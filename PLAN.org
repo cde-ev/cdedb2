@@ -1,0 +1,7 @@
+* Finalize SQL
+* replace checked.png and unchecked.png with better icons
+* use framework for html? (maybe pure?) -- CSS is really rudimentary
+* investigate mypy and pytypedecl
+* more logging
+* make test-suite faster
+* make automatic VM build

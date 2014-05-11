@@ -1,0 +1,103 @@
+body{
+    margin: 0px;
+}
+
+#header{
+    background: blue;
+    width: 100%;
+    padding: 5px;
+}
+
+#middle{
+    background: #ccc;
+    display: table;
+}
+
+#strut{
+    width: 0px;
+    height: 100ex;
+    display: table-cell;
+}
+
+#navigation{
+    min-width: 12em;
+    min-height: 100ex;
+    background: red;
+    vertical-align: top;
+    display: table-cell;
+    padding: 10px;
+}
+
+#navigation ul{
+    padding-left: 10px;
+}
+
+#content{
+    background: green;
+    display: table-cell;
+    vertical-align: top;
+    padding: 5px;
+    width: 100%;
+}
+
+
+#footer{
+    background: yellow;
+    width: 100%;
+    padding: 5px;
+}
+
+.notification{
+    margin: auto;
+    width: 30em;
+    min-height: 15ex;
+    text-align: center;
+    background: cyan;
+    border: solid;
+}
+
+.errorNotification{
+    background: cyan;
+    border-color: #abc;
+}
+
+.warningNotification{
+    background: #ddd;
+    border-color: #abc;
+}
+
+.infoNotification{
+    background: #ccc;
+    border-color: #abc;
+}
+
+.successNotification{
+    background: #999;
+    border-color: #abc;
+}
+
+.questionNotification{
+    background: #999;
+    border-color: #abc;
+}
+
+.notificationMessage{
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.notificationIcon{
+    height: 5ex;
+    width: 5ex;
+    margin-top: 5ex;
+    margin-bottom: 5ex;
+    vertical-align: middle;
+}
+
+.errorInput{
+    background: #f33;
+}
+
+.stacking{
+    display: inline-block;
+}

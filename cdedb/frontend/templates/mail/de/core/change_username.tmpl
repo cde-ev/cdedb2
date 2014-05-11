@@ -1,0 +1,9 @@
+Hallo {{ user.display_name }},
+
+Du hast in der CdE-Datenbank eine Änderung Deiner Emailadresse
+angestoßen. Um die neue Adresse zu verifizieren, besuche bitte den Link [1],
+wo Du die Änderung dann abschließen kannst.
+
+Liebe Grüße von der Verwaltung
+
+[1] {{ cdedblink('core/do_username_change', {'new_username' : new_username}) }}

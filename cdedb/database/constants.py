@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+
+"""Translation of numeric constants to semantic values.
+
+This file takes care of encoding mostly enum-like things into the
+correct numeric values. The values are specified in the
+``cdedb-tables.sql`` file. The raw values should never be used, instead
+their symbolic names provided by this module should be used.
+"""
+
+SEARCHMEMBER_STATUS = 0 #:
+SEARCHMEMBER_STATUSES = (0,) #:
+MEMBER_STATUS = 1 #:
+MEMBER_STATUSES = (0, 1) #:
+FORMER_MEMBER_STATUS = 2 #:
+CDE_STATUSES = (0, 1, 2) #:
+ARCHIVED_MEMBER_STATUS = 10 #:
+ALL_CDE_STATUSES = (0, 1, 2, 10) #:
+EVENT_USER_STATUS = 20 #:
+EVENT_STATUSES = (0, 1, 2, 20) #:
+ASSEMBLY_USER_STATUS = 30 #:
+ASSEMBLY_STATUSES = (0, 1, 30) #:
+
+ADMIN_BIT = 1 #:
+CORE_ADMIN_BIT = 2 #:
+CDE_ADMIN_BIT = 4 #:
+EVENT_ADMIN_BIT = 8 #:
+ML_ADMIN_BIT = 16 #:
+ASSEMBLY_ADMIN_BIT = 32 #:
+FILES_ADMIN_BIT = 64 #:
+I25P_ADMIN_BIT = 128 #:
+
+FEMALE = 0 #:
+MALE = 1 #:
+GENDER_UNKNOWN = 2 #:
+
+MEMBER_CHANGE_PENDING = 0 #:
+MEMBER_CHANGE_COMMITTED = 1 #:
+MEMBER_CHANGE_SUPERSEDED = 10 #:
+MEMBER_CHANGE_NACKED = 11 #:
+
+REGISTRATION_STATE_DISINTERESTED = -1 #:
+REGISTRATION_STATE_APPLIED = 0 #:
+REGISTRATION_STATE_PARTICIPANT = 1 #:
+REGISTRATION_STATE_WAITLIST = 2 #:
+REGISTRATION_STATE_GUEST = 3 #:
+REGISTRATION_STATE_CANCELLED = 4 #:
+REGISTRATION_STATE_REJECTED = 5 #:
+
+PERSONA_CREATION_UNCONFIRMED = 0 #:
+PERSONA_CREATION_TO_REVIEW = 1 #:
+PERSONA_CREATION_APPROVED = 2 #:
+PERSONA_CREATION_FINISHED = 3 #:
+PERSONA_CREATION_REJECTED = 10 #:

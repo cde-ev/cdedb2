@@ -1,0 +1,206 @@
+{# This template provides a set of standard macros which should be used to
+   create html-elements. #}
+
+{% macro input_hidden(name) %}
+    <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, '')|e }}" >
+{% endmacro %}
+
+{% macro input_text(name, label='', displayerrors=True, readonly=False) %}
+    <span {% if name in errors %} class="errorInput" {% endif %} >
+        <label>
+            {{ label|e }}
+            <span class="stacking">
+                {% if displayerrors %}
+                    {% for error in errors.get(name, []) %}
+                        {% if error %}
+                            {{ i18n(error|string)|e }}<br>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if readonly %}
+                    <span>{{ values.get(name, '')|e }}</span>
+                    <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, '')|e }}" >
+                {% else %}
+                    <input type="text" name="{{ name|e }}" value="{{ values.get(name, '')|e }}" >
+                {% endif %}
+            </span>
+        </label>
+    </span>
+{% endmacro %}
+
+{% macro tab_input_text(name, label='', displayerrors=True, readonly=False) %}
+    <tr {% if name in errors %} class="errorInput" {% endif %} >
+        <td><label for="{{ name|e }}">{{ label|e }}</label></td>
+        <td>
+            {% if displayerrors %}
+                {% for error in errors.get(name, []) %}
+                    {{ i18n(error|string)|e }}<br>
+                {% endfor %}
+            {% endif %}
+            {% if readonly %}
+                <span>{{ values.get(name, '')|e }}</span>
+                <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, '')|e }}" >
+            {% else %}
+                <input type="text" name="{{ name|e }}" value="{{ values.get(name, '')|e }}" >
+            {% endif %}
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro input_password(name="password", label="", readonly=False) %}
+    <span {% if name in errors %} class="errorInput" {% endif %} >
+        <label>
+            {{ label|e }}
+            {% if readonly %}
+                <span>******</span>
+                <input type="hidden" name="{{ name|e }}" value="" >
+            {% else %}
+                <input type="password" name="{{ name|e }}" value="" >
+            {% endif %}
+        </label>
+    </span>
+{% endmacro %}
+
+{% macro tab_input_password(name="password", label="", readonly=False) %}
+    <tr {% if name in errors %} class="errorInput" {% endif %} >
+        <td><label for="{{ name|e }}">{{ label|e }}</label></td>
+        <td>
+            {% if readonly %}
+                <span>******</span>
+                <input type="hidden" name="{{ name|e }}" value="" >
+            {% else %}
+                <input type="password" name="{{ name|e }}" value="" >
+            {% endif %}
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro input_checkbox(name, label="", value="checked", readonly=False) %}
+{# This is the version for single checkboxes as opposed to input_checkboxes(). #}
+    <span {% if name in errors %} class="errorInput" {% endif %} >
+        <label>
+            {% if readonly %}
+                {% if values.get(name, '') == value %}
+                    <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+                    <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+                {% else %}
+                    <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+                {% endif %}
+            {% else %}
+                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, '') == value %} checked {% endif %} >
+            {% endif %}
+            {{ label|e }}
+        </label>
+    </span>
+{% endmacro %}
+
+{% macro tab_input_checkbox(name, label="", value="checked", readonly=False) %}
+{# This is the version for single checkboxes as opposed to tab_input_checkboxes(). #}
+    <tr {% if name in errors %} class="errorInput" {% endif %} >
+        <td colspan="2">
+                <label>
+                {% if readonly %}
+                    {% if values.get(name, '') == value %}
+                        <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+                        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+                    {% else %}
+                        <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+                    {% endif %}
+                {% else %}
+                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, '') == value %} checked {% endif %} >
+                {% endif %}
+                {{ label|e }}
+            </label>
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro input_checkboxes(name, entries, readonly=False) %}
+{# This is the version for multiple checkboxes as opposed to input_checkbox().
+   entries is of type [(str, str)]. #}
+
+    <span {% if name in errors %} class="errorInput" {% endif %} >
+        <span class="stacking">
+            {% for value, label in entries %}
+                <label>
+                    {% if readonly %}
+                        {% if value in values.get(name, []) %}
+                            <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+                            <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+                        {% else %}
+                            <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+                        {% endif %}
+                    {% else %}
+                        <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, []) %} checked {% endif %} >
+                    {% endif %}
+                    {{ label|e }}
+                </label>
+            {% endfor %}
+        </span>
+    </span>
+{% endmacro %}
+
+{% macro tab_input_checkboxes(name, entries, readonly=False) %}
+{# This is the version for multiple checkboxes as opposed to tab_input_checkbox().
+   entries is of type [(str, str)]. #}
+
+    <tr {% if name in errors %} class="errorInput" {% endif %} >
+        <td colspan="2">
+            {% for value, label in entries %}
+                <label>
+                    {% if readonly %}
+                        {% if value in values.get(name, []) %}
+                            <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+                            <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+                        {% else %}
+                            <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+                        {% endif %}
+                    {% else %}
+                        <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, []) %} checked {% endif %} >
+                    {% endif %}
+                    {{ label|e }}
+                </label>
+            {% endfor %}
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro input_radio(name, entries, title="", readonly=False) %}
+    <span {% if name in errors %} class="errorInput" {% endif %} >
+        {{ title|e }}
+        {% if readonly %}
+            <span>{{ values.get(name, i18n('Undefined.'))|e }}</span>
+        {% else %}
+            <span class="stacking">
+                {% for value, label in entries %}
+                    <label>
+                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name) == value %} checked {% endif %} >
+                        {{ label|e }}
+                    </label><br>
+                {% endfor %}
+            </span>
+        {% endif %}
+    </span>
+{% endmacro %}
+
+{% macro tab_input_radio(name, entries, title="", readonly=False) %}
+    <tr {% if name in errors %} class="errorInput" {% endif %} >
+        <td> {{ title|e }} </td>
+        <td>
+            {% if readonly %}
+                <span>{{ values.get(name, i18n('Undefined.'))|e }}</span>
+            {% else %}
+                {% for value, label in entries %}
+                    <label>
+                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name) == value %} checked {% endif %} >
+                        {{ label|e }}
+                    </label><br>
+                {% endfor %}
+            {% endif %}
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro input_submit(value, name="submitform", readonly=False) %}
+    <input type="submit" name="{{ name|e }}" value="{{ value|e }}" {% if readonly %} disabled {% endif %}>
+{% endmacro %}

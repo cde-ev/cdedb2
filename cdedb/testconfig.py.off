@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+"""Configuration for test runs. Has to be included via
+``cdedb.localconfig``."""
+
+GLOBAL_LOG = "/tmp/test-cdedb.log"
+CONSOLE_LOG_LEVEL = None

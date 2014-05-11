@@ -1,0 +1,251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting Started &mdash; CdEDB 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="CdEDB 2.0 documentation" href="index.html" />
+    <link rel="up" title="Introduction" href="Introduction.html" />
+    <link rel="next" title="Readme" href="Introduction_Readme.html" />
+    <link rel="prev" title="Introduction" href="Introduction.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Introduction_Readme.html" title="Readme"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Introduction.html" title="Introduction"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">CdEDB 2.0 documentation</a> &raquo;</li>
+          <li><a href="Introduction.html" accesskey="U">Introduction</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
+<p>We need some dependencies:</p>
+<ul class="simple">
+<li>python (at least 3.4)</li>
+<li>PostgreSQL</li>
+<li>Apache (with mod_wsgi)</li>
+<li>git</li>
+</ul>
+<p>Further we depend on a number of python packages:</p>
+<ul class="simple">
+<li>passlib</li>
+<li>psycopg2</li>
+<li>pyro4 (which depends on serpent)</li>
+<li>werkzeug</li>
+<li>dateutil</li>
+<li>jinja2</li>
+</ul>
+<p>At last there are some recommended dependencies:</p>
+<ul class="simple">
+<li>sphinx (for building the documentation)</li>
+<li>webtest (for tests)</li>
+<li>pgbouncer (otherwise database performance may be degraded)</li>
+</ul>
+<p>Here are some oneliners for the lazy:</p>
+<div class="highlight-python"><div class="highlight"><pre># Gentoo
+emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/sphinx dev-python/webtest dev-db/pgbouncer
+</pre></div>
+</div>
+</div>
+<div class="section" id="checkout-the-repository">
+<h2>Checkout the repository<a class="headerlink" href="#checkout-the-repository" title="Permalink to this headline">¶</a></h2>
+<p>Use git to clone the code:</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone rcs.cde-ev.de/cdedb2
+</pre></div>
+</div>
+<p>Now you can build the documentation by issuing:</p>
+<div class="highlight-python"><div class="highlight"><pre>make doc
+</pre></div>
+</div>
+<p>If you are reading the excerpt version (<tt class="docutils literal"><span class="pre">INSTALL.html</span></tt>) you can now switch
+to the real document.</p>
+</div>
+<div class="section" id="prepare-environment">
+<h2>Prepare environment<a class="headerlink" href="#prepare-environment" title="Permalink to this headline">¶</a></h2>
+<p>Now we set up all auxillary stuff. First execute as user with enough
+permissions and with running postgres:</p>
+<div class="highlight-python"><div class="highlight"><pre>make sql
+</pre></div>
+</div>
+<p>This will create the database users and tables. Now configure pgbouncer in
+<tt class="docutils literal"><span class="pre">/etc/pgbouncer.ini</span></tt> with the following:</p>
+<div class="highlight-python"><div class="highlight"><pre>[databases]
+cdb =
+cdb_test =
+
+[pgbouncer]
+listen_addr = 127.0.0.1
+listen_port = 6432
+auth_type = md5
+auth_file = /etc/pgbouncer_users.txt
+pool_mode = session
+max_client_conn = 100
+default_pool_size = 20
+</pre></div>
+</div>
+<p>Additionally place the file <tt class="docutils literal"><span class="pre">related/pgbouncer_users.txt</span></tt> into <tt class="docutils literal"><span class="pre">/etc</span></tt>
+for authentication (otherwise pgbouncer will refuse connections):</p>
+<div class="highlight-python"><div class="highlight"><pre>cp related/pgbouncer_users.txt /etc
+chown pgbouncer:root /etc/pgbouncer_users.txt
+chmod 600 /etc/pgbouncer_users.txt
+</pre></div>
+</div>
+<p>This file may be regenerated with the <tt class="docutils literal"><span class="pre">mkauth.py</span></tt> tool from the pgbouncer
+tar-ball.</p>
+<p>Now we set up the Apache server, first with <tt class="docutils literal"><span class="pre">/etc/apache2/httpd.conf</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>LoadModule wsgi_module modules/mod_wsgi.so
+ServerName localhost
+</pre></div>
+</div>
+<p>and then with <tt class="docutils literal"><span class="pre">/etc/apache2/vhosts.d/00_default_ssl_vhost.conf</span></tt>:</p>
+<div class="highlight-python"><div class="highlight"><pre>WSGIDaemonProcess cdedb processes=4 threads=4
+WSGIScriptAlias /db /path/to/repo/wsgi/cdedb.wsgi
+
+&lt;Directory /path/to/repo/wsgi&gt;
+Require all granted
+&lt;/Directory&gt;
+
+Alias /static /path/to/repo/static
+&lt;Directory /path/to/repo/static/static&gt;
+Require all granted
+&lt;/Directory&gt;
+</pre></div>
+</div>
+<p>note, that this is syntax for apache-2.4 (this differs from apache-2.2).</p>
+</div>
+<div class="section" id="configure-the-application">
+<h2>Configure the application<a class="headerlink" href="#configure-the-application" title="Permalink to this headline">¶</a></h2>
+<p>The details can be found in <a class="reference internal" href="Auxiliary.html#module-cdedb.config" title="cdedb.config"><tt class="xref py py-mod docutils literal"><span class="pre">cdedb.config</span></tt></a>. The global configuration
+can be done in <tt class="docutils literal"><span class="pre">/cdedb/localconfig.py</span></tt>. The configuration for the frontend
+resides in <tt class="docutils literal"><span class="pre">/etc/cdedb-frontend-config.py</span></tt>. The path to the backend
+configuration is passed on the command line (if you use the make recipes,
+then via the variable <tt class="docutils literal"><span class="pre">CONFIGPATH</span></tt>).</p>
+</div>
+<div class="section" id="running-it">
+<h2>Running it<a class="headerlink" href="#running-it" title="Permalink to this headline">¶</a></h2>
+<p>First start a <tt class="docutils literal"><span class="pre">pyro</span></tt> nameserver with:</p>
+<div class="highlight-python"><div class="highlight"><pre>make pyro-nameserver
+</pre></div>
+</div>
+<p>then spin up the backends (exemplary here for the core backend):</p>
+<div class="highlight-python"><div class="highlight"><pre>make run-core
+</pre></div>
+</div>
+<p>now start the apache and access <tt class="docutils literal"><span class="pre">http://localhost/db/</span></tt> with a browser. You
+can shutdown the backends with:</p>
+<div class="highlight-python"><div class="highlight"><pre>make quit-all
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting Started</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#checkout-the-repository">Checkout the repository</a></li>
+<li><a class="reference internal" href="#prepare-environment">Prepare environment</a></li>
+<li><a class="reference internal" href="#configure-the-application">Configure the application</a></li>
+<li><a class="reference internal" href="#running-it">Running it</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Introduction.html"
+                        title="previous chapter">Introduction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Introduction_Readme.html"
+                        title="next chapter">Readme</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Introduction_Setup.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Introduction_Readme.html" title="Readme"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Introduction.html" title="Introduction"
+             >previous</a> |</li>
+        <li><a href="index.html">CdEDB 2.0 documentation</a> &raquo;</li>
+          <li><a href="Introduction.html" >Introduction</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, CdE Datenbank Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

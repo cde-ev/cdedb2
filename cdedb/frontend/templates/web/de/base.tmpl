@@ -1,0 +1,70 @@
+{# This is the base template to be extended by (nearly) all html templates.
+   It provides a skeleton where only the content needs to be filled in. #}
+
+{# This must be a macro because of the recursive nature of the nav-list. #}
+{% macro buildnavlist(alist) %}
+    {% if alist %}
+        <ul>
+            {% for title, link, sublist in alist %}
+                {% if link %}
+                    <li><a href="{{ link }}">{{ i18n(title)|e }}</a></li>
+                {% else %}
+                    <li>{{ i18n(title)|e }}</li>
+                {% endif %}
+                {{ buildnavlist(alist=sublist) }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endmacro %}
+
+<html>
+    <head>
+        <title>{% block title %}CdEDB{% endblock %}</title>
+        <link rel="stylesheet" type="text/css" href="/static/cdedb.css" media="all">
+        <link rel="stylesheet" type="text/css" href="/static/print.css" media="print">
+    </head>
+    <body>
+        <div id="header">
+            {% block header %}More logo{% endblock %}
+        </div>
+        <div id="middle">
+            <div id="strut"></div>
+            <div id="navigation">
+                <h1><a href="{{ cdedblink("core/index") }}">CdEDB</a></h1>
+                {% if user.role == "anonymous" %}
+                    Nicht eingeloggt<br>
+                    <a href="{{ cdedblink("core/index") }}">Login</a>
+                {% else %}
+                    Eingeloggt als:<br>
+                    <span id="displayname">{{ user.display_name|e }}</span>
+                    <form action="{{ cdedblink("core/logout") }}" method="POST" id="logoutform">
+                        <input type="submit" name="submitlogout" value="Abmelden">
+                    </form>
+                {% endif %}
+                <hr>
+                <h2>Navigation</h2>
+                {{ buildnavlist(navigationlist) }}
+            </div>
+            <div id="content">
+                {% for ntype, message in notifications %}
+                    <div class="notification {{ ntype|e }}Notification">
+                        <img src="{{ staticurl("icons/{}.png".format(ntype)) }}"
+                          alt="{{ ntype|e }}" class="notificationIcon">
+                        <span class="notificationMessage">{{ i18n(message)|e }}</span>
+                    </div>
+                {% endfor %}
+                {% block content %}
+                    This should not be visible.
+                {% endblock %}
+            </div>
+        </div>
+        <div id="footer">
+            {% block footer %}{{ debugstring|e }}{% endblock %}
+        </div>
+    </body>
+    {% if errors %}
+        <!-- error listing for debugging
+             {{ errors|e }}
+        -->
+    {% endif %}
+</html>

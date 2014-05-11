@@ -1,0 +1,16 @@
+# local backups
+*~
+*.bak
+
+# py[co] files
+*.pyc
+*.pyo
+
+# generated documentation files
+doc/build/**
+
+# local configuration
+cdedb/localconfig.py
+
+# cache data
+.coverage

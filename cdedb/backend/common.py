@@ -1,0 +1,429 @@
+#!/usr/bin/env python3
+
+"""All the common infrastructure for the backend services.
+
+The most important thing is :py:class:`AbstractBackend` which is the
+template for all services.
+"""
+
+import os
+import signal
+import logging
+from cdedb.database.connection import connection_pool_factory
+from cdedb.database import DATABASE_ROLES
+from cdedb.common import glue, extract_realm, make_root_logger, \
+     extract_global_privileges
+from cdedb.config import Config, SecretsConfig
+import abc
+import cdedb.validation as validate
+import functools
+import copy
+import inspect
+
+
+def access_decorator_generator(possibleroles):
+    """The @access decorator marks a function of a backend for publication via
+    RPC.
+
+    :type possibleroles: [str]
+    :param possibleroles: ordered list of privilege levels
+    :rtype: decorator
+    """
+    def decorator(role):
+        def wrap(fun):
+            fun.access_list = set(possibleroles[possibleroles.index(role):])
+            return fun
+        return wrap
+    return decorator
+
+def internal_access_decorator_generator(possibleroles):
+    """The @internal_access decorator marks a function of a backend for
+    internal publication. It will be accessible via the :py:class:`AuthShim`.
+
+    :type possibleroles: [str]
+    :param possibleroles: ordered list of privilege levels
+    :rtype: decorator
+    """
+    def decorator(role):
+        def wrap(fun):
+            fun.internal_access_list = set(
+                possibleroles[possibleroles.index(role):])
+            return fun
+        return wrap
+    return decorator
+
+class BackendRequestState:
+    """As the backends should be stateless most functions should as first
+    argument accept a request state object.
+    """
+    def __init__(self, sessionkey, user, conn):
+        """
+        :type sessionkey: str
+        :type user: :py:class:`BackendUser`
+        :type conn: :py:class:`cdedb.database.connection.IrradiatedConnection`
+        """
+        self.sessionkey = sessionkey
+        self.user = user
+        self.conn = conn
+
+class AbstractBackend(metaclass=abc.ABCMeta):
+    """Basic template for all backend services.
+
+    Note the method :py:meth:`establish` which is used by
+    :py:mod:`cdedb.backend.rpc` to do authentification. Children classes
+    have to override some things: first :py:attr:`realm` identifies the
+    component; furthermore there are some abstract methods which specify
+    realm-specific behaviour (with a default implementation which is
+    sufficient for some cases).
+    """
+    #: abstract str to be specified by children
+    realm = None
+
+    def __init__(self, configpath):
+        """
+        :type configpath: str
+        """
+        self.conf = Config(configpath)
+        ## initialize logging
+        make_root_logger(
+            "cdedb.backend", getattr(self.conf, "{}_BACKEND_LOG".format(
+                self.realm.upper())), self.conf.LOG_LEVEL,
+            syslog_level=self.conf.SYSLOG_LEVEL,
+            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+        self.connpool = connection_pool_factory(
+            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
+            SecretsConfig(configpath))
+        ## logger are thread-safe!
+        self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
+        self.logger.info("Instantiated {} with configpath {}.".format(
+            self, configpath))
+
+    def establish(self, sessionkey, method, allow_internal=False):
+        """Do the initialization for an RPC connection.
+
+        :type sessionkey: str
+        :param sessionkey: used for authorization and converted into a
+          :py:class:`BackendRequestState`
+        :type method: str
+        :param method: name of the method to be invoked via RPC
+        :type allow_internal: bool
+        :param allow_internal: ``True`` for permitting
+          @internal_access. This is currently only used for testing.
+        :rtype: :py:class:`BackendRequestState` or None
+        """
+        persona_id = None
+        if sessionkey:
+            query = glue("SELECT persona_id FROM core.sessions",
+                         "WHERE sessionkey = %s AND is_active = True")
+            with self.connpool["cdb_anonymous"] as conn:
+                with conn.cursor() as cur:
+                    self.execute_db_query(cur, query, (sessionkey,))
+                    if cur.rowcount == 1:
+                        persona_id = cur.fetchone()["persona_id"]
+                    else:
+                        self.logger.info("Got invalid session key '{}'.".format(
+                            sessionkey))
+        user = BackendUser()
+        if persona_id:
+            ## no update to core.sessions(atime) here
+            ## these happen only in the frontend and on logout
+            ## the backend can generally be less paranoid about sessions
+            query = glue("SELECT status, db_privileges, is_active",
+                         "FROM core.personas WHERE id = %s")
+            with self.connpool["cdb_anonymous"] as conn:
+                with conn.cursor() as cur:
+                    self.execute_db_query(cur, query, (persona_id,))
+                    data = self._sanitize_db_output(cur.fetchone())
+            if data["is_active"]:
+                realm = extract_realm(data["status"])
+                role = self.extract_roles(data)[-1]
+                db_role = self.db_role(role)
+                user = BackendUser(persona_id, role, db_role,
+                                   realm, persona_data=data)
+            else:
+                self.logger.warn("Found inactive user {}".format(persona_id))
+        try:
+            access_list = getattr(self, method).access_list
+        except AttributeError:
+            if allow_internal:
+                access_list = getattr(self, method).internal_access_list
+            else:
+                raise
+        if user.role in access_list:
+            return BackendRequestState(sessionkey, user,
+                                       self.connpool[user.db_role])
+        else:
+            return None
+
+    @classmethod
+    @abc.abstractmethod
+    def extract_roles(cls, personadata):
+        """
+        Convert a data set from the core.personas database table into a
+        list of application level roles (used for authorization
+        throughout the python code), these roles may be realm-specific.
+
+        :type personadata: {str : object}
+        :rtype: [str]
+        """
+        roles = ["anonymous", "persona"]
+        if extract_realm(personadata["status"]) == cls.realm:
+            roles.append("user")
+        global_privs = extract_global_privileges(personadata["db_privileges"],
+                                                 personadata["status"])
+        for role in ("member", "{}_admin".format(cls.realm), "admin"):
+            if role in global_privs:
+                roles.append(role)
+        return roles
+
+    @classmethod
+    @abc.abstractmethod
+    def db_role(cls, role):
+        """Convert an application level role into a database level
+        role. There may be more application level roles, which have to be
+        mapped to those available in the database.
+
+        :type role: str
+        :rtype: str
+        """
+        if role == "user":
+            return "cdb_persona"
+        return "cdb_{}".format(role)
+
+    @classmethod
+    @abc.abstractmethod
+    def is_admin(cls, rs):
+        """Since each realm may have its own application level roles, it may
+        also have additional roles with elevated privileges.
+
+        :type rs: :py:class:`BackendRequestState`
+        :rtype: bool
+        """
+        return rs.user.role in ("{}_admin".format(cls.realm), "admin")
+
+    @staticmethod
+    def _sanitize_db_output(output):
+        """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
+        :py:class:`dict`. We only use the outputs as dictionaries and
+        the psycopg variant has some rough edges (e.g. it does not survive
+        serialization).
+
+        Also this wrapper allows future global modifications to the
+        outputs, if we want to add some.
+
+        :type output: :py:class:`psycopg2.extras.RealDictRow`
+        :rtype: {str : object}
+        """
+        if not output:
+            return None
+        return dict(output)
+
+    @staticmethod
+    def _sanitize_tuple(obj):
+        """Convert :py:class:`tuple`s into :py:class:`list`s.
+
+        This is necesary because psycopg will fail to insert a tuple
+        into an 'ANY(%s)' clause -- only a list does the trick.
+
+        :type obj: object
+        :rtype: object but not tuple
+        """
+        if isinstance(obj, tuple):
+            return list(obj)
+        return obj
+
+    def execute_db_query(self, cur, query, params):
+        """Perform a database query. This low-level wrapper should be used
+        for all explicit database queries, mostly because it invokes
+        :py:meth:`_sanitize_tuple`. However in nearly all cases you want to
+        call one of :py:meth:`query_exec`, :py:meth:`query_one`,
+        :py:meth:`query_all` which utilize a transaction to do the query. If
+        this is not called inside a transaction context (probably created by
+        a ``with`` block) it is unsafe!
+
+        This doesn't return anything, but has a side-effect on ``cur``.
+
+        :type cur: :py:class:`psycopg2.extensions.cursor`
+        :type query: str
+        :type params: [object]
+        :rtype: None
+        """
+        sanitized_params = tuple(self._sanitize_tuple(p) for p in params)
+        self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
+            query, sanitized_params)))
+        cur.execute(query, sanitized_params)
+
+    def query_exec(self, rs, query, params):
+        """Execute a query in a safe way (inside a transaction).
+
+        :type rs: :py:class:`BackendRequestState`
+        :type query: str
+        :type params: [object]
+        :rtype: int
+        :returns: number of affected rows
+        """
+        with rs.conn as conn:
+            with conn.cursor() as cur:
+                self.execute_db_query(cur, query, params)
+                return cur.rowcount
+
+    def query_one(self, rs, query, params):
+        """Execute a query in a safe way (inside a transaction).
+
+        :type rs: :py:class:`BackendRequestState`
+        :type query: str
+        :type params: [object]
+        :rtype: {str : object} or None
+        :returns: First result of query or None if there is none
+        """
+        with rs.conn as conn:
+            with conn.cursor() as cur:
+                self.execute_db_query(cur, query, params)
+                return self._sanitize_db_output(cur.fetchone())
+
+    def query_all(self, rs, query, params):
+        """Execute a query in a safe way (inside a transaction).
+
+        :type rs: :py:class:`BackendRequestState`
+        :type query: str
+        :type params: [object]
+        :rtype: [{str : object}]
+        :returns: all results of query
+        """
+        with rs.conn as conn:
+            with conn.cursor() as cur:
+                self.execute_db_query(cur, query, params)
+                return tuple(
+                    self._sanitize_db_output(x) for x in cur.fetchall())
+
+class BackendUser:
+    """Container for representing a persona."""
+    def __init__(self, persona_id=None, role="anonymous",
+                 db_role="cdb_anonymous", realm=None, orga=None,
+                 moderator=None, persona_data=None):
+        """
+        :type persona_id: int or None
+        :type role: str
+        :param role: python side privilege level
+        :type db_role: str :param db_role: database role associated to
+          python level role (this is non-trivial since there may be more
+          possible roles on the python level than in the database)
+        :type realm: str
+        :param realm: realm of origin, describing which component is
+          responsible for handling the basic aspects of this user
+        :type orga: [int]
+        :param orga: list of event ids for which this user is orga
+        :type moderator: [int]
+        :param moderator: list of mailing lists for which this user is
+          moderator
+        :type personadata: {str : object} or None
+        :param personadata: copy of the raw data used to create this instance,
+          to be used by :py:class:`AuthShim` for updating privilege information
+          for the target component
+        """
+        self.persona_id = persona_id
+        self.role = role
+        self.db_role = db_role
+        self.realm = realm
+        self.orga = orga or tuple()
+        self.moderator = moderator or tuple()
+        self._persona_data = persona_data
+
+def affirm_validation(assertion, value):
+    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
+
+    :type assertion: str
+    :type value: object
+    :rtype: object
+    """
+    checker = getattr(validate, "assert_{}".format(assertion))
+    return checker(value)
+
+def make_RPCDaemon(backend, socket_address, access_log=None):
+    """Wrapper around :py:func:`cdedb.backend.rpc.create_RPCDaemon` which is
+    necessary to set up the environment for :py:mod:`Pyro4` before it is
+    imported.
+
+    :type backend: :py:class:`AbstractBackend`
+    :type socket_address: str
+    :type access_log: str or None
+    :rtype: :py:class:`Pyro4.core.Daemon`
+    """
+    if access_log:
+        os.environ['PYRO_LOGFILE'] = access_log
+        if backend.conf.LOG_LEVEL <= logging.DEBUG:
+            os.environ['PYRO_LOGLEVEL'] = "DEBUG"
+        else:
+            os.environ['PYRO_LOGLEVEL'] = "INFO"
+    from cdedb.backend.rpc import create_RPCDaemon
+    return create_RPCDaemon(backend, socket_address, bool(access_log))
+
+def run_RPCDaemon(daemon, pidfile=None):
+    """Helper to run :py:meth:`Pyro4.core.Daemon.requestLoop`. This provides a
+    handler for doing a clean shutdown on SIGTERM and creates a state file
+    to get the server pid.
+
+    :type daemon: :py:class:`Pyro4.core.Daemon`
+    :type pidfile: str or None
+    """
+    running = [True]
+    def handler(signum, frame): # signature because of interface compatability
+        if running:
+            running.pop()
+    signal.signal(signal.SIGTERM, handler)
+    if pidfile:
+        with open(pidfile, 'w') as f:
+            f.write(str(os.getpid()))
+    try:
+        with daemon:
+            daemon.requestLoop(lambda: running)
+    finally:
+        if pidfile:
+            os.remove(pidfile)
+
+class AuthShim:
+    """Mediate calls between different backend components. This emulates an
+    RPC call without most of the overhead of actually doing an RPC call.
+    """
+    def __init__(self, backend):
+        """
+        :type backend: :py:class:`AbstractBackend`
+        """
+        self._backend = backend
+        self._funs = {}
+        funs = inspect.getmembers(backend, predicate=inspect.isroutine)
+        for name, fun in funs:
+            if hasattr(fun, "access_list") or hasattr(fun,
+                                                      "internal_access_list"):
+                self._funs[name] = self._wrapit(fun)
+
+    def _wrapit(self, fun):
+        """
+        :type fun: callable
+        """
+        try:
+            access_list = fun.internal_access_list
+        except AttributeError:
+            access_list = fun.access_list
+        @functools.wraps(fun)
+        def new_fun(rs, *args, **kwargs):
+            new_rs = BackendRequestState(rs.sessionkey, copy.deepcopy(rs.user),
+                                         rs.conn)
+            ## be naughty and take a peek at _persona_data
+            if rs.user._persona_data and rs.user.role != "anonymous":
+                roles = self._backend.extract_roles(rs.user._persona_data)
+                new_rs.user.role = roles[-1]
+            if new_rs.user.role in access_list:
+                return getattr(self._backend, fun.__name__)(new_rs, *args,
+                                                            **kwargs)
+            else:
+                raise RuntimeError("Permission denied")
+        return new_fun
+
+    def __getattr__(self, name):
+        if name in ("_funs", "_backend"):
+            raise AttributeError()
+        try:
+            return self._funs[name]
+        except KeyError as e:
+            raise AttributeError from e

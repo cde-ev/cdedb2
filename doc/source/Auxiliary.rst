@@ -1,0 +1,37 @@
+Auxiliary Faculties
+===================
+
+Here we describe some additional global helper modules.
+
+cdedb.config
+------------
+
+.. automodule:: cdedb.config
+   :members:
+
+cdedb.serialization
+-------------------
+
+.. automodule:: cdedb.serialization
+   :members:
+
+cdedb.internationalization
+--------------------------
+
+.. automodule:: cdedb.internationalization
+   :members:
+
+cdedb.common
+------------
+
+.. automodule:: cdedb.common
+   :members:
+
+cdedb.validation
+----------------
+
+The annotations below are a bit flakey, because of the way the validators
+are created.
+
+.. automodule:: cdedb.validation
+   :members:

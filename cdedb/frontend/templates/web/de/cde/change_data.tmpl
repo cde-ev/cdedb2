@@ -1,0 +1,52 @@
+{% extends "web/de/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Meine Daten bearbeiten{% endblock %}
+{% block content %}
+    <h1>Meine Daten</h1>
+
+    <form action="{{ cdedblink('cde/change_data') }}" method="POST" id="changedataform">
+        <table>
+            <th>
+                <tr> <td colspan="2">Person</td> </tr>
+            </th>
+            {{ util.tab_input_text(name="title", label="Titel") }}
+            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.tab_input_text(name="family_name", label="Nachname") }}
+            {{ util.tab_input_text(name="name_supplement", label="Namenszusatz") }}
+            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+            {{ util.tab_input_text(name="specialisation", label="Fachgebiet") }}
+            {{ util.tab_input_text(name="affiliation", label="Schule, Uni, ...") }}
+            {{ util.tab_input_text(name="timeline", label="Jahrgang, Matrikel, ...") }}
+            {{ util.tab_input_text(name="interests", label="Interessen") }}
+            {{ util.tab_input_text(name="free_form", label="Sonstiges") }}
+            <th>
+                <tr> <td colspan="2">Kontakt</td> </tr>
+            </th>
+            <tr>
+                <td>Email</td>
+                <td>{{ user.username|e }} <a href="{{ cdedblink('core/change_username_form') }}">Email ändern</a></td>
+            </tr>
+            {{ util.tab_input_text(name="telephone", label="Telefon") }}
+            {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.tab_input_text(name="weblink", label="WWW") }}
+            <th>
+                <tr> <td colspan="2">Adresse</td> </tr>
+            </th>
+            {{ util.tab_input_text(name="address", label="Straße") }}
+            {{ util.tab_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.tab_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.tab_input_text(name="location", label="Stadt") }}
+            {{ util.tab_input_text(name="country", label="Land") }}
+            <th>
+                <tr> <td colspan="2">Zweitadresse</td> </tr>
+            </th>
+            {{ util.tab_input_text(name="address2", label="Straße") }}
+            {{ util.tab_input_text(name="address_supplement2", label="Addresszusatz") }}
+            {{ util.tab_input_text(name="postal_code2", label="Postleitzahl") }}
+            {{ util.tab_input_text(name="location2", label="Stadt") }}
+            {{ util.tab_input_text(name="country2", label="Land") }}
+        </table>
+        {{ util.input_submit(value="Speichern") }}
+        <a href="{{ cdedblink('cde/mydata') }}">Abbrechen</a>
+    </form>
+{% endblock %}

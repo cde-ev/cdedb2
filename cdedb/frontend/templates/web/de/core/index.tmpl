@@ -1,0 +1,28 @@
+{% extends "web/de/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Startseite{% endblock %}
+{% block content %}
+    <h1>CdE Datenbank</h1>
+    Willkommen!
+    {% if user.role == "anonymous" %}
+        <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform">
+            {{ util.input_text(name="username", label="Nutzer:") }}<br>
+            {{ util.input_password(label="Passwort:") }}<br>
+            {{ util.input_hidden(name="wants") }}
+
+            Testeingaben:
+            <input type="checkbox" name="checka"> a
+            <input type="checkbox" name="checkb" value="BBB"> b
+            <input type="checkbox" name="checkc"> c
+            <input type="checkbox" name="checkc"> c
+            <input type="checkbox" name="checkd" value="dddd"> d
+            <input type="checkbox" name="checkd" value="DDDD"> D
+            <input type="radio" name="radioa" value="a"> a
+            <input type="radio" name="radiob" value="b"> b
+            <input type="radio" name="radiob" value="B"> B
+
+            {{ util.input_submit(value="Anmelden") }}
+        </form>
+        <a href="{{ cdedblink('core/reset_password_form') }}">Passwort vergessen?</a>
+    {% endif %}
+{% endblock %}

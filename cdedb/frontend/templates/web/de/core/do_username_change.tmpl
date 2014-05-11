@@ -1,0 +1,17 @@
+{% extends "web/de/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Emailadresse ändern{% endblock %}
+{% block content %}
+    <h1>Emailadresse ändern</h1>
+
+    Gibt Dein Passwort ein und klicke den Bestätigungsknopf um Deine
+    Emailadresse in {{ values['new_username']|e }} zu ändern. Nachdem Du die
+    Änderung durchgeführt hast musst Du bei der Anmeldung Deine neue
+    Emailadresse angeben.
+
+    <form action="{{ cdedblink('core/do_username_change') }}" method="POST" id="usernamechangeform">
+        {{ util.input_hidden(name="new_username") }}<br>
+        {{ util.input_password() }}<br>
+        {{ util.input_submit(value="Emailadresse ändern") }}
+    </form>
+{% endblock %}

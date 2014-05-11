@@ -1,0 +1,74 @@
+{% extends "web/de/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Meine Daten{% endblock %}
+{% block content %}
+    <h1>Meine Daten</h1>
+    <p>
+        <a href="{{ cdedblink('event/change_data_form') }}">Bearbeiten</a>
+    </p>
+    <table>
+        <th>
+            <tr> <td colspan="2">Person</td> </tr>
+        </th>
+        <tr>
+            <td>Name</td>
+            <td>{{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }} {{ data['name_supplement']|e }}</td>
+        </tr>
+        <tr>
+            <td>Rufname</td>
+            <td>{{ data['display_name']|e }}</td>
+        </tr>
+        <tr>
+            <td>Geburtstag</td>
+            <td>{{ data['birthday']|e }}</td>
+        </tr>
+        <tr>
+            <td>Geschlecht</td>
+            {# FIXME this needs a pictogram or something like this #}
+            <td>{{ data['gender']|e }}</td>
+        </tr>
+        <tr>
+            <td>CdEDB-ID</td>
+            {# FIXME this needs some encoding (handling should be global) #}
+            <td>{{ data['id']|e }}</td>
+        </tr>
+        <th>
+            <tr> <td colspan="2">Kontakt</td> </tr>
+        </th>
+        <tr>
+            <td>Email</td>
+            <td>{{ data['username']|e }}</td>
+        </tr>
+        <tr>
+            <td>Telefon</td>
+            <td>{{ data['telephone']|e }}</td>
+        </tr>
+        <tr>
+            <td>Mobiltelefon</td>
+            <td>{{ data['mobile']|e }}</td>
+        </tr>
+        <th>
+            <tr> <td colspan="2">Adresse</td> </tr>
+        </th>
+        <tr>
+            <td>Straße</td>
+            <td>{{ data['address']|e }}</td>
+        </tr>
+        <tr>
+            <td>Adresszusatz</td>
+            <td>{{ data['address_supplement']|e }}</td>
+        </tr>
+        <tr>
+            <td>Stadt</td>
+            <td>{{ data['postal_code']|e }} {{ data['location']|e }}</td>
+        </tr>
+        <tr>
+            <td>Land</td>
+            <td>{{ data['country']|e }}</td>
+        </tr>
+    </table>
+
+    <p>
+        <a href="{{ cdedblink('event/change_data_form') }}">Bearbeiten</a>
+    </p>
+{% endblock %}
