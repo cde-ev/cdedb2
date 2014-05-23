@@ -118,12 +118,20 @@ First start a ``pyro`` nameserver with::
 
   make pyro-nameserver
 
-then spin up the backends (exemplary here for the core backend)::
+Second create the directory ``/run/cdedb`` (for this you possibly need
+elevated privileges). This has to be writable by the user running the
+backends and readable by the user running the frontend (here go the sockets
+by default)::
+
+  mkdir /run/cdedb
+  chown <user>:<user> /run/cdedb
+
+Check if apache, postgres and pgbouncer are running. Then spin up the
+backends (exemplary here for the core backend)::
 
   make run-core
 
-now start the apache and access ``http://localhost/db/`` with a browser. You
+Now start the apache and access ``http://localhost/db/`` with a browser. You
 can shutdown the backends with::
 
   make quit-all
-

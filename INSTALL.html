@@ -168,11 +168,20 @@ then via the variable <tt class="docutils literal"><span class="pre">CONFIGPATH<
 <div class="highlight-python"><div class="highlight"><pre>make pyro-nameserver
 </pre></div>
 </div>
-<p>then spin up the backends (exemplary here for the core backend):</p>
+<p>Second create the directory <tt class="docutils literal"><span class="pre">/run/cdedb</span></tt> (for this you possibly need
+elevated privileges). This has to be writable by the user running the
+backends and readable by the user running the frontend (here go the sockets
+by default):</p>
+<div class="highlight-python"><div class="highlight"><pre>mkdir /run/cdedb
+chown &lt;user&gt;:&lt;user&gt; /run/cdedb
+</pre></div>
+</div>
+<p>Check if apache, postgres and pgbouncer are running. Then spin up the
+backends (exemplary here for the core backend):</p>
 <div class="highlight-python"><div class="highlight"><pre>make run-core
 </pre></div>
 </div>
-<p>now start the apache and access <tt class="docutils literal"><span class="pre">http://localhost/db/</span></tt> with a browser. You
+<p>Now start the apache and access <tt class="docutils literal"><span class="pre">http://localhost/db/</span></tt> with a browser. You
 can shutdown the backends with:</p>
 <div class="highlight-python"><div class="highlight"><pre>make quit-all
 </pre></div>
