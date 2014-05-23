@@ -36,9 +36,11 @@ Checkout the repository
 
 Use git to clone the code::
 
-  git clone rcs.cde-ev.de/cdedb2
+  git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2
 
-Now you can build the documentation by issuing::
+For this to work you need to send an ssh public key to the administrators
+(``admin@lists.cde-ev.de``) first, to be authorized for access to the
+repository. Now you can build the documentation by issuing::
 
   make doc
 

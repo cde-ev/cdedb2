@@ -89,10 +89,12 @@ emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apac
 <div class="section" id="checkout-the-repository">
 <h2>Checkout the repository<a class="headerlink" href="#checkout-the-repository" title="Permalink to this headline">¶</a></h2>
 <p>Use git to clone the code:</p>
-<div class="highlight-python"><div class="highlight"><pre>git clone rcs.cde-ev.de/cdedb2
+<div class="highlight-python"><div class="highlight"><pre>git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2
 </pre></div>
 </div>
-<p>Now you can build the documentation by issuing:</p>
+<p>For this to work you need to send an ssh public key to the administrators
+(<tt class="docutils literal"><span class="pre">admin&#64;lists.cde-ev.de</span></tt>) first, to be authorized for access to the
+repository. Now you can build the documentation by issuing:</p>
 <div class="highlight-python"><div class="highlight"><pre>make doc
 </pre></div>
 </div>

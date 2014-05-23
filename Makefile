@@ -1,5 +1,22 @@
 help:
-	@echo "Available targets: ..."
+	@echo "run-core, run-cde, run-event, run-session"
+	@echo "         -- run the respective backend (CONFIGPATH specifies configuration)"
+	@echo "quit-core, quit-cde, quit-event, quit-session"
+	@echo "          -- quit the respective backend"
+	@echo "quit-all -- quit all running backends"
+	@echo "quit-test-backends -- quit all running backends started by the test suite"
+	@echo "pyro-nameserver -- run a pyro nameserver"
+	@echo "doc -- build documentation"
+	@echo "sql -- initialize database structures (DESTROYES DATA)"
+	@echo "sql-test -- initialize database structures for test suite"
+	@echo "sql-test-data -- fill test database with data for test suite"
+	@echo "lint -- run pylint"
+	@echo "check -- run test suite"
+	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
+	@echo "single-check -- run a single test from the test suite"
+	@echo "                (specified via TESTPATTERN, e.g."
+	@echo "                 'test.test_common.TestCommon.test_realm_extraction')"
+	@echo "coverage -- run coverage to determine test suite coverage"
 
 CONFIGPATH ?= ""
 PYTHONBIN ?= "python3"
@@ -89,4 +106,4 @@ single-check:
 coverage: .coverage
 	coverage report -m --omit='test/*,related/*'
 
-.PHONY: run-core quit-core run-frontend doc sql-dump sql-restore lint check
+.PHONY: help pyro-nameserver run-core quit-core run-cde quit-cde run-event quit-event run-session quit-session quit-all quit-test-backends doc sql sql-test sql-test-data lint check single-check .coverage coverage
