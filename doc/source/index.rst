@@ -11,6 +11,7 @@ Contents:
    Backend
    Database
    Auxiliary
+   Specification
 
 Indices and tables
 ==================
