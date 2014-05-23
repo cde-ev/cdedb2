@@ -106,10 +106,12 @@ Configure the application
 -------------------------
 
 The details can be found in :py:mod:`cdedb.config`. The global configuration
-can be done in ``/cdedb/localconfig.py``. The configuration for the frontend
-resides in ``/etc/cdedb-frontend-config.py``. The path to the backend
-configuration is passed on the command line (if you use the make recipes,
-then via the variable ``CONFIGPATH``).
+can be done in ``cdedb/localconfig.py`` (a sample for this is provided at
+``cdedb/localconfig.py.sample``, for development instances you are strongly
+encouraged to copy this to ``cdedb/localconfig.py``). The configuration for
+the frontend resides in ``/etc/cdedb-frontend-config.py``. The path to the
+backend configuration is passed on the command line (if you use the make
+recipes, then via the variable ``CONFIGPATH``).
 
 Running it
 ----------
