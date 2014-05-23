@@ -130,6 +130,8 @@ class CoreFrontend(AbstractFrontend):
         if new_password != new_password2:
             rs.errors.append(("new_password", ValueError("No match.")))
             rs.errors.append(("new_password2", ValueError("No match.")))
+        new_password = check(rs, "password_strength", new_password,
+                             "new_password")
         ## delete values so the user must resupply them
         for v in ('old_password', 'new_password', 'new_password2'):
             rs.values[v] = ""
