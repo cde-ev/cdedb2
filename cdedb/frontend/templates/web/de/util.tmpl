@@ -75,7 +75,7 @@
     </tr>
 {% endmacro %}
 
-{% macro input_checkbox(name, label="", value="checked", readonly=False) %}
+{% macro input_checkbox(name, label="", value=True, readonly=False) %}
 {# This is the version for single checkboxes as opposed to input_checkboxes(). #}
     <span {% if name in errors %} class="errorInput" {% endif %} >
         <label>
@@ -94,7 +94,7 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_checkbox(name, label="", value="checked", readonly=False) %}
+{% macro tab_input_checkbox(name, label="", value=True, readonly=False) %}
 {# This is the version for single checkboxes as opposed to tab_input_checkboxes(). #}
     <tr {% if name in errors %} class="errorInput" {% endif %} >
         <td colspan="2">
