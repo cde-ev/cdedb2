@@ -18,7 +18,7 @@ We offer three variants.
   things like dates mustn't be strings)
 
 The raw validator implementations are functions with signature ``(val,
-argname, *, _convert)`` which are wrapped into the three variants
+argname, *, _convert, **kwargs)`` which are wrapped into the three variants
 above. They return the tuple ``(mangled_value, errors)``, where
 ``errors`` is a list containing tuples ``(argname, exception)``.
 """
@@ -156,7 +156,8 @@ def _decimal(val, argname=None, *, _convert=True):
     return val, []
 
 @_addvalidator
-def _str(val, argname=None, *, strip=False, zap='', sieve='', _convert=True):
+def _str_type(val, argname=None, *, strip=False, zap='', sieve='', 
+              _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -185,9 +186,10 @@ def _str(val, argname=None, *, strip=False, zap='', sieve='', _convert=True):
 
 
 @_addvalidator
-def _nonempty_str(val, argname=None, *, strip=False, zap='', sieve='',
-                  _convert=True):
-    """ Like :py:class:`_str` (parameters see there), but must be truthy.
+def _str(val, argname=None, *, strip=False, zap='', sieve='',
+         _convert=True):
+    """ Like :py:class:`_str_type` (parameters see there), but mustn't be 
+    empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
@@ -196,9 +198,9 @@ def _nonempty_str(val, argname=None, *, strip=False, zap='', sieve='',
     :type zap: str
     :type sieve: str
     """
-    val, errs = _str(val, argname, strip=strip, zap=zap, sieve=sieve,
-                     _convert=_convert)
-    if not val:
+    val, errs = _str_type(val, argname, strip=strip, zap=zap, sieve=sieve,
+                          _convert=_convert)
+    if val is not None and not val.strip():
         errs.append((argname, ValueError("Mustn't be empty.")))
     return val, errs
 
@@ -232,7 +234,7 @@ def _bool(val, argname=None, *, _convert=True):
 
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')
 @_addvalidator
-def _printable_ascii(val, argname=None, *, strip=False, _convert=True):
+def _printable_ascii_type(val, argname=None, *, strip=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -241,15 +243,15 @@ def _printable_ascii(val, argname=None, *, strip=False, _convert=True):
     :param strip: Mangle with :py:func:`str.strip`.
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str(val, argname, strip=strip, _convert=_convert)
+    val, errs = _str_type(val, argname, strip=strip, _convert=_convert)
     if not errs and not _PRINTABLE_ASCII.search(val):
         errs.append((argname, ValueError("Must be printable ASCII.")))
     return val, errs
 
 @_addvalidator
-def _nonempty_printable_ascii(val, argname=None, *, strip=False, _convert=True):
-    """Like :py:func:`_printable_ascii` (parameters see there), but must be
-    thruthy.
+def _printable_ascii(val, argname=None, *, strip=False, _convert=True):
+    """Like :py:func:`_printable_ascii_type` (parameters see there), but
+    mustn't be empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
@@ -257,8 +259,8 @@ def _nonempty_printable_ascii(val, argname=None, *, strip=False, _convert=True):
     :type strip: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, strip=strip, _convert=_convert)
-    if not val:
+    val, errs = _printable_ascii_type(val, argname, strip=strip, _convert=_convert)
+    if val is not None and not val.strip():
         errs.append((argname, ValueError("Mustn't be empty.")))
     return val, errs
 
@@ -270,7 +272,7 @@ def _password_strength(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errors = _nonempty_str(val, argname=argname, _convert=_convert)
+    val, errors = _str(val, argname=argname, _convert=_convert)
     if val:
         if len(val) < 8:
             errors.append((argname,
@@ -296,8 +298,7 @@ def _email(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _nonempty_printable_ascii(val, argname, strip=True,
-                                          _convert=_convert)
+    val, errs = _printable_ascii(val, argname, strip=True, _convert=_convert)
     if errs:
         return None, errs
     ## normalize email addresses to lower case
@@ -309,7 +310,7 @@ def _email(val, argname=None, *, _convert=True):
 _PERSONA_MANDATORY_FIELDS = {'id' : _int}
 _PERSONA_OPTIONAL_FIELDS = {
     'username' : _email,
-    'display_name' : _nonempty_str,
+    'display_name' : _str,
     'is_active' : _bool,
     'status' : _int,
     'db_privileges' : _int,
@@ -378,8 +379,7 @@ def _phone(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _nonempty_printable_ascii(val, argname, strip=True,
-                                          _convert=_convert)
+    val, errs = _printable_ascii(val, argname, strip=True, _convert=_convert)
     if errs:
         return val, errs
     orig = val
@@ -452,8 +452,7 @@ def _german_postal_code(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _nonempty_printable_ascii(val, argname, strip=True,
-                                          _convert=_convert)
+    val, errs = _printable_ascii(val, argname, strip=True, _convert=_convert)
     if val not in GERMAN_POSTAL_CODES:
         errs.append((argname, ValueError("Invalid german postal code.")))
     return val, errs
@@ -474,32 +473,32 @@ def _member_data(val, argname=None, *, strict=False, _convert=True):
         return val, errs
     mandatory_fields = _PERSONA_MANDATORY_FIELDS
     optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
-        'family_name' : _nonempty_str,
-        'given_names' : _nonempty_str,
-        'title' : _nonempty_str_or_None,
-        'name_supplement' : _nonempty_str_or_None,
+        'family_name' : _str,
+        'given_names' : _str,
+        'title' : _str_or_None,
+        'name_supplement' : _str_or_None,
         'gender' : _int,
         'birthday' : _date,
         'telephone' : _phone_or_None,
         'mobile' : _phone_or_None,
-        'address_supplement' : _nonempty_str_or_None,
-        'address' : _nonempty_str_or_None,
-        'postal_code' : _nonempty_printable_ascii_or_None,
-        'location' : _nonempty_str_or_None,
-        'country' : _nonempty_str_or_None,
-        'notes' : _nonempty_str_or_None,
-        'birth_name' : _nonempty_str_or_None,
-        'address_supplement2' : _nonempty_str_or_None,
-        'address2' : _nonempty_str_or_None,
-        'postal_code2' : _nonempty_printable_ascii_or_None,
-        'location2' : _nonempty_str_or_None,
-        'country2' : _nonempty_str_or_None,
-        'weblink' : _nonempty_str_or_None,
-        'specialisation' : _nonempty_str_or_None,
-        'affiliation' : _nonempty_str_or_None,
-        'timeline' : _nonempty_str_or_None,
-        'interests' : _nonempty_str_or_None,
-        'free_form' : _nonempty_str_or_None,
+        'address_supplement' : _str_or_None,
+        'address' : _str_or_None,
+        'postal_code' : _printable_ascii_or_None,
+        'location' : _str_or_None,
+        'country' : _str_or_None,
+        'notes' : _str_or_None,
+        'birth_name' : _str_or_None,
+        'address_supplement2' : _str_or_None,
+        'address2' : _str_or_None,
+        'postal_code2' : _printable_ascii_or_None,
+        'location2' : _str_or_None,
+        'country2' : _str_or_None,
+        'weblink' : _str_or_None,
+        'specialisation' : _str_or_None,
+        'affiliation' : _str_or_None,
+        'timeline' : _str_or_None,
+        'interests' : _str_or_None,
+        'free_form' : _str_or_None,
         'balance' : _decimal,
         'decided_search' : _bool,
     }.items()))
@@ -548,20 +547,20 @@ def _event_user_data(val, argname=None, *, strict=False, _convert=True):
         return val, errs
     mandatory_fields = _PERSONA_MANDATORY_FIELDS
     optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
-        'family_name' : _nonempty_str,
-        'given_names' : _nonempty_str,
-        'title' : _nonempty_str_or_None,
-        'name_supplement' : _nonempty_str_or_None,
+        'family_name' : _str,
+        'given_names' : _str,
+        'title' : _str_or_None,
+        'name_supplement' : _str_or_None,
         'gender' : _int,
         'birthday' : _date,
         'telephone' : _phone_or_None,
         'mobile' : _phone_or_None,
-        'address_supplement' : _nonempty_str_or_None,
-        'address' : _nonempty_str_or_None,
-        'postal_code' : _nonempty_printable_ascii_or_None,
-        'location' : _nonempty_str_or_None,
-        'country' : _nonempty_str_or_None,
-        'notes' : _nonempty_str_or_None,
+        'address_supplement' : _str_or_None,
+        'address' : _str_or_None,
+        'postal_code' : _printable_ascii_or_None,
+        'location' : _str_or_None,
+        'country' : _str_or_None,
+        'notes' : _str_or_None,
     }.items()))
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,

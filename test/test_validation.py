@@ -109,26 +109,26 @@ class TestValidation(unittest.TestCase):
             (12.3, None, TypeError, False),
             ))
 
-    def test_str(self):
-        self.do_validator_test("_str", (
+    def test_str_type(self):
+        self.do_validator_test("_str_type", (
             ("a string", "a string", None, True),
             ("with stuff äößł€ ", "with stuff äößł€ ", None, True),
             ("", "", None, True),
             (54, "54", None, False),
             ))
-        self.do_validator_test("_str", (
+        self.do_validator_test("_str_type", (
             ("a string", "a string", None, True),
             (" a string ", "a string", None, True),
             ), extraparams={'strip' : True})
-        self.do_validator_test("_str", (
+        self.do_validator_test("_str_type", (
             ("a string", "a stig", None, True),
             ), extraparams={'zap' : 'rn'})
-        self.do_validator_test("_str", (
+        self.do_validator_test("_str_type", (
             ("a string", "a sti", None, True),
             ), extraparams={'sieve' : ' aist'})
 
-    def test_nonempty_str(self):
-        self.do_validator_test("_nonempty_str", (
+    def test_str(self):
+        self.do_validator_test("_str", (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", "string with stuff äößł€", None, True),
             ("", "", ValueError, False),
@@ -150,20 +150,20 @@ class TestValidation(unittest.TestCase):
             (54, True, None, False),
             ))
 
-    def test_printable_ascii(self):
-        self.do_validator_test("_printable_ascii", (
+    def test_printable_ascii_type(self):
+        self.do_validator_test("_printable_ascii_type", (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", None, ValueError, False),
             ("", "", None, True),
             (54, "54", None, False),
             ))
-        self.do_validator_test("_printable_ascii", (
+        self.do_validator_test("_printable_ascii_type", (
             ("a string", "a string", None, True),
             (" a string ", "a string", None, True),
             ), extraparams={'strip' : True})
 
-    def test_nonempty_printable_ascii(self):
-        self.do_validator_test("_nonempty_printable_ascii", (
+    def test_printable_ascii(self):
+        self.do_validator_test("_printable_ascii", (
             ("a string", "a string", None, True),
             ("string with stuff äößł€", None, ValueError, False),
             ("", "", ValueError, False),

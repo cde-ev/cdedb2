@@ -141,7 +141,7 @@ class CoreBackend(AbstractBackend):
         :returns: the session-key for the new session
         """
         username = affirm("printable_ascii", username)
-        password = affirm("nonempty_str", password)
+        password = affirm("str", password)
         ip = affirm("printable_ascii", ip)
         ## note the lower-casing for email addresses
         query = glue("SELECT id, password_hash FROM core.personas",
@@ -307,7 +307,7 @@ class CoreBackend(AbstractBackend):
         # if rs.user.realm == "cde":
         #     raise RuntimeError("cde realm needs special treatment")
         new_username = affirm("email", new_username)
-        password = affirm("nonempty_str", password)
+        password = affirm("str", password)
         if self.verify_existence(rs, new_username):
             ## abort if there is allready an account with this address
             return False, "Name collision."

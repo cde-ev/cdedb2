@@ -123,10 +123,9 @@ class CoreFrontend(AbstractFrontend):
     def change_password(self, rs, old_password="", new_password="",
                         new_password2=""):
         """Update your own password."""
-        old_password = check(rs, "nonempty_str", old_password, "old_password")
-        new_password = check(rs, "nonempty_str", new_password, "new_password")
-        new_password2 = check(rs, "nonempty_str", new_password2,
-                              "new_password2")
+        old_password = check(rs, "str", old_password, "old_password")
+        new_password = check(rs, "str", new_password, "new_password")
+        new_password2 = check(rs, "str", new_password2, "new_password2")
         if new_password != new_password2:
             rs.errors.append(("new_password", ValueError("No match.")))
             rs.errors.append(("new_password2", ValueError("No match.")))
@@ -257,7 +256,7 @@ class CoreFrontend(AbstractFrontend):
         """Now we can do the actual change."""
         # TODO implement changelog functionality, then redirect on realm
         new_username = check(rs, 'email', new_username, "new_username")
-        password = check(rs, 'nonempty_str', password, "password")
+        password = check(rs, 'str', password, "password")
         ## do not leak the password
         rs.values['password'] = ""
         if rs.errors:
