@@ -31,11 +31,9 @@ import email.header
 import email.charset
 import tempfile
 import abc
-from cdedb.config import BasicConfig
 from cdedb.internationalization import i18n_factory
 from cdedb.serialization import deserialize
 
-_BASICCONF = BasicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 #: List of possible values for ``ntype`` in

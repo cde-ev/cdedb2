@@ -6,8 +6,6 @@ import cdedb.database.constants as const
 import sys
 import logging
 import logging.handlers
-from cdedb.config import BasicConfig
-_BASICCONF = BasicConfig()
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
                      console_log_level=None):

@@ -20,9 +20,7 @@ import stat
 import serpent
 import logging
 from cdedb.common import glue
-from cdedb.config import BasicConfig
 from cdedb.serialization import SERIALIZERS
-_BASICCONF = BasicConfig()
 
 _LOGGER = logging.getLogger(__name__)
 
