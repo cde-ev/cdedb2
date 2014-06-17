@@ -19,6 +19,7 @@ Further we depend on a number of python packages:
 * werkzeug
 * dateutil
 * jinja2
+* pytz
 
 At last there are some recommended dependencies:
 
@@ -29,7 +30,7 @@ At last there are some recommended dependencies:
 Here are some oneliners for the lazy::
 
   # Gentoo
-  emerge -avt >=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/sphinx dev-python/webtest dev-db/pgbouncer
+  emerge -avt >=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz dev-python/sphinx dev-python/webtest dev-db/pgbouncer
 
 Checkout the repository
 -----------------------

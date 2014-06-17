@@ -6,6 +6,7 @@ import cdedb.validation as validate
 import decimal
 import copy
 import datetime
+import pytz
 
 class TestValidation(unittest.TestCase):
     def do_validator_test(self, name, spec, extraparams=None):
@@ -237,15 +238,43 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test("_datetime", (
             (now, now, None, True),
             (now.date(), None, TypeError, False),
-            ("2014-04-20", datetime.datetime(2014, 4, 20, 0, 0, 0),
-             None, False),
-            ("01.02.2014", datetime.datetime(2014, 2, 1, 0, 0, 0),
-             None, False),
+            ("2014-04-20", None, ValueError, False),
+            ("2014-04-20 21:53",
+             datetime.datetime(2014, 4, 20, 19, 53, 0,
+                               tzinfo=pytz.utc), None, False),
+            ("01.02.2014 21:53",
+             datetime.datetime(2014, 2, 1, 20, 53, 0,
+                               tzinfo=pytz.utc), None, False),
+            ("21:53", None, ValueError, False),
             ("2014-04-20T20:48:25.808240+00:00",
              datetime.datetime(2014, 4, 20, 20, 48, 25, 808240,
-                               tzinfo=datetime.timezone.utc), None, False),
+                               tzinfo=pytz.utc), None, False),
+            ("2014-04-20T20:48:25.808240+03:00",
+             datetime.datetime(2014, 4, 20, 17, 48, 25, 808240,
+                               tzinfo=pytz.utc), None, False),
             ("more garbage", None, TypeError, False),
             ))
+        self.do_validator_test("_datetime", (
+            (now, now, None, True),
+            (now.date(), None, TypeError, False),
+            ("2014-04-20", None, ValueError, False),
+            ("2014-04-20 21:53",
+             datetime.datetime(2014, 4, 20, 19, 53, 0,
+                               tzinfo=pytz.utc), None, False),
+            ("01.02.2014 21:53",
+             datetime.datetime(2014, 2, 1, 20, 53, 0,
+                               tzinfo=pytz.utc), None, False),
+            ("21:53",
+             datetime.datetime(2000, 5, 23, 19, 53, 0,
+                               tzinfo=pytz.utc), None, False),
+            ("2014-04-20T20:48:25.808240+00:00",
+             datetime.datetime(2014, 4, 20, 20, 48, 25, 808240,
+                               tzinfo=pytz.utc), None, False),
+            ("2014-04-20T20:48:25.808240+03:00",
+             datetime.datetime(2014, 4, 20, 17, 48, 25, 808240,
+                               tzinfo=pytz.utc), None, False),
+            ("more garbage", None, TypeError, False),
+            ), extraparams={'default_date' : datetime.date(2000, 5, 23)})
 
 
     def test_phone(self):

@@ -13,6 +13,7 @@ import logging
 import importlib.machinery
 import os.path
 import uuid
+import pytz
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +40,8 @@ _BASIC_DEFAULTS = {
     "TESTCONFIG_PATH" : "test/localconfig.py",
     ## port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT" : 6432,
+    ## default timezone for input and output
+    "DEFAULT_TIMEZONE" : pytz.timezone('CET'),
 }
 
 #: defaults for :py:class:`Config`

@@ -32,6 +32,7 @@ import datetime
 import dateutil.parser
 import copy
 import string
+import pytz
 
 from itertools import chain
 current_module = sys.modules[__name__]
@@ -39,6 +40,8 @@ current_module = sys.modules[__name__]
 from cdedb.common import EPSILON
 from cdedb.validationdata import GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, \
     ITU_CODES
+from cdedb.config import BasicConfig
+_BASICCONF = BasicConfig()
 
 _ALL = []
 def _addvalidator(fun):
@@ -333,6 +336,30 @@ def _persona_data(val, argname=None, *, strict=False, _convert=True):
         val, _PERSONA_MANDATORY_FIELDS, _PERSONA_OPTIONAL_FIELDS,
         strict=strict, _convert=_convert)
 
+def _parse_date(val):
+    """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
+
+    By default :py:mod:`dateutil` substitutes todays values if anything
+    is missing from the input. We want no auto-magic defaults so we
+    check whether this behaviour happens and raise an exeption if so.
+
+    :type val: str
+    :rtype: datetime.date
+    """
+    default1 = datetime.datetime(1, 1, 1)
+    default2 = datetime.datetime(2, 2, 2)
+    val1 = dateutil.parser.parse(val.strip(), dayfirst=True,
+                                 default=default1).date()
+    val2 = dateutil.parser.parse(val.strip(), dayfirst=True,
+                                 default=default2).date()
+    if val1.year == 1 and val2.year == 2:
+        raise ValueError("Year missing.")
+    if val1.month == 1 and val2.month == 2:
+        raise ValueError("Month missing.")
+    if val1.day == 1 and val2.day == 2:
+        raise ValueError("Day missing.")
+    return dateutil.parser.parse(val.strip(), dayfirst=True).date()
+
 @_addvalidator
 def _date(val, argname=None, *, _convert=True):
     """
@@ -343,7 +370,7 @@ def _date(val, argname=None, *, _convert=True):
     """
     if _convert and isinstance(val, str) and len(val.strip()) >= 6:
         try:
-            val = dateutil.parser.parse(val.strip(), dayfirst=True).date()
+            val = _parse_date(val)
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, datetime.date):
@@ -354,17 +381,56 @@ def _date(val, argname=None, *, _convert=True):
         val = val.date()
     return val, []
 
+def _parse_datetime(val, default_date=None):
+    """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
+
+    By default :py:mod:`dateutil` substitutes values from now if anything
+    is missing from the input. We want no auto-magic defaults so we
+    check whether this behaviour happens and raise an exeption if so.
+
+    :type val: str
+    :type default_date: datetime.date or None
+    :rtype: datetime.datetime
+    """
+    default1 = datetime.datetime(1, 1, 1, 1, 1)
+    default2 = datetime.datetime(2, 2, 2, 2, 2)
+    val1 = dateutil.parser.parse(val.strip(), dayfirst=True, default=default1)
+    val2 = dateutil.parser.parse(val.strip(), dayfirst=True, default=default2)
+    if not default_date and val1.year == 1 and val2.year == 2:
+        raise ValueError("Year missing.")
+    if not default_date and val1.month == 1 and val2.month == 2:
+        raise ValueError("Month missing.")
+    if not default_date and val1.day == 1 and val2.day == 2:
+        raise ValueError("Day missing.")
+    if val1.hour == 1 and val2.hour == 2:
+        raise ValueError("Hours missing.")
+    if val1.minute == 1 and val2.minute == 2:
+        raise ValueError("Minutes missing.")
+    if default_date:
+        dd = default_date
+    else:
+        dd = datetime.datetime.now()
+    default = datetime.datetime(dd.year, dd.month, dd.day)
+    ret = dateutil.parser.parse(val.strip(), dayfirst=True, default=default)
+    if ret.tzinfo is None:
+        ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
+    return ret.astimezone(pytz.utc)
+
 @_addvalidator
-def _datetime(val, argname=None, *, _convert=True):
+def _datetime(val, argname=None, *, _convert=True, default_date=None):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :type default_date: datetime.date or None
+    :param default_date: If the user-supplied value specifies only a time, this 
+      parameter allows to fill in the necessary date information to fill 
+      the gap.
     :rtype: (datetime.datetime or None, [(str or None, exception)])
     """
-    if _convert and isinstance(val, str) and len(val.strip()) >= 10:
+    if _convert and isinstance(val, str) and len(val.strip()) >= 5:
         try:
-            val = dateutil.parser.parse(val.strip(), dayfirst=True)
+            val = _parse_datetime(val, default_date)
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, datetime.datetime):
