@@ -4,7 +4,9 @@ import unittest
 import random
 import string
 import datetime
-from cdedb.frontend.common import encode_parameter, decode_parameter
+import pytz
+from cdedb.frontend.common import encode_parameter, decode_parameter, \
+     date_filter, datetime_filter
 
 def rand_str(chars, exclude=''):
     pool = string.printable
@@ -39,3 +41,13 @@ class TestFrontendCommon(unittest.TestCase):
         wrong_encoded = "G" + encoded[1:]
         self.assertEqual(decode_parameter(salt, target, name, wrong_encoded,
                                           timeout), None)
+
+    def test_date_filters(self):
+        dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
+        dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=pytz.utc)
+        dt_other = pytz.timezone('America/New_York').localize(dt_naive)
+        self.assertEqual(date_filter(dt_naive), "2010-05-22")
+        self.assertEqual(date_filter(dt_aware), "2010-05-22")
+        self.assertEqual(datetime_filter(dt_naive), "2010-05-22 04:55 ()")
+        self.assertEqual(datetime_filter(dt_aware), "2010-05-22 06:55 (CEST)")
+        self.assertEqual(datetime_filter(dt_other), "2010-05-22 10:55 (CEST)")

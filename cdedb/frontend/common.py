@@ -33,8 +33,10 @@ import tempfile
 import abc
 from cdedb.internationalization import i18n_factory
 from cdedb.serialization import deserialize
+from cdedb.config import BasicConfig
 
 _LOGGER = logging.getLogger(__name__)
+_BASICCONF = BasicConfig()
 
 #: List of possible values for ``ntype`` in
 #: :py:meth:`FrontendRequestState.notify`. Must conform to the regex
@@ -229,6 +231,26 @@ def sanitize_None(data):
     else:
         return data
 
+def date_filter(val, formatstr="%Y-%m-%d"):
+    """Custom jinja filter to format ``datetime.date`` objects.
+
+    :type val: datetime.date
+    :rtype: str
+    """
+    return val.strftime(formatstr)
+
+def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
+    """Custom jinja filter to format ``datetime.datetime`` objects.
+
+    :type val: datetime.datetime
+    :rtype: str
+    """
+    if val.tzinfo is not None:
+        val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
+    else:
+        _LOGGER.warn("Found naive datetime object {}.".format(val))
+    return val.strftime(formatstr)
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -246,6 +268,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             loader=jinja2.FileSystemLoader(os.path.join(
                 self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
             finalize=sanitize_None)
+        filters = {
+            'date' : date_filter,
+            'datetime' : datetime_filter,
+        }
+        self.jinja_env.filters.update(filters)
 
     @classmethod
     @abc.abstractmethod

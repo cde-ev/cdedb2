@@ -8,6 +8,7 @@ from cdedb.frontend.common import AbstractFrontend, REQUESTdata, \
     basic_redirect, connect_proxy
 from cdedb.frontend.common import check_validation as check
 import datetime
+import pytz
 
 access = access_decorator_generator(
         ("anonymous", "persona", "member", "core_admin", "admin"))
@@ -64,8 +65,9 @@ class CoreFrontend(AbstractFrontend):
         if kind not in ("general", "database"):
             kind = "general"
         rs.notify("error", "{} error.".format(kind))
-        return self.render(rs, "error", {'kind' : kind,
-                                         'now' : str(datetime.datetime.now())})
+        return self.render(rs, "error",
+                           {'kind' : kind,
+                            'now' : datetime.datetime.now(pytz.utc)})
 
     @access("anonymous", ("POST",))
     @REQUESTdata("username", "password", "wants")
