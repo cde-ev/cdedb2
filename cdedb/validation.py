@@ -409,7 +409,7 @@ def _parse_datetime(val, default_date=None):
     if default_date:
         dd = default_date
     else:
-        dd = datetime.datetime.now()
+        dd = datetime.datetime.now(pytz.utc)
     default = datetime.datetime(dd.year, dd.month, dd.day)
     ret = dateutil.parser.parse(val.strip(), dayfirst=True, default=default)
     if ret.tzinfo is None:

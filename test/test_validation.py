@@ -235,8 +235,12 @@ class TestValidation(unittest.TestCase):
 
     def test_datetime(self):
         now = datetime.datetime.now()
+        now_aware = datetime.datetime.now(pytz.utc)
+        now_other = pytz.timezone('America/New_York').localize(now)
         self.do_validator_test("_datetime", (
             (now, now, None, True),
+            (now_aware, now_aware, None, True),
+            (now_other, now_other, None, True),
             (now.date(), None, TypeError, False),
             ("2014-04-20", None, ValueError, False),
             ("2014-04-20 21:53",
@@ -256,6 +260,8 @@ class TestValidation(unittest.TestCase):
             ))
         self.do_validator_test("_datetime", (
             (now, now, None, True),
+            (now_aware, now_aware, None, True),
+            (now_other, now_other, None, True),
             (now.date(), None, TypeError, False),
             ("2014-04-20", None, ValueError, False),
             ("2014-04-20 21:53",

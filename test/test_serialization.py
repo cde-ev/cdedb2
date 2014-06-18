@@ -2,6 +2,7 @@
 
 import unittest
 import datetime
+import pytz
 import decimal
 import serpent
 from cdedb.serialization import SERIALIZERS, deserialize
@@ -14,6 +15,9 @@ class TestSerialization(unittest.TestCase):
     def test_invariance(self):
         corpus = (datetime.datetime.now().date(),
                   datetime.datetime.now(),
+                  datetime.datetime.now(pytz.utc),
+                  pytz.timezone("America/New_York").localize(
+                      datetime.datetime.now()),
                   datetime.datetime.now().time(),
                   1234567890,
                   0,

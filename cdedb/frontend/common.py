@@ -17,6 +17,7 @@ import cdedb.database.constants as const
 import jinja2
 import werkzeug.wrappers
 import datetime
+import pytz
 import hashlib
 import Pyro4
 import logging
@@ -475,8 +476,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("From", "Reply-To", "Subject"):
             msg[header] = headers[header]
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
-        msg["Date"] = datetime.datetime.now(
-            datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S%z")
+        msg["Date"] = datetime.datetime.now(pytz.utc).strftime(
+            "%Y-%m-%d %H:%M:%S%z")
         return msg
 
     def _send_mail(self, msg):
@@ -720,7 +721,7 @@ def encode_parameter(salt, target, name, param):
     :rtype: str
     """
     myhash = hashlib.sha512()
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(pytz.utc)
     message = "{}--{}".format(now.strftime("%Y-%m-%d %H:%M:%S%z"), param)
     tohash = "{}--{}--{}--{}".format(salt, target, name, message)
     myhash.update(tohash.encode("utf-8"))
@@ -747,7 +748,7 @@ def decode_parameter(salt, target, name, param, timeout):
             myhash.hexdigest(), mac, tohash))
         return None
     timestamp = datetime.datetime.strptime(message[:24], "%Y-%m-%d %H:%M:%S%z")
-    if timestamp + timeout <= datetime.datetime.now(datetime.timezone.utc):
+    if timestamp + timeout <= datetime.datetime.now(pytz.utc):
         _LOGGER.debug("Expired protected parameter {}".format(tohash))
         return None
     return message[26:]

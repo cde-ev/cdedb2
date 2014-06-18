@@ -79,7 +79,7 @@ GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_core_admin;
 CREATE TABLE core.persona_creation_challenges (
         id                       bigserial PRIMARY KEY,
         -- creation time
-        ctime                    timestamp with time zone NOT NULL DEFAULT now(),
+        ctime                    timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         email                    varchar NOT NULL,
         -- status the persona is going to have initially
         persona_status           integer NOT NULL,
@@ -112,9 +112,9 @@ CREATE TABLE core.sessions (
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         is_active               boolean NOT NULL DEFAULT True,
         -- login time
-        ctime                   timestamp with time zone NOT NULL DEFAULT now(),
+        ctime                   timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         -- last access time
-        atime                   timestamp with time zone NOT NULL DEFAULT now(),
+        atime                   timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         ip                      varchar,
         -- FIXME should we hash this?
         sessionkey              varchar NOT NULL UNIQUE
@@ -221,7 +221,7 @@ CREATE TABLE cde.changelog (
         --
         submitted_by            integer REFERENCES core.personas(id),
         reviewed_by             integer REFERENCES core.personas(id) DEFAULT NULL,
-        cdate                   timestamp with time zone NOT NULL DEFAULT now(),
+        cdate                   timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         -- enum for progress of change
         -- 0 ... review pending
         -- 1 ... commited

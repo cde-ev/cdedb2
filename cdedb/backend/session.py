@@ -13,7 +13,8 @@ from cdedb.backend.common import make_RPCDaemon, run_RPCDaemon
 from cdedb.common import glue, make_root_logger
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
-from datetime import datetime, timezone
+import datetime
+import pytz
 import psycopg2.extensions
 import argparse
 import logging
@@ -107,9 +108,9 @@ class SessionBackend:
             if data["is_active"]:
                 if data["ip"] == ip:
                     if data["atime"] + self.conf.SESSION_TIMEOUT \
-                      >= datetime.now(timezone.utc):
+                      >= datetime.datetime.now(pytz.utc):
                         if data["ctime"] + self.conf.SESSION_LIFESPAN \
-                          >= datetime.now(timezone.utc):
+                          >= datetime.datetime.now(pytz.utc):
                             ## here we finally verified the session key
                             persona_id = data["persona_id"]
                         else:
@@ -141,7 +142,7 @@ class SessionBackend:
                }
         if persona_id:
             query = glue("UPDATE core.sessions SET atime = now()",
-                         "WHERE sessionkey = %s")
+                         "AT TIME ZONE 'UTC' WHERE sessionkey = %s")
             query2 = glue("SELECT status, db_privileges, display_name,",
                           "is_active, username FROM core.personas",
                           "WHERE id = %s")

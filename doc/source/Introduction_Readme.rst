@@ -77,3 +77,5 @@ it right away.
 * Use tuples instead of lists where feasible.
 * unittests were sensible, high level testing otherwise.
 * Use fail2ban for preventing brute force.
+* All time stamps must have a time zone associated to them. For everything
+  used internally this time zone has to be UTC.

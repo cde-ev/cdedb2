@@ -176,7 +176,8 @@ class CoreBackend(AbstractBackend):
         :returns: number of sessions invalidated
         """
         query = glue("UPDATE core.sessions SET is_active = False,",
-                     "atime = now() WHERE sessionkey = %s AND is_active = True")
+                     "atime = now() AT TIME ZONE 'UTC' WHERE sessionkey = %s",
+                     "AND is_active = True")
         return self.query_exec(rs, query, (rs.sessionkey,))
 
     @access("persona")
