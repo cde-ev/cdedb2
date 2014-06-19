@@ -64,6 +64,7 @@
 <li>PostgreSQL</li>
 <li>Apache (with mod_wsgi)</li>
 <li>git</li>
+<li>openldap</li>
 </ul>
 <p>Further we depend on a number of python packages:</p>
 <ul class="simple">
@@ -73,6 +74,8 @@
 <li>werkzeug</li>
 <li>dateutil</li>
 <li>jinja2</li>
+<li>pytz</li>
+<li>python-ldap (support for py3 is currently unreleased)</li>
 </ul>
 <p>At last there are some recommended dependencies:</p>
 <ul class="simple">
@@ -82,7 +85,7 @@
 </ul>
 <p>Here are some oneliners for the lazy:</p>
 <div class="highlight-python"><div class="highlight"><pre># Gentoo
-emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/sphinx dev-python/webtest dev-db/pgbouncer
+emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/sphinx dev-python/webtest dev-db/pgbouncer
 </pre></div>
 </div>
 </div>
@@ -133,6 +136,37 @@ chmod 600 /etc/pgbouncer_users.txt
 </div>
 <p>This file may be regenerated with the <tt class="docutils literal"><span class="pre">mkauth.py</span></tt> tool from the pgbouncer
 tar-ball.</p>
+<p>Next up is LDAP. Edit the <tt class="docutils literal"><span class="pre">/etc/openldap/slapd.conf</span></tt> and enter the
+following values (we will use a basic setup that omits fancy <tt class="docutils literal"><span class="pre">cn=config</span></tt>
+features):</p>
+<div class="highlight-python"><div class="highlight"><pre>include         /etc/openldap/schema/core.schema
+include         /etc/openldap/schema/cosine.schema
+include         /etc/openldap/schema/inetorgperson.schema
+include         /etc/openldap/schema/cdepersona.schema
+
+pidfile         /var/run/openldap/slapd.pid
+argsfile        /var/run/openldap/slapd.args
+
+database        hdb
+suffix          &quot;dc=cde-ev,dc=de&quot;
+rootdn          &quot;cn=root,dc=cde-ev,dc=de&quot;
+rootpw          s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0
+directory       /var/lib/openldap-data
+index           objectClass     eq
+index           cn      pres,sub,eq
+index           sn      pres,sub,eq
+index           uid     pres,sub,eq
+index           displayName     pres,sub,eq
+</pre></div>
+</div>
+<p>You need to place a symlink to the custom cdepersona schema:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ln</span> <span class="o">-</span><span class="n">s</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">cdedb</span><span class="o">/</span><span class="n">database</span><span class="o">/</span><span class="n">cdepersona</span><span class="o">.</span><span class="n">schema</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">openldap</span><span class="o">/</span><span class="n">schema</span><span class="o">/</span><span class="n">cdepersona</span><span class="o">.</span><span class="n">schema</span>
+</pre></div>
+</div>
+<p>Now start the slapd daemon and issue the following in the repo:</p>
+<div class="highlight-python"><div class="highlight"><pre>make ldap
+</pre></div>
+</div>
 <p>Now we set up the Apache server, first with <tt class="docutils literal"><span class="pre">/etc/apache2/httpd.conf</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre>LoadModule wsgi_module modules/mod_wsgi.so
 ServerName localhost
@@ -178,13 +212,17 @@ by default):</p>
 chown &lt;user&gt;:&lt;user&gt; /run/cdedb
 </pre></div>
 </div>
-<p>Check if apache, postgres and pgbouncer are running. Then spin up the
-backends (exemplary here for the core backend):</p>
+<p>Check if apache, postgres, pgbouncer and slapd are running. Optionally you
+can run the test suite first to see whether everything is ready:</p>
+<div class="highlight-python"><div class="highlight"><pre>make check
+</pre></div>
+</div>
+<p>Then spin up the backends (exemplary here for the core backend):</p>
 <div class="highlight-python"><div class="highlight"><pre>make run-core
 </pre></div>
 </div>
-<p>Now start the apache and access <tt class="docutils literal"><span class="pre">http://localhost/db/</span></tt> with a browser. You
-can shutdown the backends with:</p>
+<p>Now start the apache and access <tt class="docutils literal"><span class="pre">https://localhost/db/</span></tt> with a
+browser. Finally you can shutdown the backends with:</p>
 <div class="highlight-python"><div class="highlight"><pre>make quit-all
 </pre></div>
 </div>
