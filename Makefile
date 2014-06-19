@@ -7,9 +7,18 @@ help:
 	@echo "quit-test-backends -- quit all running backends started by the test suite"
 	@echo "pyro-nameserver -- run a pyro nameserver"
 	@echo "doc -- build documentation"
-	@echo "sql -- initialize database structures (DESTROYES DATA)"
-	@echo "sql-test -- initialize database structures for test suite"
-	@echo "sql-test-data -- fill test database with data for test suite"
+	@echo "sample-data -- initialize database structures (DESTROYES DATA!)"
+	@echo "sample-data-test -- initialize database structures for test suite"
+	@echo "sample-data-test-shallow -- initialize database structures for test suite"
+	@echo "                            (this is a fast version of sample-data-test,"
+	@echo "                             can be substituted after sample-data-test was"
+	@echo "                             executed)"
+	@echo "ldap -- initialize ldap (use sample-data instead)"
+	@echo "ldap-test -- initialize ldap for test suite (use sample-data-test instead)"
+	@echo "sql -- initialize postgres (use sample-data instead)"
+	@echo "sql-test -- initialize postgres for test suite (use sample-data-test instead)"
+	@echo "sql-test-shallow -- reset postgres for test suite"
+	@echo "                    (use sample-data-test-shallow instead)"
 	@echo "lint -- run pylint"
 	@echo "check -- run test suite"
 	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
@@ -64,6 +73,29 @@ quit-test-backends:
 doc:
 	make -C doc html
 
+sample-data:
+	make sql
+	make ldap
+
+sample-data-test:
+	make sql-test
+	make ldap-test
+
+sample-data-test-shallow:
+	make sql-test-shallow
+	make ldap-test
+
+ldap:
+	echo -e 'ou=personas,dc=cde-ev,dc=de\nou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+	ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw -f cdedb/database/init.ldif || true
+	sed -e 's/{LDAP_ORGANIZATION}/personas/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+
+ldap-test:
+	echo -e 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+	ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw -f cdedb/database/init.ldif || true
+	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+
 sql:
 	psql -U postgres -f cdedb/database/cdedb-users.sql -v cdb_database_name=cdb
 	psql -U postgres -f cdedb/database/cdedb-tables.sql -v cdb_database_name=cdb
@@ -71,9 +103,9 @@ sql:
 
 sql-test:
 	psql -U postgres -f cdedb/database/cdedb-tables.sql -v cdb_database_name=cdb_test
-	psql -U postgres -f test/ancillary_files/sample_data.sql -v cdb_database_name=cdb_test
+	make sql-test-shallow
 
-sql-test-data:
+sql-test-shallow:
 	psql -U postgres -f test/ancillary_files/clean_data.sql -v cdb_database_name=cdb_test
 	psql -U postgres -f test/ancillary_files/sample_data.sql -v cdb_database_name=cdb_test
 
@@ -88,14 +120,14 @@ lint:
 
 check:
 	make quit-test-backends
-	make sql-test &> /dev/null
+	make sample-data-test &> /dev/null
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m test.main ${TESTPATTERN}
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 single-check:
 	make quit-test-backends
-	make sql-test &> /dev/null
+	make sample-data-test &> /dev/null
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m unittest ${TESTPATTERN}
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
@@ -106,4 +138,4 @@ single-check:
 coverage: .coverage
 	coverage report -m --omit='test/*,related/*'
 
-.PHONY: help pyro-nameserver run-core quit-core run-cde quit-cde run-event quit-event run-session quit-session quit-all quit-test-backends doc sql sql-test sql-test-data lint check single-check .coverage coverage
+.PHONY: help pyro-nameserver run-core quit-core run-cde quit-cde run-event quit-event run-session quit-session quit-all quit-test-backends doc sample-data sample-data-test sample-data-test-shallow ldap ldap-test sql sql-test sql-test-shallow lint check single-check .coverage coverage

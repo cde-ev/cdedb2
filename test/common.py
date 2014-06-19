@@ -47,7 +47,7 @@ class BackendUsingTest(unittest.TestCase):
     used_backends = None
 
     def setUp(self):
-        subprocess.check_call(("make", "sql-test-data"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         classes = {
             "core" : CoreBackend,
             "session" : SessionBackend,
@@ -176,7 +176,7 @@ class FrontendTest(unittest.TestCase):
         subprocess.check_call(("make", "quit-test-backends"), stdout=subprocess.DEVNULL)
 
     def setUp(self):
-        subprocess.check_call(("make", "sql-test-data"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.app.reset()
         self.response = None
 

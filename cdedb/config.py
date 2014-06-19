@@ -54,6 +54,12 @@ _DEFAULTS = {
     ## Template for server names, one parameter will be substituted in
     "SERVER_NAME_TEMPLATE" : "{}_server",
 
+    ## name of ldap unit (i.e. subtree) to use
+    "LDAP_UNIT_NAME" : "ou=personas,dc=cde-ev,dc=de",
+
+    ## name of ldap user to use
+    "LDAP_USER" : "cn=root,dc=cde-ev,dc=de",
+
     ### Frontend stuff
 
     ## log for frontend issues
@@ -134,6 +140,9 @@ _SECRECTS_DEFAULTS = {
 
     ## salting value used for verifying sensitve url parameters
     "URL_PARAMETER_SALT" : "aoeuidhtns9KT6AOR2kNjq2zO",
+
+    ## password of ldap user above
+    "LDAP_PASSWORD" : "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0",
 }
 
 class BasicConfig:

@@ -10,6 +10,7 @@ We need some dependencies:
 * PostgreSQL
 * Apache (with mod_wsgi)
 * git
+* openldap
 
 Further we depend on a number of python packages:
 
@@ -19,6 +20,7 @@ Further we depend on a number of python packages:
 * werkzeug
 * dateutil
 * jinja2
+* python-ldap (support for py3 is currently unreleased)
 
 At last there are some recommended dependencies:
 
@@ -29,7 +31,7 @@ At last there are some recommended dependencies:
 Here are some oneliners for the lazy::
 
   # Gentoo
-  emerge -avt >=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/sphinx dev-python/webtest dev-db/pgbouncer
+  emerge -avt >=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja =dev-python/python-ldap-9999 dev-python/sphinx dev-python/webtest dev-db/pgbouncer
 
 Checkout the repository
 -----------------------
@@ -81,6 +83,37 @@ for authentication (otherwise pgbouncer will refuse connections)::
 This file may be regenerated with the ``mkauth.py`` tool from the pgbouncer
 tar-ball.
 
+Next up is LDAP. Edit the ``/etc/openldap/slapd.conf`` and enter the
+following values (we will use a basic setup that omits fancy ``cn=config``
+features)::
+
+  include         /etc/openldap/schema/core.schema
+  include         /etc/openldap/schema/cosine.schema
+  include         /etc/openldap/schema/inetorgperson.schema
+  include         /etc/openldap/schema/cdepersona.schema
+
+  pidfile         /var/run/openldap/slapd.pid
+  argsfile        /var/run/openldap/slapd.args
+
+  database        hdb
+  suffix          "dc=cde-ev,dc=de"
+  rootdn          "cn=root,dc=cde-ev,dc=de"
+  rootpw          s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0
+  directory       /var/lib/openldap-data
+  index           objectClass     eq
+  index           cn      pres,sub,eq
+  index           sn      pres,sub,eq
+  index           uid     pres,sub,eq
+  index           displayName     pres,sub,eq
+
+You need to place a symlink to the custom cdepersona schema::
+
+  ln -s /path/to/repo/cdedb/database/cdepersona.schema /etc/openldap/schema/cdepersona.schema
+
+Now start the slapd daemon and issue the following in the repo::
+
+  make ldap
+
 Now we set up the Apache server, first with ``/etc/apache2/httpd.conf``::
 
   LoadModule wsgi_module modules/mod_wsgi.so
@@ -128,12 +161,16 @@ by default)::
   mkdir /run/cdedb
   chown <user>:<user> /run/cdedb
 
-Check if apache, postgres and pgbouncer are running. Then spin up the
-backends (exemplary here for the core backend)::
+Check if apache, postgres, pgbouncer and slapd are running. Optionally you
+can run the test suite first to see whether everything is ready::
+
+  make check
+
+Then spin up the backends (exemplary here for the core backend)::
 
   make run-core
 
-Now start the apache and access ``http://localhost/db/`` with a browser. You
-can shutdown the backends with::
+Now start the apache and access ``https://localhost/db/`` with a
+browser. Finally you can shutdown the backends with::
 
   make quit-all

@@ -68,7 +68,9 @@ CREATE TABLE core.personas (
         -- 32 ... assembly_admin
         -- 64 ... files_admin
         -- 128 ... i25p_admin
-        db_privileges           integer NOT NULL DEFAULT 0
+        db_privileges           integer NOT NULL DEFAULT 0,
+        -- grant access to the CdE cloud (this is utilized via LDAP)
+        cloud_account           boolean NOT NULL DEFAULT False
 );
 CREATE INDEX idx_personas_status ON core.personas(status);
 GRANT SELECT ON core.personas TO cdb_anonymous;
@@ -238,6 +240,7 @@ CREATE TABLE cde.changelog (
         is_active               boolean,
         status                  integer,
         db_privileges           integer,
+        cloud_account           boolean,
         -- now those frome member_data
         family_name             varchar NOT NULL,
         given_names             varchar NOT NULL,
