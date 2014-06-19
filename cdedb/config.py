@@ -54,6 +54,9 @@ _DEFAULTS = {
     ## Template for server names, one parameter will be substituted in
     "SERVER_NAME_TEMPLATE" : "{}_server",
 
+    ## location of ldap server
+    "LDAP_URL" : "ldap://localhost",
+
     ## name of ldap unit (i.e. subtree) to use
     "LDAP_UNIT_NAME" : "ou=personas,dc=cde-ev,dc=de",
 

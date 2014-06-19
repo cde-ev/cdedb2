@@ -2,6 +2,8 @@
 
 from test.common import BackendTest, as_users, USER_DICT
 import copy
+import subprocess
+import ldap
 
 class TestCoreBackend(BackendTest):
     used_backends = ("core",)
@@ -80,3 +82,42 @@ class TestCoreBackend(BackendTest):
         newuser['username'] = newaddress
         self.login(newuser)
         self.assertTrue(self.key)
+
+    @as_users("anton", "berta")
+    def test_ldap(self, user):
+        new_name = "Zelda"
+        new_address = "zelda@example.cde"
+        newpass = "er3NQ_5bkrc#"
+        dn = "uid={},{}".format(user['id'], "ou=personas-test,dc=cde-ev,dc=de")
+        ret, message = self.core.change_password(self.key, user['id'], user['password'], newpass)
+        self.assertTrue(ret)
+        self.assertEqual(newpass, message)
+        self.assertEqual(
+            "dn:{}\n".format(dn).encode('utf-8'), subprocess.check_output(
+            ['/usr/bin/ldapwhoami', '-x', '-D', dn, '-w', newpass]))
+        update = {
+            'id' : user['id'],
+            'display_name' : new_name,
+            'username' : new_address,
+        }
+        if user['id'] == 1:
+            update['cloud_account'] = False
+        self.core.change_persona(self.key, update)
+        ldap_con = ldap.initialize("ldap://localhost")
+        ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",
+                               "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")
+        val = ldap_con.search_s("ou=personas-test,dc=cde-ev,dc=de",
+                                ldap.SCOPE_ONELEVEL,
+                                filterstr='(uid={})'.format(user['id']),
+                                attrlist=['cn', 'displayName', 'mail',
+                                          'cloudAccount'])
+        cloud_expectation = b'TRUE'
+        if user['id'] == 1:
+            cloud_expectation = b'FALSE'
+        expectation = [(
+            dn, {'cn' : [new_name.encode('utf-8')],
+                 'displayName' : [new_name.encode('utf-8')],
+                 'mail' : [new_address.encode('utf-8')],
+                 'cloudAccount' : [cloud_expectation],})]
+        self.assertEqual(expectation, val)
+        ldap_con.unbind()

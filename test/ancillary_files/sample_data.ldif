@@ -5,7 +5,7 @@ cn: Anton
 displayName: Anton
 uid: 1
 mail: anton@example.cde
-userPassword: secret
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
 
 dn: uid=2,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -15,7 +15,7 @@ cn: Bertå
 displayName: Bertå
 uid: 2
 mail: berta@example.cde
-userPassword: secret
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
 
 dn: uid=3,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -25,7 +25,7 @@ cn: Charly
 displayName: Charly
 uid: 3
 mail: charly@example.cde
-userPassword: secret
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
 
 dn: uid=4,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -35,7 +35,7 @@ cn: Daniel
 displayName: Daniel
 uid: 4
 mail: daniel@example.cde
-userPassword: secret
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: FALSE
 
 dn: uid=5,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -45,7 +45,7 @@ cn: Emilia
 displayName: Emilia
 uid: 5
 mail: emilia@example.cde
-userPassword: secret
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: FALSE
 
 dn: uid=6,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -55,7 +55,7 @@ cn: Ferdinand
 displayName: Ferdinand
 uid: 6
 mail: ferdinand@example.cde
-userPassword: secret
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
 
 dn: uid=7,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -65,5 +65,5 @@ cn: Garcia
 displayName: Garcia
 uid: 7
 mail: @example.cde
-userPassword: secret
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
