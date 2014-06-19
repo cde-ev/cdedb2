@@ -122,6 +122,16 @@
                 {% endif %}
             </td>
         </tr>
+        <tr>
+            <td>CdE-Wolken-Zugriff</td>
+            <td>
+                {% if data['cloud_account'] %}
+                    <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+                {% else %}
+                    img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+                {% endif %}
+            </td>
+        </tr>
 	{% if user.is_member %}
 	    <tr>
 		<td>Sichtbarkeit</td>

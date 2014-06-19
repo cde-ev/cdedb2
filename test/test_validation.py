@@ -198,6 +198,7 @@ class TestValidation(unittest.TestCase):
             "is_active" : True,
             "status" : 0,
             "db_privileges" : 2,
+            "cloud_account" : True,
             }
         stripped_example = { "id" : 42 }
         key_example = copy.deepcopy(base_example)
@@ -314,6 +315,7 @@ class TestValidation(unittest.TestCase):
             "is_active" : True,
             "status" : 0,
             "db_privileges" : 2,
+            "cloud_account" : True,
             "family_name" : "Thør",
             "given_names" : "Blubberwing",
             "title" : "Sir",
@@ -374,6 +376,7 @@ class TestValidation(unittest.TestCase):
             "is_active" : True,
             "status" : 0,
             "db_privileges" : 2,
+            "cloud_account" : False,
             "family_name" : "Thør",
             "given_names" : "Blubberwing",
             "title" : "Sir",

@@ -104,7 +104,7 @@ def extract_global_privileges(db_privileges, status):
 #: Names of columns associated to a persona, which are modifyable.
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_DATA_FIELDS_MOD = ("username", "display_name", "is_active", "status",
-                           "db_privileges")
+                           "db_privileges", "cloud_account")
 
 #: names of all columns associated to a persona, regardless of modifyability
 PERSONA_DATA_FIELDS = ("id",) + PERSONA_DATA_FIELDS_MOD

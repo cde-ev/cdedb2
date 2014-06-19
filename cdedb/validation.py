@@ -317,6 +317,7 @@ _PERSONA_OPTIONAL_FIELDS = {
     'is_active' : _bool,
     'status' : _int,
     'db_privileges' : _int,
+    'cloud_account' : _bool,
 }
 @_addvalidator
 def _persona_data(val, argname=None, *, strict=False, _convert=True):

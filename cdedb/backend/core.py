@@ -11,7 +11,7 @@ from cdedb.backend.common import access_decorator_generator, \
      internal_access_decorator_generator, make_RPCDaemon, run_RPCDaemon
 from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.config import Config
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
 
@@ -20,11 +20,52 @@ import uuid
 import argparse
 import random
 import string
+import ldap
+import tempfile
+import subprocess
 
 access = access_decorator_generator(("anonymous", "persona", "member",
                                      "core_admin", "admin"))
 internal_access = internal_access_decorator_generator(
     ("anonymous", "persona", "member", "core_admin", "admin"))
+
+def ldap_bool(val):
+    """Convert a :py:class:`bool` to its LDAP representation.
+
+    :type val: bool
+    :rtype: str
+    """
+    mapping = {
+        True : 'TRUE',
+        False : 'FALSE',
+    }
+    return mapping[val]
+
+class LDAPConnection:
+    """Wrapper around :py:class:`ldap.LDAPObject`.
+
+    This acts as context manager ensuring that the connection to the
+    LDAP server is correctly terminated.
+    """
+    def __init__(self, url, user, password):
+        """
+        :param url: URL of LDAP server
+        :type url: str
+        :type user: str
+        :type password: str
+        """
+        self._ldap_con = ldap.initialize(url)
+        self._ldap_con.simple_bind_s(user, password)
+
+    def modify_s(self, dn, modlist):
+        self._ldap_con.modify_s(dn, modlist)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, etype, evalue, tb):
+        self._ldap_con.unbind()
+        return None
 
 
 class CoreBackend(AbstractBackend):
@@ -37,6 +78,9 @@ class CoreBackend(AbstractBackend):
         :type configpath: str
         """
         super().__init__(configpath)
+        secrets = SecretsConfig(configpath)
+        self.ldap_connect = lambda : LDAPConnection(
+            self.conf.LDAP_URL, self.conf.LDAP_USER, secrets.LDAP_PASSWORD)
 
     @classmethod
     def extract_roles(cls, personadata):
@@ -116,13 +160,34 @@ class CoreBackend(AbstractBackend):
             keys = tuple(key for key in data if key in PERSONA_DATA_FIELDS_MOD)
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
             raise RuntimeError("Not enough privileges.")
-        privileged_fields = set(('is_active', 'status', 'db_privileges'))
+        privileged_fields = set(('is_active', 'status', 'db_privileges',
+                                 'cloud_account'))
         if not self.is_admin(rs) and (set(keys) & privileged_fields):
             raise RuntimeError("Modifying sensitive key forbidden.")
         query = "UPDATE core.personas SET ({}) = ({}) WHERE id = %s".format(
             ", ".join(keys), ", ".join(("%s",) * len(keys)))
-        num = self.query_exec(rs, query,
-                              tuple(data[key] for key in keys) + (data['id'],))
+        ldap_ops = []
+        if 'username' in data:
+            ldap_ops.append((ldap.MOD_REPLACE, 'sn', "({})".format(
+                data['username'])))
+            ldap_ops.append((ldap.MOD_REPLACE, 'mail', data['username']))
+        if 'display_name' in data:
+            ldap_ops.append((ldap.MOD_REPLACE, 'cn', data['display_name']))
+            ldap_ops.append((ldap.MOD_REPLACE, 'displayName',
+                             data['display_name']))
+        if 'cloud_account' in data:
+            ldap_ops.append((ldap.MOD_REPLACE, 'cloudAccount',
+                             ldap_bool(data['cloud_account'])))
+        dn = "uid={},{}".format(data['id'], self.conf.LDAP_UNIT_NAME)
+        with rs.conn as conn:
+            with conn.cursor() as cur:
+                self.execute_db_query(
+                    cur, query, tuple(
+                        data[key] for key in keys) + (data['id'],))
+                num = cur.rowcount
+                if ldap_ops:
+                    with self.ldap_connect() as l:
+                        l.modify_s(dn, ldap_ops)
         if num != 1:
             self.logger.warn(
                 "Wrong number ({}) of personas updated".format(num))
@@ -245,8 +310,21 @@ class CoreBackend(AbstractBackend):
         ## do not use set_persona_data since it doesn't operate on password
         ## hashes by design
         query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-        ret = self.query_exec(rs, query, (self.encrypt_password(new_password),
-                                          persona_id))
+        with tempfile.NamedTemporaryFile(mode='w') as f:
+            f.write(new_password)
+            f.flush()
+            ldap_passwd = subprocess.check_output(
+                ['/usr/sbin/slappasswd', '-T', f.name, '-h', '{SSHA}', '-n'])
+        dn = "uid={},{}".format(persona_id, self.conf.LDAP_UNIT_NAME)
+        with rs.conn as conn:
+            with conn.cursor() as cur:
+                self.execute_db_query(
+                    cur, query,
+                    (self.encrypt_password(new_password), persona_id))
+                ret = cur.rowcount
+                with self.ldap_connect() as l:
+                    l.modify_s(dn, ((ldap.MOD_REPLACE, 'userPassword',
+                                    ldap_passwd),))
         if orig_conn:
             rs.conn = orig_conn
         return ret, new_password
