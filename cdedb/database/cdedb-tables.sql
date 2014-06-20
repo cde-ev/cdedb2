@@ -81,7 +81,7 @@ GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_core_admin;
 CREATE TABLE core.persona_creation_challenges (
         id                       bigserial PRIMARY KEY,
         -- creation time
-        ctime                    timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        ctime                    timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         email                    varchar NOT NULL,
         -- status the persona is going to have initially
         persona_status           integer NOT NULL,
@@ -114,10 +114,10 @@ CREATE TABLE core.sessions (
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         is_active               boolean NOT NULL DEFAULT True,
         -- login time
-        ctime                   timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        ctime                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         -- last access time
-        atime                   timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-        ip                      varchar,
+        atime                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        ip                      varchar NOT NULL,
         -- FIXME should we hash this?
         sessionkey              varchar NOT NULL UNIQUE
 );
@@ -197,16 +197,20 @@ CREATE TABLE cde.member_data (
         free_form               varchar,
         balance                 numeric(8,2) NOT NULL DEFAULT 0,
 	-- True if user decided (positive or negative) on searchability
-	decided_search		boolean DEFAULT FALSE,
+	decided_search		boolean NOT NULL DEFAULT FALSE,
+        -- True for trial members (first semester after the first official academy)
+        trial_member            boolean NOT NULL,
+        -- if True this member's data may be passed on to BuB
+        bub_search              boolean NOT NULL DEFAULT FALSE,
         -- file name of image
-        -- not logged in chengelog
+        -- not logged in changelog
         foto                    varchar DEFAULT NULL,
 
         -- internal field for fulltext search
         -- this contains a concatenation of all other fields
         -- thus enabling fulltext search as substring search on this field
         -- it is automatically updated when a change is commited
-        fulltext                varchar
+        fulltext                varchar NOT NULL
 );
 GRANT SELECT ON cde.member_data TO cdb_member;
 GRANT UPDATE ON cde.member_data TO cdb_member; -- TODO once the changelog functionality is implemented this has to be revisited
@@ -221,9 +225,9 @@ CREATE TABLE cde.changelog (
         --
         -- information about the change
         --
-        submitted_by            integer REFERENCES core.personas(id),
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
         reviewed_by             integer REFERENCES core.personas(id) DEFAULT NULL,
-        cdate                   timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        cdate                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         -- enum for progress of change
         -- 0 ... review pending
         -- 1 ... commited
@@ -244,8 +248,8 @@ CREATE TABLE cde.changelog (
         -- now those frome member_data
         family_name             varchar NOT NULL,
         given_names             varchar NOT NULL,
-        title                   varchar DEFAULT NULL,
-        name_supplement         varchar DEFAULT NULL,
+        title                   varchar,
+        name_supplement         varchar,
         gender                  integer NOT NULL,
         birthday                date NOT NULL,
         telephone               varchar,
@@ -255,7 +259,7 @@ CREATE TABLE cde.changelog (
         postal_code             varchar,
         location                varchar,
         country                 varchar,
-        birth_name              varchar DEFAULT NULL,
+        birth_name              varchar,
         address_supplement2     varchar,
         address2                varchar,
         postal_code2            varchar,
@@ -267,8 +271,10 @@ CREATE TABLE cde.changelog (
         timeline                varchar,
         interests               varchar,
         free_form               varchar,
-        balance                 numeric(8,2) NOT NULL DEFAULT 0,
-	decided_search		boolean
+        balance                 numeric(8,2) NOT NULL,
+	decided_search		boolean,
+        trial_member            boolean NOT NULL,
+        bub_search              boolean NOT NULL
 );
 CREATE INDEX idx_changelog_change_status ON cde.changelog(change_status);
 GRANT INSERT ON cde.changelog TO cdb_member;
@@ -276,33 +282,29 @@ GRANT SELECT, UPDATE ON cde.changelog_id_seq TO cdb_member;
 GRANT UPDATE (reviewed_by, change_status) ON cde.changelog TO cdb_cde_admin;
 
 CREATE TABLE cde.semester (
-        -- The historically recommended method to determine the semester
-        -- is which exPuls is the _next_ one to be sent out.
-        -- normally, a semester would end on -07-01 or -01-01 of a year.
-        -- This means:  end_year = 1993 + int(next_expuls / 2)
-        --              end_month = 1 + int(next_expuls % 2)*6
-        --              end_day = 1
-        next_expuls             integer PRIMARY KEY,
+        -- historically this was determined by the exPuls number
+        -- the formula is id = 2*(year - 1993) + ((month - 1) // 6)
+        id                      integer PRIMARY KEY,
         -- has the billing mail already been sent? If so, up to which ID (it
         -- is done incrementally)
-        billingmail             integer REFERENCES core.personas(id),
-        billingmail_done        timestamp with time zone DEFAULT NULL,
+        billing_state           integer REFERENCES core.personas(id),
+        billing_done            timestamp WITH time zone DEFAULT NULL,
         -- have those who haven't paid been ejected? If so, up to which ID
         -- (it is done incrementally)
-        ejection                integer REFERENCES core.personas(id),
-        ejection_done           timestamp with time zone DEFAULT NULL,
-        -- has the address check mail already been sent? If so, up to which
-        -- ID (it is done incrementally)
-        addrcheckmail           integer REFERENCES core.personas(id),
-        addrcheck_done          timestamp with time zone DEFAULT NULL,
+        ejection_state          integer REFERENCES core.personas(id),
+        ejection_done           timestamp WITH time zone DEFAULT NULL,
         -- has the balance already been adjusted? If so, up to which ID?
         -- (it is done incrementally)
-        balanceupdate           integer REFERENCES core.personas(id),
-        balance_done            timestamp with time zone DEFAULT NULL,
-        -- has the member journal been sent?
-        sendjournal_done        timestamp with time zone DEFAULT NULL
+        balance_state           integer REFERENCES core.personas(id),
+        balance_done            timestamp WITH time zone DEFAULT NULL
+);
 
--- TODO review this whole piece and decide what is usefull
+CREATE TABLE cde.expuls (
+        id                      integer PRIMARY KEY,
+        -- has the address check mail already been sent? If so, up to which
+        -- ID (it is done incrementally)
+        addresscheck_state      integer REFERENCES core.personas(id),
+        addresscheck_done       timestamp WITH time zone DEFAULT NULL,
 );
 
 ---
@@ -346,7 +348,7 @@ GRANT INSERT ON event.user_data TO cdb_event_admin;
 CREATE TABLE event.event_type (
         id                      serial PRIMARY KEY,
         -- Schueler/Junior/Pfingst/Sommer/WinterAkademie, Segeln, NMUN, ...
-        moniker                 varchar,
+        moniker                 varchar NOT NULL,
         -- DSA,  JGW, DJA, CdE, BASF, ...
         organizer               varchar
 );
@@ -357,6 +359,7 @@ CREATE TABLE event.events (
         shortname               varchar NOT NULL UNIQUE,
         longname                varchar NOT NULL UNIQUE,
         type_id                 integer NOT NULL REFERENCES event.event_type(id),
+        description             varchar,
         -- True if coordinated via CdEDB
         -- if so, there has to exist a corresponding entry in event.event_data
         is_db                   boolean NOT NULL DEFAULT False
@@ -366,22 +369,21 @@ CREATE INDEX idx_events_is_db ON event.events(is_db);
 
 CREATE TABLE event.event_data (
         event_id                integer PRIMARY KEY REFERENCES event.events(id),
-        registration_start      date NOT NULL,
+        registration_start      date,
         -- official end of registration
-        registration_soft_limit date NOT NULL,
+        registration_soft_limit date,
         -- actual end of registration, in between participants are automatically warned about registering late
-        registration_hard_limit date NOT NULL,
+        registration_hard_limit date,
         has_courses             boolean NOT NULL,
         notes                   varchar,
-        orga_email              varchar NOT NULL,
-        description             varchar
+        orga_email              varchar NOT NULL
 
 -- TODO u18url, zusatzinfo, writeprotect
 );
 
 CREATE TABLE event.event_parts (
         id                      serial PRIMARY KEY,
-        event_id                integer REFERENCES event.events(id),
+        event_id                integer NOT NULL REFERENCES event.events(id),
         -- we implicitly assume, that parts are non-overlapping
         part_begin              date NOT NULL,
         part_end                date NOT NULL,
@@ -394,6 +396,7 @@ CREATE TABLE event.courses (
         event_id                integer NOT NULL REFERENCES event.events(id),
         nr                      integer,
         title                   varchar NOT NULL
+        description             varchar,
         -- if this course belongs to an event with is_db == True then there
         -- has to be a corresponding entry in event.course_data
 );
@@ -402,17 +405,16 @@ CREATE INDEX idx_courses_nr ON event.courses(nr);
 
 CREATE TABLE event.course_data (
         course_id               integer PRIMARY KEY REFERENCES event.courses(id),
-        shortname               varchar,
+        shortname               varchar NOT NULL,
         -- string containing all course-instructors
         instructors             varchar,
-        description             varchar,
         notes                   varchar
 );
 
 CREATE TABLE event.course_parts (
         id                      serial PRIMARY KEY,
-        course_id               integer REFERENCES event.courses(id),
-        part_id                 integer REFERENCES event.event_parts(id)
+        course_id               integer NOT NULL REFERENCES event.courses(id),
+        part_id                 integer NOT NULL REFERENCES event.event_parts(id)
 );
 
 CREATE TABLE event.orgas (
@@ -448,7 +450,7 @@ CREATE TABLE event.registrations (
         payment                 date,
         -- parental consent for minors (NULL if not (yet) given, e.g. non-minors)
         parental_agreement      date,
-        checkin                 timestamp with time zone,
+        checkin                 timestamp WITH time zone,
         -- true if participant would take a reserve space in a lodgment
         would_overfill          boolean DEFAULT False,
         -- foto consent (documentation, password protected gallery)
@@ -466,8 +468,8 @@ CREATE INDEX idx_registrations_payment ON event.registrations(payment);
 
 CREATE TABLE event.registration_parts (
         id                      serial PRIMARY KEY,
-        registration_id         integer REFERENCES event.registrations(id),
-        part_id                 integer REFERENCES event.part_data(id),
+        registration_id         integer NOT NULL REFERENCES event.registrations(id),
+        part_id                 integer NOT NULL REFERENCES event.part_data(id),
         -- enum for status of this registration part
         -- -1 ... not applied
         -- 0 ... applied
@@ -478,14 +480,16 @@ CREATE TABLE event.registration_parts (
         -- 5 ... rejected
         status                  integer NOT NULL DEFAULT 0,
 
-        logdment_id             integer REFERENCES event.lodgments(id)
-        -- TODO course choices, course instructor
+        logdment_id             integer REFERENCES event.lodgments(id),
+        -- this is NULL if not an instructor
+        course_instructor       integer REFERENCES event.course(id)
+        -- TODO course choices
 );
 
 CREATE TABLE event.lodgments (
         id                       serial PRIMARY KEY,
-        event_id                 integer REFERENCES event.events(id),
-        title                    varchar,
+        event_id                 integer NOT NULL REFERENCES event.events(id),
+        moniker                  varchar NOT NULL,
         capacity                 integer,
         -- number of people which can be accommodated with reduced comfort
         reserve                  integer DEFAULT 0,
@@ -494,16 +498,16 @@ CREATE TABLE event.lodgments (
 
 CREATE TABLE event.extfield_definitions (
         id                      serial PRIMARY KEY,
-        event_id                integer REFERENCES event.events(id),
-        field_name              varchar,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        field_name              varchar NOT NULL,
         -- anything understood by cdedb.validation and serializable as string
-        kind                    varchar
+        kind                    varchar NOT NULL
 );
 
 CREATE TABLE event.extfield_data (
         id                      serial PRIMARY KEY,
-        registration_id         integer REFERENCES event.registrations(id),
-        field_name              varchar,
+        registration_id         integer NOT NULL REFERENCES event.registrations(id),
+        field_name              varchar NOT NULL,
         field_value             varchar
 );
 
