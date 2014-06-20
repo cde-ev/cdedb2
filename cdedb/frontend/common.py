@@ -252,6 +252,23 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
         _LOGGER.warn("Found naive datetime object {}.".format(val))
     return val.strftime(formatstr)
 
+def cdedbid_filter(val):
+    """Custom jinja filter to format persona ids with a check digit. Every user
+    visible id should be formatted with this filter. The check digit is
+    one of the letters between 'A' and 'K' to make a clear distinction
+    between the numeric id and the check digit.
+
+    :type val: int
+    :rtype: str
+    """
+    digits = []
+    tmp = val
+    while tmp > 0:
+        digits.append(tmp % 10)
+        tmp = tmp // 10
+    dsum = sum((i+1)*d for i, d in enumerate(digits))
+    return "DB-{}-{}".format(val, chr(65 + (dsum % 11)))
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -272,6 +289,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         filters = {
             'date' : date_filter,
             'datetime' : datetime_filter,
+            'cdedbid' : cdedbid_filter,
         }
         self.jinja_env.filters.update(filters)
 

@@ -5,4 +5,3 @@
 * more logging
 * make test-suite faster
 * make automatic VM build
-* ldap userPassword attribute needs protection (currently plain text)

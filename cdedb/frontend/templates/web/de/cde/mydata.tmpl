@@ -149,8 +149,7 @@
 	{% endif %}
         <tr>
             <td>CdEDB-ID</td>
-            {# FIXME this needs some encoding (handling should be global) #}
-            <td>{{ data['id']|e }}</td>
+            <td>{{ data['id']|cdedbid|e }}</td>
         </tr>
         <tr>
             <td>Guthaben</td>

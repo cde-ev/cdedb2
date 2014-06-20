@@ -6,7 +6,7 @@ import string
 import datetime
 import pytz
 from cdedb.frontend.common import encode_parameter, decode_parameter, \
-     date_filter, datetime_filter
+     date_filter, datetime_filter, cdedbid_filter
 
 def rand_str(chars, exclude=''):
     pool = string.printable
@@ -51,3 +51,9 @@ class TestFrontendCommon(unittest.TestCase):
         self.assertEqual(datetime_filter(dt_naive), "2010-05-22 04:55 ()")
         self.assertEqual(datetime_filter(dt_aware), "2010-05-22 06:55 (CEST)")
         self.assertEqual(datetime_filter(dt_other), "2010-05-22 10:55 (CEST)")
+
+    def test_cdedbid_filter(self):
+        self.assertEqual("DB-123-K", cdedbid_filter(123))
+        self.assertEqual("DB-11111-E", cdedbid_filter(11111))
+        self.assertEqual("DB-11118-A", cdedbid_filter(11118))
+
