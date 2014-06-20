@@ -24,33 +24,33 @@ class TestFrontendCommon(unittest.TestCase):
             param = rand_str(200, exclude='-')
             encoded = encode_parameter(salt, target, name, param)
             decoded = decode_parameter(salt, target, name, encoded, timeout)
-            self.assertEqual(decoded, param)
+            self.assertEqual(param, decoded)
         salt = "a salt"
         target = "some target"
         name = "fancy name"
         param = "an arbitrary message"
         encoded = encode_parameter(salt, target, name, param)
-        self.assertEqual(decode_parameter(salt, target, name, encoded,
-                                          datetime.timedelta(seconds=0)), None)
-        self.assertEqual(decode_parameter("wrong", target, name, encoded,
-                                          timeout), None)
-        self.assertEqual(decode_parameter(salt, "wrong", name, encoded,
-                                          timeout), None)
-        self.assertEqual(decode_parameter(salt, target, "wrong", encoded,
-                                          timeout), None)
+        self.assertEqual(None, decode_parameter(salt, target, name, encoded,
+                                                datetime.timedelta(seconds=0)))
+        self.assertEqual(None, decode_parameter("wrong", target, name, encoded,
+                                                timeout))
+        self.assertEqual(None, decode_parameter(salt, "wrong", name, encoded,
+                                                timeout))
+        self.assertEqual(None, decode_parameter(salt, target, "wrong", encoded,
+                                                timeout))
         wrong_encoded = "G" + encoded[1:]
-        self.assertEqual(decode_parameter(salt, target, name, wrong_encoded,
-                                          timeout), None)
+        self.assertEqual(None, decode_parameter(salt, target, name, wrong_encoded,
+                                                timeout))
 
     def test_date_filters(self):
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
         dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=pytz.utc)
         dt_other = pytz.timezone('America/New_York').localize(dt_naive)
-        self.assertEqual(date_filter(dt_naive), "2010-05-22")
-        self.assertEqual(date_filter(dt_aware), "2010-05-22")
-        self.assertEqual(datetime_filter(dt_naive), "2010-05-22 04:55 ()")
-        self.assertEqual(datetime_filter(dt_aware), "2010-05-22 06:55 (CEST)")
-        self.assertEqual(datetime_filter(dt_other), "2010-05-22 10:55 (CEST)")
+        self.assertEqual("2010-05-22", date_filter(dt_naive))
+        self.assertEqual("2010-05-22", date_filter(dt_aware))
+        self.assertEqual("2010-05-22 04:55 ()", datetime_filter(dt_naive))
+        self.assertEqual("2010-05-22 06:55 (CEST)", datetime_filter(dt_aware))
+        self.assertEqual("2010-05-22 10:55 (CEST)", datetime_filter(dt_other))
 
     def test_cdedbid_filter(self):
         self.assertEqual("DB-123-K", cdedbid_filter(123))

@@ -71,7 +71,7 @@ class TestCoreBackend(BackendTest):
     def test_change_username(self, user):
         newaddress = "newaddress@example.cde"
         ret = self.core.change_username(self.key, user['id'], newaddress, "wrongpass")
-        self.assertEqual(ret, (False, "Failed."))
+        self.assertEqual((False, "Failed."), ret)
         ret = self.core.change_username(self.key, user['id'], newaddress, user['password'])
         self.assertTrue(ret)
         self.core.logout(self.key)

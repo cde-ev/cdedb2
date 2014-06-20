@@ -15,4 +15,4 @@ class TestCdEBackend(BackendTest):
             ('id', 'birth_name', 'display_name', 'telephone'))}
         self.cde.change_member(self.key, setter)
         new_data = self.cde.get_data(self.key, (user['id'],))[0]
-        self.assertEqual(new_data, data)
+        self.assertEqual(data, new_data)

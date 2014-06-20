@@ -81,7 +81,7 @@ class TestCoreFrontend(FrontendTest):
                 self.submit(f)
                 if u in ("anton",):
                     # admins are not resettable
-                    self.assertEqual(self.fetch_mail(), [])
+                    self.assertEqual([], self.fetch_mail())
                     continue
                 mail = self.fetch_mail()[0]
                 for line in mail.split('\n'):

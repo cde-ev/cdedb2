@@ -14,4 +14,4 @@ class TestCdEBackend(BackendTest):
             ('id', 'name_supplement', 'display_name', 'telephone'))}
         self.event.change_user(self.key, setter)
         new_data = self.event.get_data(self.key, (user['id'],))[0]
-        self.assertEqual(new_data, data)
+        self.assertEqual(data, new_data)
