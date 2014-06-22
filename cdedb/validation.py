@@ -568,6 +568,8 @@ def _member_data(val, argname=None, *, strict=False, _convert=True):
         'free_form' : _str_or_None,
         'balance' : _decimal,
         'decided_search' : _bool,
+        'trial_member' : _bool,
+        'bub_search' : _bool,
     }.items()))
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,

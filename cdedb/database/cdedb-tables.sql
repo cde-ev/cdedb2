@@ -304,7 +304,7 @@ CREATE TABLE cde.expuls (
         -- has the address check mail already been sent? If so, up to which
         -- ID (it is done incrementally)
         addresscheck_state      integer REFERENCES core.personas(id),
-        addresscheck_done       timestamp WITH time zone DEFAULT NULL,
+        addresscheck_done       timestamp WITH time zone DEFAULT NULL
 );
 
 ---
@@ -395,8 +395,8 @@ CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         nr                      integer,
-        title                   varchar NOT NULL
-        description             varchar,
+        title                   varchar NOT NULL,
+        description             varchar
         -- if this course belongs to an event with is_db == True then there
         -- has to be a corresponding entry in event.course_data
 );
@@ -463,13 +463,22 @@ CREATE TABLE event.registrations (
 );
 CREATE INDEX idx_registrations_persona_id ON event.registrations(persona_id);
 CREATE INDEX idx_registrations_event_id ON event.registrations(event_id);
-CREATE INDEX idx_registrations_status ON event.registrations(status);
 CREATE INDEX idx_registrations_payment ON event.registrations(payment);
+
+CREATE TABLE event.lodgments (
+        id                       serial PRIMARY KEY,
+        event_id                 integer NOT NULL REFERENCES event.events(id),
+        moniker                  varchar NOT NULL,
+        capacity                 integer,
+        -- number of people which can be accommodated with reduced comfort
+        reserve                  integer DEFAULT 0,
+        notes                    varchar
+);
 
 CREATE TABLE event.registration_parts (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
-        part_id                 integer NOT NULL REFERENCES event.part_data(id),
+        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
         -- enum for status of this registration part
         -- -1 ... not applied
         -- 0 ... applied
@@ -484,16 +493,6 @@ CREATE TABLE event.registration_parts (
         -- this is NULL if not an instructor
         course_instructor       integer REFERENCES event.course(id)
         -- TODO course choices
-);
-
-CREATE TABLE event.lodgments (
-        id                       serial PRIMARY KEY,
-        event_id                 integer NOT NULL REFERENCES event.events(id),
-        moniker                  varchar NOT NULL,
-        capacity                 integer,
-        -- number of people which can be accommodated with reduced comfort
-        reserve                  integer DEFAULT 0,
-        notes                    varchar
 );
 
 CREATE TABLE event.extfield_definitions (

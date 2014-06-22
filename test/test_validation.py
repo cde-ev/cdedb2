@@ -343,7 +343,9 @@ class TestValidation(unittest.TestCase):
             "interests" : "Still more blurb",
             "free_form" : "And yet another blurb",
             "balance" : decimal.Decimal("10.77"),
-            "decided_search" : True
+            "decided_search" : True,
+            "trial_member" : False,
+            "bub_search" : True,
             }
         stripped_example = { "id" : 42 }
         key_example = copy.deepcopy(base_example)

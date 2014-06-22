@@ -117,7 +117,8 @@ MEMBER_DATA_FIELDS = (
     "postal_code", "location", "country", "notes", "birth_name",
     "address_supplement2", "address2", "postal_code2", "location2",
     "country2", "weblink", "specialisation", "affiliation", "timeline",
-    "interests", "free_form", "balance", "decided_search")
+    "interests", "free_form", "balance", "decided_search", "trial_member",
+    "bub_search")
 
 #: Names of columns associated to an event user (in addition to those which
 #: exist for every persona). This should be a subset of

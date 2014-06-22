@@ -57,7 +57,7 @@ class CdeFrontend(AbstractFrontend):
                      "location", "country", "address_supplement2", "address2",
                      "postal_code2", "location2", "country2", "weblink",
                      "specialisation", "affiliation", "timeline", "interests",
-                     "free_form")
+                     "free_form", "bub_search")
     def change_data(self, rs, data=None):
         """Modify account details."""
         # TODO add changelog functionality

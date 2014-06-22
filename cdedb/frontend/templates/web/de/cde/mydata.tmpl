@@ -117,6 +117,9 @@
             <td>
                 {% if user.is_member %}
                     <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+                    {% if data['trial_member'] %}
+                    (Probemitgliedschaft)
+                    {% endif %}
                 {% else %}
                     img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
                 {% endif %}
@@ -147,6 +150,16 @@
 		{% endif %}
 	    </tr>
 	{% endif %}
+        <tr>
+            <td>Datenzugriff für BuB</td>
+            <td>
+                {% if data['bub_search'] %}
+                    <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+                {% else %}
+                    img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+                {% endif %}
+            </td>
+        </tr>
         <tr>
             <td>CdEDB-ID</td>
             <td>{{ data['id']|cdedbid|e }}</td>
