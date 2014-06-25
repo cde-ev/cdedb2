@@ -7,7 +7,8 @@ variant for external participants.
 from cdedb.backend.common import AbstractBackend, access_decorator_generator, \
      internal_access_decorator_generator, make_RPCDaemon, \
      run_RPCDaemon, AuthShim
-from cdedb.backend.common import affirm_validation as affirm
+from cdedb.backend.common import affirm_validation as affirm, \
+     affirm_array_validation as affirm_array
 from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS, \
      EVENT_USER_DATA_FIELDS, extract_realm
 from cdedb.config import Config
@@ -110,6 +111,46 @@ class EventBackend(AbstractBackend):
                              ", ".join(ukeys), ", ".join(("%s",) * len(ukeys)))
             return self.query_exec(
                 rs, query, tuple(data[key] for key in ukeys) + (data['id'],))
+
+    @access("persona")
+    def orga_info(self, rs, ids):
+        """List events organized by persona.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type anid: int
+        :rtype: {int: {int}}
+        """
+        ids = affirm_array("int", ids)
+        query = glue("SELECT persona_id, event_id FROM event.orgas",
+                     "WHERE persona_id = ANY(%s)")
+        data = self.query_all(rs, query, (ids,))
+        ret = {}
+        for anid in ids:
+            ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
+        return ret
+
+    @access("user")
+    def participation_info(self, rs, ids):
+        """List events visited.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: {int : [dict]}
+        :returns: Keys are the ids and items are the event lists.
+        """
+        ids = affirm_array("int", ids)
+        query = glue(
+            "SELECT p.persona_id, p.event_id, e.longname AS event_name,",
+            "p.course_id, c.title AS course_name, p.is_instructor, p.is_orga",
+            "FROM event.participants AS p",
+            "INNER JOIN event.events AS e ON (p.event_id = e.id)",
+            "LEFT OUTER JOIN event.courses AS c ON (p.course_id = c.id)",
+            "WHERE p.persona_id = ANY(%s) ORDER BY p.event_id")
+        event_data = self.query_all(rs, query, (ids,))
+        ret = {}
+        for anid in ids:
+            ret[anid] = tuple(x for x in event_data if x['persona_id'] == anid)
+        return ret
 
     @access("user")
     def change_user(self, rs, data):

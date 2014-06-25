@@ -341,6 +341,16 @@ def affirm_validation(assertion, value):
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value)
 
+def affirm_array_validation(assertion, values):
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
+
+    :type assertion: str
+    :type values: [object]
+    :rtype: [object]
+    """
+    checker = getattr(validate, "assert_{}".format(assertion))
+    return tuple(checker(value) for value in values)
+
 def make_RPCDaemon(backend, socket_address, access_log=None):
     """Wrapper around :py:func:`cdedb.backend.rpc.create_RPCDaemon` which is
     necessary to set up the environment for :py:mod:`Pyro4` before it is

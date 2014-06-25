@@ -5,14 +5,21 @@
     {% if kind == "database" %}
         Eine Datenbanktransaktion ist fehlgeschlagen. Versuche es bitte
         einfach nochmal, dann sollte es klappen.
+    {% elif kind == "quota" %}
+        Du hast das interne Limit für Zugriffe erreicht. Dies ist ein
+        Sicherheitsfeature, das ein Klonen der Datenbank verhindern
+        soll. Dabei kann es leider auch zu falsch positiven Beschränkungen
+        kommen. Dein Zähler wird im Laufe der nächsten Tage automatisch
+        zurückgesetzt.
     {% else %}
         Es ist leider ein Fehler aufgetreten. Dies bedeutet vermutlich, dass
-        sich irgendwo im Quelltext ein Bug versteckt hat, den Du gerade
+        sich irgendwo im Quelltext ein Bug versteckt, den Du gerade
         erfolgreich aufgespürt hast.
     {% endif %}
 
     Sollte das Problem hartnäckig sein, so schreibe bitte eine Email an das
-    Datenbank Team (cdedb at lists dot cde minus ev dot de). Gib dabei
-    bitte eine möglichst genaue Fehlerbeschreibung (sprich: wie lässt sich
-    der Fehler reproduzieren) sowie die aktuelle Uhrzeit ({{ now|datetime|e }}) an.
+    Datenbank Team (cdedb at lists dot cde minus ev dot de). Gib dabei bitte
+    eine möglichst genaue Fehlerbeschreibung (sprich: wie lässt sich der
+    Fehler reproduzieren) sowie die aktuelle Uhrzeit ({{ now|datetime|e }})
+    an.
 {% endblock %}

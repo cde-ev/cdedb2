@@ -8,9 +8,9 @@ import sys
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdeFrontend
 from cdedb.frontend.event import EventFrontend
-from cdedb.common import glue, make_root_logger
+from cdedb.common import glue, make_root_logger, QuotaException
 from cdedb.frontend.common import FrontendRequestState, BaseApp, \
-     construct_redirect, connect_proxy
+     construct_redirect, connect_proxy, FakeFrontendRequestState
 from cdedb.config import SecretsConfig
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.serialization import deserialize
@@ -94,7 +94,8 @@ class Application(BaseApp):
                     raise werkzeug.exceptions.MethodNotAllowed(
                         handler.modi,
                         "Unsupported request method {}.".format(request.method))
-                rs.user = getattr(self, component).finalize_session(data)
+                rs.user = getattr(self, component).finalize_session(
+                    FakeFrontendRequestState(sessionkey), data)
                 return handler(rs, **args)
             except werkzeug.exceptions.HTTPException:
                 ## do not log these, since they are not interesting and
@@ -114,6 +115,9 @@ class Application(BaseApp):
             ## Serialization error
             return construct_redirect(
                 request, urls.build("core/error", {'kind' : "database"}))
+        except QuotaException:
+            return construct_redirect(
+                request, urls.build("core/error", {'kind' : "quota"}))
         except Exception as e:
             ## debug output if applicable
             if self.conf.CDEDB_DEV or ('data' in locals() \

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+from cdedb.common import QuotaException
 from test.common import BackendTest, as_users, USER_DICT
+import decimal
+import datetime
 
 class TestCdEBackend(BackendTest):
     used_backends = ("core", "cde")
@@ -11,8 +14,95 @@ class TestCdEBackend(BackendTest):
         data = self.cde.get_data(self.key, (user['id'],))[0]
         data['display_name'] = "Zelda"
         data['birth_name'] = "Hylia"
-        setter = {k : v for k, v in data.items() if k in set(
-            ('id', 'birth_name', 'display_name', 'telephone'))}
+        setter = {k : v for k, v in data.items() if k in
+                  {'id', 'birth_name', 'display_name', 'telephone'}}
         self.cde.change_member(self.key, setter)
         new_data = self.cde.get_data(self.key, (user['id'],))[0]
         self.assertEqual(data, new_data)
+
+    @as_users("berta")
+    def test_quota(self, user):
+        for _ in range(25):
+            self.cde.get_data(self.key, (1, 2, 3))
+        with self.assertRaises(QuotaException):
+            self.cde.get_data(self.key, (1, 2, 3))
+
+    @as_users("anton", "berta")
+    def test_get_data(self, user):
+        data = self.cde.get_data(self.key, (1, 2))
+        expectation = ({
+            'bub_search': True,
+            'location': 'Musterstadt',
+            'cloud_account': True,
+            'specialisation': None,
+            'id': 1,
+            'address_supplement': '',
+            'username': 'anton@example.cde',
+            'affiliation': None,
+            'interests': None,
+            'location2': 'Hintertupfingen',
+            'birth_name': None,
+            'weblink': None,
+            'balance': decimal.Decimal('17.50'),
+            'decided_search': True,
+            'timeline': None,
+            'address_supplement2': '',
+            'given_names': 'Anton Armin A.',
+            'address': 'Auf der Düne 42',
+            'status': 0,
+            'db_privileges': 1,
+            'gender': 1,
+            'title': '',
+            'mobile': '',
+            'country': '',
+            'country2': '',
+            'family_name': 'Administrator',
+            'trial_member': False,
+            'display_name': 'Anton',
+            'name_supplement': '',
+            'notes': '',
+            'telephone': '+49 (234) 98765',
+            'address2': 'Unter dem Hügel 23',
+            'postal_code': '03205',
+            'free_form': None,
+            'is_active': True,
+            'postal_code2': '22335',
+            'birthday': datetime.datetime(1991, 3, 30).date()},
+            {'bub_search': False,
+            'location': 'Utopia',
+            'cloud_account': True,
+            'specialisation': 'Alles',
+            'id': 2,
+            'address_supplement': 'bei Spielmanns',
+            'username': 'berta@example.cde',
+            'affiliation': 'Jedermann',
+            'interests': 'Immer',
+            'location2': 'Foreign City',
+            'birth_name': 'Gemeinser',
+            'weblink': 'https://www.bundestag.cde',
+            'balance': decimal.Decimal('12.50'),
+            'decided_search': True,
+            'timeline': 'Überall',
+            'address_supplement2': '',
+            'given_names': 'Bertålotta',
+            'address': 'Im Garten 77',
+            'status': 0,
+            'db_privileges': 0,
+            'gender': 0,
+            'title': 'Dr.',
+            'mobile': '0163/123456789',
+            'country': '',
+            'country2': 'Far Away',
+            'family_name': 'Beispiel',
+            'trial_member': False,
+            'display_name': 'Bertå',
+            'name_supplement': 'MdB',
+            'notes': '',
+            'telephone': '+49 (5432) 987654321',
+            'address2': 'Strange Road 9 3/4',
+            'postal_code': '34576',
+            'free_form': 'Jede Menge Gefasel',
+            'is_active': True,
+            'postal_code2': '8XA 45-$',
+            'birthday': datetime.datetime(1981, 2, 11).date()})
+        self.assertEqual(expectation, data)

@@ -28,9 +28,8 @@ class CoreFrontend(AbstractFrontend):
         self.coreproxy = ProxyShim(connect_proxy(
             self.conf.SERVER_NAME_TEMPLATE.format("core")))
 
-    @classmethod
-    def finalize_session(cls, sessiondata):
-        ret = super().finalize_session(sessiondata)
+    def finalize_session(self, rs, sessiondata):
+        ret = super().finalize_session(rs, sessiondata)
         if ret.role == "user":
             ## no user role in this realm
             ret.role = "persona"

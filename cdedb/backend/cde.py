@@ -11,12 +11,14 @@ from cdedb.backend.common import AbstractBackend, access_decorator_generator, \
      run_RPCDaemon, AuthShim
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS, \
-     MEMBER_DATA_FIELDS, extract_global_privileges, extract_realm
+     MEMBER_DATA_FIELDS, extract_global_privileges, extract_realm, \
+     QuotaException
 from cdedb.config import Config
 from cdedb.backend.core import CoreBackend
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import argparse
+import datetime
 
 access = access_decorator_generator(
     ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
@@ -76,13 +78,34 @@ class CdeBackend(AbstractBackend):
             "SELECT {} FROM cde.member_data AS m JOIN core.personas",
             "AS p ON m.persona_id = p.id WHERE p.id = ANY(%s)").format(
                 ", ".join(PERSONA_DATA_FIELDS + MEMBER_DATA_FIELDS))
-
-        # TODO add academy information
-
         ret = self.query_all(rs, query, (ids,))
         if len(ret) != len(ids):
             raise ValueError("Invalid ids requested.")
         return ret
+
+    @staticmethod
+    def create_fulltext(data):
+        """
+        :type data: {str : object}
+        :param data: one member data set to convert into a string for fulltext
+          search
+        :rtype: str
+        """
+        attrs = (
+            "username", "title", "given_names", "display_name",
+            "family_name", "birth_name", "name_supplement", "birthday",
+            "telephone", "mobile", "address", "address_supplement",
+            "postal_code", "location", "country", "address2",
+            "address_supplement2", "postal_code2", "location2", "country2",
+            "weblink", "specialisation", "affiliation", "timeline",
+            "interests", "free_form")
+        def _sanitize(val):
+            if val is None:
+                return ""
+            else:
+                return str(val)
+        vals = (_sanitize(data[x]) for x in attrs)
+        return " ".join(vals)
 
     def set_complete_member_data(self, rs, data):
         """This requires that all possible keys are present. Often you may
@@ -140,10 +163,16 @@ class CdeBackend(AbstractBackend):
             query = glue("UPDATE cde.member_data SET ({}) = ({})",
                          "WHERE persona_id = %s").format(
                              ", ".join(mkeys), ", ".join(("%s",) * len(mkeys)))
-            return self.query_exec(
+            ret = self.query_exec(
                 rs, query, tuple(data[key] for key in mkeys) + (data['id'],))
 
-        # TODO update fulltext
+        with Atomizer(rs):
+            new_data = self.retrieve_member_data(rs, (data['id'],))[0]
+            text = self.create_fulltext(new_data)
+            query = glue("UPDATE cde.member_data SET fulltext = %s",
+                         "WHERE persona_id = %s")
+            self.query_exec(rs, query, (text, data['id']))
+        return ret
 
     @access("user")
     def change_member(self, rs, data):
@@ -159,13 +188,47 @@ class CdeBackend(AbstractBackend):
         self.set_member_data(rs, data)
 
     @access("user")
+    def get_data_no_quota(self, rs, ids):
+        """This behaves like :py:meth:`get_data` but does not check or update the
+        quota.
+
+        This is intended for consumption by the event backend, where
+        orgas will need access. This should only be used after serious
+        consideration. This is a separate function (and not a mere
+        parameter to :py:meth:`get_data`) so that its usage can be
+        tracked.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: [{str : object}]
+        """
+        return self.retrieve_member_data(rs, ids)
+
+    @access("user")
     def get_data(self, rs, ids):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
         :rtype: [{str : object}]
         """
-        # TODO add quota functionality
+        with Atomizer(rs):
+            query = glue("SELECT queries FROM core.quota WHERE persona_id = %s",
+                         "AND qdate = %s")
+            today = datetime.datetime.now().date()
+            num = self.query_one(rs, query, (rs.user.persona_id, today))
+            query = glue("UPDATE core.quota SET queries = %s",
+                         "WHERE persona_id = %s AND qdate = %s")
+            if num is None:
+                query = glue("INSERT INTO core.quota",
+                             "(queries, persona_id, qdate) VALUES (%s, %s, %s)")
+                num = 0
+            else:
+                num = num['queries']
+            new = tuple(i == rs.user.persona_id for i in ids).count(False)
+            if num + new > self.conf.MAX_QUERIES_PER_DAY \
+              and not self.is_admin(rs):
+                raise QuotaException("Too many queries.")
+            self.query_exec(rs, query, (num + new, rs.user.persona_id, today))
         return self.retrieve_member_data(rs, ids)
 
 if __name__ == "__main__":

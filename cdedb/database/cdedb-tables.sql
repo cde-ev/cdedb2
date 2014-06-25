@@ -433,7 +433,7 @@ CREATE TABLE event.orgas (
 );
 CREATE INDEX idx_orgas_persona_id ON event.orgas(persona_id);
 CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
-GRANT SELECT ON event.orgas TO cdb_user;
+GRANT SELECT ON event.orgas TO cdb_persona;
 GRANT INSERT, UPDATE ON event.orgas TO cdb_event_admin;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_event_admin;
 

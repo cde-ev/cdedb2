@@ -11,6 +11,8 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual('Meine Daten',
                          self.response.lxml.xpath('//h1/text()')[0])
         self.assertIn(user['given_names'], self.response.text)
+        if user['id'] == 2:
+            self.assertIn('PfingstAkademie', self.response.text)
 
     @as_users("anton", "berta")
     def test_changedata(self, user):

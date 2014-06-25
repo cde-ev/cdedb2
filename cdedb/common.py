@@ -70,6 +70,15 @@ def extract_realm(status):
     else:
         raise ValueError("Invalid status {} found.".format(status))
 
+class QuotaException(RuntimeError):
+    """
+    Exception for signalling a quota excess. This is thrown in
+    :py:mod:`cdedb.backend.cde` and caught in
+    :py:mod:`cdedb.frontend.application`. We use a custom class so that
+    we can distinguish it from other exceptions.
+    """
+    pass
+
 def extract_global_privileges(db_privileges, status):
     """Take numerical raw values from the database and convert it into a
     set of semantic privilege levels.

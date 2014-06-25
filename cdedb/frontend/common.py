@@ -90,6 +90,17 @@ def connect_proxy(name):
     proxy = Pyro4.Proxy(uri)
     return proxy
 
+class FakeFrontendRequestState:
+    """Mock version of :py:class:`FrontendRequestState` to be used before a
+    real version is available. The basic requirement is, that the
+    :py:class:`ProxyShim` can work with this imitation.
+    """
+    def __init__(self, sessionkey):
+        """
+        :type sessionkey: str or None
+        """
+        self.sessionkey = sessionkey
+
 class FrontendRequestState:
     """Container for request info. Besides this the python frontend code should
     be state-less. This data structure enables several convenient
@@ -293,9 +304,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         }
         self.jinja_env.filters.update(filters)
 
-    @classmethod
     @abc.abstractmethod
-    def finalize_session(cls, sessiondata):
+    def finalize_session(self, rs, sessiondata):
         """Create a :py:class:`FrontendUser` instance for this request. This is
         realm dependent and may add supplementary information (e.g. list of
         events which are organized by this persona).
@@ -304,6 +314,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :py:class:`cdedb.frontend.application.Application` and is thus
         part of the interface.
 
+        :type rs: :py:class:`FakeFrontendRequestState`
         :type sessiondata: {str : object}
         :param sessiondata: values from the ``core.personas`` table in the
           database
@@ -315,9 +326,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                                                  sessiondata['status'])
         if "persona" in global_privs:
             roles.append("persona")
-        if realm == cls.realm:
+        if realm == self.realm:
             roles.append("user")
-        for role in ("member", "{}_admin".format(cls.realm), "admin"):
+        for role in ("member", "{}_admin".format(self.realm), "admin"):
             if role in global_privs:
                 roles.append(role)
         role = roles[-1]

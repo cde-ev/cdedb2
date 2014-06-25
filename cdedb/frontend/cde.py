@@ -23,10 +23,11 @@ class CdeFrontend(AbstractFrontend):
         super().__init__(configpath)
         self.cdeproxy = ProxyShim(connect_proxy(
             self.conf.SERVER_NAME_TEMPLATE.format("cde")))
+        self.eventproxy = ProxyShim(connect_proxy(
+            self.conf.SERVER_NAME_TEMPLATE.format("event")))
 
-    @classmethod
-    def finalize_session(cls, sessiondata):
-        return super().finalize_session(sessiondata)
+    def finalize_session(self, rs, sessiondata):
+        return super().finalize_session(rs, sessiondata)
 
     @classmethod
     def build_navigation(cls, rs):
@@ -38,7 +39,11 @@ class CdeFrontend(AbstractFrontend):
         if rs.user.realm != self.realm:
             return self.redirect(rs, "{}/mydata".format(rs.user.realm))
         data = self.cdeproxy.get_data(rs, (rs.user.persona_id,))[0]
-        return self.render(rs, "mydata", {'data' : data})
+        participation_info = self.eventproxy.participation_info(
+            rs, (rs.user.persona_id,))[rs.user.persona_id]
+        return self.render(rs, "mydata",
+                           {'data' : data,
+                            'participation_info' : participation_info})
 
     @access("user")
     def change_data_form(self, rs):

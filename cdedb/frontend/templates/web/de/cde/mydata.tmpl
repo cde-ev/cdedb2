@@ -168,9 +168,27 @@
             <td>Guthaben</td>
             <td>{{ data['balance']|e }}</td>
         </tr>
+        <th>
+            <tr> <td colspan="2">Veranstaltungen</td> </tr>
+        </th>
+        {% for info in participation_info %}
+            <tr>
+                <td colspan="2">
+                    {{ info['event_name']|e }}
+                    {% if info['is_orga'] %}
+                        (Orga)
+                    {% else %}
+                        {% if info['course_name'] %}
+                            {{ info['course_name']|e }}
+                            {% if info['is_instructor'] %}
+                                (Kursleiter)
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
     </table>
-
-    {# TODO add academy information #}
 
     <p>
         <a href="{{ cdedblink('cde/change_data_form') }}">Bearbeiten</a>

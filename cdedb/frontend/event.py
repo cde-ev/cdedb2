@@ -22,10 +22,12 @@ class EventFrontend(AbstractFrontend):
         self.eventproxy = ProxyShim(connect_proxy(
             self.conf.SERVER_NAME_TEMPLATE.format("event")))
 
-    @classmethod
-    def finalize_session(cls, sessiondata):
-        # TODO add orga info to user struct
-        return super().finalize_session(sessiondata)
+    def finalize_session(self, rs, sessiondata):
+        user = super().finalize_session(rs, sessiondata)
+        if user.persona_id:
+            user.orga = self.eventproxy.orga_info(
+                rs, (user.persona_id,))[user.persona_id]
+        return user
 
     @classmethod
     def build_navigation(cls, rs):
