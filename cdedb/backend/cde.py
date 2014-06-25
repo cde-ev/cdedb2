@@ -81,9 +81,7 @@ class CdeBackend(AbstractBackend):
 
         ret = self.query_all(rs, query, (ids,))
         if len(ret) != len(ids):
-            self.logger.warn(
-                "Wrong number of data sets found ({} instead of {}).".format(
-                    len(ret), len(ids)))
+            raise ValueError("Invalid ids requested.")
         return ret
 
     def set_complete_member_data(self, rs, data):
@@ -116,8 +114,10 @@ class CdeBackend(AbstractBackend):
             realm = rs.user.realm
         else:
             query = "SELECT status FROM core.personas WHERE id = %s"
-            realm = extract_realm(
-                self.query_one(rs, query, (data['id'],))['status'])
+            d = self.query_one(rs, query, (data['id'],))
+            if not d:
+                raise ValueError("Nonexistant user.")
+            realm = extract_realm(d['status'])
         if realm != self.realm:
             raise ValueError("Wrong realm for persona.")
 

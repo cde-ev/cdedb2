@@ -128,9 +128,7 @@ class CoreBackend(AbstractBackend):
             ", ".join(PERSONA_DATA_FIELDS))
         ret = self.query_all(rs, query, (ids,))
         if len(ret) != len(ids):
-            self.logger.warn(
-                "Wrong number of data sets found ({} instead of {}).".format(
-                    len(ret), len(ids)))
+            raise ValueError("Invalid ids requested.")
         return ret
 
     @internal_access("persona")
@@ -185,12 +183,11 @@ class CoreBackend(AbstractBackend):
                     cur, query, tuple(
                         data[key] for key in keys) + (data['id'],))
                 num = cur.rowcount
+                if num != 1:
+                    raise ValueError("Nonexistant user.")
                 if ldap_ops:
                     with self.ldap_connect() as l:
                         l.modify_s(dn, ldap_ops)
-        if num != 1:
-            self.logger.warn(
-                "Wrong number ({}) of personas updated".format(num))
         return num
 
     @access("anonymous")
@@ -291,7 +288,7 @@ class CoreBackend(AbstractBackend):
         query = "SELECT password_hash FROM core.personas WHERE id = %s"
         data = self.query_one(rs, query, (persona_id,))
         if not data:
-            raise ValueError("No persona with id {}.".format(persona_id))
+            raise ValueError("Invalid id.")
         if new_password is not None and (not self.is_admin(rs) \
                                          or persona_id == rs.user.persona_id):
             if not validate.is_password_strength(new_password):
