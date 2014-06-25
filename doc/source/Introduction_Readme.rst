@@ -79,3 +79,6 @@ it right away.
 * Use fail2ban for preventing brute force.
 * All time stamps must have a time zone associated to them. For everything
   used internally this time zone has to be UTC.
+* If a check for membership is done (``if foo in bar``) use a ``set`` as
+  data structure if possible, this does not apply for iterating (``for foo
+  in bar``).

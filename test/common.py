@@ -39,7 +39,7 @@ class BackendShim:
         return new_fun
 
     def __getattr__(self, name):
-        if name in ("_funs", "_backend"):
+        if name in {"_funs", "_backend"}:
             raise AttributeError()
         return self._funs[name]
 

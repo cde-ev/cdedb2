@@ -70,7 +70,7 @@ class SessionBackend:
         if self.validate_sessionkey(sessionkey) and method == "lookupsession":
             return True
         else:
-            self.logger.warn("Invalid session lookup key {}.".format(
+            self.logger.warning("Invalid session lookup key {}.".format(
                 sessionkey))
             return None
 
@@ -157,7 +157,7 @@ class SessionBackend:
                 ret['display_name'] = data["display_name"]
                 ret['username'] = data["username"]
             else:
-                self.logger.warn("Found inactive user {}".format(persona_id))
+                self.logger.warning("Found inactive user {}".format(persona_id))
         return ret
 
 if __name__ == "__main__":

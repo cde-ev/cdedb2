@@ -50,7 +50,7 @@ class CdeFrontend(AbstractFrontend):
         rs.values.update(data)
         return self.render(rs, "change_data")
 
-    @access("user", ("POST",))
+    @access("user", {"POST"})
     @REQUESTdatadict("display_name", "family_name", "given_names", "title",
                      "name_supplement", "telephone", "mobile",
                      "address_supplement", "address", "postal_code",

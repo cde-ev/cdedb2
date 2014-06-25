@@ -6,7 +6,6 @@
 -- TODO: think about ctime/mtime hack for evreg
 -- TODO: tables: quota, lastschrift_*, finance_log, mailinglist_*, assembly_*, cdefiles_*
 -- TODO: evreg-tables: busses, mitnahme-support
--- TODO: NOT NULL?? use it or leave it?
 
 -- create the database
 DROP DATABASE IF EXISTS :cdb_database_name;
@@ -46,9 +45,9 @@ CREATE TABLE core.personas (
         --
         -- the different statuses have different additional data attached
         -- 0/1/2 ... a matching entry cde.member_data
-        -- 10 ...  a matching entry cde.member_data which is mostly NULL (thus
-        --         fulfilling fewer constraints and most queries will need to
-        --         filter for status in (0, 1))
+        -- 10 ...  a matching entry cde.member_data which is mostly NULL or
+        --         default values (most queries will need to filter for status
+        --         in (0, 1))
         --         archived members may not login, thus is_active must be False
         -- 20 ... a matching entry event.user_data
         -- 30 ... a matching entry assembly.user_data
@@ -67,7 +66,6 @@ CREATE TABLE core.personas (
         -- 16 ... ml_admin
         -- 32 ... assembly_admin
         -- 64 ... files_admin
-        -- 128 ... i25p_admin
         db_privileges           integer NOT NULL DEFAULT 0,
         -- grant access to the CdE cloud (this is utilized via LDAP)
         cloud_account           boolean NOT NULL DEFAULT False
@@ -135,7 +133,10 @@ CREATE TABLE core.quota (
         qdate                   date NOT NULL DEFAULT current_date,
         queries                 integer NOT NULL DEFAULT 0
 );
--- TODO index, grant
+CREATE INDEX idx_quota_persona_id_qdate ON core.quota(qdate, persona_id);
+GRANT SELECT, INSERT ON core.quota TO cdb_member;
+GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
+GRANT UPDATE (queries) ON core.quota TO cdb_member;
 
 ---
 --- SCHEMA cde
@@ -345,20 +346,23 @@ CREATE TABLE event.user_data (
 GRANT SELECT, UPDATE ON event.user_data TO cdb_persona;
 GRANT INSERT ON event.user_data TO cdb_event_admin;
 
-CREATE TABLE event.event_type (
+CREATE TABLE event.event_types (
         id                      serial PRIMARY KEY,
         -- Schueler/Junior/Pfingst/Sommer/WinterAkademie, Segeln, NMUN, ...
         moniker                 varchar NOT NULL,
         -- DSA,  JGW, DJA, CdE, BASF, ...
         organizer               varchar
 );
-CREATE INDEX idx_event_type_organizer ON event.event_type(organizer);
+CREATE INDEX idx_event_types_organizer ON event.event_types(organizer);
+GRANT SELECT ON event.event_types TO cdb_anonymous;
+GRANT INSERT, UPDATE ON event.event_types TO cdb_event_admin;
+GRANT SELECT, UPDATE ON event.event_types_id_seq TO cdb_event_admin;
 
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
         shortname               varchar NOT NULL UNIQUE,
         longname                varchar NOT NULL UNIQUE,
-        type_id                 integer NOT NULL REFERENCES event.event_type(id),
+        type_id                 integer NOT NULL REFERENCES event.event_types(id),
         description             varchar,
         -- True if coordinated via CdEDB
         -- if so, there has to exist a corresponding entry in event.event_data
@@ -366,6 +370,9 @@ CREATE TABLE event.events (
 );
 CREATE INDEX idx_events_type_id ON event.events(type_id);
 CREATE INDEX idx_events_is_db ON event.events(is_db);
+GRANT SELECT ON event.events TO cdb_anonymous;
+GRANT INSERT, UPDATE ON event.events TO cdb_event_admin;
+GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_event_admin;
 
 CREATE TABLE event.event_data (
         event_id                integer PRIMARY KEY REFERENCES event.events(id),
@@ -401,7 +408,9 @@ CREATE TABLE event.courses (
         -- has to be a corresponding entry in event.course_data
 );
 CREATE INDEX idx_courses_event_id ON event.courses(event_id);
-CREATE INDEX idx_courses_nr ON event.courses(nr);
+GRANT SELECT ON event.courses TO cdb_anonymous;
+GRANT INSERT, UPDATE ON event.courses TO cdb_event_admin;
+GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_event_admin;
 
 CREATE TABLE event.course_data (
         course_id               integer PRIMARY KEY REFERENCES event.courses(id),
@@ -424,6 +433,9 @@ CREATE TABLE event.orgas (
 );
 CREATE INDEX idx_orgas_persona_id ON event.orgas(persona_id);
 CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
+GRANT SELECT ON event.orgas TO cdb_user;
+GRANT INSERT, UPDATE ON event.orgas TO cdb_event_admin;
+GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_event_admin;
 
 -- this table captures participation of concluded events and is not used for
 -- coordinating current events (for the latter look at event.registrations)
@@ -433,11 +445,14 @@ CREATE TABLE event.participants (
         event_id                 integer NOT NULL REFERENCES event.events(id),
         course_id                integer REFERENCES event.courses(id),
         is_instructor            boolean NOT NULL,
-        is_orga                  boolean NOT NULL -- TODO delete this?
+        is_orga                  boolean NOT NULL
 );
 CREATE INDEX idx_participants_persona_id ON event.participants(persona_id);
 CREATE INDEX idx_participants_event_id ON event.participants(event_id);
 CREATE INDEX idx_participants_course_id ON event.participants(course_id);
+GRANT SELECT ON event.participants TO cdb_persona;
+GRANT INSERT, UPDATE ON event.participants TO cdb_event_admin;
+GRANT SELECT, UPDATE ON event.participants_id_seq TO cdb_event_admin;
 
 -- this table for for organizing a current or future event, participation of
 -- past events is tracked via event.participants
@@ -491,7 +506,7 @@ CREATE TABLE event.registration_parts (
 
         logdment_id             integer REFERENCES event.lodgments(id),
         -- this is NULL if not an instructor
-        course_instructor       integer REFERENCES event.course(id)
+        course_instructor       integer REFERENCES event.courses(id)
         -- TODO course choices
 );
 
@@ -547,13 +562,5 @@ CREATE TABLE assembly.user_data (
 ---
 DROP SCHEMA IF EXISTS files;
 CREATE SCHEMA files;
-
--- TODO implement
-
----
---- SCHEMA i25p
----
-DROP SCHEMA IF EXISTS i25p;
-CREATE SCHEMA i25p;
 
 -- TODO implement

@@ -45,10 +45,6 @@ CREATE USER cdb_assembly_admin  PASSWORD '0987654321snthdiueoa0987654321';
 DROP ROLE IF EXISTS cdb_files_admin;
 CREATE USER cdb_files_admin     PASSWORD 'snthdiueoasnthdiueoasnthdiueoa';
 
--- cdb_i25p_admin has all rights in schema i25p
-DROP ROLE IF EXISTS cdb_i25p_admin;
-CREATE USER cdb_i25p_admin      PASSWORD 'snthdiueoa0987654321snthdiueoa';
-
 -- cdb_admin has all rights
 DROP ROLE IF EXISTS cdb_admin;
 CREATE USER cdb_admin           PASSWORD '9876543210abcdefghijklmnopqrst';
@@ -68,4 +64,3 @@ GRANT cdb_event_admin TO cdb_admin;
 GRANT cdb_ml_admin TO cdb_admin;
 GRANT cdb_assembly_admin TO cdb_admin;
 GRANT cdb_files_admin TO cdb_admin;
-GRANT cdb_i25p_admin TO cdb_admin;

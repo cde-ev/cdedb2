@@ -23,7 +23,7 @@ class TestCoreFrontend(FrontendTest):
                     self.response.lxml.get_element_by_id('displayname').text_content())
 
     @as_users("anton", "berta", "emilia")
-    def test_logout(self, user=None):
+    def test_logout(self, user):
         self.assertEqual(
             user['displayname'],
             self.response.lxml.get_element_by_id('displayname').text_content())
@@ -33,7 +33,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('loginform', self.response.forms)
 
     @as_users("anton", "berta", "emilia")
-    def test_mydata(self, user=None):
+    def test_mydata(self, user):
         self.get('/mydata')
         self.follow()
         self.assertEqual('Meine Daten',
@@ -41,7 +41,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn(user['given_names'], self.response.text)
 
     @as_users("anton", "berta", "emilia")
-    def test_change_password(self, user=None):
+    def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
         self.traverse({'href' : '/changepassword'})
         f = self.response.forms['passwordchangeform']
@@ -79,7 +79,7 @@ class TestCoreFrontend(FrontendTest):
                 self.get(link)
                 f = self.response.forms['passwordresetform']
                 self.submit(f)
-                if u in ("anton",):
+                if u in {"anton"}:
                     # admins are not resettable
                     self.assertEqual([], self.fetch_mail())
                     continue
@@ -99,7 +99,7 @@ class TestCoreFrontend(FrontendTest):
                 self.assertIn(user['displayname'], self.response)
 
     @as_users("anton", "berta", "emilia")
-    def test_change_username(self, user=None):
+    def test_change_username(self, user):
         new_username = "zelda@example.cde"
         self.traverse({'href' : '/mydata'},
                       {'href' : '/changedata', 'index' : 0},

@@ -158,8 +158,8 @@ class CoreBackend(AbstractBackend):
             keys = tuple(key for key in data if key in PERSONA_DATA_FIELDS_MOD)
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
             raise RuntimeError("Not enough privileges.")
-        privileged_fields = set(('is_active', 'status', 'db_privileges',
-                                 'cloud_account'))
+        privileged_fields = {'is_active', 'status', 'db_privileges',
+                             'cloud_account'}
         if not self.is_admin(rs) and (set(keys) & privileged_fields):
             raise RuntimeError("Modifying sensitive key forbidden.")
         query = "UPDATE core.personas SET ({}) = ({}) WHERE id = %s".format(
@@ -212,7 +212,7 @@ class CoreBackend(AbstractBackend):
         if not data or \
           not self.verify_password(password, data["password_hash"]):
             ## log message to be picked up by fail2ban
-            self.logger.warn("CdEDB login failure from {} for {}".format(
+            self.logger.warning("CdEDB login failure from {} for {}".format(
                 ip, username))
             return None
         else:

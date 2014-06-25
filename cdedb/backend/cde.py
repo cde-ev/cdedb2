@@ -130,7 +130,7 @@ class CdeBackend(AbstractBackend):
 
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
             raise RuntimeError("Permission denied")
-        privileged_fields = set(('balance',))
+        privileged_fields = {'balance'}
         if (set(data) & privileged_fields) and not self.is_admin(rs):
             raise RuntimeError("Modifying sensitive key forbidden.")
 

@@ -141,7 +141,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 user = BackendUser(persona_id, role, db_role,
                                    realm, persona_data=data)
             else:
-                self.logger.warn("Found inactive user {}".format(persona_id))
+                self.logger.warning("Found inactive user {}".format(persona_id))
         try:
             access_list = getattr(self, method).access_list
         except AttributeError:
@@ -325,8 +325,10 @@ class BackendUser:
         self.role = role
         self.db_role = db_role
         self.realm = realm
-        self.orga = orga or tuple()
-        self.moderator = moderator or tuple()
+        orga = orga or set()
+        self.orga = set(orga)
+        moderator = moderator or set()
+        self.moderator = set(moderator)
         self._persona_data = persona_data
 
 def affirm_validation(assertion, value):
@@ -421,7 +423,7 @@ class AuthShim:
         return new_fun
 
     def __getattr__(self, name):
-        if name in ("_funs", "_backend"):
+        if name in {"_funs", "_backend"}:
             raise AttributeError()
         try:
             return self._funs[name]

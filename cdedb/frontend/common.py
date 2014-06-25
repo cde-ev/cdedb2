@@ -39,10 +39,10 @@ from cdedb.config import BasicConfig
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
 
-#: List of possible values for ``ntype`` in
+#: Set of possible values for ``ntype`` in
 #: :py:meth:`FrontendRequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
-NOTIFICATION_TYPES = ("success", "info", "question", "warning", "error")
+NOTIFICATION_TYPES = {"success", "info", "question", "warning", "error"}
 
 class ProxyShim:
     """Slim wrapper around a :py:class:`Pyro4.Proxy` to add some boiler plate
@@ -71,7 +71,7 @@ class ProxyShim:
         return proxy_fun
 
     def __getattr__(self, name):
-        if name in ("_attrs", "_proxy"):
+        if name in {"_attrs", "_proxy"}:
             raise AttributeError()
         if not name.startswith('_'):
             if name not in self._attrs:
@@ -249,7 +249,7 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
     else:
-        _LOGGER.warn("Found naive datetime object {}.".format(val))
+        _LOGGER.warning("Found naive datetime object {}.".format(val))
     return val.strftime(formatstr)
 
 def cdedbid_filter(val):
@@ -544,8 +544,10 @@ class FrontendUser:
         """
         self.persona_id = persona_id
         self.role = role
-        self.orga = orga or tuple()
-        self.moderator = moderator or tuple()
+        orga = orga or set()
+        self.orga = set(orga)
+        moderator = moderator or set()
+        self.moderator = set(moderator)
         self.display_name = display_name
         self.username = username
         self.is_member = is_member
@@ -564,10 +566,10 @@ def access_decorator_generator(possibleroles):
         """
         :type role: str
         :param role: least level of privileges required
-        :type modi: [str]
+        :type modi: {str}
         :param modi: HTTP methods allowed for this invocation
         """
-        modi = modi or ("GET", "HEAD")
+        modi = modi or {"GET", "HEAD"}
         def wrap(fun):
             @functools.wraps(fun)
             def new_fun(obj, rs, *args, **kwargs):

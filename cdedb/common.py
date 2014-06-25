@@ -75,11 +75,11 @@ def extract_global_privileges(db_privileges, status):
     set of semantic privilege levels.
 
     :type db_privileges: int
-    :rtype: [str]
+    :rtype: {str}
     """
     if db_privileges is None or status is None:
-        return set(("anonymous",))
-    ret = set(("anonymous", "persona"))
+        return {"anonymous",}
+    ret = {"anonymous", "persona"}
     if status in const.MEMBER_STATUSES:
         ret.add("member")
     if db_privileges & const.ADMIN_BIT:

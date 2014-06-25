@@ -62,14 +62,14 @@ class CoreFrontend(AbstractFrontend):
         concurrent accesses.
         """
         kind = check(rs, "printable_ascii", kind, "kind")
-        if kind not in ("general", "database"):
+        if kind not in {"general", "database"}:
             kind = "general"
         rs.notify("error", "{} error.".format(kind))
         return self.render(rs, "error",
                            {'kind' : kind,
                             'now' : datetime.datetime.now(pytz.utc)})
 
-    @access("anonymous", ("POST",))
+    @access("anonymous", {"POST"})
     @REQUESTdata("username", "password", "wants")
     @encodedparam("wants")
     def login(self, rs, username="", password="", wants=""):
@@ -97,7 +97,7 @@ class CoreFrontend(AbstractFrontend):
         rs.response.set_cookie("sessionkey", sessionkey)
         return rs.response
 
-    @access("persona", ("POST",))
+    @access("persona", {"POST"})
     def logout(self, rs):
         """Invalidate session."""
         self.coreproxy.logout(rs)
@@ -120,7 +120,7 @@ class CoreFrontend(AbstractFrontend):
         """Render form."""
         return self.render(rs, "change_password")
 
-    @access("persona", ("POST",))
+    @access("persona", {"POST"})
     @REQUESTdata("old_password", "new_password", "new_password2")
     def change_password(self, rs, old_password="", new_password="",
                         new_password2=""):
@@ -192,7 +192,7 @@ class CoreFrontend(AbstractFrontend):
             "core/do_password_reset", "email", email)
         return self.render(rs, "do_password_reset")
 
-    @access("anonymous", ("POST",))
+    @access("anonymous", {"POST"})
     @REQUESTdata("email")
     @encodedparam("email")
     def do_password_reset(self, rs, email=""):
@@ -251,7 +251,7 @@ class CoreFrontend(AbstractFrontend):
             "core/do_username_change", "new_username", new_username)
         return self.render(rs, "do_username_change")
 
-    @access("persona", ('POST',))
+    @access("persona", {'POST'})
     @REQUESTdata('new_username', 'password')
     @encodedparam('new_username')
     def do_username_change(self, rs, new_username="", password=""):
