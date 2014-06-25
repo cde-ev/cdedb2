@@ -12,6 +12,7 @@ Contents:
    Database
    Auxiliary
    Specification
+   Paraphernalia
 
 Indices and tables
 ==================
