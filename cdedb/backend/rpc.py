@@ -6,7 +6,7 @@ use the :py:mod:`Pyro4` module. This depends on the syntax of
 see there).
 
 .. warning:: Due to the specifics of configuring :py:mod:`Pyro4` this
-  mustn't be loaded by anything other than
+  mustn't be loaded by anything other in the backend than
   :py:mod:`cdedb.backend.common` (otherwise logging may be broken).
 """
 
