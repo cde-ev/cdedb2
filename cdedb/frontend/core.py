@@ -11,7 +11,7 @@ import datetime
 import pytz
 
 access = access_decorator_generator(
-        ("anonymous", "persona", "member", "core_admin", "admin"))
+    ("anonymous", "persona", "member", "core_admin", "admin"))
 encodedparam = encodedparam_decorator_generator("core")
 
 class CoreFrontend(AbstractFrontend):
@@ -227,7 +227,8 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.render(rs, "change_username")
         self.do_mail(rs, "change_username",
-                     {'To' : (new_username,), 'Subject' : 'CdEDB username change'},
+                     {'To' : (new_username,),
+                      'Subject' : 'CdEDB username change'},
                      {'new_username' : self.encode_parameter(
                          "core/do_username_change_form", "new_username",
                          new_username)})

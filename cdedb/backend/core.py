@@ -8,7 +8,7 @@ accesses.
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import access_decorator_generator, \
-     internal_access_decorator_generator, make_RPCDaemon, run_RPCDaemon
+    internal_access_decorator_generator, make_RPCDaemon, run_RPCDaemon
 from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS
 from cdedb.backend.common import affirm_validation as affirm
 from cdedb.config import Config, SecretsConfig
@@ -79,7 +79,7 @@ class CoreBackend(AbstractBackend):
         """
         super().__init__(configpath)
         secrets = SecretsConfig(configpath)
-        self.ldap_connect = lambda : LDAPConnection(
+        self.ldap_connect = lambda: LDAPConnection(
             self.conf.LDAP_URL, self.conf.LDAP_USER, secrets.LDAP_PASSWORD)
 
     @classmethod
@@ -321,7 +321,7 @@ class CoreBackend(AbstractBackend):
                 ret = cur.rowcount
                 with self.ldap_connect() as l:
                     l.modify_s(dn, ((ldap.MOD_REPLACE, 'userPassword',
-                                    ldap_passwd),))
+                                     ldap_passwd),))
         if orig_conn:
             rs.conn = orig_conn
         return ret, new_password

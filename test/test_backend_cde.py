@@ -16,7 +16,7 @@ class TestCdEBackend(BackendTest):
         data['birth_name'] = "Hylia"
         setter = {k : v for k, v in data.items() if k in
                   {'id', 'birth_name', 'display_name', 'telephone'}}
-        self.cde.change_member(self.key, setter)
+        self.cde.change_user(self.key, setter)
         new_data = self.cde.get_data(self.key, (user['id'],))[0]
         self.assertEqual(data, new_data)
 

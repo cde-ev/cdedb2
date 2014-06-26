@@ -47,7 +47,7 @@ def _create_connection(dbname, dbuser, password, port,
     return conn
 
 def connection_pool_factory(dbname, roles, secrets,
-                               isolation_level=SERIALIZABLE):
+                            isolation_level=SERIALIZABLE):
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
 

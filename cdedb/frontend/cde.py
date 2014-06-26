@@ -3,21 +3,25 @@
 """Services for the cde realm."""
 
 import logging
-from cdedb.frontend.common import AbstractFrontend, REQUESTdata, \
+from cdedb.frontend.common import AbstractUserFrontend, REQUESTdata, \
     REQUESTdatadict, access_decorator_generator, ProxyShim, \
     encodedparam_decorator_generator, connect_proxy
 from cdedb.frontend.common import check_validation as check
 
 access = access_decorator_generator(
-        ("anonymous", "persona", "user", "member", "searchmember",
-        "cde_admin", "admin"))
+    ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
+     "admin"))
 encodedparam = encodedparam_decorator_generator("cde")
 
-class CdeFrontend(AbstractFrontend):
+class CdeFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
     realm = "cde"
     logger = logging.getLogger(__name__)
+    user_management = {
+        "proxy" : lambda obj: obj.cdeproxy,
+        "validator" : "member_data",
+    }
 
     def __init__(self, configpath):
         super().__init__(configpath)
@@ -35,7 +39,6 @@ class CdeFrontend(AbstractFrontend):
 
     @access("user")
     def mydata(self, rs):
-        """Display account details."""
         if rs.user.realm != self.realm:
             return self.redirect(rs, "{}/mydata".format(rs.user.realm))
         data = self.cdeproxy.get_data(rs, (rs.user.persona_id,))[0]
@@ -47,13 +50,7 @@ class CdeFrontend(AbstractFrontend):
 
     @access("user")
     def change_data_form(self, rs):
-        """Render form."""
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/change_data_form".format(
-                rs.user.realm))
-        data = self.cdeproxy.get_data(rs, (rs.user.persona_id,))[0]
-        rs.values.update(data)
-        return self.render(rs, "change_data")
+        return super().change_data_form(rs)
 
     @access("user", {"POST"})
     @REQUESTdatadict("display_name", "family_name", "given_names", "title",
@@ -75,6 +72,6 @@ class CdeFrontend(AbstractFrontend):
         data = check(rs, "member_data", data)
         if rs.errors:
             return self.render(rs, "change_data")
-        self.cdeproxy.change_member(rs, data)
+        self.cdeproxy.change_user(rs, data)
         rs.notify("success", "Change committed.")
         return self.redirect(rs, "cde/mydata")

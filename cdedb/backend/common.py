@@ -12,7 +12,7 @@ import logging
 from cdedb.database.connection import connection_pool_factory
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import glue, extract_realm, make_root_logger, \
-     extract_global_privileges
+    extract_global_privileges
 from cdedb.config import Config, SecretsConfig
 import abc
 import cdedb.validation as validate

@@ -412,8 +412,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'values' : rs.values,
                 'cdedblink' : _cdedblink,
                 'staticurl' : staticurl,
-                'i18n' : lambda string: self.i18n(string, rs.lang),
-                }
+                'i18n' : lambda string: self.i18n(string, rs.lang),}
         data.update(params)
         t = self.jinja_env.get_template(os.path.join(
             modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
@@ -485,8 +484,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Reply-To" : self.conf.DEFAULT_REPLY_TO,
                     "Cc" : tuple(),
                     "Bcc" : tuple(),
-                    "domain" : self.conf.MAIL_DOMAIN,
-                    }
+                    "domain" : self.conf.MAIL_DOMAIN,}
         defaults.update(headers)
         headers = defaults
         msg = email.mime.text.MIMEText(text)
@@ -532,6 +530,63 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.logger.info("Sent email with subject '{}' to '{}'".format(
             msg['Subject'], msg['To']))
         return ret
+
+class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
+    """Base class for all frontends which have their own user realm.
+
+    This is basically every frontend with exception of 'core'.
+    """
+    #: Specification how user management works. To be filled by child classes.
+    user_management = {
+        "proxy" : None, # callable
+        "validator" : None, # str
+    }
+
+    @abc.abstractmethod
+    def finalize_session(self, rs, sessiondata):
+        return super().finalize_session(rs, sessiondata)
+
+    @classmethod
+    @abc.abstractmethod
+    def build_navigation(cls, rs):
+        return super().build_navigation(rs)
+
+    # @access("user")
+    def mydata(self, rs):
+        """Display account details."""
+        if rs.user.realm != self.realm:
+            return self.redirect(rs, "{}/mydata".format(rs.user.realm))
+        data = self.user_management['proxy'](self).get_data(
+            rs, (rs.user.persona_id,))[0]
+        return self.render(rs, "mydata", {'data' : data})
+
+    # @access("user")
+    def change_data_form(self, rs):
+        """Render form."""
+        if rs.user.realm != self.realm:
+            return self.redirect(rs, "{}/change_data_form".format(
+                rs.user.realm))
+        data = self.user_management['proxy'](self).get_data(
+            rs, (rs.user.persona_id,))[0]
+        rs.values.update(data)
+        return self.render(rs, "change_data")
+
+    # @access("user", {"POST"})
+    # @REQUESTdatadict(...)
+    def change_data(self, rs, data=None):
+        """Modify account details."""
+        if rs.user.realm != self.realm:
+            return self.redirect(rs, "{}/change_data_form".format(
+                rs.user.realm))
+        data = data or {}
+        data['username'] = rs.user.username
+        data['id'] = rs.user.persona_id
+        data = check_validation(rs, self.user_management['validator'], data)
+        if rs.errors:
+            return self.render(rs, "change_data")
+        self.user_management['proxy'](self).change_user(rs, data)
+        rs.notify("success", "Change committed.")
+        return self.redirect(rs, "{}/mydata".format(self.realm))
 
 class FrontendUser:
     """Container for representing a persona."""
@@ -806,7 +861,7 @@ def check_validation(rs, assertion, value, name=None):
     return ret
 
 def basic_redirect(rs, url):
-    """Convenienc wrapper around :py:func:`construct_redirect`. This should be
+    """Convenience wrapper around :py:func:`construct_redirect`. This should be
     the main thing to use.
 
     :type rs: :py:class:`FrontendRequestState`

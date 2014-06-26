@@ -159,7 +159,7 @@ def _decimal(val, argname=None, *, _convert=True):
     return val, []
 
 @_addvalidator
-def _str_type(val, argname=None, *, strip=False, zap='', sieve='', 
+def _str_type(val, argname=None, *, strip=False, zap='', sieve='',
               _convert=True):
     """
     :type val: object
@@ -191,7 +191,7 @@ def _str_type(val, argname=None, *, strip=False, zap='', sieve='',
 @_addvalidator
 def _str(val, argname=None, *, strip=False, zap='', sieve='',
          _convert=True):
-    """ Like :py:class:`_str_type` (parameters see there), but mustn't be 
+    """ Like :py:class:`_str_type` (parameters see there), but mustn't be
     empty (whitespace doesn't count).
 
     :type val: object
@@ -424,8 +424,8 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None):
     :type argname: str or None
     :type _convert: bool
     :type default_date: datetime.date or None
-    :param default_date: If the user-supplied value specifies only a time, this 
-      parameter allows to fill in the necessary date information to fill 
+    :param default_date: If the user-supplied value specifies only a time, this
+      parameter allows to fill in the necessary date information to fill
       the gap.
     :rtype: (datetime.datetime or None, [(str or None, exception)])
     """

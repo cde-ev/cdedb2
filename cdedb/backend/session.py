@@ -138,8 +138,7 @@ class SessionBackend:
                'db_privileges' : None,
                'status' : None,
                'display_name' : "",
-               'username' : "",
-               }
+               'username' : "",}
         if persona_id:
             query = glue("UPDATE core.sessions SET atime = now()",
                          "AT TIME ZONE 'UTC' WHERE sessionkey = %s")

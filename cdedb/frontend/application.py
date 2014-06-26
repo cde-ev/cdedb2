@@ -120,9 +120,9 @@ class Application(BaseApp):
                 request, urls.build("core/error", {'kind' : "quota"}))
         except Exception as e:
             ## debug output if applicable
-            if self.conf.CDEDB_DEV or ('data' in locals() \
-                                        and data.get('db_privileges')
-                                        and (data.get('db_privileges') % 2)):
+            if self.conf.CDEDB_DEV or ('data' in locals()
+                                       and data.get('db_privileges')
+                                       and (data.get('db_privileges') % 2)):
                 return werkzeug.wrappers.Response(
                     cgitb.html(sys.exc_info(), context=7), mimetype="text/html")
             ## prevent infinite loop if the error pages are buggy

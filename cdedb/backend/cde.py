@@ -6,15 +6,13 @@ organization. We will speak of members in most contexts where former
 members are also possible.
 """
 
-from cdedb.backend.common import AbstractBackend, access_decorator_generator, \
-     internal_access_decorator_generator, make_RPCDaemon, \
-     run_RPCDaemon, AuthShim
-from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS, \
-     MEMBER_DATA_FIELDS, extract_global_privileges, extract_realm, \
-     QuotaException
+from cdedb.backend.uncommon import AbstractUserBackend
+from cdedb.backend.common import access_decorator_generator, \
+    internal_access_decorator_generator, make_RPCDaemon, run_RPCDaemon, \
+    affirm_validation as affirm, affirm_array_validation as affirm_array
+from cdedb.common import glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS, \
+    extract_global_privileges, QuotaException
 from cdedb.config import Config
-from cdedb.backend.core import CoreBackend
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import argparse
@@ -27,13 +25,14 @@ internal_access = internal_access_decorator_generator(
     ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
      "admin"))
 
-class CdeBackend(AbstractBackend):
+class CdeBackend(AbstractUserBackend):
     """This is the backend with the most additional role logic."""
     realm = "cde"
-
-    def __init__(self, configpath):
-        super().__init__(configpath)
-        self.core = AuthShim(CoreBackend(configpath))
+    user_management = {
+        "data_table" : "cde.member_data",
+        "data_fields" : MEMBER_DATA_FIELDS,
+        "validator" : "member_data",
+    }
 
     @classmethod
     def extract_roles(cls, personadata):
@@ -68,21 +67,6 @@ class CdeBackend(AbstractBackend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def retrieve_member_data(self, rs, ids):
-        """
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: [{str : object}]
-        """
-        query = glue(
-            "SELECT {} FROM cde.member_data AS m JOIN core.personas",
-            "AS p ON m.persona_id = p.id WHERE p.id = ANY(%s)").format(
-                ", ".join(PERSONA_DATA_FIELDS + MEMBER_DATA_FIELDS))
-        ret = self.query_all(rs, query, (ids,))
-        if len(ret) != len(ids):
-            raise ValueError("Invalid ids requested.")
-        return ret
-
     @staticmethod
     def create_fulltext(data):
         """
@@ -107,47 +91,27 @@ class CdeBackend(AbstractBackend):
         vals = (_sanitize(data[x]) for x in attrs)
         return " ".join(vals)
 
-    def set_complete_member_data(self, rs, data):
-        """This requires that all possible keys are present. Often you may
-        want to use :py:meth:`set_member_data` instead.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
-        :rtype: int
-        :returns: number of changed entries
-        """
-        return self.set_member_data(rs, data, pkeys=PERSONA_DATA_FIELDS_MOD,
-                                    mkeys=MEMBER_DATA_FIELDS)
-
-    def set_member_data(self, rs, data, pkeys=None, mkeys=None):
-        """Update only some keys of a data set. If ``pkeys`` or ``mkeys`` is not
-        passed all keys available in ``data`` are updated.
+    def set_user_data(self, rs, data, pkeys=None, ukeys=None):
+        """This checks for privileged fields, implements the change log
+        and updates the fulltext in addition to what
+        :py:meth:`cdedb.backend.common.AbstractUserBackend.set_user_data`
+        does.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str : object}
         :type pkeys: [str]
         :param pkeys: keys pretaining to the persona
-        :type mkeys: [str]
-        :param mkeys: keys pretaining to the member
+        :type ukeys: [str]
+        :param ukeys: keys pretaining to the user
         :rtype: int
         :returns: number of changed entries
         """
-        realm = None
-        if data['id'] == rs.user.persona_id:
-            realm = rs.user.realm
-        else:
-            query = "SELECT status FROM core.personas WHERE id = %s"
-            d = self.query_one(rs, query, (data['id'],))
-            if not d:
-                raise ValueError("Nonexistant user.")
-            realm = extract_realm(d['status'])
-        if realm != self.realm:
-            raise ValueError("Wrong realm for persona.")
+        self.affirm_realm(rs, (data['id'],))
 
         if not pkeys:
             pkeys = tuple(key for key in data if key in PERSONA_DATA_FIELDS)
-        if not mkeys:
-            mkeys = tuple(key for key in data if key in MEMBER_DATA_FIELDS)
+        if not ukeys:
+            ukeys = tuple(key for key in data if key in MEMBER_DATA_FIELDS)
 
         # TODO add changelog functionality
 
@@ -162,12 +126,12 @@ class CdeBackend(AbstractBackend):
             self.core.set_persona_data(rs, pdata)
             query = glue("UPDATE cde.member_data SET ({}) = ({})",
                          "WHERE persona_id = %s").format(
-                             ", ".join(mkeys), ", ".join(("%s",) * len(mkeys)))
+                             ", ".join(ukeys), ", ".join(("%s",) * len(ukeys)))
             ret = self.query_exec(
-                rs, query, tuple(data[key] for key in mkeys) + (data['id'],))
+                rs, query, tuple(data[key] for key in ukeys) + (data['id'],))
 
         with Atomizer(rs):
-            new_data = self.retrieve_member_data(rs, (data['id'],))[0]
+            new_data = self.retrieve_user_data(rs, (data['id'],))[0]
             text = self.create_fulltext(new_data)
             query = glue("UPDATE cde.member_data SET fulltext = %s",
                          "WHERE persona_id = %s")
@@ -175,22 +139,14 @@ class CdeBackend(AbstractBackend):
         return ret
 
     @access("user")
-    def change_member(self, rs, data):
-        """Change a data set. Note that you need privileges to edit someone
-        elses data set.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
-        :rtype: int
-        :returns: number of members changed
-        """
-        data = affirm("member_data", data)
-        self.set_member_data(rs, data)
+    def change_user(self, rs, data):
+        return super().change_user(rs, data)
 
     @access("user")
     def get_data_no_quota(self, rs, ids):
-        """This behaves like :py:meth:`get_data` but does not check or update the
-        quota.
+        """This behaves like
+        :py:meth:`cdedb.backend.common.AbstractUserBackend.get_data`, that is
+        it does not check or update the quota.
 
         This is intended for consumption by the event backend, where
         orgas will need access. This should only be used after serious
@@ -202,15 +158,18 @@ class CdeBackend(AbstractBackend):
         :type ids: [int]
         :rtype: [{str : object}]
         """
-        return self.retrieve_member_data(rs, ids)
+        return super().get_data(rs, ids)
 
     @access("user")
     def get_data(self, rs, ids):
-        """
+        """This checks for quota in addition to what
+        :py:meth:`cdedb.backend.common.AbstractUserBackend.get_data` does.
+
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
         :rtype: [{str : object}]
         """
+        ids = affirm_array("int", ids)
         with Atomizer(rs):
             query = glue("SELECT queries FROM core.quota WHERE persona_id = %s",
                          "AND qdate = %s")
@@ -229,7 +188,7 @@ class CdeBackend(AbstractBackend):
               and not self.is_admin(rs):
                 raise QuotaException("Too many queries.")
             self.query_exec(rs, query, (num + new, rs.user.persona_id, today))
-        return self.retrieve_member_data(rs, ids)
+        return self.retrieve_user_data(rs, ids)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

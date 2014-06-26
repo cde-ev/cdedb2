@@ -26,3 +26,9 @@ cdedb.backend.common
 
 .. automodule:: cdedb.backend.common
    :members:
+
+cdedb.backend.uncommon
+----------------------
+
+.. automodule:: cdedb.backend.uncommon
+   :members:

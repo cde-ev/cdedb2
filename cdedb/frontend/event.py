@@ -3,19 +3,23 @@
 """Services for the event realm."""
 
 import logging
-from cdedb.frontend.common import AbstractFrontend, REQUESTdata, \
+from cdedb.frontend.common import AbstractUserFrontend, REQUESTdata, \
     REQUESTdatadict, access_decorator_generator, ProxyShim, \
     encodedparam_decorator_generator, connect_proxy
 from cdedb.frontend.common import check_validation as check
 
 access = access_decorator_generator(
-        ("anonymous", "persona", "user", "member", "event_admin", "admin"))
+    ("anonymous", "persona", "user", "member", "event_admin", "admin"))
 encodedparam = encodedparam_decorator_generator("event")
 
-class EventFrontend(AbstractFrontend):
+class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
     realm = "event"
     logger = logging.getLogger(__name__)
+    user_management = {
+        "proxy" : lambda obj: obj.eventproxy,
+        "validator" : "event_user_data",
+    }
 
     def __init__(self, configpath):
         super().__init__(configpath)
@@ -35,21 +39,11 @@ class EventFrontend(AbstractFrontend):
 
     @access("user")
     def mydata(self, rs):
-        """Display account details."""
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/mydata".format(rs.user.realm))
-        data = self.eventproxy.get_data(rs, (rs.user.persona_id,))[0]
-        return self.render(rs, "mydata", {'data' : data})
+        return super().mydata(rs)
 
     @access("user")
     def change_data_form(self, rs):
-        """Render form."""
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/change_data_form".format(
-                rs.user.realm))
-        data = self.eventproxy.get_data(rs, (rs.user.persona_id,))[0]
-        rs.values.update(data)
-        return self.render(rs, "change_data")
+        return super().change_data_form(rs)
 
     @access("user", {"POST"})
     @REQUESTdatadict("display_name", "family_name", "given_names", "title",
@@ -57,16 +51,4 @@ class EventFrontend(AbstractFrontend):
                      "address_supplement", "address", "postal_code", "location",
                      "country")
     def change_data(self, rs, data=None):
-        """Modify account details."""
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/change_data_form".format(
-                rs.user.realm))
-        data = data or {}
-        data['username'] = rs.user.username
-        data['id'] = rs.user.persona_id
-        data = check(rs, "event_user_data", data)
-        if rs.errors:
-            return self.render(rs, "change_data")
-        self.eventproxy.change_user(rs, data)
-        rs.notify("success", "Change committed.")
-        return self.redirect(rs, "event/mydata")
+        return super().change_data(rs, data)
