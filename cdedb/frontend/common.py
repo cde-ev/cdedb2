@@ -47,9 +47,6 @@ NOTIFICATION_TYPES = {"success", "info", "question", "warning", "error"}
 class ProxyShim:
     """Slim wrapper around a :py:class:`Pyro4.Proxy` to add some boiler plate
     to all proxy calls.
-
-    .. note:: This may do multiplexing in the future and thus enable
-      multi-process backends if necessary.
     """
     def __init__(self, proxy):
         """

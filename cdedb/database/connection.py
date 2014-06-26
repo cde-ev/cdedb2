@@ -54,7 +54,8 @@ def connection_pool_factory(dbname, roles, secrets,
     Database connections are a costly good (in memory terms), so it is
     wise to create them only when necessary. Since this is costly in
     itself (in time terms) it is advisable to use connection pooling
-    (e.g. pgbouncer).
+    (e.g. pgbouncer). Additionally this approach offers thread-safety
+    since connetions created at runtime are not shared between threads.
 
     The first implementation of this interface was a caching connection
     factory, which used crazy amounts of resources.

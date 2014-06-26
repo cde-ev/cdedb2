@@ -13,9 +13,10 @@ organization. In the python code this is achieved by different classes for
 each realm and in the SQL code we have different schemas for each realm.
 
 The python code is state-less and thus easily parallelizable. This is
-currently only exploited in the frontend. All state is kept in the
-database. For accountability we keep a record of all sessions and only allow
-one active session per user or per IP.
+exploited in the frontend (where Apache does multithreading) and the backend
+(where Pyro does multithreading). All state is kept in the database. For
+accountability we keep a record of all sessions and only allow one active
+session per user or per IP.
 
 The basic account is referred to as persona. Each persona has an associated
 realm to which it belongs. Thus it is possible to uniquely identify the
