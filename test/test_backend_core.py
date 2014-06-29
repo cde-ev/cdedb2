@@ -36,7 +36,7 @@ class TestCoreBackend(BackendTest):
         self.core.change_persona(self.key, {'id' : user['id'],
                                             'display_name' : new_name})
         self.assertEqual(new_name, self.core.retrieve_persona_data(
-            self.key, (user['id'],))[0]['display_name'])
+            self.key, (user['id'],))[user['id']]['display_name'])
 
     @as_users("anton", "berta")
     def test_change_password(self, user):

@@ -3,10 +3,11 @@
 """Services for the cde realm."""
 
 import logging
-from cdedb.frontend.common import AbstractUserFrontend, REQUESTdata, \
+from cdedb.frontend.common import REQUESTdata, \
     REQUESTdatadict, access_decorator_generator, ProxyShim, \
     encodedparam_decorator_generator, connect_proxy
 from cdedb.frontend.common import check_validation as check
+from cdedb.frontend.uncommon import AbstractUserFrontend
 
 access = access_decorator_generator(
     ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
@@ -34,23 +35,37 @@ class CdeFrontend(AbstractUserFrontend):
         return super().finalize_session(rs, sessiondata)
 
     @classmethod
-    def build_navigation(cls, rs):
-        return super().build_navigation(rs)
+    def is_admin(cls, rs):
+        return super().is_admin(rs)
+
+    @access("persona")
+    def index(self, rs):
+        return self.render(rs, "index")
 
     @access("user")
-    def mydata(self, rs):
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/mydata".format(rs.user.realm))
-        data = self.cdeproxy.get_data(rs, (rs.user.persona_id,))[0]
+    @REQUESTdata("confirm_id")
+    @encodedparam("confirm_id")
+    def show_user(self, rs, persona_id, confirm_id=None):
+        confirm_id = check(rs, "int", confirm_id, "confirm_id")
+        if persona_id != confirm_id or rs.errors:
+            rs.notify("error", "Link expired.")
+            return self.redirect(rs, "core/error")
+        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        red = self.redirect_realm(
+            rs, persona_id, "show_user", params={
+                'confirm_id' : self.encode_parameter(
+                    "{}/show_user".format(realm), "confirm_id", confirm_id)})
+        if red:
+            return red
+        data = self.cdeproxy.get_data(rs, (persona_id,))[persona_id]
         participation_info = self.eventproxy.participation_info(
-            rs, (rs.user.persona_id,))[rs.user.persona_id]
-        return self.render(rs, "mydata",
-                           {'data' : data,
-                            'participation_info' : participation_info})
+            rs, (persona_id,))[persona_id]
+        return self.render(rs, "show_user", {
+            'data' : data, 'participation_info' : participation_info})
 
     @access("user")
-    def change_data_form(self, rs):
-        return super().change_data_form(rs)
+    def change_user_form(self, rs, persona_id):
+        return super().change_user_form(rs, persona_id)
 
     @access("user", {"POST"})
     @REQUESTdatadict("display_name", "family_name", "given_names", "title",
@@ -60,18 +75,6 @@ class CdeFrontend(AbstractUserFrontend):
                      "postal_code2", "location2", "country2", "weblink",
                      "specialisation", "affiliation", "timeline", "interests",
                      "free_form", "bub_search")
-    def change_data(self, rs, data=None):
-        """Modify account details."""
+    def change_user(self, rs, persona_id, data=None):
         # TODO add changelog functionality
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/change_data_form".format(
-                rs.user.realm))
-        data = data or {}
-        data['username'] = rs.user.username
-        data['id'] = rs.user.persona_id
-        data = check(rs, "member_data", data)
-        if rs.errors:
-            return self.render(rs, "change_data")
-        self.cdeproxy.change_user(rs, data)
-        rs.notify("success", "Change committed.")
-        return self.redirect(rs, "cde/mydata")
+        return super().change_user(rs, persona_id, data)

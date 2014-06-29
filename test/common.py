@@ -82,6 +82,7 @@ USER_DICT = {
         'password' : "secret",
         'displayname' : "Anton",
         'given_names' : "Anton Armin A.",
+        'family_name' : "Administrator",
     },
     "berta" : {
         'id' : 2,
@@ -89,6 +90,7 @@ USER_DICT = {
         'password' : "secret",
         'displayname' : "Bertå",
         'given_names' : "Bertålotta",
+        'family_name' : "Beispiel",
     },
     "charly" : {
         'id' : 3,
@@ -96,6 +98,7 @@ USER_DICT = {
         'password' : "secret",
         'displayname' : "Charly",
         'given_names' : "Charly C.",
+        'family_name' : "Clown",
     },
     "daniel" : {
         'id' : 4,
@@ -103,6 +106,7 @@ USER_DICT = {
         'password' : "secret",
         'displayname' : "Daniel",
         'given_names' : "Daniel D.",
+        'family_name' : "Dino",
     },
     "emilia" : {
         'id' : 5,
@@ -110,6 +114,7 @@ USER_DICT = {
         'password' : "secret",
         'displayname' : "Emilia",
         'given_names' : "Emilia E.",
+        'family_name' : "Eventis",
     },
     "ferdinand" : {
         'id' : 6,
@@ -117,6 +122,7 @@ USER_DICT = {
         'password' : "secret",
         'displayname' : "Ferdinand",
         'given_names' : "Ferdinand F.",
+        'family_name' : "Findus",
     },
     "garcia" : {
         'id' : 7,
@@ -124,6 +130,7 @@ USER_DICT = {
         'password' : "secret",
         'displayname' : "Garcia",
         'given_names' : "Garcia G.",
+        'family_name' : "Generalis",
     },
 }
 
@@ -203,8 +210,8 @@ class FrontendTest(unittest.TestCase):
 
     def traverse(self, *links):
         for link in links:
-            response = self.response.click(**link)
-            self.response = response.maybe_follow()
+            self.response = self.response.click(**link)
+            self.follow()
             self.basic_validate()
 
     def login(self, user):

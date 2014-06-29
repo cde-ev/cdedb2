@@ -6,17 +6,21 @@ from test.common import as_users, USER_DICT, FrontendTest
 
 class TestCdEFrontend(FrontendTest):
     @as_users("anton", "berta")
-    def test_mydata(self, user):
+    def test_index(self, user):
+        self.traverse({'href' : '/cde/'})
+
+    @as_users("anton", "berta")
+    def test_showuser(self, user):
         self.traverse({'href' : '/mydata'})
-        self.assertEqual('Meine Daten',
+        self.assertEqual("{} {}".format(user['given_names'],
+                                        user['family_name']),
                          self.response.lxml.xpath('//h1/text()')[0])
-        self.assertIn(user['given_names'], self.response.text)
         if user['id'] == 2:
             self.assertIn('PfingstAkademie', self.response.text)
 
     @as_users("anton", "berta")
     def test_changedata(self, user):
-        self.traverse({'href' : '/mydata'}, {'href' : '/cde/changedata', 'index' : 0})
+        self.traverse({'href' : '/mydata'}, {'href' : '/cde/changeuser', 'index' : 0})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"

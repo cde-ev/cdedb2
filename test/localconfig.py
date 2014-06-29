@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 CDB_DATABASE_NAME = "cdb_test"
+SERVER_NAME_TEMPLATE = "test_{}_server"
 LDAP_UNIT_NAME="ou=personas-test,dc=cde-ev,dc=de"
 FRONTEND_LOG = "/tmp/test-cdedb-frontend.log"
 CORE_SOCKET = "/run/cdedb/test-coreserver.sock"

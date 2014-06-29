@@ -1,10 +1,10 @@
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Meine Daten{% endblock %}
+{% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
-    <h1>Meine Daten</h1>
+    <h1>{{ data['given_names']|e }} {{ data['family_name']|e }}</h1>
     <p>
-        <a href="{{ cdedblink('event/change_data_form') }}">Bearbeiten</a>
+        <a href="{{ cdedblink('event/change_user_form') }}">Bearbeiten</a>
     </p>
     <table>
         <th>
@@ -78,6 +78,6 @@
     </table>
 
     <p>
-        <a href="{{ cdedblink('event/change_data_form') }}">Bearbeiten</a>
+        <a href="{{ cdedblink('event/change_user_form') }}">Bearbeiten</a>
     </p>
 {% endblock %}

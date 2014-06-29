@@ -5,12 +5,13 @@ users/personas independent of their realm. Thus we have no user role
 since the basic division is between known accounts and anonymous
 accesses.
 """
-
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import access_decorator_generator, \
     internal_access_decorator_generator, make_RPCDaemon, run_RPCDaemon
-from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS
-from cdedb.backend.common import affirm_validation as affirm
+from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS, \
+    extract_realm
+from cdedb.backend.common import affirm_validation as affirm, \
+    affirm_array_validation as affirm_array
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -122,14 +123,15 @@ class CoreBackend(AbstractBackend):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: [{str : object}]
+        :rtype: {int : {str : object}}
+        :returns: dict mapping ids to requested data
         """
         query = "SELECT {} FROM core.personas WHERE id = ANY(%s)".format(
             ", ".join(PERSONA_DATA_FIELDS))
-        ret = self.query_all(rs, query, (ids,))
-        if len(ret) != len(ids):
+        data = self.query_all(rs, query, (ids,))
+        if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return ret
+        return {d['id'] : d for d in data}
 
     @internal_access("persona")
     def set_complete_persona_data(self, rs, data):
@@ -190,6 +192,11 @@ class CoreBackend(AbstractBackend):
                         l.modify_s(dn, ldap_ops)
         return num
 
+    @access("persona")
+    def get_data(self, rs, ids):
+        ids = affirm_array("int", ids)
+        return self.retrieve_persona_data(rs, ids)
+
     @access("anonymous")
     def login(self, rs, username, password, ip):
         """Create a new session. This invalidates all existing sessions for this
@@ -241,6 +248,39 @@ class CoreBackend(AbstractBackend):
                      "atime = now() AT TIME ZONE 'UTC' WHERE sessionkey = %s",
                      "AND is_active = True")
         return self.query_exec(rs, query, (rs.sessionkey,))
+
+    @access("persona")
+    def verify_ids(self, rs, ids):
+        """Check that ids do exist.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: bool
+        """
+        ids = affirm_array("int", ids)
+        if ids == (rs.user.persona_id,):
+            return True
+        query = "SELECT COUNT(*) AS num FROM core.personas WHERE id = ANY(%s)"
+        data = self.query_one(rs, query, (ids,))
+        return data['num'] == len(ids)
+
+    @access("persona")
+    def get_realms(self, rs, ids):
+        """Resolve ids into realms.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: {int : str}
+        :returns: dict mapping id to realm
+        """
+        ids = affirm_array("int", ids)
+        if ids == (rs.user.persona_id,):
+            return {rs.user.persona_id : rs.user.realm}
+        query = "SELECT id, status FROM core.personas WHERE id = ANY(%s)"
+        data = self.query_all(rs, query, (ids,))
+        if len(data) != len(ids):
+            raise ValueError("Invalid ids requested.")
+        return {d['id'] : extract_realm(d['status']) for d in data}
 
     @access("persona")
     def change_persona(self, rs, data):

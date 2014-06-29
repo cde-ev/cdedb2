@@ -11,13 +11,13 @@ class TestCdEBackend(BackendTest):
 
     @as_users("anton", "berta")
     def test_basics(self, user):
-        data = self.cde.get_data(self.key, (user['id'],))[0]
+        data = self.cde.get_data(self.key, (user['id'],))[user['id']]
         data['display_name'] = "Zelda"
         data['birth_name'] = "Hylia"
         setter = {k : v for k, v in data.items() if k in
                   {'id', 'birth_name', 'display_name', 'telephone'}}
         self.cde.change_user(self.key, setter)
-        new_data = self.cde.get_data(self.key, (user['id'],))[0]
+        new_data = self.cde.get_data(self.key, (user['id'],))[user['id']]
         self.assertEqual(data, new_data)
 
     @as_users("berta")
@@ -30,7 +30,7 @@ class TestCdEBackend(BackendTest):
     @as_users("anton", "berta")
     def test_get_data(self, user):
         data = self.cde.get_data(self.key, (1, 2))
-        expectation = ({
+        expectation = {1 : {
             'bub_search': True,
             'location': 'Musterstadt',
             'cloud_account': True,
@@ -68,7 +68,7 @@ class TestCdEBackend(BackendTest):
             'is_active': True,
             'postal_code2': '22335',
             'birthday': datetime.datetime(1991, 3, 30).date()},
-            {'bub_search': False,
+            2 : {'bub_search': False,
             'location': 'Utopia',
             'cloud_account': True,
             'specialisation': 'Alles',
@@ -104,5 +104,5 @@ class TestCdEBackend(BackendTest):
             'free_form': 'Jede Menge Gefasel',
             'is_active': True,
             'postal_code2': '8XA 45-$',
-            'birthday': datetime.datetime(1981, 2, 11).date()})
+            'birthday': datetime.datetime(1981, 2, 11).date()}}
         self.assertEqual(expectation, data)

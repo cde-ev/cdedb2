@@ -43,7 +43,9 @@
                 {% endif %}
                 <hr>
                 <h2>Navigation</h2>
-                {{ buildnavlist(navigationlist) }}
+                {% block navigation %}
+                    This should not be visible.
+                {% endblock %}
             </div>
             <div id="content">
                 {% for ntype, message in notifications %}

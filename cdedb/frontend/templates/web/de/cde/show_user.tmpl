@@ -1,10 +1,10 @@
-{% extends "web/de/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Meine Daten{% endblock %}
+{% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
-    <h1>Meine Daten</h1>
+    <h1>{{ data['given_names']|e }} {{ data['family_name']|e }}</h1>
     <p>
-        <a href="{{ cdedblink('cde/change_data_form') }}">Bearbeiten</a>
+        <a href="{{ cdedblink('cde/change_user_form') }}">Bearbeiten</a>
     </p>
     <table>
         <th>
@@ -109,65 +109,67 @@
             <td>Land</td>
             <td>{{ data['country2']|e }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Mitgliedschaft</td> </tr>
-        </th>
-        <tr>
-            <td>CdE-Mitglied</td>
-            <td>
-                {% if user.is_member %}
-                    <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
-                    {% if data['trial_member'] %}
-                    (Probemitgliedschaft)
-                    {% endif %}
-                {% else %}
-                    img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>CdE-Wolken-Zugriff</td>
-            <td>
-                {% if data['cloud_account'] %}
-                    <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
-                {% else %}
-                    img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
-                {% endif %}
-            </td>
-        </tr>
-	{% if user.is_member %}
+	{% if data['id'] == user.persona_id %}
+	    <th>
+		<tr> <td colspan="2">Mitgliedschaft</td> </tr>
+	    </th>
 	    <tr>
-		<td>Sichtbarkeit</td>
-		{% if not data['decided_search'] %}
-		    {# FIXME add link to decision page #}
-		    <td>Du hast Dich noch nicht entschieden und Deine Daten sind nicht sichtbar.</td>
-		{% else %}
-		   {% if user.is_searchable %}
-		       <td>Deine Daten sind für andere Mitglieder sichtbar.</td>
-		   {% else %}
-		       <td>Deine Daten sind nicht sichtbar.</td>
-		   {% endif %}
-		{% endif %}
+		<td>CdE-Mitglied</td>
+		<td>
+		    {% if user.is_member %}
+			<img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+			{% if data['trial_member'] %}
+			(Probemitgliedschaft)
+			{% endif %}
+		    {% else %}
+			img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+		    {% endif %}
+		</td>
+	    </tr>
+	    <tr>
+		<td>CdE-Wolken-Zugriff</td>
+		<td>
+		    {% if data['cloud_account'] %}
+			<img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+		    {% else %}
+			img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+		    {% endif %}
+		</td>
+	    </tr>
+	    {% if user.is_member %}
+		<tr>
+		    <td>Sichtbarkeit</td>
+		    {% if not data['decided_search'] %}
+			{# FIXME add link to decision page #}
+			<td>Du hast Dich noch nicht entschieden und Deine Daten sind nicht sichtbar.</td>
+		    {% else %}
+		       {% if user.is_searchable %}
+			   <td>Deine Daten sind für andere Mitglieder sichtbar.</td>
+		       {% else %}
+			   <td>Deine Daten sind nicht sichtbar.</td>
+		       {% endif %}
+		    {% endif %}
+		</tr>
+	    {% endif %}
+	    <tr>
+		<td>Datenzugriff für BuB</td>
+		<td>
+		    {% if data['bub_search'] %}
+			<img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+		    {% else %}
+			img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+		    {% endif %}
+		</td>
+	    </tr>
+	    <tr>
+		<td>CdEDB-ID</td>
+		<td>{{ data['id']|cdedbid|e }}</td>
+	    </tr>
+	    <tr>
+		<td>Guthaben</td>
+		<td>{{ data['balance']|e }}</td>
 	    </tr>
 	{% endif %}
-        <tr>
-            <td>Datenzugriff für BuB</td>
-            <td>
-                {% if data['bub_search'] %}
-                    <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
-                {% else %}
-                    img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>CdEDB-ID</td>
-            <td>{{ data['id']|cdedbid|e }}</td>
-        </tr>
-        <tr>
-            <td>Guthaben</td>
-            <td>{{ data['balance']|e }}</td>
-        </tr>
         <th>
             <tr> <td colspan="2">Veranstaltungen</td> </tr>
         </th>
@@ -191,6 +193,6 @@
     </table>
 
     <p>
-        <a href="{{ cdedblink('cde/change_data_form') }}">Bearbeiten</a>
+        <a href="{{ cdedblink('cde/change_user_form') }}">Bearbeiten</a>
     </p>
 {% endblock %}

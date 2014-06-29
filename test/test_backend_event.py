@@ -7,13 +7,13 @@ class TestCdEBackend(BackendTest):
 
     @as_users("emilia")
     def test_basics(self, user):
-        data = self.event.get_data(self.key, (user['id'],))[0]
+        data = self.event.get_data(self.key, (user['id'],))[user['id']]
         data['display_name'] = "Zelda"
         data['name_supplement'] = "von und zu Hylia"
         setter = {k : v for k, v in data.items() if k in
                   {'id', 'name_supplement', 'display_name', 'telephone'}}
         self.event.change_user(self.key, setter)
-        new_data = self.event.get_data(self.key, (user['id'],))[0]
+        new_data = self.event.get_data(self.key, (user['id'],))[user['id']]
         self.assertEqual(data, new_data)
 
     @as_users("anton", "berta")

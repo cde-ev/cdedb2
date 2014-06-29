@@ -8,8 +8,7 @@ dependencies.
 """
 
 from cdedb.database.connection import Atomizer
-from cdedb.common import glue, extract_realm, PERSONA_DATA_FIELDS, \
-    PERSONA_DATA_FIELDS_MOD
+from cdedb.common import glue, PERSONA_DATA_FIELDS, PERSONA_DATA_FIELDS_MOD
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.common import AbstractBackend, AuthShim, \
     affirm_validation as affirm, affirm_array_validation as affirm_array
@@ -46,33 +45,30 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def affirm_realm(self, rs, ids):
-        """Check that all personas corresponding to the ids are in the realm
-        of this class.
+    def affirm_realm(self, rs, ids, realms=None):
+        """Check that all personas corresponding to the ids are in the
+        appropriate realm.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
+        :type realms: {str}
+        :param realms: Set of realms to check for. By default this is
+          the set containing only the realm of this class.
         """
-        realm = None
+        realms = realms or {self.realm}
         if (ids,) == (rs.user.persona_id,):
-            realm = rs.user.realm
+            actual_realms = {rs.user.realm}
         else:
-            query = "SELECT status FROM core.personas WHERE id = ANY(%s)"
-            data = self.query_all(rs, query, (ids,))
-            if len(data) != len(ids):
-                raise ValueError("Invalid ids.")
-            for d in data:
-                realm = realm or extract_realm(d['status'])
-                if realm != extract_realm(d['status']):
-                    raise ValueError("Differing realms.")
-        if realm != self.realm:
-            raise ValueError("Wrong realm for persona.")
+            actual_realms = set(self.core.get_realms(rs, ids).values())
+        if not actual_realms <= realms:
+            raise ValueError("Wrong realm for personas.")
 
     def retrieve_user_data(self, rs, ids):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: [{str : object}]
+        :rtype: {int : {str : object}}
+        :returns: dict mapping ids to requested data
         """
         query = glue(
             "SELECT {} FROM {} AS u JOIN core.personas AS p",
@@ -80,10 +76,10 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
                 ", ".join(PERSONA_DATA_FIELDS +
                           self.user_management['data_fields']),
                 self.user_management['data_table'])
-        ret = self.query_all(rs, query, (ids,))
-        if len(ret) != len(ids):
+        data = self.query_all(rs, query, (ids,))
+        if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return ret
+        return {d['id'] : d for d in data}
 
     def set_complete_user_data(self, rs, data):
         """This requires that all possible keys are present. Often you may

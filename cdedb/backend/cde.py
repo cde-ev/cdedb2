@@ -131,7 +131,7 @@ class CdeBackend(AbstractUserBackend):
                 rs, query, tuple(data[key] for key in ukeys) + (data['id'],))
 
         with Atomizer(rs):
-            new_data = self.retrieve_user_data(rs, (data['id'],))[0]
+            new_data = self.retrieve_user_data(rs, (data['id'],))[data['id']]
             text = self.create_fulltext(new_data)
             query = glue("UPDATE cde.member_data SET fulltext = %s",
                          "WHERE persona_id = %s")
@@ -156,7 +156,8 @@ class CdeBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: [{str : object}]
+        :rtype: {int : {str : object}}
+        :returns: dict mapping ids to requested data
         """
         return super().get_data(rs, ids)
 
@@ -167,7 +168,8 @@ class CdeBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: [{str : object}]
+        :rtype: {int : {str : object}}
+        :returns: dict mapping ids to requested data
         """
         ids = affirm_array("int", ids)
         with Atomizer(rs):

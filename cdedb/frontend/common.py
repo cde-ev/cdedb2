@@ -277,6 +277,19 @@ def cdedbid_filter(val):
     dsum = sum((i+1)*d for i, d in enumerate(digits))
     return "DB-{}-{}".format(val, chr(65 + (dsum % 11)))
 
+def escape_filter(val):
+    """Custom jinja filter to reconcile escaping with the finalize method
+    (which suppresses all ``None`` values and thus mustn't be converted to
+    strings first).
+
+    :type val: obj or None
+    :rtype: str or None
+    """
+    if val is None:
+        return None
+    else:
+        return jinja2.escape(val)
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -298,6 +311,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'date' : date_filter,
             'datetime' : datetime_filter,
             'cdedbid' : cdedbid_filter,
+            'escape' : escape_filter,
+            'e' : escape_filter,
         }
         self.jinja_env.filters.update(filters)
 
@@ -343,26 +358,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     @classmethod
     @abc.abstractmethod
-    def build_navigation(cls, rs):
-        """Create a specification for the side-bar of the web page. This is a
-        recursive structure described by ``spec = [(str, str or None, spec)]``
-        where the first string is a heading (to be internationalized) and the
-        second string is a link address, and the third entry is the recursion.
-
-        This should be realm specific, so we can present only the
-        relevant links.
+    def is_admin(cls, rs):
+        """Since each realm may have its own application level roles, it may
+        also have additional roles with elevated privileges.
 
         :type rs: :py:class:`FrontendRequestState`
-        :rtype: [spec]
+        :rtype: bool
         """
-        return (("Start", cdedburl(rs, "core/index"),
-                 (("My data", cdedburl(rs, "core/mydata"), tuple()),
-                  ("Change password",
-                   cdedburl(rs, "core/change_password_form"), tuple()))),
-                ("CdE", None,
-                 (("Persona search", None, tuple()),
-                  ("Membership", None, tuple()))),
-                ("Mailinglists", None, tuple()))
+        return rs.user.role in ("{}_admin".format(cls.realm), "admin")
 
     def allowed(self, rs, method):
         """Called by the ``@access`` decorator to verify authorization.
@@ -409,6 +412,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'values' : rs.values,
                 'cdedblink' : _cdedblink,
                 'staticurl' : staticurl,
+                'encode_parameter' : self.encode_parameter,
                 'i18n' : lambda string: self.i18n(string, rs.lang),}
         data.update(params)
         t = self.jinja_env.get_template(os.path.join(
@@ -436,8 +440,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     rs.request.is_secure, rs.request.method,
                     rs.request.remote_addr, rs.request.values)
             params['debugstring'] = debugstring
-        if 'navigationlist' not in params:
-            params['navigationlist'] = self.build_navigation(rs)
         html = self.fill_template(rs, "web", templatename, params)
         if "<pre>" not in html:
             ## eliminate empty lines, since they don't matter
@@ -527,63 +529,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.logger.info("Sent email with subject '{}' to '{}'".format(
             msg['Subject'], msg['To']))
         return ret
-
-class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
-    """Base class for all frontends which have their own user realm.
-
-    This is basically every frontend with exception of 'core'.
-    """
-    #: Specification how user management works. To be filled by child classes.
-    user_management = {
-        "proxy" : None, # callable
-        "validator" : None, # str
-    }
-
-    @abc.abstractmethod
-    def finalize_session(self, rs, sessiondata):
-        return super().finalize_session(rs, sessiondata)
-
-    @classmethod
-    @abc.abstractmethod
-    def build_navigation(cls, rs):
-        return super().build_navigation(rs)
-
-    # @access("user")
-    def mydata(self, rs):
-        """Display account details."""
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/mydata".format(rs.user.realm))
-        data = self.user_management['proxy'](self).get_data(
-            rs, (rs.user.persona_id,))[0]
-        return self.render(rs, "mydata", {'data' : data})
-
-    # @access("user")
-    def change_data_form(self, rs):
-        """Render form."""
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/change_data_form".format(
-                rs.user.realm))
-        data = self.user_management['proxy'](self).get_data(
-            rs, (rs.user.persona_id,))[0]
-        rs.values.update(data)
-        return self.render(rs, "change_data")
-
-    # @access("user", {"POST"})
-    # @REQUESTdatadict(...)
-    def change_data(self, rs, data=None):
-        """Modify account details."""
-        if rs.user.realm != self.realm:
-            return self.redirect(rs, "{}/change_data_form".format(
-                rs.user.realm))
-        data = data or {}
-        data['username'] = rs.user.username
-        data['id'] = rs.user.persona_id
-        data = check_validation(rs, self.user_management['validator'], data)
-        if rs.errors:
-            return self.render(rs, "change_data")
-        self.user_management['proxy'](self).change_user(rs, data)
-        rs.notify("success", "Change committed.")
-        return self.redirect(rs, "{}/mydata".format(self.realm))
 
 class FrontendUser:
     """Container for representing a persona."""
@@ -846,8 +791,8 @@ def check_validation(rs, assertion, value, name=None):
     :type name: str or None
     :param name: name of the parameter to check (bonus points if you find
       out how to nicely get rid of this -- python has huge introspection
-      capabilities, but I didn't see how this should be done.
-    :rtype: object or None
+      capabilities, but I didn't see how this should be done).
+    :rtype: (object or None, [(str, Exception)])
     """
     checker = getattr(validate, "check_{}".format(assertion))
     if name is not None:

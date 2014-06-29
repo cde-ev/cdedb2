@@ -33,10 +33,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('loginform', self.response.forms)
 
     @as_users("anton", "berta", "emilia")
-    def test_mydata(self, user):
-        self.get('/mydata')
+    def test_showuser(self, user):
+        self.traverse({'href' : '/mydata'})
         self.follow()
-        self.assertEqual('Meine Daten',
+        self.assertEqual("{} {}".format(user['given_names'],
+                                        user['family_name']),
                          self.response.lxml.xpath('//h1/text()')[0])
         self.assertIn(user['given_names'], self.response.text)
 
@@ -102,7 +103,7 @@ class TestCoreFrontend(FrontendTest):
     def test_change_username(self, user):
         new_username = "zelda@example.cde"
         self.traverse({'href' : '/mydata'},
-                      {'href' : '/changedata', 'index' : 0},
+                      {'href' : '/changeuser', 'index' : 0},
                       {'href' : '/changeusername'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username

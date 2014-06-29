@@ -36,8 +36,8 @@ class CoreFrontend(AbstractFrontend):
         return ret
 
     @classmethod
-    def build_navigation(cls, rs):
-        return super().build_navigation(rs)
+    def is_admin(cls, rs):
+        return super().is_admin(rs)
 
     @access("anonymous")
     @REQUESTdata("wants")
@@ -63,7 +63,6 @@ class CoreFrontend(AbstractFrontend):
         kind = check(rs, "printable_ascii", kind, "kind")
         if kind not in {"general", "database"}:
             kind = "general"
-        rs.notify("error", "{} error.".format(kind))
         return self.render(rs, "error",
                            {'kind' : kind,
                             'now' : datetime.datetime.now(pytz.utc)})
@@ -106,13 +105,34 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona")
     def mydata(self, rs):
-        """Common entry point redirecting to user's realm."""
-        return self.redirect(rs, "{}/mydata".format(rs.user.realm))
+        """Convenience entry point for own data."""
+        return self.redirect(rs, "core/show_user", params={
+            'confirm_id' : self.encode_parameter(
+                "core/show_user", "confirm_id", rs.user.persona_id),
+            'persona_id' : rs.user.persona_id})
 
     @access("persona")
-    def change_data_form(self, rs):
+    @REQUESTdata("confirm_id")
+    @encodedparam("confirm_id")
+    def show_user(self, rs, persona_id, confirm_id=None):
         """Common entry point redirecting to user's realm."""
-        return self.redirect(rs, "{}/change_data_form".format(rs.user.realm))
+        confirm_id = check(rs, "int", confirm_id, "confirm_id")
+        if persona_id != confirm_id or rs.errors:
+            rs.notify("error", "Link expired.")
+            return self.redirect(rs, "core/error")
+        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        return self.redirect(
+            rs, "{}/show_user".format(realm), params={
+                'confirm_id' : self.encode_parameter(
+                    "{}/show_user".format(realm), "confirm_id", confirm_id)})
+
+    @access("persona")
+    def change_user_form(self, rs, persona_id):
+        """Common entry point redirecting to user's realm."""
+        if not self.coreproxy.verify_ids(rs, (persona_id,)):
+            raise werkzeug.exceptions.BadRequest("Nonexistant user.")
+        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        return self.redirect(rs, "{}/change_user_form".format(realm))
 
     @access("persona")
     def change_password_form(self, rs):
