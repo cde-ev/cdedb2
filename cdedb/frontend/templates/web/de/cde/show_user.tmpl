@@ -3,9 +3,11 @@
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
     <h1>{{ data['given_names']|e }} {{ data['family_name']|e }}</h1>
-    <p>
-        <a href="{{ cdedblink('cde/change_user_form') }}">Bearbeiten</a>
-    </p>
+    {% if data['id'] == user.persona_id or is_admin %}
+        <p>
+            <a href="{{ cdedblink('cde/change_user_form') }}">Bearbeiten</a>
+        </p>
+    {% endif %}
     <table>
         <th>
             <tr> <td colspan="2">Person</td> </tr>
@@ -28,8 +30,7 @@
         </tr>
         <tr>
             <td>Geschlecht</td>
-            {# FIXME this needs a pictogram or something like this #}
-            <td>{{ data['gender']|e }}</td>
+            <td>{{ data['gender']|gender|e }}</td>
         </tr>
         <tr>
             <td>Fachgebiet</td>
@@ -117,12 +118,12 @@
 		<td>CdE-Mitglied</td>
 		<td>
 		    {% if user.is_member %}
-			<img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+			{{ util.checkbox_checked() }}
 			{% if data['trial_member'] %}
 			(Probemitgliedschaft)
 			{% endif %}
 		    {% else %}
-			img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+			{{ util.checkbox_unchecked() }}
 		    {% endif %}
 		</td>
 	    </tr>
@@ -130,9 +131,9 @@
 		<td>CdE-Wolken-Zugriff</td>
 		<td>
 		    {% if data['cloud_account'] %}
-			<img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+			{{ util.checkbox_checked() }}
 		    {% else %}
-			img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+			{{ util.checkbox_unchecked() }}
 		    {% endif %}
 		</td>
 	    </tr>
@@ -155,9 +156,9 @@
 		<td>Datenzugriff für BuB</td>
 		<td>
 		    {% if data['bub_search'] %}
-			<img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
+			{{ util.checkbox_checked() }}
 		    {% else %}
-			img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
+			{{ util.checkbox_unchecked() }}
 		    {% endif %}
 		</td>
 	    </tr>
@@ -192,7 +193,9 @@
         {% endfor %}
     </table>
 
-    <p>
-        <a href="{{ cdedblink('cde/change_user_form') }}">Bearbeiten</a>
-    </p>
+    {% if data['id'] == user.persona_id or is_admin %}
+        <p>
+            <a href="{{ cdedblink('cde/change_user_form') }}">Bearbeiten</a>
+        </p>
+    {% endif %}
 {% endblock %}

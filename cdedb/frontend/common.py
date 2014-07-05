@@ -290,6 +290,19 @@ def escape_filter(val):
     else:
         return jinja2.escape(val)
 
+def gender_filter(val):
+    """Custom jinja filter to convert gender constants to something printable.
+
+    :type val: int
+    :rtype: str
+    """
+    if val == const.FEMALE:
+        return '♀'
+    elif val == const.MALE:
+        return '♂'
+    else:
+        return '⚧'
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -313,6 +326,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'cdedbid' : cdedbid_filter,
             'escape' : escape_filter,
             'e' : escape_filter,
+            'gender' : gender_filter,
         }
         self.jinja_env.filters.update(filters)
 
@@ -413,6 +427,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'cdedblink' : _cdedblink,
                 'staticurl' : staticurl,
                 'encode_parameter' : self.encode_parameter,
+                'is_admin' : self.is_admin(rs),
                 'i18n' : lambda string: self.i18n(string, rs.lang),}
         data.update(params)
         t = self.jinja_env.get_template(os.path.join(

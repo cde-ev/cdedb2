@@ -1,6 +1,14 @@
 {# This template provides a set of standard macros which should be used to
    create html-elements. #}
 
+{% macro checkbox_checked() %}
+   <input type="checkbox" checked disabled>
+{% endmacro %}
+
+{% macro checkbox_unchecked() %}
+   <input type="checkbox" disabled>
+{% endmacro %}
+
 {% macro input_hidden(name) %}
     <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, '')|e }}" >
 {% endmacro %}
@@ -79,16 +87,7 @@
 {# This is the version for single checkboxes as opposed to input_checkboxes(). #}
     <span {% if name in errors %} class="errorInput" {% endif %} >
         <label>
-            {% if readonly %}
-                {% if values.get(name, '') == value %}
-                    <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
-                    <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
-                {% else %}
-                    <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
-                {% endif %}
-            {% else %}
-                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, '') == value %} checked {% endif %} >
-            {% endif %}
+            <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, '') == value %} checked {% endif %} {% if readonly %} disabled {% endif %} >
             {{ label|e }}
         </label>
     </span>
@@ -99,16 +98,7 @@
     <tr {% if name in errors %} class="errorInput" {% endif %} >
         <td colspan="2">
                 <label>
-                {% if readonly %}
-                    {% if values.get(name, '') == value %}
-                        <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
-                        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
-                    {% else %}
-                        <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
-                    {% endif %}
-                {% else %}
-                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, '') == value %} checked {% endif %} >
-                {% endif %}
+                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, '') == value %} checked {% endif %} {% if readonly %} disabled {% endif %} >
                 {{ label|e }}
             </label>
         </td>
@@ -123,16 +113,7 @@
         <span class="stacking">
             {% for value, label in entries %}
                 <label>
-                    {% if readonly %}
-                        {% if value in values.get(name, []) %}
-                            <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
-                            <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
-                        {% else %}
-                            <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
-                        {% endif %}
-                    {% else %}
-                        <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, []) %} checked {% endif %} >
-                    {% endif %}
+                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, []) %} checked {% endif %} {% if readonly %} disabled {% endif %} >
                     {{ label|e }}
                 </label>
             {% endfor %}
@@ -148,16 +129,7 @@
         <td colspan="2">
             {% for value, label in entries %}
                 <label>
-                    {% if readonly %}
-                        {% if value in values.get(name, []) %}
-                            <img src="{{ staticurl("icons/checked.png") }}" alt="checked" class="checkboxIcon">
-                            <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
-                        {% else %}
-                            <img src="{{ staticurl("icons/unchecked.png") }}" alt="unchecked" class="checkboxIcon">
-                        {% endif %}
-                    {% else %}
-                        <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, []) %} checked {% endif %} >
-                    {% endif %}
+                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, []) %} checked {% endif %} {% if readonly %} disabled {% endif %} >
                     {{ label|e }}
                 </label>
             {% endfor %}
