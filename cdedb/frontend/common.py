@@ -392,16 +392,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type params: {str : object}
         :rtype: str
         """
-        def _cdedblink(endpoint, args=None):
+        def _cdedblink(endpoint, params=None):
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
 
             :type endpoint: str
-            :type args: {str : object}
+            :type params: {str : object}
             :rtype: str
             """
-            args = args or {}
-            return cdedburl(rs, endpoint, args)
+            params = params or {}
+            return cdedburl(rs, endpoint, params)
         errorsdict = {}
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
@@ -601,22 +601,22 @@ def access_decorator_generator(possibleroles):
         return wrap
     return decorator
 
-def cdedburl(rs, endpoint, args=None):
+def cdedburl(rs, endpoint, params=None):
     """Construct an HTTP URL.
 
     :type rs: :py:class:`FrontendRequestState`
     :type endpoint: str
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
-    :type args: {str : object}
+    :type params: {str : object}
     :rtype: str
     """
-    args = args or {}
-    params = {}
+    params = params or {}
+    allparams = {}
     for arg in rs.requestargs:
         if rs.urlmap.is_endpoint_expecting(endpoint, arg):
-            params[arg] = rs.requestargs[arg]
-    params.update(args)
-    return rs.urls.build(endpoint, params)
+            allparams[arg] = rs.requestargs[arg]
+    allparams.update(params)
+    return rs.urls.build(endpoint, allparams)
 
 def staticurl(path):
     """Construct an HTTP URL to a static resource (to be found in the static

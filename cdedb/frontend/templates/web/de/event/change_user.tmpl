@@ -34,7 +34,7 @@
             <th>
         </table>
         {{ util.input_submit(value="Speichern") }}
-        <a href="{{ cdedblink('event/show_user', args={
+        <a href="{{ cdedblink('event/show_user', params={
             'confirm_id' : encode_parameter("event/show_user", "confirm_id",
             values['id'])}) }}">Abbrechen</a>
     </form>

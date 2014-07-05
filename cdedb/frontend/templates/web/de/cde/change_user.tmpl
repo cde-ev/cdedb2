@@ -51,7 +51,7 @@
             {{ util.tab_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
         </table>
         {{ util.input_submit(value="Speichern") }}
-        <a href="{{ cdedblink('cde/show_user', args={
+        <a href="{{ cdedblink('cde/show_user', params={
             'confirm_id' : encode_parameter("cde/show_user", "confirm_id",
             values['id'])}) }}">Abbrechen</a>
     </form>
