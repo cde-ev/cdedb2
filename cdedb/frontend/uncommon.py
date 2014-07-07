@@ -105,9 +105,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.redirect_realm(rs, persona_id, "change_user_form")
         data = data or {}
         data['id'] = persona_id
-        if 'username' in data:
-            # changing the username is done via a special path in the core realm
-            return werkzeug.exceptions.BadRequest()
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
             return self.render(rs, "change_user")
