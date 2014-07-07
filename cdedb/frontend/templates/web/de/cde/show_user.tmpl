@@ -110,7 +110,7 @@
             <td>Land</td>
             <td>{{ data['country2']|e }}</td>
         </tr>
-	{% if data['id'] == user.persona_id %}
+	{% if data['id'] == user.persona_id or is_admin %}
 	    <th>
 		<tr> <td colspan="2">Mitgliedschaft</td> </tr>
 	    </th>
@@ -120,7 +120,7 @@
 		    {% if user.is_member %}
 			{{ util.checkbox_checked() }}
 			{% if data['trial_member'] %}
-			(Probemitgliedschaft)
+			    (Probemitgliedschaft)
 			{% endif %}
 		    {% else %}
 			{{ util.checkbox_unchecked() }}
@@ -142,26 +142,26 @@
 		    <td>Sichtbarkeit</td>
 		    {% if not data['decided_search'] %}
 			{# FIXME add link to decision page #}
-			<td>Du hast Dich noch nicht entschieden und Deine Daten sind nicht sichtbar.</td>
+			<td>Noch nicht entschieden; Daten sind nicht sichtbar.</td>
 		    {% else %}
 		       {% if user.is_searchable %}
-			   <td>Deine Daten sind für andere Mitglieder sichtbar.</td>
+			   <td>Daten sind für andere Mitglieder sichtbar.</td>
 		       {% else %}
-			   <td>Deine Daten sind nicht sichtbar.</td>
+			   <td>Daten sind nicht sichtbar.</td>
 		       {% endif %}
 		    {% endif %}
 		</tr>
+                <tr>
+                    <td>Datenzugriff für BuB</td>
+                    <td>
+                        {% if data['bub_search'] %}
+                            {{ util.checkbox_checked() }}
+                        {% else %}
+                            {{ util.checkbox_unchecked() }}
+                        {% endif %}
+                    </td>
+                </tr>
 	    {% endif %}
-	    <tr>
-		<td>Datenzugriff für BuB</td>
-		<td>
-		    {% if data['bub_search'] %}
-			{{ util.checkbox_checked() }}
-		    {% else %}
-			{{ util.checkbox_unchecked() }}
-		    {% endif %}
-		</td>
-	    </tr>
 	    <tr>
 		<td>CdEDB-ID</td>
 		<td>{{ data['id']|cdedbid|e }}</td>
