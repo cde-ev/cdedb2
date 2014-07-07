@@ -25,3 +25,9 @@ cdedb.frontend.common
 
 .. automodule:: cdedb.frontend.common
    :members:
+
+cdedb.frontend.uncommon
+-----------------------
+
+.. automodule:: cdedb.frontend.uncommon
+   :members:
