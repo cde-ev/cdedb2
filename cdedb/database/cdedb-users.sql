@@ -2,7 +2,6 @@
 -- stable.
 
 -- drop everything to be sure
-DROP DATABASE IF EXISTS :cdb_database_name;
 DROP DATABASE IF EXISTS cdb;
 DROP DATABASE IF EXISTS cdb_test;
 -- master user cdb -- do not use in code
@@ -57,7 +56,6 @@ GRANT cdb_member TO cdb_event_admin;
 GRANT cdb_member TO cdb_ml_admin;
 GRANT cdb_member TO cdb_assembly_admin;
 GRANT cdb_member TO cdb_files_admin;
-GRANT cdb_member TO cdb_i25p_admin;
 GRANT cdb_core_admin TO cdb_admin;
 GRANT cdb_cde_admin TO cdb_admin;
 GRANT cdb_event_admin TO cdb_admin;

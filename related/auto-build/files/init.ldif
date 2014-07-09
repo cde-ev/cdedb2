@@ -1,0 +1,12 @@
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: dc=cde-ev,dc=de
+-
+replace: olcRootDN
+olcRootDN: cn=root,dc=cde-ev,dc=de
+-
+replace: olcAccess
+olcAccess: to attrs=userPassword,shadowLastChange by self write by anonymous auth by dn="cn=root,dc=cde-ev,dc=de" write by * none
+olcAccess: to dn.base="" by * read
+olcAccess: to * by self write by dn="cn=root,dc=cde-ev,dc=de" write by * read

@@ -1,0 +1,350 @@
+#!/bin/bash
+set -e
+
+echo ""
+echo "cdedb - sandbox system: STAGE 3"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+echo ""
+echo "Getting the system up to date..."
+echo "--------------------------------------------"
+
+cd /
+sleep 3
+
+aptitude -y update
+aptitude -y safe-upgrade
+
+echo ""
+echo "Getting a copy of the cdedb sources..."
+echo "--------------------------------------------"
+
+mkdir /cdedb2
+chown cdedb:cdedb /cdedb2
+sudo -u cdedb git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2 /cdedb2
+cd /cdedb2
+chmod 600 /cdedb2/.ldap_rootpw
+chmod +x /cdedb2/related/auto-build/files/make-pyro-nameserver.sh
+
+echo ""
+echo "Initialize LDAP"
+echo "--------------------------------------------"
+
+# first we undo the automatically generated debian stuff
+ldapdelete -D 'cn=admin,dc=cdedb,dc=virtual' -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0 'cn=admin,dc=cdedb,dc=virtual'
+ldapdelete -D 'cn=admin,dc=cdedb,dc=virtual' -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0 'dc=cdedb,dc=virtual'
+# now we do our stuff
+ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/related/auto-build/files/init.ldif
+TMPDIR=`mktemp -d`
+slaptest -f /cdedb2/related/auto-build/files/temp_ldap.conf -F $TMPDIR
+# stupid LDAP needs manual fixing
+sed -n -i -e '/structuralObjectClass: olcSchemaConfig/q;p' "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
+sed -i -e 's/^dn: cn={[0-9]\+}cdepersona/dn: cn=cdepersona,cn=schema,cn=config/' "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
+sed -i -e 's/^cn: {[0-9]\+}cdepersona/cn: cdepersona/' "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
+ldapadd -Y EXTERNAL -H ldapi:/// -f "$TMPDIR/cn=config/cn=schema/cn="*"cdepersona.ldif"
+rm -rf $TMPDIR
+make ldap
+
+echo ""
+echo "Setting up the database..."
+echo "--------------------------------------------"
+
+cat > /etc/postgresql/9.3/main/pg_hba.conf <<EOF
+local   all       postgres                      ident
+local   cdb       cdb                           peer
+local   cdb_test  cdb                           peer
+local   cdb       all                           md5
+local   cdb_test  all                           md5
+local   all       all                           peer
+host    all       all       127.0.0.1/32        md5
+host    all       all       ::1/128             md5
+EOF
+
+/etc/init.d/postgresql restart
+
+make sql
+
+cat > /etc/pgbouncer/pgbouncer.ini <<EOF
+[databases]
+cdb =
+cdb_test =
+
+[pgbouncer]
+logfile = /var/log/postgresql/pgbouncer.log
+pidfile = /var/run/postgresql/pgbouncer.pid
+unix_socket_dir = /run/postgresql
+listen_addr = 127.0.0.1
+listen_port = 6432
+auth_type = md5
+auth_file = /etc/pgbouncer/userlist.txt
+pool_mode = session
+server_reset_query = DISCARD ALL
+max_client_conn = 100
+default_pool_size = 20
+EOF
+
+cp /cdedb2/related/pgbouncer_users.txt /etc/pgbouncer/userlist.txt
+chmod 640 /etc/pgbouncer/userlist.txt
+chown postgres:postgres /etc/pgbouncer/userlist.txt
+
+cat > /etc/defaults/pgbouncer <<EOF
+START=1
+EOF
+
+echo ""
+echo "Create local config files"
+echo "--------------------------------------------"
+
+cp /cdedb2/related/auto-build/files/localconfig.py /cdedb2/cdedb/
+chown cdedb:cdedb /cdedb2/cdedb/localconfig.py
+chmod 644 /cdedb2/cdedb/localconfig.py
+cp /cdedb2/related/auto-build/files/backendconfig.py /home/backend/
+chown backend:backend /home/backend/backendconfig.py
+chmod 600 /home/backend/backendconfig.py
+cp /cdedb2/related/auto-build/files/frontendconfig.py /etc/cdedb-frontend-config.py
+chown www-data:www-data /etc/cdedb-frontend-config.py
+chmod 640 /cdedb2/cdedb/localconfig.py
+
+echo ""
+echo "Create central directory for log files"
+echo "--------------------------------------------"
+
+mkdir -p /log
+chown cdedb:cdedb /log
+chmod 777 /log
+
+echo ""
+echo "Let the cdedb run automagically..."
+echo "--------------------------------------------"
+
+cp /cdedb2/related/auto-build/files/cdedb-rundir /etc/init.d
+chmod +x /etc/init.d/cdedb-rundir
+update-rc.d cdedb-rundir defaults
+
+cp /cdedb2/related/auto-build/files/pyro-nameserver /etc/init.d
+chmod +x /etc/init.d/pyro-nameserver
+update-rc.d pyro-nameserver defaults
+
+cp /cdedb2/related/auto-build/files/runit /etc/init.d
+chmod +x /etc/init.d/runit
+update-rc.d runit defaults
+
+for i in session core cde event; do
+   mkdir -p /etc/sv/$i;
+done;
+
+cat >/etc/sv/session/run <<EOF
+#!/bin/bash
+cd /cdedb2
+CONFIGPATH=/home/backend/backendconfig.py
+exec chpst -u backend:backend make run-session
+EOF
+
+cat >/etc/sv/core/run <<EOF
+#!/bin/bash
+cd /cdedb2
+CONFIGPATH=/home/backend/backendconfig.py
+exec chpst -u backend:backend make run-core
+EOF
+
+cat >/etc/sv/cde/run <<EOF
+#!/bin/bash
+cd /cdedb2
+CONFIGPATH=/home/backend/backendconfig.py
+exec chpst -u backend:backend make run-cde
+EOF
+
+cat >/etc/sv/event/run <<EOF
+#!/bin/bash
+cd /cdedb2
+CONFIGPATH=/home/backend/backendconfig.py
+exec chpst -u backend:backend make run-event
+EOF
+
+# enable
+
+for i in session core cde event; do
+   chmod +x /etc/sv/$i/run;
+done;
+
+for i in session core cde event; do
+    ln -s /etc/sv/$i /etc/service/$i;
+done;
+
+echo ""
+echo "Set up the apache2..."
+echo "--------------------------------------------"
+
+for i in ssl wsgi; do
+    a2enmod $i
+done;
+
+a2dissite 000-default
+
+mkdir -p /etc/ssl/apache2
+openssl req -new -x509 -days 3650 -nodes -out /etc/ssl/apache2/server.pem -keyout /etc/ssl/apache2/server.key <<EOF
+de
+
+
+
+
+cdedb.virtual
+cdedb@lists.schuelerakademie.de
+EOF
+chmod 600 /etc/ssl/apache2/server*
+
+cat >/etc/apache2/sites-available/cdedb.conf <<EOF
+Listen 443
+DocumentRoot "/var/www/html/"
+ServerAdmin cdedb@lists.schuelerakademie.de
+
+<VirtualHost _default_:443>
+	ServerName cdedb.virtual
+        DocumentRoot "/var/www/html"
+	ErrorLog /var/log/apache2/ssl_error_log
+
+	TransferLog /var/log/apache2/ssl_access_log
+
+	## SSL Engine Switch:
+	# Enable/Disable SSL for this virtual host.
+	SSLEngine on
+
+	## SSLProtocol:
+	# Don't use SSLv2 anymore as it's considered to be broken security-wise.
+	# Also disable SSLv3 as most modern browsers are capable of TLS.
+	SSLProtocol ALL -SSLv2 -SSLv3
+
+	## SSL Cipher Suite:
+	# List the ciphers that the client is permitted to negotiate.
+	# See the mod_ssl documentation for a complete list.
+	# This list of ciphers is recommended by mozilla and was stripped off
+	# its RC4 ciphers. (bug #506924)
+	SSLCipherSuite ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128:AES256:HIGH:!RC4:!aNULL:!eNULL:!EXPORT:!DES:!3DES:!MD5:!PSK
+
+	## SSLHonorCipherOrder:
+	# Prefer the server's cipher preference order as the client may have a
+	# weak default order.
+	SSLHonorCipherOrder On
+
+	## Server Certificate:
+	# Point SSLCertificateFile at a PEM encoded certificate. If the certificate
+	# is encrypted, then you will be prompted for a pass phrase. Note that a 
+	# kill -HUP will prompt again. Keep in mind that if you have both an RSA
+	# and a DSA certificate you can configure both in parallel (to also allow
+	# the use of DSA ciphers, etc.)
+	SSLCertificateFile /etc/ssl/apache2/server.pem
+
+	## Server Private Key:
+	# If the key is not combined with the certificate, use this directive to
+	# point at the key file. Keep in mind that if you've both a RSA and a DSA
+	# private key you can configure both in parallel (to also allow the use of
+	# DSA ciphers, etc.)
+	SSLCertificateKeyFile /etc/ssl/apache2/server.key
+
+	## SSL Protocol Adjustments:
+	# The safe and default but still SSL/TLS standard compliant shutdown
+	# approach is that mod_ssl sends the close notify alert but doesn't wait
+	# for the close notify alert from client. When you need a different
+	# shutdown approach you can use one of the following variables:
+
+	## ssl-unclean-shutdown:
+	# This forces an unclean shutdown when the connection is closed, i.e. no
+	# SSL close notify alert is send or allowed to received.  This violates the
+	# SSL/TLS standard but is needed for some brain-dead browsers. Use this when
+	# you receive I/O errors because of the standard approach where mod_ssl
+	# sends the close notify alert.
+
+	## ssl-accurate-shutdown:
+	# This forces an accurate shutdown when the connection is closed, i.e. a
+	# SSL close notify alert is send and mod_ssl waits for the close notify
+	# alert of the client. This is 100% SSL/TLS standard compliant, but in
+	# practice often causes hanging connections with brain-dead browsers. Use
+	# this only for browsers where you know that their SSL implementation works
+	# correctly. 
+	# Notice: Most problems of broken clients are also related to the HTTP 
+	# keep-alive facility, so you usually additionally want to disable 
+	# keep-alive for those clients, too. Use variable "nokeepalive" for this.
+	# Similarly, one has to force some clients to use HTTP/1.0 to workaround
+	# their broken HTTP/1.1 implementation. Use variables "downgrade-1.0" and
+	# "force-response-1.0" for this.
+	<IfModule setenvif_module>
+		BrowserMatch ".*MSIE.*" \
+			nokeepalive ssl-unclean-shutdown \
+			downgrade-1.0 force-response-1.0
+	</IfModule>
+
+	## Per-Server Logging:
+	# The home of a custom SSL log file. Use this when you want a compact 
+	# non-error SSL logfile on a virtual host basis.
+	<IfModule log_config_module>
+		CustomLog /var/log/apache2/ssl_request_log \
+			"%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+	</IfModule>
+
+	# CdEDB customization
+	WSGIDaemonProcess cdedb processes=4 threads=4
+    	WSGIScriptAlias /db /cdedb2/wsgi/cdedb.wsgi
+
+	<Directory /cdedb2/wsgi>
+	Require all granted
+	</Directory>
+
+	Alias /static /cdedb2/static
+	<Directory /cdedb2/static>
+	Require all granted
+	</Directory>
+
+</VirtualHost>
+EOF
+
+a2ensite cdedb
+
+echo "" > /etc/apache2/ports.conf
+
+/etc/init.d/apache2 restart
+
+echo ""
+echo "Set up the fail2ban..."
+echo "--------------------------------------------"
+
+cp /cdedb2/related/auto-build/files/cdedb.conf /etc/fail2ban/filter.d/
+cp /cdedb2/related/auto-build/files/jail.local /etc/fail2ban/
+
+echo ""
+echo "Disable auto-build init..."
+echo "--------------------------------------------"
+
+cat >/etc/rc.local <<EOF
+#!/bin/bash
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+exit 0
+EOF
+
+echo ""
+echo "Shrink image size..."
+echo "--------------------------------------------"
+
+dd if=/dev/zero of=/tmp/ZERO || echo 'Error ignored'
+sync
+sleep 1
+rm -f /tmp/ZERO
+
+## Finally, use reboot (together with -no-reboot of qemu) to stop the machine
+## with the finalised image
+
+echo ""
+echo ""
+echo ""
+echo "Done. Will reboot..."
+
+( sleep 2; reboot ) &

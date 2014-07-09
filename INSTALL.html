@@ -56,6 +56,10 @@
             
   <div class="section" id="getting-started">
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>This describes the steps necessary to get the project running on a
+machine. This is somewhat complicated and it is advised to use the virtual
+machine in most cases. This may have some Gentoo-specific bits in it, for
+Debian-specific stuff look at the setup scripts in <tt class="docutils literal"><span class="pre">related/auto-build</span></tt>.</p>
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
 <p>We need some dependencies:</p>
@@ -82,10 +86,13 @@
 <li>sphinx (for building the documentation)</li>
 <li>webtest (for tests)</li>
 <li>pgbouncer (otherwise database performance may be degraded)</li>
+<li>fail2ban (for preventing brute-force attacks)</li>
 </ul>
 <p>Here are some oneliners for the lazy:</p>
 <div class="highlight-python"><div class="highlight"><pre># Gentoo
-emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/sphinx dev-python/webtest dev-db/pgbouncer
+emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/sphinx dev-python/webtest dev-db/pgbouncer net-analyzer/fail2ban
+# Debian
+aptitude install apache2 libapache2-mod-wsgi slapd ldap-utils postgresql-client postgresql pgbouncer python3 python3-psycopg2 python3-pyro4 python3-werkzeug python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-webtest fail2ban # python3-passlib python3-ldap (note that the last two are not yet package)
 </pre></div>
 </div>
 </div>
@@ -97,7 +104,8 @@ emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apac
 </div>
 <p>For this to work you need to send an ssh public key to the administrators
 (<tt class="docutils literal"><span class="pre">admin&#64;lists.cde-ev.de</span></tt>) first, to be authorized for access to the
-repository. Now you can build the documentation by issuing:</p>
+repository. All commands below assume, that you are in the root directory of
+the repository. Now you can build the documentation by issuing:</p>
 <div class="highlight-python"><div class="highlight"><pre>make doc
 </pre></div>
 </div>
@@ -106,29 +114,37 @@ to the real document.</p>
 </div>
 <div class="section" id="prepare-environment">
 <h2>Prepare environment<a class="headerlink" href="#prepare-environment" title="Permalink to this headline">¶</a></h2>
-<p>Now we set up all auxillary stuff. First execute as user with enough
-permissions and with running postgres:</p>
+<p>Now we set up all auxillary stuff. We assume, that postgres is configured
+for peer authentication (i.e. the system user xy has access to the postgres
+user xy). First execute as user with enough permissions (that is the ability
+to run <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">-u</span> <span class="pre">postgres</span> <span class="pre">...</span></tt> and <tt class="docutils literal"><span class="pre">sudo</span> <span class="pre">-u</span> <span class="pre">cdb</span> <span class="pre">...</span></tt>) and with running
+postgres:</p>
 <div class="highlight-python"><div class="highlight"><pre>make sql
 </pre></div>
 </div>
 <p>This will create the database users and tables. Now configure pgbouncer in
-<tt class="docutils literal"><span class="pre">/etc/pgbouncer.ini</span></tt> with the following:</p>
+<tt class="docutils literal"><span class="pre">pgbouncer.ini</span></tt> (in <tt class="docutils literal"><span class="pre">/etc</span></tt>) with the following:</p>
 <div class="highlight-python"><div class="highlight"><pre>[databases]
 cdb =
 cdb_test =
 
 [pgbouncer]
+logfile = /var/log/postgresql/pgbouncer.log
+pidfile = /var/run/postgresql/pgbouncer.pid
+unix_socket_dir = /run/postgresql
 listen_addr = 127.0.0.1
 listen_port = 6432
 auth_type = md5
 auth_file = /etc/pgbouncer_users.txt
 pool_mode = session
+server_reset_query = DISCARD ALL
 max_client_conn = 100
 default_pool_size = 20
 </pre></div>
 </div>
-<p>Additionally place the file <tt class="docutils literal"><span class="pre">related/pgbouncer_users.txt</span></tt> into <tt class="docutils literal"><span class="pre">/etc</span></tt>
-for authentication (otherwise pgbouncer will refuse connections):</p>
+<p>Additionally place copy file <tt class="docutils literal"><span class="pre">related/pgbouncer_users.txt</span></tt> to
+<tt class="docutils literal"><span class="pre">/etc/pgbouncer_users.txt</span></tt> for authentication (otherwise pgbouncer will
+refuse connections):</p>
 <div class="highlight-python"><div class="highlight"><pre>cp related/pgbouncer_users.txt /etc
 chown pgbouncer:root /etc/pgbouncer_users.txt
 chmod 600 /etc/pgbouncer_users.txt
@@ -137,8 +153,9 @@ chmod 600 /etc/pgbouncer_users.txt
 <p>This file may be regenerated with the <tt class="docutils literal"><span class="pre">mkauth.py</span></tt> tool from the pgbouncer
 tar-ball.</p>
 <p>Next up is LDAP. Edit the <tt class="docutils literal"><span class="pre">/etc/openldap/slapd.conf</span></tt> and enter the
-following values (we will use a basic setup that omits fancy <tt class="docutils literal"><span class="pre">cn=config</span></tt>
-features):</p>
+following values (we will use a basic setup via config file, this will be
+deprecated at some point in the future, then the <tt class="docutils literal"><span class="pre">cn=config</span></tt> machinery
+needs to be used &#8211; how this works can be seen in the auto-build scripts):</p>
 <div class="highlight-python"><div class="highlight"><pre>include         /etc/openldap/schema/core.schema
 include         /etc/openldap/schema/cosine.schema
 include         /etc/openldap/schema/inetorgperson.schema
@@ -167,12 +184,14 @@ index           displayName     pres,sub,eq
 <div class="highlight-python"><div class="highlight"><pre>make ldap
 </pre></div>
 </div>
-<p>Now we set up the Apache server, first with <tt class="docutils literal"><span class="pre">/etc/apache2/httpd.conf</span></tt>:</p>
+<p>Now we set up the Apache server, first add the following lines to
+<tt class="docutils literal"><span class="pre">/etc/apache2/httpd.conf</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre>LoadModule wsgi_module modules/mod_wsgi.so
 ServerName localhost
 </pre></div>
 </div>
-<p>and then with <tt class="docutils literal"><span class="pre">/etc/apache2/vhosts.d/00_default_ssl_vhost.conf</span></tt>:</p>
+<p>and then insert the following close to the end of
+<tt class="docutils literal"><span class="pre">/etc/apache2/vhosts.d/00_default_ssl_vhost.conf</span></tt>:</p>
 <div class="highlight-python"><div class="highlight"><pre>WSGIDaemonProcess cdedb processes=4 threads=4
 WSGIScriptAlias /db /path/to/repo/wsgi/cdedb.wsgi
 
@@ -186,17 +205,17 @@ Require all granted
 &lt;/Directory&gt;
 </pre></div>
 </div>
-<p>note, that this is syntax for apache-2.4 (this differs from apache-2.2).</p>
+<p>note, that this is syntax for apache-2.4 (which differs from apache-2.2).</p>
 </div>
 <div class="section" id="configure-the-application">
 <h2>Configure the application<a class="headerlink" href="#configure-the-application" title="Permalink to this headline">¶</a></h2>
 <p>The details can be found in <a class="reference internal" href="Auxiliary.html#module-cdedb.config" title="cdedb.config"><tt class="xref py py-mod docutils literal"><span class="pre">cdedb.config</span></tt></a>. The global configuration
 can be done in <tt class="docutils literal"><span class="pre">cdedb/localconfig.py</span></tt> (a sample for this is provided at
 <tt class="docutils literal"><span class="pre">cdedb/localconfig.py.sample</span></tt>, for development instances you are strongly
-encouraged to copy this to <tt class="docutils literal"><span class="pre">cdedb/localconfig.py</span></tt>). The configuration for
-the frontend resides in <tt class="docutils literal"><span class="pre">/etc/cdedb-frontend-config.py</span></tt>. The path to the
-backend configuration is passed on the command line (if you use the make
-recipes, then via the variable <tt class="docutils literal"><span class="pre">CONFIGPATH</span></tt>).</p>
+encouraged to copy this file to <tt class="docutils literal"><span class="pre">cdedb/localconfig.py</span></tt>). The configuration
+for the frontend resides in <tt class="docutils literal"><span class="pre">/etc/cdedb-frontend-config.py</span></tt>. The path to
+the backend configuration is passed on the command line (if you use the make
+recipes, then via the environment variable <tt class="docutils literal"><span class="pre">CONFIGPATH</span></tt>).</p>
 </div>
 <div class="section" id="running-it">
 <h2>Running it<a class="headerlink" href="#running-it" title="Permalink to this headline">¶</a></h2>

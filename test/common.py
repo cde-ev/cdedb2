@@ -71,7 +71,7 @@ class BackendTest(BackendUsingTest):
         super().setUp()
         self.key = None
 
-    def login(self, user, ip="0.0.0.0"):
+    def login(self, user, ip="127.0.0.0"):
         self.key = self.core.login(None, user['username'], user['password'], ip)
         return self.key
 
@@ -176,7 +176,7 @@ class FrontendTest(unittest.TestCase):
                 break
             time.sleep(0.01)
         app = Application(os.path.join(_BASICCONF.REPOSITORY_PATH, _BASICCONF.TESTCONFIG_PATH))
-        cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR' : "0.0.0.0", 'SERVER_PROTOCOL' : "HTTP/1.1"})
+        cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR' : "127.0.0.0", 'SERVER_PROTOCOL' : "HTTP/1.1"})
 
     @classmethod
     def tearDownClass(cls):

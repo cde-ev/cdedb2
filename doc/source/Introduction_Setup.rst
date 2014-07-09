@@ -1,6 +1,13 @@
 Getting Started
 ===============
 
+This describes the steps necessary to get the project running on a
+machine. This is somewhat complicated and it is advised to use the virtual
+machine in most cases. This may have some Gentoo-specific bits in it, for
+Debian-specific stuff look at the setup scripts in ``related/auto-build``.
+
+.. TODO:: URL for VM
+
 Prerequisites
 -------------
 
@@ -28,11 +35,15 @@ At last there are some recommended dependencies:
 * sphinx (for building the documentation)
 * webtest (for tests)
 * pgbouncer (otherwise database performance may be degraded)
+* fail2ban (for preventing brute-force attacks)
 
 Here are some oneliners for the lazy::
 
   # Gentoo
-  emerge -avt >=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/sphinx dev-python/webtest dev-db/pgbouncer
+  emerge -avt >=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/sphinx dev-python/webtest dev-db/pgbouncer net-analyzer/fail2ban
+  # Debian
+  aptitude install apache2 libapache2-mod-wsgi slapd ldap-utils postgresql-client postgresql pgbouncer python3 python3-psycopg2 python3-pyro4 python3-werkzeug python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-webtest fail2ban # python3-passlib python3-ldap (note that the last two are not yet package)
+
 
 Checkout the repository
 -----------------------
@@ -43,7 +54,8 @@ Use git to clone the code::
 
 For this to work you need to send an ssh public key to the administrators
 (``admin@lists.cde-ev.de``) first, to be authorized for access to the
-repository. Now you can build the documentation by issuing::
+repository. All commands below assume, that you are in the root directory of
+the repository. Now you can build the documentation by issuing::
 
   make doc
 
@@ -53,29 +65,37 @@ to the real document.
 Prepare environment
 -------------------
 
-Now we set up all auxillary stuff. First execute as user with enough
-permissions and with running postgres::
+Now we set up all auxillary stuff. We assume, that postgres is configured
+for peer authentication (i.e. the system user xy has access to the postgres
+user xy). First execute as user with enough permissions (that is the ability
+to run ``sudo -u postgres ...`` and ``sudo -u cdb ...``) and with running
+postgres::
 
   make sql
 
 This will create the database users and tables. Now configure pgbouncer in
-``/etc/pgbouncer.ini`` with the following::
+``pgbouncer.ini`` (in ``/etc``) with the following::
 
   [databases]
   cdb =
   cdb_test =
 
   [pgbouncer]
+  logfile = /var/log/postgresql/pgbouncer.log
+  pidfile = /var/run/postgresql/pgbouncer.pid
+  unix_socket_dir = /run/postgresql
   listen_addr = 127.0.0.1
   listen_port = 6432
   auth_type = md5
   auth_file = /etc/pgbouncer_users.txt
   pool_mode = session
+  server_reset_query = DISCARD ALL
   max_client_conn = 100
   default_pool_size = 20
 
-Additionally place the file ``related/pgbouncer_users.txt`` into ``/etc``
-for authentication (otherwise pgbouncer will refuse connections)::
+Additionally place copy file ``related/pgbouncer_users.txt`` to
+``/etc/pgbouncer_users.txt`` for authentication (otherwise pgbouncer will
+refuse connections)::
 
   cp related/pgbouncer_users.txt /etc
   chown pgbouncer:root /etc/pgbouncer_users.txt
@@ -85,8 +105,9 @@ This file may be regenerated with the ``mkauth.py`` tool from the pgbouncer
 tar-ball.
 
 Next up is LDAP. Edit the ``/etc/openldap/slapd.conf`` and enter the
-following values (we will use a basic setup that omits fancy ``cn=config``
-features)::
+following values (we will use a basic setup via config file, this will be
+deprecated at some point in the future, then the ``cn=config`` machinery
+needs to be used -- how this works can be seen in the auto-build scripts)::
 
   include         /etc/openldap/schema/core.schema
   include         /etc/openldap/schema/cosine.schema
@@ -115,12 +136,14 @@ Now start the slapd daemon and issue the following in the repo::
 
   make ldap
 
-Now we set up the Apache server, first with ``/etc/apache2/httpd.conf``::
+Now we set up the Apache server, first add the following lines to
+``/etc/apache2/httpd.conf``::
 
   LoadModule wsgi_module modules/mod_wsgi.so
   ServerName localhost
 
-and then with ``/etc/apache2/vhosts.d/00_default_ssl_vhost.conf``::
+and then insert the following close to the end of
+``/etc/apache2/vhosts.d/00_default_ssl_vhost.conf``::
 
   WSGIDaemonProcess cdedb processes=4 threads=4
   WSGIScriptAlias /db /path/to/repo/wsgi/cdedb.wsgi
@@ -134,7 +157,7 @@ and then with ``/etc/apache2/vhosts.d/00_default_ssl_vhost.conf``::
   Require all granted
   </Directory>
 
-note, that this is syntax for apache-2.4 (this differs from apache-2.2).
+note, that this is syntax for apache-2.4 (which differs from apache-2.2).
 
 Configure the application
 -------------------------
@@ -142,10 +165,10 @@ Configure the application
 The details can be found in :py:mod:`cdedb.config`. The global configuration
 can be done in ``cdedb/localconfig.py`` (a sample for this is provided at
 ``cdedb/localconfig.py.sample``, for development instances you are strongly
-encouraged to copy this to ``cdedb/localconfig.py``). The configuration for
-the frontend resides in ``/etc/cdedb-frontend-config.py``. The path to the
-backend configuration is passed on the command line (if you use the make
-recipes, then via the variable ``CONFIGPATH``).
+encouraged to copy this file to ``cdedb/localconfig.py``). The configuration
+for the frontend resides in ``/etc/cdedb-frontend-config.py``. The path to
+the backend configuration is passed on the command line (if you use the make
+recipes, then via the environment variable ``CONFIGPATH``).
 
 Running it
 ----------

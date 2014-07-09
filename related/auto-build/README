@@ -1,0 +1,75 @@
+HINWEIS: Die unten angegebenen Informationen beziehen sich
+auf eine ursprüngliche Version dieses "Port"-Systems und
+dienen im Wesentlichen zur Weiterentwicklung dieser
+Entwicklungsumgebung. Zur Benutzung der Entwicklungsumgebung
+sei statt dessen auf die Datei "HOWTO" verwiesen.
+
+===================================================
+
+This make directory builds and runs the virtual
+machines needed for the course "Softwaresicherheit"
+at the CdE Winterakademie 2009. It is a shortened version
+of the one that was actually used.
+
+It assumes that the following software is installed already.
+
+- qemu is installed
+  so far, succesfully tested on
+  + qemu 0.9.1s.20080620 (FreeBSD port emulators/qemu-devel as of 2008/11/02)
+
+- the GNU version of the make utility (usually called gmake on *BSD machines)
+
+- the BSD version of tar (often called bsdtar on gnu/linux machines)
+
+Knobs:
+The following are the make variables you most probably want to set.
+
+DISTDIR       The directory where downloaded files are to be stored.
+              Write permissions are needed if and only if distribution
+              files are missing. If all the needed files are
+              downloaded already (or you happen to have them on your
+              machine for some reason anyway), this directory can be
+              read-only. Symbolic links are honored.
+ 
+              Defaults to ../distfiles
+
+WORKDIR       The directory where all generated data is stored. This
+              is the only directory where write permissions are
+              absolutely necessary (note that the directory this
+              README resides in can safely be read-only, if the
+              workdir is set to some writable place outside). After a
+              sucessful build, this directory can safely be removed
+              (the clean target will do this for you). So you may have
+              this directory on a ram-disk.
+
+              Defaults to ./work. 
+
+IMAGEDIR      The directory where the build images are to be
+              stored. All the install-* targets need write permissions
+              in this directory. The build targets only need write
+              permissions, if they depend on an image not yet present
+              in the image directory already.
+
+              Defaults to ../images-winter09
+
+Warnings:
+~~~~~~~~~
+
+* For debugging purpose, qemu is usually startet *without* the option -no-graphics.
+  That is, qemu will bring up (in a blocking way) a new window, which, depending 
+  on the preferences of your window-manager may or may not require user interaction
+  (it does, e.g., if you have rudeness 0 in ratpoision). For a fully automatic
+  build, use QEMUOPTIONS=-nographic.
+
+
+Usage:
+~~~~~~
+
+* First build the base system. This might take an hour. So best do such things before
+  going to lunch. Also make sure you read the warning about QEMUOPTIONS above. 
+
+    (g)make install-base clean
+
+* The game can be build with (g)make install clean. This will preserve any existing base
+  immage (takes a few minutes, mainly for rsync -S to duplicate a sparse file).
+  (g)make run will then start the ready made game image for you.

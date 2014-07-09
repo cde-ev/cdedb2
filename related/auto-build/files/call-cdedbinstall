@@ -1,0 +1,6 @@
+#!/bin/sh
+
+touch /root/install-log
+chown root:root /root/install-log
+chmod 640 /root/install-log
+/bin/sh /media/cdrom0/cdedb-install 2>&1 | tee /root/install-log

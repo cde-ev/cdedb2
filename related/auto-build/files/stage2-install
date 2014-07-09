@@ -1,0 +1,128 @@
+#!/bin/bash
+set -e
+
+echo ""
+echo "cdedb - sandbox system: stage2"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo ""
+echo "Providing the host keys"
+echo "--------------------------------------------"
+
+mkdir -p /etc/ssh
+chmod 755 /etc/ssh
+cp /media/cdrom0/ssh_host* /etc/ssh
+chmod 600 /etc/ssh/ssh_host*
+chmod 644 /etc/ssh/ssh_host*.pub
+
+echo ""
+echo "Getting the system up to date..."
+echo "--------------------------------------------"
+cat > /etc/apt/sources.list <<EOF
+deb ftp://ftp.de.debian.org/debian jessie main contrib non-free
+deb-src ftp://ftp.de.debian.org/debian jessie main contrib non-free
+
+deb http://security.debian.org/ jessie/updates main contrib non-free
+deb-src http://security.debian.org/ jessie/updates main contrib non-free
+
+# jessie-updates, previously known as 'volatile'
+deb ftp://ftp.de.debian.org/debian jessie-updates main contrib non-free
+deb-src ftp://ftp.de.debian.org/debian jessie-updates main contrib non-free
+
+# jessie-backports, previously on backports.debian.org
+deb ftp://ftp.de.debian.org/debian jessie-backports main contrib non-free
+deb-src ftp://ftp.de.debian.org/debian jessie-backports main contrib non-free
+EOF
+
+sleep 3
+
+aptitude -y update
+aptitude -y safe-upgrade
+
+echo ""
+echo "Setting up packets..."
+echo "--------------------------------------------"
+
+echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
+echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
+
+aptitude -y install --without-recommends                            \
+    openssh-server sudo git runit joe file mc emacs vim             \
+    apache2 libapache2-mod-wsgi-py3 fail2ban                        \
+    slapd ldap-utils                                                \
+    postgresql-client postgresql pgbouncer                          \
+    python3 python3-psycopg2 python3-pyro4 python3-werkzeug         \
+    python3-dateutil python3-jinja2 python3-tz python3-sphinx       \
+    python3-webtest
+#   python3-passlib python3-ldap
+
+aptitude -y install --without-recommends python3-pip
+pip3 install passlib
+pip3 install serpent
+aptitude -y install --without-recommends python3-dev libldap2-dev libsasl2-dev
+pip3 install git+https://github.com/xmw/python-ldap.git
+
+for file in /var/cache/apt/archives/*.deb
+do
+  shred --iteration=0 --zero --remove $file
+done
+
+echo ""
+echo "Setting up system..."
+echo "--------------------------------------------"
+
+# frontend user is www-data
+useradd -s /bin/bash -m backend
+useradd -s /bin/bash -m cdb
+useradd -s /bin/bash -m -p REw.iVaxV7gAI cdedb # password: akademie
+
+echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+cat >/etc/motd.tail <<EOF
+
+Herzlich Willkommen zum Sandbox-System der CdE-Datenbank!
+
+Einige wichtige Befehle:
+
+TODO fill in
+
+EOF
+
+echo ""
+echo "Setting up outgoing ssh..."
+echo "--------------------------"
+
+mkdir -p /home/cdedb/.ssh
+chmod 755 /home/cdedb/.ssh
+cp /media/cdrom0/ssh_user_rsa_key /home/cdedb/.ssh/id_rsa
+cp /media/cdrom0/ssh_user_rsa_key.pub /home/cdedb/.ssh/id_rsa.pub
+cp /media/cdrom0/ssh_user_known_hosts /home/cdedb/.ssh/known_hosts
+chmod 600 /home/cdedb/.ssh/id_rsa
+chmod 644 /home/cdedb/.ssh/id_rsa.pub
+chown -R cdedb:cdedb /home/cdedb/.ssh/
+
+cat >/etc/rc.local <<EOF
+#!/bin/bash
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+mount /media/cdrom0 && /bin/sh /media/cdrom0/init
+
+EOF
+
+chmod +x /etc/rc.local
+
+echo ""
+echo ""
+echo ""
+echo "Done. Will reboot..."
+
+( sleep 2; reboot ) &

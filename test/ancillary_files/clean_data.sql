@@ -1,4 +1,3 @@
-\connect :cdb_database_name cdb
 DO $$
     DECLARE onetable varchar;
     BEGIN

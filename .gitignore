@@ -14,3 +14,9 @@ cdedb/localconfig.py
 
 # cache data
 .coverage
+
+# autobuild temporary data
+
+related/auto-build/distfiles/**
+related/auto-build/images/**
+related/auto-build/work/**

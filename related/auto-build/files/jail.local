@@ -1,0 +1,6 @@
+[cdedb]
+enabled = true
+port    = all
+filter  = cdedb
+logpath  = /log/cdedb-backend-core.log
+maxretry = 5

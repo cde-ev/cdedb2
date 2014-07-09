@@ -15,12 +15,12 @@ class TestCoreBackend(BackendTest):
                     self.setUp()
                 user = USER_DICT[u]
                 key = self.core.login(None, user['username'], user['password'],
-                                      "0.0.0.0")
+                                      "127.0.0.0")
                 self.assertIsInstance(key, str)
                 self.assertTrue(key)
 
                 key = self.core.login(None, user['username'], "wrong key",
-                                      "0.0.0.0")
+                                      "127.0.0.0")
                 self.assertEqual(None, key)
 
     @as_users("anton", "berta", "emilia")

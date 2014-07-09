@@ -1,19 +1,11 @@
 -- This file specifies the tables in the database and has the users in
--- cdedb-users.sql as prerequisite.
+-- cdedb-users.sql as prerequisite, as well as cdedb-db.sql .
 
 -- TODO: grant priveleges
 -- TODO: create indices
 -- TODO: think about ctime/mtime hack for evreg
 -- TODO: tables: quota, lastschrift_*, finance_log, mailinglist_*, assembly_*, cdefiles_*
 -- TODO: evreg-tables: busses, mitnahme-support
-
--- create the database
-DROP DATABASE IF EXISTS :cdb_database_name;
-CREATE DATABASE :cdb_database_name WITH OWNER = cdb TEMPLATE = template0 ENCODING = 'UTF8';
-
-ALTER DATABASE :cdb_database_name SET datestyle TO 'ISO, YMD';
-
-\connect :cdb_database_name cdb
 
 ---
 --- SCHEMA core

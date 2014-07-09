@@ -28,11 +28,11 @@ help:
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 CONFIGPATH ?= ""
-PYTHONBIN ?= "python3"
+PYTHONBIN ?= python3
 TESTPATTERN ?= ""
 
 pyro-nameserver:
-	python -m Pyro4.naming
+	${PYTHONBIN} -m Pyro4.naming
 
 run-core:
 	${PYTHONBIN} -m cdedb.backend.core -c ${CONFIGPATH}
@@ -86,28 +86,33 @@ sample-data-test-shallow:
 	make ldap-test
 
 ldap:
-	echo -e 'ou=personas,dc=cde-ev,dc=de\nou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+	echo 'ou=personas,dc=cde-ev,dc=de\nou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
 	ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw -f cdedb/database/init.ldif || true
 	sed -e 's/{LDAP_ORGANIZATION}/personas/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
 	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
 
 ldap-test:
-	echo -e 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
 	ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw -f cdedb/database/init.ldif || true
 	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
 
 sql:
-	psql -U postgres -f cdedb/database/cdedb-users.sql -v cdb_database_name=cdb
-	psql -U postgres -f cdedb/database/cdedb-tables.sql -v cdb_database_name=cdb
-	psql -U postgres -f test/ancillary_files/sample_data.sql -v cdb_database_name=cdb
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	sudo -u cdb psql -U cdb -d cdb -f cdedb/database/cdedb-tables.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 
 sql-test:
-	psql -U postgres -f cdedb/database/cdedb-tables.sql -v cdb_database_name=cdb_test
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
+	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	make sql-test-shallow
 
 sql-test-shallow:
-	psql -U postgres -f test/ancillary_files/clean_data.sql -v cdb_database_name=cdb_test
-	psql -U postgres -f test/ancillary_files/sample_data.sql -v cdb_database_name=cdb_test
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 
 lint:
 	/usr/lib/python-exec/python3.4/pylint --rcfile='./lint.rc' cdedb || true

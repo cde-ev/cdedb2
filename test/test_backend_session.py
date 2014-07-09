@@ -6,11 +6,11 @@ class TestSessionBackend(BackendTest):
     used_backends = ("core", "session")
 
     def test_sessionlookup(self):
-        data = self.session.lookupsession("a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5", "random key", "0.0.0.0")
+        data = self.session.lookupsession("a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5", "random key", "127.0.0.0")
         self.assertEqual(None, data['persona_id'])
         self.assertEqual(None, data['db_privileges'])
         key = self.login(USER_DICT["anton"])
-        data = self.session.lookupsession("a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5", key, "0.0.0.0")
+        data = self.session.lookupsession("a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5", key, "127.0.0.0")
         self.assertIsInstance(data, dict)
         self.assertTrue(data['persona_id'])
         self.assertIsInstance(data['db_privileges'], int)
