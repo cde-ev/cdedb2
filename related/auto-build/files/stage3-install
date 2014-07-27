@@ -87,7 +87,7 @@ cp /cdedb2/related/pgbouncer_users.txt /etc/pgbouncer/userlist.txt
 chmod 640 /etc/pgbouncer/userlist.txt
 chown postgres:postgres /etc/pgbouncer/userlist.txt
 
-cat > /etc/defaults/pgbouncer <<EOF
+cat > /etc/default/pgbouncer <<EOF
 START=1
 EOF
 
