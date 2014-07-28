@@ -21,7 +21,7 @@ export PORT QEMUOPTIONS
 if [[ -e $WWWDIR/cdedb-$PORT.qcow2 && $COMPLETE = "NO" ]]; then
     echo "port already exists... exiting"
     exit 0
-else;
+else
     rm -f $WWWDIR/cdedb-$PORT.qcow2
 fi;
 
