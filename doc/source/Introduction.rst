@@ -9,3 +9,4 @@ This provides informational material about the CdEDB.
    Introduction_Setup
    Introduction_Readme
    Introduction_Architecture
+   Introduction_VM

@@ -2,7 +2,7 @@ HINWEIS: Die unten angegebenen Informationen beziehen sich
 auf eine ursprüngliche Version dieses "Port"-Systems und
 dienen im Wesentlichen zur Weiterentwicklung dieser
 Entwicklungsumgebung. Zur Benutzung der Entwicklungsumgebung
-sei statt dessen auf die Datei "HOWTO" verwiesen.
+sei statt dessen auf die Dokumentation in doc/ verwiesen.
 
 ===================================================
 
@@ -30,7 +30,7 @@ DISTDIR       The directory where downloaded files are to be stored.
               downloaded already (or you happen to have them on your
               machine for some reason anyway), this directory can be
               read-only. Symbolic links are honored.
- 
+
               Defaults to ../distfiles
 
 WORKDIR       The directory where all generated data is stored. This
@@ -42,7 +42,7 @@ WORKDIR       The directory where all generated data is stored. This
               (the clean target will do this for you). So you may have
               this directory on a ram-disk.
 
-              Defaults to ./work. 
+              Defaults to ./work.
 
 IMAGEDIR      The directory where the build images are to be
               stored. All the install-* targets need write permissions
@@ -50,13 +50,13 @@ IMAGEDIR      The directory where the build images are to be
               permissions, if they depend on an image not yet present
               in the image directory already.
 
-              Defaults to ../images-winter09
+              Defaults to ../images
 
 Warnings:
 ~~~~~~~~~
 
 * For debugging purpose, qemu is usually startet *without* the option -no-graphics.
-  That is, qemu will bring up (in a blocking way) a new window, which, depending 
+  That is, qemu will bring up (in a blocking way) a new window, which, depending
   on the preferences of your window-manager may or may not require user interaction
   (it does, e.g., if you have rudeness 0 in ratpoision). For a fully automatic
   build, use QEMUOPTIONS=-nographic.
@@ -66,7 +66,7 @@ Usage:
 ~~~~~~
 
 * First build the base system. This might take an hour. So best do such things before
-  going to lunch. Also make sure you read the warning about QEMUOPTIONS above. 
+  going to lunch. Also make sure you read the warning about QEMUOPTIONS above.
 
     (g)make install-base clean
 
