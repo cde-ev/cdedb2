@@ -9,7 +9,7 @@ REPODIR=/home/cdedb/cdedb2/
 AUTOBUILDDIR=/home/cdedb/cdedb2/related/auto-build/
 WWWDIR=/var/www/austausch/html/cdedb2/images/
 
-QEMUOPTIONS="-nographic"
+QEMUOPTIONS="-nographic -m 512M -net nic,model=virtio"
 
 # get the most current state for the working dir
 cd $REPODIR
