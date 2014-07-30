@@ -40,7 +40,7 @@ run-core:
 	${PYTHONBIN} -m cdedb.backend.core -c ${CONFIGPATH}
 
 quit-core:
-	kill `cat /run/cdedb/coreserver.pid`
+	[ -f /run/cdedb/coreserver.pid ] && kill `cat /run/cdedb/coreserver.pid` || true
 
 run-cde:
 	make quit-cde
@@ -48,7 +48,7 @@ run-cde:
 	${PYTHONBIN} -m cdedb.backend.cde -c ${CONFIGPATH}
 
 quit-cde:
-	kill `cat /run/cdedb/cdeserver.pid`
+	[ -f /run/cdedb/cdeserver.pid ] && kill `cat /run/cdedb/cdeserver.pid` || true
 
 run-event:
 	make quit-event
@@ -56,7 +56,7 @@ run-event:
 	${PYTHONBIN} -m cdedb.backend.event -c ${CONFIGPATH}
 
 quit-event:
-	kill `cat /run/cdedb/eventserver.pid`
+	[ -f /run/cdedb/eventserver.pid ] && kill `cat /run/cdedb/eventserver.pid` || true
 
 run-session:
 	make quit-session
@@ -64,13 +64,13 @@ run-session:
 	${PYTHONBIN} -m cdedb.backend.session -c ${CONFIGPATH}
 
 quit-session:
-	kill `cat /run/cdedb/sessionserver.pid`
+	[ -f /run/cdedb/sessionserver.pid ] && kill `cat /run/cdedb/sessionserver.pid` || true
 
 quit-all:
-	[ -f /run/cdedb/coreserver.pid ] && kill `cat /run/cdedb/coreserver.pid` || true
-	[ -f /run/cdedb/cdeserver.pid ] && kill `cat /run/cdedb/cdeserver.pid` || true
-	[ -f /run/cdedb/eventserver.pid ] && kill `cat /run/cdedb/eventserver.pid` || true
-	[ -f /run/cdedb/sessionserver.pid ] && kill `cat /run/cdedb/sessionserver.pid` || true
+	make quit-core
+	make quit-cde
+	make quit-session
+	make quit-event
 
 quit-test-backends:
 	[ -f /run/cdedb/test-coreserver.pid ] && kill `cat /run/cdedb/test-coreserver.pid` || true
