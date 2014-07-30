@@ -5,7 +5,7 @@ echo ""
 echo "cdedb - sandbox system: stage2"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo ""
-echo "Providing the host keys"
+echo "Providing the host keys..."
 echo "--------------------------------------------"
 
 mkdir -p /etc/ssh
@@ -13,6 +13,10 @@ chmod 755 /etc/ssh
 cp /media/cdrom0/ssh_host* /etc/ssh
 chmod 600 /etc/ssh/ssh_host*
 chmod 644 /etc/ssh/ssh_host*.pub
+
+mkdir -p /etc/ssl/apache2
+cp /media/cdrom0/server* /etc/ssl/apache2/
+chmod 600 /etc/ssl/apache2/server*
 
 echo ""
 echo "Getting the system up to date..."
@@ -79,13 +83,13 @@ echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 cat >/etc/motd.tail <<EOF
 
-Herzlich Willkommen zum Sandbox-System der CdE-Datenbank!
+Welcome to the sandbox system of the CdEDB.
 
-Einige wichtige Befehle:
-
-TODO fill in
+Find below a short summary of useful commands.
 
 EOF
+
+cat >> /etc/motd.tail < /media/cdrom0/motd.txt
 
 echo ""
 echo "Setting up outgoing ssh..."
@@ -99,6 +103,10 @@ cp /media/cdrom0/ssh_user_known_hosts /home/cdedb/.ssh/known_hosts
 chmod 600 /home/cdedb/.ssh/id_rsa
 chmod 644 /home/cdedb/.ssh/id_rsa.pub
 chown -R cdedb:cdedb /home/cdedb/.ssh/
+
+echo ""
+echo "Enable auto-build init..."
+echo "--------------------------"
 
 cat >/etc/rc.local <<EOF
 #!/bin/bash

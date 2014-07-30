@@ -848,7 +848,7 @@ def construct_redirect(request, url):
     </head>
     <body>
         You should be redirected now.
-        You can also access the target via <a href='{url}'>this link</a>.
+        You can also access the target via <a href="{url}">this link</a>.
     </body>
 </html>"""
         return werkzeug.wrappers.Response(

@@ -9,9 +9,9 @@ REPODIR=/home/cdedb/cdedb2/
 AUTOBUILDDIR=/home/cdedb/cdedb2/related/auto-build/
 WWWDIR=/var/www/austausch/html/cdedb2/images/
 
-QEMUOPTIONS="-nographic -m 512M -net nic,model=virtio"
+QEMUOPTIONS="-nographic -m 512M -net nic,model=virtio -net user"
 
-# get the most current state for the working dir
+# get the most current state of the repository
 cd $REPODIR
 git pull
 PORT=$(git --no-pager log -1 --format='%H')

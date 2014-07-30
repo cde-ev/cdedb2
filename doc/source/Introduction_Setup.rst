@@ -3,10 +3,9 @@ Getting Started
 
 This describes the steps necessary to get the project running on a
 machine. This is somewhat complicated and it is advised to use the virtual
-machine in most cases. This may have some Gentoo-specific bits in it, for
+machine in most cases. Instructions for obtianing and using the image can be
+found at :doc:`Introduction_VM`. Below may be some Gentoo-specific bits, for
 Debian-specific stuff look at the setup scripts in ``related/auto-build``.
-
-.. TODO:: URL for VM
 
 Prerequisites
 -------------

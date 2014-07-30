@@ -1,0 +1,22 @@
+# access postgres database
+sudo -u cdb psql -U cdb -d cdb
+
+# reload (update the running state with current code,
+# i.e. restart backend and frontend)
+/cdedb2/bin/reload-vm.sh
+
+# run test suite
+cd /cdedb2 && make check
+
+# list CdEDB log files (most recently changed first)
+ls -lht /log/
+
+# reset database (DESTROYS ALL DATA)
+cd /cdedb2 && make sample-data
+
+# access ldap
+ldapsearch -Y EXTERNAL -H ldapi:/// <filter>
+ldapmodify -Y EXTERNAL -H ldapi:/// -f /path/to/ldif
+
+# list process ids of running backends
+cat /run/cdedb/*.pid

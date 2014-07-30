@@ -30,7 +30,7 @@ DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
 STAGE1DEPS = $(shell [ -e ${IMAGEDIR}/stage1.qcow2 ] || echo "install-stage1")
 STAGE2DEPS = $(shell [ -e ${IMAGEDIR}/stage1.qcow2 ] || echo "install-stage2")
 STAGE3DEPS = $(shell [ -e ${IMAGEDIR}/cdedb.qcow2 ] || echo "install")
-FILES = $(shell ls files/*)
+FILES = $(shell find files -type f)
 
 showconf:
 	@echo "DISTDIR:    ${DISTDIR}"
@@ -129,8 +129,8 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 	cp files/stage2-install ${WORKDIR}/stage2cd/cdedb-install
 	chmod 755 ${WORKDIR}/stage2cd/cdedb-install
 	cp files/call-cdedbinstall ${WORKDIR}/stage2cd/init
-	cp files/ssh_host* ${WORKDIR}/stage2cd/
-	cp files/ssh_user* ${WORKDIR}/stage2cd/
+	cp files/stage2/* ${WORKDIR}/stage2cd/
+	cp ../../doc/source/motd.txt ${WORKDIR}/stage2cd/
 	chmod 755 ${WORKDIR}/stage2cd/init
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \

@@ -38,23 +38,25 @@ Here is a list of best practices to follow, so the code stays nice.
   succes, and the str is the either error message or return value
 * The test-suite should visit all functionality at least once.
 
+.. _sample-data:
+
 Sample Data
 -----------
 
 There is a default data set for the development it contains some users
 (according to the table below).
 
-  +-----------------------+----------+----------------------------------------------+
-  | Nutzer                | Passwort | Bemerkungen                                  |
-  +-----------------------+----------+----------------------------------------------+
-  | anton@example.cde     | secret   | admin with all privileges                    |
-  | berta@example.cde     | secret   | canonical example member                     |
-  | charly@example.cde    | secret   | member, but not searchable                   |
-  | daniel@example.cde    | secret   | former member                                |
-  | emilia@example.cde    | secret   | event user                                   |
-  | ferdinand@example.cde | secret   | admin in all realms, but not globally        |
-  | garcia@example.cde    | secret   | orga of an event                             |
-  +-----------------------+----------+----------------------------------------------+
+  ======================= ========== =======================================
+   User                    Password   Notes
+  ======================= ========== =======================================
+   anton@example.cde       secret     admin with all privileges
+   berta@example.cde       secret     canonical example member
+   charly@example.cde      secret     member, but not searchable
+   daniel@example.cde      secret     former member
+   emilia@example.cde      secret     event user
+   ferdinand@example.cde   secret     admin in all realms, but not globally
+   garcia@example.cde      secret     orga of an event
+  ======================= ========== =======================================
 
 Random Thoughts
 ---------------
