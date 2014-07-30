@@ -22,7 +22,7 @@ case "$1" in
   start)
 	cd /cdedb2
 	log_daemon_msg "Starting Pyro nameserver" || true
-	if start-stop-daemon --start --chuid backend:backend --background --make-pidfile --pidfile /var/run/pyro-nameserver.pid --exec /cdedb2/related/auto-build/files/make-pyro-nameserver.sh; then
+	if start-stop-daemon --start --chuid backend:backend --background --make-pidfile --pidfile /var/run/pyro-nameserver.pid --exec /cdedb2/related/auto-build/files/stage3/make-pyro-nameserver.sh; then
 	    log_end_msg 0 || true
 	else
 	    log_end_msg 1 || true

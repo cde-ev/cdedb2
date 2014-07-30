@@ -73,7 +73,7 @@ chown backend:backend /home/backend/backendconfig.py
 chmod 600 /home/backend/backendconfig.py
 cp /cdedb2/related/auto-build/files/stage3/frontendconfig.py /etc/cdedb-frontend-config.py
 chown www-data:www-data /etc/cdedb-frontend-config.py
-chmod 640 /cdedb2/cdedb/localconfig.py
+chmod 640 /etc/cdedb-frontend-config.py
 
 echo ""
 echo "Create central directory for log files..."
