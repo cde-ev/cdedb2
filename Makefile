@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 help:
 	@echo "run-core, run-cde, run-event, run-session"
 	@echo "         -- run the respective backend (CONFIGPATH specifies configuration)"
