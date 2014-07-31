@@ -37,32 +37,24 @@ pyro-nameserver:
 	${PYTHONBIN} -m Pyro4.naming
 
 run-core:
-	make quit-core
-	rm -f /run/cdedb/coreserver.pid /run/cdedb/coreserver.sock
 	${PYTHONBIN} -m cdedb.backend.core -c ${CONFIGPATH}
 
 quit-core:
 	[ -f /run/cdedb/coreserver.pid ] && kill `cat /run/cdedb/coreserver.pid` || true
 
 run-cde:
-	make quit-cde
-	rm -f /run/cdedb/cdeserver.pid /run/cdedb/cdeserver.sock
 	${PYTHONBIN} -m cdedb.backend.cde -c ${CONFIGPATH}
 
 quit-cde:
 	[ -f /run/cdedb/cdeserver.pid ] && kill `cat /run/cdedb/cdeserver.pid` || true
 
 run-event:
-	make quit-event
-	rm -f /run/cdedb/eventserver.pid /run/cdedb/eventserver.sock
 	${PYTHONBIN} -m cdedb.backend.event -c ${CONFIGPATH}
 
 quit-event:
 	[ -f /run/cdedb/eventserver.pid ] && kill `cat /run/cdedb/eventserver.pid` || true
 
 run-session:
-	make quit-session
-	rm -f /run/cdedb/sessionserver.pid /run/cdedb/sessionserver.sock
 	${PYTHONBIN} -m cdedb.backend.session -c ${CONFIGPATH}
 
 quit-session:

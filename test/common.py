@@ -59,7 +59,8 @@ class BackendUsingTest(unittest.TestCase):
             setattr(self, backend, self.initialize_backend(classes[backend]))
 
     def initialize_raw_backend(self, backendcls):
-        return backendcls(os.path.join(_BASICCONF.REPOSITORY_PATH, _BASICCONF.TESTCONFIG_PATH))
+        return backendcls(os.path.join(_BASICCONF.REPOSITORY_PATH,
+                                       _BASICCONF.TESTCONFIG_PATH))
 
     def initialize_backend(self, backendcls):
         return BackendShim(self.initialize_raw_backend(backendcls))
@@ -164,7 +165,7 @@ class FrontendTest(unittest.TestCase):
                      '/run/cdedb/test-sessionserver.pid',
                      '/run/cdedb/test-eventserver.pid')
         tries = 0
-        while tries < 10**3:
+        while tries < 10**4:
             found = []
             for pid_file in pid_files:
                 try:
@@ -175,6 +176,8 @@ class FrontendTest(unittest.TestCase):
             if all(found):
                 break
             time.sleep(0.01)
+        else:
+            raise RuntimeError("Backends did not appear.")
         app = Application(os.path.join(_BASICCONF.REPOSITORY_PATH, _BASICCONF.TESTCONFIG_PATH))
         cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR' : "127.0.0.0", 'SERVER_PROTOCOL' : "HTTP/1.1"})
 

@@ -56,7 +56,7 @@ aptitude -y install --without-recommends                            \
     postgresql-client postgresql pgbouncer                          \
     python3 python3-psycopg2 python3-pyro4 python3-werkzeug         \
     python3-dateutil python3-jinja2 python3-tz python3-sphinx       \
-    python3-webtest
+    python3-webtest python3-lxml
 #   python3-passlib python3-ldap
 
 aptitude -y install --without-recommends python3-pip
@@ -81,7 +81,7 @@ useradd -s /bin/bash -m -p REw.iVaxV7gAI cdedb # password: akademie
 
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-cat >/etc/motd.tail <<EOF
+cat > /etc/motd <<EOF
 
 Welcome to the sandbox system of the CdEDB.
 
@@ -89,7 +89,7 @@ Find below a short summary of useful commands.
 
 EOF
 
-cat >> /etc/motd.tail < /media/cdrom0/motd.txt
+cat >> /etc/motd < /media/cdrom0/motd.txt
 
 echo ""
 echo "Setting up outgoing ssh..."

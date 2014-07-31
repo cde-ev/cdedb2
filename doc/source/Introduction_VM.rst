@@ -29,7 +29,7 @@ If ``cdedb.qcow2`` is the downloaded image, then the VM can be started with
 the following command (note that the name of the binary may differ from
 ``kvm``)::
 
-  kvm -m 1G -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
+  kvm -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
 
 Accessing
 ---------
