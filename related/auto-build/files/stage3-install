@@ -22,7 +22,9 @@ echo "--------------------------------------------"
 
 mkdir /cdedb2
 chown cdedb:cdedb /cdedb2
-sudo -u cdedb git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2 /cdedb2
+# the following is a bit hacky, but for the actual autobuild we have to try
+# another location
+sudo -u cdedb git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2 /cdedb2 || sudo -u cdedb git clone ssh://gitolite@127.0.0.1:63332/cdedb2 /cdedb2
 cd /cdedb2
 chmod 600 /cdedb2/.ldap_rootpw
 chmod +x /cdedb2/related/auto-build/files/stage3/make-pyro-nameserver.sh
