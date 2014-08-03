@@ -22,6 +22,8 @@ echo "--------------------------------------------"
 
 mkdir /cdedb2
 chown cdedb:cdedb /cdedb2
+# add host key of rcs.cde-ev.de
+echo "|1|vXB2omqjOvYZDwjxG0X1I1OBD6Y=|eNN/7ZMt/ldn6bZOPQOO3nqI37c= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBtaIppEowMrU1Pm62A0qWjKVL7D0EUNaaokyyIMqIHLRFJDA6sH0bWGyr/yuCk9kcmmmnjT5730SY4l1VdGbVY=" >> /home/cdedb/.ssh/known_hosts
 # the following is a bit hacky, but for the actual autobuild we have to try
 # another location
 sudo -u cdedb git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2 /cdedb2 || sudo -u cdedb git clone ssh://gitolite@10.8.0.2:63332/cdedb2 /cdedb2
