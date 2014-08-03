@@ -11,12 +11,12 @@ if [[ $RETVAL -eq 0 ]]; then
 	exit 0
 fi;
 if [[ $RETVAL -eq 1 ]]; then
-	cat $LOGFILE | mail -s "autobuild: neue Version" $MAILTO
+	cat $LOGFILE | mail -s "cdedb2-auto-build: neue Version" $MAILTO
 	rm -f $LOGFILE
 	exit 0
 fi;
 
-cat $LOGFILE | mail -s "cdedb autobuild failure" $MAILTO
+cat $LOGFILE | mail -s "cdedb2: auto-build failure" $MAILTO
 
 rm -f $LOGFILE
 exit $RETVAL
