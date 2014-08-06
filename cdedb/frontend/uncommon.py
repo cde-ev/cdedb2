@@ -54,7 +54,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         """
         if not self.coreproxy.verify_ids(rs, (persona_id,)):
             raise werkzeug.exceptions.BadRequest("Nonexistant user.")
-        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        realm = self.coreproxy.get_realm(rs, persona_id)
         if realm != self.realm:
             return self.redirect(rs, "{}/{}".format(realm, target), params)
         return None
@@ -72,15 +72,15 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/error")
-        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        realm = self.coreproxy.get_realm(rs, persona_id)
         red = self.redirect_realm(
             rs, persona_id, "show_user", params={
                 'confirm_id' : self.encode_parameter(
                     "{}/show_user".format(realm), "confirm_id", confirm_id)})
         if red:
             return red
-        data = self.user_management['proxy'](self).get_data(
-            rs, (persona_id,))[persona_id]
+        data = self.user_management['proxy'](self).get_data_single(rs,
+                                                                   persona_id)
         return self.render(rs, "show_user", {'data' : data})
 
     # @access("user")
@@ -90,8 +90,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return werkzeug.exceptions.Forbidden()
         if self.redirect_realm(rs, persona_id, "change_user_form"):
             return self.redirect_realm(rs, persona_id, "change_user_form")
-        data = self.user_management['proxy'](self).get_data(
-            rs, (persona_id,))[persona_id]
+        data = self.user_management['proxy'](self).get_data_single(rs,
+                                                                   persona_id)
         rs.values.update(data)
         return self.render(rs, "change_user")
 
@@ -108,8 +108,11 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
             return self.render(rs, "change_user")
-        self.user_management['proxy'](self).change_user(rs, data)
-        rs.notify("success", "Change committed.")
+        num = self.user_management['proxy'](self).change_user(rs, data)
+        if num:
+            rs.notify("success", "Change committed.")
+        else:
+            rs.notify("success", "Change failed.")
         return self.redirect(rs, "{}/show_user".format(self.realm), params={
             'confirm_id' : self.encode_parameter(
                 "{}/show_user".format(self.realm), "confirm_id", persona_id)})

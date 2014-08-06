@@ -30,8 +30,7 @@ class EventFrontend(AbstractUserFrontend):
     def finalize_session(self, rs, sessiondata):
         user = super().finalize_session(rs, sessiondata)
         if user.persona_id:
-            user.orga = self.eventproxy.orga_info(
-                rs, (user.persona_id,))[user.persona_id]
+            user.orga = self.eventproxy.orga_info(rs, user.persona_id)
         return user
 
     @classmethod

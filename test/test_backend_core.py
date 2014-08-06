@@ -31,12 +31,12 @@ class TestCoreBackend(BackendTest):
             self.core.logout(self.key)
 
     @as_users("anton", "berta", "emilia")
-    def test_change_persona(self, user):
+    def test_set_persona_data(self, user):
         new_name = "Zelda"
-        self.core.change_persona(self.key, {'id' : user['id'],
-                                            'display_name' : new_name})
-        self.assertEqual(new_name, self.core.retrieve_persona_data(
-            self.key, (user['id'],))[user['id']]['display_name'])
+        self.core.set_persona_data(self.key, {'id' : user['id'],
+                                              'display_name' : new_name})
+        self.assertEqual(new_name, self.core.retrieve_persona_data_single(
+            self.key, user['id'])['display_name'])
 
     @as_users("anton", "berta")
     def test_change_password(self, user):
@@ -55,6 +55,15 @@ class TestCoreBackend(BackendTest):
         self.login(newuser)
         self.assertTrue(self.key)
 
+    @as_users("anton", "berta", "emilia")
+    def test_change_username_token(self, user):
+        newaddress = "newaddress@example.cde"
+        ret = self.core.change_username_token(self.key, user['id'], newaddress, "wrongpass")
+        self.assertEqual(None, ret)
+        ret = self.core.change_username_token(self.key, user['id'], newaddress, user['password'])
+        self.assertTrue(ret)
+        self.assertTrue(isinstance(ret, str))
+
     def test_verify_existence(self):
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))
         self.assertFalse(self.core.verify_existence(self.key, "nonexistent@example.cde"))
@@ -66,22 +75,6 @@ class TestCoreBackend(BackendTest):
         self.assertFalse(ret)
         ret, _ = self.core.reset_password(self.key, "nonexistant@example.cde")
         self.assertFalse(ret)
-
-    @as_users("anton", "berta")
-    def test_change_username(self, user):
-        newaddress = "newaddress@example.cde"
-        ret = self.core.change_username(self.key, user['id'], newaddress, "wrongpass")
-        self.assertEqual((False, "Failed."), ret)
-        ret = self.core.change_username(self.key, user['id'], newaddress, user['password'])
-        self.assertTrue(ret)
-        self.core.logout(self.key)
-        self.key = None
-        self.login(user)
-        self.assertEqual(None, self.key)
-        newuser = copy.deepcopy(user)
-        newuser['username'] = newaddress
-        self.login(newuser)
-        self.assertTrue(self.key)
 
     @as_users("anton", "berta")
     def test_ldap(self, user):
@@ -102,7 +95,7 @@ class TestCoreBackend(BackendTest):
         }
         if user['id'] == 1:
             update['cloud_account'] = False
-        self.core.change_persona(self.key, update)
+        self.core.set_persona_data(self.key, update, allow_username_change=True)
         ldap_con = ldap.initialize("ldap://localhost")
         ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",
                                "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")

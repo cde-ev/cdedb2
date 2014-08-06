@@ -11,6 +11,7 @@ import os.path
 import webtest
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
+from cdedb.backend.common import do_singularization
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdeBackend
@@ -26,6 +27,12 @@ class BackendShim:
         for name, fun in funs:
             if hasattr(fun, "access_list") or hasattr(fun, "internal_access_list"):
                 self._funs[name] = self._wrapit(fun)
+                if hasattr(fun, "singularization_hint"):
+                    hint = fun.singularization_hint
+                    self._funs[hint['singular_function_name']] = self._wrapit(
+                        do_singularization(fun))
+                    setattr(self._backend, hint['singular_function_name'],
+                            do_singularization(fun))
 
     def _wrapit(self, fun):
         @functools.wraps(fun)

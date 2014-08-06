@@ -20,6 +20,60 @@ import functools
 import copy
 import inspect
 
+def singularize(singular_function_name, array_param_name="ids",
+                singular_param_name="anid"):
+    """This decorator marks a function for singularization.
+
+    The function has to accept an array as parameter and return a dict
+    indexed by this array. This array has either to be a keyword only
+    parameter or the first positional parameter after the request
+    state. Singularization creates a function which accepts a single
+    element instead and transparently wraps in a list as well as
+    unwrapping the returned dict.
+
+    Singularization is performed at the same spot as publishing of the
+    functions with @access decorator, that is in
+    :py:class:`cdedb.backend.rpc.BackendServer` and
+    :py:class:`AuthShim`.
+
+    :type singular_function_name: str
+    :param singular_function_name: name for the new singularized function
+    :type array_param_name: str
+    :type array_param_name: name of the parameter to singularize
+    :type singular_param_name: str
+    :type singular_param_name: new name of the singularized parameter
+    """
+    def wrap(fun):
+        fun.singularization_hint = {
+            'singular_function_name' : singular_function_name,
+            'array_param_name' : array_param_name,
+            'singular_param_name' : singular_param_name,
+        }
+        return fun
+    return wrap
+
+def do_singularization(fun):
+    """Perform singularization on a function.
+
+    This is the companion to the @singularize decorator.
+    :type fun: callable
+    :param fun: function with ``fun.singularization_hint`` attribute
+    :rtype: callable
+    :returns: singularized function
+    """
+    hint = fun.singularization_hint
+    @functools.wraps(fun)
+    def new_fun(rs, *args, **kwargs):
+        if hint['singular_param_name'] in kwargs:
+            param = kwargs.pop(hint['singular_param_name'])
+            kwargs[hint['array_param_name']] = (param,)
+        else:
+            param = args[0]
+            args = ((param,),) + args[1:]
+        data = fun(rs, *args, **kwargs)
+        return data[param]
+    new_fun.__name__ = hint['singular_function_name']
+    return new_fun
 
 def access_decorator_generator(possibleroles):
     """The @access decorator marks a function of a backend for publication via
@@ -408,6 +462,12 @@ class AuthShim:
             if hasattr(fun, "access_list") or hasattr(fun,
                                                       "internal_access_list"):
                 self._funs[name] = self._wrapit(fun)
+                if hasattr(fun, "singularization_hint"):
+                    hint = fun.singularization_hint
+                    self._funs[hint['singular_function_name']] = self._wrapit(
+                        do_singularization(fun))
+                    setattr(backend, hint['singular_function_name'],
+                            do_singularization(fun))
 
     def _wrapit(self, fun):
         """
@@ -426,6 +486,7 @@ class AuthShim:
                 roles = self._backend.extract_roles(rs.user._persona_data)
                 new_rs.user.role = roles[-1]
             if new_rs.user.role in access_list:
+                # FIXME
                 return getattr(self._backend, fun.__name__)(new_rs, *args,
                                                             **kwargs)
             else:

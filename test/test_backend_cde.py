@@ -4,6 +4,7 @@ from cdedb.common import QuotaException
 from test.common import BackendTest, as_users, USER_DICT
 import decimal
 import datetime
+import copy
 
 class TestCdEBackend(BackendTest):
     used_backends = ("core", "cde")
@@ -11,13 +12,14 @@ class TestCdEBackend(BackendTest):
 
     @as_users("anton", "berta")
     def test_basics(self, user):
-        data = self.cde.get_data(self.key, (user['id'],))[user['id']]
+        data = self.cde.get_data_single(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['birth_name'] = "Hylia"
         setter = {k : v for k, v in data.items() if k in
                   {'id', 'birth_name', 'display_name', 'telephone'}}
-        self.cde.change_user(self.key, setter)
-        new_data = self.cde.get_data(self.key, (user['id'],))[user['id']]
+        num = self.cde.change_user(self.key, setter, 1)
+        self.assertEqual(1, num)
+        new_data = self.cde.get_data_single(self.key, user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("berta")
@@ -26,6 +28,21 @@ class TestCdEBackend(BackendTest):
             self.cde.get_data(self.key, (1, 2, 3))
         with self.assertRaises(QuotaException):
             self.cde.get_data(self.key, (1, 2, 3))
+
+    @as_users("anton", "berta", "emilia")
+    def test_change_username(self, user):
+        newaddress = "newaddress@example.cde"
+        token = self.core.change_username_token(self.key, user['id'], newaddress, user['password'])
+        ret, _ = self.cde.change_username(self.key, user['id'], newaddress, token)
+        self.assertTrue(ret)
+        self.core.logout(self.key)
+        self.key = None
+        self.login(user)
+        self.assertEqual(None, self.key)
+        newuser = copy.deepcopy(user)
+        newuser['username'] = newaddress
+        self.login(newuser)
+        self.assertTrue(self.key)
 
     @as_users("anton", "berta")
     def test_get_data(self, user):

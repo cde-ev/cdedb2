@@ -5,9 +5,10 @@ variant for external participants.
 """
 
 from cdedb.backend.uncommon import AbstractUserBackend
-from cdedb.backend.common import access_decorator_generator, \
-    internal_access_decorator_generator, make_RPCDaemon, run_RPCDaemon, \
-    affirm_validation as affirm, affirm_array_validation as affirm_array
+from cdedb.backend.common import (
+    access_decorator_generator, internal_access_decorator_generator,
+    make_RPCDaemon, run_RPCDaemon, affirm_validation as affirm,
+    affirm_array_validation as affirm_array, singularize)
 from cdedb.common import glue, EVENT_USER_DATA_FIELDS
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -41,8 +42,9 @@ class EventBackend(AbstractUserBackend):
         return super().is_admin(rs)
 
     @access("persona")
-    def orga_info(self, rs, ids):
-        """List events organized by persona.
+    @singularize("orga_info")
+    def orga_infos(self, rs, ids):
+        """List events organized by personas.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
@@ -58,7 +60,8 @@ class EventBackend(AbstractUserBackend):
         return ret
 
     @access("user")
-    def participation_info(self, rs, ids):
+    @singularize("participation_info")
+    def participation_infos(self, rs, ids):
         """List events visited.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
@@ -85,6 +88,7 @@ class EventBackend(AbstractUserBackend):
         return super().change_user(rs, data)
 
     @access("user")
+    @singularize("get_data_single")
     def get_data(self, rs, ids):
         return super().get_data(rs, ids)
 

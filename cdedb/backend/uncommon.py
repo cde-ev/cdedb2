@@ -81,20 +81,8 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
             raise ValueError("Invalid ids requested.")
         return {d['id'] : d for d in data}
 
-    def set_complete_user_data(self, rs, data):
-        """This requires that all possible keys are present. Often you may
-        want to use :py:meth:`set_user_data` instead.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
-        :rtype: int
-        :returns: number of changed entries
-        """
-        return self.set_user_data(rs, data, pkeys=PERSONA_DATA_FIELDS_MOD,
-                                  ukeys=self.user_management['data_fields'])
-
     def set_user_data(self, rs, data, pkeys=None, ukeys=None):
-        """Update only some keys of a data set. If ``pkeys`` or ``ukeys`` is not
+        """Update some keys of a data set. If ``pkeys`` or ``ukeys`` is not
         passed all keys available in ``data`` are updated.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
@@ -118,13 +106,22 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
             raise RuntimeError("Not enough privileges.")
 
         pdata = {key:data[key] for key in pkeys}
+        ret = 0
         with Atomizer(rs):
-            self.core.set_persona_data(rs, pdata)
-            query = "UPDATE {} SET ({}) = ({}) WHERE persona_id = %s".format(
-                self.user_management['data_table'], ", ".join(ukeys),
-                ", ".join(("%s",) * len(ukeys)))
-            return self.query_exec(
-                rs, query, tuple(data[key] for key in ukeys) + (data['id'],))
+            if len(pkeys) > 1:
+                ret = self.core.set_persona_data(rs, pdata)
+                if not ret:
+                    raise RuntimeError("Modification failed.")
+            if len(ukeys) > 0:
+                query = \
+                  "UPDATE {} SET ({}) = ({}) WHERE persona_id = %s".format(
+                      self.user_management['data_table'], ", ".join(ukeys),
+                      ", ".join(("%s",) * len(ukeys)))
+                params = tuple(data[key] for key in ukeys) + (data['id'],)
+                ret = self.query_exec(rs, query, params)
+                if not ret:
+                    raise RuntimeError("Modification failed.")
+        return ret
 
     # @access("user")
     def change_user(self, rs, data):
@@ -137,9 +134,10 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :returns: number of users changed
         """
         data = affirm(self.user_management['validator'], data)
-        self.set_user_data(rs, data)
+        return self.set_user_data(rs, data)
 
     # @access("user")
+    # @singularize("get_data_single")
     def get_data(self, rs, ids):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`

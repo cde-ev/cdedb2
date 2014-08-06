@@ -137,7 +137,6 @@ DROP SCHEMA IF EXISTS cde;
 CREATE SCHEMA cde;
 GRANT USAGE ON SCHEMA cde TO cdb_member;
 
--- FIXME think about splitting off adresses
 CREATE TABLE cde.member_data (
         persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
 
@@ -164,7 +163,6 @@ CREATE TABLE cde.member_data (
         location                varchar,
         country                 varchar,
         -- administrative notes about this user
-        -- not logged in changelog
         notes                   varchar,
 
         -- here is the cut for event.user_data
@@ -196,13 +194,14 @@ CREATE TABLE cde.member_data (
         -- if True this member's data may be passed on to BuB
         bub_search              boolean NOT NULL DEFAULT FALSE,
         -- file name of image
-        -- not logged in changelog
+        -- not logged in the changelog
         foto                    varchar DEFAULT NULL,
 
         -- internal field for fulltext search
         -- this contains a concatenation of all other fields
         -- thus enabling fulltext search as substring search on this field
         -- it is automatically updated when a change is commited
+        -- this is not logged in the changelog
         fulltext                varchar NOT NULL
 );
 GRANT SELECT ON cde.member_data TO cdb_member;
@@ -221,6 +220,7 @@ CREATE TABLE cde.changelog (
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
         reviewed_by             integer REFERENCES core.personas(id) DEFAULT NULL,
         cdate                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        generation              integer NOT NULL,
         -- enum for progress of change
         -- 0 ... review pending
         -- 1 ... commited
@@ -252,6 +252,7 @@ CREATE TABLE cde.changelog (
         postal_code             varchar,
         location                varchar,
         country                 varchar,
+        notes                   varchar,
         birth_name              varchar,
         address_supplement2     varchar,
         address2                varchar,
@@ -270,9 +271,11 @@ CREATE TABLE cde.changelog (
         bub_search              boolean NOT NULL
 );
 CREATE INDEX idx_changelog_change_status ON cde.changelog(change_status);
-GRANT INSERT ON cde.changelog TO cdb_member;
+CREATE INDEX idx_changelog_persona_id ON cde.changelog(persona_id);
+GRANT SELECT, INSERT ON cde.changelog TO cdb_member;
 GRANT SELECT, UPDATE ON cde.changelog_id_seq TO cdb_member;
-GRANT UPDATE (reviewed_by, change_status) ON cde.changelog TO cdb_cde_admin;
+GRANT UPDATE (change_status) ON cde.changelog TO cdb_member;
+GRANT UPDATE (reviewed_by) ON cde.changelog TO cdb_cde_admin;
 
 CREATE TABLE cde.semester (
         -- historically this was determined by the exPuls number

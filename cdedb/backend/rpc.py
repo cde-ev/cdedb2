@@ -20,6 +20,7 @@ import stat
 import serpent
 import logging
 from cdedb.common import glue
+from cdedb.backend.common import do_singularization
 from cdedb.serialization import SERIALIZERS
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,6 +70,12 @@ class _BackendServer:
         for name, fun in funs:
             if hasattr(fun, "access_list"):
                 setattr(self, name, _process_function(backend, fun))
+                if hasattr(fun, "singularization_hint"):
+                    hint = fun.singularization_hint
+                    setattr(self, hint['singular_function_name'],
+                            _process_function(backend, do_singularization(fun)))
+                    setattr(backend, hint['singular_function_name'],
+                            do_singularization(fun))
 
 def create_RPCDaemon(backend, socket_address, access_logging=True):
     """Take care of the details for publishing a backend via :py:mod:`Pyro4`.

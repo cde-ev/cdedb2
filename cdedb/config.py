@@ -147,6 +147,9 @@ _SECRECTS_DEFAULTS = {
     ## salting value used for verifying sensitve url parameters
     "URL_PARAMETER_SALT" : "aoeuidhtns9KT6AOR2kNjq2zO",
 
+    ## salting value used for verifying tokens for username changes
+    "USERNAME_CHANGE_TOKEN_SALT" : "kaoslrcekhvx2387krcoekd983xRKCh309xKX",
+
     ## password of ldap user above
     "LDAP_PASSWORD" : "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0",
 }

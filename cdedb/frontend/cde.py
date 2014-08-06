@@ -50,24 +50,32 @@ class CdeFrontend(AbstractUserFrontend):
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/error")
-        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        realm = self.coreproxy.get_realm(rs, persona_id)
         red = self.redirect_realm(
             rs, persona_id, "show_user", params={
                 'confirm_id' : self.encode_parameter(
                     "{}/show_user".format(realm), "confirm_id", confirm_id)})
         if red:
             return red
-        data = self.cdeproxy.get_data(rs, (persona_id,))[persona_id]
-        participation_info = self.eventproxy.participation_info(
-            rs, (persona_id,))[persona_id]
+        data = self.cdeproxy.get_data_single(rs, persona_id)
+        participation_info = self.eventproxy.participation_info(rs, persona_id)
         return self.render(rs, "show_user", {
             'data' : data, 'participation_info' : participation_info})
 
     @access("user")
     def change_user_form(self, rs, persona_id):
-        return super().change_user_form(rs, persona_id)
+        if persona_id != rs.user.persona_id and not self.is_admin(rs):
+            return werkzeug.exceptions.Forbidden()
+        if self.redirect_realm(rs, persona_id, "change_user_form"):
+            return self.redirect_realm(rs, persona_id, "change_user_form")
+        generation = self.cdeproxy.get_generation(rs, persona_id)
+        data = self.cdeproxy.get_data_single(rs, persona_id)
+        rs.values.update(data)
+        rs.values['generation'] = generation
+        return self.render(rs, "change_user")
 
     @access("user", {"POST"})
+    @REQUESTdata("generation")
     @REQUESTdatadict("display_name", "family_name", "given_names", "title",
                      "name_supplement", "telephone", "mobile",
                      "address_supplement", "address", "postal_code",
@@ -75,6 +83,50 @@ class CdeFrontend(AbstractUserFrontend):
                      "postal_code2", "location2", "country2", "weblink",
                      "specialisation", "affiliation", "timeline", "interests",
                      "free_form", "bub_search")
-    def change_user(self, rs, persona_id, data=None):
-        # TODO add changelog functionality
-        return super().change_user(rs, persona_id, data)
+    def change_user(self, rs, persona_id, data=None, generation=None):
+        if persona_id != rs.user.persona_id and not self.is_admin(rs):
+            return werkzeug.exceptions.Forbidden()
+        if self.redirect_realm(rs, persona_id, "change_user_form"):
+            return self.redirect_realm(rs, persona_id, "change_user_form")
+        data = data or {}
+        data['id'] = persona_id
+        data = check(rs, "member_data", data)
+        generation = check(rs, "int", generation, "generation")
+        if rs.errors:
+            return self.render(rs, "change_user")
+        num = self.cdeproxy.change_user(rs, data, generation)
+        if num > 0:
+            rs.notify("success", "Change committed.")
+        elif num < 0:
+            rs.notify("info", "Change pending.")
+        else:
+            rs.notify("warning", "Change failed.")
+        return self.redirect(rs, "cde/show_user", params={
+            'confirm_id' : self.encode_parameter("cde/show_user", "confirm_id",
+                                                 persona_id)})
+
+    @access("persona", {'POST'})
+    @REQUESTdata('persona_id', 'new_username', 'password')
+    @encodedparam('new_username')
+    def do_username_change(self, rs, persona_id="", new_username="",
+                           password=""):
+        """Now we can do the actual change. This is in the cde frontend to
+        allow the changelog functionality. (Otherwise this would be in the
+        core frontend.)"""
+        persona_id = check(rs, 'int', persona_id, "persona_id")
+        new_username = check(rs, 'email', new_username, "new_username")
+        password = check(rs, 'str', password, "password")
+        ## do not leak the password
+        rs.values['password'] = ""
+        if rs.errors:
+            return self.redirect(rs, "core/change_username_form")
+        token = self.coreproxy.change_username_token(
+            rs, persona_id, new_username, password)
+        success, message = self.cdeproxy.change_username(
+            rs, persona_id, new_username, token)
+        if not success:
+            rs.notify("error", message)
+            return self.redirect(rs, "core/username_change_form")
+        else:
+            rs.notify("success", "Username changed.")
+            return self.redirect(rs, "core/index")

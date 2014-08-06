@@ -120,18 +120,18 @@ class CoreFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/error")
-        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        realm = self.coreproxy.get_realm(rs, persona_id)
+        params = {'confirm_id' : self.encode_parameter(
+            "{}/show_user".format(realm), "confirm_id", confirm_id)}
         return self.redirect(
-            rs, "{}/show_user".format(realm), params={
-                'confirm_id' : self.encode_parameter(
-                    "{}/show_user".format(realm), "confirm_id", confirm_id)})
+            rs, "{}/show_user".format(realm), params=params)
 
     @access("persona")
     def change_user_form(self, rs, persona_id):
         """Common entry point redirecting to user's realm."""
         if not self.coreproxy.verify_ids(rs, (persona_id,)):
             raise werkzeug.exceptions.BadRequest("Nonexistant user.")
-        realm = self.coreproxy.get_realms(rs, (persona_id,))[persona_id]
+        realm = self.coreproxy.get_realm(rs, persona_id)
         return self.redirect(rs, "{}/change_user_form".format(realm))
 
     @access("persona")
@@ -235,14 +235,12 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     def change_username_form(self, rs):
         """Render form."""
-        # TODO implement changelog functionality, then redirect on realm
         return self.render(rs, "change_username")
 
     @access("persona")
     @REQUESTdata("new_username")
     def send_username_change_link(self, rs, new_username=""):
         """Verify new name with test email."""
-        # TODO implement changelog functionality, then redirect on realm
         new_username = check(rs, "email", new_username, "new_username")
         if rs.errors:
             return self.render(rs, "change_username")
@@ -261,37 +259,12 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata("new_username")
     @encodedparam("new_username")
     def do_username_change_form(self, rs, new_username=""):
-        """Email is now verified."""
-        # TODO implement changelog functionality, then redirect on realm
+        """Email is now verified or we are admin."""
         new_username = check(rs, "email", new_username, "new_username")
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.render(rs, "change_username")
         rs.values['new_username'] = self.encode_parameter(
-            "core/do_username_change", "new_username", new_username)
+            "cde/do_username_change", "new_username", new_username)
+        rs.values['persona_id'] = rs.user.persona_id
         return self.render(rs, "do_username_change")
-
-    @access("persona", {'POST'})
-    @REQUESTdata('new_username', 'password')
-    @encodedparam('new_username')
-    def do_username_change(self, rs, new_username="", password=""):
-        """Now we can do the actual change."""
-        # TODO implement changelog functionality, then redirect on realm
-        new_username = check(rs, 'email', new_username, "new_username")
-        password = check(rs, 'str', password, "password")
-        ## do not leak the password
-        rs.values['password'] = ""
-        if rs.errors:
-            rs.values['new_username'] = self.encode_parameter(
-                "core/do_username_change", "new_username", new_username)
-            return self.render(rs, "do_username_change")
-        success, message = self.coreproxy.change_username(
-            rs, rs.user.persona_id, new_username, password)
-        if not success:
-            rs.notify("error", message)
-            rs.values['new_username'] = self.encode_parameter(
-                "core/do_username_change", "new_username", new_username)
-            return self.render(rs, "do_username_change")
-        else:
-            rs.notify("success", "Username changed.")
-            return self.redirect(rs, "core/index")

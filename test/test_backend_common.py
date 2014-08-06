@@ -15,5 +15,6 @@ class TestBackendCommon(unittest.TestCase):
         shim = AuthShim(backend)
         self.assertTrue(callable(shim.retrieve_persona_data))
         self.assertTrue(callable(shim.login))
+        self.assertTrue(callable(shim.get_realm))
         with self.assertRaises(AttributeError):
             shim.verify_password

@@ -5,6 +5,7 @@
     <h1>{{ values['given_names']|e }} {{ values['family_name']|e }}</h1>
 
     <form action="{{ cdedblink('cde/change_user') }}" method="POST" id="changedataform">
+        {{ util.input_hidden(name="generation") }}
         <table>
             <th>
                 <tr> <td colspan="2">Person</td> </tr>

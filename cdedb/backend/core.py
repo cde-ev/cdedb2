@@ -6,17 +6,20 @@ since the basic division is between known accounts and anonymous
 accesses.
 """
 from cdedb.backend.common import AbstractBackend
-from cdedb.backend.common import access_decorator_generator, \
-    internal_access_decorator_generator, make_RPCDaemon, run_RPCDaemon
-from cdedb.common import glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS, \
-    extract_realm
-from cdedb.backend.common import affirm_validation as affirm, \
-    affirm_array_validation as affirm_array
+from cdedb.backend.common import (
+    access_decorator_generator, internal_access_decorator_generator,
+    make_RPCDaemon, run_RPCDaemon, singularize, affirm_validation as affirm,
+    affirm_array_validation as affirm_array)
+from cdedb.common import (glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS,
+                          extract_realm)
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
 
 from passlib.hash import sha512_crypt
+import hashlib
+import datetime
+import pytz
 import uuid
 import argparse
 import random
@@ -69,6 +72,27 @@ class LDAPConnection:
         return None
 
 
+def create_token(salt, persona_id, current_email, new_email):
+    """Create a token for :py:meth:`CoreBackend.change_username_token`.
+
+    This is somewhat similar to
+    :py:func:`cdedb.frontend.common.encode_parameter`.
+
+    :type salt: str
+    :param salt: secret used for signing the parameter
+    :type persona_id: int
+    :type current_email: str
+    :type new_email: str
+    :rtype: str
+    """
+    myhash = hashlib.sha512()
+    now = datetime.datetime.now(pytz.utc)
+    tohash = "{}--{}--{}--{}--{}".format(
+        salt, persona_id, current_email, new_email,
+        now.strftime("%Y-%m-%d %H"))
+    myhash.update(tohash.encode("utf-8"))
+    return myhash.hexdigest()
+
 class CoreBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
     ``@internal_access`` quite often. """
@@ -82,6 +106,10 @@ class CoreBackend(AbstractBackend):
         secrets = SecretsConfig(configpath)
         self.ldap_connect = lambda: LDAPConnection(
             self.conf.LDAP_URL, self.conf.LDAP_USER, secrets.LDAP_PASSWORD)
+        self.create_token = \
+          lambda persona_id, current_email, new_email: create_token(
+              secrets.USERNAME_CHANGE_TOKEN_SALT, persona_id, current_email,
+              new_email)
 
     @classmethod
     def extract_roles(cls, personadata):
@@ -119,6 +147,7 @@ class CoreBackend(AbstractBackend):
         return sha512_crypt.encrypt(password)
 
     @internal_access("persona")
+    @singularize("retrieve_persona_data_single")
     def retrieve_persona_data(self, rs, ids):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
@@ -134,25 +163,18 @@ class CoreBackend(AbstractBackend):
         return {d['id'] : d for d in data}
 
     @internal_access("persona")
-    def set_complete_persona_data(self, rs, data):
-        """This requires that all possible keys are present. Often you may
-        want to use :py:meth:`set_persona_data` instead.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
-        :rtype: int
-        :returns: number of changed entries
-        """
-        return self.set_persona_data(rs, data, keys=PERSONA_DATA_FIELDS_MOD)
-
-    @internal_access("persona")
-    def set_persona_data(self, rs, data, keys=None):
+    def set_persona_data(self, rs, data, keys=None, allow_username_change=False):
         """Update only some keys of a data set. If ``keys`` is not passed
         all keys available in ``data`` are updated.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str : object}
         :type keys: [str]
+        :type allow_username_change: bool
+        :param allow_username_change: Usernames are special because they
+          are used for login and password recovery, hence we require an
+          explicit statement of intent to change a username. Obviously this
+          should only be set if necessary.
         :rtype: int
         :returns: number of changed entries
         """
@@ -164,6 +186,8 @@ class CoreBackend(AbstractBackend):
                              'cloud_account'}
         if not self.is_admin(rs) and (set(keys) & privileged_fields):
             raise RuntimeError("Modifying sensitive key forbidden.")
+        if 'username' in data and not allow_username_change:
+            raise RuntimeError("Modification of username prevented.")
         query = "UPDATE core.personas SET ({}) = ({}) WHERE id = %s".format(
             ", ".join(keys), ", ".join(("%s",) * len(keys)))
         ldap_ops = []
@@ -193,6 +217,7 @@ class CoreBackend(AbstractBackend):
         return num
 
     @access("persona")
+    @singularize("get_data_single")
     def get_data(self, rs, ids):
         ids = affirm_array("int", ids)
         return self.retrieve_persona_data(rs, ids)
@@ -251,7 +276,7 @@ class CoreBackend(AbstractBackend):
 
     @access("persona")
     def verify_ids(self, rs, ids):
-        """Check that ids do exist.
+        """Check that persona ids do exist.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
@@ -265,6 +290,7 @@ class CoreBackend(AbstractBackend):
         return data['num'] == len(ids)
 
     @access("persona")
+    @singularize("get_realm")
     def get_realms(self, rs, ids):
         """Resolve ids into realms.
 
@@ -281,19 +307,6 @@ class CoreBackend(AbstractBackend):
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
         return {d['id'] : extract_realm(d['status']) for d in data}
-
-    @access("persona")
-    def change_persona(self, rs, data):
-        """Change a data set. Note that you need privileges to edit someone
-        elses data set.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
-        :rtype: int
-        :returns: number of personas changed
-        """
-        data = affirm("persona_data", data)
-        return self.set_persona_data(rs, data)
 
     @access("anonymous")
     def verify_existence(self, rs, email):
@@ -341,6 +354,7 @@ class CoreBackend(AbstractBackend):
             orig_conn = rs.conn
             rs.conn = self.connpool['cdb_persona']
         if new_password is None:
+            # FIXME zap similar characters
             new_password = ''.join(random.choice(
                 string.ascii_letters + string.digits) for _ in range(12))
             new_password = new_password + random.choice('!@#$%^&*(){}')
@@ -410,35 +424,30 @@ class CoreBackend(AbstractBackend):
         return self.modify_password(rs, data['id'], None, None)
 
     @access("persona")
-    def change_username(self, rs, persona_id, new_username, password):
-        """Since usernames are used for login, this needs a bit of care.
+    def change_username_token(self, rs, persona_id, new_username, password):
+        """We provide a token to be used with
+        :py:meth:`cdedb.backend.cde.CdeBackend.change_username` which will
+        do the actual username change. This construct is necessary to
+        provide the changelog functionality and at the same time do the
+        password check in the core realm.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type persona_id: int
         :type new_username: str
         :type password: str
-        :rtype: (bool, str)
+        :rtype: str or None
+        :returns: Token or None if password was invalid
         """
-        # TODO add changelog functionality
-        # if rs.user.realm == "cde":
-        #     raise RuntimeError("cde realm needs special treatment")
+        persona_id = affirm("int", persona_id)
         new_username = affirm("email", new_username)
         password = affirm("str", password)
-        if self.verify_existence(rs, new_username):
-            ## abort if there is allready an account with this address
-            return False, "Name collision."
-        with Atomizer(rs):
-            query = "SELECT password_hash FROM core.personas WHERE id = %s"
-            data = self.query_one(rs, query, (persona_id,))
-            if (self.is_admin(rs) and persona_id != rs.user.persona_id) \
-              or self.verify_password(password, data['password_hash']):
-                new_data = {
-                    'id' : persona_id,
-                    'username' : new_username,
-                }
-                if self.set_persona_data(rs, new_data):
-                    return True, new_username
-        return False, "Failed."
+        query = glue("SELECT username, password_hash FROM core.personas",
+                     "WHERE id = %s")
+        data = self.query_one(rs, query, (persona_id,))
+        if (self.is_admin(rs) and persona_id != rs.user.persona_id) \
+          or self.verify_password(password, data['password_hash']):
+            return self.create_token(persona_id, data['username'], new_username)
+        return None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
