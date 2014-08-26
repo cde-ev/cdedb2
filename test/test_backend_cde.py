@@ -44,6 +44,43 @@ class TestCdEBackend(BackendTest):
         self.login(newuser)
         self.assertTrue(self.key)
 
+    @as_users("berta")
+    def test_displacement(self, user):
+        self.assertEqual(
+            -1, self.cde.change_user(self.key, {'id' : user['id'],
+                                                'family_name' : "Link"}, 1))
+        newaddress = "newaddress@example.cde"
+        token = self.core.change_username_token(self.key, user['id'],
+                                                newaddress, user['password'])
+        ret, _ = self.cde.change_username(self.key, user['id'], newaddress, token)
+        self.assertTrue(ret)
+        self.core.logout(self.key)
+        self.key = None
+        self.login(user)
+        self.assertEqual(None, self.key)
+        newuser = copy.deepcopy(user)
+        newuser['username'] = newaddress
+        self.login(newuser)
+        self.assertTrue(self.key)
+        data = self.cde.get_data_single(self.key, user['id'],)
+        self.assertEqual(user['family_name'], data['family_name'])
+        self.core.logout(self.key)
+        self.login(USER_DICT['anton'])
+        self.cde.resolve_change(self.key, user['id'], 4, ack=True)
+        data = self.cde.get_data_single(self.key, user['id'],)
+        self.assertEqual("Link", data['family_name'])
+
+    @as_users("berta")
+    def test_nack_change(self, user):
+        self.assertEqual(
+            -1, self.cde.change_user(self.key, {'id' : user['id'],
+                                                'family_name' : "Link"}, 1))
+        self.assertEqual(2, self.cde.get_generation(self.key, user['id']))
+        self.core.logout(self.key)
+        self.login(USER_DICT['anton'])
+        self.cde.resolve_change(self.key, user['id'], 2, ack=False)
+        self.assertEqual(1, self.cde.get_generation(self.key, user['id']))
+
     @as_users("anton", "berta")
     def test_get_data(self, user):
         data = self.cde.get_data(self.key, (1, 2))

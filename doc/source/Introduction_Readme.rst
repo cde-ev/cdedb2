@@ -84,3 +84,7 @@ it right away.
 * If a check for membership is done (``if foo in bar``) use a ``set`` as
   data structure if possible, this does not apply for iterating (``for foo
   in bar``).
+* Non-specific parameters should be given as keyword arguments. That is
+  values like ``True``, ``False``, ``None`` where it's pretty hard to guess
+  what they do. Antipattern would be a call like ``do_something(True, False,
+  None, True)``.

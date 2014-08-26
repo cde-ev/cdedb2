@@ -258,13 +258,14 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata("new_username")
     @encodedparam("new_username")
-    def do_username_change_form(self, rs, new_username=""):
+    def do_username_change_form(self, rs, persona_id, new_username=""):
         """Email is now verified or we are admin."""
+        if persona_id != rs.user.persona_id and not self.is_admin(rs):
+            return werkzeug.exceptions.Forbidden()
         new_username = check(rs, "email", new_username, "new_username")
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.render(rs, "change_username")
         rs.values['new_username'] = self.encode_parameter(
             "cde/do_username_change", "new_username", new_username)
-        rs.values['persona_id'] = rs.user.persona_id
         return self.render(rs, "do_username_change")

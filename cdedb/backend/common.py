@@ -486,9 +486,7 @@ class AuthShim:
                 roles = self._backend.extract_roles(rs.user._persona_data)
                 new_rs.user.role = roles[-1]
             if new_rs.user.role in access_list:
-                # FIXME
-                return getattr(self._backend, fun.__name__)(new_rs, *args,
-                                                            **kwargs)
+                return fun(new_rs, *args, **kwargs)
             else:
                 raise RuntimeError("Permission denied")
         return new_fun

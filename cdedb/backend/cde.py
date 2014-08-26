@@ -136,7 +136,7 @@ class CdeBackend(AbstractUserBackend):
         return " ".join(vals)
 
     def set_user_data(self, rs, data, generation, pkeys=None, ukeys=None,
-                      allow_username_change=False):
+                      allow_username_change=False, may_wait=True):
         """This checks for privileged fields, implements the change log and
         updates the fulltext in addition to what
         :py:meth:`cdedb.backend.common.AbstractUserBackend.set_user_data`
@@ -147,8 +147,8 @@ class CdeBackend(AbstractUserBackend):
         :type data: {str : object}
         :type generation: int or None
         :param generation: generation on which this request is based, if this
-           is not the current generation we abort, may be None for
-           administrative override
+           is not the current generation we abort, may be None to override
+           the check
         :type pkeys: [str]
         :param pkeys: keys pretaining to the persona
         :type ukeys: [str]
@@ -158,6 +158,10 @@ class CdeBackend(AbstractUserBackend):
           are used for login and password recovery, hence we require an
           explicit statement of intent to change a username. Obviously this
           should only be set if necessary.
+        :type may_wait: bool
+        :param may_wait: Whether this change may wait in the changelog. If
+          this is ``False`` and there is a pending change in the changelog,
+          the new change is slipped in between.
         :rtype: int
         :returns: number of changed entries, however if changes were only
           written to changelog and are waiting for review, the negative number
@@ -170,41 +174,71 @@ class CdeBackend(AbstractUserBackend):
         privileged_fields = {'balance'}
         if set(data) & privileged_fields and not self.is_admin(rs):
             raise RuntimeError("Modifying sensitive key forbidden.")
+        if 'username' in data  and not allow_username_change:
+            raise RuntimeError("Modification of username prevented.")
 
         with Atomizer(rs):
+            ## check for race
             current_generation = self.get_generations(rs, (data['id'],))[
                 data['id']]
-            if current_generation != generation:
+            if generation is not None and current_generation != generation:
                 _LOGGER.info("Generation mismatch {} != {} for {}".format(
-                    current_generation, generation, persona_id))
+                    current_generation, generation, data['id']))
                 return 0
 
-            current_data = self.get_current_data_single(rs, data['id'])
+            ## stash pending change if we may not wait
+            history = self.get_history(rs, data['id'], generations=None)
+            current_data = history[current_generation]
+            diff = None
+            if current_data['change_status'] == const.MEMBER_CHANGE_PENDING \
+              and not may_wait:
+                old_data = self.get_data(rs, (data['id'],))[data['id']]
+                diff = {key : current_data[key] for key in old_data
+                        if old_data[key] != current_data[key]}
+                current_data = old_data
+                query = glue("UPDATE cde.changelog SET change_status = %s",
+                             "WHERE persona_id = %s AND change_status = %s")
+                self.query_exec(rs, query, (
+                    const.MEMBER_CHANGE_DISPLACED, data['id'],
+                    const.MEMBER_CHANGE_PENDING))
+
+            ## determine if something changed
             changed_fields = {key for key, value in data.items()
                               if value != current_data[key]}
             if not changed_fields:
+                if diff:
+                    query = glue("UPDATE cde.changelog SET change_status = %s",
+                                 "WHERE persona_id = %s AND generation = %s")
+                    self.query_exec(rs, query, (const.MEMBER_CHANGE_PENDING,
+                                                data['id'], current_generation))
                 return 0
+
+            ## determine if something requiring a review changed
             fields_requiring_review = {'birthday', 'family_name', 'given_names'}
             if changed_fields & fields_requiring_review and not self.is_admin(rs):
                 status = const.MEMBER_CHANGE_PENDING
+                if not may_wait:
+                    self.logger.error(glue("Change requiring review may not",
+                                           "wait for {}.").format(data['id']))
+                    status = const.MEMBER_CHANGE_COMMITTED
             else:
                 status = const.MEMBER_CHANGE_COMMITTED
 
-            if 'username' in data  and not allow_username_change:
-                raise RuntimeError("Modification of username prevented.")
+            ## prepare for inserting a new changelog entry
             query = glue("SELECT COUNT(*) AS num FROM cde.changelog",
                          "WHERE persona_id = %s")
             next_generation = self.query_one(
                 rs, query, (data['id'],))['num'] + 1
             # the following is a nop, if there is no pending change
             query = glue("UPDATE cde.changelog SET change_status = %s",
-                         "WHERE persona_id = %s AND generation = %s",
-                         "AND change_status = %s")
+                         "WHERE persona_id = %s AND change_status = %s")
             self.query_exec(rs, query, (
-                const.MEMBER_CHANGE_SUPERSEDED, data['id'], generation,
+                const.MEMBER_CHANGE_SUPERSEDED, data['id'],
                 const.MEMBER_CHANGE_PENDING))
-            fields = ["submitted_by", "generation", "change_status"]
-            fields.append("persona_id")
+
+            ## insert new changelog entry
+            fields = ["submitted_by", "generation", "change_status",
+                      "persona_id"]
             fields.extend(PERSONA_DATA_FIELDS)
             fields.remove("id")
             fields.extend(MEMBER_DATA_FIELDS)
@@ -218,20 +252,46 @@ class CdeBackend(AbstractUserBackend):
                 else:
                     params.append(current_data[field])
             self.query_exec(rs, query, params)
-        if status == const.MEMBER_CHANGE_COMMITTED:
-            return self.resolve_change(
-                rs, data['id'], ack=True, reviewed=False,
-                allow_username_change=allow_username_change)
-        else:
-            return -1
+
+            ## resolve change if it doesn't require review
+            if status == const.MEMBER_CHANGE_COMMITTED:
+                ret = self.resolve_change(
+                    rs, data['id'], next_generation, ack=True, reviewed=False,
+                    allow_username_change=allow_username_change)
+            else:
+                ret = -1
+
+            # pop the stashed change
+            if diff:
+                if set(diff) & changed_fields:
+                    # This should not happen since non-waiting changes
+                    # should only manipulate selected fields
+                    self.logger.warning(
+                        "Dropped conflicting change for {}".format(data['id']))
+                    return ret
+                query = "INSERT INTO cde.changelog ({}) VALUES ({})".format(
+                    ", ".join(fields), ", ".join(("%s",) * len(fields)))
+                params = [rs.user.persona_id, next_generation + 1,
+                          const.MEMBER_CHANGE_PENDING, data['id']]
+                for field in fields[4:]:
+                    if field in diff:
+                        params.append(diff[field])
+                    elif field in data:
+                        params.append(data[field])
+                    else:
+                        params.append(current_data[field])
+                self.query_exec(rs, query, params)
+
+        return ret
 
     @access("cde_admin")
-    def resolve_change(self, rs, persona_id, ack, allow_username_change=False,
-                       reviewed=True):
+    def resolve_change(self, rs, persona_id, generation, ack,
+                       allow_username_change=False, reviewed=True):
         """Review a currently pending change from the changelog.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type persona_id: int
+        :type generation: int
         :type ack: bool
         :param ack: whether to commit or refuse the change
         :type allow_username_change: bool
@@ -246,29 +306,34 @@ class CdeBackend(AbstractUserBackend):
         :returns: number of changed entries
         """
         persona_id = affirm("int", persona_id)
+        generation = affirm("int", generation)
         ack = affirm("bool", ack)
         allow_username_change = affirm("bool", allow_username_change)
         if not ack:
             query = glue(
                 "UPDATE cde.changelog SET reviewed_by = %s, change_status = %s",
-                "WHERE persona_id = %s AND change_status = %s")
+                "WHERE persona_id = %s AND change_status = %s",
+                "AND generation = %s")
             self.query_exec(rs, query, (
                 rs.user.persona_id, const.MEMBER_CHANGE_NACKED, persona_id,
-                const.MEMBER_CHANGE_PENDING))
+                const.MEMBER_CHANGE_PENDING, generation))
             return 0
         with Atomizer(rs):
-            data = self.get_current_data_single(rs, persona_id)
+            ## look up changelog entry and mark as commited
+            history = self.get_history(rs, persona_id,
+                                       generations=(generation,))
+            data = history[generation]
+            if data['change_status'] != const.MEMBER_CHANGE_PENDING:
+                return 0
             query = glue(
                 "UPDATE cde.changelog SET {} change_status = %s",
-                "WHERE persona_id = %s AND generation = %s",
-                "AND change_status = %s").format(
+                "WHERE persona_id = %s AND generation = %s").format(
                     "reviewed_by = %s," if reviewed else "")
             params = ((rs.user.persona_id,) if reviewed else tuple()) + (
-                          const.MEMBER_CHANGE_COMMITTED, persona_id,
-                          data['generation'], const.MEMBER_CHANGE_PENDING)
-            num = self.query_exec(rs, query, params)
-            if num != 1:
-                raise RuntimeError("No pending change to be commited.")
+                          const.MEMBER_CHANGE_COMMITTED, persona_id, generation)
+            self.query_exec(rs, query, params)
+
+            ## determine changed fields
             old_data = self.get_data(rs, (persona_id,))[persona_id]
             relevant_keys = tuple(key for key in old_data
                                   if data[key] != old_data[key])
@@ -279,6 +344,8 @@ class CdeBackend(AbstractUserBackend):
                           PERSONA_DATA_FIELDS)
             ukeys = tuple(key for key in relevant_keys if key in
                           MEMBER_DATA_FIELDS)
+
+            ## commit changes
             ret = 0
             if len(pkeys) > 1:
                 pdata = {key:data[key] for key in pkeys}
@@ -306,11 +373,10 @@ class CdeBackend(AbstractUserBackend):
         return ret
 
     @access("user")
-    def change_user(self, rs, data, generation):
+    def change_user(self, rs, data, generation, may_wait=True):
         data = affirm("member_data", data)
         generation = affirm("int", generation)
-        ret = self.set_user_data(rs, data, generation)
-        self.logger.error("result is {}".format(ret))
+        ret = self.set_user_data(rs, data, generation, may_wait=may_wait)
         return ret
 
     @access("user")
@@ -368,7 +434,8 @@ class CdeBackend(AbstractUserBackend):
     @access("user")
     @singularize("get_generation")
     def get_generations(self, rs, ids):
-        """Retrieve the current generation of the persona ids in the changelog.
+        """Retrieve the current generation of the persona ids in the
+        changelog. This includes committed and pending changelog entries.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
@@ -384,28 +451,21 @@ class CdeBackend(AbstractUserBackend):
         data = self.query_all(rs, query, (ids, valid_status))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return {entry['persona_id'] : entry['generation'] for entry in data}
+        return {e['persona_id'] : e['generation'] for e in data}
 
-    @access("user")
-    def get_current_data_single(self, rs, anid):
-        """Retrieve the most current data set along with its generation.
-
-        This is like get_data_single combined with get_generation, but
-        the data is refreshed from the most recent valid changelog entry.
+    @access("cde_admin")
+    def get_pending_changes(self, rs):
+        """Retrive currently pending changes in the changelog.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type anid: int
-        :rtype: {str : object}
+        :rtype: {int : {str : object}}
+        :returns: dict mapping persona ids to dicts containing information
+          about the change and the persona
         """
-        anid = affirm("int", anid)
-        with Atomizer(rs):
-            generation = self.get_generations(rs, (anid,))[anid]
-            data = self.get_data(rs, (anid,))[anid]
-            recent_data = self.get_history(rs, anid, (generation,))[generation]
-            data.update(recent_data)
-            data['generation'] = generation
-        return data
-
+        query = glue("SELECT persona_id, given_names, family_name, generation",
+                     "FROM cde.changelog WHERE change_status = %s")
+        data = self.query_all(rs, query, (const.MEMBER_CHANGE_PENDING,))
+        return {e['persona_id'] : e for e in data}
 
     @access("cde_admin")
     def get_history(self, rs, anid, generations):
@@ -423,10 +483,8 @@ class CdeBackend(AbstractUserBackend):
             generations = affirm_array("int", generations)
         fields = list(PERSONA_DATA_FIELDS)
         fields.remove("id")
-        fields.append("persona_id")
+        fields.append("persona_id AS id")
         fields.extend(MEMBER_DATA_FIELDS)
-        for unlogged_field in ("notes",):
-            fields.remove(unlogged_field)
         fields.extend(("submitted_by", "reviewed_by", "cdate", "generation",
                        "change_status"))
         query = "SELECT {} FROM cde.changelog WHERE persona_id = %s".format(
@@ -436,7 +494,7 @@ class CdeBackend(AbstractUserBackend):
             query = glue(query, "AND generation = ANY(%s)")
             params.append(generations)
         data = self.query_all(rs, query, params)
-        return {entry['generation'] : entry for entry in data}
+        return {e['generation'] : e for e in data}
 
     @access("persona")
     def change_username(self, rs, persona_id, new_username, token):
@@ -460,14 +518,6 @@ class CdeBackend(AbstractUserBackend):
                 ## abort if there is allready an account with this address
                 return False, "Name collision."
             is_cde = self.core.get_realm(rs, persona_id) == "cde"
-            if is_cde:
-                generation = self.get_generations(rs, (persona_id,))[persona_id]
-                query = glue("SELECT change_status FROM cde.changelog",
-                             "WHERE persona_id = %s AND generation = %s")
-                status = self.query_one(
-                    rs, query, (persona_id, generation))['change_status']
-                if status != const.MEMBER_CHANGE_COMMITTED:
-                    return False, "Unclean changelog."
             query = "SELECT username FROM core.personas WHERE id = %s"
             data = self.query_one(rs, query, (persona_id,))
             if self.verify_token(persona_id, data['username'], new_username,
@@ -477,14 +527,14 @@ class CdeBackend(AbstractUserBackend):
                     'username' : new_username,
                 }
                 if is_cde:
-                    if self.set_user_data(rs, new_data, generation,
-                                          allow_username_change=True):
+                    if self.set_user_data(rs, new_data, generation=None,
+                                          allow_username_change=True,
+                                          may_wait=False):
                         return True, new_username
                 else:
                     if self.core.set_persona_data(rs, new_data,
                                                   allow_username_change=True):
                         return True, new_username
-
         return False, "Failed."
 
 if __name__ == "__main__":

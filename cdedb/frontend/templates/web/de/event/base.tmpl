@@ -1,27 +1,23 @@
 {% extends "web/de/base.tmpl" %}
 {% block navigation %}
     <ul>
-        <li><a href="{{ cdedblink("core/index") }}">{{ i18n("Start")|e }}</a></li>
+        <li><a href="{{ cdedblink("core/index") }}">Start</a></li>
         <ul>
-            <li><a href="{{ cdedblink("core/mydata")}}">{{ i18n("My data")|e }}</a></li>
-            <li><a href="{{ cdedblink("core/change_password_form") }}">{{ i18n("Change Password")|e }}</a></li>
+            <li><a href="{{ cdedblink("core/mydata")}}">Meine Daten</a></li>
+            <li><a href="{{ cdedblink("core/change_password_form") }}">Passwort ändern</a></li>
         </ul>
         {% if user.realm == "cde" %}
-            <li><a href="{{ cdedblink("cde/index") }}">{{ i18n("CdE")|e }}</a></li>
-            <ul>
-                <li>{{ i18n("Persona Search")|e }}</li>
-                <li>{{ i18n("Membership")|e }}</li>
-            </ul>
+            <li><a href="{{ cdedblink("cde/index") }}">CdE</a></li>
         {% endif %}
         {% if user.realm in ("event", "cde") %}
-            <li><a href="{{ cdedblink("event/index") }}">{{ i18n("Events")|e }}</a></li>
+            <li><a href="{{ cdedblink("event/index") }}">Veranstaltungen</a></li>
             <ul>
             </ul>
         {% endif %}
-        <li>{{ i18n("Mailinglists")|e }}</li>
+        <li>Mailinglisten</li>
         {% if user.realm in ("assembly", "cde") %}
-            <li>{{ i18n("Assembly")|e }}</li>
+            <li>Versammlung</li>
         {% endif %}
-        <li>{{ i18n("Files")|e }}</li>
+        <li>Dateien/li>
     </ul>
 {% endblock %}

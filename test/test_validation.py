@@ -148,6 +148,8 @@ class TestValidation(unittest.TestCase):
             (False, False, None, True),
             ("a string", True, None, False),
             ("", False, None, False),
+            ("True", True, None, False),
+            ("False", False, None, False),
             (54, True, None, False),
             ))
 

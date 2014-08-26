@@ -11,6 +11,8 @@ I18N_STRINGS = {
     "Must be printable ASCII." : \
       "Darf nur aus druckbaren ASCII-Zeichen bestehen.",
     "Session expired." : "Die Sitzung ist abgelaufen.",
+    "" : "",
+    None : "Undefiniert.",
 }
 
 I18N_REGEXES = {

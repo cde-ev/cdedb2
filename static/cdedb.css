@@ -101,3 +101,7 @@ body{
 .stacking{
     display: inline-block;
 }
+
+.changedValue{
+    background: #dd6;
+}

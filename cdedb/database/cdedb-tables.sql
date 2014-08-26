@@ -108,7 +108,6 @@ CREATE TABLE core.sessions (
         -- last access time
         atime                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         ip                      varchar NOT NULL,
-        -- FIXME should we hash this?
         sessionkey              varchar NOT NULL UNIQUE
 );
 CREATE INDEX idx_sessions_persona_id ON core.sessions(persona_id);
@@ -205,7 +204,7 @@ CREATE TABLE cde.member_data (
         fulltext                varchar NOT NULL
 );
 GRANT SELECT ON cde.member_data TO cdb_member;
-GRANT UPDATE ON cde.member_data TO cdb_member; -- TODO once the changelog functionality is implemented this has to be revisited
+GRANT UPDATE ON cde.member_data TO cdb_member;
 GRANT INSERT, UPDATE ON cde.member_data TO cdb_cde_admin;
 
 -- log all changes made to the personal data of members (require approval)
@@ -226,6 +225,7 @@ CREATE TABLE cde.changelog (
         -- 1 ... commited
         -- 10 ... superseded
         -- 11 ... nacked
+        -- 12 ... displaced (superseded by a change which couldn't wait)
         change_status           integer NOT NULL DEFAULT 0,
         --
         -- data fields

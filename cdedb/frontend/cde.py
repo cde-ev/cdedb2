@@ -8,6 +8,7 @@ from cdedb.frontend.common import REQUESTdata, \
     encodedparam_decorator_generator, connect_proxy
 from cdedb.frontend.common import check_validation as check
 from cdedb.frontend.uncommon import AbstractUserFrontend
+import cdedb.database.constants as const
 
 access = access_decorator_generator(
     ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
@@ -106,14 +107,15 @@ class CdeFrontend(AbstractUserFrontend):
                                                  persona_id)})
 
     @access("persona", {'POST'})
-    @REQUESTdata('persona_id', 'new_username', 'password')
+    @REQUESTdata('new_username', 'password')
     @encodedparam('new_username')
-    def do_username_change(self, rs, persona_id="", new_username="",
+    def do_username_change(self, rs, persona_id, new_username="",
                            password=""):
         """Now we can do the actual change. This is in the cde frontend to
         allow the changelog functionality. (Otherwise this would be in the
         core frontend.)"""
-        persona_id = check(rs, 'int', persona_id, "persona_id")
+        if persona_id != rs.user.persona_id and not self.is_admin(rs):
+            return werkzeug.exceptions.Forbidden()
         new_username = check(rs, 'email', new_username, "new_username")
         password = check(rs, 'str', password, "password")
         ## do not leak the password
@@ -130,3 +132,38 @@ class CdeFrontend(AbstractUserFrontend):
         else:
             rs.notify("success", "Username changed.")
             return self.redirect(rs, "core/index")
+
+    @access("cde_admin")
+    def list_pending_changes(self, rs):
+        """List non-committed changelog entries."""
+        pending = self.cdeproxy.get_pending_changes(rs)
+        return self.render(rs, "list_pending_changes", {'pending' : pending})
+
+    @access("cde_admin")
+    def inspect_change(self, rs, persona_id):
+        """Look at a pending change"""
+        history = self.cdeproxy.get_history(rs, persona_id, generations=None)
+        pending = history[max(history)]
+        if pending['change_status'] != const.MEMBER_CHANGE_PENDING:
+            rs.notify("warning", "Persona has no pending change.")
+            return self.redirect(rs, "cde/list_pending_changes")
+        current = history[max(
+            key for key in history
+            if history[key]['change_status'] == const.MEMBER_CHANGE_COMMITTED)]
+        diff = {key for key in pending if current[key] != pending[key]}
+        return self.render(rs, "inspect_change", {
+            'pending' : pending, 'current' : current, 'diff' : diff})
+
+    @access("cde_admin", {"POST"})
+    @REQUESTdata("generation", "ack")
+    def resolve_change(self, rs, persona_id, generation="", ack=""):
+        generation = check(rs, 'int', generation, "generation")
+        ack = check(rs, 'bool', ack, "ack")
+        if rs.errors:
+            return self.redirect(rs, "cde/list_pending_changes")
+        self.cdeproxy.resolve_change(rs, persona_id, generation, ack)
+        if ack:
+            rs.notify("success", "Change comitted.")
+        else:
+            rs.notify("info", "Change dropped.")
+        return self.redirect(rs, "cde/list_pending_changes")

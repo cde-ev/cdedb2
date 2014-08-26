@@ -1,0 +1,170 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% macro mangle_string(name) %}
+   {% if name in diff %}
+       <span class="changedValue">{{ pending[name]|e }} (war: {{ current[name]|e }})</span>
+   {% else %}
+       <span>{{ pending[name]|e }}</span>
+   {% endif %}
+{% endmacro %}
+{% macro mangle_date(name) %}
+   {% if name in diff %}
+       <span class="changedValue">{{ pending[name]|date|e }} (war: {{ current[name]|date|e }})</span>
+   {% else %}
+       <span>{{ pending[name]|date|e }}</span>
+   {% endif %}
+{% endmacro %}
+{% macro mangle_gender(name) %}
+   {% if name in diff %}
+       <span class="changedValue">{{ pending[name]|gender|e }} (war: {{ current[name]|gender|e }})</span>
+   {% else %}
+       <span>{{ pending[name]|gender|e }}</span>
+   {% endif %}
+{% endmacro %}
+
+{% block title %}offene Änderung für {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
+{% block content %}
+    <table>
+        <th>
+            <tr> <td colspan="2">Person</td> </tr>
+        </th>
+        <tr>
+            <td>Titel</td>
+            <td>{{ mangle_string('title') }}</td>
+        </tr>
+        <tr>
+            <td>Vornamen</td>
+            <td>{{ mangle_string('given_names') }}</td>
+        </tr>
+        <tr>
+            <td>Nachname</td>
+            <td>{{ mangle_string('family_name') }}</td>
+        </tr>
+        <tr>
+            <td>Namenszusatz</td>
+            <td>{{ mangle_string('name_supplement') }}</td>
+        </tr>
+        <tr>
+            <td>Rufname</td>
+            <td>{{ mangle_string('display_name') }}</td>
+        </tr>
+        <tr>
+            <td>Geburtsname</td>
+            <td>{{ mangle_string('birth_name') }}</td>
+        </tr>
+        <tr>
+            <td>Geburtstag</td>
+            <td>{{ mangle_date('birthday') }}</td>
+        </tr>
+        <tr>
+            <td>Geschlecht</td>
+            <td>{{ mangle_gender('gender') }}</td>
+        </tr>
+        <tr>
+            <td>Fachgebiet</td>
+            <td>{{ mangle_string('specialisation') }}</td>
+        </tr>
+        <tr>
+            <td>Schule, Uni, ...</td>
+            <td>{{ mangle_string('affiliation') }}</td>
+        </tr>
+        <tr>
+            <td>Jahrgang, Matrikel, ...</td>
+            <td>{{ mangle_string('timeline') }}</td>
+        </tr>
+        <tr>
+            <td>Interessen</td>
+            <td>{{ mangle_string('interests') }}</td>
+        </tr>
+        <tr>
+            <td>Sonstiges</td>
+            <td>{{ mangle_string('free_form') }}</td>
+        </tr>
+        <th>
+            <tr> <td colspan="2">Kontakt</td> </tr>
+        </th>
+        <tr>
+            <td>Email</td>
+            <td>{{ mangle_string('username') }}</td>
+        </tr>
+        <tr>
+            <td>Telefon</td>
+            <td>{{ mangle_string('telephone') }}</td>
+        </tr>
+        <tr>
+            <td>Mobiltelefon</td>
+            <td>{{ mangle_string('mobile') }}</td>
+        </tr>
+        <tr>
+            <td>WWW</td>
+            <td>{{ mangle_string('weblink') }}</td>
+        </tr>
+        <th>
+            <tr> <td colspan="2">Adresse</td> </tr>
+        </th>
+        <tr>
+            <td>Straße</td>
+            <td>{{ mangle_string('address') }}</td>
+        </tr>
+        <tr>
+            <td>Adresszusatz</td>
+            <td>{{ mangle_string('address_supplement') }}</td>
+        </tr>
+        <tr>
+            <td>PLZ</td>
+            <td>{{ mangle_string('postal_code') }}</td>
+        </tr>
+        <tr>
+            <td>Ort</td>
+            <td>{{ mangle_string('location') }}</td>
+        </tr>
+        <tr>
+            <td>Land</td>
+            <td>{{ mangle_string('country') }}</td>
+        </tr>
+        <th>
+            <tr> <td colspan="2">Zweitadresse</td> </tr>
+        </th>
+        <tr>
+            <td>Straße</td>
+            <td>{{ mangle_string('address2') }}</td>
+        </tr>
+        <tr>
+            <td>Adresszusatz</td>
+            <td>{{ mangle_string('address_supplement2') }}</td>
+        </tr>
+        <tr>
+            <td>PLZ</td>
+            <td>{{ mangle_string('postal_code2') }}</td>
+        </tr>
+        <tr>
+            <td>Ort</td>
+            <td>{{ mangle_string('location2') }}</td>
+        </tr>
+        <tr>
+            <td>Land</td>
+            <td>{{ mangle_string('country2') }}</td>
+        </tr>
+        <th>
+            <tr> <td colspan="2">Mitgliedschaft</td> </tr>
+        </th>
+        <tr>
+            <td>CdEDB-ID</td>
+            <td>{{ pending['id']|cdedbid|e }}</td>
+        </tr>
+        <tr>
+            <td>Guthaben</td>
+            <td>{{ mangle_string('balance') }}</td>
+        </tr>
+    </table>
+    <form action="{{ cdedblink('cde/resolve_change') }}" method="POST" id="ackchangeform">
+        {{ util.input_hidden(name="ack", defaultvalue="True") }}<br>
+        {{ util.input_hidden(name="generation", defaultvalue=pending['generation']) }}<br>
+        {{ util.input_submit(value="Änderung bestätigen") }}
+    </form>
+    <form action="{{ cdedblink('cde/resolve_change') }}" method="POST" id="nackchangeform">
+        {{ util.input_hidden(name="ack", defaultvalue="False") }}<br>
+        {{ util.input_hidden(name="generation", defaultvalue=pending['generation']) }}<br>
+        {{ util.input_submit(value="Änderung verwerfen") }}
+    </form>
+{% endblock %}

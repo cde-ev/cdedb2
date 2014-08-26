@@ -37,7 +37,6 @@ class BackendShim:
     def _wrapit(self, fun):
         @functools.wraps(fun)
         def new_fun(key, *args, **kwargs):
-            # FIXME internal_access?
             rs = self._backend.establish(key, fun.__name__, allow_internal=True)
             if rs:
                 return getattr(self._backend, fun.__name__)(rs, *args, **kwargs)

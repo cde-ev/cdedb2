@@ -1,22 +1,6 @@
 {# This is the base template to be extended by (nearly) all html templates.
    It provides a skeleton where only the content needs to be filled in. #}
 
-{# This must be a macro because of the recursive nature of the nav-list. #}
-{% macro buildnavlist(alist) %}
-    {% if alist %}
-        <ul>
-            {% for title, link, sublist in alist %}
-                {% if link %}
-                    <li><a href="{{ link }}">{{ i18n(title)|e }}</a></li>
-                {% else %}
-                    <li>{{ i18n(title)|e }}</li>
-                {% endif %}
-                {{ buildnavlist(alist=sublist) }}
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endmacro %}
-
 <html>
     <head>
         <title>{% block title %}CdEDB{% endblock %}</title>

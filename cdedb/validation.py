@@ -227,6 +227,10 @@ def _bool(val, argname=None, *, _convert=True):
     :type _convert: bool
     """
     if _convert and val is not None:
+        if val in ("True", "true", "yes", "y"):
+            return True, []
+        elif val in ("False", "false", "no", "n"):
+            return False, []
         try:
             val = bool(val)
         except (ValueError, TypeError) as e:
