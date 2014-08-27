@@ -516,10 +516,8 @@ CREATE TABLE event.extfield_definitions (
 CREATE TABLE event.extfield_data (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
-        field_name              varchar NOT NULL,
-        field_value             varchar
+        ext_data                json NOT NULL
 );
-
 ---
 --- SCHEMA ml
 ---
