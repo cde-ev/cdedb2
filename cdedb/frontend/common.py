@@ -434,6 +434,20 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
         return t.render(**data)
 
+    def send_file(self, rs, path):
+        """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
+        download.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type path: str
+        :rtype: :py:class:`werkzeug.wrappers.Response`
+        """
+        if not os.path.isfile(path):
+            return werkzeug.exceptions.NotFound()
+        f = werkzeug.wsgi.wrap_file(rs.request.environ, open(path, 'rb'))
+        # TODO maybe add mime type
+        return werkzeug.wrappers.Response(f, direct_passthrough=True)
+
     def render(self, rs, templatename, params=None):
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTTP responses.
@@ -643,57 +657,70 @@ def staticurl(path):
     """
     return os.path.join("/static", path)
 
-def REQUESTdata(*args):
-    """Decorator to extract parameters from requests. This should always be
-    used, so automatic form filling works as expected.
+def REQUESTdata(*spec):
+    """Decorator to extract parameters from requests and validate them. This
+    should always be used, so automatic form filling works as expected.
 
-    :type args: [str or (str, str)]
-    :param args: Specification of parameters to extract. A string ``s`` is
-      promoted to the tuple ``('str', s)``. The first value of the tuple
-      denotes the sort of parameter to extract, valid values are 'str' and
-      '[str]', the latter being relevant for HTML elements which submit
-      multiple values for the same parameter (e.g. <select>). The second
-      value of a tuple is the name of the parameter to look out for.
+    :type spec: [(str, str)]
+    :param spec: Specification of parameters to extract. The
+      first value of a tuple is the name of the parameter to look out
+      for. The second value of each tuple denotes the sort of parameter to
+      extract, valid values are all validators from
+      :py:mod:`cdedb.validation` vanilla, enclosed in square brackets or
+      with a leading hash, the square brackets are for HTML elements which
+      submit multiple values for the same parameter (e.g. <select>) which
+      are extracted as lists and the hash signals an encoded parameter,
+      which needs to be decoded first.
     """
-    spec = []
-    for arg in args:
-        if isinstance(arg, str):
-            spec.append(("str", arg))
-        else:
-            spec.append(arg)
     def wrap(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args2, **kwargs):
-            for argtype, name in spec:
+        def new_fun(obj, rs, *args, **kwargs):
+            for name, argtype in spec:
                 if name not in kwargs:
-                    if argtype == "str":
-                        kwargs[name] = rs.request.values.get(name, "")
-                    elif argtype == "[str]":
-                        kwargs[name] = rs.request.values.getlist(name)
+                    if argtype.startswith('[') and argtype.endswith(']'):
+                        vals = rs.request.values.getlist(name)
+                        rs.values[name] = vals
+                        kwargs[name] = tuple(
+                            check_validation(rs, argtype[1:-1], val, name)
+                            for val in vals)
                     else:
-                        raise ValueError("Invalid argtype {} found.".format(
-                            argtype))
-                rs.values[name] = kwargs[name]
-            return fun(obj, rs, *args2, **kwargs)
+                        val = rs.request.values.get(name, "")
+                        rs.values[name] = val
+                        if argtype.startswith('#'):
+                            argtype = argtype[1:]
+                            if val:
+                                # only decode if exists
+                                val = rs._coders['decode_parameter'](
+                                    "{}/{}".format(obj.realm, fun.__name__),
+                                    name, val)
+                        kwargs[name] = check_validation(rs, argtype, val, name)
+            return fun(obj, rs, *args, **kwargs)
         return new_fun
     return wrap
 
-def REQUESTdatadict(*args):
-    """Like :py:meth:`REQUESTdata`, but doesn't hand down the parameters as
-    keyword-arguments, instead packs them all into a dict and passes this as
-    ``data`` parameter.
+def REQUESTdatadict(*proto_spec):
+    """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
+    parameters as keyword-arguments, instead packs them all into a dict and
+    passes this as ``data`` parameter. This does not do validation since
+    this is infeasible in practice.
+
+    :type proto_spec: [str or (str, str)]
+    :param proto_spec: Similar to ``spec`` parameter :py:meth:`REQUESTdata`,
+      but the only two allowed argument types are ``str`` and
+      ``[str]``. Additionally the argument type may be omitted and a default
+      of ``str`` is assumed.
     """
     spec = []
-    for arg in args:
+    for arg in proto_spec:
         if isinstance(arg, str):
-            spec.append(("str", arg))
+            spec.append((arg, "str"))
         else:
             spec.append(arg)
     def wrap(fun):
         @functools.wraps(fun)
-        def new_fun(obj, rs, *args2, **kwargs):
+        def new_fun(obj, rs, *args, **kwargs):
             data = {}
-            for argtype, name in spec:
+            for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
                 elif argtype == "[str]":
@@ -702,33 +729,60 @@ def REQUESTdatadict(*args):
                     raise ValueError("Invalid argtype {} found.".format(
                         argtype))
                 rs.values[name] = data[name]
-            return fun(obj, rs, *args2, data=data, **kwargs)
+            return fun(obj, rs, *args, data=data, **kwargs)
         return new_fun
     return wrap
 
-def encodedparam_decorator_generator(realm):
-    """Annotate encoded parameters with a decorator to simplify handling
-    them. The ``@encodedparam`` should be the innermost decorator,
-    especially not outside the ``@REQUESTdata`` decorator. This
-    transparently decodes the parameter.
+def REQUESTfile(*args):
+    """Decorator to extract file uploads from requests.
 
-    :type realm: str
-    :rtype: decorator
+    :type args: [str]
+    :param args: Names of file parameters.
     """
-    def decorator(*names):
-        def wrap(fun):
-            @functools.wraps(fun)
-            def new_fun(obj, rs, *args, **kwargs):
-                for name in names:
-                    if kwargs.get(name):
-                        ## only decode if exists
-                        kwargs[name] = rs._coders['decode_parameter'](
-                            "{}/{}".format(realm, fun.__name__),
-                            name, kwargs[name])
-                return fun(obj, rs, *args, **kwargs)
-            return new_fun
-        return wrap
-    return decorator
+    def wrap(fun):
+        @functools.wraps(fun)
+        def new_fun(obj, rs, *args2, **kwargs):
+            for name in args:
+                if name not in kwargs:
+                    kwargs[name] = rs.request.files.get(name, None)
+                rs.values[name] = kwargs[name]
+            return fun(obj, rs, *args2, **kwargs)
+        return new_fun
+    return wrap
+
+def persona_dataset_guard(argname="persona_id", realms=tuple()):
+    """This decorator checks the access with respect to a specific persona. The
+    persona is specified by id which has either to be a keyword
+    parameter or the first positional parameter after the request state.
+
+    Only the persona itself or a privileged user is
+    admitted. Additionally the realm of the persona may be verified.
+
+    An example use case is the page for changing user details.
+
+    :type argname: str
+    :param argname: name of the keyword argument specifying the id
+    :type realms: [str] or None
+    :param realms: If not None the realm of the persona is checked. The
+      realm of the persona has to be in this list (if the list is empty
+      the realm of the current frontend is checked against).
+    """
+    def wrap(fun):
+        @functools.wraps(fun)
+        def new_fun(obj, rs, *args, **kwargs):
+            if argname in kwargs:
+                arg = kwargs[argname]
+            else:
+                arg = args[0]
+            if arg != rs.user.persona_id and not obj.is_admin(rs):
+                return werkzeug.exceptions.Forbidden()
+            if realms is not None:
+                therealms = realms or (obj.realm,)
+                if obj.coreproxy.get_realm(rs, arg) not in therealms:
+                    return werkzeug.exceptions.NotFound()
+            return fun(obj, rs, *args, **kwargs)
+        return new_fun
+    return wrap
 
 def encode_parameter(salt, target, name, param):
     """Crypographically secure a parameter. This allows two things:

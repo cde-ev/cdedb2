@@ -33,6 +33,10 @@ import dateutil.parser
 import copy
 import string
 import pytz
+import werkzeug.datastructures
+import magic
+import PIL.Image
+import io
 
 from itertools import chain
 current_module = sys.modules[__name__]
@@ -657,6 +661,37 @@ def _event_user_data(val, argname=None, *, strict=False, _convert=True):
                     errs.append((key, ValueError("Missing entry.")))
     return val, errs
 
+@_addvalidator
+def _input_file(val, argname=None, *, _convert=True):
+    if not isinstance(val, werkzeug.datastructures.FileStorage):
+        return None, [(argname, TypeError("Not a FileStorage."))]
+    return val, []
+
+@_addvalidator
+def _profilepic(val, argname=None, *, _convert=True):
+    val, errs = _input_file(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    blob = val.read()
+    val.seek(0)
+    if len(blob) < 1000:
+        errs.append((argname, "Too small."))
+    if len(blob) > 100000:
+        errs.append((argname, "Too big."))
+    mime = magic.from_buffer(blob, mime=True)
+    mime = mime.decode() # python-magic is naughty and returns bytes
+    if mime not in ("image/jgp", "image/png"):
+        errs.append((argname, "Only jpg and png allowed."))
+    if errs:
+        return None, errs
+    image = PIL.Image.open(io.BytesIO(blob))
+    width, height = image.size
+    if width / height < 0.8 or height / width < 0.8:
+        errs.append((argname, "Not square enough."))
+    if width * height < 5000:
+        errs.append((argname, "Resolution too small."))
+    return val, errs
+
 ##
 ## Above is the real stuff
 ##
@@ -710,11 +745,11 @@ def _allow_None(fun):
             try:
                 retval, errs = fun(val, *args, **kwargs)
             except: # we need to catch everything
-                if kwargs.get('_convert') and not val:
+                if kwargs.get('_convert', True) and not val:
                     return None, []
                 else:
                     raise
-            if errs and kwargs.get('_convert') and not val:
+            if errs and kwargs.get('_convert', True) and not val:
                 return None, []
             return retval, errs
     return new_fun

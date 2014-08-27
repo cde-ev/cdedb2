@@ -537,6 +537,61 @@ class CdeBackend(AbstractUserBackend):
                         return True, new_username
         return False, "Failed."
 
+    @access("user")
+    @singularize("get_foto")
+    def get_fotos(self, rs, ids):
+        """Retrieve the profile picture attribute.
+
+        This is separate since it is not logged in the changelog and
+        hence not present in :py:data:`cdedb.common.MEMBER_DATA_FIELDS`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: {int : str}
+        """
+        ids = affirm_array("int", ids)
+        query = glue("SELECT persona_id, foto FROM cde.member_data",
+                     "WHERE persona_id = ANY(%s)")
+        data = self.query_all(rs, query, (ids,))
+        if len(data) != len(ids):
+            raise RuntimeError("Invalid ids requested.")
+        return {e['persona_id'] : e['foto'] for e in data}
+
+    @access("user")
+    def set_foto(self, rs, persona_id, foto):
+        """Set the profile picture attribute.
+
+        This is separate since it is not logged in the changelog and
+        hence not present in :py:data:`cdedb.common.MEMBER_DATA_FIELDS`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type persona_id: int
+        :type foto: str or None
+        :rtype: bool
+        """
+        persona_id = affirm("int", persona_id)
+        foto = affirm("str_or_None", foto)
+        if rs.user.persona_id != persona_id and not self.is_admin(rs):
+            raise RuntimeError("Permission denied")
+        query = "UPDATE cde.member_data SET foto = %s WHERE persona_id = %s"
+        num = self.query_exec(rs, query, (foto, persona_id))
+        return bool(num)
+
+    @access("user")
+    def foto_usage(self, rs, foto):
+        """Retrieve usage number for a specific foto.
+
+        So we know when a foto is up for garbage collection.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type foto: str
+        :rtype: int
+        """
+        foto = affirm("str", foto)
+        query = "SELECT COUNT(*) AS num FROM cde.member_data WHERE foto = %s"
+        data = self.query_one(rs, query, (foto,))
+        return data['num']
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Run CdEDB Backend for CdE services.')

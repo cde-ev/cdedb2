@@ -8,7 +8,7 @@ dependencies.
 """
 
 from cdedb.database.connection import Atomizer
-from cdedb.common import glue, PERSONA_DATA_FIELDS, PERSONA_DATA_FIELDS_MOD
+from cdedb.common import glue, PERSONA_DATA_FIELDS
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.common import AbstractBackend, AuthShim, \
     affirm_validation as affirm, affirm_array_validation as affirm_array

@@ -30,6 +30,13 @@ chmod 600 /cdedb2/.ldap_rootpw
 chmod +x /cdedb2/related/auto-build/files/stage3/make-pyro-nameserver.sh
 
 echo ""
+echo "Creating storage directory for uploads..."
+echo "--------------------------------------------"
+
+mkdir /var/lib/cdedb/
+chown www-data:www-data /var/lib/cdedb
+
+echo ""
 echo "Initialize LDAP..."
 echo "--------------------------------------------"
 

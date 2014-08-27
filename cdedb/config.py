@@ -66,6 +66,9 @@ _DEFAULTS = {
     ## name of ldap user to use
     "LDAP_USER" : "cn=root,dc=cde-ev,dc=de",
 
+    ## place for uploaded data
+    "STORAGE_DIR" : "/var/lib/cdedb/",
+
     ### Frontend stuff
 
     ## log for frontend issues

@@ -2,17 +2,16 @@
 
 """Services for the core realm."""
 
-import logging
-from cdedb.frontend.common import AbstractFrontend, REQUESTdata, \
-    access_decorator_generator, ProxyShim, encodedparam_decorator_generator, \
-    basic_redirect, connect_proxy
-from cdedb.frontend.common import check_validation as check
 import datetime
+import logging
 import pytz
+import werkzeug
+from cdedb.frontend.common import (
+    AbstractFrontend, REQUESTdata, access_decorator_generator, ProxyShim,
+    basic_redirect, connect_proxy, check_validation as check, persona_dataset_guard)
 
 access = access_decorator_generator(
     ("anonymous", "persona", "member", "core_admin", "admin"))
-encodedparam = encodedparam_decorator_generator("core")
 
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
@@ -40,9 +39,8 @@ class CoreFrontend(AbstractFrontend):
         return super().is_admin(rs)
 
     @access("anonymous")
-    @REQUESTdata("wants")
-    @encodedparam("wants")
-    def index(self, rs, wants=""):
+    @REQUESTdata(("wants", "#str_or_None"))
+    def index(self, rs, wants=None):
         """Basic entry point.
 
         :param wants: URL to redirect to upon login
@@ -53,29 +51,26 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "index")
 
     @access("anonymous")
-    @REQUESTdata("kind")
-    def error(self, rs, kind=""):
+    @REQUESTdata(("kind", "printable_ascii"))
+    def error(self, rs, kind):
         """Fault page.
 
         This may happen upon a database serialization failure during
         concurrent accesses.
         """
-        kind = check(rs, "printable_ascii", kind, "kind")
         if kind not in {"general", "database"}:
             kind = "general"
-        return self.render(rs, "error",
-                           {'kind' : kind,
-                            'now' : datetime.datetime.now(pytz.utc)})
+        return self.render(rs, "error", {
+            'kind' : kind, 'now' : datetime.datetime.now(pytz.utc)})
 
     @access("anonymous", {"POST"})
-    @REQUESTdata("username", "password", "wants")
-    @encodedparam("wants")
-    def login(self, rs, username="", password="", wants=""):
+    @REQUESTdata(("username", "printable_ascii"), ("password", "str"),
+                 ("wants", "#str_or_None"))
+    def login(self, rs, username, password, wants):
         """Create session.
 
         :param wants: URL to redirect to
         """
-        username = check(rs, "printable_ascii", username, "username")
         ## do not leak the password
         rs.values['password'] = ""
         if rs.errors:
@@ -112,14 +107,12 @@ class CoreFrontend(AbstractFrontend):
             'persona_id' : rs.user.persona_id})
 
     @access("persona")
-    @REQUESTdata("confirm_id")
-    @encodedparam("confirm_id")
-    def show_user(self, rs, persona_id, confirm_id=None):
+    @REQUESTdata(("confirm_id", "#int"))
+    def show_user(self, rs, persona_id, confirm_id):
         """Common entry point redirecting to user's realm."""
-        confirm_id = check(rs, "int", confirm_id, "confirm_id")
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/error")
+            return self.redirect(rs, "core/index")
         realm = self.coreproxy.get_realm(rs, persona_id)
         params = {'confirm_id' : self.encode_parameter(
             "{}/show_user".format(realm), "confirm_id", confirm_id)}
@@ -129,8 +122,6 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     def change_user_form(self, rs, persona_id):
         """Common entry point redirecting to user's realm."""
-        if not self.coreproxy.verify_ids(rs, (persona_id,)):
-            raise werkzeug.exceptions.BadRequest("Nonexistant user.")
         realm = self.coreproxy.get_realm(rs, persona_id)
         return self.redirect(rs, "{}/change_user_form".format(realm))
 
@@ -140,13 +131,10 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "change_password")
 
     @access("persona", {"POST"})
-    @REQUESTdata("old_password", "new_password", "new_password2")
-    def change_password(self, rs, old_password="", new_password="",
-                        new_password2=""):
+    @REQUESTdata(("old_password", "str"), ("new_password", "str"),
+                 ("new_password2", "str"))
+    def change_password(self, rs, old_password, new_password, new_password2):
         """Update your own password."""
-        old_password = check(rs, "str", old_password, "old_password")
-        new_password = check(rs, "str", new_password, "new_password")
-        new_password2 = check(rs, "str", new_password2, "new_password2")
         if new_password != new_password2:
             rs.errors.append(("new_password", ValueError("No match.")))
             rs.errors.append(("new_password2", ValueError("No match.")))
@@ -176,16 +164,15 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "reset_password")
 
     @access("anonymous")
-    @REQUESTdata("email")
-    def send_password_reset_link(self, rs, email=""):
+    @REQUESTdata(("email", "email"))
+    def send_password_reset_link(self, rs, email):
         """First send a confirmation mail, to prevent an adversary from
         changing random passwords."""
-        email = check(rs, "email", email, "email")
         if rs.errors:
             return self.render(rs, "reset_password")
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
-            rs.notify("error", "Email non-existant.")
+            rs.errors.append(("email", ValueError("Nonexistant user.")))
             return self.render(rs, "reset_password")
         self.do_mail(
             rs, "reset_password",
@@ -198,12 +185,10 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "index")
 
     @access("anonymous")
-    @REQUESTdata("email")
-    @encodedparam("email")
-    def do_password_reset_form(self, rs, email=""):
+    @REQUESTdata(("email", "#email"))
+    def do_password_reset_form(self, rs, email):
         """Second form. Pretty similar to first form, but now we know, that
         the account owner actually wants the reset."""
-        email = check(rs, "email", email, "email")
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.render(rs, "reset_password")
@@ -212,11 +197,9 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "do_password_reset")
 
     @access("anonymous", {"POST"})
-    @REQUESTdata("email")
-    @encodedparam("email")
-    def do_password_reset(self, rs, email=""):
+    @REQUESTdata(("email", "#email"))
+    def do_password_reset(self, rs, email):
         """Now we can send an email with a new password."""
-        email = check(rs, "email", email, "email")
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.render(rs, "reset_password")
@@ -238,10 +221,9 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "change_username")
 
     @access("persona")
-    @REQUESTdata("new_username")
-    def send_username_change_link(self, rs, new_username=""):
+    @REQUESTdata(("new_username", "email"))
+    def send_username_change_link(self, rs, new_username):
         """Verify new name with test email."""
-        new_username = check(rs, "email", new_username, "new_username")
         if rs.errors:
             return self.render(rs, "change_username")
         self.do_mail(rs, "change_username",
@@ -255,14 +237,12 @@ class CoreFrontend(AbstractFrontend):
         rs.notify("success", "Email sent.")
         return self.render(rs, "index")
 
+    # TODO persona_id is used further down the line
     @access("persona")
-    @REQUESTdata("new_username")
-    @encodedparam("new_username")
-    def do_username_change_form(self, rs, persona_id, new_username=""):
+    @REQUESTdata(("new_username", "#email"))
+    @persona_dataset_guard(realms=None)
+    def do_username_change_form(self, rs, persona_id, new_username):
         """Email is now verified or we are admin."""
-        if persona_id != rs.user.persona_id and not self.is_admin(rs):
-            return werkzeug.exceptions.Forbidden()
-        new_username = check(rs, "email", new_username, "new_username")
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.render(rs, "change_username")

@@ -60,36 +60,37 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         return None
 
     # @access("user")
-    # @REQUESTdata("confirm_id")
-    # @encodedparam("confirm_id")
-    def show_user(self, rs, persona_id, confirm_id=None):
+    # @REQUESTdata(("confirm_id", "#int"))
+    def show_user(self, rs, persona_id, confirm_id):
         """Display user details.
 
         This has an additional encoded parameter to make links to this
         target ephemeral. Thus it is more difficult to algorithmically
         extract user data from the web frontend."""
-        confirm_id = check(rs, "int", confirm_id, "confirm_id")
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/error")
-        realm = self.coreproxy.get_realm(rs, persona_id)
-        red = self.redirect_realm(
-            rs, persona_id, "show_user", params={
-                'confirm_id' : self.encode_parameter(
-                    "{}/show_user".format(realm), "confirm_id", confirm_id)})
-        if red:
-            return red
+            return self.redirect(rs, "core/index")
+        if self.coreproxy.get_realm(rs, persona_id) != self.realm:
+            return werkzeug.exceptions.NotFound()
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
         return self.render(rs, "show_user", {'data' : data})
 
+    def redirect_show_user(self, rs, persona_id):
+        """Convenience function to redirect to a user detail page.
+
+        The point is, that encoding the ``confirm_id`` parameter is
+        somewhat lengthy and only necessary because of our paranoia.
+        """
+        params = {'confirm_id' : self.encode_parameter(
+            "{}/show_user".format(self.realm), "confirm_id", persona_id)}
+        return self.redirect(rs, '{}/show_user'.format(self.realm),
+                             params=params)
+
     # @access("user")
+    # @persona_dataset_guard()
     def change_user_form(self, rs, persona_id):
         """Render form."""
-        if persona_id != rs.user.persona_id and not self.is_admin(rs):
-            return werkzeug.exceptions.Forbidden()
-        if self.redirect_realm(rs, persona_id, "change_user_form"):
-            return self.redirect_realm(rs, persona_id, "change_user_form")
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
         rs.values.update(data)
@@ -97,12 +98,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     # @access("user", {"POST"})
     # @REQUESTdatadict(...)
-    def change_user(self, rs, persona_id, data=None):
+    # @persona_dataset_guard()
+    def change_user(self, rs, persona_id, data):
         """Modify account details."""
-        if persona_id != rs.user.persona_id and not self.is_admin(rs):
-            return werkzeug.exceptions.Forbidden()
-        if self.redirect_realm(rs, persona_id, "change_user_form"):
-            return self.redirect_realm(rs, persona_id, "change_user_form")
         data = data or {}
         data['id'] = persona_id
         data = check(rs, self.user_management['validator'], data)

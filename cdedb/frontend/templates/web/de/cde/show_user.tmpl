@@ -6,7 +6,13 @@
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
             <a href="{{ cdedblink('cde/change_user_form') }}">Bearbeiten</a>
+            <a href="{{ cdedblink('cde/set_foto_form') }}">Profilbild ändern</a>
         </p>
+    {% endif %}
+    {% if foto %}
+       <img src="{{ cdedblink('cde/get_foto', {'foto' : foto})}}" alt="Profilbild" class="profilepic">
+    {% else %}
+       <img src="{{ staticurl("generic-avatar.png") }}" alt="Standardprofilbild" class="profilepic">
     {% endif %}
     <table>
         <th>

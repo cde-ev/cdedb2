@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
 
@@ -72,3 +73,19 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href' : '/mydata'})
         self.assertNotIn(user['family_name'], self.response.text)
         self.assertIn('Ganondorf', self.response.text)
+
+    @as_users("anton", "berta")
+    def test_get_foto(self, user):
+        response = self.app.get('/cde/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')
+        self.assertTrue(len(response.body) > 10000)
+
+    @as_users("anton", "berta")
+    def test_set_foto(self, user):
+        self.traverse({'href' : '/mydata'}, {'href' : '/setfoto'})
+        f = self.response.forms['setfotoform']
+        f['foto'] = webtest.Upload("/tmp/cdedb-store/testfiles/picture.png")
+        self.submit(f)
+        self.assertIn('foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', self.response.text)
+        with open('/tmp/cdedb-store/foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', 'rb') as f:
+            blob = f.read()
+        self.assertTrue(len(blob) > 10000)

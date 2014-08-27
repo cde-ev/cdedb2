@@ -2,7 +2,8 @@
 
 CDB_DATABASE_NAME = "cdb_test"
 SERVER_NAME_TEMPLATE = "test_{}_server"
-LDAP_UNIT_NAME="ou=personas-test,dc=cde-ev,dc=de"
+LDAP_UNIT_NAME = "ou=personas-test,dc=cde-ev,dc=de"
+STORAGE_DIR = "/tmp/cdedb-store/"
 FRONTEND_LOG = "/tmp/test-cdedb-frontend.log"
 CORE_SOCKET = "/run/cdedb/test-coreserver.sock"
 CORE_STATE_FILE = "/run/cdedb/test-coreserver.pid"

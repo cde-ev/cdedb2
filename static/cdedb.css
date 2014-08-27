@@ -105,3 +105,8 @@ body{
 .changedValue{
     background: #dd6;
 }
+
+.profilepic{
+    width: 10ex;
+    height: 10ex;
+}

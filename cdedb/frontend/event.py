@@ -3,15 +3,13 @@
 """Services for the event realm."""
 
 import logging
-from cdedb.frontend.common import REQUESTdata, \
-    REQUESTdatadict, access_decorator_generator, ProxyShim, \
-    encodedparam_decorator_generator, connect_proxy
-from cdedb.frontend.common import check_validation as check
+from cdedb.frontend.common import (
+    REQUESTdata, REQUESTdatadict, access_decorator_generator, ProxyShim,
+    connect_proxy, check_validation as check, persona_dataset_guard)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 
 access = access_decorator_generator(
     ("anonymous", "persona", "user", "member", "event_admin", "admin"))
-encodedparam = encodedparam_decorator_generator("event")
 
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
@@ -42,12 +40,12 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "index")
 
     @access("user")
-    @REQUESTdata("confirm_id")
-    @encodedparam("confirm_id")
-    def show_user(self, rs, persona_id, confirm_id=None):
+    @REQUESTdata(("confirm_id", "#int"))
+    def show_user(self, rs, persona_id, confirm_id):
         return super().show_user(rs, persona_id, confirm_id)
 
     @access("user")
+    @persona_dataset_guard()
     def change_user_form(self, rs, persona_id):
         return super().change_user_form(rs, persona_id)
 
@@ -56,5 +54,6 @@ class EventFrontend(AbstractUserFrontend):
                      "name_supplement", "telephone", "mobile",
                      "address_supplement", "address", "postal_code", "location",
                      "country")
-    def change_user(self, rs, persona_id, data=None):
+    @persona_dataset_guard()
+    def change_user(self, rs, persona_id, data):
         return super().change_user(rs, persona_id, data)

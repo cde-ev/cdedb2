@@ -90,7 +90,7 @@ class TestCoreFrontend(FrontendTest):
                         words = line.split(' ')
                         break
                 index = words.index('nun')
-                new_password = words[index + 1]
+                new_password = quopri.decodestring(words[index + 1])
                 self.login(user)
                 self.assertIn('loginform', self.response.forms)
                 new_user = copy.deepcopy(user)

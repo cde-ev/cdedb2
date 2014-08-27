@@ -7,6 +7,10 @@ it here where it is out of the way.
 import werkzeug.routing
 rule = werkzeug.routing.Rule
 
+class FilenameConverter(werkzeug.routing.BaseConverter):
+    """Handles filename inputs in URL path."""
+    regex = '[a-zA-Z0-9][-a-zA-Z0-9._]*'
+
 #: Using a routing map allows to do lookups as well as the reverse process
 #: of generating links to targets instead of hardcoding them.
 CDEDB_PATHS = werkzeug.routing.Map((
@@ -57,6 +61,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="inspect_change"),
             rule("/resolvechange/<int:persona_id>", methods=("POST",),
                  endpoint="resolve_change"),
+            rule("/foto/<filename:foto>", methods=("GET", "HEAD"),
+                 endpoint="get_foto"),
+            rule("/setfoto/<int:persona_id>", methods=("GET", "HEAD"),
+                 endpoint="set_foto_form"),
+            rule("/setfoto/<int:persona_id>", methods=("POST",),
+                 endpoint="set_foto"),
             )),
         )),
     werkzeug.routing.EndpointPrefix('event/', (
@@ -70,4 +80,4 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="change_user"),
             )),
         ))
-    ))
+    ), converters={'filename' : FilenameConverter})

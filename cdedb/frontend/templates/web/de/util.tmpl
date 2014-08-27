@@ -13,6 +13,19 @@
     <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
 {% endmacro %}
 
+{% macro input_file(name, displayerrors=True, accept='') %}
+    <span class="stacking">
+        {% if displayerrors %}
+            {% for error in errors.get(name, []) %}
+                {% if error %}
+                    {{ i18n(error|string)|e }}<br>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        <input type="file" name="{{ name|e }}" {% if accept %} accept="{{ accept|e }}" {% endif %}>
+    </span>
+{% endmacro %}
+
 {% macro input_text(name, label='', displayerrors=True, readonly=False, defaultvalue='') %}
     <span {% if name in errors %} class="errorInput" {% endif %} >
         <label>
