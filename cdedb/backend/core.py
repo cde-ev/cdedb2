@@ -354,10 +354,9 @@ class CoreBackend(AbstractBackend):
             orig_conn = rs.conn
             rs.conn = self.connpool['cdb_persona']
         if new_password is None:
-            # FIXME zap similar characters
             new_password = ''.join(random.choice(
-                string.ascii_letters + string.digits) for _ in range(12))
-            new_password = new_password + random.choice('!@#$%^&*(){}')
+                'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789' +
+                '!@#$%&*()[]-=<>') for _ in range(12))
         ## do not use set_persona_data since it doesn't operate on password
         ## hashes by design
         query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
