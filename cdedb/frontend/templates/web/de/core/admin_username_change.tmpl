@@ -1,0 +1,13 @@
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Emailadresse ändern{% endblock %}
+{% block content %}
+    <h1>{{ data['displayname']|e }}s Emailadresse ändern</h1>
+
+    Bisherige Emailadresse: {{ data['username']|e }}
+
+    <form action="{{ cdedblink('cde/admin_username_change') }}" method="POST" id="usernamechangeform">
+        {{ util.input_text(name="new_username") }}<br>
+        {{ util.input_submit(value="Emailadresse ändern") }}
+    </form>
+{% endblock %}

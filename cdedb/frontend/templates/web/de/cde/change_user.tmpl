@@ -25,7 +25,14 @@
             </th>
             <tr>
                 <td>Email</td>
-                <td>{{ values['username']|e }} <a href="{{ cdedblink('core/change_username_form') }}">Email ändern</a></td>
+                <td>
+                    {{ values['username']|e }}
+                    {% if is_admin and values['id'] != user.persona_id %}
+                        <a href="{{ cdedblink('core/admin_username_change_form') }}">Email ändern</a>
+                    {% else %}
+                        <a href="{{ cdedblink('core/change_username_form') }}">Email ändern</a>
+                    {% endif %}
+                </td>
             </tr>
             {{ util.tab_input_text(name="telephone", label="Telefon") }}
             {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}

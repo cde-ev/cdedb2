@@ -35,11 +35,18 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_showuser(self, user):
         self.traverse({'href' : '/mydata'})
-        self.follow()
         self.assertEqual("{} {}".format(user['given_names'],
                                         user['family_name']),
                          self.response.lxml.xpath('//h1/text()')[0])
         self.assertIn(user['given_names'], self.response.text)
+
+    @as_users("anton")
+    def test_adminshowuser(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        berta = USER_DICT['berta']
+        self.assertIn(berta['given_names'], self.response.text)
 
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
@@ -99,6 +106,32 @@ class TestCoreFrontend(FrontendTest):
                 self.assertNotIn('loginform', self.response.forms)
                 self.assertIn(user['displayname'], self.response)
 
+    def test_admin_password_reset(self):
+        anton = USER_DICT['anton']
+        self.get('/')
+        self.login(anton)
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        f = self.response.forms['adminpasswordresetform']
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        for line in mail.split('\n'):
+            if line.startswith('zur'):
+                words = line.split(' ')
+                break
+        index = words.index('nun')
+        new_password = quopri.decodestring(words[index + 1])
+        self.logout()
+        berta = USER_DICT['berta']
+        self.login(berta)
+        self.assertIn('loginform', self.response.forms)
+        new_berta = copy.deepcopy(berta)
+        new_berta['password'] = new_password
+        self.login(new_berta)
+        self.assertNotIn('loginform', self.response.forms)
+        self.assertIn(new_berta['displayname'], self.response)
+
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
         new_username = "zelda@example.cde"
@@ -127,3 +160,26 @@ class TestCoreFrontend(FrontendTest):
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
         self.assertIn(user['displayname'], self.response)
+
+    def test_admin_username_change(self):
+        new_username = "zelda@example.cde"
+        anton = USER_DICT['anton']
+        self.get('/')
+        self.login(anton)
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        self.traverse({'href' : '/changeuser', 'index' : 0},
+                      {'href' : '/adminusernamechange'})
+        f = self.response.forms['usernamechangeform']
+        f['new_username'] = new_username
+        self.submit(f)
+        self.logout()
+        berta = USER_DICT['berta']
+        self.login(berta)
+        self.assertIn('loginform', self.response.forms)
+        new_berta = copy.deepcopy(berta)
+        new_berta['username'] = new_username
+        self.login(new_berta)
+        self.assertNotIn('loginform', self.response.forms)
+        self.assertIn(new_berta['displayname'], self.response)

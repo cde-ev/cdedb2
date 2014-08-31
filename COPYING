@@ -1,6 +1,7 @@
 Applies to all files in this repository except
-* the icons in the directory static/icons (all from the ubo icon theme by UBO
-  which is GPL-compatibly licensed as Artistic 2.0, see
+* the icons in the directory static/icons as well as
+  static/generic-avatar.png (all from the ubo icon theme by UBO which is
+  GPL-compatibly licensed as Artistic 2.0, see
   http://gnome-look.org/content/show.php/?content=122078),
 * everything in the directory related (each having its own license/copyright).
 

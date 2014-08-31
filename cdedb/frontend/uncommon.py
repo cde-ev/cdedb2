@@ -76,17 +76,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                                                                    persona_id)
         return self.render(rs, "show_user", {'data' : data})
 
-    def redirect_show_user(self, rs, persona_id):
-        """Convenience function to redirect to a user detail page.
-
-        The point is, that encoding the ``confirm_id`` parameter is
-        somewhat lengthy and only necessary because of our paranoia.
-        """
-        params = {'confirm_id' : self.encode_parameter(
-            "{}/show_user".format(self.realm), "confirm_id", persona_id)}
-        return self.redirect(rs, '{}/show_user'.format(self.realm),
-                             params=params)
-
     # @access("user")
     # @persona_dataset_guard()
     def change_user_form(self, rs, persona_id):

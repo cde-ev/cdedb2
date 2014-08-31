@@ -507,7 +507,7 @@ class CdeBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type persona_id: int
         :type new_username: str
-        :type password: str
+        :type token: str
         :rtype: (bool, str)
         """
         persona_id = affirm("int", persona_id)

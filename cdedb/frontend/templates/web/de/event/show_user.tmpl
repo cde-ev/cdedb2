@@ -1,4 +1,4 @@
-{% extends "web/de/base.tmpl" %}
+{% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
@@ -82,5 +82,10 @@
         <p>
             <a href="{{ cdedblink('event/change_user_form') }}">Bearbeiten</a>
         </p>
+    {% endif %}
+    {% if is_admin %}
+        <form action="{{ cdedblink('core/admin_password_reset', {'persona_id' : data['id']}) }}" method="POST" id="adminpasswordresetform">
+            {{ util.input_submit(value="Passwort zurücksetzen") }}
+        </form>
     {% endif %}
 {% endblock %}

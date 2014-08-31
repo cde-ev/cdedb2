@@ -559,6 +559,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             msg['Subject'], msg['To']))
         return ret
 
+    def redirect_show_user(self, rs, persona_id):
+        """Convenience function to redirect to a user detail page.
+
+        The point is, that encoding the ``confirm_id`` parameter is
+        somewhat lengthy and only necessary because of our paranoia.
+        """
+        params = {'confirm_id' : self.encode_parameter(
+            "{}/show_user".format(self.realm), "confirm_id", persona_id),
+            'persona_id' : persona_id}
+        return self.redirect(rs, '{}/show_user'.format(self.realm),
+                             params=params)
+
 class FrontendUser:
     """Container for representing a persona."""
     def __init__(self, persona_id=None,
@@ -644,7 +656,11 @@ def cdedburl(rs, endpoint, params=None):
     for arg in rs.requestargs:
         if rs.urlmap.is_endpoint_expecting(endpoint, arg):
             allparams[arg] = rs.requestargs[arg]
-    allparams.update(params)
+    # be careful and not use allparams.update since params may be a
+    # werkzeug.datastructures.MultiDict which produces unwanted lists in
+    # this context
+    for key in params:
+        allparams[key] = params[key]
     return rs.urls.build(endpoint, allparams)
 
 def staticurl(path):

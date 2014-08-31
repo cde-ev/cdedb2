@@ -70,7 +70,6 @@ class LDAPConnection:
         self._ldap_con.unbind()
         return None
 
-
 def create_token(salt, persona_id, current_email, new_email):
     """Create a token for :py:meth:`CoreBackend.change_username_token`.
 

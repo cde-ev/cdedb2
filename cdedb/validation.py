@@ -686,7 +686,7 @@ def _profilepic(val, argname=None, *, _convert=True):
         return None, errs
     image = PIL.Image.open(io.BytesIO(blob))
     width, height = image.size
-    if width / height < 0.8 or height / width < 0.8:
+    if width / height < 0.9 or height / width < 0.9:
         errs.append((argname, "Not square enough."))
     if width * height < 5000:
         errs.append((argname, "Resolution too small."))

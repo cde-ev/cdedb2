@@ -101,10 +101,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     def mydata(self, rs):
         """Convenience entry point for own data."""
-        return self.redirect(rs, "core/show_user", params={
-            'confirm_id' : self.encode_parameter(
-                "core/show_user", "confirm_id", rs.user.persona_id),
-            'persona_id' : rs.user.persona_id})
+        return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
     @REQUESTdata(("confirm_id", "#int"))
@@ -118,6 +115,12 @@ class CoreFrontend(AbstractFrontend):
             "{}/show_user".format(realm), "confirm_id", confirm_id)}
         return self.redirect(
             rs, "{}/show_user".format(realm), params=params)
+
+    @access("core_admin")
+    @REQUESTdata(("id_to_show", "int"))
+    def admin_show_user(self, rs, id_to_show):
+        """Allow admins to view any user data set."""
+        return self.redirect_show_user(rs, id_to_show)
 
     @access("persona")
     def change_user_form(self, rs, persona_id):
@@ -215,6 +218,22 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("success", "Password reset.")
             return self.redirect(rs, "core/index")
 
+    @access("core_admin", {"POST"})
+    def admin_password_reset(self, rs, persona_id):
+        """Administrative password reset."""
+        data = self.coreproxy.get_data_single(rs, persona_id)
+        success, message = self.coreproxy.reset_password(rs, data['username'])
+        if not success:
+            rs.notify("error", message)
+            return self.redirect_show_user(rs, persona_id)
+        else:
+            self.do_mail(rs, "password_reset_done",
+                         {'To' : (data['username'],),
+                          'Subject' : 'CdEDB password reset successful'},
+                         {'password' : message})
+            rs.notify("success", "Password reset.")
+            return self.redirect_show_user(rs, persona_id)
+
     @access("persona")
     def change_username_form(self, rs):
         """Render form."""
@@ -237,7 +256,6 @@ class CoreFrontend(AbstractFrontend):
         rs.notify("success", "Email sent.")
         return self.render(rs, "index")
 
-    # TODO persona_id is used further down the line
     @access("persona")
     @REQUESTdata(("new_username", "#email"))
     @persona_dataset_guard(realms=None)
@@ -249,3 +267,9 @@ class CoreFrontend(AbstractFrontend):
         rs.values['new_username'] = self.encode_parameter(
             "cde/do_username_change", "new_username", new_username)
         return self.render(rs, "do_username_change")
+
+    @access("core_admin")
+    def admin_username_change_form(self, rs, persona_id):
+        """Render form."""
+        data = self.coreproxy.get_data_single(rs, persona_id)
+        return self.render(rs, "admin_username_change", {'data' : data})

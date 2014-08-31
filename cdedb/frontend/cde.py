@@ -115,6 +115,25 @@ class CdeFrontend(AbstractUserFrontend):
             rs.notify("success", "Username changed.")
             return self.redirect(rs, "core/index")
 
+    @access("cde_admin", {'POST'})
+    @REQUESTdata(('new_username', 'email'))
+    def admin_username_change(self, rs, persona_id, new_username):
+        """This is in the cde frontend to allow the changelog
+        functionality. (Otherwise this would be in the core frontend.)"""
+        if rs.errors:
+            rs.notify("error", "Failed.")
+            return self.redirect(rs, "core/admin_username_change_form")
+        token = self.coreproxy.change_username_token(
+            rs, persona_id, new_username, "dummy")
+        success, message = self.cdeproxy.change_username(
+            rs, persona_id, new_username, token)
+        if not success:
+            rs.notify("error", message)
+            return self.redirect(rs, "core/admin_username_change_form")
+        else:
+            rs.notify("success", "Username changed.")
+            return self.redirect(rs, "core/show_user")
+
     @access("cde_admin")
     def list_pending_changes(self, rs):
         """List non-committed changelog entries."""
