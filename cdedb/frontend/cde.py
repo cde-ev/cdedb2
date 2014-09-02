@@ -204,3 +204,41 @@ class CdeFrontend(AbstractUserFrontend):
                 os.remove(path)
         rs.notify("success", "Foto updated.")
         return self.redirect_show_user(rs, persona_id)
+
+    @access("persona")
+    def consent_decision_form(self, rs):
+        """After login ask cde members for decision about searchability. Do
+        this only if no decision has been made in the past.
+        """
+        if rs.user.realm != "cde" or rs.user.is_searchable:
+            return self.redirect(rs, "core/index")
+        data = self.cdeproxy.get_data_single(rs, rs.user.persona_id)
+        if data['decided_search']:
+            return self.redirect(rs, "core/index")
+        return self.render(rs, "consent_decision", {'data' : data})
+
+    @access("member", {"POST"})
+    @REQUESTdata(("ack", "bool"))
+    def consent_decision(self, rs, ack):
+        """Record decision."""
+        data = self.cdeproxy.get_data_single(rs, rs.user.persona_id)
+        if rs.errors:
+            rs.notify("error", "Failed.")
+            return self.render(rs, "consent_decision", {'data' : data})
+        if data['decided_search']:
+            return self.redirect(rs, "core/index")
+        status = const.SEARCHMEMBER_STATUS if ack else const.MEMBER_STATUS
+        new_data = {
+            'id' : rs.user.persona_id,
+            'decided_search' : True,
+            'status' : status
+        }
+        num = self.cdeproxy.change_user(rs, new_data, None, may_wait=False)
+        if num != 1:
+            rs.notify("error", "Failed.")
+            return self.render(rs, "consent_decision", {'data' : data})
+        if ack:
+            rs.notify("success", "Consent noted.")
+        else:
+            rs.notify("info", "Decision noted.")
+        return self.redirect(rs, "core/index")

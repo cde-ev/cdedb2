@@ -65,6 +65,7 @@ CREATE TABLE core.personas (
 CREATE INDEX idx_personas_status ON core.personas(status);
 GRANT SELECT ON core.personas TO cdb_anonymous;
 GRANT UPDATE (username, password_hash, display_name) ON core.personas TO cdb_persona;
+GRANT UPDATE (status) ON core.personas TO cdb_member;
 GRANT INSERT, UPDATE ON core.personas TO cdb_core_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_core_admin;
 

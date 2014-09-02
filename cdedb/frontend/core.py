@@ -86,7 +86,7 @@ class CoreFrontend(AbstractFrontend):
         if wants:
             basic_redirect(rs, wants)
         else:
-            self.redirect(rs, "core/index")
+            self.redirect(rs, "cde/consent_decision_form")
         rs.response.set_cookie("sessionkey", sessionkey)
         return rs.response
 

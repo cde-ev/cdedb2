@@ -9,8 +9,12 @@
    <input type="checkbox" disabled>
 {% endmacro %}
 
-{% macro input_hidden(name, defaultvalue='') %}
-    <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
+{% macro input_hidden(name, value=None, defaultvalue='') %}
+    {% if value is none %}
+        <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
+    {% else %}
+        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+    {% endif %}
 {% endmacro %}
 
 {% macro input_file(name, displayerrors=True, accept='') %}

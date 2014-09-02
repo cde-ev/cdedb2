@@ -122,7 +122,7 @@ class TestCdEBackend(BackendTest):
             'is_active': True,
             'postal_code2': '22335',
             'birthday': datetime.datetime(1991, 3, 30).date()},
-            2 : {'bub_search': False,
+            2 : {'bub_search': True,
             'location': 'Utopia',
             'cloud_account': True,
             'specialisation': 'Alles',

@@ -176,6 +176,8 @@ class CdeBackend(AbstractUserBackend):
             raise RuntimeError("Modifying sensitive key forbidden.")
         if 'username' in data  and not allow_username_change:
             raise RuntimeError("Modification of username prevented.")
+        if not may_wait and generation is not None:
+            raise ValueError("Non-waiting change without generation override.")
 
         with Atomizer(rs):
             ## check for race
@@ -217,10 +219,6 @@ class CdeBackend(AbstractUserBackend):
             fields_requiring_review = {'birthday', 'family_name', 'given_names'}
             if changed_fields & fields_requiring_review and not self.is_admin(rs):
                 status = const.MEMBER_CHANGE_PENDING
-                if not may_wait:
-                    self.logger.error(glue("Change requiring review may not",
-                                           "wait for {}.").format(data['id']))
-                    status = const.MEMBER_CHANGE_COMMITTED
             else:
                 status = const.MEMBER_CHANGE_COMMITTED
 
@@ -260,15 +258,13 @@ class CdeBackend(AbstractUserBackend):
                     allow_username_change=allow_username_change)
             else:
                 ret = -1
+            if not may_wait and ret <= 0:
+                raise RuntimeError("Non-waiting change not committed.")
 
             # pop the stashed change
             if diff:
                 if set(diff) & changed_fields:
-                    # This should not happen since non-waiting changes
-                    # should only manipulate selected fields
-                    self.logger.warning(
-                        "Dropped conflicting change for {}".format(data['id']))
-                    return ret
+                    raise RuntimeError("Conflicting pending change.")
                 query = "INSERT INTO cde.changelog ({}) VALUES ({})".format(
                     ", ".join(fields), ", ".join(("%s",) * len(fields)))
                 params = [rs.user.persona_id, next_generation + 1,
@@ -375,9 +371,8 @@ class CdeBackend(AbstractUserBackend):
     @access("user")
     def change_user(self, rs, data, generation, may_wait=True):
         data = affirm("member_data", data)
-        generation = affirm("int", generation)
-        ret = self.set_user_data(rs, data, generation, may_wait=may_wait)
-        return ret
+        generation = affirm("int_or_None", generation)
+        return self.set_user_data(rs, data, generation, may_wait=may_wait)
 
     @access("user")
     @singularize("get_data_single_no_quota")

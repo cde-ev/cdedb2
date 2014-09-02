@@ -74,6 +74,22 @@ class TestCdEFrontend(FrontendTest):
         self.assertNotIn(user['family_name'], self.response.text)
         self.assertIn('Ganondorf', self.response.text)
 
+    def test_consent(self):
+        user = USER_DICT["garcia"]
+        self.login(user)
+        self.assertEqual("Einwilligung zur Personensuche",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        f = self.response.forms['toplaterform']
+        self.submit(f)
+        self.assertEqual("CdE Datenbank",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        self.traverse({'href' : '/mydata'},
+                      {'href' : '/cde/changeuser', 'index' : 0},
+                      {'href' : '/cde/consentdecision'})
+        f = self.response.forms['ackconsentform']
+        self.submit(f)
+        self.assertIn("successNotification", self.response.text)
+
     @as_users("anton", "berta")
     def test_get_foto(self, user):
         response = self.app.get('/cde/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')

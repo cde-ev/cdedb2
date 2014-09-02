@@ -3,7 +3,7 @@
 {% block title %}Startseite{% endblock %}
 {% block content %}
     <h1>CdE Datenbank</h1>
-    Willkommen!
+    <p>Willkommen!</p>
     {% if user.role == "anonymous" %}
         <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform">
             {{ util.input_text(name="username", label="Nutzer:") }}<br>

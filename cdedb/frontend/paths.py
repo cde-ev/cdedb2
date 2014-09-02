@@ -75,6 +75,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="set_foto_form"),
             rule("/setfoto/<int:persona_id>", methods=("POST",),
                  endpoint="set_foto"),
+            rule("/consentdecision", methods=("GET", "HEAD"),
+                 endpoint="consent_decision_form"),
+            rule("/consentdecision", methods=("POST",),
+                 endpoint="consent_decision"),
             )),
         )),
     werkzeug.routing.EndpointPrefix('event/', (

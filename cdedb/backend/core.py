@@ -15,6 +15,7 @@ from cdedb.common import (glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS,
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
+import cdedb.database.constants as const
 
 from passlib.hash import sha512_crypt
 import hashlib
@@ -183,7 +184,15 @@ class CoreBackend(AbstractBackend):
         privileged_fields = {'is_active', 'status', 'db_privileges',
                              'cloud_account'}
         if not self.is_admin(rs) and (set(keys) & privileged_fields):
-            raise RuntimeError("Modifying sensitive key forbidden.")
+            # be naughty and take a peak
+            if set(keys) == {'status'} \
+              and data['id'] == rs.user.persona_id \
+              and data['status'] == const.SEARCHMEMBER_STATUS \
+              and rs.user._persona_data['status'] == const.MEMBER_STATUS:
+                # allow upgrading self to searchable member
+                pass
+            else:
+                raise RuntimeError("Modifying sensitive key forbidden.")
         if 'username' in data and not allow_username_change:
             raise RuntimeError("Modification of username prevented.")
         query = "UPDATE core.personas SET ({}) = ({}) WHERE id = %s".format(

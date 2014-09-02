@@ -158,13 +158,13 @@
         </tr>
     </table>
     <form action="{{ cdedblink('cde/resolve_change') }}" method="POST" id="ackchangeform">
-        {{ util.input_hidden(name="ack", defaultvalue="True") }}<br>
-        {{ util.input_hidden(name="generation", defaultvalue=pending['generation']) }}<br>
+        {{ util.input_hidden(name="ack", value="True") }}<br>
+        {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
         {{ util.input_submit(value="Änderung bestätigen") }}
     </form>
     <form action="{{ cdedblink('cde/resolve_change') }}" method="POST" id="nackchangeform">
-        {{ util.input_hidden(name="ack", defaultvalue="False") }}<br>
-        {{ util.input_hidden(name="generation", defaultvalue=pending['generation']) }}<br>
+        {{ util.input_hidden(name="ack", value="False") }}<br>
+        {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
         {{ util.input_submit(value="Änderung verwerfen") }}
     </form>
 {% endblock %}

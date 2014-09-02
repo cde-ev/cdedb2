@@ -4,6 +4,10 @@
 {% block content %}
     <h1>{{ values['given_names']|e }} {{ values['family_name']|e }}</h1>
 
+    {% if not values['decided_search'] %}
+        <a href="{{ cdedblink('cde/consent_decision') }}">Datenschutzrichtlinie zur Personensuche</a>
+    {% endif %}
+
     <form action="{{ cdedblink('cde/change_user') }}" method="POST" id="changedataform">
         {{ util.input_hidden(name="generation") }}
         <table>

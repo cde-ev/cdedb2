@@ -191,9 +191,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             if data["is_active"]:
                 realm = extract_realm(data["status"])
                 role = self.extract_roles(data)[-1]
-                db_role = self.db_role(role)
-                user = BackendUser(persona_id, role, db_role,
-                                   realm, persona_data=data)
+                user = BackendUser(persona_id, role, realm, persona_data=data)
             else:
                 self.logger.warning("Found inactive user {}".format(persona_id))
         try:
@@ -205,7 +203,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 raise
         if user.role in access_list:
             return BackendRequestState(sessionkey, user,
-                                       self.connpool[user.db_role])
+                                       self.connpool[self.db_role(user.role)])
         else:
             return None
 
@@ -352,16 +350,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
 class BackendUser:
     """Container for representing a persona."""
-    def __init__(self, persona_id=None, role="anonymous",
-                 db_role="cdb_anonymous", realm=None, orga=None,
-                 moderator=None, persona_data=None):
+    def __init__(self, persona_id=None, role="anonymous", realm=None,
+                 orga=None, moderator=None, persona_data=None):
         """
         :type persona_id: int or None
         :type role: str
         :param role: python side privilege level
-        :type db_role: str :param db_role: database role associated to
-          python level role (this is non-trivial since there may be more
-          possible roles on the python level than in the database)
         :type realm: str
         :param realm: realm of origin, describing which component is
           responsible for handling the basic aspects of this user
@@ -377,7 +371,6 @@ class BackendUser:
         """
         self.persona_id = persona_id
         self.role = role
-        self.db_role = db_role
         self.realm = realm
         orga = orga or set()
         self.orga = set(orga)
