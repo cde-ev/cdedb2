@@ -61,6 +61,8 @@ echo "--------------------------------------------"
 
 cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/9.4/main/
 /etc/init.d/postgresql restart
+sleep 3
+
 make sql
 
 cp /cdedb2/related/auto-build/files/stage3/pgbouncer.ini /etc/pgbouncer/
