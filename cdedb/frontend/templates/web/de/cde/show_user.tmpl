@@ -147,8 +147,12 @@
 		<tr>
 		    <td>Sichtbarkeit</td>
 		    {% if not data['decided_search'] %}
-			{# FIXME add link to decision page #}
-			<td>Noch nicht entschieden; Daten sind nicht sichtbar.</td>
+			<td>
+                            Noch nicht entschieden; Daten sind nicht sichtbar.
+                            {% if data['id'] == user.persona_id %}
+                                <a href="{{ cdedblink('cde/consent_decision') }}">Entscheiden.</a>
+                            {% endif %}
+                        </td>
 		    {% else %}
 		       {% if user.is_searchable %}
 			   <td>Daten sind für andere Mitglieder sichtbar.</td>

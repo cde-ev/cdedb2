@@ -77,7 +77,7 @@ class TestCdEFrontend(FrontendTest):
     def test_consent(self):
         user = USER_DICT["garcia"]
         self.login(user)
-        self.assertEqual("Einwilligung zur Personensuche",
+        self.assertEqual("Einwilligung zur Mitgliedersuche",
                          self.response.lxml.xpath('//h1/text()')[0])
         f = self.response.forms['toplaterform']
         self.submit(f)
