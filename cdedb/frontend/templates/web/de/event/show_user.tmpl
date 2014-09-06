@@ -37,7 +37,14 @@
         </th>
         <tr>
             <td>Email</td>
-            <td>{{ data['username']|e }}</td>
+            <td>
+                {{ data['username']|e }}
+                {% if is_admin and values['id'] != user.persona_id %}
+                    <a href="{{ cdedblink('core/admin_username_change_form') }}">Email ändern</a>
+                {% else %}
+                    <a href="{{ cdedblink('core/change_username_form') }}">Email ändern</a>
+                {% endif %}
+            </td>
         </tr>
         <tr>
             <td>Telefon</td>

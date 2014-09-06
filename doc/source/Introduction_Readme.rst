@@ -88,3 +88,5 @@ it right away.
   values like ``True``, ``False``, ``None`` where it's pretty hard to guess
   what they do. Antipattern would be a call like ``do_something(True, False,
   None, True)``.
+* HTML pages with a big form for data entry should have no links which
+  redirect and cause the entered data to be lost.

@@ -16,14 +16,18 @@
             <div id="navigation">
                 <h1><a href="{{ cdedblink("core/index") }}">CdEDB</a></h1>
                 {% if user.role == "anonymous" %}
-                    Nicht eingeloggt<br>
-                    <a href="{{ cdedblink("core/index") }}">Login</a>
+                    <p>
+                        Nicht eingeloggt<br>
+                        <a href="{{ cdedblink("core/index") }}">Login</a>
+                    </p>
                 {% else %}
-                    Eingeloggt als:<br>
-                    <span id="displayname">{{ user.display_name|e }}</span>
-                    <form action="{{ cdedblink("core/logout") }}" method="POST" id="logoutform">
-                        <input type="submit" name="submitlogout" value="Abmelden">
-                    </form>
+                    <p>
+                        Eingeloggt als:<br>
+                        <span id="displayname">{{ user.display_name|e }}</span>
+                        <form action="{{ cdedblink("core/logout") }}" method="POST" id="logoutform">
+                            <input type="submit" name="submitlogout" value="Abmelden">
+                        </form>
+                    </p>
                 {% endif %}
                 <hr>
                 <h2>Navigation</h2>
