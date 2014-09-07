@@ -135,9 +135,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
         new_username = "zelda@example.cde"
-        self.traverse({'href' : '/mydata'},
-                      {'href' : '/changeuser', 'index' : 0},
-                      {'href' : '/changeusername'})
+        self.traverse({'href' : '/mydata'}, {'href' : '/changeusername'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)
@@ -169,8 +167,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = 2
         self.submit(f)
-        self.traverse({'href' : '/changeuser', 'index' : 0},
-                      {'href' : '/adminusernamechange'})
+        self.traverse({'href' : '/adminusernamechange'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)

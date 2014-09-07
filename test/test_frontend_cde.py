@@ -84,7 +84,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("CdE Datenbank",
                          self.response.lxml.xpath('//h1/text()')[0])
         self.traverse({'href' : '/mydata'},
-                      {'href' : '/cde/changeuser', 'index' : 0},
                       {'href' : '/cde/consentdecision'})
         f = self.response.forms['ackconsentform']
         self.submit(f)
