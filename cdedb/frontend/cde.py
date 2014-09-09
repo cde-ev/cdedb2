@@ -145,12 +145,12 @@ class CdeFrontend(AbstractUserFrontend):
         """Look at a pending change."""
         history = self.cdeproxy.get_history(rs, persona_id, generations=None)
         pending = history[max(history)]
-        if pending['change_status'] != const.MEMBER_CHANGE_PENDING:
+        if pending['change_status'] != const.MemberChangeStati.pending:
             rs.notify("warning", "Persona has no pending change.")
             return self.list_pending_changes(rs)
         current = history[max(
             key for key in history
-            if history[key]['change_status'] == const.MEMBER_CHANGE_COMMITTED)]
+            if history[key]['change_status'] == const.MemberChangeStati.committed)]
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
             'pending' : pending, 'current' : current, 'diff' : diff})
@@ -227,7 +227,10 @@ class CdeFrontend(AbstractUserFrontend):
             return self.render(rs, "consent_decision", {'data' : data})
         if data['decided_search']:
             return self.redirect(rs, "core/index")
-        status = const.SEARCHMEMBER_STATUS if ack else const.MEMBER_STATUS
+        if ack:
+            status = const.PersonaStati.search_member.value
+        else:
+            status = const.PersonaStati.member.value
         new_data = {
             'id' : rs.user.persona_id,
             'decided_search' : True,

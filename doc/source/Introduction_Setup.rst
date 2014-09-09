@@ -43,7 +43,7 @@ Here are some oneliners for the lazy::
   # Gentoo
   emerge -avt >=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/python-magic virtual/python-imaging dev-python/sphinx dev-python/webtest dev-db/pgbouncer net-analyzer/fail2ban
   # Debian
-  aptitude install apache2 libapache2-mod-wsgi slapd ldap-utils postgresql-client postgresql pgbouncer python3 python3-psycopg2 python3-pyro4 python3-werkzeug python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-webtest python3-magic python3-pil fail2ban # python3-passlib python3-ldap (note that the last two are not yet package)
+  aptitude install apache2 libapache2-mod-wsgi slapd ldap-utils postgresql-client postgresql pgbouncer python3 python3-psycopg2 python3-pyro4 python3-werkzeug python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-webtest python3-magic python3-pil fail2ban # python3-passlib python3-ldap (note that the last two are not yet packaged)
 
 
 Checkout the repository

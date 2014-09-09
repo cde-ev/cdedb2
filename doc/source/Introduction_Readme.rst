@@ -32,8 +32,8 @@ Here is a list of best practices to follow, so the code stays nice.
 * The HTML should degrade nicely if Javascript is not available.
 * No numeric id (like persona_id) may be zero.
 * If possible test core.personas.status always against lists like
-  cdedb.database.constants.SEARCHMEMBERSTATUSES and not against the direct
-  values like cdedb.database.constants.SEARCHMEMBERSTATUS.
+  cdedb.database.constants.SEARCHMEMBER_STATI and not against the direct
+  values like cdedb.database.constants.PersonaStati.search_member.
 * As general pattern: return tuple ``(bool, str)`` where the bool signals
   succes, and the str is the either error message or return value
 * The test-suite should visit all functionality at least once.

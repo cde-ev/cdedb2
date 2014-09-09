@@ -187,8 +187,8 @@ class CoreBackend(AbstractBackend):
             # be naughty and take a peak
             if set(keys) == {'status'} \
               and data['id'] == rs.user.persona_id \
-              and data['status'] == const.SEARCHMEMBER_STATUS \
-              and rs.user._persona_data['status'] == const.MEMBER_STATUS:
+              and data['status'] == const.PersonaStati.search_member \
+              and rs.user._persona_data['status'] == const.PersonaStati.member:
                 # allow upgrading self to searchable member
                 pass
             else:

@@ -296,9 +296,9 @@ def gender_filter(val):
     :type val: int
     :rtype: str
     """
-    if val == const.FEMALE:
+    if val == const.Genders.female:
         return '♀'
-    elif val == const.MALE:
+    elif val == const.Genders.male:
         return '♂'
     else:
         return '⚧'
@@ -358,11 +358,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if role in global_privs:
                 roles.append(role)
         role = roles[-1]
-        if sessiondata["status"] in const.MEMBER_STATUSES:
+        if sessiondata["status"] in const.MEMBER_STATI:
             is_member = True
         else:
             is_member = False
-        if sessiondata["status"] in const.SEARCHMEMBER_STATUSES:
+        if sessiondata["status"] in const.SEARCHMEMBER_STATI:
             is_searchable = True
         else:
             is_searchable = False

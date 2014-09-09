@@ -28,36 +28,10 @@ CREATE TABLE core.personas (
         -- inactive accounts may not log in
         is_active               boolean NOT NULL DEFAULT True,
         -- nature of this entry
-        -- 0 ... searchable CdE member
-        -- 1 ... non-searchable CdE member
-        -- 2 ... former CdE member
-        -- 10 ... archived former CdE member
-        -- 20 ... external event user
-        -- 30 ... external assembly user
-        --
-        -- the different statuses have different additional data attached
-        -- 0/1/2 ... a matching entry cde.member_data
-        -- 10 ...  a matching entry cde.member_data which is mostly NULL or
-        --         default values (most queries will need to filter for status
-        --         in (0, 1))
-        --         archived members may not login, thus is_active must be False
-        -- 20 ... a matching entry event.user_data
-        -- 30 ... a matching entry assembly.user_data
-        --
-        -- Searchability (see statusses 0 and 1) means the user has given
-        -- (at any point in time) permission for his data to be accessible
-        -- to other users. This permission is revoked upon leaving the CdE
-        -- and has to be granted again in case of reentry.
+        -- see cdedb.database.constants.PersonaStati
         status                  integer NOT NULL,
         -- bitmask of possible privileges
-        -- if db_privileges == 0 no privileges are granted
-        -- 1 ... global admin privileges (implies all other privileges granted here)
-        -- 2 ... core_admin
-        -- 4 ... cde_admin
-        -- 8 ... event_admin
-        -- 16 ... ml_admin
-        -- 32 ... assembly_admin
-        -- 64 ... files_admin
+        -- see cdedb.database.constants.PrivilegeBits
         db_privileges           integer NOT NULL DEFAULT 0,
         -- grant access to the CdE cloud (this is utilized via LDAP)
         cloud_account           boolean NOT NULL DEFAULT False
@@ -87,11 +61,7 @@ CREATE TABLE core.persona_creation_challenges (
         -- email is sent, that persona creation can proceed
         --
         -- enum tracking the progress
-        -- 0 ... created, email unconfirmed
-        -- 1 ... email confirmed, awaiting review
-        -- 2 ... reviewed and approved, awaiting persona creation
-        -- 3 ... finished (persona created, challenge archived)
-        -- 10 ... reviewed and rejected (also a final state)
+        -- see cdedb.database.constants.PersonaCreationStati
         challenge_status         integer NOT NULL DEFAULT 0
 );
 GRANT SELECT, INSERT ON core.persona_creation_challenges To cdb_anonymous;
@@ -149,9 +119,7 @@ CREATE TABLE cde.member_data (
         title                   varchar DEFAULT NULL,
         -- after name
         name_supplement         varchar DEFAULT NULL,
-        -- 0 ... female
-        -- 1 ... male
-        -- 2 ... unknown
+        -- see cdedb.database.constants.Genders
         gender                  integer NOT NULL,
         birthday                date NOT NULL,
         telephone               varchar,
@@ -222,11 +190,7 @@ CREATE TABLE cde.changelog (
         cdate                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         generation              integer NOT NULL,
         -- enum for progress of change
-        -- 0 ... review pending
-        -- 1 ... commited
-        -- 10 ... superseded
-        -- 11 ... nacked
-        -- 12 ... displaced (superseded by a change which couldn't wait)
+        -- see cdedb.database.constants.MemberChangeStati
         change_status           integer NOT NULL DEFAULT 0,
         --
         -- data fields
@@ -323,9 +287,7 @@ CREATE TABLE event.user_data (
         title                   varchar DEFAULT NULL,
         -- after name
         name_supplement         varchar DEFAULT NULL,
-        -- 0 ... female
-        -- 1 ... male
-        -- 2 ... unknown
+        -- see cdedb.database.constants.Genders
         gender                  integer NOT NULL,
         birthday                date NOT NULL,
         telephone               varchar,
@@ -491,15 +453,8 @@ CREATE TABLE event.registration_parts (
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
         part_id                 integer NOT NULL REFERENCES event.event_parts(id),
         -- enum for status of this registration part
-        -- -1 ... not applied
-        -- 0 ... applied
-        -- 1 ... admitted
-        -- 2 ... on hold (waiting list)
-        -- 3 ... guest
-        -- 4 ... canceled
-        -- 5 ... rejected
+        -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL DEFAULT 0,
-
         logdment_id             integer REFERENCES event.lodgments(id),
         -- this is NULL if not an instructor
         course_instructor       integer REFERENCES event.courses(id)

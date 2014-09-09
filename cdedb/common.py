@@ -61,11 +61,11 @@ def extract_realm(status):
     """
     if status is None:
         return None
-    elif status in const.CDE_STATUSES:
+    elif status in const.CDE_STATI:
         return "cde"
-    elif status in const.EVENT_STATUSES:
+    elif status in const.EVENT_STATI:
         return "event"
-    elif status in const.ASSEMBLY_STATUSES:
+    elif status in const.ASSEMBLY_STATI:
         return "assembly"
     else:
         raise ValueError("Invalid status {} found.".format(status))
@@ -83,30 +83,18 @@ def extract_global_privileges(db_privileges, status):
     """Take numerical raw values from the database and convert it into a
     set of semantic privilege levels.
 
-    :type db_privileges: int
+    :type db_privileges: int or None
+    :type status: :py:class:`cdedb.database.constants.PersonaStati` or None
     :rtype: {str}
     """
     if db_privileges is None or status is None:
         return {"anonymous",}
     ret = {"anonymous", "persona"}
-    if status in const.MEMBER_STATUSES:
+    if status in const.MEMBER_STATI:
         ret.add("member")
-    if db_privileges & const.ADMIN_BIT:
-        ret.add("admin")
-    if db_privileges & const.CORE_ADMIN_BIT:
-        ret.add("core_admin")
-    if db_privileges & const.CDE_ADMIN_BIT:
-        ret.add("cde_admin")
-    if db_privileges & const.EVENT_ADMIN_BIT:
-        ret.add("event_admin")
-    if db_privileges & const.ML_ADMIN_BIT:
-        ret.add("ml_admin")
-    if db_privileges & const.ASSEMBLY_ADMIN_BIT:
-        ret.add("assembly_admin")
-    if db_privileges & const.FILES_ADMIN_BIT:
-        ret.add("files_admin")
-    if db_privileges & const.I25P_ADMIN_BIT:
-        ret.add("i25p_admin")
+    for privilege in const.PrivilegeBits:
+        if db_privileges & privilege.value:
+            ret.add(privilege.name)
     return ret
 
 

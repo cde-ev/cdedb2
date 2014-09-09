@@ -81,14 +81,14 @@ class CdeBackend(AbstractUserBackend):
     @classmethod
     def extract_roles(cls, personadata):
         roles = ["anonymous", "persona"]
-        if personadata["status"] in const.CDE_STATUSES:
+        if personadata['status'] in const.CDE_STATI:
             roles.append("user")
-        if personadata["status"] in const.MEMBER_STATUSES:
+        if personadata['status'] in const.MEMBER_STATI:
             roles.append("member")
-        if personadata["status"] in const.SEARCHMEMBER_STATUSES:
+        if personadata['status'] in const.SEARCHMEMBER_STATI:
             roles.append("searchmember")
         global_privs = extract_global_privileges(personadata["db_privileges"],
-                                                 personadata["status"])
+                                                 personadata['status'])
         for role in ("cde_admin", "admin"):
             if role in global_privs:
                 roles.append(role)
@@ -192,7 +192,7 @@ class CdeBackend(AbstractUserBackend):
             history = self.get_history(rs, data['id'], generations=None)
             current_data = history[current_generation]
             diff = None
-            if current_data['change_status'] == const.MEMBER_CHANGE_PENDING \
+            if current_data['change_status'] == const.MemberChangeStati.pending \
               and not may_wait:
                 old_data = self.get_data(rs, (data['id'],))[data['id']]
                 diff = {key : current_data[key] for key in old_data
@@ -201,8 +201,8 @@ class CdeBackend(AbstractUserBackend):
                 query = glue("UPDATE cde.changelog SET change_status = %s",
                              "WHERE persona_id = %s AND change_status = %s")
                 self.query_exec(rs, query, (
-                    const.MEMBER_CHANGE_DISPLACED, data['id'],
-                    const.MEMBER_CHANGE_PENDING))
+                    const.MemberChangeStati.displaced, data['id'],
+                    const.MemberChangeStati.pending))
 
             ## determine if something changed
             changed_fields = {key for key, value in data.items()
@@ -211,16 +211,14 @@ class CdeBackend(AbstractUserBackend):
                 if diff:
                     query = glue("UPDATE cde.changelog SET change_status = %s",
                                  "WHERE persona_id = %s AND generation = %s")
-                    self.query_exec(rs, query, (const.MEMBER_CHANGE_PENDING,
+                    self.query_exec(rs, query, (const.MemberChangeStati.pending,
                                                 data['id'], current_generation))
                 return 0
 
             ## determine if something requiring a review changed
             fields_requiring_review = {'birthday', 'family_name', 'given_names'}
-            if changed_fields & fields_requiring_review and not self.is_admin(rs):
-                status = const.MEMBER_CHANGE_PENDING
-            else:
-                status = const.MEMBER_CHANGE_COMMITTED
+            requires_review = (changed_fields & fields_requiring_review
+                               and not self.is_admin(rs))
 
             ## prepare for inserting a new changelog entry
             query = glue("SELECT COUNT(*) AS num FROM cde.changelog",
@@ -231,8 +229,8 @@ class CdeBackend(AbstractUserBackend):
             query = glue("UPDATE cde.changelog SET change_status = %s",
                          "WHERE persona_id = %s AND change_status = %s")
             self.query_exec(rs, query, (
-                const.MEMBER_CHANGE_SUPERSEDED, data['id'],
-                const.MEMBER_CHANGE_PENDING))
+                const.MemberChangeStati.superseded, data['id'],
+                const.MemberChangeStati.pending))
 
             ## insert new changelog entry
             fields = ["submitted_by", "generation", "change_status",
@@ -243,7 +241,7 @@ class CdeBackend(AbstractUserBackend):
             query = "INSERT INTO cde.changelog ({}) VALUES ({})".format(
                 ", ".join(fields), ", ".join(("%s",) * len(fields)))
             params = [rs.user.persona_id, next_generation,
-                      const.MEMBER_CHANGE_PENDING, data['id']]
+                      const.MemberChangeStati.pending, data['id']]
             for field in fields[4:]:
                 if field in data:
                     params.append(data[field])
@@ -252,7 +250,7 @@ class CdeBackend(AbstractUserBackend):
             self.query_exec(rs, query, params)
 
             ## resolve change if it doesn't require review
-            if status == const.MEMBER_CHANGE_COMMITTED:
+            if not requires_review:
                 ret = self.resolve_change(
                     rs, data['id'], next_generation, ack=True, reviewed=False,
                     allow_username_change=allow_username_change)
@@ -268,7 +266,7 @@ class CdeBackend(AbstractUserBackend):
                 query = "INSERT INTO cde.changelog ({}) VALUES ({})".format(
                     ", ".join(fields), ", ".join(("%s",) * len(fields)))
                 params = [rs.user.persona_id, next_generation + 1,
-                          const.MEMBER_CHANGE_PENDING, data['id']]
+                          const.MemberChangeStati.pending, data['id']]
                 for field in fields[4:]:
                     if field in diff:
                         params.append(diff[field])
@@ -311,22 +309,22 @@ class CdeBackend(AbstractUserBackend):
                 "WHERE persona_id = %s AND change_status = %s",
                 "AND generation = %s")
             self.query_exec(rs, query, (
-                rs.user.persona_id, const.MEMBER_CHANGE_NACKED, persona_id,
-                const.MEMBER_CHANGE_PENDING, generation))
+                rs.user.persona_id, const.MemberChangeStati.nacked, persona_id,
+                const.MemberChangeStati.pending, generation))
             return 0
         with Atomizer(rs):
             ## look up changelog entry and mark as commited
             history = self.get_history(rs, persona_id,
                                        generations=(generation,))
             data = history[generation]
-            if data['change_status'] != const.MEMBER_CHANGE_PENDING:
+            if data['change_status'] != const.MemberChangeStati.pending:
                 return 0
             query = glue(
                 "UPDATE cde.changelog SET {} change_status = %s",
                 "WHERE persona_id = %s AND generation = %s").format(
                     "reviewed_by = %s," if reviewed else "")
             params = ((rs.user.persona_id,) if reviewed else tuple()) + (
-                          const.MEMBER_CHANGE_COMMITTED, persona_id, generation)
+                const.MemberChangeStati.committed, persona_id, generation)
             self.query_exec(rs, query, params)
 
             ## determine changed fields
@@ -441,8 +439,8 @@ class CdeBackend(AbstractUserBackend):
         query = glue("SELECT persona_id, max(generation) AS generation",
                      "FROM cde.changelog WHERE persona_id = ANY(%s)",
                      "AND change_status = ANY(%s) GROUP BY persona_id")
-        valid_status = (const.MEMBER_CHANGE_PENDING,
-                        const.MEMBER_CHANGE_COMMITTED)
+        valid_status = (const.MemberChangeStati.pending,
+                        const.MemberChangeStati.committed)
         data = self.query_all(rs, query, (ids, valid_status))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
@@ -459,7 +457,7 @@ class CdeBackend(AbstractUserBackend):
         """
         query = glue("SELECT persona_id, given_names, family_name, generation",
                      "FROM cde.changelog WHERE change_status = %s")
-        data = self.query_all(rs, query, (const.MEMBER_CHANGE_PENDING,))
+        data = self.query_all(rs, query, (const.MemberChangeStati.pending,))
         return {e['persona_id'] : e for e in data}
 
     @access("cde_admin")

@@ -19,6 +19,8 @@ import cdedb.validation as validate
 import functools
 import copy
 import inspect
+import collections.abc
+import enum
 
 def singularize(singular_function_name, array_param_name="ids",
                 singular_param_name="anid"):
@@ -271,18 +273,28 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return dict(output)
 
     @staticmethod
-    def _sanitize_tuple(obj):
-        """Convert :py:class:`tuple`s into :py:class:`list`s.
+    def _sanitize_db_input(obj):
+        """Mangle data to make psycopg happy.
 
-        This is necesary because psycopg will fail to insert a tuple
-        into an 'ANY(%s)' clause -- only a list does the trick.
+        Convert :py:class:`tuple`s (and all other iterables) into
+        :py:class:`list`s. This is necesary because psycopg will fail to
+        insert a tuple into an 'ANY(%s)' clause -- only a list does the
+        trick.
+
+        Convert :py:class:`enum.IntEnum` (and all other enums) into
+        their numeric value. Everywhere else these automagically work
+        like integers, but here they have to be handled explicitly.
 
         :type obj: object
-        :rtype: object but not tuple
+        :rtype: object but not tuple or IntEnum
         """
-        if isinstance(obj, tuple):
-            return list(obj)
-        return obj
+        if isinstance(obj, collections.abc.Iterable) \
+          and not isinstance(obj, str):
+            return [AbstractBackend._sanitize_db_input(x) for x in obj]
+        elif isinstance(obj, enum.Enum):
+            return obj.value
+        else:
+            return obj
 
     def execute_db_query(self, cur, query, params):
         """Perform a database query. This low-level wrapper should be used
@@ -300,7 +312,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type params: [object]
         :rtype: None
         """
-        sanitized_params = tuple(self._sanitize_tuple(p) for p in params)
+        sanitized_params = tuple(self._sanitize_db_input(p) for p in params)
         self.logger.debug("Execute PostgreSQL query {}.".format(cur.mogrify(
             query, sanitized_params)))
         cur.execute(query, sanitized_params)
