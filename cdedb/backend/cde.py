@@ -13,6 +13,7 @@ from cdedb.backend.common import (
     affirm_array_validation as affirm_array, singularize)
 from cdedb.common import (glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS,
                           extract_global_privileges, QuotaException)
+from cdedb.query import QueryScopes
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -584,6 +585,19 @@ class CdeBackend(AbstractUserBackend):
         query = "SELECT COUNT(*) AS num FROM cde.member_data WHERE foto = %s"
         data = self.query_one(rs, query, (foto,))
         return data['num']
+
+    @access("searchmember")
+    def member_search(self, rs, query):
+        query = affirm("serialized_query", query)
+        if query.scope == QueryScopes.member:
+            tables = glue(
+                "(core.personas JOIN cde.member_data",
+                "ON personas.id = member_data.persona_id)",
+                "LEFT OUTER JOIN event.participants",
+                "ON personas.id = participants.persona_id")
+            return self.general_query(rs, query, tables)
+        else:
+            raise RuntimeError("Bad scope.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

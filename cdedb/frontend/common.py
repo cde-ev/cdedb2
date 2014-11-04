@@ -12,6 +12,7 @@ import werkzeug.utils
 import functools
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import extract_realm, extract_global_privileges, glue
+from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
 import jinja2
@@ -319,6 +320,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(os.path.join(
                 self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
+            extensions=['jinja2.ext.with_'],
             finalize=sanitize_None)
         filters = {
             'date' : date_filter,
@@ -416,6 +418,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             """
             params = params or {}
             return cdedburl(rs, endpoint, params)
+
+        def _show_user_link(persona_id):
+            """Convenience method to create link to user data page.
+
+            This is lengthy otherwise because of the parameter encoding
+            and a pretty frequent operation so that it is beneficial to
+            have this helper.
+
+            :type persona_id: int
+            :rtype: str
+            """
+            return cdedburl(rs, 'core/show_user', params={
+                'persona_id' : persona_id,
+                'confirm_id' : self.encode_parameter("core/show_user",
+                                                     "confirm_id", persona_id)})
         errorsdict = {}
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
@@ -425,9 +442,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'errors' : errorsdict,
                 'values' : rs.values,
                 'cdedblink' : _cdedblink,
+                'show_user_link' : _show_user_link,
                 'staticurl' : staticurl,
                 'encode_parameter' : self.encode_parameter,
                 'is_admin' : self.is_admin(rs),
+                'VALID_QUERY_OPERATORS' : VALID_QUERY_OPERATORS,
                 'i18n' : lambda string: self.i18n(string, rs.lang),}
         data.update(params)
         t = self.jinja_env.get_template(os.path.join(
@@ -866,7 +885,7 @@ def decode_parameter(salt, target, name, param, timeout):
         return None
     return message[26:]
 
-def check_validation(rs, assertion, value, name=None):
+def check_validation(rs, assertion, value, name=None, **kwargs):
     """Helper to perform parameter sanitization.
 
     :type rs: :py:class:`FrontendRequestState`
@@ -881,9 +900,9 @@ def check_validation(rs, assertion, value, name=None):
     """
     checker = getattr(validate, "check_{}".format(assertion))
     if name is not None:
-        ret, errs = checker(value, name)
+        ret, errs = checker(value, name, **kwargs)
     else:
-        ret, errs = checker(value)
+        ret, errs = checker(value, **kwargs)
     rs.errors.extend(errs)
     return ret
 

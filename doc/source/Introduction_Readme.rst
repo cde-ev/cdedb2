@@ -90,3 +90,5 @@ it right away.
   None, True)``.
 * HTML pages with a big form for data entry should have no links which
   redirect and cause the entered data to be lost.
+* Email addresses are lower-cased. (This has to be taken into account during
+  migration!)

@@ -319,7 +319,7 @@ GRANT SELECT, UPDATE ON event.event_types_id_seq TO cdb_event_admin;
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
         shortname               varchar NOT NULL UNIQUE,
-        longname                varchar NOT NULL UNIQUE,
+        title                   varchar NOT NULL UNIQUE,
         type_id                 integer NOT NULL REFERENCES event.event_types(id),
         description             varchar,
         -- True if coordinated via CdEDB
@@ -423,6 +423,7 @@ CREATE TABLE event.registrations (
         payment                 date,
         -- parental consent for minors (NULL if not (yet) given, e.g. non-minors)
         parental_agreement      date,
+        mixed_lodging           boolean,
         checkin                 timestamp WITH time zone,
         -- true if participant would take a reserve space in a lodgment
         would_overfill          boolean DEFAULT False,
@@ -465,8 +466,16 @@ CREATE TABLE event.extfield_definitions (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         field_name              varchar NOT NULL,
-        -- anything understood by cdedb.validation and serializable as string
+        -- anything allowed as type in a query spec
         kind                    varchar NOT NULL
+);
+
+-- additional data required for describing extfields (like selection options)
+CREATE TABLE event.extfield_definition_data (
+        id                      serial PRIMARY KEY,
+        extfield_definition_id  integer NOT NULL REFERENCES event.extfield_definitions(id),
+        datum                   varchar NOT NULL,
+        description             varchar NOT NULL
 );
 
 CREATE TABLE event.extfield_data (
@@ -474,6 +483,7 @@ CREATE TABLE event.extfield_data (
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
         ext_data                json NOT NULL
 );
+
 ---
 --- SCHEMA ml
 ---

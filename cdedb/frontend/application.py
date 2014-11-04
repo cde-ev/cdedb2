@@ -101,13 +101,16 @@ class Application(BaseApp):
                 ## do not log these, since they are not interesting and
                 ## reduce the signal to noise ratio
                 raise
-            except:
+            except Exception as e:
                 self.logger.error(glue(
                     ">>>\n>>>\n>>>\n>>> Exception while serving {}",
                     "<<<\n<<<\n<<<\n<<<").format(request.url))
                 self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                 self.logger.error("SECOND TRY CGITB   ")
                 self.logger.error(cgitb.text(sys.exc_info(), context=7))
+                if hasattr(e, '_pyroTraceback'):
+                    self.logger.error("THIRD NESTED PYRO TRACEBACK")
+                    self.logger.error("".join(e._pyroTraceback))
                 raise
         except werkzeug.exceptions.HTTPException as e:
             return e

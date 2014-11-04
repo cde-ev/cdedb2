@@ -27,6 +27,7 @@ above. They return the tuple ``(mangled_value, errors)``, where
 import re
 import sys
 import functools
+import collections.abc
 import decimal
 import datetime
 import dateutil.parser
@@ -42,8 +43,11 @@ from itertools import chain
 current_module = sys.modules[__name__]
 
 from cdedb.common import EPSILON
-from cdedb.validationdata import GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, \
-    ITU_CODES
+from cdedb.validationdata import (
+    GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
+from cdedb.query import (
+    Query, QueryOperators, VALID_QUERY_OPERATORS, QueryScopes,
+    MULTI_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
 _BASICCONF = BasicConfig()
 
@@ -663,12 +667,26 @@ def _event_user_data(val, argname=None, *, strict=False, _convert=True):
 
 @_addvalidator
 def _input_file(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (:py:class:`werkzeug.datastructures.FileStorage` or None,
+        [(str or None, exception)])
+    """
     if not isinstance(val, werkzeug.datastructures.FileStorage):
         return None, [(argname, TypeError("Not a FileStorage."))]
     return val, []
 
 @_addvalidator
 def _profilepic(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (:py:class:`werkzeug.datastructures.FileStorage` or None,
+        [(str or None, exception)])
+    """
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -691,6 +709,305 @@ def _profilepic(val, argname=None, *, _convert=True):
     if width * height < 5000:
         errs.append((argname, "Resolution too small."))
     return val, errs
+
+_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
+@_addvalidator
+def _alphanumeric(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if not _ALPHANUMERIC_REGEX.search(val):
+        errs.append((argname, ValueError("Must be alphanumeric.")))
+    return val, errs
+
+_CSV_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$')
+@_addvalidator
+def _csv_alphanumeric(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if not _CSV_ALPHANUMERIC_REGEX.search(val):
+        errs.append((argname,
+                     ValueError("Must be comma separated alphanumeric.")))
+    return val, errs
+
+_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+$')
+@_addvalidator
+def _identifier(val, argname=None, *, _convert=True):
+    """Identifiers encompass everything from file names over sql column
+    names to short names for events.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if not _IDENTIFIER_REGEX.search(val):
+        errs.append((argname, ValueError("Must be an identifier.")))
+    return val, errs
+
+_CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
+@_addvalidator
+def _csv_identifier(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if not _CSV_IDENTIFIER_REGEX.search(val):
+        errs.append((argname,
+                     ValueError("Must be comma separated identifiers.")))
+    return val, errs
+
+@_addvalidator
+def _regex(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _str_or_None(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    try:
+        re.compile(val)
+    # Is there something more specific we can catch? This is bad style.
+    except Exception as e:
+        errs.append((argname, e))
+    return val, errs
+
+@_addvalidator
+def _query_input(val, argname=None, *, spec=None, allow_empty=False,
+                 _convert=True):
+    """This is for the queries coming from the web.
+
+    It is not usable with decorators since the spec is often only known at
+    runtime. To alleviate this circumstance there is the
+    :py:func:`cdedb.query.mangle_query_input` function to take care of the
+    things the decorators normally do.
+
+    :type val: object
+    :type argname: str or None
+    :type spec: {str: str}
+    :param spec: a query spec from :py:mod:`cdedb.query`
+    :type allow_empty: bool
+    :param allow_empty: Toggles whether no selected output fields is an error.
+    :type _convert: bool
+    :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
+    """
+    if spec is None:
+        raise RuntimeError("Query must be specified.")
+    val, errs = _dict(val, argname, _convert=_convert)
+    fields_of_interest = []
+    constraints = []
+    order = []
+    SEPERATOR = ' '
+    for field, validator in spec.items():
+        if {"qsel_{}".format(field), "qop_{}".format(field),
+            "qval_{}".format(field)} - set(val):
+            errs.append((field, KeyError("Missing component.")))
+            continue
+        selected, e = _bool_or_None(val["qsel_{}".format(field)], field,
+                                    _convert=_convert)
+        errs.extend(e)
+        if selected:
+            fields_of_interest.append(field)
+        operator, e = _query_operator_or_None(val["qop_{}".format(field)],
+                                              field, _convert=_convert)
+        errs.extend(e)
+        if e or not operator:
+            continue
+        if operator not in VALID_QUERY_OPERATORS[validator]:
+            errs.append((field, ValueError("Invalid operator.")))
+        if operator in (QueryOperators.null, QueryOperators.notnull):
+            constraints.append((field, operator, None))
+            continue
+        value = val["qval_{}".format(field)]
+        if operator in MULTI_VALUE_OPERATORS:
+            values = value.split(SEPERATOR)
+            value = []
+            for v in values:
+                vv, e = getattr(current_module,
+                                "_{}_or_None".format(validator))(
+                                    v, field, _convert=_convert)
+                errs.extend(e)
+                if e or not vv:
+                    continue
+                value.append(vv)
+            if not value:
+                continue
+            if operator == QueryOperators.between and len(value) != 2:
+                errs.append((field, ValueError("Two endpoints required.")))
+        elif operator == QueryOperators.regex:
+            value, e = _regex_or_None(value, field, _convert=_convert)
+            errs.extend(e)
+            if e or not value:
+                continue
+        else:
+            value, e = getattr(current_module, "_{}_or_None".format(validator))(
+                value, field, _convert=_convert)
+            errs.extend(e)
+            if e:
+                continue
+        if value is not None:
+            constraints.append((field, operator, value))
+    if not fields_of_interest and not allow_empty:
+        errs.append((argname, ValueError("Selection may not be empty.")))
+    for postfix in ("primary", "secondary", "tertiary"):
+        if "qord_" + postfix not in val:
+            errs.append((argname, KeyError("Missing component.")))
+            continue
+        value, e = _csv_identifier_or_None(val["qord_" + postfix],
+                                           "qord_" + postfix, _convert=_convert)
+        errs.extend(e)
+        if value:
+            if value in fields_of_interest:
+                order.append(value)
+            else:
+                errs.append(("qord_" + postfix, KeyError("Must be selected.")))
+    if errs:
+        return None, errs
+    return Query(None, spec, fields_of_interest, constraints, order), errs
+
+@_addvalidator
+def _query_operator(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (:py:class:`cdedb.query.QueryOperators` or None,
+        [(str or None, exception)])
+    """
+    val, errs = _int(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    try:
+        val = QueryOperators(val)
+    except ValueError as e:
+        errs.append((argname, e))
+        return None, errs
+    return val, errs
+
+@_addvalidator
+def _serialized_query(val, argname=None, *, _convert=True):
+    """This is for the queries from frontend to backend.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
+    """
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if set(val) != {"scope", "spec", "fields_of_interest", "constraints",
+                    "order"}:
+        return None, [(argname, ValueError("Wrong keys."))]
+    # scope
+    scope, e = _int(val['scope'], "scope", _convert=_convert)
+    errs.extend(e)
+    try:
+        scope = QueryScopes(scope)
+    except ValueError as e:
+        errs.append(("scope", e))
+    # spec
+    spec_val, e = _dict(val['spec'], "spec", _convert=_convert)
+    errs.extend(e)
+    if errs:
+        return None, errs
+    spec = {}
+    for field, validator in spec_val.items():
+        field, e = _csv_identifier(field, "spec", _convert=_convert)
+        errs.extend(e)
+        validator, e = _printable_ascii(validator, "spec", _convert=_convert)
+        errs.extend(e)
+        spec[field] = validator
+    # fields_of_interest
+    fields_of_interest = []
+    if not isinstance(val['fields_of_interest'], collections.abc.Iterable):
+        errs.append(("fields_of_interest", TypeError("Must be iterable.")))
+    else:
+        for field in val['fields_of_interest']:
+            field, e = _csv_identifier(field, "fields_of_interest", _convert=_convert)
+            fields_of_interest.append(field)
+            errs.extend(e)
+    if not fields_of_interest:
+        errs.append(("fields_of_interest", ValueError("Mustn't be empty.")))
+    # constraints
+    constraints = []
+    if not isinstance(val['constraints'], collections.abc.Iterable):
+        errs.append(("constraints", TypeError("Must be iterable.")))
+    else:
+        for x in val['constraints']:
+            try:
+                field, operator, value = x
+            except ValueError as e:
+                errs.append(("constraints", e))
+                continue
+            field, e = _csv_identifier(field, "constraints", _convert=_convert)
+            errs.extend(e)
+            if field not in spec:
+                errs.append(("constraints", KeyError("Invalid field.")))
+                continue
+            operator, e = _int(operator, "constraints/{}".format(field),
+                               _convert=_convert)
+            errs.extend(e)
+            try:
+                operator = QueryOperators(operator)
+            except ValueError as e:
+                errs.append(("constraints", e))
+                continue
+            if operator not in VALID_QUERY_OPERATORS[spec[field]]:
+                errs.append(("constraints/{}".format(field),
+                             ValueError("Invalid operator.")))
+                continue
+            if operator in MULTI_VALUE_OPERATORS:
+                tmp = []
+                validator = getattr(current_module, "_{}".format(spec[field]))
+                for v in value:
+                    v, e = validator(v, "constraints/{}".format(field),
+                                     _convert=_convert)
+                    tmp.append(v)
+                    errs.extend(e)
+                value = tmp
+            else:
+                value, e = getattr(current_module, "_{}".format(spec[field]))(
+                    value, "constraints/{}".format(field), _convert=_convert)
+            errs.extend(e)
+            constraints.append((field, operator, value))
+    # order
+    order = []
+    if not isinstance(val['order'], collections.abc.Iterable):
+        errs.append(("order", TypeError("Must be iterable.")))
+    else:
+        for field in val['order']:
+            field, e = _csv_identifier(field, "order", _convert=_convert)
+            order.append(field)
+            errs.extend(e)
+    if errs:
+        return None, errs
+    else:
+        return Query(scope, spec, fields_of_interest, constraints, order), errs
 
 ##
 ## Above is the real stuff

@@ -119,7 +119,7 @@ MEMBER_DATA_FIELDS = (
 
 #: Names of columns associated to an event user (in addition to those which
 #: exist for every persona). This should be a subset of
-#: :py:const:`MEMBER_DATA_FIELDS` to facilitate upgrading of event users to
+#: :py:data:`MEMBER_DATA_FIELDS` to facilitate upgrading of event users to
 #: memebers.
 EVENT_USER_DATA_FIELDS = (
     "family_name", "given_names", "title", "name_supplement", "gender",

@@ -13,6 +13,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import glue, extract_realm, make_root_logger, \
     extract_global_privileges
+from cdedb.query import QueryOperators
 from cdedb.config import Config, SecretsConfig
 import abc
 import cdedb.validation as validate
@@ -359,6 +360,127 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return tuple(
                     self._sanitize_db_output(x) for x in cur.fetchall())
+
+    @staticmethod
+    def diacritic_patterns(string):
+        """Replace letters with a pattern matching expressions, so that ommitting
+        diacritics in the query input is possible.
+
+        This is intended for use with the sql SIMILAR TO clause.
+
+        :type string: str
+        :rtype: str
+        """
+        # if fragile special chars are present do nothing
+        # all special chars: '_%|*+?{}()[]'
+        special_chars = '|*+?{}()[]'
+        for char in special_chars:
+            if char in string:
+                return string
+        # some of the diacritics in use according to wikipedia
+        umlaut_map = (
+            ("ae", "(ae|[äæ])"),
+            ("oe", "(oe|[öøœ])"),
+            ("ue", "(ue|ü)"),
+            ("ss", "(ss|ß)"),
+            ("a", "[aàáâãäåą]"),
+            ("c", "[cçčć]"),
+            ("e", "[eèéêëę]"),
+            ("i", "[iìíîï]"),
+            ("l", "[lł]"),
+            ("n", "[nñń]"),
+            ("o", "[oòóôõöøő]"),
+            ("u", "[uùúûüű]"),
+            ("y", "[yýÿ]"),
+            ("z", "[zźż]"),
+        )
+        for normal, replacement in umlaut_map:
+            string = string.replace(normal, replacement)
+        return string
+
+    def general_query(self, rs, query, tables, distinct=True):
+        """Perform a DB query described by a :py:class:`cdedb.query.Query`
+        object.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :type tables: str
+        :param tables: the expression to use for the sql FROM <tables> part
+        :type distinct: bool
+        :param distinct: whether only unique rows should be returned
+        :rtype: [{str : object}]
+        :returns: all results of the query
+        """
+        select = ", ".join(column for field in query.fields_of_interest
+                           for column in field.split(','))
+        q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
+                                          select, tables)
+        params = []
+        constraints = []
+        for field, operator, value in query.constraints:
+            lowercase = (query.spec[field] == "str")
+            if lowercase:
+                # the following should be used with operators which are allowed
+                # for str as well as for other types
+                sql_param_str = "lower({})"
+                caser = lambda x: x.lower()
+            else:
+                sql_param_str = "{}"
+                caser = lambda x: x
+            columns = field.split(',')
+            if operator == QueryOperators.null:
+                phrase = "{} IS NULL"
+            elif operator == QueryOperators.notnull:
+                phrase = "{} IS NOT NULL"
+            elif operator == QueryOperators.equal:
+                phrase = "{} = %s".format(sql_param_str)
+                params.extend((caser(value),)*len(columns))
+            elif operator == QueryOperators.oneof:
+                phrase = "{} = ANY(%s)".format(sql_param_str)
+                params.extend((tuple(caser(x) for x in value),)*len(columns))
+            elif operator == QueryOperators.similar:
+                phrase = "lower({}) SIMILAR TO %s"
+                value = "%{}%".format(self.diacritic_patterns(value.lower()))
+                params.extend((value,)*len(columns))
+            elif operator == QueryOperators.similaroneof:
+                phrase = "lower({}) SIMILAR TO ANY(%s)"
+                value = tuple("%{}%".format(self.diacritic_patterns(x.lower()))
+                              for x in value)
+                params.extend((value,)*len(columns))
+            elif operator == QueryOperators.regex:
+                phrase = "{} ~* %s"
+                params.extend((value,)*len(columns))
+            elif operator == QueryOperators.containsall:
+                values = tuple("%{}%".format(self.diacritic_patterns(x.lower()))
+                               for x in value)
+                subphrase = "lower({0}) SIMILAR TO %s"
+                phrase = "( {} )".format(" ) AND ( ".join(
+                    subphrase for _ in range(len(values))))
+                params.extend(values*len(columns))
+            elif operator == QueryOperators.less:
+                phrase = "{} < %s"
+                params.extend((value,)*len(columns))
+            elif operator == QueryOperators.lessequal:
+                phrase = "{} <= %s"
+                params.extend((value,)*len(columns))
+            elif operator == QueryOperators.between:
+                phrase = "(%s <= {0} AND {0} <= %s)"
+                params.extend((value[0], value[1])*len(columns))
+            elif operator == QueryOperators.greaterequal:
+                phrase = "{} >= %s"
+                params.extend((value,)*len(columns))
+            elif operator == QueryOperators.greater:
+                phrase = "{} > %s"
+                params.extend((value,)*len(columns))
+            else:
+                raise RuntimeError("Impossible.")
+            constraints.append(" OR ".join(phrase.format(c) for c in columns))
+        if constraints:
+            q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
+        if query.order:
+            q = glue(q, "ORDER BY",
+                     ", ".join(entry.split(',')[0] for entry in query.order))
+        return self.query_all(rs, q, params)
 
 class BackendUser:
     """Container for representing a persona."""

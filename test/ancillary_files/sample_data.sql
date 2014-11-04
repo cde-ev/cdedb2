@@ -25,7 +25,7 @@ INSERT INTO cde.changelog (id, submitted_by, reviewed_by, cdate, generation, cha
 -- events
 --
 INSERT INTO event.event_types (id, moniker, organizer) VALUES (1, 'PfingstAkademie', 'CdE e.V.');
-INSERT INTO event.events (id, shortname, longname, type_id, description, is_db) VALUES (1, 'PA2014', 'PfingstAkademie 2014', 1, '', False);
+INSERT INTO event.events (id, shortname, title, type_id, description, is_db) VALUES (1, 'PA2014', 'PfingstAkademie 2014', 1, '', False);
 INSERT INTO event.courses (id, event_id, nr, title, description) VALUES (1, 1, 1, 'Swish -- und alles ist gut', '');
 INSERT INTO event.participants (id, persona_id, event_id, course_id, is_instructor, is_orga) VALUES (1, 2, 1, 1, True, False);
 --

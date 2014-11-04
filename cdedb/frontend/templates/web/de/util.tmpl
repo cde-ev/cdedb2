@@ -43,7 +43,7 @@
                     {% endfor %}
                 {% endif %}
                 {% if readonly %}
-                    <span>{{ values.get(name, i18n(defaultvalue))|e }}</span>
+                    <span>{{ values.get(name, defaultvalue)|e }}</span>
                     <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
                 {% else %}
                     <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
@@ -63,7 +63,7 @@
                 {% endfor %}
             {% endif %}
             {% if readonly %}
-                <span>{{ values.get(name, i18n(defaultvalue))|e }}</span>
+                <span>{{ values.get(name, defaultvalue)|e }}</span>
                 <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
             {% else %}
                 <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
@@ -158,7 +158,7 @@
     <span {% if name in errors %} class="errorInput" {% endif %} >
         {{ title|e }}
         {% if readonly %}
-            <span>{{ values.get(name, i18n(defaultvalue))|e }}</span>
+            <span>{{ values.get(name, defaultvalue)|e }}</span>
         {% else %}
             <span class="stacking">
                 {% for value, label in entries %}
@@ -177,7 +177,7 @@
         <td> {{ title|e }} </td>
         <td>
             {% if readonly %}
-                <span>{{ values.get(name, i18n(defaultvalue))|e }}</span>
+                <span>{{ values.get(name, defaultvalue)|e }}</span>
             {% else %}
                 {% for value, label in entries %}
                     <label>
@@ -190,6 +190,157 @@
     </tr>
 {% endmacro %}
 
+{% macro input_select(name, entries, title="", readonly=False, defaultvalue=None) %}
+    <span {% if name in errors %} class="errorInput" {% endif %} >
+        {{ title|e }}
+        {% if readonly %}
+            <span>{{ values.get(name, defaultvalue)|e }}</span>
+        {% else %}
+            <select name="{{ name|e }}" >
+                {% for value, label in entries %}
+                    <option value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} selected {% endif %} >
+                        {{ label|e }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endif %}
+    </span>
+{% endmacro %}
+
+{% macro tab_input_select(name, entries, title="", readonly=False, defaultvalue=None) %}
+    <tr {% if name in errors %} class="errorInput" {% endif %} >
+        <td> {{ title|e }} </td>
+        <td>
+            {% if readonly %}
+                <span>{{ values.get(name, defaultvalue)|e }}</span>
+            {% else %}
+                <select name="{{ name|e }}" >
+                    {% for value, label in entries %}
+                        <option value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} selected {% endif %} >
+                            {{ label|e }}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </td>
+    </tr>
+{% endmacro %}
+
+{% macro input_multiselect(name, entries, title="", readonly=False, defaultvalue=[]) %}
+    <span {% if name in errors %} class="errorInput" {% endif %} >
+        {{ title|e }}
+        {% if readonly %}
+            <span>{{ values.get(name, defaultvalue)|join(", ")|e }}</span>
+        {% else %}
+            <select name="{{ name|e }}" multiple >
+                {% for value, label in entries %}
+                    <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %} >
+                        {{ label|e }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endif %}
+    </span>
+{% endmacro %}
+
+{% macro tab_input_multiselect(name, entries, title="", readonly=False, defaultvalue=[]) %}
+    <tr {% if name in errors %} class="errorInput" {% endif %} >
+        <td> {{ title|e }} </td>
+        <td>
+            {% if readonly %}
+                <span>{{ values.get(name, defaultvalue)|join(", ")|e }}</span>
+            {% else %}
+                <select name="{{ name|e }}" multiple >
+                    {% for value, label in entries %}
+                        <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %} >
+                            {{ label|e }}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+        </td>
+    </tr>
+{% endmacro %}
+
 {% macro input_submit(value, name="submitform", readonly=False) %}
     <input type="submit" name="{{ name|e }}" value="{{ value|e }}" {% if readonly %} disabled {% endif %}>
+{% endmacro %}
+
+{% macro format_query(spec, titles, choices, output_selection=True) %}
+    {% with OPERATOR_LABELS = {0 : "nicht definiert",
+                               1 : "definiert",
+                               2 : "gleich",
+                               3 : "eines aus",
+                               4 : "ähnlich",
+                               5 : "ähnlich zu einem aus",
+                               6 : "regex",
+                               7 : "enthält alle",
+                               10 : "kleiner",
+                               11 : "kleinergleich",
+                               12 : "zwischen",
+                               13 : "größergleich",
+                               14 : "größer",} %}
+        <table>
+            {% for field in spec %}
+                <tr {% if field in errors %} class="errorInput" {% endif %} >
+                    <td>
+                        {% with name, value = ("qsel_{}".format(field), True) %}
+                            {% if output_selection %}
+                                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name) == value %} checked {% endif %} >
+                            {% else %}
+                                <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td> {{ titles[field]|e }} </td>
+                    <td>
+                        {% with name = "qop_{}".format(field) %}
+                            <select name="{{ name|e }}" >
+                                {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
+                                    <option value="{{ op.value|e }}" {% if values.get(name) == op.value %} selected {% endif %} >
+                                        {{ OPERATOR_LABELS[op.value]|e }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% with name = "qval_{}".format(field) %}
+                            {% if field in choices %}
+                                <select name="{{ name|e }}" >
+                                    <option value="" > </option>
+                                    {% for value, label in choices[field] %}
+                                        <option value="{{ value|e }}" {% if values.get(name) == value %} selected {% endif %} >
+                                            {{ label|e }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            {% elif spec[field] == "bool" %}
+                                <select name="{{ name|e }}" >
+                                    <option value="" > </option>
+                                    <option value="True" {% if values.get(name) == True %} selected {% endif %} > wahr </option>
+                                    <option value="False" {% if values.get(name) == False %} selected {% endif %} > falsch </option>
+                                </select>
+                            {% else %}
+                                <input type="text" name="{{ name|e }}", value="{{ values.get(name, '')|e }}" >
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                </tr>
+            {% endfor %}
+            {% for title, name in (("1. Sortierung nach", "qord_primary"), ("2. Sortierung nach", "qord_secondary"), ("3. Sortierung nach", "qord_tertiary"))%}
+                <tr>
+                    <td colspan="2"> {{ title|e }} </td>
+                    <td colspan="2">
+                        <select name="{{ name|e }}" >
+                            <option value="" > </option>
+                            {% for field in spec %}
+                                <option value="{{ field|e }}" {% if values.get(name) == field %} selected {% endif %} > {{ titles[field]|e }} </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endwith %}
 {% endmacro %}

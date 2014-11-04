@@ -18,7 +18,7 @@
         {% if user.realm == "cde" %}
             <li><a href="{{ cdedblink("cde/index") }}">CdE</a></li>
             <ul>
-                <li>Mitgliedersuche</li>
+                <li><a href="{{ cdedblink("cde/member_search")}}">Mitgliedersuche</a></li>
                 <li>Mitgliedschaft</li>
                 {% if is_admin %}
                     <li><a href="{{ cdedblink("cde/list_pending_changes")}}">Änderungen begutachten</a></li>

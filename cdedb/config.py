@@ -117,6 +117,8 @@ _DEFAULTS = {
 
     ## maximal number of data sets a normal user is allowed to view per day
     "MAX_QUERIES_PER_DAY" : 50,
+    ## maximal number of results for a member search
+    "MAX_QUERY_RESULTS" : 50,
 
     ### event stuff
 

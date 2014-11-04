@@ -71,7 +71,7 @@ class EventBackend(AbstractUserBackend):
         """
         ids = affirm_array("int", ids)
         query = glue(
-            "SELECT p.persona_id, p.event_id, e.longname AS event_name,",
+            "SELECT p.persona_id, p.event_id, e.title AS event_name,",
             "p.course_id, c.title AS course_name, p.is_instructor, p.is_orga",
             "FROM event.participants AS p",
             "INNER JOIN event.events AS e ON (p.event_id = e.id)",
@@ -91,6 +91,32 @@ class EventBackend(AbstractUserBackend):
     @singularize("get_data_single")
     def get_data(self, rs, ids):
         return super().get_data(rs, ids)
+
+    @access("persona")
+    def list_events(self, rs):
+        """List all events.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :rtype: {int: str}
+        :returns: Mapping of event ids to titles.
+        """
+        query = "SELECT id, title FROM event.events"
+        data = self.query_all(rs, query, tuple())
+        return {e['id'] : e['title'] for e in data}
+
+    @access("persona")
+    def list_courses(self, rs, event_id):
+        """List all courses of an event.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type event_id: int
+        :rtype: {int: str}
+        :returns: Mapping of course ids to titles.
+        """
+        event_id = affirm("int", event_id)
+        query = "SELECT id, title FROM event.courses WHERE event_id = %s"
+        data = self.query_all(rs, query, (event_id,))
+        return {e['id'] : e['title'] for e in data}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

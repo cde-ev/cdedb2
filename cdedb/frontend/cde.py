@@ -5,12 +5,18 @@
 import logging
 import os.path
 import hashlib
+import werkzeug
+import copy
 
 import cdedb.database.constants as const
+from cdedb.common import extract_realm, extract_global_privileges
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access_decorator_generator,
-    ProxyShim, connect_proxy, persona_dataset_guard, check_validation as check)
+    ProxyShim, connect_proxy, persona_dataset_guard, check_validation as check,
+    FrontendUser)
 from cdedb.frontend.uncommon import AbstractUserFrontend
+from cdedb.query import (QUERY_SPECS, mangle_query_input, QueryScopes,
+                         serialize_query, QueryOperators)
 
 access = access_decorator_generator(
     ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
@@ -34,7 +40,33 @@ class CdeFrontend(AbstractUserFrontend):
             self.conf.SERVER_NAME_TEMPLATE.format("event")))
 
     def finalize_session(self, rs, sessiondata):
-        return super().finalize_session(rs, sessiondata)
+        realm = extract_realm(sessiondata["status"])
+        roles = ["anonymous"]
+        global_privs = extract_global_privileges(sessiondata['db_privileges'],
+                                                 sessiondata['status'])
+        if "persona" in global_privs:
+            roles.append("persona")
+        if realm == self.realm:
+            roles.append("user")
+        if "member" in global_privs:
+            roles.append("member")
+        if sessiondata["status"] in const.SEARCHMEMBER_STATI:
+            roles.append("searchmember")
+        for role in ("{}_admin".format(self.realm), "admin"):
+            if role in global_privs:
+                roles.append(role)
+        role = roles[-1]
+        if sessiondata["status"] in const.MEMBER_STATI:
+            is_member = True
+        else:
+            is_member = False
+        if sessiondata["status"] in const.SEARCHMEMBER_STATI:
+            is_searchable = True
+        else:
+            is_searchable = False
+        return FrontendUser(
+            sessiondata['persona_id'], role, sessiondata['display_name'],
+            sessiondata['username'], is_member, is_searchable, realm)
 
     @classmethod
     def is_admin(cls, rs):
@@ -245,3 +277,44 @@ class CdeFrontend(AbstractUserFrontend):
         else:
             rs.notify("info", "Decision noted.")
         return self.redirect(rs, "core/index")
+
+    @access("searchmember")
+    @REQUESTdata(("submitform", "bool"))
+    def member_search(self, rs, submitform):
+        """Render form and do search queries. This has a double meaning so
+        that we are able to update the course selection upon request.
+
+        ``submitform`` is present in the request data if the
+        corresponding button was pressed and absent otherwise.
+        """
+        spec = QUERY_SPECS['cde-member-search']
+        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
+                      spec=spec, allow_empty=not submitform)
+        if not submitform or rs.errors:
+            events = self.eventproxy.list_events(rs).items()
+            event_id = None
+            if query:
+                for field, _, value in query.constraints:
+                    if field == "event_id" and value:
+                        event_id = value
+            courses = tuple()
+            if event_id:
+                courses = self.eventproxy.list_courses(rs, event_id).items()
+            choices = {"event_id" : events, 'course_id' : courses}
+            return self.render(rs, "member_search",
+                               {'spec' : spec, 'choices' : choices,
+                                'queryops' : QueryOperators,})
+        else:
+            query.scope = QueryScopes.member
+            query.fields_of_interest.append('member_data.persona_id')
+            result = self.cdeproxy.member_search(rs, serialize_query(query))
+            if len(result) == 1:
+                return self.redirect_show_user(rs, result[0]['persona_id'])
+            if len(result) > self.conf.MAX_QUERY_RESULTS \
+              and not self.is_admin(rs):
+                result = result[:self.conf.MAX_QUERY_RESULTS]
+                rs.notify("info", "Too many query results.")
+            query_inputs = {val:rs.values[val] for val in rs.values
+                            if val.startswith(("qval_", "qsel_", "qop_",
+                                               "qord_"))}
+            return self.render(rs, "member_search_result", {'result' : result})
