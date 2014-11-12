@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     affirm_array_validation as affirm_array, singularize)
 from cdedb.common import (glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS,
                           extract_global_privileges, QuotaException)
-from cdedb.query import QueryScopes
+from cdedb.query import QueryOperators
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -171,7 +171,7 @@ class CdeBackend(AbstractUserBackend):
         self.affirm_realm(rs, (data['id'],))
 
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
-            raise RuntimeError("Permission denied")
+            raise RuntimeError("Permission denied.")
         privileged_fields = {'balance'}
         if set(data) & privileged_fields and not self.is_admin(rs):
             raise RuntimeError("Modifying sensitive key forbidden.")
@@ -210,6 +210,7 @@ class CdeBackend(AbstractUserBackend):
                               if value != current_data[key]}
             if not changed_fields:
                 if diff:
+                    ## reenable old change if we were going to displace it
                     query = glue("UPDATE cde.changelog SET change_status = %s",
                                  "WHERE persona_id = %s AND generation = %s")
                     self.query_exec(rs, query, (const.MemberChangeStati.pending,
@@ -226,7 +227,7 @@ class CdeBackend(AbstractUserBackend):
                          "WHERE persona_id = %s")
             next_generation = self.query_one(
                 rs, query, (data['id'],))['num'] + 1
-            # the following is a nop, if there is no pending change
+            ## the following is a nop, if there is no pending change
             query = glue("UPDATE cde.changelog SET change_status = %s",
                          "WHERE persona_id = %s AND change_status = %s")
             self.query_exec(rs, query, (
@@ -260,7 +261,7 @@ class CdeBackend(AbstractUserBackend):
             if not may_wait and ret <= 0:
                 raise RuntimeError("Non-waiting change not committed.")
 
-            # pop the stashed change
+            ## pop the stashed change
             if diff:
                 if set(diff) & changed_fields:
                     raise RuntimeError("Conflicting pending change.")
@@ -566,7 +567,7 @@ class CdeBackend(AbstractUserBackend):
         persona_id = affirm("int", persona_id)
         foto = affirm("str_or_None", foto)
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
-            raise RuntimeError("Permission denied")
+            raise RuntimeError("Permission denied.")
         query = "UPDATE cde.member_data SET foto = %s WHERE persona_id = %s"
         num = self.query_exec(rs, query, (foto, persona_id))
         return bool(num)
@@ -587,17 +588,20 @@ class CdeBackend(AbstractUserBackend):
         return data['num']
 
     @access("searchmember")
-    def member_search(self, rs, query):
+    def submit_general_query(self, rs, query):
         query = affirm("serialized_query", query)
-        if query.scope == QueryScopes.member:
-            tables = glue(
-                "(core.personas JOIN cde.member_data",
-                "ON personas.id = member_data.persona_id)",
-                "LEFT OUTER JOIN event.participants",
-                "ON personas.id = participants.persona_id")
-            return self.general_query(rs, query, tables)
+        if query.scope == "qview_cde_member":
+            query.constraints.append(("status", QueryOperators.oneof,
+                                      const.SEARCHMEMBER_STATI))
+            query.spec['status'] = "int"
+        elif query.scope == "qview_cde_user":
+            if not self.is_admin(rs):
+                raise RuntimeError("Permission denied.")
+            query.constraints.append(("status", QueryOperators.oneof,
+                                      const.CDE_STATI))
         else:
             raise RuntimeError("Bad scope.")
+        return self.general_query(rs, query)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

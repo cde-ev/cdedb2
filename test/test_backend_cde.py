@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from cdedb.common import QuotaException
+from cdedb.query import QUERY_SPECS, QueryOperators
 from test.common import BackendTest, as_users, USER_DICT
 import decimal
 import datetime
@@ -160,3 +161,62 @@ class TestCdEBackend(BackendTest):
             'postal_code2': '8XA 45-$',
             'birthday': datetime.datetime(1981, 2, 11).date()}}
         self.assertEqual(expectation, data)
+
+    @as_users("berta")
+    def test_member_search(self, user):
+        query = {
+            "scope" : "qview_cde_member",
+            "spec" : dict(QUERY_SPECS["qview_cde_member"]),
+            "fields_of_interest" : ("member_data.persona_id", "family_name",
+                                    "birthday"),
+            "constraints" : (("given_names,display_name", QueryOperators.regex.value, '[ae]'),
+                             ("country,country2", QueryOperators.empty.value, None)),
+            "order" : ("family_name",),
+        }
+        result = self.cde.submit_general_query(self.key, query)
+        self.assertEqual({1, 2, 6}, {e['persona_id'] for e in result})
+
+    @as_users("anton")
+    def test_user_search(self, user):
+        query = {
+            "scope" : "qview_cde_user",
+            "spec" : dict(QUERY_SPECS["qview_cde_user"]),
+            "fields_of_interest" : ("member_data.persona_id", "family_name",
+                                    "birthday"),
+            "constraints" : (("given_names", QueryOperators.regex.value, '[ae]'),
+                             ("birthday", QueryOperators.less.value, datetime.datetime.now())),
+            "order" : ("family_name",),
+        }
+        result = self.cde.submit_general_query(self.key, query)
+        self.assertEqual({1, 2, 3, 4, 6, 7}, {e['persona_id'] for e in result})
+
+    @as_users("anton")
+    def test_user_search_operators(self, user):
+        query = {
+            "scope" : "qview_cde_user",
+            "spec" : dict(QUERY_SPECS["qview_cde_user"]),
+            "fields_of_interest" : ("member_data.persona_id", "family_name",
+                                    "birthday"),
+            "constraints" : (("given_names", QueryOperators.similar.value, 'Berta'),
+                             ("address", QueryOperators.oneof.value, ("Auf der Düne 42", "Im Garten 77")),
+                             ("weblink", QueryOperators.containsall.value, ("/", ":", "http")),
+                             ("birthday", QueryOperators.between.value, (datetime.datetime(1000, 1, 1),
+                                                                         datetime.datetime.now()))),
+            "order" : ("family_name",),
+        }
+        result = self.cde.submit_general_query(self.key, query)
+        self.assertEqual({2}, {e['persona_id'] for e in result})
+
+    @as_users("anton", "berta")
+    def test_get_fotos(self, user):
+        expectation = {1: None,
+                       2: 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9'}
+        result = self.cde.get_fotos(self.key, (1, 2))
+        self.assertEqual(expectation, result)
+
+    @as_users("anton", "berta")
+    def test_set_foto(self, user):
+        new_foto = "rkorechkorekchoreckhoreckhorechkrocehkrocehk"
+        self.assertEqual(True, self.cde.set_foto(self.key, 2, new_foto))
+        result = self.cde.get_fotos(self.key, (1, 2))
+        self.assertEqual({1: None, 2: new_foto}, result)

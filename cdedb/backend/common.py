@@ -13,7 +13,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import glue, extract_realm, make_root_logger, \
     extract_global_privileges
-from cdedb.query import QueryOperators
+from cdedb.query import QueryOperators, QUERY_VIEWS
 from cdedb.config import Config, SecretsConfig
 import abc
 import cdedb.validation as validate
@@ -371,13 +371,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type string: str
         :rtype: str
         """
-        # if fragile special chars are present do nothing
-        # all special chars: '_%|*+?{}()[]'
+        ## if fragile special chars are present do nothing
+        ## all special chars: '_%|*+?{}()[]'
         special_chars = '|*+?{}()[]'
         for char in special_chars:
             if char in string:
                 return string
-        # some of the diacritics in use according to wikipedia
+        ## some of the diacritics in use according to wikipedia
         umlaut_map = (
             ("ae", "(ae|[äæ])"),
             ("oe", "(oe|[öøœ])"),
@@ -398,40 +398,39 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             string = string.replace(normal, replacement)
         return string
 
-    def general_query(self, rs, query, tables, distinct=True):
+    def general_query(self, rs, query, distinct=True):
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
 
         :type rs: :py:class:`BackendRequestState`
         :type query: :py:class:`cdedb.query.Query`
-        :type tables: str
-        :param tables: the expression to use for the sql FROM <tables> part
         :type distinct: bool
         :param distinct: whether only unique rows should be returned
         :rtype: [{str : object}]
         :returns: all results of the query
         """
+        self.logger.debug("Performing general query {}.".format(query))
         select = ", ".join(column for field in query.fields_of_interest
                            for column in field.split(','))
         q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
-                                          select, tables)
+                                          select, QUERY_VIEWS[query.scope])
         params = []
         constraints = []
         for field, operator, value in query.constraints:
             lowercase = (query.spec[field] == "str")
             if lowercase:
-                # the following should be used with operators which are allowed
-                # for str as well as for other types
+                ## the following should be used with operators which are allowed
+                ## for str as well as for other types
                 sql_param_str = "lower({})"
                 caser = lambda x: x.lower()
             else:
                 sql_param_str = "{}"
                 caser = lambda x: x
             columns = field.split(',')
-            if operator == QueryOperators.null:
-                phrase = "{} IS NULL"
-            elif operator == QueryOperators.notnull:
-                phrase = "{} IS NOT NULL"
+            if operator == QueryOperators.empty:
+                phrase = "( {0} IS NULL OR {0} = '' )"
+            elif operator == QueryOperators.nonempty:
+                phrase = "( {0} IS NOT NULL AND {0} <> '' )"
             elif operator == QueryOperators.equal:
                 phrase = "{} = %s".format(sql_param_str)
                 params.extend((caser(value),)*len(columns))
@@ -441,11 +440,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             elif operator == QueryOperators.similar:
                 phrase = "lower({}) SIMILAR TO %s"
                 value = "%{}%".format(self.diacritic_patterns(value.lower()))
-                params.extend((value,)*len(columns))
-            elif operator == QueryOperators.similaroneof:
-                phrase = "lower({}) SIMILAR TO ANY(%s)"
-                value = tuple("%{}%".format(self.diacritic_patterns(x.lower()))
-                              for x in value)
                 params.extend((value,)*len(columns))
             elif operator == QueryOperators.regex:
                 phrase = "{} ~* %s"
@@ -560,7 +554,7 @@ def run_RPCDaemon(daemon, pidfile=None):
     :type pidfile: str or None
     """
     running = [True]
-    def handler(signum, frame): # signature because of interface compatability
+    def handler(signum, frame): ## signature because of interface compatability
         if running:
             running.pop()
     signal.signal(signal.SIGTERM, handler)

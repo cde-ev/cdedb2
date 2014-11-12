@@ -88,7 +88,7 @@ class TestCoreFrontend(FrontendTest):
                 f = self.response.forms['passwordresetform']
                 self.submit(f)
                 if u in {"anton"}:
-                    # admins are not resettable
+                    ## admins are not resettable
                     self.assertEqual([], self.fetch_mail())
                     continue
                 mail = self.fetch_mail()[0]

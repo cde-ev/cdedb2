@@ -85,9 +85,9 @@
                 <td>
                     <select name="qval_event_id" >
                         <option value="" > </option>
-                        {% for value, label in choices['event_id'] %}
-                            <option value="{{ value|e }}" {% if values.get('event_id') == value %} selected {% endif %} >
-                                {{ label|e }}
+                        {% for key in choices['event_id'] %}
+                            <option value="{{ key|e }}" {% if values.get('qval_event_id') == key %} selected {% endif %} >
+                                {{ choices['event_id'][key]|e }}
                             </option>
                         {% endfor %}
                     </select>
@@ -101,9 +101,9 @@
                 <td>
                     <select name="qval_course_id" >
                         <option value="" > </option>
-                        {% for value, label in choices['course_id'] %}
-                            <option value="{{ value|e }}" {% if values.get('course_id') == value %} selected {% endif %} >
-                                {{ label|e }}
+                        {% for key in choices['course_id'] %}
+                            <option value="{{ key|e }}" {% if values.get('qval_course_id') == key %} selected {% endif %} >
+                                {{ choices['course_id'][key]|e }}
                             </option>
                         {% endfor %}
                     </select>

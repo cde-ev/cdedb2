@@ -19,8 +19,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """
     #: Specification how user management works. To be filled by child classes.
     user_management = {
-        "proxy" : None, # callable
-        "validator" : None, # str
+        "proxy" : None, ## callable
+        "validator" : None, ## str
     }
 
     def __init__(self, configpath):
@@ -59,8 +59,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.redirect(rs, "{}/{}".format(realm, target), params)
         return None
 
-    # @access("user")
-    # @REQUESTdata(("confirm_id", "#int"))
+    ## @access("user")
+    ## @REQUESTdata(("confirm_id", "#int"))
     def show_user(self, rs, persona_id, confirm_id):
         """Display user details.
 
@@ -76,8 +76,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                                                                    persona_id)
         return self.render(rs, "show_user", {'data' : data})
 
-    # @access("user")
-    # @persona_dataset_guard()
+    ## @access("user")
+    ## @persona_dataset_guard()
     def change_user_form(self, rs, persona_id):
         """Render form."""
         data = self.user_management['proxy'](self).get_data_single(rs,
@@ -85,9 +85,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         rs.values.update(data)
         return self.render(rs, "change_user")
 
-    # @access("user", {"POST"})
-    # @REQUESTdatadict(...)
-    # @persona_dataset_guard()
+    ## @access("user", {"POST"})
+    ## @REQUESTdatadict(...)
+    ## @persona_dataset_guard()
     def change_user(self, rs, persona_id, data):
         """Modify account details."""
         data = data or {}

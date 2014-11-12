@@ -19,10 +19,10 @@
             {% if user.realm == "cde" %}
                 <li><a href="{{ cdedblink("cde/index") }}">CdE</a></li>
                 <ul>
-                    <li><a href="{{ cdedblink("cde/member_search")}}">Mitgliedersuche</a></li>
-                    <li>Mitgliedschaft</li>
-                    {% if is_admin %}
-                        <li><a href="{{ cdedblink("cde/list_pending_changes")}}">Änderungen begutachten</a></li>
+                    {% if user.is_searchable %}
+                        <li><a href="{{ cdedblink("cde/member_search")}}">Mitgliedersuche</a></li>
+                    {% else %}
+                        <li><a href="{{ cdedblink("cde/consent_decision_form")}}">Datenschutzerklärung</a></li>
                     {% endif %}
                 </ul>
             {% endif %}

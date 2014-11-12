@@ -46,8 +46,8 @@ from cdedb.common import EPSILON
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
-    Query, QueryOperators, VALID_QUERY_OPERATORS, QueryScopes,
-    MULTI_VALUE_OPERATORS)
+    Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
+    NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
 _BASICCONF = BasicConfig()
 
@@ -697,7 +697,7 @@ def _profilepic(val, argname=None, *, _convert=True):
     if len(blob) > 100000:
         errs.append((argname, "Too big."))
     mime = magic.from_buffer(blob, mime=True)
-    mime = mime.decode() # python-magic is naughty and returns bytes
+    mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime not in ("image/jgp", "image/png"):
         errs.append((argname, "Only jpg and png allowed."))
     if errs:
@@ -791,7 +791,7 @@ def _regex(val, argname=None, *, _convert=True):
         return val, errs
     try:
         re.compile(val)
-    # Is there something more specific we can catch? This is bad style.
+    # TODO Is there something more specific we can catch? This is bad style.
     except Exception as e:
         errs.append((argname, e))
     return val, errs
@@ -805,6 +805,9 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     runtime. To alleviate this circumstance there is the
     :py:func:`cdedb.query.mangle_query_input` function to take care of the
     things the decorators normally do.
+
+    This has to be careful to treat checkboxes and selects correctly
+    (which are partly handled by an absence of data).
 
     :type val: object
     :type argname: str or None
@@ -823,26 +826,28 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     order = []
     SEPERATOR = ' '
     for field, validator in spec.items():
-        if {"qsel_{}".format(field), "qop_{}".format(field),
-            "qval_{}".format(field)} - set(val):
-            errs.append((field, KeyError("Missing component.")))
-            continue
-        selected, e = _bool_or_None(val["qsel_{}".format(field)], field,
-                                    _convert=_convert)
+        ## First the selection
+        selected, e = _bool(val.get("qsel_{}".format(field), "False"), field,
+                            _convert=_convert)
         errs.extend(e)
         if selected:
             fields_of_interest.append(field)
-        operator, e = _query_operator_or_None(val["qop_{}".format(field)],
+        ## Second the constraints
+        operator, e = _query_operator_or_None(val.get("qop_{}".format(field)),
                                               field, _convert=_convert)
         errs.extend(e)
         if e or not operator:
             continue
         if operator not in VALID_QUERY_OPERATORS[validator]:
             errs.append((field, ValueError("Invalid operator.")))
-        if operator in (QueryOperators.null, QueryOperators.notnull):
+            continue
+        if operator in NO_VALUE_OPERATORS:
             constraints.append((field, operator, None))
             continue
-        value = val["qval_{}".format(field)]
+        value = val.get("qval_{}".format(field))
+        if value is None or value == "":
+            ## No value supplied means no constraint
+            continue
         if operator in MULTI_VALUE_OPERATORS:
             values = value.split(SEPERATOR)
             value = []
@@ -858,6 +863,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                 continue
             if operator == QueryOperators.between and len(value) != 2:
                 errs.append((field, ValueError("Two endpoints required.")))
+                continue
         elif operator == QueryOperators.regex:
             value, e = _regex_or_None(value, field, _convert=_convert)
             errs.extend(e)
@@ -873,9 +879,9 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             constraints.append((field, operator, value))
     if not fields_of_interest and not allow_empty:
         errs.append((argname, ValueError("Selection may not be empty.")))
+    ## Third the ordering
     for postfix in ("primary", "secondary", "tertiary"):
         if "qord_" + postfix not in val:
-            errs.append((argname, KeyError("Missing component.")))
             continue
         value, e = _csv_identifier_or_None(val["qord_" + postfix],
                                            "qord_" + postfix, _convert=_convert)
@@ -923,14 +929,12 @@ def _serialized_query(val, argname=None, *, _convert=True):
     if set(val) != {"scope", "spec", "fields_of_interest", "constraints",
                     "order"}:
         return None, [(argname, ValueError("Wrong keys."))]
-    # scope
-    scope, e = _int(val['scope'], "scope", _convert=_convert)
+    ## scope
+    scope, e = _identifier(val['scope'], "scope", _convert=_convert)
     errs.extend(e)
-    try:
-        scope = QueryScopes(scope)
-    except ValueError as e:
-        errs.append(("scope", e))
-    # spec
+    if not scope.startswith("qview_"):
+        errs.append(("scope", ValueError("Must start with 'qview_'.")))
+    ## spec
     spec_val, e = _dict(val['spec'], "spec", _convert=_convert)
     errs.extend(e)
     if errs:
@@ -942,7 +946,7 @@ def _serialized_query(val, argname=None, *, _convert=True):
         validator, e = _printable_ascii(validator, "spec", _convert=_convert)
         errs.extend(e)
         spec[field] = validator
-    # fields_of_interest
+    ## fields_of_interest
     fields_of_interest = []
     if not isinstance(val['fields_of_interest'], collections.abc.Iterable):
         errs.append(("fields_of_interest", TypeError("Must be iterable.")))
@@ -953,7 +957,7 @@ def _serialized_query(val, argname=None, *, _convert=True):
             errs.extend(e)
     if not fields_of_interest:
         errs.append(("fields_of_interest", ValueError("Mustn't be empty.")))
-    # constraints
+    ## constraints
     constraints = []
     if not isinstance(val['constraints'], collections.abc.Iterable):
         errs.append(("constraints", TypeError("Must be iterable.")))
@@ -981,7 +985,9 @@ def _serialized_query(val, argname=None, *, _convert=True):
                 errs.append(("constraints/{}".format(field),
                              ValueError("Invalid operator.")))
                 continue
-            if operator in MULTI_VALUE_OPERATORS:
+            if operator in NO_VALUE_OPERATORS:
+                value = None
+            elif operator in MULTI_VALUE_OPERATORS:
                 tmp = []
                 validator = getattr(current_module, "_{}".format(spec[field]))
                 for v in value:
@@ -995,7 +1001,7 @@ def _serialized_query(val, argname=None, *, _convert=True):
                     value, "constraints/{}".format(field), _convert=_convert)
             errs.extend(e)
             constraints.append((field, operator, value))
-    # order
+    ## order
     order = []
     if not isinstance(val['order'], collections.abc.Iterable):
         errs.append(("order", TypeError("Must be iterable.")))
@@ -1061,7 +1067,7 @@ def _allow_None(fun):
         else:
             try:
                 retval, errs = fun(val, *args, **kwargs)
-            except: # we need to catch everything
+            except: ## we need to catch everything
                 if kwargs.get('_convert', True) and not val:
                     return None, []
                 else:

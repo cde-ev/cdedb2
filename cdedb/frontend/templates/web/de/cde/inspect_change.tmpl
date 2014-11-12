@@ -25,9 +25,7 @@
 {% block title %}offene Änderung für {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
 {% block content %}
     <table>
-        <th>
-            <tr> <td colspan="2">Person</td> </tr>
-        </th>
+        <tr> <th colspan="2">Person</th> </tr>
         <tr>
             <td>Titel</td>
             <td>{{ mangle_string('title') }}</td>
@@ -80,9 +78,7 @@
             <td>Sonstiges</td>
             <td>{{ mangle_string('free_form') }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Kontakt</td> </tr>
-        </th>
+        <tr> <th colspan="2">Kontakt</th> </tr>
         <tr>
             <td>Email</td>
             <td>{{ mangle_string('username') }}</td>
@@ -99,9 +95,7 @@
             <td>WWW</td>
             <td>{{ mangle_string('weblink') }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Adresse</td> </tr>
-        </th>
+        <tr> <th colspan="2">Adresse</th> </tr>
         <tr>
             <td>Straße</td>
             <td>{{ mangle_string('address') }}</td>
@@ -122,9 +116,7 @@
             <td>Land</td>
             <td>{{ mangle_string('country') }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Zweitadresse</td> </tr>
-        </th>
+        <tr> <th colspan="2">Zweitadresse</th> </tr>
         <tr>
             <td>Straße</td>
             <td>{{ mangle_string('address2') }}</td>
@@ -145,9 +137,7 @@
             <td>Land</td>
             <td>{{ mangle_string('country2') }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Mitgliedschaft</td> </tr>
-        </th>
+        <tr> <th colspan="2">Mitgliedschaft</th> </tr>
         <tr>
             <td>CdEDB-ID</td>
             <td>{{ pending['id']|cdedbid|e }}</td>

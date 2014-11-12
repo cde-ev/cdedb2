@@ -6,32 +6,25 @@
 
     <form action="{{ cdedblink('event/change_user') }}" method="POST" id="changedataform">
         <table>
-            <th>
-                <tr> <td colspan="2">Person</td> </tr>
-            </th>
+            <tr> <th colspan="2">Person</th> </tr>
             {{ util.tab_input_text(name="title", label="Titel") }}
             {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
             {{ util.tab_input_text(name="family_name", label="Nachname") }}
             {{ util.tab_input_text(name="name_supplement", label="Namenszusatz") }}
             {{ util.tab_input_text(name="display_name", label="Rufname") }}
-            <th>
-                <tr> <td colspan="2">Kontakt</td> </tr>
-            </th>
+            <tr> <th colspan="2">Kontakt</th> </tr>
             <tr>
                 <td>Email</td>
                 <td>{{ values['username']|e }}</td>
             </tr>
             {{ util.tab_input_text(name="telephone", label="Telefon") }}
             {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
-            <th>
-                <tr> <td colspan="2">Adresse</td> </tr>
-            </th>
+            <tr> <th colspan="2">Adresse</th> </tr>
             {{ util.tab_input_text(name="address", label="Straße") }}
             {{ util.tab_input_text(name="address_supplement", label="Addresszusatz") }}
             {{ util.tab_input_text(name="postal_code", label="Postleitzahl") }}
             {{ util.tab_input_text(name="location", label="Stadt") }}
             {{ util.tab_input_text(name="country", label="Land") }}
-            <th>
         </table>
         {{ util.input_submit(value="Speichern") }}
         <a href="{{ show_user_link(values['id']) }}">Abbrechen</a>

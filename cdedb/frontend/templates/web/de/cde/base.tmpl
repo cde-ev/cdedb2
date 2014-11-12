@@ -22,6 +22,7 @@
                 <li>Mitgliedschaft</li>
                 {% if is_admin %}
                     <li><a href="{{ cdedblink("cde/list_pending_changes")}}">Änderungen begutachten</a></li>
+                    <li><a href="{{ cdedblink("cde/user_search_form")}}">Nutzersuche</a></li>
                 {% endif %}
             </ul>
         {% endif %}

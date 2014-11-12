@@ -52,7 +52,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
     werkzeug.routing.EndpointPrefix('cde/', (
         werkzeug.routing.Submount('/cde', (
             rule("/", methods=("GET", "HEAD"), endpoint="index"),
-            # this is here because of the changelog functionality
+            ## this is here because of the changelog functionality
             rule("/dousernamechange/<int:persona_id>", methods=("POST",),
                 endpoint="do_username_change"),
             rule("/adminusernamechange/<int:persona_id>", methods=("POST",),
@@ -81,6 +81,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="consent_decision"),
             rule("/membersearch", methods=("GET", "HEAD"),
                  endpoint="member_search"),
+            rule("/usersearchform", methods=("GET", "HEAD"),
+                 endpoint="user_search_form"),
+            rule("/usersearch", methods=("GET", "HEAD"),
+                 endpoint="user_search"),
             )),
         )),
     werkzeug.routing.EndpointPrefix('event/', (

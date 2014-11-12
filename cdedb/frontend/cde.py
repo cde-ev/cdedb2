@@ -6,7 +6,7 @@ import logging
 import os.path
 import hashlib
 import werkzeug
-import copy
+import io
 
 import cdedb.database.constants as const
 from cdedb.common import extract_realm, extract_global_privileges
@@ -15,8 +15,9 @@ from cdedb.frontend.common import (
     ProxyShim, connect_proxy, persona_dataset_guard, check_validation as check,
     FrontendUser)
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import (QUERY_SPECS, mangle_query_input, QueryScopes,
-                         serialize_query, QueryOperators)
+from cdedb.query import (
+    QUERY_SPECS, mangle_query_input, serialize_query, QueryOperators,
+    DEFAULT_QUERIES)
 
 access = access_decorator_generator(
     ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
@@ -204,7 +205,7 @@ class CdeFrontend(AbstractUserFrontend):
     def get_foto(self, rs, foto):
         """Retrieve profile picture"""
         path = os.path.join(self.conf.STORAGE_DIR, "foto", foto)
-        return self.send_file(rs, path)
+        return self.send_file(rs, path=path)
 
     @access("user")
     @persona_dataset_guard()
@@ -284,14 +285,15 @@ class CdeFrontend(AbstractUserFrontend):
         """Render form and do search queries. This has a double meaning so
         that we are able to update the course selection upon request.
 
-        ``submitform`` is present in the request data if the
-        corresponding button was pressed and absent otherwise.
+        ``submitform`` is present in the request data if the corresponding
+        button was pressed and absent otherwise.
         """
-        spec = QUERY_SPECS['cde-member-search']
+        spec = QUERY_SPECS['qview_cde_member']
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
                       spec=spec, allow_empty=not submitform)
         if not submitform or rs.errors:
-            events = self.eventproxy.list_events(rs).items()
+            events = {str(k) : v
+                      for k,v in self.eventproxy.list_events(rs).items()}
             event_id = None
             if query:
                 for field, _, value in query.constraints:
@@ -299,22 +301,55 @@ class CdeFrontend(AbstractUserFrontend):
                         event_id = value
             courses = tuple()
             if event_id:
-                courses = self.eventproxy.list_courses(rs, event_id).items()
+                courses = {str(k) : v for k,v in
+                           self.eventproxy.list_courses(rs, event_id).items()}
             choices = {"event_id" : events, 'course_id' : courses}
             return self.render(rs, "member_search",
                                {'spec' : spec, 'choices' : choices,
                                 'queryops' : QueryOperators,})
         else:
-            query.scope = QueryScopes.member
+            query.scope = "qview_cde_member"
             query.fields_of_interest.append('member_data.persona_id')
-            result = self.cdeproxy.member_search(rs, serialize_query(query))
+            result = self.cdeproxy.submit_general_query(rs,
+                                                        serialize_query(query))
             if len(result) == 1:
                 return self.redirect_show_user(rs, result[0]['persona_id'])
             if len(result) > self.conf.MAX_QUERY_RESULTS \
               and not self.is_admin(rs):
                 result = result[:self.conf.MAX_QUERY_RESULTS]
                 rs.notify("info", "Too many query results.")
-            query_inputs = {val:rs.values[val] for val in rs.values
-                            if val.startswith(("qval_", "qsel_", "qop_",
-                                               "qord_"))}
             return self.render(rs, "member_search_result", {'result' : result})
+
+    @access("cde_admin")
+    def user_search_form(self, rs):
+        """Render form."""
+        spec = QUERY_SPECS['qview_cde_user']
+        ## mangle the input, so we can prefill the form
+        mangle_query_input(rs, spec)
+        events = self.eventproxy.list_events(rs)
+        choices = {'event_id' : events,
+                   'status' : self.enum_choice(rs, const.PersonaStati),
+                   'gender' : self.enum_choice(rs, const.Genders)}
+        default_queries = DEFAULT_QUERIES['qview_cde_user']
+        return self.render(rs, "user_search", {
+            'spec' : spec, 'choices' : choices, 'queryops' : QueryOperators,
+            'default_queries' : default_queries,})
+
+    @access("cde_admin")
+    @REQUESTdata(("CSV", "bool"))
+    def user_search(self, rs, CSV):
+        """Perform search."""
+        spec = QUERY_SPECS['qview_cde_user']
+        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
+                      spec=spec, allow_empty=False)
+        if rs.errors:
+            return self.user_search_form(rs)
+        query.scope = "qview_cde_user"
+        result = self.cdeproxy.submit_general_query(rs, serialize_query(query))
+        params = {'result' : result, 'query' : query}
+        if CSV:
+            data = self.fill_template(rs, 'web', 'user_search_csv_result',
+                                      params)
+            return self.send_file(rs, data=data)
+        else:
+            return self.render(rs, "user_search_result", params)

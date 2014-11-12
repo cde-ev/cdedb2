@@ -59,7 +59,7 @@ class TestCdEFrontend(FrontendTest):
         self.logout()
         user = USER_DICT["anton"]
         self.login(user)
-        self.traverse({'href' : '/cde/listpendingchanges'})
+        self.traverse({'description' : '^CdE$'}, {'href' : '/cde/listpendingchanges'})
         self.assertEqual("Zurzeit liegen 1 Änderungen vor",
                          self.response.lxml.xpath('//h1/text()')[0])
         self.traverse({'href' : '/cde/inspectchange'})
@@ -111,11 +111,10 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Suche",
                          self.response.lxml.xpath('//h1/text()')[0])
         f = self.response.forms['membersearchform']
-        f['qval_event_id'] = 1
-        self.submit(f, button="updateform")
-        f = self.response.forms['membersearchform']
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
+        self.assertEqual("Bertålotta Beispiel",
+                         self.response.lxml.xpath('//h1/text()')[0])
         self.assertIn("Im Garten 77", self.response.text)
 
     @as_users("anton", "berta")
@@ -124,11 +123,10 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Suche",
                          self.response.lxml.xpath('//h1/text()')[0])
         f = self.response.forms['membersearchform']
-        f['qval_event_id'] = 1
-        self.submit(f, button="updateform")
-        f = self.response.forms['membersearchform']
         f['qval_given_names,display_name'] = "Berta"
         self.submit(f)
+        self.assertEqual("Bertålotta Beispiel",
+                         self.response.lxml.xpath('//h1/text()')[0])
         self.assertIn("Im Garten 77", self.response.text)
 
     @as_users("anton", "berta")
@@ -142,8 +140,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_username'] = "@example"
         self.submit(f)
-        self.assertIn("Anton", self.response.text)
-        self.assertIn("Bertålotta", self.response.text)
+        self.assertEqual("Bertålotta Beispiel",
+                         self.response.lxml.xpath('//h1/text()')[0])
 
     @as_users("anton", "berta")
     def test_member_search_fulltext(self, user):
@@ -151,10 +149,42 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual("Suche",
                          self.response.lxml.xpath('//h1/text()')[0])
         f = self.response.forms['membersearchform']
-        f['qval_event_id'] = 1
-        self.submit(f, button="updateform")
-        f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
+        self.assertEqual("2 Mitglieder gefunden",
+                         self.response.lxml.xpath('//h1/text()')[0])
         self.assertIn("Anton", self.response.text)
         self.assertIn("Bertålotta", self.response.text)
+
+    @as_users("anton")
+    def test_user_search(self, user):
+        self.traverse({'description' : '^CdE$'}, {'href' : 'usersearch'})
+        self.assertEqual("Suche",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        f = self.response.forms['usersearchform']
+        f['qval_address'] = 'Garten'
+        f['qsel_member_data.persona_id'].checked = True
+        self.submit(f)
+        self.assertEqual("1 Ergebnis gefunden",
+                         self.response.lxml.xpath('//h1/text()')[0])
+
+    @as_users("anton")
+    def test_user_search_csv(self, user):
+        self.traverse({'description' : '^CdE$'}, {'href' : 'usersearch'})
+        self.assertEqual("Suche",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        f = self.response.forms['usersearchform']
+        f['qval_address'] = 'a[rm]'
+        f['qsel_member_data.persona_id'].checked = True
+        f['qsel_birthday'].checked = True
+        f['qsel_decided_search'].checked = True
+        f['qsel_given_names'].checked = True
+        f['qord_primary'] = "member_data.persona_id"
+        self.response = f.submit("CSV")
+        expectation = '''member_data.persona_id;given_names;birthday;decided_search
+2;Bertålotta;1981-02-11;True
+3;Charly C.;1984-05-13;True
+4;Daniel D.;1963-02-19;False
+6;Ferdinand F.;1988-01-01;True
+'''.encode('utf-8')
+        self.assertEqual(expectation, self.response.body)

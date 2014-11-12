@@ -27,6 +27,12 @@ cdedb.common
 .. automodule:: cdedb.common
    :members:
 
+cdedb.query
+------------
+
+.. automodule:: cdedb.query
+   :members:
+
 cdedb.validation
 ----------------
 

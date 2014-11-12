@@ -151,7 +151,7 @@ single-check:
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) $(wildcard cdedb/frontend/*.py) $(wildcard cdedb/backend/*.py) $(wildcard test/*.py)
-	/usr/lib/python-exec/python3.4/coverage run -m test.main
+	coverage run -m test.main
 
 coverage: .coverage
 	coverage report -m --omit='test/*,related/*'

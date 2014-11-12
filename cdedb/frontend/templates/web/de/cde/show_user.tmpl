@@ -15,9 +15,7 @@
        <img src="{{ staticurl("generic-avatar.png") }}" alt="Standardprofilbild" class="profilepic">
     {% endif %}
     <table>
-        <th>
-            <tr> <td colspan="2">Person</td> </tr>
-        </th>
+        <tr> <th colspan="2">Person</th> </tr>
         <tr>
             <td>Name</td>
             <td>{{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }} {{ data['name_supplement']|e }}</td>
@@ -58,9 +56,7 @@
             <td>Sonstiges</td>
             <td>{{ data['free_form']|e }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Kontakt</td> </tr>
-        </th>
+            <tr> <th colspan="2">Kontakt</th> </tr>
         <tr>
             <td>Email</td>
             <td>
@@ -85,9 +81,7 @@
             {# TODO maybe add links or so #}
             <td>{{ data['weblink']|e }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Adresse</td> </tr>
-        </th>
+        <tr> <th colspan="2">Adresse</th> </tr>
         <tr>
             <td>Straße</td>
             <td>{{ data['address']|e }}</td>
@@ -104,9 +98,7 @@
             <td>Land</td>
             <td>{{ data['country']|e }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Zweitadresse</td> </tr>
-        </th>
+        <tr> <th colspan="2">Zweitadresse</th> </tr>
         <tr>
             <td>Straße</td>
             <td>{{ data['address2']|e }}</td>
@@ -123,51 +115,49 @@
             <td>Land</td>
             <td>{{ data['country2']|e }}</td>
         </tr>
-	{% if data['id'] == user.persona_id or is_admin %}
-	    <th>
-		<tr> <td colspan="2">Mitgliedschaft</td> </tr>
-	    </th>
-	    <tr>
-		<td>CdE-Mitglied</td>
-		<td>
-		    {% if user.is_member %}
-			{{ util.checkbox_checked() }}
-			{% if data['trial_member'] %}
-			    (Probemitgliedschaft)
-			{% endif %}
-		    {% else %}
-			{{ util.checkbox_unchecked() }}
-		    {% endif %}
-		</td>
-	    </tr>
-	    <tr>
-		<td>CdE-Wolken-Zugriff</td>
-		<td>
-		    {% if data['cloud_account'] %}
-			{{ util.checkbox_checked() }}
-		    {% else %}
-			{{ util.checkbox_unchecked() }}
-		    {% endif %}
-		</td>
-	    </tr>
-	    {% if user.is_member %}
-		<tr>
-		    <td>Sichtbarkeit</td>
-		    {% if not data['decided_search'] %}
-			<td>
+        {% if data['id'] == user.persona_id or is_admin %}
+            <tr> <th colspan="2">Mitgliedschaft</th> </tr>
+            <tr>
+                <td>CdE-Mitglied</td>
+                <td>
+                    {% if user.is_member %}
+                        {{ util.checkbox_checked() }}
+                        {% if data['trial_member'] %}
+                            (Probemitgliedschaft)
+                        {% endif %}
+                    {% else %}
+                        {{ util.checkbox_unchecked() }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>CdE-Wolken-Zugriff</td>
+                <td>
+                    {% if data['cloud_account'] %}
+                        {{ util.checkbox_checked() }}
+                    {% else %}
+                        {{ util.checkbox_unchecked() }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% if user.is_member %}
+                <tr>
+                    <td>Sichtbarkeit</td>
+                    {% if not data['decided_search'] %}
+                        <td>
                             Noch nicht entschieden; Daten sind nicht sichtbar.
                             {% if data['id'] == user.persona_id %}
                                 <a href="{{ cdedblink('cde/consent_decision') }}">Entscheiden.</a>
                             {% endif %}
                         </td>
-		    {% else %}
-		       {% if user.is_searchable %}
-			   <td>Daten sind für andere Mitglieder sichtbar.</td>
-		       {% else %}
-			   <td>Daten sind nicht sichtbar.</td>
-		       {% endif %}
-		    {% endif %}
-		</tr>
+                    {% else %}
+                       {% if user.is_searchable %}
+                           <td>Daten sind für andere Mitglieder sichtbar.</td>
+                       {% else %}
+                           <td>Daten sind nicht sichtbar.</td>
+                       {% endif %}
+                    {% endif %}
+                </tr>
                 <tr>
                     <td>Datenzugriff für BuB</td>
                     <td>
@@ -178,19 +168,17 @@
                         {% endif %}
                     </td>
                 </tr>
-	    {% endif %}
-	    <tr>
-		<td>CdEDB-ID</td>
-		<td>{{ data['id']|cdedbid|e }}</td>
-	    </tr>
-	    <tr>
-		<td>Guthaben</td>
-		<td>{{ data['balance']|e }}</td>
-	    </tr>
-	{% endif %}
-        <th>
-            <tr> <td colspan="2">Veranstaltungen</td> </tr>
-        </th>
+            {% endif %}
+            <tr>
+                <td>CdEDB-ID</td>
+                <td>{{ data['id']|cdedbid|e }}</td>
+            </tr>
+            <tr>
+                <td>Guthaben</td>
+                <td>{{ data['balance']|e }}</td>
+            </tr>
+        {% endif %}
+        <tr> <th colspan="2">Veranstaltungen</th> </tr>
         {% for info in participation_info %}
             <tr>
                 <td colspan="2">

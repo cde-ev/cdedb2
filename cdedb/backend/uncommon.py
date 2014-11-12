@@ -21,9 +21,9 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
     """
     #: Specification how user management works. To be filled by child classes.
     user_management = {
-        "data_table" : None, # str
-        "data_fields" : None, # [str], does not contain PERSONA_DATA_FIELDS
-        "validator" : None, # str
+        "data_table" : None, ## str
+        "data_fields" : None, ## [str], does not contain PERSONA_DATA_FIELDS
+        "validator" : None, ## str
     }
 
     def __init__(self, configpath):
@@ -123,7 +123,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
                     raise RuntimeError("Modification failed.")
         return ret
 
-    # @access("user")
+    ## @access("user")
     def change_user(self, rs, data):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
@@ -136,8 +136,8 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         data = affirm(self.user_management['validator'], data)
         return self.set_user_data(rs, data)
 
-    # @access("user")
-    # @singularize("get_data_single")
+    ## @access("user")
+    ## @singularize("get_data_single")
     def get_data(self, rs, ids):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`

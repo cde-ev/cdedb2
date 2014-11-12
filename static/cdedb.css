@@ -110,3 +110,10 @@ body{
     width: 10ex;
     height: 10ex;
 }
+
+.checkeredTable tr:nth-child(odd) {
+    background: #FFF;
+}
+.checkeredTable tr:nth-child(even) {
+    background: #CCC;
+}

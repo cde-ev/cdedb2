@@ -9,9 +9,7 @@
         </p>
     {% endif %}
     <table>
-        <th>
-            <tr> <td colspan="2">Person</td> </tr>
-        </th>
+        <tr> <th colspan="2">Person</th> </tr>
         <tr>
             <td>Name</td>
             <td>{{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }} {{ data['name_supplement']|e }}</td>
@@ -32,9 +30,7 @@
             <td>CdEDB-ID</td>
             <td>{{ data['id']|cdedbid|e }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Kontakt</td> </tr>
-        </th>
+        <tr> <th colspan="2">Kontakt</th> </tr>
         <tr>
             <td>Email</td>
             <td>
@@ -54,9 +50,7 @@
             <td>Mobiltelefon</td>
             <td>{{ data['mobile']|e }}</td>
         </tr>
-        <th>
-            <tr> <td colspan="2">Adresse</td> </tr>
-        </th>
+        <tr> <th colspan="2">Adresse</th> </tr>
         <tr>
             <td>Straße</td>
             <td>{{ data['address']|e }}</td>
@@ -77,9 +71,9 @@
             <td>CdE-Wolken-Zugriff</td>
             <td>
                 {% if data['cloud_account'] %}
-	            {{ util.checkbox_checked() }}
+                    {{ util.checkbox_checked() }}
                 {% else %}
-	            {{ util.checkbox_unchecked() }}
+                    {{ util.checkbox_unchecked() }}
                 {% endif %}
             </td>
         </tr>

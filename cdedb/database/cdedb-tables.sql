@@ -155,8 +155,8 @@ CREATE TABLE cde.member_data (
         -- anything else the member wants to tell
         free_form               varchar,
         balance                 numeric(8,2) NOT NULL DEFAULT 0,
-	-- True if user decided (positive or negative) on searchability
-	decided_search		boolean NOT NULL DEFAULT FALSE,
+        -- True if user decided (positive or negative) on searchability
+        decided_search          boolean NOT NULL DEFAULT FALSE,
         -- True for trial members (first semester after the first official academy)
         trial_member            boolean NOT NULL,
         -- if True this member's data may be passed on to BuB
@@ -231,7 +231,7 @@ CREATE TABLE cde.changelog (
         interests               varchar,
         free_form               varchar,
         balance                 numeric(8,2) NOT NULL,
-	decided_search		boolean,
+        decided_search          boolean,
         trial_member            boolean NOT NULL,
         bub_search              boolean NOT NULL
 );

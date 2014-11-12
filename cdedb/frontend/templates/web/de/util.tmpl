@@ -1,6 +1,10 @@
 {# This template provides a set of standard macros which should be used to
    create html-elements. #}
 
+{% macro jquery_preamble() %}
+   <script src="{{ staticurl("jquery.js") }}"></script>
+{% endmacro %}
+
 {% macro checkbox_checked() %}
    <input type="checkbox" checked disabled>
 {% endmacro %}
@@ -9,113 +13,122 @@
    <input type="checkbox" disabled>
 {% endmacro %}
 
-{% macro input_hidden(name, value=None, defaultvalue='') %}
-    {% if value is none %}
-        <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
-    {% else %}
-        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+{% macro output_errors(name, displayerrors=True) %}
+    {% if displayerrors %}
+        {% for error in errors.get(name, []) %}
+            {% if error %}
+                {{ i18n(error|string)|e }}<br>
+            {% endif %}
+        {% endfor %}
     {% endif %}
 {% endmacro %}
 
-{% macro input_file(name, displayerrors=True, accept='') %}
+{% macro input_hidden(name, value=None, defaultvalue='', anid='', aclass='') %}
+    {% if value is none %}
+        <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
+          {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+    {% else %}
+        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
+          {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+    {% endif %}
+{% endmacro %}
+
+{% macro input_file(name, displayerrors=True, accept='', anid='', aclass='') %}
     <span class="stacking">
-        {% if displayerrors %}
-            {% for error in errors.get(name, []) %}
-                {% if error %}
-                    {{ i18n(error|string)|e }}<br>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-        <input type="file" name="{{ name|e }}" {% if accept %} accept="{{ accept|e }}" {% endif %}>
+        {{ output_errors(name, displayerrors) }}
+        <input type="file" name="{{ name|e }}" {% if accept %} accept="{{ accept|e }}" {% endif %}
+          {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
     </span>
 {% endmacro %}
 
-{% macro input_text(name, label='', displayerrors=True, readonly=False, defaultvalue='') %}
-    <span {% if name in errors %} class="errorInput" {% endif %} >
+{% macro input_text(name, label='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+    <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
             {{ label|e }}
             <span class="stacking">
-                {% if displayerrors %}
-                    {% for error in errors.get(name, []) %}
-                        {% if error %}
-                            {{ i18n(error|string)|e }}<br>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
+                {{ output_errors(name, displayerrors) }}
                 {% if readonly %}
                     <span>{{ values.get(name, defaultvalue)|e }}</span>
-                    <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
+                    <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
+                      {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {% else %}
-                    <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
+                    <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
+                      {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {% endif %}
             </span>
         </label>
     </span>
 {% endmacro %}
 
-{% macro tab_input_text(name, label='', displayerrors=True, readonly=False, defaultvalue='') %}
-    <tr {% if name in errors %} class="errorInput" {% endif %} >
+{% macro tab_input_text(name, label='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+    <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td><label for="{{ name|e }}">{{ label|e }}</label></td>
         <td>
-            {% if displayerrors %}
-                {% for error in errors.get(name, []) %}
-                    {{ i18n(error|string)|e }}<br>
-                {% endfor %}
-            {% endif %}
+            {{ output_errors(name, displayerrors) }}
             {% if readonly %}
                 <span>{{ values.get(name, defaultvalue)|e }}</span>
-                <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
+                <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
+                  {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {% else %}
-                <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}" >
+                <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
+                  {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {% endif %}
         </td>
     </tr>
 {% endmacro %}
 
-{% macro input_password(name="password", label="", readonly=False) %}
-    <span {% if name in errors %} class="errorInput" {% endif %} >
+{% macro input_password(name="password", label="", readonly=False, anid='', aclass='') %}
+    <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
             {{ label|e }}
             {% if readonly %}
                 <span>******</span>
-                <input type="hidden" name="{{ name|e }}" value="" >
+                <input type="hidden" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
+                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {% else %}
-                <input type="password" name="{{ name|e }}" value="" >
+                <input type="password" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
+                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {% endif %}
         </label>
     </span>
 {% endmacro %}
 
-{% macro tab_input_password(name="password", label="", readonly=False) %}
-    <tr {% if name in errors %} class="errorInput" {% endif %} >
+{% macro tab_input_password(name="password", label="", readonly=False, anid='', aclass='') %}
+    <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td><label for="{{ name|e }}">{{ label|e }}</label></td>
         <td>
             {% if readonly %}
                 <span>******</span>
-                <input type="hidden" name="{{ name|e }}" value="" >
+                <input type="hidden" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
+                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {% else %}
-                <input type="password" name="{{ name|e }}" value="" >
+                <input type="password" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
+                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {% endif %}
         </td>
     </tr>
 {% endmacro %}
 
-{% macro input_checkbox(name, label="", value=True, readonly=False, defaultvalue='') %}
+{% macro input_checkbox(name, label="", value=True, readonly=False, defaultvalue='', anid='', aclass='') %}
 {# This is the version for single checkboxes as opposed to input_checkboxes(). #}
-    <span {% if name in errors %} class="errorInput" {% endif %} >
+    <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
-            <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} checked {% endif %} {% if readonly %} disabled {% endif %} >
+            <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
+              {% if values.get(name, defaultvalue) == value %} checked {% endif %} {% if readonly %} disabled {% endif %}
+              {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {{ label|e }}
         </label>
     </span>
 {% endmacro %}
 
-{% macro tab_input_checkbox(name, label="", value=True, readonly=False, defaultvalue='') %}
+{% macro tab_input_checkbox(name, label="", value=True, readonly=False, defaultvalue='', anid='', aclass='') %}
 {# This is the version for single checkboxes as opposed to tab_input_checkboxes(). #}
-    <tr {% if name in errors %} class="errorInput" {% endif %} >
+    <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td colspan="2">
                 <label>
-                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} checked {% endif %} {% if readonly %} disabled {% endif %} >
+                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
+                  {% if values.get(name, defaultvalue) == value %} checked {% endif %} {% if readonly %} disabled {% endif %}
+                  {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {{ label|e }}
             </label>
         </td>
@@ -126,11 +139,12 @@
 {# This is the version for multiple checkboxes as opposed to input_checkbox().
    entries is of type [(str, str)]. #}
 
-    <span {% if name in errors %} class="errorInput" {% endif %} >
+    <span {% if name in errors %} class="errorInput" {% endif %}>
         <span class="stacking">
             {% for value, label in entries %}
                 <label>
-                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} checked {% endif %} {% if readonly %} disabled {% endif %} >
+                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
+                      {% if value in values.get(name, defaultvalue) %} checked {% endif %} {% if readonly %} disabled {% endif %}>
                     {{ label|e }}
                 </label>
             {% endfor %}
@@ -142,11 +156,12 @@
 {# This is the version for multiple checkboxes as opposed to tab_input_checkbox().
    entries is of type [(str, str)]. #}
 
-    <tr {% if name in errors %} class="errorInput" {% endif %} >
+    <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td colspan="2">
             {% for value, label in entries %}
                 <label>
-                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} checked {% endif %} {% if readonly %} disabled {% endif %} >
+                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
+                      {% if value in values.get(name, defaultvalue) %} checked {% endif %} {% if readonly %} disabled {% endif %}>
                     {{ label|e }}
                 </label>
             {% endfor %}
@@ -155,7 +170,7 @@
 {% endmacro %}
 
 {% macro input_radio(name, entries, title="", readonly=False, defaultvalue=None) %}
-    <span {% if name in errors %} class="errorInput" {% endif %} >
+    <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
         {% if readonly %}
             <span>{{ values.get(name, defaultvalue)|e }}</span>
@@ -163,7 +178,8 @@
             <span class="stacking">
                 {% for value, label in entries %}
                     <label>
-                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} checked {% endif %} >
+                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}"
+                          {% if values.get(name, defaultvalue) == value %} checked {% endif %}>
                         {{ label|e }}
                     </label><br>
                 {% endfor %}
@@ -173,7 +189,7 @@
 {% endmacro %}
 
 {% macro tab_input_radio(name, entries, title="", readonly=False, defaultvalue=None) %}
-    <tr {% if name in errors %} class="errorInput" {% endif %} >
+    <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td> {{ title|e }} </td>
         <td>
             {% if readonly %}
@@ -181,7 +197,8 @@
             {% else %}
                 {% for value, label in entries %}
                     <label>
-                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} checked {% endif %} >
+                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}"
+                          {% if values.get(name, defaultvalue) == value %} checked {% endif %}>
                         {{ label|e }}
                     </label><br>
                 {% endfor %}
@@ -190,15 +207,21 @@
     </tr>
 {% endmacro %}
 
-{% macro input_select(name, entries, title="", readonly=False, defaultvalue=None) %}
-    <span {% if name in errors %} class="errorInput" {% endif %} >
+{% macro input_select(name, entries, title="", readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
+    <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
         {% if readonly %}
-            <span>{{ values.get(name, defaultvalue)|e }}</span>
+            <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+                {{ values.get(name, defaultvalue)|e }}
+            </span>
         {% else %}
-            <select name="{{ name|e }}" >
+            <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
+              {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+                {% if nulloption %}
+                     <option value=""> </option>
+                {% endif %}
                 {% for value, label in entries %}
-                    <option value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} selected {% endif %} >
+                    <option value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} selected {% endif %}>
                         {{ label|e }}
                     </option>
                 {% endfor %}
@@ -207,16 +230,22 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_select(name, entries, title="", readonly=False, defaultvalue=None) %}
-    <tr {% if name in errors %} class="errorInput" {% endif %} >
+{% macro tab_input_select(name, entries, title="", readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
+    <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td> {{ title|e }} </td>
         <td>
             {% if readonly %}
-                <span>{{ values.get(name, defaultvalue)|e }}</span>
+                <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+                    {{ values.get(name, defaultvalue)|e }}
+                </span>
             {% else %}
-                <select name="{{ name|e }}" >
+                <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
+                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+                    {% if nulloption %}
+                         <option value=""> </option>
+                    {% endif %}
                     {% for value, label in entries %}
-                        <option value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} selected {% endif %} >
+                        <option value="{{ value|e }}" {% if values.get(name, defaultvalue) == value %} selected {% endif %}>
                             {{ label|e }}
                         </option>
                     {% endfor %}
@@ -226,15 +255,18 @@
     </tr>
 {% endmacro %}
 
-{% macro input_multiselect(name, entries, title="", readonly=False, defaultvalue=[]) %}
-    <span {% if name in errors %} class="errorInput" {% endif %} >
+{% macro input_multiselect(name, entries, title="", readonly=False, defaultvalue=[], anid='', aclass='') %}
+    <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
         {% if readonly %}
-            <span>{{ values.get(name, defaultvalue)|join(", ")|e }}</span>
+            <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+                {{ values.get(name, defaultvalue)|join(", ")|e }}
+            </span>
         {% else %}
-            <select name="{{ name|e }}" multiple >
+            <select name="{{ name|e }}" multiple  {% if anid %} id="{{ anid|e }}" {% endif %}
+              {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {% for value, label in entries %}
-                    <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %} >
+                    <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %}>
                         {{ label|e }}
                     </option>
                 {% endfor %}
@@ -243,16 +275,19 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_multiselect(name, entries, title="", readonly=False, defaultvalue=[]) %}
-    <tr {% if name in errors %} class="errorInput" {% endif %} >
+{% macro tab_input_multiselect(name, entries, title="", readonly=False, defaultvalue=[], anid='', aclass='') %}
+    <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td> {{ title|e }} </td>
         <td>
             {% if readonly %}
-                <span>{{ values.get(name, defaultvalue)|join(", ")|e }}</span>
+                <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+                    {{ values.get(name, defaultvalue)|join(", ")|e }}
+                </span>
             {% else %}
-                <select name="{{ name|e }}" multiple >
+                <select name="{{ name|e }}" multiple {% if anid %} id="{{ anid|e }}" {% endif %}
+                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                     {% for value, label in entries %}
-                        <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %} >
+                        <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %}>
                             {{ label|e }}
                         </option>
                     {% endfor %}
@@ -262,19 +297,54 @@
     </tr>
 {% endmacro %}
 
-{% macro input_submit(value, name="submitform", readonly=False) %}
-    <input type="submit" name="{{ name|e }}" value="{{ value|e }}" {% if readonly %} disabled {% endif %}>
+{% macro input_submit(value, name="submitform", readonly=False, anid='', aclass='') %}
+    <input type="submit" name="{{ name|e }}" value="{{ value|e }}" {% if readonly %} disabled {% endif %}
+      {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
 {% endmacro %}
 
 {% macro format_query(spec, titles, choices, output_selection=True) %}
-    {% with OPERATOR_LABELS = {0 : "nicht definiert",
-                               1 : "definiert",
+    <script>
+        // adjust input element to the selected operator
+        // this should be called from the corresponding change trigger
+        function update_choices(field, choices, validator) {
+            var previous = $("#qinput_" + field).val();
+            $("#qinput_" + field).remove();
+            // NOTE cdedb.query.QueryOperator values are embedded
+            if ($('#qop_'+field).val() == "0" || $('#qop_'+field).val() == "1") {
+                // do nothing
+            } else if ($('#qop_'+field).val() == "2") {
+                if (!$.isEmptyObject(choices)) {
+                    $("#qspan_"+field).append($("<select>", {"name" : "qval_" + field, "id" : "qinput_"+field}));
+                    $("#qinput_"+field).append($("<option>", {"value" : ""}));
+                    for (var key in choices) {
+                        if (choices.hasOwnProperty(key)) {
+                            $("#qinput_"+field).append($("<option>", {"value" : key, "html" : choices[key], selected : (key == previous)}));
+                        }
+                    }
+                } else {
+                    if (validator == "bool") {
+                        $("#qspan_"+field).append($("<select>", {"name" : "qval_" + field, "id" : "qinput_"+field}));
+                        $("#qinput_"+field).append($("<option>", {"value" : ""}));
+                        var bool_choices = {"True" : "wahr", "False" : "falsch"};
+                        for (var key in bool_choices) {
+                            $("#qinput_"+field).append($("<option>", {"value" : key, "html" : bool_choices[key], selected : (key == previous)}));
+                        }
+                    } else {
+                        $("#qspan_"+field).append($("<input>", {"name" : "qval_" + field, "id" : "qinput_"+field, "type" : "text", "value" : previous}));
+                    }
+                }
+            } else {
+                $("#qspan_"+field).append($("<input>", {"name" : "qval_" + field, "id" : "qinput_"+field, "type" : "text", "value" : previous}));
+            }
+        }
+    </script>
+    {% with OPERATOR_LABELS = {0 : "leer",
+                               1 : "nichtleer",
                                2 : "gleich",
                                3 : "eines aus",
                                4 : "ähnlich",
-                               5 : "ähnlich zu einem aus",
-                               6 : "regex",
-                               7 : "enthält alle",
+                               5 : "regex",
+                               6 : "enthält alle",
                                10 : "kleiner",
                                11 : "kleinergleich",
                                12 : "zwischen",
@@ -282,49 +352,38 @@
                                14 : "größer",} %}
         <table>
             {% for field in spec %}
-                <tr {% if field in errors %} class="errorInput" {% endif %} >
+                <tr {% if field in errors %} class="errorInput" {% endif %}>
                     <td>
-                        {% with name, value = ("qsel_{}".format(field), True) %}
+                        {% with name = "qsel_{}".format(field) %}
                             {% if output_selection %}
-                                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}" {% if values.get(name) == value %} checked {% endif %} >
+                                {{ input_checkbox(name, aclass="outputSelector") }}
                             {% else %}
-                                <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" >
+                                {{ input_hidden(name, value=True) }}
                             {% endif %}
                         {% endwith %}
                     </td>
                     <td> {{ titles[field]|e }} </td>
                     <td>
                         {% with name = "qop_{}".format(field) %}
-                            <select name="{{ name|e }}" >
-                                {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
-                                    <option value="{{ op.value|e }}" {% if values.get(name) == op.value %} selected {% endif %} >
-                                        {{ OPERATOR_LABELS[op.value]|e }}
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            {# jinja does not support list comprehension ... #}
+                            {% set myentries = [] %}
+                            {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
+                                {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
+                            {% endfor %}
+                            {{ input_select(name, entries=myentries, defaultvalue=VALID_QUERY_OPERATORS[spec[field]][0].value,
+                                            anid=name) }}
+                            <script>
+                                $(document).ready(function(){
+                                    $("#{{ name|e }}").change(function (){ update_choices("{{ field|e }}", {{ choices.get(field, '')|json }}, "{{ spec[field]|e }}") });
+                                    $("#{{ name|e }}").trigger('change');
+                                });
+                            </script>
                         {% endwith %}
                     </td>
                     <td>
-                        {% with name = "qval_{}".format(field) %}
-                            {% if field in choices %}
-                                <select name="{{ name|e }}" >
-                                    <option value="" > </option>
-                                    {% for value, label in choices[field] %}
-                                        <option value="{{ value|e }}" {% if values.get(name) == value %} selected {% endif %} >
-                                            {{ label|e }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            {% elif spec[field] == "bool" %}
-                                <select name="{{ name|e }}" >
-                                    <option value="" > </option>
-                                    <option value="True" {% if values.get(name) == True %} selected {% endif %} > wahr </option>
-                                    <option value="False" {% if values.get(name) == False %} selected {% endif %} > falsch </option>
-                                </select>
-                            {% else %}
-                                <input type="text" name="{{ name|e }}", value="{{ values.get(name, '')|e }}" >
-                            {% endif %}
-                        {% endwith %}
+                        <span id="qspan_{{ field|e }}">
+                            {{ input_text("qval_{}".format(field), anid="qinput_{}".format(field)) }}
+                        </span>
                     </td>
                 </tr>
             {% endfor %}
@@ -332,15 +391,75 @@
                 <tr>
                     <td colspan="2"> {{ title|e }} </td>
                     <td colspan="2">
-                        <select name="{{ name|e }}" >
-                            <option value="" > </option>
-                            {% for field in spec %}
-                                <option value="{{ field|e }}" {% if values.get(name) == field %} selected {% endif %} > {{ titles[field]|e }} </option>
-                            {% endfor %}
-                        </select>
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for field in spec %}
+                            {{ myentries.append((field, titles[field]))|e }}
+                        {% endfor %}
+                        {{ input_select(name, entries=myentries, nulloption=True)}}
                     </td>
                 </tr>
             {% endfor %}
         </table>
     {% endwith %}
+{% endmacro %}
+
+{% macro place_default_queries(target, queries, titles) %}
+{# TODO make this a multicolumn thing for more efficient space usage #}
+    {% if queries %}
+        <ul>
+            {% for query in queries %}
+                <li><a href="{{ cdedblink(target, queries[query]|querytoparams) }}">{{ titles.get(query, query)|e }}</a></li>
+            {% endfor %}
+        <ul>
+    {% endif %}
+{% endmacro %}
+
+{% macro display_query_result(result, query, titles) %}
+    {% if not result|length %}
+        Keine Ergebnisse!
+    {% else %}
+        {# TODO add fancy js to table #}
+        <table class="checkeredTable">
+            <tr>
+                <th></th>
+                {% for field in query.fields_of_interest %}
+                    <th>{{ titles.get(field, field)|e }}</th>
+                {% endfor %}
+            </tr>
+            {% for row in result %}
+                <tr>
+                    <td>
+                        {{ input_checkbox("row_{}".format(loop.index), anid="row_{}".format(loop.index), aclass="rowSelector") }}
+                    </td>
+                    {% for field in query.fields_of_interest %}
+                        {# NOTE that we split off any possible schema specification since they're not preserved by the query #}
+                        {% with afield = field.split('.')[-1] %}
+                            <td>
+                                {% if afield == "persona_id" %}
+                                    <a href="{{ show_user_link(row[afield]) }}">{{ row[afield]|e }}</a>
+                                {% else %}
+                                    {{ row.get(afield, "UNDEFINED")|e }}
+                                {% endif %}
+                                {{ input_hidden("row_{}_{}".format(loop.index, afield), row.get(afield),
+                                                anid="row_{}_{}".format(loop.index, afield)) }}
+                            </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+{% endmacro %}
+
+{% macro display_csv_query_result(result, query) -%}
+{{ ";".join(query.fields_of_interest) }}
+{% for row in result -%}
+{% for field in query.fields_of_interest -%}
+{% with afield = field.split('.')[-1] -%}
+{{ row.get(afield, "UNDEFINED") -}}
+{% endwith -%}
+{% if not loop.last %};{% endif -%}
+{% endfor %}
+{% endfor -%}
 {% endmacro %}

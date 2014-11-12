@@ -184,12 +184,12 @@ class CoreBackend(AbstractBackend):
         privileged_fields = {'is_active', 'status', 'db_privileges',
                              'cloud_account'}
         if not self.is_admin(rs) and (set(keys) & privileged_fields):
-            # be naughty and take a peak
+            ## be naughty and take a peak
             if set(keys) == {'status'} \
               and data['id'] == rs.user.persona_id \
               and data['status'] == const.PersonaStati.search_member \
               and rs.user._persona_data['status'] == const.PersonaStati.member:
-                # allow upgrading self to searchable member
+                ## allow upgrading self to searchable member
                 pass
             else:
                 raise RuntimeError("Modifying sensitive key forbidden.")

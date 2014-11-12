@@ -194,7 +194,7 @@ class Config(BasicConfig):
         super().__init__()
         _LOGGER.debug("Initialising Config with path {}".format(configpath))
         if configpath:
-            module_id = str(uuid.uuid4()) # otherwise importlib caches wrongly
+            module_id = str(uuid.uuid4()) ## otherwise importlib caches wrongly
             loader = importlib.machinery.SourceFileLoader(module_id, configpath)
             primaryconf = loader.load_module(module_id)
         else:
@@ -230,7 +230,7 @@ class SecretsConfig:
         _LOGGER.debug("Initialising SecretsConfig with path {}".format(
             configpath))
         if configpath:
-            module_id = str(uuid.uuid4()) # otherwise importlib caches wrongly
+            module_id = str(uuid.uuid4()) ## otherwise importlib caches wrongly
             loader = importlib.machinery.SourceFileLoader(module_id, configpath)
             primaryconf = loader.load_module(module_id)
         else:

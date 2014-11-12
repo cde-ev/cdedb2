@@ -16,12 +16,14 @@ from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
 import jinja2
+import json
 import werkzeug.wrappers
 import datetime
 import pytz
 import hashlib
 import Pyro4
 import logging
+import io
 
 import urllib.parse
 import smtplib
@@ -291,6 +293,15 @@ def escape_filter(val):
     else:
         return jinja2.escape(val)
 
+def json_filter(val):
+    """Custom jinja filter to create json representation of objects. This is
+    intended to allow embedding of values into generated javascript code.
+
+    The result of this method does not need to be escaped -- more so if
+    escaped, the javascript execution will probably fail.
+    """
+    return json.dumps(val)
+
 def gender_filter(val):
     """Custom jinja filter to convert gender constants to something printable.
 
@@ -303,6 +314,58 @@ def gender_filter(val):
         return '♂'
     else:
         return '⚧'
+
+def numerus_filter(val, singular, plural):
+    """Custom jinja filter to select singular or plural form.
+
+    :type val: int
+    :type singular: str
+    :type plural: str
+    :rtype: str
+    """
+    if val == 1:
+        return singular
+    else:
+        return plural
+
+def genus_filter(val, female, male, unknown=None):
+    """Custom jinja filter to select gendered form of a string.
+
+    :type val: int
+    :type female: str
+    :type male: str
+    :type unknown: str
+    :rtype: str
+    """
+    if unknown is None:
+        unknown = female
+    if val == const.Genders.female:
+        return female
+    elif val == const.Genders.male:
+        return male
+    else:
+        return unknown
+
+def querytoparams_filter(val):
+    """Custom jinja filter to convert query into a parameter dict
+    which can be used to create a URL of the query.
+
+    This could probably be done in jinja, but this would be pretty
+    painful.
+
+    :type val: :py:class:`cdedb.query.Query`
+    :rtype: {str : obj}
+    """
+    params = {}
+    for field in val.fields_of_interest:
+        params['qsel_{}'.format(field)] = True
+    for field, op, value in val.constraints:
+        params['qop_{}'.format(field)] = op.value
+        params['qval_{}'.format(field)] = value
+    for field, postfix in zip(val.order,
+                              ("primary", "secondary", "tertiary")):
+        params['qord_{}'.format(postfix)] = field
+    return params
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
@@ -329,6 +392,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'escape' : escape_filter,
             'e' : escape_filter,
             'gender' : gender_filter,
+            'json' : json_filter,
+            'querytoparams' : querytoparams_filter,
+            'numerus' : numerus_filter,
+            'genus' : genus_filter,
         }
         self.jinja_env.filters.update(filters)
 
@@ -453,17 +520,32 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
         return t.render(**data)
 
-    def send_file(self, rs, path):
+    def send_file(self, rs, path=None, afile=None, data=None):
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
+        Exactly one of the inputs has to be provided.
+
         :type rs: :py:class:`FrontendRequestState`
         :type path: str
+        :type afile: file like
+        :param afile: should be opened in binary mode
+        :type data: str
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
-        if not os.path.isfile(path):
+        if not path and not afile and not data:
+            raise RuntimeError("No input specified.")
+        if (path and afile) or (path and data) or (afile and data):
+            raise RuntimeError("Ambiguous input.")
+        if path and not os.path.isfile(path):
             return werkzeug.exceptions.NotFound()
-        f = werkzeug.wsgi.wrap_file(rs.request.environ, open(path, 'rb'))
+        if path:
+            afile = open(path, 'rb')
+        elif data is not None:
+            afile = io.BytesIO()
+            afile.write(data.encode('utf-8'))
+            afile.seek(0)
+        f = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         # TODO maybe add mime type
         return werkzeug.wrappers.Response(f, direct_passthrough=True)
 
@@ -583,12 +665,27 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         The point is, that encoding the ``confirm_id`` parameter is
         somewhat lengthy and only necessary because of our paranoia.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type persona_id: int
+        :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = {'confirm_id' : self.encode_parameter(
             "{}/show_user".format(self.realm), "confirm_id", persona_id),
             'persona_id' : persona_id}
         return self.redirect(rs, '{}/show_user'.format(self.realm),
                              params=params)
+
+    def enum_choice(self, rs, anenum):
+        """Convert an enum into a dict suitable for consumption by the template
+        code (this will turn into an HTML select in the end).
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type anenum: :py:class:`enum.Enum`
+        :rtype: {str : str}
+        """
+        return {str(case.value) : self.i18n(str(case), rs.lang)
+                for case in anenum}
 
 class FrontendUser:
     """Container for representing a persona."""
@@ -675,9 +772,9 @@ def cdedburl(rs, endpoint, params=None):
     for arg in rs.requestargs:
         if rs.urlmap.is_endpoint_expecting(endpoint, arg):
             allparams[arg] = rs.requestargs[arg]
-    # be careful and not use allparams.update since params may be a
-    # werkzeug.datastructures.MultiDict which produces unwanted lists in
-    # this context
+    ## be careful and not use allparams.update since params may be a
+    ## werkzeug.datastructures.MultiDict which produces unwanted lists in
+    ## this context
     for key in params:
         allparams[key] = params[key]
     return rs.urls.build(endpoint, allparams)
@@ -724,7 +821,7 @@ def REQUESTdata(*spec):
                         if argtype.startswith('#'):
                             argtype = argtype[1:]
                             if val:
-                                # only decode if exists
+                                ## only decode if exists
                                 val = rs._coders['decode_parameter'](
                                     "{}/{}".format(obj.realm, fun.__name__),
                                     name, val)
