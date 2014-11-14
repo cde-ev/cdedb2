@@ -154,6 +154,20 @@ QUERY_SPECS = {
         ("bub_search", "bool"),
         ("notes", "str"),
         ]),
+    "qview_cde_archived_user" :
+    collections.OrderedDict([
+        ("member_data.persona_id", "int"),
+        ("username", "str"),
+        ("family_name", "str"),
+        ("birth_name", "str"),
+        ("given_names", "str"),
+        ("display_name", "str"),
+        ("gender", "int"),
+        ("birthday", "date"),
+        ("event_id", "int"),
+        ("course_id", "int"),
+        ("notes", "str"),
+        ]),
 }
 
 #: Supstitute for SQL views, this is the target of the FROM clause of the
@@ -170,6 +184,11 @@ QUERY_VIEWS = {
         "ON personas.id = member_data.persona_id)",
         "LEFT OUTER JOIN event.participants",
         "ON personas.id = participants.persona_id"),
+    "qview_cde_archived_user" : glue(
+        "(core.personas JOIN cde.member_data",
+        "ON personas.id = member_data.persona_id)",
+        "LEFT OUTER JOIN event.participants",
+        "ON personas.id = participants.persona_id"),
 }
 
 #: dict where the values are dicts mapping titles to queries for "speed dialing"
@@ -177,10 +196,18 @@ DEFAULT_QUERIES = {
     "qview_cde_user" : {
         "trial members" : Query(
             "qview_cde_user", QUERY_SPECS['qview_cde_user'],
-            ("persona_id", "given_names", "family_name"),
+            ("member_data.persona_id", "given_names", "family_name"),
             (("trial_member", QueryOperators.equal, True),),
-            ("given_names", "family_name"),),
-    }
+            ("family_name", "given_names"),),
+    },
+    "qview_cde_archived_user" : {
+        "with notes" : Query(
+            "qview_cde_archived_user", QUERY_SPECS['qview_cde_archived_user'],
+            ("member_data.persona_id", "given_names", "family_name",
+             "birth_name"),
+            (("notes", QueryOperators.nonempty, None),),
+            ("family_name", "given_names"),),
+    },
 }
 
 def mangle_query_input(rs, spec):
@@ -209,23 +236,3 @@ def mangle_query_input(rs, spec):
         if name in rs.request.values:
             params[name] = rs.values[name] = rs.request.values[name]
     return params
-
-def serialize_query(query):
-    """This is the inverse of the ``serialized_query`` validator.
-
-    This has to be called manually and could be automated with a bit of
-    pyro-magic, but since this is the only thing that needs special
-    serialization in the frontend -> backend direction we keep it simple
-    for now.
-
-    :type query: :py:class:`Query`
-    :rtype: {str : object}
-    """
-    return {
-        "scope" : query.scope,
-        "spec" : dict(query.spec), ## convert OrderedDict to dict for serpent
-        "fields_of_interest" : query.fields_of_interest,
-        "constraints" : tuple((field, operator.value, obj)
-                              for field, operator, obj in query.constraints),
-        "order" : query.order,
-    }

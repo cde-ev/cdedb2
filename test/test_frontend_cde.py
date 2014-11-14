@@ -4,6 +4,7 @@ import unittest
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
+from cdedb.query import QueryOperators
 
 class TestCdEFrontend(FrontendTest):
     @as_users("anton", "berta")
@@ -158,7 +159,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search(self, user):
-        self.traverse({'description' : '^CdE$'}, {'href' : 'usersearch'})
+        self.traverse({'description' : '^CdE$'}, {'href' : '/usersearch'})
         self.assertEqual("Suche",
                          self.response.lxml.xpath('//h1/text()')[0])
         f = self.response.forms['usersearchform']
@@ -167,10 +168,11 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertEqual("1 Ergebnis gefunden",
                          self.response.lxml.xpath('//h1/text()')[0])
+        self.assertIn("persona_id=2", self.response.text)
 
     @as_users("anton")
     def test_user_search_csv(self, user):
-        self.traverse({'description' : '^CdE$'}, {'href' : 'usersearch'})
+        self.traverse({'description' : '^CdE$'}, {'href' : '/usersearch'})
         self.assertEqual("Suche",
                          self.response.lxml.xpath('//h1/text()')[0])
         f = self.response.forms['usersearchform']
@@ -188,3 +190,19 @@ class TestCdEFrontend(FrontendTest):
 6;Ferdinand F.;1988-01-01;True
 '''.encode('utf-8')
         self.assertEqual(expectation, self.response.body)
+
+    @as_users("anton")
+    def test_archived_user_search(self, user):
+        self.traverse({'description' : '^CdE$'}, {'href' : '/archivedusersearch'})
+        self.assertEqual("Archivsuche",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        f = self.response.forms['usersearchform']
+        f['qval_birthday'] = '31.12.2000'
+        f['qop_birthday'] = QueryOperators.less.value
+        f['qsel_member_data.persona_id'].checked = True
+        f['qsel_family_name'].checked = True
+        f['qsel_birth_name'].checked = True
+        self.submit(f)
+        self.assertEqual("1 Ergebnis gefunden",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertIn("Hell", self.response.text)

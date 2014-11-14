@@ -85,6 +85,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="user_search_form"),
             rule("/usersearch", methods=("GET", "HEAD"),
                  endpoint="user_search"),
+            rule("/archivedusersearchform", methods=("GET", "HEAD"),
+                 endpoint="archived_user_search_form"),
+            rule("/archivedusersearch", methods=("GET", "HEAD"),
+                 endpoint="archived_user_search"),
             )),
         )),
     werkzeug.routing.EndpointPrefix('event/', (

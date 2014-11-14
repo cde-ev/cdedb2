@@ -100,6 +100,4 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             rs.notify("success", "Change committed.")
         else:
             rs.notify("success", "Change failed.")
-        return self.redirect(rs, "{}/show_user".format(self.realm), params={
-            'confirm_id' : self.encode_parameter(
-                "{}/show_user".format(self.realm), "confirm_id", persona_id)})
+        return self.redirect_show_user(rs, persona_id)

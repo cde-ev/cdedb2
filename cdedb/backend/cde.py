@@ -589,6 +589,13 @@ class CdeBackend(AbstractUserBackend):
 
     @access("searchmember")
     def submit_general_query(self, rs, query):
+        """Realm specific wrapper around
+        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :rtype: [{str : obj}]
+        """
         query = affirm("serialized_query", query)
         if query.scope == "qview_cde_member":
             query.constraints.append(("status", QueryOperators.oneof,
@@ -599,6 +606,12 @@ class CdeBackend(AbstractUserBackend):
                 raise RuntimeError("Permission denied.")
             query.constraints.append(("status", QueryOperators.oneof,
                                       const.CDE_STATI))
+        elif query.scope == "qview_cde_archived_user":
+            if not self.is_admin(rs):
+                raise RuntimeError("Permission denied.")
+            query.constraints.append(("status", QueryOperators.equal,
+                                      const.PersonaStati.archived_member))
+            query.spec['status'] = "int"
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)

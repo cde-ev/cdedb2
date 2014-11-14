@@ -209,6 +209,9 @@ class CoreBackend(AbstractBackend):
         if 'cloud_account' in data:
             ldap_ops.append((ldap.MOD_REPLACE, 'cloudAccount',
                              ldap_bool(data['cloud_account'])))
+        if 'is_active' in data:
+            ldap_ops.append((ldap.MOD_REPLACE, 'isActive',
+                             ldap_bool(data['is_active'])))
         dn = "uid={},{}".format(data['id'], self.conf.LDAP_UNIT_NAME)
         with rs.conn as conn:
             with conn.cursor() as cur:

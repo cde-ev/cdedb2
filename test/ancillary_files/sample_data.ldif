@@ -7,6 +7,7 @@ uid: 1
 mail: anton@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
+isActive: TRUE
 
 dn: uid=2,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
@@ -17,6 +18,7 @@ uid: 2
 mail: berta@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
+isActive: TRUE
 
 dn: uid=3,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
@@ -27,6 +29,7 @@ uid: 3
 mail: charly@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
+isActive: TRUE
 
 dn: uid=4,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
@@ -37,6 +40,7 @@ uid: 4
 mail: daniel@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: FALSE
+isActive: TRUE
 
 dn: uid=5,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
@@ -47,6 +51,7 @@ uid: 5
 mail: emilia@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: FALSE
+isActive: TRUE
 
 dn: uid=6,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
@@ -57,6 +62,7 @@ uid: 6
 mail: ferdinand@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
+isActive: TRUE
 
 dn: uid=7,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
@@ -64,6 +70,18 @@ sn: (garcia@example.cde)
 cn: Garcia
 displayName: Garcia
 uid: 7
-mail: @example.cde
+mail: garcia@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: TRUE
+isActive: TRUE
+
+dn: uid=8,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
+objectClass: cdePersona
+sn: (hades@example.cde)
+cn: Hades
+displayName: Hades
+uid: 8
+mail: hades@example.cde
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
+cloudAccount: FALSE
+isActive: FALSE

@@ -16,8 +16,7 @@ from cdedb.frontend.common import (
     FrontendUser)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
-    QUERY_SPECS, mangle_query_input, serialize_query, QueryOperators,
-    DEFAULT_QUERIES)
+    QUERY_SPECS, mangle_query_input, QueryOperators, DEFAULT_QUERIES)
 
 access = access_decorator_generator(
     ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
@@ -110,6 +109,7 @@ class CdeFrontend(AbstractUserFrontend):
                      "postal_code2", "location2", "country2", "weblink",
                      "specialisation", "affiliation", "timeline", "interests",
                      "free_form", "bub_search")
+    # FIXME admins must be able to edit birthday
     @persona_dataset_guard()
     def change_user(self, rs, persona_id, generation, data):
         data['id'] = persona_id
@@ -310,8 +310,7 @@ class CdeFrontend(AbstractUserFrontend):
         else:
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('member_data.persona_id')
-            result = self.cdeproxy.submit_general_query(rs,
-                                                        serialize_query(query))
+            result = self.cdeproxy.submit_general_query(rs, query)
             if len(result) == 1:
                 return self.redirect_show_user(rs, result[0]['persona_id'])
             if len(result) > self.conf.MAX_QUERY_RESULTS \
@@ -345,11 +344,43 @@ class CdeFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.user_search_form(rs)
         query.scope = "qview_cde_user"
-        result = self.cdeproxy.submit_general_query(rs, serialize_query(query))
+        result = self.cdeproxy.submit_general_query(rs, query)
         params = {'result' : result, 'query' : query}
         if CSV:
-            data = self.fill_template(rs, 'web', 'user_search_csv_result',
-                                      params)
+            data = self.fill_template(rs, 'web', 'csv_search_result', params)
             return self.send_file(rs, data=data)
         else:
             return self.render(rs, "user_search_result", params)
+
+    @access("cde_admin")
+    def archived_user_search_form(self, rs):
+        """Render form."""
+        spec = QUERY_SPECS['qview_cde_archived_user']
+        ## mangle the input, so we can prefill the form
+        mangle_query_input(rs, spec)
+        events = self.eventproxy.list_events(rs)
+        choices = {'event_id' : events,
+                   'status' : self.enum_choice(rs, const.PersonaStati),
+                   'gender' : self.enum_choice(rs, const.Genders)}
+        default_queries = DEFAULT_QUERIES['qview_cde_archived_user']
+        return self.render(rs, "archived_user_search", {
+            'spec' : spec, 'choices' : choices, 'queryops' : QueryOperators,
+            'default_queries' : default_queries,})
+
+    @access("cde_admin")
+    @REQUESTdata(("CSV", "bool"))
+    def archived_user_search(self, rs, CSV):
+        """Perform search."""
+        spec = QUERY_SPECS['qview_cde_archived_user']
+        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
+                      spec=spec, allow_empty=False)
+        if rs.errors:
+            return self.archived_user_search_form(rs)
+        query.scope = "qview_cde_archived_user"
+        result = self.cdeproxy.submit_general_query(rs, query)
+        params = {'result' : result, 'query' : query}
+        if CSV:
+            data = self.fill_template(rs, 'web', 'csv_search_result', params)
+            return self.send_file(rs, data=data)
+        else:
+            return self.render(rs, "archived_user_search_result", params)

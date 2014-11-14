@@ -8,9 +8,11 @@ contained in here.
 All output formatting should be handled by the :py:mod:`jinja2` templates.
 """
 from cdedb.common import QuotaException
+from cdedb.serialization import SERIALIZERS
 import Pyro4.util
 import psycopg2
 import psycopg2.extensions
+import serpent
 
 ## We register some custom exception classes so that they are handled
 ## correctly by pyro.
@@ -22,3 +24,11 @@ custom_exceptions = {
     "psycopg2.ProgrammingError" : psycopg2.ProgrammingError,}
 
 Pyro4.util.all_exceptions.update(custom_exceptions)
+
+## pyro uses serpent as serializers and we want some additional comfort so
+## we register some additional serializers, they are reversed in
+## cdedb.validation
+##
+## This is for frontend -> backend.
+for clazz in SERIALIZERS:
+    serpent.register_class(clazz, SERIALIZERS[clazz])

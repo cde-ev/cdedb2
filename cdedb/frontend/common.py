@@ -67,6 +67,9 @@ class ProxyShim:
             ## use context to automatically close the pyro object
             with self._proxy:
                 attr = getattr(self._proxy, name)
+                ## Invert our custom serialization.
+                ##
+                ## This is backend -> frontend.
                 return deserialize(attr(rs.sessionkey, *args, **kwargs))
         return proxy_fun
 

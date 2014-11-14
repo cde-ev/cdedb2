@@ -101,5 +101,7 @@ def create_RPCDaemon(backend, socket_address, access_logging=True):
 ## pyro uses serpent as serializers and we want some additional comfort so
 ## we register some additional serializers, they are reversed in
 ## cdedb.frontend.common.ProxyShim
+##
+## This is for backend -> frontend.
 for clazz in SERIALIZERS:
     serpent.register_class(clazz, SERIALIZERS[clazz])

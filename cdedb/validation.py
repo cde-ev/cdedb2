@@ -43,6 +43,7 @@ from itertools import chain
 current_module = sys.modules[__name__]
 
 from cdedb.common import EPSILON
+from cdedb.serialization import deserialize
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
@@ -55,10 +56,18 @@ _ALL = []
 def _addvalidator(fun):
     """Mark a function for processing into validators.
 
+    Add an inversion of our custom serialization. This is for the
+    direction of frontend -> backend.
+
     :type fun: callable
     """
     _ALL.append(fun)
-    return fun
+    @functools.wraps(fun)
+    def new_fun(*args, **kwargs):
+        args = tuple(deserialize(arg) for arg in args)
+        kwargs = {key : deserialize(value) for key, value in kwargs.items()}
+        return fun(*args, **kwargs)
+    return new_fun
 
 def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
                                *, strict=False, allow_superfluous=False,

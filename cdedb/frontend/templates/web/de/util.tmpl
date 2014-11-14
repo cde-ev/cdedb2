@@ -423,8 +423,10 @@
         <table class="checkeredTable">
             <tr>
                 <th></th>
-                {% for field in query.fields_of_interest %}
-                    <th>{{ titles.get(field, field)|e }}</th>
+                {% for csvfield in query.fields_of_interest %}
+                    {% for field in csvfield.split(',') %}
+                        <th>{{ titles.get(field, field)|e }}</th>
+                    {% endfor %}
                 {% endfor %}
             </tr>
             {% for row in result %}
@@ -432,19 +434,21 @@
                     <td>
                         {{ input_checkbox("row_{}".format(loop.index), anid="row_{}".format(loop.index), aclass="rowSelector") }}
                     </td>
-                    {% for field in query.fields_of_interest %}
-                        {# NOTE that we split off any possible schema specification since they're not preserved by the query #}
-                        {% with afield = field.split('.')[-1] %}
-                            <td>
-                                {% if afield == "persona_id" %}
-                                    <a href="{{ show_user_link(row[afield]) }}">{{ row[afield]|e }}</a>
-                                {% else %}
-                                    {{ row.get(afield, "UNDEFINED")|e }}
-                                {% endif %}
-                                {{ input_hidden("row_{}_{}".format(loop.index, afield), row.get(afield),
-                                                anid="row_{}_{}".format(loop.index, afield)) }}
-                            </td>
-                        {% endwith %}
+                    {% for csvfield in query.fields_of_interest %}
+                        {% for field in csvfield.split(',') %}
+                            {# NOTE that we split off any possible schema specification since they're not preserved by the query #}
+                            {% with afield = field.split('.')[-1] %}
+                                <td>
+                                    {% if afield == "persona_id" %}
+                                        <a href="{{ show_user_link(row[afield]) }}">{{ row[afield]|e }}</a>
+                                    {% else %}
+                                        {{ row.get(afield, "UNDEFINED")|e }}
+                                    {% endif %}
+                                    {{ input_hidden("row_{}_{}".format(loop.index, afield), row.get(afield),
+                                                    anid="row_{}_{}".format(loop.index, afield)) }}
+                                </td>
+                            {% endwith %}
+                        {% endfor %}
                     {% endfor %}
                 </tr>
             {% endfor %}
@@ -453,12 +457,15 @@
 {% endmacro %}
 
 {% macro display_csv_query_result(result, query) -%}
-{{ ";".join(query.fields_of_interest) }}
+{{ ";".join(query.fields_of_interest).replace(',', ';') }}
 {% for row in result -%}
-{% for field in query.fields_of_interest -%}
+{% for csvfield in query.fields_of_interest -%}
+{% for field in csvfield.split(',') -%}
 {% with afield = field.split('.')[-1] -%}
 {{ row.get(afield, "UNDEFINED") -}}
 {% endwith -%}
+{% if not loop.last %};{% endif -%}
+{% endfor -%}
 {% if not loop.last %};{% endif -%}
 {% endfor %}
 {% endfor -%}

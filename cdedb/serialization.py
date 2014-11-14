@@ -16,6 +16,11 @@ import dateutil.parser
 import collections.abc
 import decimal
 
+from cdedb.query import Query
+
+# FIXME the frontend -> backend direction also needs custom serialization
+# FIXME handle Query objects here as well
+
 #: Skeleton for custom serialization wrapper. :py:attr:`_class` and
 #: :py:attr:`_value` have to be filled in accordingly.
 _BASE_DICT = {
@@ -36,6 +41,21 @@ def _date_serializer(obj, serpent_serializer, out, level):
     else:
         ret["_class"] = "datetime.date"
     ret["_value"] = obj.isoformat()
+    serpent_serializer._serialize(ret, out, level)
+
+
+def _query_serializer(obj, serpent_serializer, out, level):
+    """Serialize a :py:class:`cdedb.query.Query`."""
+    ret = _BASE_DICT.copy()
+    ret["_class"] = "cdedb.query.Query"
+    ret["_value"] = {
+        "scope" : obj.scope,
+        "spec" : dict(obj.spec), ## convert OrderedDict to dict for serpent
+        "fields_of_interest" : obj.fields_of_interest,
+        "constraints" : tuple((field, operator.value, obj)
+                              for field, operator, obj in obj.constraints),
+        "order" : obj.order,
+    }
     serpent_serializer._serialize(ret, out, level)
 
 def _isoformat_serializer_generator(classname):
@@ -60,6 +80,10 @@ def _datetime_deserializer(obj):
 
 def _time_deserializer(obj):
     return dateutil.parser.parse(obj, dayfirst=True).time()
+
+def _query_deserializer(obj):
+    ## To deserialize a query use the ``serialized_query`` validator.
+    return obj
 
 def _trivial_serializer_generator(classname):
     """Serialize by calling :py:func:`str` on the object.
@@ -92,6 +116,7 @@ SERIALIZERS = {
     datetime.time : _isoformat_serializer_generator("datetime.time"),
     float : _trivial_serializer_generator("float"),
     decimal.Decimal : _trivial_serializer_generator("decimal.Decimal"),
+    Query : _query_serializer,
 }
 
 #: The custom deserializers are called with one :py:class:`str` argument.
@@ -101,6 +126,7 @@ _DESERIALIZERS = {
     "datetime.time" : _time_deserializer,
     "float" : _trivial_deserializer_generator(float),
     "decimal.Decimal" : _trivial_deserializer_generator(decimal.Decimal),
+    "cdedb.query.Query" : _query_deserializer,
 }
 
 def deserialize(obj):

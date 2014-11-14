@@ -13,6 +13,15 @@ attributetype ( 2.25.424242424242424242420002
         SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
         SINGLE-VALUE )
 
+# isActive
+# Controles whether this account is active and thus allowed to log in.
+attributetype ( 2.25.424242424242424242420003
+        NAME 'isActive'
+        DESC 'enabling/disabling the account'
+        EQUALITY booleanMatch
+        SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
+        SINGLE-VALUE )
+
 # cdePersona
 # The cdePersona represents a persona from the CdEDB
 objectclass     ( 2.25.424242424242424242420001
@@ -21,6 +30,6 @@ objectclass     ( 2.25.424242424242424242420001
     SUP inetOrgPerson
     STRUCTURAL
         MUST (
-             cloudAccount
+             cloudAccount $ isActive
         )
     )

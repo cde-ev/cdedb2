@@ -1,0 +1,48 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
+{% block title %}CdE Archivsuche{% endblock %}
+{% block content %}
+    <h1>{{ result|length|e }} Ergebnis{{ result|length|numerus("", "se") }} gefunden</h1>
+    <a href="{{ cdedblink("cde/archived_user_search_form", query|querytoparams) }}">Zurück</a>
+
+    {% with TITLES = {
+        "persona_id" : "ID",
+        "username" : "Email",
+        "family_name" : "Nachname",
+        "birth_name" : "Geburtsname",
+        "given_names" : "Vorname",
+        "display_name" : "Rufname",
+        "gender" : "Geschlecht",
+        "birthday" : "Geburtstag",
+        "event_id" : "Veranstaltung",
+        "course_id" : "Kurs",
+        "notes" : "Notizen",} %}
+
+        {{ util.display_query_result(result, query, TITLES) }}
+    {% endwith %}
+
+    <a href="{{ cdedblink("cde/archived_user_search_form", query|querytoparams) }}">Zurück</a>
+
+    <h3>Aktionen</h3>
+    <p>
+        <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
+        <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
+        <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
+    </p>
+    <script>
+        $(document).ready(function(){
+            $(".jsEnabled").prop(disabled, false);
+            $("#action_select_all").click(function (){
+                 $(".rowSelector").prop('checked', true);
+                 });
+            $("#action_select_none").click(function (){
+                 $(".rowSelector").prop('checked', false);
+                 });
+            $("#action_select_invert").click(function (){
+                 $(".rowSelector").each(function (){
+                     $(this).prop('checked', !$(this).prop('checked'));
+                 })});
+        });
+    </script>
+{% endblock %}

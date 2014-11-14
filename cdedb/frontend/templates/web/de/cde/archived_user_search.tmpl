@@ -1,60 +1,31 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
-{% block title %}CdE Nutzersuche{% endblock %}
+{% block title %}CdE Archivsuche{% endblock %}
 {% block content %}
-    <h1>Suche</h1>
+    <h1>Archivsuche</h1>
     <h3>Standardabfragen</h3>
     {% with TITLES = {
-        "trial members" : "Probemitglieder",} %}
+        "with notes" : "Mit Notizen",} %}
 
-        {{ util.place_default_queries("cde/user_search", default_queries, TITLES) }}
+        {{ util.place_default_queries("cde/archived_user_search", default_queries, TITLES) }}
     {% endwith %}
 
     <h3>Suchmaske</h3>
     {% with TITLES = {
-        "fulltext" : "Volltext",
         "persona_id" : "ID",
         "username" : "Email",
-        "status" : "Status",
-        "is_active" : "Aktiv",
-        "db_privileges" : "DB-Rechte",
-        "cloud_account" : "Cloud Zugriff",
         "family_name" : "Nachname",
         "birth_name" : "Geburtsname",
         "given_names" : "Vorname",
         "display_name" : "Rufname",
-        "title" : "Titel",
-        "name_supplement" : "Namenszusatz",
         "gender" : "Geschlecht",
         "birthday" : "Geburtstag",
-        "telephone" : "Telefon",
-        "mobile" : "Mobilfunk",
-        "address" : "Anschrift",
-        "address_supplement" : "Adresszusatz",
-        "postal_code" : "PLZ",
-        "location" : "Ort",
-        "country" : "Land",
-        "address2" : "Anschrift (Zweitadresse)",
-        "address_supplement2" : "Adresszusatz (Zweitadresse)",
-        "postal_code2" : "PLZ (Zweitadresse)",
-        "location2" : "Ort (Zweitadresse)",
-        "country2" : "Land (Zweitadresse)",
-        "weblink" : "WWW",
-        "specialisation" : "Fachgebiet",
-        "affiliation" : "Schule, Uni, ...",
-        "timeline" : "Jahrgang, Matrikel, ...",
-        "interests" : "Interessen",
-        "free_form" : "Sonstige Angaben",
         "event_id" : "Veranstaltung",
         "course_id" : "Kurs",
-        "balance" : "Guthaben",
-        "decided_search" : "Sichtbarkeit entschieden",
-        "trial_member" : "Probemitgliedschaft",
-        "bub_search" : "Sichtbarkeit BuB",
         "notes" : "Notizen",} %}
 
-        <form action="{{ cdedblink('cde/user_search') }}" method="GET" id="usersearchform">
+        <form action="{{ cdedblink('cde/archived_user_search') }}" method="GET" id="usersearchform">
             {{ util.input_submit(value="Suchen") }}
             {{ util.input_submit(value="CSV-Datei", name="CSV") }}
             {{ util.format_query(spec, TITLES, choices) }}
