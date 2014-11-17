@@ -86,6 +86,12 @@ class CdeFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.NotFound()
         data = self.cdeproxy.get_data_single(rs, persona_id)
         participation_info = self.eventproxy.participation_info(rs, persona_id)
+        if data['status'] == const.PersonaStati.archived_member:
+            if self.is_admin(rs):
+                rs.notify("info", "Displaying archived member.")
+            else:
+                rs.notify("error", "Accessing archived member impossible.")
+                return self.redirect(rs, "core/index")
         foto = self.cdeproxy.get_foto(rs, persona_id)
         return self.render(rs, "show_user", {
             'data' : data, 'participation_info' : participation_info,
@@ -96,27 +102,74 @@ class CdeFrontend(AbstractUserFrontend):
     def change_user_form(self, rs, persona_id):
         generation = self.cdeproxy.get_generation(rs, persona_id)
         data = self.cdeproxy.get_data_single(rs, persona_id)
+        if data['status'] == const.PersonaStati.archived_member:
+            rs.notify("error", "Editing archived member impossible.")
+            return self.redirect(rs, "core/index")
         rs.values.update(data)
         rs.values['generation'] = generation
         return self.render(rs, "change_user")
 
     @access("user", {"POST"})
     @REQUESTdata(("generation", "int"))
-    @REQUESTdatadict("display_name", "family_name", "given_names", "title",
-                     "name_supplement", "telephone", "mobile",
-                     "address_supplement", "address", "postal_code",
-                     "location", "country", "address_supplement2", "address2",
-                     "postal_code2", "location2", "country2", "weblink",
-                     "specialisation", "affiliation", "timeline", "interests",
-                     "free_form", "bub_search")
-    # FIXME admins must be able to edit birthday
+    @REQUESTdatadict(
+        "display_name", "family_name", "given_names", "title",
+        "name_supplement", "telephone", "mobile", "address_supplement",
+        "address", "postal_code", "location", "country",
+        "address_supplement2", "address2", "postal_code2", "location2",
+        "country2", "weblink", "specialisation", "affiliation", "timeline",
+        "interests", "free_form", "bub_search")
     @persona_dataset_guard()
     def change_user(self, rs, persona_id, generation, data):
         data['id'] = persona_id
         data = check(rs, "member_data", data)
         if rs.errors:
             return self.render(rs, "change_user")
-        num = self.cdeproxy.change_user(rs, data, generation)
+        change_note = self.i18n(
+            "Normal dataset change by {}.".format(rs.user.persona_id), rs.lang)
+        num = self.cdeproxy.change_user(rs, data, generation,
+                                        change_note=change_note)
+        if num > 0:
+            rs.notify("success", "Change committed.")
+        elif num < 0:
+            rs.notify("info", "Change pending.")
+        else:
+            rs.notify("warning", "Change failed.")
+        return self.redirect_show_user(rs, persona_id)
+
+    @access("cde_admin")
+    @persona_dataset_guard()
+    def admin_change_user_form(self, rs, persona_id):
+        generation = self.cdeproxy.get_generation(rs, persona_id)
+        data = self.cdeproxy.get_data_single(rs, persona_id)
+        if data['status'] == const.PersonaStati.archived_member:
+            rs.notify("error", "Editing archived member impossible.")
+            return self.redirect(rs, "core/index")
+        rs.values.update(data)
+        rs.values['generation'] = generation
+        return self.render(rs, "admin_change_user")
+
+    @access("cde_admin", {"POST"})
+    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
+    @REQUESTdatadict(
+        "title", "given_names", "family_name", "name_supplement",
+        "display_name", "specialisation", "affiliation", "timeline",
+        "interests", "free_form", "gender", "birthday", "telephone",
+        "mobile", "weblink", "address", "address_supplement", "postal_code",
+        "location", "country", "address2", "address_supplement2",
+        "postal_code2", "location2", "country2", "bub_search",
+        "cloud_account", "notes")
+    @persona_dataset_guard()
+    def admin_change_user(self, rs, persona_id, generation, change_note, data):
+        data['id'] = persona_id
+        data = check(rs, "member_data", data)
+        if change_note is None:
+            change_note = self.i18n(
+                "Admin dataset change by {}.".format(rs.user.persona_id),
+                rs.lang)
+        if rs.errors:
+            return self.render(rs, "admin_change_user")
+        num = self.cdeproxy.change_user(rs, data, generation,
+                                        change_note=change_note)
         if num > 0:
             rs.notify("success", "Change committed.")
         elif num < 0:

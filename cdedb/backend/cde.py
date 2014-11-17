@@ -137,7 +137,8 @@ class CdeBackend(AbstractUserBackend):
         return " ".join(vals)
 
     def set_user_data(self, rs, data, generation, pkeys=None, ukeys=None,
-                      allow_username_change=False, may_wait=True):
+                      allow_username_change=False, may_wait=True,
+                      change_note=''):
         """This checks for privileged fields, implements the change log and
         updates the fulltext in addition to what
         :py:meth:`cdedb.backend.common.AbstractUserBackend.set_user_data`
@@ -163,6 +164,8 @@ class CdeBackend(AbstractUserBackend):
         :param may_wait: Whether this change may wait in the changelog. If
           this is ``False`` and there is a pending change in the changelog,
           the new change is slipped in between.
+        :type change_note: str
+        :param change_note: Comment to record in the changelog entry.
         :rtype: int
         :returns: number of changed entries, however if changes were only
           written to changelog and are waiting for review, the negative number
@@ -189,9 +192,14 @@ class CdeBackend(AbstractUserBackend):
                     current_generation, generation, data['id']))
                 return 0
 
-            ## stash pending change if we may not wait
+            ## get current state and check for archived members
             history = self.get_history(rs, data['id'], generations=None)
             current_data = history[current_generation]
+            if current_data['status'] == const.PersonaStati.archived_member \
+              and data.get('status') not in const.CDE_STATI:
+                raise RuntimeError("Editing archived member impossible.")
+
+            ## stash pending change if we may not wait
             diff = None
             if current_data['change_status'] == const.MemberChangeStati.pending \
               and not may_wait:
@@ -236,19 +244,16 @@ class CdeBackend(AbstractUserBackend):
 
             ## insert new changelog entry
             fields = ["submitted_by", "generation", "change_status",
-                      "persona_id"]
+                      "persona_id", "change_note"]
             fields.extend(PERSONA_DATA_FIELDS)
             fields.remove("id")
             fields.extend(MEMBER_DATA_FIELDS)
             query = "INSERT INTO cde.changelog ({}) VALUES ({})".format(
                 ", ".join(fields), ", ".join(("%s",) * len(fields)))
             params = [rs.user.persona_id, next_generation,
-                      const.MemberChangeStati.pending, data['id']]
-            for field in fields[4:]:
-                if field in data:
-                    params.append(data[field])
-                else:
-                    params.append(current_data[field])
+                      const.MemberChangeStati.pending, data['id'], change_note]
+            for field in fields[5:]:
+                params.append(data.get(field, current_data[field]))
             self.query_exec(rs, query, params)
 
             ## resolve change if it doesn't require review
@@ -268,8 +273,9 @@ class CdeBackend(AbstractUserBackend):
                 query = "INSERT INTO cde.changelog ({}) VALUES ({})".format(
                     ", ".join(fields), ", ".join(("%s",) * len(fields)))
                 params = [rs.user.persona_id, next_generation + 1,
-                          const.MemberChangeStati.pending, data['id']]
-                for field in fields[4:]:
+                          const.MemberChangeStati.pending, data['id'],
+                          change_note]
+                for field in fields[5:]:
                     if field in diff:
                         params.append(diff[field])
                     elif field in data:
@@ -369,10 +375,23 @@ class CdeBackend(AbstractUserBackend):
         return ret
 
     @access("user")
-    def change_user(self, rs, data, generation, may_wait=True):
+    def change_user(self, rs, data, generation, may_wait=True, change_note=''):
+        """Change a data set. Note that you need privileges to edit someone
+        elses data set.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type data: {str : object}
+        :type may_wait: bool
+        :param may_wait: override for system requests (which may not wait)
+        :type change_note: str
+        :param change_note: Descriptive line for changelog
+        :rtype: int
+        :returns: number of users changed
+        """
         data = affirm("member_data", data)
         generation = affirm("int_or_None", generation)
-        return self.set_user_data(rs, data, generation, may_wait=may_wait)
+        return self.set_user_data(rs, data, generation, may_wait=may_wait,
+                                  change_note=change_note)
 
     @access("user")
     @singularize("get_data_single_no_quota")

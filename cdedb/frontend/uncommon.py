@@ -101,3 +101,29 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         else:
             rs.notify("success", "Change failed.")
         return self.redirect_show_user(rs, persona_id)
+
+    ## @access("realm_admin")
+    ## @persona_dataset_guard()
+    def admin_change_user_form(self, rs, persona_id):
+        """Render form."""
+        data = self.user_management['proxy'](self).get_data_single(rs,
+                                                                   persona_id)
+        rs.values.update(data)
+        return self.render(rs, "admin_change_user")
+
+    ## @access("realm_admin", {"POST"})
+    ## @REQUESTdatadict(...)
+    ## @persona_dataset_guard()
+    def admin_change_user(self, rs, persona_id, data):
+        """Modify account details by administrator."""
+        data = data or {}
+        data['id'] = persona_id
+        data = check(rs, self.user_management['validator'], data)
+        if rs.errors:
+            return self.render(rs, "admin_change_user")
+        num = self.user_management['proxy'](self).change_user(rs, data)
+        if num:
+            rs.notify("success", "Change committed.")
+        else:
+            rs.notify("success", "Change failed.")
+        return self.redirect_show_user(rs, persona_id)

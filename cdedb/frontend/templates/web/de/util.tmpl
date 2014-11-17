@@ -41,6 +41,7 @@
     </span>
 {% endmacro %}
 
+{# FIXME add textareas #}
 {% macro input_text(name, label='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>

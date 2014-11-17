@@ -5,7 +5,11 @@
     <h1>{{ data['given_names']|e }} {{ data['family_name']|e }}</h1>
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
-            <a href="{{ cdedblink('event/change_user_form') }}">Bearbeiten</a>
+            {% if is_admin %}
+                <a href="{{ cdedblink('event/admin_change_user_form') }}">Bearbeiten</a>
+            {% else %}
+                <a href="{{ cdedblink('event/change_user_form') }}">Bearbeiten</a>
+            {% endif %}
         </p>
     {% endif %}
     <table>
@@ -81,7 +85,11 @@
 
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
-            <a href="{{ cdedblink('event/change_user_form') }}">Bearbeiten</a>
+            {% if is_admin %}
+                <a href="{{ cdedblink('event/admin_change_user_form') }}">Bearbeiten</a>
+            {% else %}
+                <a href="{{ cdedblink('event/change_user_form') }}">Bearbeiten</a>
+            {% endif %}
         </p>
     {% endif %}
     {% if is_admin %}

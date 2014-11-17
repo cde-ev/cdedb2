@@ -503,6 +503,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'persona_id' : persona_id,
                 'confirm_id' : self.encode_parameter("core/show_user",
                                                      "confirm_id", persona_id)})
+        default_selections = {
+            'gender' : tuple((k, v) for k, v in
+                             self.enum_choice(rs, const.Genders).items()),
+        }
         errorsdict = {}
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
@@ -517,6 +521,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'encode_parameter' : self.encode_parameter,
                 'is_admin' : self.is_admin(rs),
                 'VALID_QUERY_OPERATORS' : VALID_QUERY_OPERATORS,
+                'default_selections' : default_selections,
                 'i18n' : lambda string: self.i18n(string, rs.lang),}
         data.update(params)
         t = self.jinja_env.get_template(os.path.join(

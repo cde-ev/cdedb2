@@ -27,3 +27,18 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual(
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content())
+
+    @as_users("anton")
+    def test_adminchangeuser(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 5
+        self.submit(f)
+        self.traverse({'href' : '/event/adminchangeuser', 'index' : 0})
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Zelda"
+        f['birthday'] = "3.4.1933"
+        self.submit(f)
+        self.assertIn("Zelda", self.response)
+        self.assertEqual("Emilia E. Eventis",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertIn("1933-04-03", self.response)

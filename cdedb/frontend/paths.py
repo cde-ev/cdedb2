@@ -63,6 +63,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="change_user_form"),
             rule("/changeuser/<int:persona_id>", methods=("POST",),
                  endpoint="change_user"),
+            rule("/adminchangeuser/<int:persona_id>", methods=("GET", "HEAD"),
+                 endpoint="admin_change_user_form"),
+            rule("/adminchangeuser/<int:persona_id>", methods=("POST",),
+                 endpoint="admin_change_user"),
             rule("/listpendingchanges", methods=("GET", "HEAD"),
                  endpoint="list_pending_changes"),
             rule("/inspectchange/<int:persona_id>", methods=("GET", "HEAD"),
@@ -100,6 +104,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="change_user_form"),
             rule("/changeuser/<int:persona_id>", methods=("POST",),
                  endpoint="change_user"),
+            rule("/adminchangeuser/<int:persona_id>", methods=("GET", "HEAD"),
+                 endpoint="admin_change_user_form"),
+            rule("/adminchangeuser/<int:persona_id>", methods=("POST",),
+                 endpoint="admin_change_user"),
             )),
         ))
     ), converters={'filename' : FilenameConverter})

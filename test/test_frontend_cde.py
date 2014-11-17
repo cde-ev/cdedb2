@@ -20,7 +20,7 @@ class TestCdEFrontend(FrontendTest):
         if user['id'] == 2:
             self.assertIn('PfingstAkademie', self.response.text)
 
-    @as_users("anton", "berta")
+    @as_users("berta")
     def test_changedata(self, user):
         self.traverse({'href' : '/mydata'}, {'href' : '/cde/changeuser', 'index' : 0})
         f = self.response.forms['changedataform']
@@ -34,19 +34,20 @@ class TestCdEFrontend(FrontendTest):
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content())
 
-    @as_users("anton", "berta")
-    def test_changedata(self, user):
-        self.traverse({'href' : '/mydata'}, {'href' : '/cde/changeuser', 'index' : 0})
+    @as_users("anton")
+    def test_adminchangedata(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        self.traverse({'href' : '/cde/adminchangeuser', 'index' : 0})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
-        f['location'] = "Hyrule"
-        f['specialisation'] = "Okarinas"
+        f['birthday'] = "3.4.1933"
         self.submit(f)
-        self.assertIn("Hyrule", self.response)
-        self.assertIn("Okarinas", self.response)
-        self.assertEqual(
-            "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content())
+        self.assertIn("Zelda", self.response)
+        self.assertEqual("Bertålotta Beispiel",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertIn("1933-04-03", self.response)
 
     def test_changelog(self):
         user = USER_DICT["berta"]

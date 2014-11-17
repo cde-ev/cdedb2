@@ -50,10 +50,26 @@ class EventFrontend(AbstractUserFrontend):
         return super().change_user_form(rs, persona_id)
 
     @access("user", {"POST"})
-    @REQUESTdatadict("display_name", "family_name", "given_names", "title",
-                     "name_supplement", "telephone", "mobile",
-                     "address_supplement", "address", "postal_code", "location",
-                     "country")
+    @REQUESTdatadict(
+        "display_name", "family_name", "given_names", "title",
+        "name_supplement", "telephone", "mobile", "address_supplement",
+        "address", "postal_code", "location", "country")
     @persona_dataset_guard()
     def change_user(self, rs, persona_id, data):
         return super().change_user(rs, persona_id, data)
+
+    @access("event_admin")
+    @persona_dataset_guard()
+    def admin_change_user_form(self, rs, persona_id):
+        """Render form."""
+        return super().admin_change_user_form(rs, persona_id)
+
+    @access("event_admin", {"POST"})
+    @REQUESTdatadict(
+        "title", "given_names", "family_name", "name_supplement",
+        "display_name", "birthday", "gender", "telephone", "mobile",
+        "address", "address_supplement", "postal_code", "location",
+        "country", "notes")
+    @persona_dataset_guard()
+    def admin_change_user(self, rs, persona_id, data):
+        return super().admin_change_user(rs, persona_id, data)

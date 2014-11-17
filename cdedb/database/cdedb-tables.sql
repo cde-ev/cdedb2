@@ -189,6 +189,7 @@ CREATE TABLE cde.changelog (
         reviewed_by             integer REFERENCES core.personas(id) DEFAULT NULL,
         cdate                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
         generation              integer NOT NULL,
+        change_note             varchar,
         -- enum for progress of change
         -- see cdedb.database.constants.MemberChangeStati
         change_status           integer NOT NULL DEFAULT 0,
