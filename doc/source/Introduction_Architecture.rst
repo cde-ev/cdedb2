@@ -43,28 +43,42 @@ Currently undecided fate (will maybe be integrated into other realms):
 * files -- file storage
 * i25p -- Initiative 25+
 
+.. _privileges:
+
 Privileges
 ----------
 
-The database has five tiers of access (a.k.a. roles):
+The available privilege levels (a.k.a. roles) are as in the following graph
+(where an arrow indicates a strictly higher privilege level).
+
+.. image:: privileges.svg
+
+Roughly speaking we have the following roles available in the python code
+
+* anonymous,
+* persona,
+* user of a specific realm,
+* former member,
+* member,
+* searchable member,
+* admin of a specific realm,
+* global admin.
+
+In the database they are mapped onto four tiers
 
 * anonymous,
 * persona,
 * member,
-* realm admin (named specifically for each realm),
-* admin (global admin),
+* admin.
 
-where the fourth is specific to each realm.
-
-In the front- and backend the user also has a role, but each unit may add
-roles to the above list for this purpose. These roles controle what actions
-the user may call and are determined by the core.personas table. For access
-to the database the additional roles must be mapped to the above list. Most
-often there is a user role which differentiates personas of the realm from
-those of all other realms.
+These roles controle what actions the user may call and are determined by
+the core.personas table (by the ``status`` and the ``db_privileges``
+entries). These are enforced throughout the python code via the ``@access``
+decorator.
 
 Additionally there may be finer grained privileges which are encoded in
-various tables. The following additional privileges are there.
+various tables which are checked locally in the relevant pieces of code. The
+following additional privileges are there.
 
 * orga of an event
 * moderator of a mailing list

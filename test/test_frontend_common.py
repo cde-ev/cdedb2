@@ -5,8 +5,9 @@ import random
 import string
 import datetime
 import pytz
-from cdedb.frontend.common import encode_parameter, decode_parameter, \
-     date_filter, datetime_filter, cdedbid_filter
+from cdedb.frontend.common import (
+    encode_parameter, decode_parameter, date_filter, datetime_filter,
+    cdedbid_filter)
 
 def rand_str(chars, exclude=''):
     pool = string.printable

@@ -4,7 +4,7 @@
 {% block content %}
     <h1>{{ values['given_names']|e }} {{ values['family_name']|e }}</h1>
 
-    <form action="{{ cdedblink('event/change_user') }}" method="POST" id="changedataform">
+    <form action="{{ cdedblink('event/change_user')|e }}" method="POST" id="changedataform">
         <table>
             <tr> <th colspan="2">Person</th> </tr>
             {{ util.tab_input_text(name="title", label="Titel") }}
@@ -15,7 +15,7 @@
             <tr> <th colspan="2">Kontakt</th> </tr>
             <tr>
                 <td>Email</td>
-                <td>{{ values['username']|e }}</td>
+                <td>{{ username|e }}</td>
             </tr>
             {{ util.tab_input_text(name="telephone", label="Telefon") }}
             {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
@@ -26,7 +26,9 @@
             {{ util.tab_input_text(name="location", label="Stadt") }}
             {{ util.tab_input_text(name="country", label="Land") }}
         </table>
-        {{ util.input_submit(value="Speichern") }}
-        <a href="{{ show_user_link(values['id']) }}">Abbrechen</a>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+            <a href="{{ show_user_link(values['persona_id'])|e }}">Abbrechen</a>
+        </div>
     </form>
 {% endblock %}

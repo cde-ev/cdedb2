@@ -83,7 +83,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
         rs.values.update(data)
-        return self.render(rs, "change_user")
+        return self.render(rs, "change_user", {'username' : data['username']})
 
     ## @access("user", {"POST"})
     ## @REQUESTdatadict(...)
@@ -94,7 +94,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data['id'] = persona_id
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
-            return self.render(rs, "change_user")
+            dataset = self.coreproxy.get_data_single(rs, persona_id)
+            return self.render(rs, "change_user", {'username' : dataset['username']})
         num = self.user_management['proxy'](self).change_user(rs, data)
         if num:
             rs.notify("success", "Change committed.")
@@ -109,7 +110,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
         rs.values.update(data)
-        return self.render(rs, "admin_change_user")
+        return self.render(rs, "admin_change_user", {'username' : data['username']})
 
     ## @access("realm_admin", {"POST"})
     ## @REQUESTdatadict(...)
@@ -120,7 +121,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data['id'] = persona_id
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
-            return self.render(rs, "admin_change_user")
+            dataset = self.coreproxy.get_data_single(rs, persona_id)
+            return self.render(rs, "admin_change_user", {'username' : dataset['username']})
         num = self.user_management['proxy'](self).change_user(rs, data)
         if num:
             rs.notify("success", "Change committed.")

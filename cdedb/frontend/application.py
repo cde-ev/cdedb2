@@ -9,8 +9,9 @@ from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdeFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.common import glue, make_root_logger, QuotaException
-from cdedb.frontend.common import FrontendRequestState, BaseApp, \
-     construct_redirect, connect_proxy, FakeFrontendRequestState
+from cdedb.frontend.common import (
+    FrontendRequestState, BaseApp, construct_redirect, connect_proxy,
+    FakeFrontendRequestState)
 from cdedb.config import SecretsConfig
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.serialization import deserialize
@@ -80,6 +81,7 @@ class Application(BaseApp):
                 rs = FrontendRequestState(sessionkey, None, request, None,
                                           [], urls, args, self.urlmap,
                                           [], {}, "de", coders)
+                rs.values.update(args)
                 component, action = endpoint.split('/')
                 notes = rs.request.values.getlist("displaynote")
                 for note in notes:

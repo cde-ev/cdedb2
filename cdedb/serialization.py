@@ -18,9 +18,6 @@ import decimal
 
 from cdedb.query import Query
 
-# FIXME the frontend -> backend direction also needs custom serialization
-# FIXME handle Query objects here as well
-
 #: Skeleton for custom serialization wrapper. :py:attr:`_class` and
 #: :py:attr:`_value` have to be filled in accordingly.
 _BASE_DICT = {

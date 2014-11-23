@@ -8,11 +8,11 @@ members are also possible.
 
 from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
-    access_decorator_generator, internal_access_decorator_generator,
-    make_RPCDaemon, run_RPCDaemon, affirm_validation as affirm,
-    affirm_array_validation as affirm_array, singularize)
-from cdedb.common import (glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS,
-                          extract_global_privileges, QuotaException)
+    access, internal_access, make_RPCDaemon, run_RPCDaemon,
+    affirm_validation as affirm, affirm_array_validation as affirm_array,
+    singularize)
+from cdedb.common import (
+    glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS,QuotaException)
 from cdedb.query import QueryOperators
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -24,13 +24,6 @@ import hashlib
 import pytz
 
 _LOGGER = logging.getLogger(__name__)
-
-access = access_decorator_generator(
-    ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
-     "admin"))
-internal_access = internal_access_decorator_generator(
-    ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
-     "admin"))
 
 def verify_token(salt, persona_id, current_email, new_email, token):
     """Inverse of :py:func:`cdedb.backend.core.create_token`. See there for
@@ -79,34 +72,9 @@ class CdeBackend(AbstractUserBackend):
               secrets.USERNAME_CHANGE_TOKEN_SALT, persona_id, current_email,
               new_email, token)
 
-    @classmethod
-    def extract_roles(cls, personadata):
-        roles = ["anonymous", "persona"]
-        if personadata['status'] in const.CDE_STATI:
-            roles.append("user")
-        if personadata['status'] in const.MEMBER_STATI:
-            roles.append("member")
-        if personadata['status'] in const.SEARCHMEMBER_STATI:
-            roles.append("searchmember")
-        global_privs = extract_global_privileges(personadata["db_privileges"],
-                                                 personadata['status'])
-        for role in ("cde_admin", "admin"):
-            if role in global_privs:
-                roles.append(role)
-        return roles
-
-    @classmethod
-    def db_role(cls, role):
-        translate = {
-            "anonymous" : "anonymous",
-            "persona" : "persona",
-            "user" : "member",
-            "member" : "member",
-            "searchmember" : "member",
-            "cde_admin" : "cde_admin",
-            "admin" : "admin",
-            }
-        return "cdb_{}".format(translate[role])
+    def establish(self, sessionkey, method, allow_internal=False):
+        return super().establish(sessionkey, method,
+                                 allow_internal=allow_internal)
 
     @classmethod
     def is_admin(cls, rs):
@@ -374,7 +342,7 @@ class CdeBackend(AbstractUserBackend):
                 self.query_exec(rs, query, (text, data['id']))
         return ret
 
-    @access("user")
+    @access("formermember")
     def change_user(self, rs, data, generation, may_wait=True, change_note=''):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
@@ -393,7 +361,7 @@ class CdeBackend(AbstractUserBackend):
         return self.set_user_data(rs, data, generation, may_wait=may_wait,
                                   change_note=change_note)
 
-    @access("user")
+    @access("formermember")
     @singularize("get_data_single_no_quota")
     def get_data_no_quota(self, rs, ids):
         """This behaves like
@@ -413,7 +381,7 @@ class CdeBackend(AbstractUserBackend):
         """
         return super().get_data(rs, ids)
 
-    @access("user")
+    @access("formermember")
     @singularize("get_data_single")
     def get_data(self, rs, ids):
         """This checks for quota in addition to what
@@ -445,7 +413,7 @@ class CdeBackend(AbstractUserBackend):
             self.query_exec(rs, query, (num + new, rs.user.persona_id, today))
         return self.retrieve_user_data(rs, ids)
 
-    @access("user")
+    @access("formermember")
     @singularize("get_generation")
     def get_generations(self, rs, ids):
         """Retrieve the current generation of the persona ids in the
@@ -551,7 +519,7 @@ class CdeBackend(AbstractUserBackend):
                         return True, new_username
         return False, "Failed."
 
-    @access("user")
+    @access("formermember")
     @singularize("get_foto")
     def get_fotos(self, rs, ids):
         """Retrieve the profile picture attribute.
@@ -571,7 +539,7 @@ class CdeBackend(AbstractUserBackend):
             raise RuntimeError("Invalid ids requested.")
         return {e['persona_id'] : e['foto'] for e in data}
 
-    @access("user")
+    @access("formermember")
     def set_foto(self, rs, persona_id, foto):
         """Set the profile picture attribute.
 
@@ -591,7 +559,7 @@ class CdeBackend(AbstractUserBackend):
         num = self.query_exec(rs, query, (foto, persona_id))
         return bool(num)
 
-    @access("user")
+    @access("formermember")
     def foto_usage(self, rs, foto):
         """Retrieve usage number for a specific foto.
 

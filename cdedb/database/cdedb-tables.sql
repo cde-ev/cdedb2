@@ -40,8 +40,8 @@ CREATE INDEX idx_personas_status ON core.personas(status);
 GRANT SELECT ON core.personas TO cdb_anonymous;
 GRANT UPDATE (username, password_hash, display_name) ON core.personas TO cdb_persona;
 GRANT UPDATE (status) ON core.personas TO cdb_member;
-GRANT INSERT, UPDATE ON core.personas TO cdb_core_admin;
-GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_core_admin;
+GRANT INSERT, UPDATE ON core.personas TO cdb_admin;
+GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
 
 CREATE TABLE core.persona_creation_challenges (
         id                       bigserial PRIMARY KEY,
@@ -67,7 +67,7 @@ CREATE TABLE core.persona_creation_challenges (
 GRANT SELECT, INSERT ON core.persona_creation_challenges To cdb_anonymous;
 GRANT SELECT, UPDATE ON core.persona_creation_challenges_id_seq TO cdb_anonymous;
 GRANT UPDATE (challenge_status) ON core.persona_creation_challenges TO cdb_anonymous;
-GRANT UPDATE ON core.persona_creation_challenges TO cdb_core_admin;
+GRANT UPDATE ON core.persona_creation_challenges TO cdb_admin;
 
 -- this table serves as access log, so entries are never deleted
 CREATE TABLE core.sessions (
@@ -174,7 +174,7 @@ CREATE TABLE cde.member_data (
 );
 GRANT SELECT ON cde.member_data TO cdb_member;
 GRANT UPDATE ON cde.member_data TO cdb_member;
-GRANT INSERT, UPDATE ON cde.member_data TO cdb_cde_admin;
+GRANT INSERT, UPDATE ON cde.member_data TO cdb_admin;
 
 -- log all changes made to the personal data of members (require approval)
 --
@@ -241,7 +241,7 @@ CREATE INDEX idx_changelog_persona_id ON cde.changelog(persona_id);
 GRANT SELECT, INSERT ON cde.changelog TO cdb_member;
 GRANT SELECT, UPDATE ON cde.changelog_id_seq TO cdb_member;
 GRANT UPDATE (change_status) ON cde.changelog TO cdb_member;
-GRANT UPDATE (reviewed_by) ON cde.changelog TO cdb_cde_admin;
+GRANT UPDATE (reviewed_by) ON cde.changelog TO cdb_admin;
 
 CREATE TABLE cde.semester (
         -- historically this was determined by the exPuls number
@@ -303,7 +303,7 @@ CREATE TABLE event.user_data (
         notes                   varchar
 );
 GRANT SELECT, UPDATE ON event.user_data TO cdb_persona;
-GRANT INSERT ON event.user_data TO cdb_event_admin;
+GRANT INSERT ON event.user_data TO cdb_admin;
 
 CREATE TABLE event.event_types (
         id                      serial PRIMARY KEY,
@@ -314,8 +314,8 @@ CREATE TABLE event.event_types (
 );
 CREATE INDEX idx_event_types_organizer ON event.event_types(organizer);
 GRANT SELECT ON event.event_types TO cdb_anonymous;
-GRANT INSERT, UPDATE ON event.event_types TO cdb_event_admin;
-GRANT SELECT, UPDATE ON event.event_types_id_seq TO cdb_event_admin;
+GRANT INSERT, UPDATE ON event.event_types TO cdb_admin;
+GRANT SELECT, UPDATE ON event.event_types_id_seq TO cdb_admin;
 
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
@@ -330,8 +330,8 @@ CREATE TABLE event.events (
 CREATE INDEX idx_events_type_id ON event.events(type_id);
 CREATE INDEX idx_events_is_db ON event.events(is_db);
 GRANT SELECT ON event.events TO cdb_anonymous;
-GRANT INSERT, UPDATE ON event.events TO cdb_event_admin;
-GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_event_admin;
+GRANT INSERT, UPDATE ON event.events TO cdb_admin;
+GRANT SELECT, UPDATE ON event.events_id_seq TO cdb_admin;
 
 CREATE TABLE event.event_data (
         event_id                integer PRIMARY KEY REFERENCES event.events(id),
@@ -368,8 +368,8 @@ CREATE TABLE event.courses (
 );
 CREATE INDEX idx_courses_event_id ON event.courses(event_id);
 GRANT SELECT ON event.courses TO cdb_anonymous;
-GRANT INSERT, UPDATE ON event.courses TO cdb_event_admin;
-GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_event_admin;
+GRANT INSERT, UPDATE ON event.courses TO cdb_admin;
+GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_admin;
 
 CREATE TABLE event.course_data (
         course_id               integer PRIMARY KEY REFERENCES event.courses(id),
@@ -393,8 +393,8 @@ CREATE TABLE event.orgas (
 CREATE INDEX idx_orgas_persona_id ON event.orgas(persona_id);
 CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
 GRANT SELECT ON event.orgas TO cdb_persona;
-GRANT INSERT, UPDATE ON event.orgas TO cdb_event_admin;
-GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_event_admin;
+GRANT INSERT, UPDATE ON event.orgas TO cdb_admin;
+GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
 
 -- this table captures participation of concluded events and is not used for
 -- coordinating current events (for the latter look at event.registrations)
@@ -410,8 +410,8 @@ CREATE INDEX idx_participants_persona_id ON event.participants(persona_id);
 CREATE INDEX idx_participants_event_id ON event.participants(event_id);
 CREATE INDEX idx_participants_course_id ON event.participants(course_id);
 GRANT SELECT ON event.participants TO cdb_persona;
-GRANT INSERT, UPDATE ON event.participants TO cdb_event_admin;
-GRANT SELECT, UPDATE ON event.participants_id_seq TO cdb_event_admin;
+GRANT INSERT, UPDATE ON event.participants TO cdb_admin;
+GRANT SELECT, UPDATE ON event.participants_id_seq TO cdb_admin;
 
 -- this table for for organizing a current or future event, participation of
 -- past events is tracked via event.participants

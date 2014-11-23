@@ -21,34 +21,36 @@ class PersonaStati(enum.IntEnum):
       archived members may not login, thus is_active must be False
     * 20 ... a matching entry event.user_data
     * 30 ... a matching entry assembly.user_data
+    * 40 ... a matching entry ml.user_data
 
     Searchability (see statusses 0 and 1) means the user has given
     (at any point in time) permission for his data to be accessible
     to other users. This permission is revoked upon leaving the CdE
     and has to be granted again in case of reentry.
     """
-    search_member = 0 #:
+    searchmember = 0 #:
     member = 1 #:
-    former_member = 2 #:
+    formermember = 2 #:
     archived_member = 10 #:
     event_user = 20 #:
     assembly_user = 30 #:
+    ml_user = 40 #:
 
 #: These personas are eligible for using the member search.
-SEARCHMEMBER_STATI = {PersonaStati.search_member}
+SEARCHMEMBER_STATI = {PersonaStati.searchmember}
 #: These personas are currently members.
 MEMBER_STATI = SEARCHMEMBER_STATI | {PersonaStati.member}
 #: These personas where at some point members.
-CDE_STATI = MEMBER_STATI | {PersonaStati.former_member}
+CDE_STATI = MEMBER_STATI | {PersonaStati.formermember}
 #: These personas where at some point members (and may be archived).
 #: This is somewhat special and should not be used often, since archived
 #: members have only a restricted data set available.
 ALL_CDE_STATI = CDE_STATI | {PersonaStati.archived_member}
 #: These personas may register for an event.
-EVENT_STATI = {PersonaStati.search_member, PersonaStati.member,
-                  PersonaStati.former_member, PersonaStati.event_user}
+EVENT_STATI = {PersonaStati.searchmember, PersonaStati.member,
+                  PersonaStati.formermember, PersonaStati.event_user}
 #: These personas may participate in an assembly.
-ASSEMBLY_STATI = {PersonaStati.search_member, PersonaStati.member,
+ASSEMBLY_STATI = {PersonaStati.searchmember, PersonaStati.member,
                      PersonaStati.assembly_user}
 
 @enum.unique
@@ -58,14 +60,14 @@ class PrivilegeBits(enum.IntEnum):
     If db_privileges is 0 no privileges are granted.
     """
     #: global admin privileges (implies all other privileges granted here)
-    admin = 1
-    core_admin = 2 #:
-    cde_admin = 4 #:
-    event_admin = 8 #:
-    ml_admin = 16 #:
-    assembly_admin = 32 #:
-    files_admin = 64 #:
-    i25p_admin = 128 #:
+    admin = 2**0
+    core_admin = 2**1 #:
+    cde_admin = 2**2 #:
+    event_admin = 2**3 #:
+    ml_admin = 2**4 #:
+    assembly_admin = 2**5 #:
+    # files_admin = 2**6 #:
+    # i25p_admin = 2**7 #:
 
 @enum.unique
 class Genders(enum.IntEnum):

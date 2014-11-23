@@ -3,44 +3,52 @@
 {% block navigation %}
     {% if user.persona_id %}
         <ul>
-            <li><a href="{{ cdedblink("core/index") }}">Start</a></li>
-            <ul>
-                <li><a href="{{ cdedblink("core/mydata")}}">Meine Daten</a></li>
-                <li><a href="{{ cdedblink("core/change_password_form") }}">Passwort ändern</a></li>
-                {% if is_admin %}
-                    <li>
-                        <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
-                            {{ util.input_text(name="id_to_show") }}
-                            {{ util.input_submit(value="ID") }}
-                        </form>
-                    </li>
-                {% endif %}
-            </ul>
-            {% if user.realm == "cde" %}
-                <li><a href="{{ cdedblink("cde/index") }}">CdE</a></li>
+            <li>
+                <a href="{{ cdedblink("core/index")|e }}">Start</a>
                 <ul>
-                    {% if user.is_searchable %}
-                        <li><a href="{{ cdedblink("cde/member_search")}}">Mitgliedersuche</a></li>
-                    {% else %}
-                        <li><a href="{{ cdedblink("cde/consent_decision_form")}}">Datenschutzerklärung</a></li>
+                    <li><a href="{{ cdedblink("core/mydata")|e }}">Meine Daten</a></li>
+                    <li><a href="{{ cdedblink("core/change_password_form")|e }}">Passwort ändern</a></li>
+                    {% if is_admin %}
+                        <li>
+                            <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
+                                <div>
+                                    {{ util.input_text(name="id_to_show") }}
+                                    {{ util.input_submit(value="ID") }}
+                                </div>
+                            </form>
+                        </li>
                     {% endif %}
                 </ul>
+            </li>
+            {% if user.realm == "cde" %}
+                <li>
+                    <a href="{{ cdedblink("cde/index")|e }}">CdE</a>
+                    <ul>
+                        {% if user.is_searchable %}
+                            <li><a href="{{ cdedblink("cde/member_search")|e }}">Mitgliedersuche</a></li>
+                        {% else %}
+                            <li><a href="{{ cdedblink("cde/consent_decision_form")|e }}">Datenschutzerklärung</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
             {% endif %}
             {% if user.realm in ("event", "cde") %}
-                <li><a href="{{ cdedblink("event/index") }}">Veranstaltungen</a></li>
+                <li><a href="{{ cdedblink("event/index")|e }}">Veranstaltungen</a></li>
             {% endif %}
             <li>Mailinglisten</li>
             {% if user.realm in ("assembly", "cde") %}
                 <li>Versammlung</li>
             {% endif %}
-            <li>Dateien/li>
+            <li>Dateien</li>
         </ul>
     {% else %}
         <ul>
-            <li><a href="{{ cdedblink("core/index") }}">Start</a></li>
-            <ul>
-                <li>Account anfordern</li>
-            </ul>
+            <li>
+                <a href="{{ cdedblink("core/index")|e }}">Start</a>
+                <ul>
+                    <li>Account anfordern</li>
+                </ul>
+            </li>
         </ul>
     {% endif %}
 {% endblock %}

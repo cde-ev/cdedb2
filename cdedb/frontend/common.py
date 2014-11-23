@@ -11,7 +11,8 @@ import werkzeug.datastructures
 import werkzeug.utils
 import functools
 from cdedb.config import Config, SecretsConfig
-from cdedb.common import extract_realm, extract_global_privileges, glue
+from cdedb.common import (
+    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser)
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
@@ -252,6 +253,8 @@ def date_filter(val, formatstr="%Y-%m-%d"):
     :type val: datetime.date
     :rtype: str
     """
+    if val is None:
+        return None
     return val.strftime(formatstr)
 
 def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
@@ -260,6 +263,8 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
     :type val: datetime.datetime
     :rtype: str
     """
+    if val is None:
+        return None
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
     else:
@@ -275,6 +280,8 @@ def cdedbid_filter(val):
     :type val: int
     :rtype: str
     """
+    if val is None:
+        return None
     digits = []
     tmp = val
     while tmp > 0:
@@ -287,6 +294,11 @@ def escape_filter(val):
     """Custom jinja filter to reconcile escaping with the finalize method
     (which suppresses all ``None`` values and thus mustn't be converted to
     strings first).
+
+    .. note:: Actually this returns a jinja specific 'safe string' which
+      will remain safe when operated on. This means for example that the
+      linebreaks filter has to make the string unsafe again, before it can
+      work.
 
     :type val: obj or None
     :rtype: str or None
@@ -311,6 +323,8 @@ def gender_filter(val):
     :type val: int
     :rtype: str
     """
+    if val is None:
+        return None
     if val == const.Genders.female:
         return '♀'
     elif val == const.Genders.male:
@@ -326,6 +340,8 @@ def numerus_filter(val, singular, plural):
     :type plural: str
     :rtype: str
     """
+    if val is None:
+        return None
     if val == 1:
         return singular
     else:
@@ -340,6 +356,8 @@ def genus_filter(val, female, male, unknown=None):
     :type unknown: str
     :rtype: str
     """
+    if val is None:
+        return None
     if unknown is None:
         unknown = female
     if val == const.Genders.female:
@@ -370,6 +388,18 @@ def querytoparams_filter(val):
         params['qord_{}'.format(postfix)] = field
     return params
 
+def linebreaks_filter(val):
+    """Custom jinja filter to convert line breaks to <br>.
+
+    :type val: str
+    :rtype: str
+    """
+    if val is None:
+        return None
+    ## because val is probably a jinja specific 'safe string'
+    val = str(val)
+    return val.replace('\n', '<br>')
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -399,6 +429,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'querytoparams' : querytoparams_filter,
             'numerus' : numerus_filter,
             'genus' : genus_filter,
+            'linebreaks' : linebreaks_filter,
         }
         self.jinja_env.filters.update(filters)
 
@@ -419,28 +450,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: :py:class:`FrontendUser`
         """
         realm = extract_realm(sessiondata["status"])
-        roles = ["anonymous"]
-        global_privs = extract_global_privileges(sessiondata['db_privileges'],
-                                                 sessiondata['status'])
-        if "persona" in global_privs:
-            roles.append("persona")
-        if realm == self.realm:
-            roles.append("user")
-        for role in ("member", "{}_admin".format(self.realm), "admin"):
-            if role in global_privs:
-                roles.append(role)
-        role = roles[-1]
-        if sessiondata["status"] in const.MEMBER_STATI:
-            is_member = True
-        else:
-            is_member = False
-        if sessiondata["status"] in const.SEARCHMEMBER_STATI:
-            is_searchable = True
-        else:
-            is_searchable = False
+        roles = extract_roles(sessiondata["db_privileges"],
+                              sessiondata["status"])
         return FrontendUser(
-            sessiondata['persona_id'], role, sessiondata['display_name'],
-            sessiondata['username'], is_member, is_searchable, realm)
+            persona_id=sessiondata['persona_id'], roles=roles, realm=realm,
+            username=sessiondata['username'],
+            display_name=sessiondata['display_name'])
 
     @classmethod
     @abc.abstractmethod
@@ -451,19 +466,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type rs: :py:class:`FrontendRequestState`
         :rtype: bool
         """
-        return rs.user.role in ("{}_admin".format(cls.realm), "admin")
-
-    def allowed(self, rs, method):
-        """Called by the ``@access`` decorator to verify authorization.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type method: str
-        :rtype: bool
-        """
-        try:
-            return rs.user.role in getattr(self, method).access_list
-        except AttributeError:
-            return False
+        return "{}_admin".format(cls.realm) in rs.user.roles
 
     def fill_template(self, rs, modus, templatename, params):
         """Central function for generating output from a template. This does
@@ -695,75 +698,48 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return {str(case.value) : self.i18n(str(case), rs.lang)
                 for case in anenum}
 
-class FrontendUser:
-    """Container for representing a persona."""
-    def __init__(self, persona_id=None,
-                 role="anonymous", display_name="", username="",
-                 is_member=False, is_searchable=False, realm=None, orga=None,
-                 moderator=None):
+class FrontendUser(CommonUser):
+    """Container for a persona in the frontend."""
+    def __init__(self, display_name="", username="", **kwargs):
         """
-        :type persona_id: int
-        :type role: str
-        :type display_name: str
-        :type username: str
-        :type is_member: bool :type is_searchable: bool
-        :type realm: str
-        :type orga: [int] or None
-        :param orga: list of event ids this persona is organizing (this is
-          optional and only provided in the event realm)
-        :type moderator: [int] or None
-        :param orga: list of mailing list ids this persona is moderating (this
-          is optional and only provided in the ml realm)
+        :type display_name: str or None
+        :type username: str or None
         """
-        self.persona_id = persona_id
-        self.role = role
-        orga = orga or set()
-        self.orga = set(orga)
-        moderator = moderator or set()
-        self.moderator = set(moderator)
-        self.display_name = display_name
+        super().__init__(**kwargs)
         self.username = username
-        self.is_member = is_member
-        self.is_searchable = is_searchable
-        self.realm = realm
+        self.display_name = display_name
 
-def access_decorator_generator(possibleroles):
+def access(role, modi=None):
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
-    :type possibleroles: [str]
-    :param possibleroles: ordered list of privilege levels
-    :rtype: decorator
+    :type role: str
+    :param role: least level of privileges required
+    :type modi: {str}
+    :param modi: HTTP methods allowed for this invocation
     """
-    def decorator(role, modi=None):
-        """
-        :type role: str
-        :param role: least level of privileges required
-        :type modi: {str}
-        :param modi: HTTP methods allowed for this invocation
-        """
-        modi = modi or {"GET", "HEAD"}
-        def wrap(fun):
-            @functools.wraps(fun)
-            def new_fun(obj, rs, *args, **kwargs):
-                if obj.allowed(rs, fun.__name__):
-                    return fun(obj, rs, *args, **kwargs)
-                else:
-                    if rs.user.role == "anonymous":
-                        params = {
-                            'wants' : rs._coders['encode_parameter'](
-                                "core/index", "wants", rs.request.url),
-                            'displaynote' : rs._coders['encode_notification'](
-                                "error", "You must login.")
-                            }
-                        return basic_redirect(rs, cdedburl(rs, "core/index",
-                                                           params))
-                    raise werkzeug.exceptions.Forbidden(
-                        "Access denied to {}/{}.".format(obj, fun.__name__))
-            new_fun.access_list = set(possibleroles[possibleroles.index(role):])
-            new_fun.modi = modi
-            return new_fun
-        return wrap
+    modi = modi or {"GET", "HEAD"}
+    access_list = ALL_ROLES[role]
+    def decorator(fun):
+        @functools.wraps(fun)
+        def new_fun(obj, rs, *args, **kwargs):
+            if rs.user.roles & access_list:
+                return fun(obj, rs, *args, **kwargs)
+            else:
+                if rs.user.roles == {"anonymous"}:
+                    params = {
+                        'wants' : rs._coders['encode_parameter'](
+                            "core/index", "wants", rs.request.url),
+                        'displaynote' : rs._coders['encode_notification'](
+                            "error", "You must login.")
+                        }
+                    return basic_redirect(rs, cdedburl(rs, "core/index",
+                                                       params))
+                raise werkzeug.exceptions.Forbidden(
+                    "Access denied to {}/{}.".format(obj, fun.__name__))
+        new_fun.access_list = access_list
+        new_fun.modi = modi
+        return new_fun
     return decorator
 
 def cdedburl(rs, endpoint, params=None):
@@ -801,6 +777,9 @@ def REQUESTdata(*spec):
     """Decorator to extract parameters from requests and validate them. This
     should always be used, so automatic form filling works as expected.
 
+    This strips surrounding whitespace. If this is undesired at some
+    point in the future we have to add an override here.
+
     :type spec: [(str, str)]
     :param spec: Specification of parameters to extract. The
       first value of a tuple is the name of the parameter to look out
@@ -818,13 +797,14 @@ def REQUESTdata(*spec):
             for name, argtype in spec:
                 if name not in kwargs:
                     if argtype.startswith('[') and argtype.endswith(']'):
-                        vals = rs.request.values.getlist(name)
+                        vals = tuple(val.strip()
+                                     for val in rs.request.values.getlist(name))
                         rs.values[name] = vals
                         kwargs[name] = tuple(
                             check_validation(rs, argtype[1:-1], val, name)
                             for val in vals)
                     else:
-                        val = rs.request.values.get(name, "")
+                        val = rs.request.values.get(name, "").strip()
                         rs.values[name] = val
                         if argtype.startswith('#'):
                             argtype = argtype[1:]
@@ -844,6 +824,9 @@ def REQUESTdatadict(*proto_spec):
     passes this as ``data`` parameter. This does not do validation since
     this is infeasible in practice.
 
+    This strips surrounding whitespace. If this is undesired at some
+    point in the future we have to add an override here.
+
     :type proto_spec: [str or (str, str)]
     :param proto_spec: Similar to ``spec`` parameter :py:meth:`REQUESTdata`,
       but the only two allowed argument types are ``str`` and
@@ -862,9 +845,10 @@ def REQUESTdatadict(*proto_spec):
             data = {}
             for name, argtype in spec:
                 if argtype == "str":
-                    data[name] = rs.request.values.get(name, "")
+                    data[name] = rs.request.values.get(name, "").strip()
                 elif argtype == "[str]":
-                    data[name] = rs.request.values.getlist(name)
+                    data[name] = tuple(
+                        val.strip() for val in rs.request.values.getlist(name))
                 else:
                     raise ValueError("Invalid argtype {} found.".format(
                         argtype))

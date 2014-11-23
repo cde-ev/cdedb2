@@ -49,6 +49,21 @@ class TestCdEFrontend(FrontendTest):
                          self.response.lxml.xpath('//h1/text()')[0])
         self.assertIn("1933-04-03", self.response)
 
+    @as_users("anton")
+    def test_validation(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        self.traverse({'href' : '/cde/adminchangeuser', 'index' : 0})
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Zelda"
+        f['birthday'] = "garbage"
+        self.submit(f)
+        self.assertIn("Zelda", self.response)
+        self.assertEqual("Bertålotta Beispiel (Adminzugriff)",
+                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertIn("errorInput", self.response)
+
     def test_changelog(self):
         user = USER_DICT["berta"]
         self.login(user)
@@ -166,6 +181,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'Garten'
         f['qsel_member_data.persona_id'].checked = True
+        f['qsel_specialisation'].checked = True
         self.submit(f)
         self.assertEqual("1 Ergebnis gefunden",
                          self.response.lxml.xpath('//h1/text()')[0])

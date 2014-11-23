@@ -6,18 +6,13 @@ variant for external participants.
 
 from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
-    access_decorator_generator, internal_access_decorator_generator,
-    make_RPCDaemon, run_RPCDaemon, affirm_validation as affirm,
-    affirm_array_validation as affirm_array, singularize)
+    access, internal_access, make_RPCDaemon, run_RPCDaemon,
+    affirm_validation as affirm, affirm_array_validation as affirm_array,
+    singularize)
 from cdedb.common import glue, EVENT_USER_DATA_FIELDS
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 import argparse
-
-access = access_decorator_generator(
-    ("anonymous", "persona", "user", "member", "event_admin", "admin"))
-internal_access = internal_access_decorator_generator(
-    ("anonymous", "persona", "user", "member", "event_admin", "admin"))
 
 class EventBackend(AbstractUserBackend):
     """Take note of the fact that some personas are orgas and thus have
@@ -29,13 +24,12 @@ class EventBackend(AbstractUserBackend):
         "validator" : "event_user_data",
     }
 
-    @classmethod
-    def extract_roles(cls, personadata):
-        return super().extract_roles(personadata)
-
-    @classmethod
-    def db_role(cls, role):
-        return super().db_role(role)
+    def establish(self, sessionkey, method, allow_internal=False):
+        ret = super().establish(sessionkey, method,
+                                allow_internal=allow_internal)
+        if ret.user.is_persona:
+            ret.user.orga = self.orga_infos(ret, (ret.user.persona_id,))
+        return ret
 
     @classmethod
     def is_admin(cls, rs):
@@ -59,7 +53,7 @@ class EventBackend(AbstractUserBackend):
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
-    @access("user")
+    @access("event_user")
     @singularize("participation_info")
     def participation_infos(self, rs, ids):
         """List events visited.
@@ -83,11 +77,11 @@ class EventBackend(AbstractUserBackend):
             ret[anid] = tuple(x for x in event_data if x['persona_id'] == anid)
         return ret
 
-    @access("user")
+    @access("event_user")
     def change_user(self, rs, data):
         return super().change_user(rs, data)
 
-    @access("user")
+    @access("event_user")
     @singularize("get_data_single")
     def get_data(self, rs, ids):
         return super().get_data(rs, ids)

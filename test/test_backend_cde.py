@@ -18,7 +18,7 @@ class TestCdEBackend(BackendTest):
         data['birth_name'] = "Hylia"
         setter = {k : v for k, v in data.items() if k in
                   {'id', 'birth_name', 'display_name', 'telephone'}}
-        num = self.cde.change_user(self.key, setter, 1)
+        num = self.cde.change_user(self.key, setter, 1, change_note='note')
         self.assertEqual(1, num)
         new_data = self.cde.get_data_single(self.key, user['id'])
         self.assertEqual(data, new_data)
@@ -126,7 +126,7 @@ class TestCdEBackend(BackendTest):
             2 : {'bub_search': True,
             'location': 'Utopia',
             'cloud_account': True,
-            'specialisation': 'Alles',
+            'specialisation': 'Alles\nUnd noch mehr',
             'id': 2,
             'address_supplement': 'bei Spielmanns',
             'username': 'berta@example.cde',
@@ -156,7 +156,7 @@ class TestCdEBackend(BackendTest):
             'telephone': '+49 (5432) 987654321',
             'address2': 'Strange Road 9 3/4',
             'postal_code': '34576',
-            'free_form': 'Jede Menge Gefasel',
+            'free_form': 'Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen',
             'is_active': True,
             'postal_code2': '8XA 45-$',
             'birthday': datetime.datetime(1981, 2, 11).date()}}

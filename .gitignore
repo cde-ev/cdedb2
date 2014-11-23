@@ -1,6 +1,7 @@
 # local backups
 *~
 *.bak
+*.autosave
 
 # py[co] files
 *.pyc

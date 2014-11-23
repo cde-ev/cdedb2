@@ -147,14 +147,18 @@
             <td>{{ mangle_string('balance') }}</td>
         </tr>
     </table>
-    <form action="{{ cdedblink('cde/resolve_change') }}" method="POST" id="ackchangeform">
-        {{ util.input_hidden(name="ack", value="True") }}<br>
-        {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
-        {{ util.input_submit(value="Änderung bestätigen") }}
+    <form action="{{ cdedblink('cde/resolve_change')|e }}" method="POST" id="ackchangeform">
+        <div>
+            {{ util.input_hidden(name="ack", value="True") }}<br>
+            {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
+            {{ util.input_submit(value="Änderung bestätigen") }}
+        </div>
     </form>
-    <form action="{{ cdedblink('cde/resolve_change') }}" method="POST" id="nackchangeform">
-        {{ util.input_hidden(name="ack", value="False") }}<br>
-        {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
-        {{ util.input_submit(value="Änderung verwerfen") }}
+    <form action="{{ cdedblink('cde/resolve_change')|e }}" method="POST" id="nackchangeform">
+        <div>
+            {{ util.input_hidden(name="ack", value="False") }}<br>
+            {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
+            {{ util.input_submit(value="Änderung verwerfen") }}
+        </div>
     </form>
 {% endblock %}

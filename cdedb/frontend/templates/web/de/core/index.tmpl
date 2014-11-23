@@ -3,26 +3,28 @@
 {% block title %}Startseite{% endblock %}
 {% block content %}
     <h1>CdE Datenbank</h1>
-    <p>Willkommen!</p>
-    {% if user.role == "anonymous" %}
-        <form action="{{ cdedblink('core/login') }}" method="POST" id="loginform">
-            {{ util.input_text(name="username", label="Nutzer:") }}<br>
-            {{ util.input_password(label="Passwort:") }}<br>
-            {{ util.input_hidden(name="wants") }}
+    Willkommen!
+    {% if not user.is_persona %}
+        <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform">
+            <p>
+                {{ util.input_text(name="username", label="Nutzer:") }}<br>
+                {{ util.input_password(label="Passwort:") }}<br>
+                {{ util.input_hidden(name="wants") }}
 
-            Testeingaben:
-            <input type="checkbox" name="checka"> a
-            <input type="checkbox" name="checkb" value="BBB"> b
-            <input type="checkbox" name="checkc"> c
-            <input type="checkbox" name="checkc"> c
-            <input type="checkbox" name="checkd" value="dddd"> d
-            <input type="checkbox" name="checkd" value="DDDD"> D
-            <input type="radio" name="radioa" value="a"> a
-            <input type="radio" name="radiob" value="b"> b
-            <input type="radio" name="radiob" value="B"> B
+                Testeingaben:
+                <input type="checkbox" name="checka"> a
+                <input type="checkbox" name="checkb" value="BBB"> b
+                <input type="checkbox" name="checkc"> c
+                <input type="checkbox" name="checkc"> c
+                <input type="checkbox" name="checkd" value="dddd"> d
+                <input type="checkbox" name="checkd" value="DDDD"> D
+                <input type="radio" name="radioa" value="a"> a
+                <input type="radio" name="radiob" value="b"> b
+                <input type="radio" name="radiob" value="B"> B
 
-            {{ util.input_submit(value="Anmelden") }}
+                {{ util.input_submit(value="Anmelden") }}
+            </p>
         </form>
-        <a href="{{ cdedblink('core/reset_password_form') }}">Passwort vergessen?</a>
+        <a href="{{ cdedblink('core/reset_password_form')|e }}">Passwort vergessen?</a>
     {% endif %}
 {% endblock %}

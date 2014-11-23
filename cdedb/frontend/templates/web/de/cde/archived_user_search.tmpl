@@ -25,12 +25,14 @@
         "course_id" : "Kurs",
         "notes" : "Notizen",} %}
 
-        <form action="{{ cdedblink('cde/archived_user_search') }}" method="GET" id="usersearchform">
-            {{ util.input_submit(value="Suchen") }}
-            {{ util.input_submit(value="CSV-Datei", name="CSV") }}
-            {{ util.format_query(spec, TITLES, choices) }}
-            {{ util.input_submit(value="Suchen") }}
-            {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+        <form action="{{ cdedblink('cde/archived_user_search')|e }}" method="GET" id="usersearchform">
+            <div>
+                {{ util.input_submit(value="Suchen") }}
+                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+                {{ util.format_query(spec, TITLES, choices) }}
+                {{ util.input_submit(value="Suchen") }}
+                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+            </div>
         </form>
 
     {% endwith %}
@@ -41,9 +43,9 @@
         <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
         <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
     </p>
-    <script>
+    <script type="text/javascript">
         $(document).ready(function(){
-            $(".jsEnabled").prop(disabled, false);
+            $(".jsEnabled").prop('disabled', false);
             $("#action_select_all").click(function (){
                  $(".outputSelector").prop('checked', true);
                  });

@@ -3,6 +3,6 @@
 {% block content %}
     <h1>{{ result|length|e }} Mitglied{{ result|length|numerus("", "er") }} gefunden</h1>
     {% for dataset in result %}
-        <p> <a href="{{ show_user_link(dataset['persona_id']) }}">{{ dataset['family_name']|e }}, {{ dataset['given_names']|e }}</a> </p>
+        <p> <a href="{{ show_user_link(dataset['persona_id'])|e }}">{{ dataset['family_name']|e }}, {{ dataset['given_names']|e }}</a> </p>
     {% endfor %}
 {% endblock %}

@@ -4,27 +4,27 @@
 {% block content %}
     <h1>{{ values['given_names']|e }} {{ values['family_name']|e }} (Adminzugriff)</h1>
 
-    <form action="{{ cdedblink('cde/admin_change_user') }}" method="POST" id="changedataform">
-        {{ util.input_hidden(name="generation") }}
+    <form action="{{ cdedblink('cde/admin_change_user')|e }}" method="POST" id="changedataform">
+        <div>{{ util.input_hidden(name="generation") }}</div>
         <table>
-            {{ util.tab_input_text(name="change_note", label="Kommentar") }}
+            {{ util.tab_input_textarea(name="change_note", label="Kommentar", aclass="bigg") }}
             <tr> <th colspan="2">Person</th> </tr>
             {{ util.tab_input_text(name="title", label="Titel") }}
             {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
             {{ util.tab_input_text(name="family_name", label="Nachname") }}
             {{ util.tab_input_text(name="name_supplement", label="Namenszusatz") }}
             {{ util.tab_input_text(name="display_name", label="Rufname") }}
-            {{ util.tab_input_text(name="specialisation", label="Fachgebiet") }}
-            {{ util.tab_input_text(name="affiliation", label="Schule, Uni, ...") }}
-            {{ util.tab_input_text(name="timeline", label="Jahrgang, Matrikel, ...") }}
-            {{ util.tab_input_text(name="interests", label="Interessen") }}
-            {{ util.tab_input_text(name="free_form", label="Sonstiges") }}
+            {{ util.tab_input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
+            {{ util.tab_input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
+            {{ util.tab_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
+            {{ util.tab_input_textarea(name="interests", label="Interessen", aclass="bigg") }}
+            {{ util.tab_input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
             {{ util.tab_input_select(name="gender", entries=default_selections['gender'], title="Geschlecht") }}
             {{ util.tab_input_text(name="birthday", label="Geburtstag") }}
             <tr> <th colspan="2">Kontakt</th> </tr>
             <tr>
                 <td>Email</td>
-                <td>{{ values['username']|e }}</td>
+                <td>{{ username|e }}</td>
             </tr>
             {{ util.tab_input_text(name="telephone", label="Telefon") }}
             {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
@@ -44,9 +44,11 @@
             <tr> <th colspan="2">Account</th> </tr>
             {{ util.tab_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
             {{ util.tab_input_checkbox(name="cloud_account", label="Cloud Account") }}
-            {{ util.tab_input_text(name="notes", label="Notizen") }}  FIXME textarea
+            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
         </table>
-        {{ util.input_submit(value="Speichern") }}
-        <a href="{{ show_user_link(values['id']) }}">Abbrechen</a>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+            <a href="{{ show_user_link(values['persona_id'])|e }}">Abbrechen</a>
+        </div>
     </form>
 {% endblock %}

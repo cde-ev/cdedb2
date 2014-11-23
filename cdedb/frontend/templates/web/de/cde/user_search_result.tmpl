@@ -4,7 +4,7 @@
 {% block title %}CdE Nutzersuche{% endblock %}
 {% block content %}
     <h1>{{ result|length|e }} Ergebnis{{ result|length|numerus("", "se") }} gefunden</h1>
-    <a href="{{ cdedblink("cde/user_search_form", query|querytoparams) }}">Zurück</a>
+    <a href="{{ cdedblink("cde/user_search_form", query|querytoparams)|e }}">Zurück</a>
 
     {% with TITLES = {
         "fulltext" : "Volltext",
@@ -51,7 +51,7 @@
         {{ util.display_query_result(result, query, TITLES) }}
     {% endwith %}
 
-    <a href="{{ cdedblink("cde/user_search_form", query|querytoparams) }}">Zurück</a>
+    <a href="{{ cdedblink("cde/user_search_form", query|querytoparams)|e }}">Zurück</a>
 
     <h3>Aktionen</h3>
     <p>
@@ -59,9 +59,9 @@
         <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
         <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
     </p>
-    <script>
+    <script type="text/javascript">
         $(document).ready(function(){
-            $(".jsEnabled").prop(disabled, false);
+            $(".jsEnabled").prop('disabled', false);
             $("#action_select_all").click(function (){
                  $(".rowSelector").prop('checked', true);
                  });

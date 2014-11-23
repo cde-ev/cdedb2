@@ -198,7 +198,9 @@ class FrontendTest(unittest.TestCase):
 
     def basic_validate(self):
         self.assertNotIn(b"cgitb", self.response.body)
-        self.assertNotEqual('Fehler', self.response.lxml.xpath('/html/head/title/text()')[0])
+        texts = self.response.lxml.xpath('/html/head/title/text()')
+        self.assertNotEqual(0, len(texts))
+        self.assertNotEqual('Fehler', texts[0])
 
     def get(self, *args, **kwargs):
         self.response = self.app.get(*args, **kwargs)

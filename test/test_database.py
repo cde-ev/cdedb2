@@ -3,8 +3,8 @@
 import unittest
 import psycopg2.extensions
 import os.path
-from cdedb.database.connection import connection_pool_factory, \
-     IrradiatedConnection, Atomizer
+from cdedb.database.connection import (
+    connection_pool_factory, IrradiatedConnection, Atomizer)
 from cdedb.config import BasicConfig, Config, SecretsConfig
 
 _BASICCONF = BasicConfig()

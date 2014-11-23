@@ -7,11 +7,8 @@ import logging
 import pytz
 import werkzeug
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, access_decorator_generator, ProxyShim,
-    basic_redirect, connect_proxy, check_validation as check, persona_dataset_guard)
-
-access = access_decorator_generator(
-    ("anonymous", "persona", "member", "core_admin", "admin"))
+    AbstractFrontend, REQUESTdata, access, ProxyShim, basic_redirect,
+    connect_proxy, check_validation as check, persona_dataset_guard)
 
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
@@ -28,11 +25,7 @@ class CoreFrontend(AbstractFrontend):
             self.conf.SERVER_NAME_TEMPLATE.format("core")))
 
     def finalize_session(self, rs, sessiondata):
-        ret = super().finalize_session(rs, sessiondata)
-        if ret.role == "user":
-            ## no user role in this realm
-            ret.role = "persona"
-        return ret
+        return super().finalize_session(rs, sessiondata)
 
     @classmethod
     def is_admin(cls, rs):
@@ -120,6 +113,8 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("id_to_show", "int"))
     def admin_show_user(self, rs, id_to_show):
         """Allow admins to view any user data set."""
+        if rs.errors:
+            return self.render(rs, "index")
         return self.redirect_show_user(rs, id_to_show)
 
     @access("persona")

@@ -7,8 +7,10 @@
     Bitte beachte: Das Bild muss eine annähernd quadratische jpg oder png
     Datei mit maximal 100KB Größe sein.
 
-    <form action="{{ cdedblink('cde/set_foto') }}" method="POST" enctype="multipart/form-data" id="setfotoform">
-        {{ util.input_file(name="foto", accept="image/*") }}
-        {{ util.input_submit(value="Aktualisieren") }}
+    <form action="{{ cdedblink('cde/set_foto')|e }}" method="POST" enctype="multipart/form-data" id="setfotoform">
+        <div>
+            {{ util.input_file(name="foto", accept="image/*") }}
+            {{ util.input_submit(value="Aktualisieren") }}
+        </div>
     </form>
 {% endblock %}

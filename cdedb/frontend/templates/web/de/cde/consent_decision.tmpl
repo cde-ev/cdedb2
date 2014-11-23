@@ -8,8 +8,8 @@
     davon ist ein elektronisches Mitgliederverzeichnis. Du hast Dich noch
     nicht entschieden ob Du in diesem sichtbar sein möchtest.
 
-    <form action="{{ cdedblink("core/index") }}" method="GET" id="toplaterform">
-        {{ util.input_submit(value="Später entscheiden") }}
+    <form action="{{ cdedblink("core/index")|e }}" method="GET" id="toplaterform">
+        <p>{{ util.input_submit(value="Später entscheiden") }}</p>
     </form>
 
     <h1>Einwilligung</h1>
@@ -31,18 +31,24 @@
     weitergeben oder zu Zwecken benutzen werde, die nicht Sinn und Aufgabe
     des CdE sind."</p>
 
-    <form action="{{ cdedblink("cde/consent_decision") }}" method="POST" id="ackconsentform">
-        {{ util.input_hidden(name="ack", value="True") }}
-        {{ util.input_submit(value="Einwilligung erteilen") }}
+    <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="ackconsentform">
+        <div>
+            {{ util.input_hidden(name="ack", value="True") }}
+            {{ util.input_submit(value="Einwilligung erteilen") }}
+        </div>
     </form>
 
-    <form action="{{ cdedblink("cde/consent_decision") }}" method="POST" id="nackconsentform">
-        {{ util.input_hidden(name="ack", value="False") }}
-        {{ util.input_submit(value="Einwilligung verweigern") }}
+    <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="nackconsentform">
+        <div>
+            {{ util.input_hidden(name="ack", value="False") }}
+            {{ util.input_submit(value="Einwilligung verweigern") }}
+        </div>
     </form>
 
-    <form action="{{ cdedblink("core/index") }}" method="GET" id="bottomlaterform">
-        {{ util.input_submit(value="Später entscheiden") }}
+    <form action="{{ cdedblink("core/index")|e }}" method="GET" id="bottomlaterform">
+        <div>
+            {{ util.input_submit(value="Später entscheiden") }}
+        </div>
     </form>
 
 {% endblock %}

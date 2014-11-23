@@ -6,8 +6,10 @@
 
     Bisherige Emailadresse: {{ data['username']|e }}
 
-    <form action="{{ cdedblink('cde/admin_username_change') }}" method="POST" id="usernamechangeform">
-        {{ util.input_text(name="new_username") }}<br>
-        {{ util.input_submit(value="Emailadresse ändern") }}
+    <form action="{{ cdedblink('cde/admin_username_change')|e }}" method="POST" id="usernamechangeform">
+        <div>
+            {{ util.input_text(name="new_username") }}
+            {{ util.input_submit(value="Emailadresse ändern") }}
+        </div>
     </form>
 {% endblock %}

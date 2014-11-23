@@ -3,9 +3,11 @@
 """Global utility functions."""
 
 import cdedb.database.constants as const
+import abc
 import sys
 import logging
 import logging.handlers
+import collections
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
                      console_log_level=None):
@@ -79,24 +81,138 @@ class QuotaException(RuntimeError):
     """
     pass
 
-def extract_global_privileges(db_privileges, status):
+class CommonUser(metaclass=abc.ABCMeta):
+    """Abstract base class for container representing a persona."""
+    def __init__(self, persona_id=None, roles={"anonymous"}, realm=None,
+                 orga=None, moderator=None):
+        """
+        :type persona_id: int or None
+        :type roles: {str}
+        :param roles: python side privilege levels
+        :type realm: str or None
+        :param realm: realm of origin, describing which component is
+          responsible for handling the basic aspects of this user
+        :type orga: {int} or None
+        :param orga: set of event ids for which this user is orga
+        :type moderator: {int} or None
+        :param moderator: set of mailing list ids for which this user is
+          moderator
+        """
+        self.persona_id = persona_id
+        self.roles = roles
+        self.realm = realm
+        self.orga = orga or set()
+        self.moderator = moderator or set()
+
+    @property
+    def is_persona(self):
+        """Shorthand to determine user state."""
+        return "persona" in self.roles
+
+    @property
+    def is_member(self):
+        """Shorthand to determine user state."""
+        return "member" in self.roles
+
+    @property
+    def is_searchable(self):
+        """Shorthand to determine user state."""
+        return "searchmember" in self.roles
+
+def extract_roles(db_privileges, status):
     """Take numerical raw values from the database and convert it into a
     set of semantic privilege levels.
 
     :type db_privileges: int or None
-    :type status: :py:class:`cdedb.database.constants.PersonaStati` or None
+    :type status: int or None
+    :param status: will be converted to a
+      :py:class:`cdedb.database.constants.PersonaStati`.
     :rtype: {str}
     """
     if db_privileges is None or status is None:
-        return {"anonymous",}
+        return {"anonymous"}
     ret = {"anonymous", "persona"}
-    if status in const.MEMBER_STATI:
-        ret.add("member")
+    status = const.PersonaStati(status)
+    if status == const.PersonaStati.archived_member:
+        raise RuntimeError("Impossible archived member found.")
+    ret.add(status.name)
     for privilege in const.PrivilegeBits:
         if db_privileges & privilege.value:
             ret.add(privilege.name)
+    ## ensure transitivity, that is that all dominated roles are present
+    for possiblerole in ALL_ROLES:
+        if ret & ALL_ROLES[possiblerole]:
+            ret.add(possiblerole)
     return ret
 
+#: A collection of the available privilege levels. More specifically the
+#: keys of this dict specify the roles. The corresponding value is a set of
+#: all roles which are upwards in the hierachy. Thus we have an encoded
+#: graph, for a picture see :ref:`privileges`.
+ALL_ROLES = {
+    "anonymous" : {"anonymous", "persona", "core_admin",
+                   "formermember", "member", "searchmember", "cde_admin",
+                   "event_user", "event_admin",
+                   "assembly_user", "assembly_admin",
+                   "ml_user", "ml_admin",
+                   "admin"},
+    "persona" : {"persona", "core_admin",
+                 "formermember", "member", "searchmember", "cde_admin",
+                 "event_user", "event_admin",
+                 "assembly_user", "assembly_admin",
+                 "ml_user", "ml_admin",
+                 "admin"},
+    "core_admin" : {"admin"},
+    "formermember" : {"formermember", "member", "searchmember", "cde_admin",
+                      "admin"},
+    "member" : {"member", "searchmember", "cde_admin",
+                "admin"},
+    "searchmember" : {"searchmember", "cde_admin",
+                      "admin"},
+    "cde_admin" : {"cde_admin",
+                   "admin"},
+    "event_user" : {"formermember", "member", "searchmember", "cde_admin",
+                    "event_user", "event_admin",
+                    "admin"},
+    "event_admin" : {"event_admin",
+                    "admin"},
+    "assembly_user" : {"member", "searchmember", "cde_admin",
+                       "assembly_user", "assembly_admin",
+                       "admin"},
+    "assembly_admin" : {"assembly_admin",
+                        "admin"},
+    "ml_user" : {"formermember", "member", "searchmember", "cde_admin",
+                 "ml_user", "ml_admin",
+                 "admin"},
+    "ml_admin" : {"ml_admin",
+                  "admin"},
+    "admin" : {"admin"},
+}
+
+#: Map of available privilege levels to those present in the SQL database
+#: (where we have less differentiation for the sake of simplicity).
+#:
+#: This is an ordered dict, so that we can select the highest privilege
+#: level.
+DB_ROLE_MAPPING = collections.OrderedDict((
+    ("admin", "cdb_admin"),
+    ("core_admin", "cdb_admin"),
+    ("cde_admin", "cdb_admin"),
+    ("ml_admin", "cdb_admin"),
+    ("assembly_admin", "cdb_admin"),
+    ("event_admin", "cdb_admin"),
+
+    ("searchmember", "cdb_member"),
+    ("member", "cdb_member"),
+    ("formermember", "cdb_member"),
+    ("assembly_user", "cdb_member"),
+
+    ("event_user", "cdb_persona"),
+    ("ml_user", "cdb_persona"),
+    ("persona", "cdb_persona"),
+
+    ("anonymous", "cdb_anonymous"),
+))
 
 #: Names of columns associated to a persona, which are modifyable.
 #: This does not include the ``password_hash`` for security reasons.

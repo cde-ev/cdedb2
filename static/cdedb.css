@@ -111,6 +111,30 @@ body{
     height: 10ex;
 }
 
+.invisible{
+    display: none;
+}
+
+.bigg{
+    height: 4ex;
+    width: 20em;
+}
+
+.biggg{
+    height: 8ex;
+    width: 20em;
+}
+
+.bigggg{
+    height: 16ex;
+    width: 20em;
+}
+
+.bigggg{
+    height: 32ex;
+    width: 20em;
+}
+
 .checkeredTable tr:nth-child(odd) {
     background: #FFF;
 }

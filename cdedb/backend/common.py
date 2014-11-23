@@ -11,8 +11,9 @@ import signal
 import logging
 from cdedb.database.connection import connection_pool_factory
 from cdedb.database import DATABASE_ROLES
-from cdedb.common import glue, extract_realm, make_root_logger, \
-    extract_global_privileges
+from cdedb.common import (
+    glue, extract_realm, make_root_logger, extract_roles,
+    ALL_ROLES, DB_ROLE_MAPPING, CommonUser)
 from cdedb.query import QueryOperators, QUERY_VIEWS
 from cdedb.config import Config, SecretsConfig
 import abc
@@ -78,35 +79,28 @@ def do_singularization(fun):
     new_fun.__name__ = hint['singular_function_name']
     return new_fun
 
-def access_decorator_generator(possibleroles):
+def access(role):
     """The @access decorator marks a function of a backend for publication via
     RPC.
 
-    :type possibleroles: [str]
-    :param possibleroles: ordered list of privilege levels
-    :rtype: decorator
+    :type role: str
+    :param role: required privilege level
     """
-    def decorator(role):
-        def wrap(fun):
-            fun.access_list = set(possibleroles[possibleroles.index(role):])
-            return fun
-        return wrap
+    def decorator(fun):
+        fun.access_list = ALL_ROLES[role]
+        return fun
     return decorator
 
-def internal_access_decorator_generator(possibleroles):
+def internal_access(role):
     """The @internal_access decorator marks a function of a backend for
     internal publication. It will be accessible via the :py:class:`AuthShim`.
 
-    :type possibleroles: [str]
-    :param possibleroles: ordered list of privilege levels
-    :rtype: decorator
+    :type role: str
+    :param role: required privilege level
     """
-    def decorator(role):
-        def wrap(fun):
-            fun.internal_access_list = set(
-                possibleroles[possibleroles.index(role):])
-            return fun
-        return wrap
+    def decorator(fun):
+        fun.internal_access_list = ALL_ROLES[role]
+        return fun
     return decorator
 
 class BackendRequestState:
@@ -155,6 +149,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
 
+    @abc.abstractmethod
     def establish(self, sessionkey, method, allow_internal=False):
         """Do the initialization for an RPC connection.
 
@@ -193,8 +188,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     data = self._sanitize_db_output(cur.fetchone())
             if data["is_active"]:
                 realm = extract_realm(data["status"])
-                role = self.extract_roles(data)[-1]
-                user = BackendUser(persona_id, role, realm, persona_data=data)
+                roles = extract_roles(data["db_privileges"], data["status"])
+                user = BackendUser(persona_id=persona_id, roles=roles,
+                                   realm=realm)
             else:
                 self.logger.warning("Found inactive user {}".format(persona_id))
         try:
@@ -204,46 +200,23 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 access_list = getattr(self, method).internal_access_list
             else:
                 raise
-        if user.role in access_list:
-            return BackendRequestState(sessionkey, user,
-                                       self.connpool[self.db_role(user.role)])
+        if user.roles & access_list:
+            ret = BackendRequestState(sessionkey, user,
+                                      self.connpool[self.db_role(user.roles)])
+            return ret
         else:
             return None
 
-    @classmethod
-    @abc.abstractmethod
-    def extract_roles(cls, personadata):
-        """
-        Convert a data set from the core.personas database table into a
-        list of application level roles (used for authorization
-        throughout the python code), these roles may be realm-specific.
+    @staticmethod
+    def db_role(roles):
+        """Convert a set of application level roles into a database level role.
 
-        :type personadata: {str : object}
-        :rtype: [str]
-        """
-        roles = ["anonymous", "persona"]
-        if extract_realm(personadata["status"]) == cls.realm:
-            roles.append("user")
-        global_privs = extract_global_privileges(personadata["db_privileges"],
-                                                 personadata["status"])
-        for role in ("member", "{}_admin".format(cls.realm), "admin"):
-            if role in global_privs:
-                roles.append(role)
-        return roles
-
-    @classmethod
-    @abc.abstractmethod
-    def db_role(cls, role):
-        """Convert an application level role into a database level
-        role. There may be more application level roles, which have to be
-        mapped to those available in the database.
-
-        :type role: str
+        :type roles: {str}
         :rtype: str
         """
-        if role == "user":
-            return "cdb_persona"
-        return "cdb_{}".format(role)
+        for role in DB_ROLE_MAPPING:
+            if role in roles:
+                return DB_ROLE_MAPPING[role]
 
     @classmethod
     @abc.abstractmethod
@@ -254,7 +227,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type rs: :py:class:`BackendRequestState`
         :rtype: bool
         """
-        return rs.user.role in ("{}_admin".format(cls.realm), "admin")
+        return "{}_admin".format(cls.realm) in rs.user.roles
 
     @staticmethod
     def _sanitize_db_output(output):
@@ -476,35 +449,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                      ", ".join(entry.split(',')[0] for entry in query.order))
         return self.query_all(rs, q, params)
 
-class BackendUser:
-    """Container for representing a persona."""
-    def __init__(self, persona_id=None, role="anonymous", realm=None,
-                 orga=None, moderator=None, persona_data=None):
-        """
-        :type persona_id: int or None
-        :type role: str
-        :param role: python side privilege level
-        :type realm: str
-        :param realm: realm of origin, describing which component is
-          responsible for handling the basic aspects of this user
-        :type orga: [int]
-        :param orga: list of event ids for which this user is orga
-        :type moderator: [int]
-        :param moderator: list of mailing lists for which this user is
-          moderator
-        :type personadata: {str : object} or None
-        :param personadata: copy of the raw data used to create this instance,
-          to be used by :py:class:`AuthShim` for updating privilege information
-          for the target component
-        """
-        self.persona_id = persona_id
-        self.role = role
-        self.realm = realm
-        orga = orga or set()
-        self.orga = set(orga)
-        moderator = moderator or set()
-        self.moderator = set(moderator)
-        self._persona_data = persona_data
+class BackendUser(CommonUser):
+    """Container for a persona in the backend."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 def affirm_validation(assertion, value):
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
@@ -600,14 +548,8 @@ class AuthShim:
             access_list = fun.access_list
         @functools.wraps(fun)
         def new_fun(rs, *args, **kwargs):
-            new_rs = BackendRequestState(rs.sessionkey, copy.deepcopy(rs.user),
-                                         rs.conn)
-            ## be naughty and take a peek at _persona_data
-            if rs.user._persona_data and rs.user.role != "anonymous":
-                roles = self._backend.extract_roles(rs.user._persona_data)
-                new_rs.user.role = roles[-1]
-            if new_rs.user.role in access_list:
-                return fun(new_rs, *args, **kwargs)
+            if rs.user.roles & access_list:
+                return fun(rs, *args, **kwargs)
             else:
                 raise RuntimeError("Permission denied")
         return new_fun

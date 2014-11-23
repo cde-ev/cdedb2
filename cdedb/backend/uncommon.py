@@ -10,8 +10,9 @@ dependencies.
 from cdedb.database.connection import Atomizer
 from cdedb.common import glue, PERSONA_DATA_FIELDS
 from cdedb.backend.core import CoreBackend
-from cdedb.backend.common import AbstractBackend, AuthShim, \
-    affirm_validation as affirm, affirm_array_validation as affirm_array
+from cdedb.backend.common import (
+    AbstractBackend, AuthShim, affirm_validation as affirm,
+    affirm_array_validation as affirm_array)
 import abc
 
 class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
@@ -29,16 +30,6 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
     def __init__(self, configpath):
         super().__init__(configpath)
         self.core = AuthShim(CoreBackend(configpath))
-
-    @classmethod
-    @abc.abstractmethod
-    def extract_roles(cls, personadata):
-        return super().extract_roles(personadata)
-
-    @classmethod
-    @abc.abstractmethod
-    def db_role(cls, role):
-        return super().db_role(role)
 
     @classmethod
     @abc.abstractmethod
@@ -123,7 +114,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
                     raise RuntimeError("Modification failed.")
         return ret
 
-    ## @access("user")
+    ## @access("realm_user")
     def change_user(self, rs, data):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
@@ -136,7 +127,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         data = affirm(self.user_management['validator'], data)
         return self.set_user_data(rs, data)
 
-    ## @access("user")
+    ## @access("realm_user")
     ## @singularize("get_data_single")
     def get_data(self, rs, ids):
         """

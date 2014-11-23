@@ -9,18 +9,14 @@ import werkzeug
 import io
 
 import cdedb.database.constants as const
-from cdedb.common import extract_realm, extract_global_privileges
+from cdedb.common import extract_realm, extract_roles
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access_decorator_generator,
-    ProxyShim, connect_proxy, persona_dataset_guard, check_validation as check,
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
+    connect_proxy, persona_dataset_guard, check_validation as check,
     FrontendUser)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import (
     QUERY_SPECS, mangle_query_input, QueryOperators, DEFAULT_QUERIES)
-
-access = access_decorator_generator(
-    ("anonymous", "persona", "user", "member", "searchmember", "cde_admin",
-     "admin"))
 
 class CdeFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
@@ -40,33 +36,7 @@ class CdeFrontend(AbstractUserFrontend):
             self.conf.SERVER_NAME_TEMPLATE.format("event")))
 
     def finalize_session(self, rs, sessiondata):
-        realm = extract_realm(sessiondata["status"])
-        roles = ["anonymous"]
-        global_privs = extract_global_privileges(sessiondata['db_privileges'],
-                                                 sessiondata['status'])
-        if "persona" in global_privs:
-            roles.append("persona")
-        if realm == self.realm:
-            roles.append("user")
-        if "member" in global_privs:
-            roles.append("member")
-        if sessiondata["status"] in const.SEARCHMEMBER_STATI:
-            roles.append("searchmember")
-        for role in ("{}_admin".format(self.realm), "admin"):
-            if role in global_privs:
-                roles.append(role)
-        role = roles[-1]
-        if sessiondata["status"] in const.MEMBER_STATI:
-            is_member = True
-        else:
-            is_member = False
-        if sessiondata["status"] in const.SEARCHMEMBER_STATI:
-            is_searchable = True
-        else:
-            is_searchable = False
-        return FrontendUser(
-            sessiondata['persona_id'], role, sessiondata['display_name'],
-            sessiondata['username'], is_member, is_searchable, realm)
+        return super().finalize_session(rs, sessiondata)
 
     @classmethod
     def is_admin(cls, rs):
@@ -76,7 +46,7 @@ class CdeFrontend(AbstractUserFrontend):
     def index(self, rs):
         return self.render(rs, "index")
 
-    @access("user")
+    @access("formermember")
     @REQUESTdata(("confirm_id", "#int"))
     def show_user(self, rs, persona_id, confirm_id):
         if persona_id != confirm_id or rs.errors:
@@ -97,7 +67,7 @@ class CdeFrontend(AbstractUserFrontend):
             'data' : data, 'participation_info' : participation_info,
             'foto' : foto})
 
-    @access("user")
+    @access("formermember")
     @persona_dataset_guard()
     def change_user_form(self, rs, persona_id):
         generation = self.cdeproxy.get_generation(rs, persona_id)
@@ -107,9 +77,9 @@ class CdeFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         rs.values.update(data)
         rs.values['generation'] = generation
-        return self.render(rs, "change_user")
+        return self.render(rs, "change_user", {'username' : data['username']})
 
-    @access("user", {"POST"})
+    @access("formermember", {"POST"})
     @REQUESTdata(("generation", "int"))
     @REQUESTdatadict(
         "display_name", "family_name", "given_names", "title",
@@ -123,9 +93,9 @@ class CdeFrontend(AbstractUserFrontend):
         data['id'] = persona_id
         data = check(rs, "member_data", data)
         if rs.errors:
-            return self.render(rs, "change_user")
-        change_note = self.i18n(
-            "Normal dataset change by {}.".format(rs.user.persona_id), rs.lang)
+            dataset = self.coreproxy.get_data_single(rs, persona_id)
+            return self.render(rs, "change_user", {'username' : dataset['username']})
+        change_note = self.i18n("Normal dataset change.", rs.lang)
         num = self.cdeproxy.change_user(rs, data, generation,
                                         change_note=change_note)
         if num > 0:
@@ -146,7 +116,7 @@ class CdeFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         rs.values.update(data)
         rs.values['generation'] = generation
-        return self.render(rs, "admin_change_user")
+        return self.render(rs, "admin_change_user", {'username' : data['username']})
 
     @access("cde_admin", {"POST"})
     @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
@@ -163,11 +133,10 @@ class CdeFrontend(AbstractUserFrontend):
         data['id'] = persona_id
         data = check(rs, "member_data", data)
         if change_note is None:
-            change_note = self.i18n(
-                "Admin dataset change by {}.".format(rs.user.persona_id),
-                rs.lang)
+            change_note = self.i18n("Admin dataset change.", rs.lang)
         if rs.errors:
-            return self.render(rs, "admin_change_user")
+            dataset = self.coreproxy.get_data_single(rs, persona_id)
+            return self.render(rs, "admin_change_user", {'username' : dataset['username']})
         num = self.cdeproxy.change_user(rs, data, generation,
                                         change_note=change_note)
         if num > 0:
@@ -254,20 +223,20 @@ class CdeFrontend(AbstractUserFrontend):
             rs.notify("info", "Change dropped.")
         return self.redirect(rs, "cde/list_pending_changes")
 
-    @access("user")
+    @access("formermember")
     def get_foto(self, rs, foto):
         """Retrieve profile picture"""
         path = os.path.join(self.conf.STORAGE_DIR, "foto", foto)
         return self.send_file(rs, path=path)
 
-    @access("user")
+    @access("formermember")
     @persona_dataset_guard()
     def set_foto_form(self, rs, persona_id):
         """Render form."""
         data = self.cdeproxy.get_data_single(rs, persona_id)
         return self.render(rs, "set_foto", {'data' : data})
 
-    @access("user", {"POST"})
+    @access("formermember", {"POST"})
     @REQUESTfile("foto")
     @persona_dataset_guard()
     def set_foto(self, rs, persona_id, foto):
@@ -314,7 +283,7 @@ class CdeFrontend(AbstractUserFrontend):
         if data['decided_search']:
             return self.redirect(rs, "core/index")
         if ack:
-            status = const.PersonaStati.search_member.value
+            status = const.PersonaStati.searchmember.value
         else:
             status = const.PersonaStati.member.value
         new_data = {

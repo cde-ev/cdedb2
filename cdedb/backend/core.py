@@ -7,9 +7,8 @@ accesses.
 """
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
-    access_decorator_generator, internal_access_decorator_generator,
-    make_RPCDaemon, run_RPCDaemon, singularize, affirm_validation as affirm,
-    affirm_array_validation as affirm_array)
+    access, internal_access, make_RPCDaemon, run_RPCDaemon, singularize,
+    affirm_validation as affirm, affirm_array_validation as affirm_array)
 from cdedb.common import (glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS,
                           extract_realm)
 from cdedb.config import Config, SecretsConfig
@@ -27,11 +26,6 @@ import random
 import ldap
 import tempfile
 import subprocess
-
-access = access_decorator_generator(("anonymous", "persona", "member",
-                                     "core_admin", "admin"))
-internal_access = internal_access_decorator_generator(
-    ("anonymous", "persona", "member", "core_admin", "admin"))
 
 def ldap_bool(val):
     """Convert a :py:class:`bool` to its LDAP representation.
@@ -110,16 +104,9 @@ class CoreBackend(AbstractBackend):
               secrets.USERNAME_CHANGE_TOKEN_SALT, persona_id, current_email,
               new_email)
 
-    @classmethod
-    def extract_roles(cls, personadata):
-        ret = super().extract_roles(personadata)
-        if "user" in ret:
-            ret.remove("user")
-        return ret
-
-    @classmethod
-    def db_role(cls, role):
-        return super().db_role(role)
+    def establish(self, sessionkey, method, allow_internal=False):
+        return super().establish(sessionkey, method,
+                                 allow_internal=allow_internal)
 
     @classmethod
     def is_admin(cls, rs):
@@ -187,8 +174,8 @@ class CoreBackend(AbstractBackend):
             ## be naughty and take a peak
             if set(keys) == {'status'} \
               and data['id'] == rs.user.persona_id \
-              and data['status'] == const.PersonaStati.search_member \
-              and rs.user._persona_data['status'] == const.PersonaStati.member:
+              and data['status'] == const.PersonaStati.searchmember \
+              and rs.user.is_member:
                 ## allow upgrading self to searchable member
                 pass
             else:
@@ -360,7 +347,7 @@ class CoreBackend(AbstractBackend):
                 return False, "Password verification failed."
         ## escalate db privilige role in case of resetting passwords
         orig_conn = None
-        if rs.user.role == "anonymous" and new_password is None:
+        if not rs.user.is_persona and new_password is None:
             orig_conn = rs.conn
             rs.conn = self.connpool['cdb_persona']
         if new_password is None:

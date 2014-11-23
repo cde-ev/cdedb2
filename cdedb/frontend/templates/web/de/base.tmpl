@@ -1,8 +1,10 @@
 {# This is the base template to be extended by (nearly) all html templates.
    It provides a skeleton where only the content needs to be filled in. #}
 
+ <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
     <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
         <title>{% block title %}CdEDB{% endblock %}</title>
         <link rel="stylesheet" type="text/css" href="/static/cdedb.css" media="all">
         <link rel="stylesheet" type="text/css" href="/static/print.css" media="print">
@@ -15,20 +17,20 @@
         <div id="middle">
             <div id="strut"></div>
             <div id="navigation">
-                <h1><a href="{{ cdedblink("core/index") }}">CdEDB</a></h1>
-                {% if user.role == "anonymous" %}
+                <h1><a href="{{ cdedblink("core/index")|e }}">CdEDB</a></h1>
+                {% if not user.is_persona %}
                     <p>
                         Nicht eingeloggt<br>
-                        <a href="{{ cdedblink("core/index") }}">Login</a>
+                        <a href="{{ cdedblink("core/index")|e }}">Login</a>
                     </p>
                 {% else %}
-                    <p>
-                        Eingeloggt als:<br>
-                        <span id="displayname">{{ user.display_name|e }}</span>
-                        <form action="{{ cdedblink("core/logout") }}" method="POST" id="logoutform">
+                    <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform">
+                        <p>
+                            Eingeloggt als:<br>
+                            <span id="displayname">{{ user.display_name|e }}</span>
                             <input type="submit" name="submitlogout" value="Abmelden">
-                        </form>
-                    </p>
+                        </p>
+                    </form>
                 {% endif %}
                 <hr>
                 <h2>Navigation</h2>
@@ -39,7 +41,7 @@
             <div id="content">
                 {% for ntype, message in notifications %}
                     <div class="notification {{ ntype|e }}Notification">
-                        <img src="{{ staticurl("icons/{}.png".format(ntype)) }}"
+                        <img src="{{ staticurl("icons/{}.png".format(ntype))|e }}"
                           alt="{{ ntype|e }}" class="notificationIcon">
                         <span class="notificationMessage">{{ i18n(message)|e }}</span>
                     </div>
