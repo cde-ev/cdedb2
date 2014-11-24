@@ -561,3 +561,27 @@ class AuthShim:
             return self._funs[name]
         except KeyError as e:
             raise AttributeError from e
+
+def create_fulltext(data):
+    """Helper to mangle data all data into a single string.
+
+    :type data: {str : object}
+    :param data: one member data set to convert into a string for fulltext
+      search
+    :rtype: str
+    """
+    attrs = (
+        "username", "title", "given_names", "display_name",
+        "family_name", "birth_name", "name_supplement", "birthday",
+        "telephone", "mobile", "address", "address_supplement",
+        "postal_code", "location", "country", "address2",
+        "address_supplement2", "postal_code2", "location2", "country2",
+        "weblink", "specialisation", "affiliation", "timeline",
+        "interests", "free_form")
+    def _sanitize(val):
+        if val is None:
+            return ""
+        else:
+            return str(val)
+    vals = (_sanitize(data[x]) for x in attrs)
+    return " ".join(vals)

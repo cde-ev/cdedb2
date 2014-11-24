@@ -9,7 +9,7 @@
     Änderung durchgeführt hast musst Du bei der Anmeldung Deine neue
     Emailadresse angeben.
 
-    <form action="{{ cdedblink('cde/do_username_change')|e }}" method="POST" id="usernamechangeform">
+    <form action="{{ cdedblink('core/do_username_change')|e }}" method="POST" id="usernamechangeform">
         <div>
             {{ util.input_hidden(name="new_username") }}
             {{ util.input_password() }}

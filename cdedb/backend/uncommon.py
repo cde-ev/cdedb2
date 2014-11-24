@@ -72,26 +72,19 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
             raise ValueError("Invalid ids requested.")
         return {d['id'] : d for d in data}
 
-    def set_user_data(self, rs, data, pkeys=None, ukeys=None):
-        """Update some keys of a data set. If ``pkeys`` or ``ukeys`` is not
-        passed all keys available in ``data`` are updated.
+    def set_user_data(self, rs, data):
+        """Update some keys of a data set.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str : object}
-        :type pkeys: [str]
-        :param pkeys: keys pretaining to the persona
-        :type ukeys: [str]
-        :param ukeys: keys pretaining to the user
         :rtype: int
         :returns: number of changed entries
         """
         self.affirm_realm(rs, (data['id'],))
 
-        if not pkeys:
-            pkeys = tuple(key for key in data if key in PERSONA_DATA_FIELDS)
-        if not ukeys:
-            ukeys = tuple(key for key in data
-                          if key in self.user_management['data_fields'])
+        pkeys = tuple(key for key in data if key in PERSONA_DATA_FIELDS)
+        ukeys = tuple(key for key in data
+                      if key in self.user_management['data_fields'])
 
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
             raise RuntimeError("Not enough privileges.")

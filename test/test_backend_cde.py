@@ -30,30 +30,13 @@ class TestCdEBackend(BackendTest):
         with self.assertRaises(QuotaException):
             self.cde.get_data(self.key, (1, 2, 3))
 
-    @as_users("anton", "berta", "emilia")
-    def test_change_username(self, user):
-        newaddress = "newaddress@example.cde"
-        token = self.core.change_username_token(self.key, user['id'], newaddress, user['password'])
-        ret, _ = self.cde.change_username(self.key, user['id'], newaddress, token)
-        self.assertTrue(ret)
-        self.core.logout(self.key)
-        self.key = None
-        self.login(user)
-        self.assertEqual(None, self.key)
-        newuser = copy.deepcopy(user)
-        newuser['username'] = newaddress
-        self.login(newuser)
-        self.assertTrue(self.key)
-
     @as_users("berta")
     def test_displacement(self, user):
         self.assertEqual(
             -1, self.cde.change_user(self.key, {'id' : user['id'],
                                                 'family_name' : "Link"}, 1))
         newaddress = "newaddress@example.cde"
-        token = self.core.change_username_token(self.key, user['id'],
-                                                newaddress, user['password'])
-        ret, _ = self.cde.change_username(self.key, user['id'], newaddress, token)
+        ret, _ = self.core.change_username(self.key, user['id'], newaddress, user['password'])
         self.assertTrue(ret)
         self.core.logout(self.key)
         self.key = None

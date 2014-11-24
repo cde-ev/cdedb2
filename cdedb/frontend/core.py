@@ -260,11 +260,45 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", "Link expired.")
             return self.render(rs, "change_username")
         rs.values['new_username'] = self.encode_parameter(
-            "cde/do_username_change", "new_username", new_username)
+            "core/do_username_change", "new_username", new_username)
         return self.render(rs, "do_username_change")
+
+    @access("persona", {'POST'})
+    @REQUESTdata(('new_username', '#email'), ('password', 'str'))
+    @persona_dataset_guard(realms=None)
+    def do_username_change(self, rs, persona_id, new_username, password):
+        """Now we can do the actual change."""
+        ## do not leak the password
+        rs.values['password'] = ""
+        if rs.errors:
+            rs.notify("error", "Failed.")
+            return self.redirect(rs, "core/change_username_form")
+        success, message = self.coreproxy.change_username(
+            rs, persona_id, new_username, password)
+        if not success:
+            rs.notify("error", message)
+            return self.redirect(rs, "core/username_change_form")
+        else:
+            rs.notify("success", "Username changed.")
+            return self.redirect(rs, "core/index")
 
     @access("core_admin")
     def admin_username_change_form(self, rs, persona_id):
         """Render form."""
         data = self.coreproxy.get_data_single(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data' : data})
+
+    @access("cde_admin", {'POST'})
+    @REQUESTdata(('new_username', 'email'))
+    def admin_username_change(self, rs, persona_id, new_username):
+        if rs.errors:
+            rs.notify("error", "Failed.")
+            return self.redirect(rs, "core/admin_username_change_form")
+        success, message = self.coreproxy.change_username(
+            rs, persona_id, new_username, password=None)
+        if not success:
+            rs.notify("error", message)
+            return self.redirect(rs, "core/admin_username_change_form")
+        else:
+            rs.notify("success", "Username changed.")
+            return self.redirect(rs, "core/show_user")

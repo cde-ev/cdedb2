@@ -95,7 +95,7 @@ class CdeFrontend(AbstractUserFrontend):
         if rs.errors:
             dataset = self.coreproxy.get_data_single(rs, persona_id)
             return self.render(rs, "change_user", {'username' : dataset['username']})
-        change_note = self.i18n("Normal dataset change.", rs.lang)
+        change_note = "Normal dataset change."
         num = self.cdeproxy.change_user(rs, data, generation,
                                         change_note=change_note)
         if num > 0:
@@ -133,10 +133,11 @@ class CdeFrontend(AbstractUserFrontend):
         data['id'] = persona_id
         data = check(rs, "member_data", data)
         if change_note is None:
-            change_note = self.i18n("Admin dataset change.", rs.lang)
+            change_note = "Admin dataset change."
         if rs.errors:
             dataset = self.coreproxy.get_data_single(rs, persona_id)
-            return self.render(rs, "admin_change_user", {'username' : dataset['username']})
+            return self.render(rs, "admin_change_user",
+                               {'username' : dataset['username']})
         num = self.cdeproxy.change_user(rs, data, generation,
                                         change_note=change_note)
         if num > 0:
@@ -146,48 +147,6 @@ class CdeFrontend(AbstractUserFrontend):
         else:
             rs.notify("warning", "Change failed.")
         return self.redirect_show_user(rs, persona_id)
-
-    @access("persona", {'POST'})
-    @REQUESTdata(('new_username', '#email'), ('password', 'str'))
-    @persona_dataset_guard(realms=None)
-    def do_username_change(self, rs, persona_id, new_username, password):
-        """Now we can do the actual change. This is in the cde frontend to
-        allow the changelog functionality. (Otherwise this would be in the
-        core frontend.)"""
-        ## do not leak the password
-        rs.values['password'] = ""
-        if rs.errors:
-            rs.notify("error", "Failed.")
-            return self.redirect(rs, "core/change_username_form")
-        token = self.coreproxy.change_username_token(
-            rs, persona_id, new_username, password)
-        success, message = self.cdeproxy.change_username(
-            rs, persona_id, new_username, token)
-        if not success:
-            rs.notify("error", message)
-            return self.redirect(rs, "core/username_change_form")
-        else:
-            rs.notify("success", "Username changed.")
-            return self.redirect(rs, "core/index")
-
-    @access("cde_admin", {'POST'})
-    @REQUESTdata(('new_username', 'email'))
-    def admin_username_change(self, rs, persona_id, new_username):
-        """This is in the cde frontend to allow the changelog
-        functionality. (Otherwise this would be in the core frontend.)"""
-        if rs.errors:
-            rs.notify("error", "Failed.")
-            return self.redirect(rs, "core/admin_username_change_form")
-        token = self.coreproxy.change_username_token(
-            rs, persona_id, new_username, "dummy")
-        success, message = self.cdeproxy.change_username(
-            rs, persona_id, new_username, token)
-        if not success:
-            rs.notify("error", message)
-            return self.redirect(rs, "core/admin_username_change_form")
-        else:
-            rs.notify("success", "Username changed.")
-            return self.redirect(rs, "core/show_user")
 
     @access("cde_admin")
     def list_pending_changes(self, rs):
@@ -291,7 +250,9 @@ class CdeFrontend(AbstractUserFrontend):
             'decided_search' : True,
             'status' : status
         }
-        num = self.cdeproxy.change_user(rs, new_data, None, may_wait=False)
+        change_note = "Conset decision change."
+        num = self.cdeproxy.change_user(rs, new_data, None, may_wait=False,
+                                        change_note=change_note)
         if num != 1:
             rs.notify("error", "Failed.")
             return self.render(rs, "consent_decision", {'data' : data})

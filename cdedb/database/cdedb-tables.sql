@@ -100,6 +100,73 @@ GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
 GRANT UPDATE (queries) ON core.quota TO cdb_member;
 
+-- log all changes made to the personal data of members (require approval)
+--
+-- this is in the core realm since the core backend has to be aware of the changelog
+CREATE TABLE core.changelog (
+        id                      bigserial PRIMARY KEY,
+        --
+        -- information about the change
+        --
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        reviewed_by             integer REFERENCES core.personas(id) DEFAULT NULL,
+        cdate                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        generation              integer NOT NULL,
+        change_note             varchar,
+        -- enum for progress of change
+        -- see cdedb.database.constants.MemberChangeStati
+        change_status           integer NOT NULL DEFAULT 0,
+        --
+        -- data fields
+        --
+        -- first those from personas directly
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        username                varchar,
+        display_name            varchar,
+        is_active               boolean,
+        status                  integer,
+        db_privileges           integer,
+        cloud_account           boolean,
+        -- now those frome member_data
+        family_name             varchar NOT NULL,
+        given_names             varchar NOT NULL,
+        title                   varchar,
+        name_supplement         varchar,
+        gender                  integer NOT NULL,
+        birthday                date NOT NULL,
+        telephone               varchar,
+        mobile                  varchar,
+        address_supplement      varchar,
+        address                 varchar,
+        postal_code             varchar,
+        location                varchar,
+        country                 varchar,
+        notes                   varchar,
+        birth_name              varchar,
+        address_supplement2     varchar,
+        address2                varchar,
+        postal_code2            varchar,
+        location2               varchar,
+        country2                varchar,
+        weblink                 varchar,
+        specialisation          varchar,
+        affiliation             varchar,
+        timeline                varchar,
+        interests               varchar,
+        free_form               varchar,
+        balance                 numeric(8,2) NOT NULL,
+        decided_search          boolean,
+        trial_member            boolean NOT NULL,
+        bub_search              boolean NOT NULL
+);
+CREATE INDEX idx_changelog_change_status ON core.changelog(change_status);
+CREATE INDEX idx_changelog_persona_id ON core.changelog(persona_id);
+GRANT SELECT (persona_id) ON core.changelog TO cdb_persona;
+GRANT SELECT, INSERT ON core.changelog TO cdb_member;
+GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_member;
+GRANT UPDATE (change_status) ON core.changelog TO cdb_member;
+GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
+
 ---
 --- SCHEMA cde
 ---
@@ -175,73 +242,6 @@ CREATE TABLE cde.member_data (
 GRANT SELECT ON cde.member_data TO cdb_member;
 GRANT UPDATE ON cde.member_data TO cdb_member;
 GRANT INSERT, UPDATE ON cde.member_data TO cdb_admin;
-
--- log all changes made to the personal data of members (require approval)
---
--- username changes are special (i.e. no approval, but verification; may not
--- change at the same time as other things)
-CREATE TABLE cde.changelog (
-        id                      bigserial PRIMARY KEY,
-        --
-        -- information about the change
-        --
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
-        reviewed_by             integer REFERENCES core.personas(id) DEFAULT NULL,
-        cdate                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-        generation              integer NOT NULL,
-        change_note             varchar,
-        -- enum for progress of change
-        -- see cdedb.database.constants.MemberChangeStati
-        change_status           integer NOT NULL DEFAULT 0,
-        --
-        -- data fields
-        --
-        -- first those from personas directly
-        persona_id              integer NOT NULL REFERENCES core.personas(id),
-        username                varchar,
-        display_name            varchar,
-        is_active               boolean,
-        status                  integer,
-        db_privileges           integer,
-        cloud_account           boolean,
-        -- now those frome member_data
-        family_name             varchar NOT NULL,
-        given_names             varchar NOT NULL,
-        title                   varchar,
-        name_supplement         varchar,
-        gender                  integer NOT NULL,
-        birthday                date NOT NULL,
-        telephone               varchar,
-        mobile                  varchar,
-        address_supplement      varchar,
-        address                 varchar,
-        postal_code             varchar,
-        location                varchar,
-        country                 varchar,
-        notes                   varchar,
-        birth_name              varchar,
-        address_supplement2     varchar,
-        address2                varchar,
-        postal_code2            varchar,
-        location2               varchar,
-        country2                varchar,
-        weblink                 varchar,
-        specialisation          varchar,
-        affiliation             varchar,
-        timeline                varchar,
-        interests               varchar,
-        free_form               varchar,
-        balance                 numeric(8,2) NOT NULL,
-        decided_search          boolean,
-        trial_member            boolean NOT NULL,
-        bub_search              boolean NOT NULL
-);
-CREATE INDEX idx_changelog_change_status ON cde.changelog(change_status);
-CREATE INDEX idx_changelog_persona_id ON cde.changelog(persona_id);
-GRANT SELECT, INSERT ON cde.changelog TO cdb_member;
-GRANT SELECT, UPDATE ON cde.changelog_id_seq TO cdb_member;
-GRANT UPDATE (change_status) ON cde.changelog TO cdb_member;
-GRANT UPDATE (reviewed_by) ON cde.changelog TO cdb_admin;
 
 CREATE TABLE cde.semester (
         -- historically this was determined by the exPuls number

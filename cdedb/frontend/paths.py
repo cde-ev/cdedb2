@@ -40,8 +40,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
              endpoint="send_username_change_link"),
         rule("/dousernamechange/<int:persona_id>", methods=("GET", "HEAD"),
              endpoint="do_username_change_form"),
+        rule("/dousernamechange/<int:persona_id>", methods=("POST",),
+            endpoint="do_username_change"),
         rule("/adminusernamechange/<int:persona_id>", methods=("GET", "HEAD"),
              endpoint="admin_username_change_form"),
+        rule("/adminusernamechange/<int:persona_id>", methods=("POST",),
+            endpoint="admin_username_change"),
         rule("/showuser/<int:persona_id>", methods=("GET", "HEAD"),
              endpoint="show_user"),
         rule("/adminshowuser", methods=("GET", "HEAD"),
@@ -52,11 +56,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
     werkzeug.routing.EndpointPrefix('cde/', (
         werkzeug.routing.Submount('/cde', (
             rule("/", methods=("GET", "HEAD"), endpoint="index"),
-            ## this is here because of the changelog functionality
-            rule("/dousernamechange/<int:persona_id>", methods=("POST",),
-                endpoint="do_username_change"),
-            rule("/adminusernamechange/<int:persona_id>", methods=("POST",),
-                endpoint="admin_username_change"),
             rule("/showuser/<int:persona_id>", methods=("GET", "HEAD"),
                  endpoint="show_user"),
             rule("/changeuser/<int:persona_id>", methods=("GET", "HEAD"),

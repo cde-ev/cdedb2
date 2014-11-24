@@ -56,13 +56,18 @@ class TestCoreBackend(BackendTest):
         self.assertTrue(self.key)
 
     @as_users("anton", "berta", "emilia")
-    def test_change_username_token(self, user):
+    def test_change_username(self, user):
         newaddress = "newaddress@example.cde"
-        ret = self.core.change_username_token(self.key, user['id'], newaddress, "wrongpass")
-        self.assertEqual(None, ret)
-        ret = self.core.change_username_token(self.key, user['id'], newaddress, user['password'])
+        ret, _ = self.core.change_username(self.key, user['id'], newaddress, user['password'])
         self.assertTrue(ret)
-        self.assertTrue(isinstance(ret, str))
+        self.core.logout(self.key)
+        self.key = None
+        self.login(user)
+        self.assertEqual(None, self.key)
+        newuser = copy.deepcopy(user)
+        newuser['username'] = newaddress
+        self.login(newuser)
+        self.assertTrue(self.key)
 
     def test_verify_existence(self):
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))
