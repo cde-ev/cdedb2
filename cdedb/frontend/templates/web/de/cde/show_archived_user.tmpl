@@ -1,0 +1,51 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Archivzugriff -- {{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
+{% block content %}
+    <table>
+        <tr> <th colspan="2">Person</th> </tr>
+        <tr>
+            <td>Name</td>
+            <td>{{ data['given_names']|e }} {{ data['family_name']|e }}</td>
+        </tr>
+        <tr>
+            <td>Rufname</td>
+            <td>{{ data['display_name']|e }}</td>
+        </tr>
+        <tr>
+            <td>Geburtstag</td>
+            <td>{{ data['birthday']|date|e }}</td>
+        </tr>
+        <tr>
+            <td>Geschlecht</td>
+            <td>{{ data['gender']|gender|e }}</td>
+        </tr>
+        <tr>
+            <td>Email</td>
+            <td>{{ data['username']|e }}</td>
+        </tr>
+        <tr>
+            <td>CdEDB-ID</td>
+            <td>{{ data['id']|cdedbid|e }}</td>
+        </tr>
+        <tr> <th colspan="2">Veranstaltungen</th> </tr>
+        {% for info in participation_info %}
+            <tr>
+                <td colspan="2">
+                    {{ info['event_name']|e }}
+                    {% if info['is_orga'] %}
+                        (Orga)
+                    {% else %}
+                        {% if info['course_name'] %}
+                            {{ info['course_name']|e }}
+                            {% if info['is_instructor'] %}
+                                (Kursleiter)
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    {# TODO add resurrection button #}
+{% endblock %}

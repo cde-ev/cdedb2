@@ -35,9 +35,8 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_showuser(self, user):
         self.traverse({'href' : '/mydata'})
-        self.assertEqual("{} {}".format(user['given_names'],
-                                        user['family_name']),
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("{} {}".format(user['given_names'],
+                                        user['family_name']))
         self.assertIn(user['given_names'], self.response.text)
 
     @as_users("anton")
@@ -46,7 +45,7 @@ class TestCoreFrontend(FrontendTest):
         f['id_to_show'] = 2
         self.submit(f)
         berta = USER_DICT['berta']
-        self.assertIn(berta['given_names'], self.response.text)
+        self.assertTitle("Bertålotta Beispiel")
 
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):

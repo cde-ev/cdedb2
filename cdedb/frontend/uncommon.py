@@ -100,7 +100,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if num:
             rs.notify("success", "Change committed.")
         else:
-            rs.notify("success", "Change failed.")
+            rs.notify("error", "Change failed.")
         return self.redirect_show_user(rs, persona_id)
 
     ## @access("realm_admin")
@@ -127,5 +127,5 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if num:
             rs.notify("success", "Change committed.")
         else:
-            rs.notify("success", "Change failed.")
+            rs.notify("error", "Change failed.")
         return self.redirect_show_user(rs, persona_id)

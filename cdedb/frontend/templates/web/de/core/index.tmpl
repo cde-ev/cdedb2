@@ -1,9 +1,8 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Startseite{% endblock %}
+{% block title %}CdE Datenbank{% endblock %}
 {% block content %}
-    <h1>CdE Datenbank</h1>
-    Willkommen!
+    <h2>Willkommen!</h2>
     {% if not user.is_persona %}
         <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform">
             <p>

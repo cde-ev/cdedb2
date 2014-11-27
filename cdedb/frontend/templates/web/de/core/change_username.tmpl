@@ -2,12 +2,9 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Emailadresse ändern{% endblock %}
 {% block content %}
-    <h1>Emailadresse ändern</h1>
-
-    Um Deine Emailadresse zu aendern wird zuerst eine Email an die neue
-    Adresse geschickt um zu verifizieren, dass diese auch korrekt ist. In
-    der Email findest Du einen Link, unter dem Du den Vorgang abschließen
-    kannst.
+    Um Deine Emailadresse zu ändern wird zuerst eine Email an die neue
+    Adresse geschickt, um diese zu verifizieren. In der Email findest Du
+    einen Link, unter dem Du den Vorgang abschließen kannst.
 
     <form action="{{ cdedblink('core/send_username_change_link')|e }}" method="GET" id="usernamechangeform">
         <div>

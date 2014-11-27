@@ -2,7 +2,6 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
-    <h1>{{ data['given_names']|e }} {{ data['family_name']|e }}</h1>
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
             {% if is_admin %}
@@ -140,9 +139,15 @@
                     <td>Account aktiv</td>
                     <td>
                         {% if data['is_active'] %}
-                            {{ util.checkbox_checked() }}
+                            {{ util.checkbox_checked(anid='activity_checkbox') }}
+                            <form action="{{ cdedblink('core/toggle_activity', {'activity' : False})|e }}" method="POST" id="activitytoggleform">
+                                <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
+                            </form>
                         {% else %}
-                            {{ util.checkbox_unchecked() }}
+                            {{ util.checkbox_unchecked(anid='activity_checkbox') }}
+                            <form action="{{ cdedblink('core/toggle_activity', {'activity' : True})|e }}" method="POST" id="activitytoggleform">
+                                <div>{{ util.input_submit(value="Account aktivieren") }}</div>
+                            </form>
                         {% endif %}
                     </td>
                 </tr>
@@ -196,6 +201,10 @@
             </tr>
             {% if is_admin %}
                 <tr>
+                    <td>Privilegien-Bits</td>
+                    <td>{{ data['db_privileges']|e }}</td>
+                </tr>
+                <tr>
                     <td>Notizen</td>
                     <td>{{ data['notes']|e|linebreaks }}</td>
                 </tr>
@@ -231,7 +240,7 @@
         </p>
     {% endif %}
     {% if is_admin %}
-        <form action="{{ cdedblink('core/admin_password_reset', {'persona_id' : data['id']})|e }}" method="POST"
+        <form action="{{ cdedblink('core/admin_password_reset')|e }}" method="POST"
           id="adminpasswordresetform">
             <div>{{ util.input_submit(value="Passwort zurücksetzen") }}</div>
         </form>

@@ -63,7 +63,7 @@ def extract_realm(status):
     """
     if status is None:
         return None
-    elif status in const.CDE_STATI:
+    elif status in const.ALL_CDE_STATI:
         return "cde"
     elif status in const.EVENT_STATI:
         return "event"

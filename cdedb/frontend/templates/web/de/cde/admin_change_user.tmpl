@@ -1,9 +1,7 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
+{% block title %}Administration -- {{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <h1>{{ values['given_names']|e }} {{ values['family_name']|e }} (Adminzugriff)</h1>
-
     <form action="{{ cdedblink('cde/admin_change_user')|e }}" method="POST" id="changedataform">
         <div>{{ util.input_hidden(name="generation") }}</div>
         <table>

@@ -115,6 +115,11 @@ body{
     display: none;
 }
 
+.infoHover{
+    width: 4ex;
+    height: 4ex;
+}
+
 .bigg{
     height: 4ex;
     width: 20em;

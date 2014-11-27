@@ -498,6 +498,38 @@ CREATE TABLE ml.user_data (
         notes                   varchar
 );
 
+CREATE TABLE ml.mailinglists (
+        id                      serial PRIMARY KEY,
+        title                   varchar NOT NULL,
+        address                 varchar NOT NULL,
+        -- see cdedb.database.constants.SubscriptionPolicy
+        sub_policy              integer NOT NULL,
+        -- see cdedb.database.constants.ModerationPolicy
+        mod_policy              integer NOT NULL,
+        subject_prefix          varchar
+        -- TODO add event awareness
+)
+
+CREATE TABLE ml.subscriptions (
+        id                      serial PRIMARY KEY,
+        mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        address                 varchar,
+        is_subscribed           boolean
+)
+
+CREATE TABLE ml.whitelist (
+        id                      serial PRIMARY KEY,
+        mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
+        address                 varchar NOT NULL
+)
+
+CREATE TABLE ml.moderators (
+        id                      serial PRIMARY KEY,
+        mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
+        persona_id              integer NOT NULL REFERENCES core.personas(id)
+)
+
 -- TODO implement
 
 ---
@@ -514,6 +546,32 @@ CREATE TABLE assembly.user_data (
         -- administrative notes about this user
         notes                   varchar
 );
+
+CREATE TABLE assembly.assemblies (
+        id                      serial PRIMARY KEY,
+        title                   varchar NOT NULL
+        -- TODO maybe some dates?
+)
+
+CREATE TABLE assembly.decisions (
+        id                      serial PRIMARY KEY,
+        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
+        title                   varchar NOT NULL,
+        description             varchar
+)
+
+CREATE TABLE assembly.voting_secrets (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        secret                  varchar
+)
+
+CREATE TABLE assembly.votes (
+        id                      serial PRIMARY KEY,
+        decision_id             integer NOT NULL REFERENCES assembly.decisions(id),
+        vote                    varchar,
+        hash                    varchar
+)
 
 -- TODO implement
 

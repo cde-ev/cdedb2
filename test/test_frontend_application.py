@@ -20,4 +20,4 @@ class TestApplication(FrontendTest):
 
     def test_error(self):
         self.response = self.app.get("/error?kind=backend")
-        self.assertEqual('Fehler', self.response.lxml.xpath('/html/head/title/text()')[0])
+        self.assertTitle('Fehler')

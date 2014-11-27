@@ -1,9 +1,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
+{% block title %}Administration -- {{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <h1>{{ values['given_names']|e }} {{ values['family_name']|e }} (Adminzugriff)</h1>
-
     <form action="{{ cdedblink('event/admin_change_user')|e }}" method="POST" id="changedataform">
         <table>
             <tr> <th colspan="2">Person</th> </tr>

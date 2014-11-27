@@ -14,9 +14,8 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton", "berta")
     def test_showuser(self, user):
         self.traverse({'href' : '/mydata'})
-        self.assertEqual("{} {}".format(user['given_names'],
-                                        user['family_name']),
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("{} {}".format(user['given_names'],
+                                        user['family_name']))
         if user['id'] == 2:
             self.assertIn('PfingstAkademie', self.response.text)
 
@@ -45,8 +44,7 @@ class TestCdEFrontend(FrontendTest):
         f['birthday'] = "3.4.1933"
         self.submit(f)
         self.assertIn("Zelda", self.response)
-        self.assertEqual("Bertålotta Beispiel",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Bertålotta Beispiel")
         self.assertIn("1933-04-03", self.response)
 
     @as_users("anton")
@@ -60,8 +58,7 @@ class TestCdEFrontend(FrontendTest):
         f['birthday'] = "garbage"
         self.submit(f)
         self.assertIn("Zelda", self.response)
-        self.assertEqual("Bertålotta Beispiel (Adminzugriff)",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Administration -- Bertålotta Beispiel bearbeiten")
         self.assertIn("errorInput", self.response)
 
     def test_changelog(self):
@@ -77,13 +74,11 @@ class TestCdEFrontend(FrontendTest):
         user = USER_DICT["anton"]
         self.login(user)
         self.traverse({'description' : '^CdE$'}, {'href' : '/cde/listpendingchanges'})
-        self.assertEqual("Zurzeit liegen 1 Änderungen vor",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Änderungen (zurzeit 1 zu begutachten)")
         self.traverse({'href' : '/cde/inspectchange'})
         f = self.response.forms['ackchangeform']
         self.submit(f)
-        self.assertEqual("Zurzeit liegen 0 Änderungen vor",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Änderungen (zurzeit 0 zu begutachten)")
         self.logout()
         user = USER_DICT["berta"]
         self.login(user)
@@ -94,12 +89,10 @@ class TestCdEFrontend(FrontendTest):
     def test_consent(self):
         user = USER_DICT["garcia"]
         self.login(user)
-        self.assertEqual("Einwilligung zur Mitgliedersuche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Einwilligung zur Mitgliedersuche")
         f = self.response.forms['toplaterform']
         self.submit(f)
-        self.assertEqual("CdE Datenbank",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("CdE Datenbank")
         self.traverse({'href' : '/mydata'},
                       {'href' : '/cde/consentdecision'})
         f = self.response.forms['ackconsentform']
@@ -125,73 +118,62 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton", "berta")
     def test_member_search_single(self, user):
         self.traverse({'href' : '/membersearch'})
-        self.assertEqual("Suche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
-        self.assertEqual("Bertålotta Beispiel",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Bertålotta Beispiel")
         self.assertIn("Im Garten 77", self.response.text)
 
     @as_users("anton", "berta")
     def test_member_search_accents(self, user):
         self.traverse({'href' : '/membersearch'})
-        self.assertEqual("Suche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_given_names,display_name'] = "Berta"
         self.submit(f)
-        self.assertEqual("Bertålotta Beispiel",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Bertålotta Beispiel")
         self.assertIn("Im Garten 77", self.response.text)
 
     @as_users("anton", "berta")
     def test_member_search(self, user):
         self.traverse({'href' : '/membersearch'})
-        self.assertEqual("Suche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_event_id'] = 1
         self.submit(f, button="updateform")
         f = self.response.forms['membersearchform']
         f['qval_username'] = "@example"
         self.submit(f)
-        self.assertEqual("Bertålotta Beispiel",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Bertålotta Beispiel")
 
     @as_users("anton", "berta")
     def test_member_search_fulltext(self, user):
         self.traverse({'href' : '/membersearch'})
-        self.assertEqual("Suche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
-        self.assertEqual("2 Mitglieder gefunden",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("Mitgliedersuche -- 2 Mitglieder gefunden")
         self.assertIn("Anton", self.response.text)
         self.assertIn("Bertålotta", self.response.text)
 
     @as_users("anton")
     def test_user_search(self, user):
         self.traverse({'description' : '^CdE$'}, {'href' : '/usersearch'})
-        self.assertEqual("Suche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'Garten'
         f['qsel_member_data.persona_id'].checked = True
         f['qsel_specialisation'].checked = True
         self.submit(f)
-        self.assertEqual("1 Ergebnis gefunden",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("CdE Nutzersuche -- 1 Ergebnis gefunden")
         self.assertIn("persona_id=2", self.response.text)
 
     @as_users("anton")
     def test_user_search_csv(self, user):
         self.traverse({'description' : '^CdE$'}, {'href' : '/usersearch'})
-        self.assertEqual("Suche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'a[rm]'
         f['qsel_member_data.persona_id'].checked = True
@@ -211,8 +193,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_archived_user_search(self, user):
         self.traverse({'description' : '^CdE$'}, {'href' : '/archivedusersearch'})
-        self.assertEqual("Archivsuche",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("CdE Archivsuche")
         f = self.response.forms['usersearchform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
@@ -220,6 +201,27 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_family_name'].checked = True
         f['qsel_birth_name'].checked = True
         self.submit(f)
-        self.assertEqual("1 Ergebnis gefunden",
-                         self.response.lxml.xpath('//h1/text()')[0])
+        self.assertTitle("CdE Archivsuche -- 1 Ergebnis gefunden")
         self.assertIn("Hell", self.response.text)
+
+    @as_users("anton")
+    def test_showarchiveduser(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 8
+        self.submit(f)
+        self.assertTitle("Archivzugriff -- Hades Hell")
+
+    @as_users("anton")
+    def test_toggleactivity(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertEqual(
+            True,
+            self.response.lxml.get_element_by_id('activity_checkbox').checked)
+        f = self.response.forms['activitytoggleform']
+        self.submit(f)
+        self.assertEqual(
+            False,
+            self.response.lxml.get_element_by_id('activity_checkbox').checked)

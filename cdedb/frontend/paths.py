@@ -50,8 +50,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
              endpoint="show_user"),
         rule("/adminshowuser", methods=("GET", "HEAD"),
              endpoint="admin_show_user"),
-        rule("/changeuser/<int:persona_id>", methods=("GET", "HEAD"),
-             endpoint="change_user"),
+        rule("/toggleactivity/<int:persona_id>", methods=("POST",),
+             endpoint="toggle_activity"),
         )),
     werkzeug.routing.EndpointPrefix('cde/', (
         werkzeug.routing.Submount('/cde', (

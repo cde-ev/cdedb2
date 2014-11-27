@@ -2,8 +2,6 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Mitgliedersuche{% endblock %}
 {% block content %}
-    <h1>Suche</h1>
-
     <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform">
         {# This is mostly an inlined version of util.format_query(...) but customized for this special query page. #}
         <table>

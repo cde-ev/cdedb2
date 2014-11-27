@@ -244,3 +244,6 @@ class FrontendTest(unittest.TestCase):
             with open(path) as f:
                 ret.append(f.read())
         return ret
+
+    def assertTitle(self, title):
+        self.assertEqual(title, self.response.lxml.xpath('//h1/text()')[0])

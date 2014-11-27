@@ -5,12 +5,14 @@
    <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
 {% endmacro %}
 
-{% macro checkbox_checked() %}
-   <input type="checkbox" checked disabled>
+{% macro checkbox_checked(anid='', aclass='') %}
+   <input type="checkbox" checked disabled {% if anid %} id="{{ anid|e }}" {% endif %}
+     {% if aclass %} class="{{ aclass|e }}" {% endif %}>
 {% endmacro %}
 
-{% macro checkbox_unchecked() %}
-   <input type="checkbox" disabled>
+{% macro checkbox_unchecked(anid='', aclass='') %}
+   <input type="checkbox" disabled {% if anid %} id="{{ anid|e }}" {% endif %}
+     {% if aclass %} class="{{ aclass|e }}" {% endif %}>
 {% endmacro %}
 
 {% macro output_errors(name, displayerrors=True) %}
@@ -23,6 +25,11 @@
     {% endif %}
 {% endmacro %}
 
+{% macro info_hover(info, anid='', aclass='') %}
+    <img src="{{ staticurl("icons/info.png")|e }}" alt="info" title="{{ info|e }}
+      {% if anid %} id="{{ anid|e }}" {% endif %} class="infoHover {{ aclass|e }}">
+{% endmacro %}
+
 {% macro input_hidden(name, value=None, defaultvalue='', anid='', aclass='') %}
     {% if value is none %}
         <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
@@ -33,15 +40,16 @@
     {% endif %}
 {% endmacro %}
 
-{% macro input_file(name, displayerrors=True, accept='', anid='', aclass='') %}
+{% macro input_file(name, displayerrors=True, accept='', info='', anid='', aclass='') %}
     <span class="stacking">
         {{ output_errors(name, displayerrors) }}
         <input type="file" name="{{ name|e }}" {% if accept %} accept="{{ accept|e }}" {% endif %}
           {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+        {% if info %} {{ info_hover(info) }} {% endif %}
     </span>
 {% endmacro %}
 
-{% macro input_text(name, label='', size='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
             {{ label|e }}
@@ -55,14 +63,18 @@
                     <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
                       {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {% endif %}
+                {% if info %} {{ info_hover(info) }} {% endif %}
             </span>
         </label>
     </span>
 {% endmacro %}
 
-{% macro tab_input_text(name, label='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro tab_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td><label for="{{ name|e }}">{{ label|e }}</label></td>
+        <td>
+            <label for="{{ name|e }}">{{ label|e }}</label>
+            {% if info %} {{ info_hover(info) }} {% endif %}
+        </td>
         <td>
             {{ output_errors(name, displayerrors) }}
             {% if readonly %}
@@ -77,12 +89,13 @@
     </tr>
 {% endmacro %}
 
-{% macro input_textarea(name, label='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
             {{ label|e }}
             <span class="stacking">
                 {{ output_errors(name, displayerrors) }}
+                {% if info %} {{ info_hover(info) }} {% endif %}
                 {% if readonly %}
                     <span>{{ values.get(name, defaultvalue)|e }}</span>
                     <textarea name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
@@ -96,9 +109,12 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_textarea(name, label='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro tab_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td><label for="{{ name|e }}">{{ label|e }}</label></td>
+        <td>
+            <label for="{{ name|e }}">{{ label|e }}</label>
+            {% if info %} {{ info_hover(info) }} {% endif %}
+        </td>
         <td>
             {{ output_errors(name, displayerrors) }}
             {% if readonly %}
@@ -113,7 +129,7 @@
     </tr>
 {% endmacro %}
 
-{% macro input_password(name="password", label="", readonly=False, anid='', aclass='') %}
+{% macro input_password(name="password", label="", info='', readonly=False, anid='', aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
             {{ label|e }}
@@ -125,13 +141,17 @@
                 <input type="password" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
                   {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {% endif %}
+            {% if info %} {{ info_hover(info) }} {% endif %}
         </label>
     </span>
 {% endmacro %}
 
-{% macro tab_input_password(name="password", label="", readonly=False, anid='', aclass='') %}
+{% macro tab_input_password(name="password", label="", info='', readonly=False, anid='', aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td><label for="{{ name|e }}">{{ label|e }}</label></td>
+        <td>
+            <label for="{{ name|e }}">{{ label|e }}</label>
+            {% if info %} {{ info_hover(info) }} {% endif %}
+        </td>
         <td>
             {% if readonly %}
                 <span>******</span>
@@ -145,7 +165,7 @@
     </tr>
 {% endmacro %}
 
-{% macro input_checkbox(name, label="", value=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro input_checkbox(name, label="", value=True, info='', readonly=False, defaultvalue='', anid='', aclass='') %}
 {# This is the version for single checkboxes as opposed to input_checkboxes(). #}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
@@ -153,30 +173,33 @@
               {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %} {% if readonly %} disabled {% endif %}
               {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {{ label|e }}
+            {% if info %} {{ info_hover(info) }} {% endif %}
         </label>
     </span>
 {% endmacro %}
 
-{% macro tab_input_checkbox(name, label="", value=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro tab_input_checkbox(name, label="", value=True, info='', readonly=False, defaultvalue='', anid='', aclass='') %}
 {# This is the version for single checkboxes as opposed to tab_input_checkboxes(). #}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td colspan="2">
-                <label>
+            <label>
                 <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
                   {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %} {% if readonly %} disabled {% endif %}
                   {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {{ label|e }}
             </label>
+            {% if info %} {{ info_hover(info) }} {% endif %}
         </td>
     </tr>
 {% endmacro %}
 
-{% macro input_checkboxes(name, entries, readonly=False, defaultvalue=[]) %}
+{% macro input_checkboxes(name, entries, info='', readonly=False, defaultvalue=[]) %}
 {# This is the version for multiple checkboxes as opposed to input_checkbox().
    entries is of type [(str, str)]. #}
 
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <span class="stacking">
+            {% if info %} {{ info_hover(info) }} {% endif %}
             {% for value, label in entries %}
                 <label>
                     <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
@@ -188,12 +211,13 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_checkboxes(name, entries, readonly=False, defaultvalue=[]) %}
+{% macro tab_input_checkboxes(name, entries, info='', readonly=False, defaultvalue=[]) %}
 {# This is the version for multiple checkboxes as opposed to tab_input_checkbox().
    entries is of type [(str, str)]. #}
 
     <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td colspan="2">
+            {% if info %} {{ info_hover(info) }} {% endif %}
             {% for value, label in entries %}
                 <label>
                     <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
@@ -205,9 +229,10 @@
     </tr>
 {% endmacro %}
 
-{% macro input_radio(name, entries, title="", readonly=False, defaultvalue=None) %}
+{% macro input_radio(name, entries, title="", info='', readonly=False, defaultvalue=None) %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
+        {% if info %} {{ info_hover(info) }} {% endif %}
         {% if readonly %}
             <span>{{ values.get(name, defaultvalue)|e }}</span>
         {% else %}
@@ -224,9 +249,12 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_radio(name, entries, title="", readonly=False, defaultvalue=None) %}
+{% macro tab_input_radio(name, entries, title="", info='', readonly=False, defaultvalue=None) %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td> {{ title|e }} </td>
+        <td>
+            {{ title|e }}
+            {% if info %} {{ info_hover(info) }} {% endif %}
+        </td>
         <td>
             {% if readonly %}
                 <span>{{ values.get(name, defaultvalue)|e }}</span>
@@ -243,9 +271,10 @@
     </tr>
 {% endmacro %}
 
-{% macro input_select(name, entries, title="", readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
+{% macro input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
+        {% if info %} {{ info_hover(info) }} {% endif %}
         {% if readonly %}
             <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {{ values.get(name, defaultvalue)|e }}
@@ -266,9 +295,12 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_select(name, entries, title="", readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
+{% macro tab_input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td> {{ title|e }} </td>
+        <td>
+            {{ title|e }}
+            {% if info %} {{ info_hover(info) }} {% endif %}
+        </td>
         <td>
             {% if readonly %}
                 <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
@@ -291,9 +323,10 @@
     </tr>
 {% endmacro %}
 
-{% macro input_multiselect(name, entries, title="", readonly=False, defaultvalue=[], anid='', aclass='') %}
+{% macro input_multiselect(name, entries, title="", info='', readonly=False, defaultvalue=[], anid='', aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
+        {% if info %} {{ info_hover(info) }} {% endif %}
         {% if readonly %}
             <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {{ values.get(name, defaultvalue)|join(", ")|e }}
@@ -311,9 +344,12 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_multiselect(name, entries, title="", readonly=False, defaultvalue=[], anid='', aclass='') %}
+{% macro tab_input_multiselect(name, entries, title="", info='', readonly=False, defaultvalue=[], anid='', aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td> {{ title|e }} </td>
+        <td>
+            {{ title|e }}
+            {% if info %} {{ info_hover(info) }} {% endif %}
+        </td>
         <td>
             {% if readonly %}
                 <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
@@ -333,9 +369,10 @@
     </tr>
 {% endmacro %}
 
-{% macro input_submit(value, name="submitform", readonly=False, anid='', aclass='') %}
+{% macro input_submit(value, name="submitform", info='', readonly=False, anid='', aclass='') %}
     <input type="submit" name="{{ name|e }}" value="{{ value|e }}" {% if readonly %} disabled {% endif %}
       {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+    {% if info %} {{ info_hover(info) }} {% endif %}
 {% endmacro %}
 
 {% macro format_query(spec, titles, choices, output_selection=True) %}

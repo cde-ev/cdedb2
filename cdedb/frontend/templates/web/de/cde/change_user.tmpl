@@ -2,8 +2,6 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <h1>{{ values['given_names']|e }} {{ values['family_name']|e }}</h1>
-
     <form action="{{ cdedblink('cde/change_user')|e }}" method="POST" id="changedataform">
         <div>{{ util.input_hidden(name="generation") }}</div>
         <table>

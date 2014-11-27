@@ -1,9 +1,8 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
-{% block title %}CdE Nutzersuche{% endblock %}
+{% block title %}CdE Nutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden{% endblock %}
 {% block content %}
-    <h1>{{ result|length|e }} Ergebnis{{ result|length|numerus("", "se") }} gefunden</h1>
     <a href="{{ cdedblink("cde/user_search_form", query|querytoparams)|e }}">Zurück</a>
 
     {% with TITLES = {

@@ -288,7 +288,7 @@ class CoreFrontend(AbstractFrontend):
         data = self.coreproxy.get_data_single(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data' : data})
 
-    @access("cde_admin", {'POST'})
+    @access("core_admin", {'POST'})
     @REQUESTdata(('new_username', 'email'))
     def admin_username_change(self, rs, persona_id, new_username):
         if rs.errors:
@@ -301,4 +301,22 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/admin_username_change_form")
         else:
             rs.notify("success", "Username changed.")
-            return self.redirect(rs, "core/show_user")
+            return self.redirect_show_user(rs, persona_id)
+
+    @access("core_admin", {"POST"})
+    @REQUESTdata(("activity", "bool"))
+    def toggle_activity(self, rs, persona_id, activity):
+        """Enable/disable an account."""
+        if rs.errors:
+            rs.notify("error", "Failed.")
+            return self.render(rs, "index")
+        data = {
+            'id' : persona_id,
+            'is_active' : activity,
+        }
+        num = self.coreproxy.adjust_persona(rs, data)
+        if num:
+            rs.notify("success", "Change committed.")
+        else:
+            rs.notify("error", "Change failed.")
+        return self.redirect_show_user(rs, persona_id)

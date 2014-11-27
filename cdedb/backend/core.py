@@ -515,6 +515,13 @@ class CoreBackend(AbstractBackend):
                 allow_username_change=allow_username_change,
                 may_wait=False, change_note=change_note)
 
+        ## prevent modification of archived members
+        query = "SELECT status FROM core.personas WHERE id = %s"
+        current_data = self.query_one(rs, query, (data['id'],))
+        if current_data['status'] == const.PersonaStati.archived_member \
+          and data.get('status') not in const.CDE_STATI:
+            raise RuntimeError("Editing archived member impossible.")
+
         query = "UPDATE core.personas SET ({}) = ({}) WHERE id = %s".format(
             ", ".join(keys), ", ".join(("%s",) * len(keys)))
         ldap_ops = []
@@ -789,6 +796,28 @@ class CoreBackend(AbstractBackend):
                         change_note=change_note):
                     return True, new_username
         return False, "Failed."
+
+    @access("core_admin")
+    def adjust_persona(self, rs, data, change_note=None):
+        """Change a persona.
+
+        This is for administrative purposes (like toggling account
+        activity). Normally one should use the change_user functions of
+        the respective realm to change a persona.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type data: {str : object}
+        :type change_note: str
+        :rtype: int
+        :returns: number of users changed
+        """
+        data = affirm("persona_data", data)
+        if "username" in data:
+            raise RuntimeError("Use change_username().")
+        change_note = affirm("str_or_None", change_note)
+        if change_note is None:
+            change_note = "Unspecified change."
+        return self.set_persona_data(rs, data, change_note=change_note)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

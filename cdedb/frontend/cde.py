@@ -56,16 +56,21 @@ class CdeFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.NotFound()
         data = self.cdeproxy.get_data_single(rs, persona_id)
         participation_info = self.eventproxy.participation_info(rs, persona_id)
+        foto = self.cdeproxy.get_foto(rs, persona_id)
+        params = {
+            'data' : data,
+            'participation_info' : participation_info,
+            'foto' : foto
+        }
         if data['status'] == const.PersonaStati.archived_member:
             if self.is_admin(rs):
                 rs.notify("info", "Displaying archived member.")
+                return self.render(rs, "show_archived_user", params)
             else:
                 rs.notify("error", "Accessing archived member impossible.")
                 return self.redirect(rs, "core/index")
-        foto = self.cdeproxy.get_foto(rs, persona_id)
-        return self.render(rs, "show_user", {
-            'data' : data, 'participation_info' : participation_info,
-            'foto' : foto})
+        else:
+            return self.render(rs, "show_user", params)
 
     @access("formermember")
     @persona_dataset_guard()
