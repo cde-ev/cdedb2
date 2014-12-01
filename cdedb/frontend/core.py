@@ -9,6 +9,7 @@ import werkzeug
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, access, ProxyShim, basic_redirect,
     connect_proxy, check_validation as check, persona_dataset_guard)
+import cdedb.database.constants as const
 
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
@@ -64,11 +65,8 @@ class CoreFrontend(AbstractFrontend):
 
         :param wants: URL to redirect to
         """
-        ## do not leak the password
-        rs.values['password'] = ""
         if rs.errors:
             return self.index(rs)
-
         sessionkey = self.coreproxy.login(rs, username, password,
                                           rs.request.remote_addr)
         if not sessionkey:
@@ -114,7 +112,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_show_user(self, rs, id_to_show):
         """Allow admins to view any user data set."""
         if rs.errors:
-            return self.render(rs, "index")
+            return self.redirect(rs, "core/index")
         return self.redirect_show_user(rs, id_to_show)
 
     @access("persona")
@@ -138,11 +136,8 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("new_password2", ValueError("No match.")))
         new_password = check(rs, "password_strength", new_password,
                              "new_password")
-        ## delete values so the user must resupply them
-        for v in ('old_password', 'new_password', 'new_password2'):
-            rs.values[v] = ""
         if rs.errors:
-            return self.render(rs, "change_password")
+            return self.change_password_form(rs)
         success, message = self.coreproxy.change_password(
             rs, rs.user.persona_id, old_password, new_password)
         if not success:
@@ -151,7 +146,7 @@ class CoreFrontend(AbstractFrontend):
             self.logger.info(
                 "Unsuccessful password change for persona {}.".format(
                     rs.user.persona_id))
-            return self.render(rs, "change_password")
+            return self.change_password_form(rs)
         else:
             rs.notify("success", "Password changed.")
             return self.redirect(rs, "core/index")
@@ -167,11 +162,11 @@ class CoreFrontend(AbstractFrontend):
         """First send a confirmation mail, to prevent an adversary from
         changing random passwords."""
         if rs.errors:
-            return self.render(rs, "reset_password")
+            return self.reset_password_form(rs)
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
             rs.errors.append(("email", ValueError("Nonexistant user.")))
-            return self.render(rs, "reset_password")
+            return self.reset_password_form(r)
         self.do_mail(
             rs, "reset_password",
             {'To' : (email,), 'Subject' : 'CdEDB password reset'},
@@ -180,7 +175,7 @@ class CoreFrontend(AbstractFrontend):
         self.logger.info("Sent password reset mail to {} for IP {}.".format(
             email, rs.request.remote_addr))
         rs.notify("success", "Email sent.")
-        return self.render(rs, "index")
+        return self.redirect(rs, "core/index")
 
     @access("anonymous")
     @REQUESTdata(("email", "#email"))
@@ -189,7 +184,7 @@ class CoreFrontend(AbstractFrontend):
         the account owner actually wants the reset."""
         if rs.errors:
             rs.notify("error", "Link expired.")
-            return self.render(rs, "reset_password")
+            return self.redirect(rs, "core/reset_password_form")
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email)
         return self.render(rs, "do_password_reset")
@@ -200,11 +195,11 @@ class CoreFrontend(AbstractFrontend):
         """Now we can send an email with a new password."""
         if rs.errors:
             rs.notify("error", "Link expired.")
-            return self.render(rs, "reset_password")
+            return self.redirect(rs, "core/reset_password_form")
         success, message = self.coreproxy.reset_password(rs, email)
         if not success:
             rs.notify("error", message)
-            return self.render(rs, "reset_password")
+            return self.redirect(rs, "core/reset_password_form")
         else:
             self.do_mail(rs, "password_reset_done",
                          {'To' : (email,),
@@ -239,7 +234,7 @@ class CoreFrontend(AbstractFrontend):
     def send_username_change_link(self, rs, new_username):
         """Verify new name with test email."""
         if rs.errors:
-            return self.render(rs, "change_username")
+            return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
                      {'To' : (new_username,),
                       'Subject' : 'CdEDB username change'},
@@ -249,7 +244,7 @@ class CoreFrontend(AbstractFrontend):
         self.logger.info("Sent username change mail to {} for {}.".format(
             new_username, rs.user.username))
         rs.notify("success", "Email sent.")
-        return self.render(rs, "index")
+        return self.redirect(rs, "core/index")
 
     @access("persona")
     @REQUESTdata(("new_username", "#email"))
@@ -258,7 +253,7 @@ class CoreFrontend(AbstractFrontend):
         """Email is now verified or we are admin."""
         if rs.errors:
             rs.notify("error", "Link expired.")
-            return self.render(rs, "change_username")
+            return self.redirect(rs, "core/change_username_form")
         rs.values['new_username'] = self.encode_parameter(
             "core/do_username_change", "new_username", new_username)
         return self.render(rs, "do_username_change")
@@ -268,10 +263,8 @@ class CoreFrontend(AbstractFrontend):
     @persona_dataset_guard(realms=None)
     def do_username_change(self, rs, persona_id, new_username, password):
         """Now we can do the actual change."""
-        ## do not leak the password
-        rs.values['password'] = ""
         if rs.errors:
-            rs.notify("error", "Failed.")
+            rs.notify("error", "Link expired")
             return self.redirect(rs, "core/change_username_form")
         success, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password)
@@ -291,8 +284,8 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", {'POST'})
     @REQUESTdata(('new_username', 'email'))
     def admin_username_change(self, rs, persona_id, new_username):
+        """Change username without verification."""
         if rs.errors:
-            rs.notify("error", "Failed.")
             return self.redirect(rs, "core/admin_username_change_form")
         success, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
@@ -308,15 +301,38 @@ class CoreFrontend(AbstractFrontend):
     def toggle_activity(self, rs, persona_id, activity):
         """Enable/disable an account."""
         if rs.errors:
-            rs.notify("error", "Failed.")
-            return self.render(rs, "index")
+            return self.redirect_show_user(rs, persona_id)
         data = {
             'id' : persona_id,
             'is_active' : activity,
         }
-        num = self.coreproxy.adjust_persona(rs, data)
-        if num:
-            rs.notify("success", "Change committed.")
-        else:
-            rs.notify("error", "Change failed.")
+        change_note="Toggling activity to {}.".format(activity)
+        num = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
+        self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
+
+    @access("admin")
+    def adjust_privileges_form(self, rs, persona_id):
+        """Render form."""
+        data = self.coreproxy.get_data_single(rs, persona_id)
+        for bit in const.PrivilegeBits:
+            if data['db_privileges'] & bit:
+                rs.values.add('newprivileges', bit.value)
+        return self.render(rs, "adjust_privileges", {
+            'data' : data, 'bits' : const.PrivilegeBits})
+
+    @access("admin", {"POST"})
+    @REQUESTdata(("newprivileges", "[int]"))
+    def adjust_privileges(self, rs, persona_id, newprivileges):
+        """Allocate permissions. This is for global admins only."""
+        if rs.errors:
+            return self.redirect_show_user(rs, persona_id)
+        data = {
+            'id' : persona_id,
+            'db_privileges' : sum(newprivileges),
+        }
+        change_note="Setting privileges to {}.".format(sum(newprivileges))
+        num = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
+        self.notify_integer_success(rs, num)
+        return self.redirect_show_user(rs, persona_id)
+

@@ -52,6 +52,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
              endpoint="admin_show_user"),
         rule("/toggleactivity/<int:persona_id>", methods=("POST",),
              endpoint="toggle_activity"),
+        rule("/adjustprivileges/<int:persona_id>", methods=("GET", "HEAD"),
+             endpoint="adjust_privileges_form"),
+        rule("/adjustprivileges/<int:persona_id>", methods=("POST",),
+             endpoint="adjust_privileges"),
         )),
     werkzeug.routing.EndpointPrefix('cde/', (
         werkzeug.routing.Submount('/cde', (
@@ -92,6 +96,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="archived_user_search_form"),
             rule("/archivedusersearch", methods=("GET", "HEAD"),
                  endpoint="archived_user_search"),
+            rule("/modifymembership/<int:persona_id>", methods=("GET", "HEAD"),
+                 endpoint="modify_membership_form"),
+            rule("/modifymembership/<int:persona_id>", methods=("POST",),
+                 endpoint="modify_membership"),
             )),
         )),
     werkzeug.routing.EndpointPrefix('event/', (

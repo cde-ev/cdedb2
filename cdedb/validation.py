@@ -51,6 +51,7 @@ from cdedb.query import (
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
 _BASICCONF = BasicConfig()
+import cdedb.database.constants as const
 
 _ALL = []
 def _addvalidator(fun):
@@ -702,21 +703,39 @@ def _profilepic(val, argname=None, *, _convert=True):
     blob = val.read()
     val.seek(0)
     if len(blob) < 1000:
-        errs.append((argname, "Too small."))
+        errs.append((argname, ValueError("Too small.")))
     if len(blob) > 100000:
-        errs.append((argname, "Too big."))
+        errs.append((argname, ValueError("Too big.")))
     mime = magic.from_buffer(blob, mime=True)
     mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime not in ("image/jgp", "image/png"):
-        errs.append((argname, "Only jpg and png allowed."))
+        errs.append((argname, ValueError("Only jpg and png allowed.")))
     if errs:
         return None, errs
     image = PIL.Image.open(io.BytesIO(blob))
     width, height = image.size
     if width / height < 0.9 or height / width < 0.9:
-        errs.append((argname, "Not square enough."))
+        errs.append((argname, ValueError("Not square enough.")))
     if width * height < 5000:
-        errs.append((argname, "Resolution too small."))
+        errs.append((argname, ValueError("Resolution too small.")))
+    return val, errs
+
+@_addvalidator
+def _persona_status(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: :py:class:`cdedb.database.constants.PersonaStati` or None
+    """
+    ## this is a nop for enums
+    val, errs = _int(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    try:
+        val = const.PersonaStati(val)
+    except ValueError as e:
+        return None, ((argname, e),)
     return val, errs
 
 _ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')

@@ -179,3 +179,30 @@ class TestCoreFrontend(FrontendTest):
         self.login(new_berta)
         self.assertNotIn('loginform', self.response.forms)
         self.assertIn(new_berta['displayname'], self.response)
+
+    @as_users("anton")
+    def test_adjust_privileges(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        self.traverse({'href' : '/adjustprivileges'})
+        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_event_admin').checked)
+        f = self.response.forms['adjustmentform']
+        ## TODO multiple checkboxes with the same name can be handled as follows in webtest-2.0.17
+        ## f['newprivileges'] = ("2", "4")
+        ## the following is a hack ...
+        f.get('newprivileges', index=1).checked = True
+        f.get('newprivileges', index=2).checked = True
+        self.submit(f)
+        self.traverse({'href' : '/adjustprivileges'})
+        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_event_admin').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_admin').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_core_admin').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_cde_admin').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_event_admin').checked)

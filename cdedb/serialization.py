@@ -17,6 +17,7 @@ import collections.abc
 import decimal
 
 from cdedb.query import Query
+import cdedb.database.constants as const
 
 #: Skeleton for custom serialization wrapper. :py:attr:`_class` and
 #: :py:attr:`_value` have to be filled in accordingly.
@@ -106,6 +107,30 @@ def _trivial_deserializer_generator(atype):
         return atype(obj)
     return _trivial_deserializer
 
+def _enum_serializer_generator(classname):
+    """Serialize by calling :py:func:`int` on the object.
+
+    :type classname: str
+    :rtype: callable
+    """
+    def _enum_serializer(obj, serpent_serializer, out, level):
+        ret = _BASE_DICT.copy()
+        ret["_class"] = classname
+        ret["_value"] = int(obj)
+        serpent_serializer._serialize(ret, out, level)
+    return _enum_serializer
+
+def _enum_deserializer_generator(atype):
+    """Deserialize by calling the construnctor with the serialized string
+    representation.
+
+    :type atype: type
+    :rtype: atype
+    """
+    def _enum_deserializer(obj):
+        return atype(int(obj))
+    return _enum_deserializer
+
 #: The custom serializers have to conform to the interface needed by
 #: serpent.
 SERIALIZERS = {
@@ -114,6 +139,7 @@ SERIALIZERS = {
     float : _trivial_serializer_generator("float"),
     decimal.Decimal : _trivial_serializer_generator("decimal.Decimal"),
     Query : _query_serializer,
+    const.PersonaStati : _enum_serializer_generator("cdedb.database.constants.PersonaStati"),
 }
 
 #: The custom deserializers are called with one :py:class:`str` argument.
@@ -124,6 +150,7 @@ _DESERIALIZERS = {
     "float" : _trivial_deserializer_generator(float),
     "decimal.Decimal" : _trivial_deserializer_generator(decimal.Decimal),
     "cdedb.query.Query" : _query_deserializer,
+    "cdedb.database.constants.PersonaStati" : _enum_deserializer_generator(const.PersonaStati),
 }
 
 def deserialize(obj):

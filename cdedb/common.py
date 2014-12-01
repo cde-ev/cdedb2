@@ -56,6 +56,24 @@ def glue(*args):
     """
     return " ".join(args)
 
+def merge_dicts(*dicts):
+    """Merge all dicts into the first one, but do not overwrite.
+
+    This is basically the :py:meth:`dict.update` method, but existing
+    keys take precedence.
+
+    This is done inplace to allow the target dict to be a multi dict. If
+    we create a new return dict we would have to add extra logic to
+    cater for this.
+
+    :type dicts: [{obj : obj}]
+    """
+    assert(len(dicts) > 0)
+    for adict in dicts[1:]:
+        for key in adict:
+            if key not in dicts[0]:
+                dicts[0][key] = adict[key]
+
 def extract_realm(status):
     """
     :type status: int
@@ -93,10 +111,11 @@ class CommonUser(metaclass=abc.ABCMeta):
         :param realm: realm of origin, describing which component is
           responsible for handling the basic aspects of this user
         :type orga: {int} or None
-        :param orga: set of event ids for which this user is orga
+        :param orga: Set of event ids for which this user is orga, only
+          available in the event realm.
         :type moderator: {int} or None
-        :param moderator: set of mailing list ids for which this user is
-          moderator
+        :param moderator: Set of mailing list ids for which this user is
+          moderator, only available in the ml realm.
         """
         self.persona_id = persona_id
         self.roles = roles

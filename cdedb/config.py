@@ -15,6 +15,8 @@ import os.path
 import uuid
 import pytz
 
+from cdedb.query import Query, QUERY_SPECS, QueryOperators
+
 _LOGGER = logging.getLogger(__name__)
 
 _currentpath = os.path.dirname(os.path.abspath(__file__))
@@ -86,6 +88,27 @@ _DEFAULTS = {
     "MAIL_DOMAIN" : "db.cde-ev.de",
     ## host to use for sending emails
     "MAIL_HOST" : "localhost",
+
+    ## query stuff
+
+    ## dict where the values are dicts mapping titles to queries for "speed dialing"
+    "DEFAULT_QUERIES" : {
+        "qview_cde_user" : {
+            "trial members" : Query(
+                "qview_cde_user", QUERY_SPECS['qview_cde_user'],
+                ("member_data.persona_id", "given_names", "family_name"),
+                (("trial_member", QueryOperators.equal, True),),
+                ("family_name", "given_names"),),
+        },
+        "qview_cde_archived_user" : {
+            "with notes" : Query(
+                "qview_cde_archived_user", QUERY_SPECS['qview_cde_archived_user'],
+                ("member_data.persona_id", "given_names", "family_name",
+                 "birth_name"),
+                (("notes", QueryOperators.nonempty, None),),
+                ("family_name", "given_names"),),
+        },
+    },
 
     ### Core stuff
 

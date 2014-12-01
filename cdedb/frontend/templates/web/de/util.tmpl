@@ -193,17 +193,18 @@
     </tr>
 {% endmacro %}
 
-{% macro input_checkboxes(name, entries, info='', readonly=False, defaultvalue=[]) %}
+{% macro input_checkboxes(name, entries, info='', readonly=False) %}
 {# This is the version for multiple checkboxes as opposed to input_checkbox().
-   entries is of type [(str, str)]. #}
+   entries is of type [(str, str, str)]. #}
 
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <span class="stacking">
             {% if info %} {{ info_hover(info) }} {% endif %}
-            {% for value, label in entries %}
+            {% for value, label, entry_id in entries %}
                 <label>
                     <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                      {% if value in values.get(name, defaultvalue) %} checked {% endif %} {% if readonly %} disabled {% endif %}>
+                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %} {% if readonly %} disabled {% endif %}
+                      {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                     {{ label|e }}
                 </label>
             {% endfor %}
@@ -211,17 +212,18 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_checkboxes(name, entries, info='', readonly=False, defaultvalue=[]) %}
+{% macro tab_input_checkboxes(name, entries, info='', readonly=False) %}
 {# This is the version for multiple checkboxes as opposed to tab_input_checkbox().
-   entries is of type [(str, str)]. #}
+   entries is of type [(str, str, str)]. #}
 
     <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td colspan="2">
             {% if info %} {{ info_hover(info) }} {% endif %}
-            {% for value, label in entries %}
+            {% for value, label, entry_id in entries %}
                 <label>
                     <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                      {% if value in values.get(name, defaultvalue) %} checked {% endif %} {% if readonly %} disabled {% endif %}>
+                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %} {% if readonly %} disabled {% endif %}
+                      {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                     {{ label|e }}
                 </label>
             {% endfor %}
@@ -237,10 +239,11 @@
             <span>{{ values.get(name, defaultvalue)|e }}</span>
         {% else %}
             <span class="stacking">
-                {% for value, label in entries %}
+                {% for value, label, entry_id in entries %}
                     <label>
                         <input type="radio" name="{{ name|e }}" value="{{ value|e }}"
-                          {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}>
+                          {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
+                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                         {{ label|e }}
                     </label><br>
                 {% endfor %}
@@ -259,10 +262,11 @@
             {% if readonly %}
                 <span>{{ values.get(name, defaultvalue)|e }}</span>
             {% else %}
-                {% for value, label in entries %}
+                {% for value, label, entry_id in entries %}
                     <label>
                         <input type="radio" name="{{ name|e }}" value="{{ value|e }}"
-                          {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}>
+                          {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
+                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                         {{ label|e }}
                     </label><br>
                 {% endfor %}
@@ -285,8 +289,9 @@
                 {% if nulloption %}
                      <option value=""> </option>
                 {% endif %}
-                {% for value, label in entries %}
-                    <option value="{{ value|e }}" {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}>
+                {% for value, label, entry_id in entries %}
+                    <option value="{{ value|e }}" {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
+                      {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                         {{ label|e }}
                     </option>
                 {% endfor %}
@@ -312,8 +317,9 @@
                     {% if nulloption %}
                          <option value=""> </option>
                     {% endif %}
-                    {% for value, label in entries %}
-                        <option value="{{ value|e }}" {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}>
+                    {% for value, label, entry_id in entries %}
+                        <option value="{{ value|e }}" {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
+                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                             {{ label|e }}
                         </option>
                     {% endfor %}
@@ -323,19 +329,20 @@
     </tr>
 {% endmacro %}
 
-{% macro input_multiselect(name, entries, title="", info='', readonly=False, defaultvalue=[], anid='', aclass='') %}
+{% macro input_multiselect(name, entries, title="", info='', readonly=False, anid='', aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
         {% if info %} {{ info_hover(info) }} {% endif %}
         {% if readonly %}
             <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {{ values.get(name, defaultvalue)|join(", ")|e }}
+                {{ values.getlist(name)|join(", ")|e }}
             </span>
         {% else %}
             <select name="{{ name|e }}" multiple  {% if anid %} id="{{ anid|e }}" {% endif %}
               {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {% for value, label in entries %}
-                    <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %}>
+                {% for value, label, entry_id in entries %}
+                    <option value="{{ value|e }}" {% if value|stringIn(values.getlist(name)) %} selected {% endif %}
+                      {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                         {{ label|e }}
                     </option>
                 {% endfor %}
@@ -344,7 +351,7 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_multiselect(name, entries, title="", info='', readonly=False, defaultvalue=[], anid='', aclass='') %}
+{% macro tab_input_multiselect(name, entries, title="", info='', readonly=False, anid='', aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td>
             {{ title|e }}
@@ -353,13 +360,14 @@
         <td>
             {% if readonly %}
                 <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                    {{ values.get(name, defaultvalue)|join(", ")|e }}
+                    {{ values.getlist(name)|join(", ")|e }}
                 </span>
             {% else %}
                 <select name="{{ name|e }}" multiple {% if anid %} id="{{ anid|e }}" {% endif %}
                   {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                    {% for value, label in entries %}
-                        <option value="{{ value|e }}" {% if value in values.get(name, defaultvalue) %} selected {% endif %}>
+                    {% for value, label, entry_id in entries %}
+                        <option value="{{ value|e }}" {% if value|stringIn(values.getlist(name)) %} selected {% endif %}
+                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                             {{ label|e }}
                         </option>
                     {% endfor %}
@@ -444,7 +452,7 @@
                                     {# jinja does not support list comprehension ... #}
                                     {% set myentries = [] %}
                                     {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
-                                        {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
+                                        {{ myentries.append((op.value, OPERATOR_LABELS[op.value], None))|e }}
                                     {% endfor %}
                                     {{ input_select(name, entries=myentries, defaultvalue=VALID_QUERY_OPERATORS[spec[field]][0].value,
                                                     anid=theid) }}
@@ -472,7 +480,7 @@
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
                         {% for field in spec %}
-                            {{ myentries.append((field, titles[field]))|e }}
+                            {{ myentries.append((field, titles[field], None))|e }}
                         {% endfor %}
                         {{ input_select(name, entries=myentries, nulloption=True)}}
                     </td>

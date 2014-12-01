@@ -12,7 +12,7 @@ import werkzeug.utils
 import functools
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
-    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser)
+    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts)
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
@@ -131,9 +131,11 @@ class FrontendRequestState:
         :param errors: validation errors, consisting of a pair of (parameter
           name, the actual error)
         :type values: {str : object}
-        :param values: parameter values extracted via :py:func:`REQUESTdata`
+        :param values: Parameter values extracted via :py:func:`REQUESTdata`
           and :py:func:`REQUESTdatadict` decorators, which allows automatically
-          filling forms in
+          filling forms in. This will be a
+          :py:class:`werkzeug.datastructures.MultiDict` to allow seamless
+          integration with the werkzeug provided data.
         :type lang: str
         :param lang: language code for i18n, currently only 'de' is valid
         :type coders: {str : callable}
@@ -149,6 +151,8 @@ class FrontendRequestState:
         self.requestargs = requestargs
         self.urlmap = urlmap
         self.errors = errors
+        if not isinstance(values, werkzeug.datastructures.MultiDict):
+            values = werkzeug.datastructures.MultiDict(values)
         self.values = values
         self.lang = lang
         self._coders = coders
@@ -218,6 +222,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
+        if rs.errors and not rs.notifications:
+            rs.notify("error", "Failed validation.")
         if rs.notifications:
             if 'displaynote' in params or len(rs.notifications) > 1:
                 if not isinstance(params, werkzeug.datastructures.MultiDict):
@@ -367,6 +373,19 @@ def genus_filter(val, female, male, unknown=None):
     else:
         return unknown
 
+def stringIn_filter(val, alist):
+    """Custom jinja filter to test if a value is in a list, but requiring
+    equality only on string representation.
+
+    This has to be an explicit filter becaus jinja does not support list
+    comprehension.
+
+    :type val: obj
+    :type alist: [obj]
+    :rtype: bool
+    """
+    return str(val) in (str(x) for x in alist)
+
 def querytoparams_filter(val):
     """Custom jinja filter to convert query into a parameter dict
     which can be used to create a URL of the query.
@@ -426,6 +445,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'e' : escape_filter,
             'gender' : gender_filter,
             'json' : json_filter,
+            'stringIn' : stringIn_filter,
             'querytoparams' : querytoparams_filter,
             'numerus' : numerus_filter,
             'genus' : genus_filter,
@@ -507,7 +527,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'confirm_id' : self.encode_parameter("core/show_user",
                                                      "confirm_id", persona_id)})
         default_selections = {
-            'gender' : tuple((k, v) for k, v in
+            'gender' : tuple((k, v, None) for k, v in
                              self.enum_choice(rs, const.Genders).items()),
         }
         errorsdict = {}
@@ -526,7 +546,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'VALID_QUERY_OPERATORS' : VALID_QUERY_OPERATORS,
                 'default_selections' : default_selections,
                 'i18n' : lambda string: self.i18n(string, rs.lang),}
-        data.update(params)
+        merge_dicts(data, params)
         t = self.jinja_env.get_template(os.path.join(
             modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
         return t.render(**data)
@@ -581,6 +601,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     rs.request.is_secure, rs.request.method,
                     rs.request.remote_addr, rs.request.values)
             params['debugstring'] = debugstring
+        if rs.errors and not rs.notifications:
+            rs.notify("error", "Failed validation.")
         html = self.fill_template(rs, "web", templatename, params)
         if "<pre>" not in html:
             ## eliminate empty lines, since they don't matter
@@ -625,8 +647,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "Cc" : tuple(),
                     "Bcc" : tuple(),
                     "domain" : self.conf.MAIL_DOMAIN,}
-        defaults.update(headers)
-        headers = defaults
+        merge_dicts(headers, defaults)
         msg = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
         del msg['Content-Transfer-Encoding']
@@ -697,6 +718,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         return {str(case.value) : self.i18n(str(case), rs.lang)
                 for case in anenum}
+
+    @staticmethod
+    def notify_integer_success(rs, num):
+        """Small helper to issue a notification based on a return code specifying
+        the number of changed entries.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type num: int
+        """
+        if num > 0:
+            rs.notify("success", "Change committed.")
+        elif num < 0:
+            rs.notify("info", "Change pending.")
+        else:
+            rs.notify("warning", "Change failed.")
+
 
 class FrontendUser(CommonUser):
     """Container for a persona in the frontend."""
@@ -799,7 +836,7 @@ def REQUESTdata(*spec):
                     if argtype.startswith('[') and argtype.endswith(']'):
                         vals = tuple(val.strip()
                                      for val in rs.request.values.getlist(name))
-                        rs.values[name] = vals
+                        rs.values.setlist(name, vals)
                         kwargs[name] = tuple(
                             check_validation(rs, argtype[1:-1], val, name)
                             for val in vals)
@@ -874,13 +911,15 @@ def REQUESTfile(*args):
         return new_fun
     return wrap
 
-def persona_dataset_guard(argname="persona_id", realms=tuple()):
+def persona_dataset_guard(argname="persona_id", realms=tuple(),
+                          disallow_archived=True):
     """This decorator checks the access with respect to a specific persona. The
     persona is specified by id which has either to be a keyword
     parameter or the first positional parameter after the request state.
 
     Only the persona itself or a privileged user is
-    admitted. Additionally the realm of the persona may be verified.
+    admitted. Additionally the realm of the persona may be verified and
+    archived member datasets may be excluded.
 
     An example use case is the page for changing user details.
 
@@ -890,6 +929,8 @@ def persona_dataset_guard(argname="persona_id", realms=tuple()):
     :param realms: If not None the realm of the persona is checked. The
       realm of the persona has to be in this list (if the list is empty
       the realm of the current frontend is checked against).
+    :type disallow_archived: bool
+    :param disallow_archived: defaults to True
     """
     def wrap(fun):
         @functools.wraps(fun)
@@ -902,7 +943,10 @@ def persona_dataset_guard(argname="persona_id", realms=tuple()):
                 return werkzeug.exceptions.Forbidden()
             if realms is not None:
                 therealms = realms or (obj.realm,)
-                if obj.coreproxy.get_realm(rs, arg) not in therealms:
+                status = obj.coreproxy.get_data_single(rs, arg)['status']
+                if extract_realm(status) not in therealms or \
+                  (disallow_archived and status == \
+                   const.PersonaStati.archived_member):
                     return werkzeug.exceptions.NotFound()
             return fun(obj, rs, *args, **kwargs)
         return new_fun

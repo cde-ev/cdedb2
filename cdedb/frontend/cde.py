@@ -9,14 +9,13 @@ import werkzeug
 import io
 
 import cdedb.database.constants as const
-from cdedb.common import extract_realm, extract_roles
+from cdedb.common import extract_realm, extract_roles, merge_dicts
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
     connect_proxy, persona_dataset_guard, check_validation as check,
     FrontendUser)
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import (
-    QUERY_SPECS, mangle_query_input, QueryOperators, DEFAULT_QUERIES)
+from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 
 class CdeFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
@@ -57,10 +56,15 @@ class CdeFrontend(AbstractUserFrontend):
         data = self.cdeproxy.get_data_single(rs, persona_id)
         participation_info = self.eventproxy.participation_info(rs, persona_id)
         foto = self.cdeproxy.get_foto(rs, persona_id)
+        data['is_member'] = data['status'] in const.MEMBER_STATI
+        data['is_searchable'] = data['status'] in const.SEARCHMEMBER_STATI
+        data['db_privileges_ascii'] = ", ".join(
+            bit.name for bit in const.PrivilegeBits
+            if data['db_privileges'] & bit.value)
         params = {
             'data' : data,
             'participation_info' : participation_info,
-            'foto' : foto
+            'foto' : foto,
         }
         if data['status'] == const.PersonaStati.archived_member:
             if self.is_admin(rs):
@@ -75,13 +79,9 @@ class CdeFrontend(AbstractUserFrontend):
     @access("formermember")
     @persona_dataset_guard()
     def change_user_form(self, rs, persona_id):
-        generation = self.cdeproxy.get_generation(rs, persona_id)
         data = self.cdeproxy.get_data_single(rs, persona_id)
-        if data['status'] == const.PersonaStati.archived_member:
-            rs.notify("error", "Editing archived member impossible.")
-            return self.redirect(rs, "core/index")
-        rs.values.update(data)
-        rs.values['generation'] = generation
+        data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
+        merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username' : data['username']})
 
     @access("formermember", {"POST"})
@@ -98,29 +98,19 @@ class CdeFrontend(AbstractUserFrontend):
         data['id'] = persona_id
         data = check(rs, "member_data", data)
         if rs.errors:
-            dataset = self.coreproxy.get_data_single(rs, persona_id)
-            return self.render(rs, "change_user", {'username' : dataset['username']})
+            return self.change_user_form(rs, persona_id)
         change_note = "Normal dataset change."
         num = self.cdeproxy.change_user(rs, data, generation,
                                         change_note=change_note)
-        if num > 0:
-            rs.notify("success", "Change committed.")
-        elif num < 0:
-            rs.notify("info", "Change pending.")
-        else:
-            rs.notify("warning", "Change failed.")
+        self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
     @persona_dataset_guard()
     def admin_change_user_form(self, rs, persona_id):
-        generation = self.cdeproxy.get_generation(rs, persona_id)
         data = self.cdeproxy.get_data_single(rs, persona_id)
-        if data['status'] == const.PersonaStati.archived_member:
-            rs.notify("error", "Editing archived member impossible.")
-            return self.redirect(rs, "core/index")
-        rs.values.update(data)
-        rs.values['generation'] = generation
+        data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
+        merge_dicts(rs.values, data)
         return self.render(rs, "admin_change_user", {'username' : data['username']})
 
     @access("cde_admin", {"POST"})
@@ -140,17 +130,10 @@ class CdeFrontend(AbstractUserFrontend):
         if change_note is None:
             change_note = "Admin dataset change."
         if rs.errors:
-            dataset = self.coreproxy.get_data_single(rs, persona_id)
-            return self.render(rs, "admin_change_user",
-                               {'username' : dataset['username']})
+            return self.admin_change_user_form(rs, persona_id)
         num = self.cdeproxy.change_user(rs, data, generation,
                                         change_note=change_note)
-        if num > 0:
-            rs.notify("success", "Change committed.")
-        elif num < 0:
-            rs.notify("info", "Change pending.")
-        else:
-            rs.notify("warning", "Change failed.")
+        self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
@@ -178,7 +161,6 @@ class CdeFrontend(AbstractUserFrontend):
     @REQUESTdata(("generation", "int"), ("ack", "bool"))
     def resolve_change(self, rs, persona_id, generation, ack):
         if rs.errors:
-            rs.notify("error", "Failed.")
             return self.list_pending_changes(rs)
         self.cdeproxy.resolve_change(rs, persona_id, generation, ack)
         if ack:
@@ -240,10 +222,9 @@ class CdeFrontend(AbstractUserFrontend):
     @REQUESTdata(("ack", "bool"))
     def consent_decision(self, rs, ack):
         """Record decision."""
-        data = self.cdeproxy.get_data_single(rs, rs.user.persona_id)
         if rs.errors:
-            rs.notify("error", "Failed.")
-            return self.render(rs, "consent_decision", {'data' : data})
+            return self.consent_decision_form(rs)
+        data = self.cdeproxy.get_data_single(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
         if ack:
@@ -255,12 +236,12 @@ class CdeFrontend(AbstractUserFrontend):
             'decided_search' : True,
             'status' : status
         }
-        change_note = "Conset decision change."
+        change_note = "Consent decision (is {}).".format(ack)
         num = self.cdeproxy.change_user(rs, new_data, None, may_wait=False,
                                         change_note=change_note)
         if num != 1:
             rs.notify("error", "Failed.")
-            return self.render(rs, "consent_decision", {'data' : data})
+            return self.consent_decision_form(rs)
         if ack:
             rs.notify("success", "Consent noted.")
         else:
@@ -317,7 +298,7 @@ class CdeFrontend(AbstractUserFrontend):
         choices = {'event_id' : events,
                    'status' : self.enum_choice(rs, const.PersonaStati),
                    'gender' : self.enum_choice(rs, const.Genders)}
-        default_queries = DEFAULT_QUERIES['qview_cde_user']
+        default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
         return self.render(rs, "user_search", {
             'spec' : spec, 'choices' : choices, 'queryops' : QueryOperators,
             'default_queries' : default_queries,})
@@ -350,7 +331,7 @@ class CdeFrontend(AbstractUserFrontend):
         choices = {'event_id' : events,
                    'status' : self.enum_choice(rs, const.PersonaStati),
                    'gender' : self.enum_choice(rs, const.Genders)}
-        default_queries = DEFAULT_QUERIES['qview_cde_archived_user']
+        default_queries = self.conf.DEFAULT_QUERIES['qview_cde_archived_user']
         return self.render(rs, "archived_user_search", {
             'spec' : spec, 'choices' : choices, 'queryops' : QueryOperators,
             'default_queries' : default_queries,})
@@ -372,3 +353,34 @@ class CdeFrontend(AbstractUserFrontend):
             return self.send_file(rs, data=data)
         else:
             return self.render(rs, "archived_user_search_result", params)
+
+    @access("cde_admin")
+    @persona_dataset_guard()
+    def modify_membership_form(self, rs, persona_id):
+        data = self.cdeproxy.get_data_single(rs, persona_id)
+        data['is_member'] = data['status'] in const.MEMBER_STATI
+        data['is_searchable'] = data['status'] in const.SEARCHMEMBER_STATI
+        return self.render(rs, "modify_membership", {
+            'data' : data, 'stati' : const.PersonaStati})
+
+    @access("cde_admin", {"POST"})
+    @persona_dataset_guard()
+    @REQUESTdata(("newstatus", "persona_status"))
+    def modify_membership(self, rs, persona_id, newstatus):
+        if newstatus not in const.ALL_CDE_STATI:
+            rs.errors.append(("newstatus", ValueError("Wrong realm.")))
+        if rs.errors:
+            return self.modify_membership_form(rs, persona_id)
+        data = {
+            'id' : persona_id,
+            'status' : newstatus,
+        }
+        if newstatus == const.PersonaStati.formermember:
+            data['decided_search'] = False
+        elif newstatus == const.PersonaStati.archived_member:
+            raise NotImplementedError("TODO")
+        change_note = "Membership change to {}".format(newstatus.name)
+        num = self.cdeproxy.change_user(rs, data, None, may_wait=False,
+                                        change_note=change_note)
+        self.notify_integer_success(rs, num)
+        return self.redirect_show_user(rs, persona_id)

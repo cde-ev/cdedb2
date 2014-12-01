@@ -7,8 +7,10 @@ a part of :py:mod:`cdedb.frontend.common`, but then we get fatal circular
 dependencies.
 """
 
+from cdedb.common import merge_dicts
 from cdedb.frontend.common import AbstractFrontend, ProxyShim, connect_proxy
 from cdedb.frontend.common import check_validation as check
+import cdedb.database.constants as const
 import abc
 import werkzeug
 
@@ -74,6 +76,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return werkzeug.exceptions.NotFound()
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
+        data['db_privileges_ascii'] = ", ".join(
+            bit.name for bit in const.PrivilegeBits
+            if data['db_privileges'] & bit.value)
         return self.render(rs, "show_user", {'data' : data})
 
     ## @access("user")
@@ -82,7 +87,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         """Render form."""
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
-        rs.values.update(data)
+        merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username' : data['username']})
 
     ## @access("user", {"POST"})
@@ -94,13 +99,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data['id'] = persona_id
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
-            dataset = self.coreproxy.get_data_single(rs, persona_id)
-            return self.render(rs, "change_user", {'username' : dataset['username']})
+            return self.change_user_form(rs, persona_id)
         num = self.user_management['proxy'](self).change_user(rs, data)
-        if num:
-            rs.notify("success", "Change committed.")
-        else:
-            rs.notify("error", "Change failed.")
+        self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
 
     ## @access("realm_admin")
@@ -109,7 +110,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         """Render form."""
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
-        rs.values.update(data)
+        merge_dicts(rs.values, data)
         return self.render(rs, "admin_change_user", {'username' : data['username']})
 
     ## @access("realm_admin", {"POST"})
@@ -121,11 +122,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data['id'] = persona_id
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
-            dataset = self.coreproxy.get_data_single(rs, persona_id)
-            return self.render(rs, "admin_change_user", {'username' : dataset['username']})
+            return self.admin_change_user_form(rs, persona_id)
         num = self.user_management['proxy'](self).change_user(rs, data)
-        if num:
-            rs.notify("success", "Change committed.")
-        else:
-            rs.notify("error", "Change failed.")
+        self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)

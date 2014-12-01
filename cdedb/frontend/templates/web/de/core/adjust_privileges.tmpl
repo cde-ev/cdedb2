@@ -1,0 +1,32 @@
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Privilegien für {{ data['displayname']|e }} ({{ data['username']|e }}) setzen{% endblock %}
+{% block content %}
+    Bisherige Privilegien:
+    <ul>
+        {% for bit in bits %}
+            <li>
+                {% if bit.value|stringIn(values.getlist('newprivileges')) %}
+                    {{ util.checkbox_checked(anid="indicator_checkbox_{}".format(bit.name)) }}
+                {% else %}
+                    {{ util.checkbox_unchecked(anid="indicator_checkbox_{}".format(bit.name)) }}
+                {% endif %}
+                {{ i18n(bit|string)|e }}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <form action="{{ cdedblink('core/adjust_privileges')|e }}" method="POST" id="adjustmentform">
+        <div>
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for bit in bits %}
+                {{ myentries.append((bit.value, i18n(bit|string), "manipulator_checkbox_{}".format(bit.name)))|e }}
+            {% endfor %}
+            entries {{ myentries|e }}
+            values {{ values.getlist('newprivileges')|e }}
+            {{ util.input_checkboxes(name="newprivileges", entries=myentries) }}
+            {{ util.input_submit(value="Privilegien setzen") }}
+        </div>
+    </form>
+{% endblock %}

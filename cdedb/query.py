@@ -191,25 +191,6 @@ QUERY_VIEWS = {
         "ON personas.id = participants.persona_id"),
 }
 
-#: dict where the values are dicts mapping titles to queries for "speed dialing"
-DEFAULT_QUERIES = {
-    "qview_cde_user" : {
-        "trial members" : Query(
-            "qview_cde_user", QUERY_SPECS['qview_cde_user'],
-            ("member_data.persona_id", "given_names", "family_name"),
-            (("trial_member", QueryOperators.equal, True),),
-            ("family_name", "given_names"),),
-    },
-    "qview_cde_archived_user" : {
-        "with notes" : Query(
-            "qview_cde_archived_user", QUERY_SPECS['qview_cde_archived_user'],
-            ("member_data.persona_id", "given_names", "family_name",
-             "birth_name"),
-            (("notes", QueryOperators.nonempty, None),),
-            ("family_name", "given_names"),),
-    },
-}
-
 def mangle_query_input(rs, spec):
     """This is to be used in conjunction with the ``query_input`` validator,
     which is exceptional since it is not used via a decorator. To take

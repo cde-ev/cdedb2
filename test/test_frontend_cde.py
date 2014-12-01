@@ -205,23 +205,39 @@ class TestCdEFrontend(FrontendTest):
         self.assertIn("Hell", self.response.text)
 
     @as_users("anton")
-    def test_showarchiveduser(self, user):
+    def test_show_archived_user(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = 8
         self.submit(f)
         self.assertTitle("Archivzugriff -- Hades Hell")
 
     @as_users("anton")
-    def test_toggleactivity(self, user):
+    def test_toggle_activity(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = 2
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertEqual(
-            True,
-            self.response.lxml.get_element_by_id('activity_checkbox').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('activity_checkbox').checked)
         f = self.response.forms['activitytoggleform']
         self.submit(f)
-        self.assertEqual(
-            False,
-            self.response.lxml.get_element_by_id('activity_checkbox').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('activity_checkbox').checked)
+
+    @as_users("anton")
+    def test_modify_membership(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = 2
+        self.submit(f)
+        self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
+        self.assertIn("Daten sind für andere Mitglieder sichtbar.", self.response.text)
+        self.traverse({'href' : '/modifymembership'})
+        f = self.response.forms['modifymembershipform']
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertFalse(self.response.lxml.get_element_by_id('membership_checkbox').checked)
+        self.traverse({'href' : '/modifymembership'})
+        f = self.response.forms['modifymembershipform']
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
+        self.assertIn("Daten sind nicht sichtbar.", self.response.text)
+

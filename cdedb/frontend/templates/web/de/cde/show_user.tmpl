@@ -124,13 +124,16 @@
             <tr>
                 <td>CdE-Mitglied</td>
                 <td>
-                    {% if user.is_member %}
-                        {{ util.checkbox_checked() }}
+                    {% if data['is_member'] %}
+                        {{ util.checkbox_checked(anid="membership_checkbox") }}
                         {% if data['trial_member'] %}
                             (Probemitgliedschaft)
                         {% endif %}
                     {% else %}
-                        {{ util.checkbox_unchecked() }}
+                        {{ util.checkbox_unchecked(anid="membership_checkbox") }}
+                    {% endif %}
+                    {% if is_admin %}
+                        <a href="{{ cdedblink('cde/modify_membership_form')|e }}">Mitgliedsstatus ändern</a>
                     {% endif %}
                 </td>
             </tr>
@@ -162,7 +165,7 @@
                     {% endif %}
                 </td>
             </tr>
-            {% if user.is_member %}
+            {% if data['is_member'] %}
                 <tr>
                     <td>Sichtbarkeit</td>
                     {% if not data['decided_search'] %}
@@ -173,7 +176,7 @@
                             {% endif %}
                         </td>
                     {% else %}
-                       {% if user.is_searchable %}
+                       {% if data['is_searchable'] %}
                            <td>Daten sind für andere Mitglieder sichtbar.</td>
                        {% else %}
                            <td>Daten sind nicht sichtbar.</td>
@@ -202,7 +205,12 @@
             {% if is_admin %}
                 <tr>
                     <td>Privilegien-Bits</td>
-                    <td>{{ data['db_privileges']|e }}</td>
+                    <td>
+                        {{ data['db_privileges_ascii']|e }}
+                        {% if "admin" in user.roles %}
+                            <a href="{{ cdedblink("core/adjust_privileges_form")|e }}">Ändern</a>
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <td>Notizen</td>
