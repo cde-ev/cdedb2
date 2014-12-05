@@ -21,7 +21,7 @@ import serpent
 import logging
 from cdedb.common import glue
 from cdedb.backend.common import do_singularization
-from cdedb.serialization import SERIALIZERS
+from cdedb.serialization import deserialize, SERIALIZERS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +43,9 @@ def _process_function(backend, fun):
         try:
             rs = backend.establish(key, fun.__name__)
             if rs:
+                ## This is for frontend -> backend.
+                args = deserialize(args)
+                kwargs = deserialize(kwargs)
                 return fun(rs, *args, **kwargs)
             else:
                 raise RuntimeError("Permission denied")

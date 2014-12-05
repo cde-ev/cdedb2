@@ -395,42 +395,42 @@
                 // do nothing
             } else if ($('#qop_'+field).val() == "2") {
                 if (!$.isEmptyObject(choices)) {
-                    $("#qspan_"+field).append($("<select>", {"name" : "qval_" + field, "id" : "qinput_"+field}));
-                    $("#qinput_"+field).append($("<option>", {"value" : ""}));
+                    $("#qspan_"+field).append($("<select>", {"name": "qval_" + field, "id": "qinput_"+field}));
+                    $("#qinput_"+field).append($("<option>", {"value": ""}));
                     for (var key in choices) {
                         if (choices.hasOwnProperty(key)) {
-                            $("#qinput_"+field).append($("<option>", {"value" : key, "html" : choices[key], selected : (key == previous)}));
+                            $("#qinput_"+field).append($("<option>", {"value": key, "html": choices[key], selected: (key == previous)}));
                         }
                     }
                 } else {
                     if (validator == "bool") {
-                        $("#qspan_"+field).append($("<select>", {"name" : "qval_" + field, "id" : "qinput_"+field}));
-                        $("#qinput_"+field).append($("<option>", {"value" : ""}));
-                        var bool_choices = {"True" : "wahr", "False" : "falsch"};
+                        $("#qspan_"+field).append($("<select>", {"name": "qval_" + field, "id": "qinput_"+field}));
+                        $("#qinput_"+field).append($("<option>", {"value": ""}));
+                        var bool_choices = {"True": "wahr", "False": "falsch"};
                         for (var key in bool_choices) {
-                            $("#qinput_"+field).append($("<option>", {"value" : key, "html" : bool_choices[key], selected : (key == previous)}));
+                            $("#qinput_"+field).append($("<option>", {"value": key, "html": bool_choices[key], selected: (key == previous)}));
                         }
                     } else {
-                        $("#qspan_"+field).append($("<input>", {"name" : "qval_" + field, "id" : "qinput_"+field, "type" : "text", "value" : previous}));
+                        $("#qspan_"+field).append($("<input>", {"name": "qval_" + field, "id": "qinput_"+field, "type": "text", "value": previous}));
                     }
                 }
             } else {
-                $("#qspan_"+field).append($("<input>", {"name" : "qval_" + field, "id" : "qinput_"+field, "type" : "text", "value" : previous}));
+                $("#qspan_"+field).append($("<input>", {"name": "qval_" + field, "id": "qinput_"+field, "type": "text", "value": previous}));
             }
         }
     </script>
-    {% with OPERATOR_LABELS = {0 : "leer",
-                               1 : "nichtleer",
-                               2 : "gleich",
-                               3 : "eines aus",
-                               4 : "ähnlich",
-                               5 : "regex",
-                               6 : "enthält alle",
-                               10 : "kleiner",
-                               11 : "kleinergleich",
-                               12 : "zwischen",
-                               13 : "größergleich",
-                               14 : "größer",} %}
+    {% with OPERATOR_LABELS = {0: "leer",
+                               1: "nichtleer",
+                               2: "gleich",
+                               3: "eines aus",
+                               4: "ähnlich",
+                               5: "regex",
+                               6: "enthält alle",
+                               10: "kleiner",
+                               11: "kleinergleich",
+                               12: "zwischen",
+                               13: "größergleich",
+                               14: "größer",} %}
         <table>
             {% for field in spec %}
                 {# NOTE: We split of schemas for ids, since the dot messes up jQuery selectors. #}

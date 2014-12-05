@@ -202,3 +202,11 @@ class IrradiatedConnection(psycopg2.extensions.connection):
         if self._radiation_level <= 0:
             raise RuntimeError("No contamination!")
         self._radiation_level -= 1
+
+    @property
+    def is_contaminated(self):
+        """Test for usage af an Atomizer higher up the in the stack.
+
+        :rtype: bool
+        """
+        return bool(self._radiation_level)

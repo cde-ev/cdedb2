@@ -18,10 +18,10 @@ import serpent
 ## correctly by pyro.
 
 custom_exceptions = {
-    "cdedb.common.QuotaException" : QuotaException,
-    "psycopg2.extensions.TransactionRollbackError" : \
+    "cdedb.common.QuotaException": QuotaException,
+    "psycopg2.extensions.TransactionRollbackError":
         psycopg2.extensions.TransactionRollbackError,
-    "psycopg2.ProgrammingError" : psycopg2.ProgrammingError,}
+    "psycopg2.ProgrammingError": psycopg2.ProgrammingError,}
 
 Pyro4.util.all_exceptions.update(custom_exceptions)
 

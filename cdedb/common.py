@@ -66,7 +66,7 @@ def merge_dicts(*dicts):
     we create a new return dict we would have to add extra logic to
     cater for this.
 
-    :type dicts: [{obj : obj}]
+    :type dicts: [{obj: obj}]
     """
     assert(len(dicts) > 0)
     for adict in dicts[1:]:
@@ -101,8 +101,8 @@ class QuotaException(RuntimeError):
 
 class CommonUser(metaclass=abc.ABCMeta):
     """Abstract base class for container representing a persona."""
-    def __init__(self, persona_id=None, roles={"anonymous"}, realm=None,
-                 orga=None, moderator=None):
+    def __init__(self, persona_id=None, roles=None, realm=None, orga=None,
+                 moderator=None):
         """
         :type persona_id: int or None
         :type roles: {str}
@@ -118,7 +118,7 @@ class CommonUser(metaclass=abc.ABCMeta):
           moderator, only available in the ml realm.
         """
         self.persona_id = persona_id
-        self.roles = roles
+        self.roles = roles or {"anonymous"}
         self.realm = realm
         self.orga = orga or set()
         self.moderator = moderator or set()
@@ -169,43 +169,46 @@ def extract_roles(db_privileges, status):
 #: all roles which are upwards in the hierachy. Thus we have an encoded
 #: graph, for a picture see :ref:`privileges`.
 ALL_ROLES = {
-    "anonymous" : {"anonymous", "persona", "core_admin",
-                   "formermember", "member", "searchmember", "cde_admin",
-                   "event_user", "event_admin",
-                   "assembly_user", "assembly_admin",
-                   "ml_user", "ml_admin",
-                   "admin"},
-    "persona" : {"persona", "core_admin",
-                 "formermember", "member", "searchmember", "cde_admin",
-                 "event_user", "event_admin",
-                 "assembly_user", "assembly_admin",
-                 "ml_user", "ml_admin",
-                 "admin"},
-    "core_admin" : {"admin"},
-    "formermember" : {"formermember", "member", "searchmember", "cde_admin",
-                      "admin"},
-    "member" : {"member", "searchmember", "cde_admin",
-                "admin"},
-    "searchmember" : {"searchmember", "cde_admin",
-                      "admin"},
-    "cde_admin" : {"cde_admin",
-                   "admin"},
-    "event_user" : {"formermember", "member", "searchmember", "cde_admin",
-                    "event_user", "event_admin",
-                    "admin"},
-    "event_admin" : {"event_admin",
-                    "admin"},
-    "assembly_user" : {"member", "searchmember", "cde_admin",
-                       "assembly_user", "assembly_admin",
-                       "admin"},
-    "assembly_admin" : {"assembly_admin",
-                        "admin"},
-    "ml_user" : {"formermember", "member", "searchmember", "cde_admin",
-                 "ml_user", "ml_admin",
-                 "admin"},
-    "ml_admin" : {"ml_admin",
+    "anonymous": {"anonymous", "persona", "core_admin",
+                  "formermember", "member", "searchmember", "cde_admin",
+                  "event_user", "event_admin",
+                  "assembly_user", "assembly_admin",
+                  "ml_user", "ml_admin",
                   "admin"},
-    "admin" : {"admin"},
+    "persona": {"persona", "core_admin",
+                "formermember", "member", "searchmember", "cde_admin",
+                "event_user", "event_admin",
+                "assembly_user", "assembly_admin",
+                "ml_user", "ml_admin",
+                "admin"},
+    "core_admin": {"core_admin",
+                   "admin"},
+    "formermember": {"formermember", "member", "searchmember", "cde_admin",
+                     "admin"},
+    "member": {"member", "searchmember", "cde_admin",
+               "admin"},
+    "searchmember": {"searchmember", "cde_admin",
+                     "admin"},
+    "cde_admin": {"cde_admin",
+                  "admin"},
+    "event_user": {"formermember", "member", "searchmember", "cde_admin",
+                   "event_user", "event_admin",
+                   "admin"},
+    "event_admin": {"event_admin",
+                    "admin"},
+    "assembly_user": {"member", "searchmember", "cde_admin",
+                      "assembly_user", "assembly_admin",
+                      "admin"},
+    "assembly_admin": {"assembly_admin",
+                       "admin"},
+    "ml_user": {"formermember", "member", "searchmember", "cde_admin",
+                "event_user", "event_admin",
+                "assembly_user", "assembly_admin",
+                "ml_user", "ml_admin",
+                "admin"},
+    "ml_admin": {"ml_admin",
+                 "admin"},
+    "admin": {"admin"},
 }
 
 #: Map of available privilege levels to those present in the SQL database
@@ -260,5 +263,10 @@ EVENT_USER_DATA_FIELDS = (
     "family_name", "given_names", "title", "name_supplement", "gender",
     "birthday", "telephone", "mobile", "address_supplement", "address",
     "postal_code", "location", "country", "notes")
+
+#: Fields of a persona creation case.
+GENESIS_CASE_FIELDS = (
+    "id", "ctime", "username", "full_name", "persona_status", "notes",
+    "case_status", "secret", "reviewer")
 
 EPSILON = 10**(-6) #:

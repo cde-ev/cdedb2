@@ -12,6 +12,8 @@ from cdedb.backend.common import (
 from cdedb.common import glue, EVENT_USER_DATA_FIELDS
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
+from cdedb.query import QueryOperators
+import cdedb.database.constants as const
 import argparse
 
 class EventBackend(AbstractUserBackend):
@@ -19,9 +21,10 @@ class EventBackend(AbstractUserBackend):
     additional actions available."""
     realm = "event"
     user_management = {
-        "data_table" : "event.user_data",
-        "data_fields" : EVENT_USER_DATA_FIELDS,
-        "validator" : "event_user_data",
+        "data_table": "event.user_data",
+        "data_fields": EVENT_USER_DATA_FIELDS,
+        "validator": "event_user_data",
+        "user_status": const.PersonaStati.event_user,
     }
 
     def establish(self, sessionkey, method, allow_internal=False):
@@ -60,7 +63,7 @@ class EventBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : [dict]}
+        :rtype: {int: [dict]}
         :returns: Keys are the ids and items are the event lists.
         """
         ids = affirm_array("int", ids)
@@ -86,6 +89,18 @@ class EventBackend(AbstractUserBackend):
     def get_data(self, rs, ids):
         return super().get_data(rs, ids)
 
+    @access("event_admin")
+    def create_user(self, rs, data):
+        return super().create_user(rs, data)
+
+    @access("anonymous")
+    def genesis_check(self, rs, case_id, secret, username=None):
+        return super().genesis_check(rs, case_id, secret, username=username)
+
+    @access("anonymous")
+    def genesis(self, rs, case_id, secret, data):
+        return super().genesis(rs, case_id, secret, data)
+
     @access("persona")
     def list_events(self, rs):
         """List all events.
@@ -96,7 +111,7 @@ class EventBackend(AbstractUserBackend):
         """
         query = "SELECT id, title FROM event.events"
         data = self.query_all(rs, query, tuple())
-        return {e['id'] : e['title'] for e in data}
+        return {e['id']: e['title'] for e in data}
 
     @access("persona")
     def list_courses(self, rs, event_id):
@@ -110,7 +125,29 @@ class EventBackend(AbstractUserBackend):
         event_id = affirm("int", event_id)
         query = "SELECT id, title FROM event.courses WHERE event_id = %s"
         data = self.query_all(rs, query, (event_id,))
-        return {e['id'] : e['title'] for e in data}
+        return {e['id']: e['title'] for e in data}
+
+    @access("event_user")
+    def submit_general_query(self, rs, query):
+        """Realm specific wrapper around
+        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :rtype: [{str: object}]
+        """
+        query = affirm("serialized_query", query)
+        if query.scope == "qview_registration":
+            raise NotImplementedError("TODO")
+        elif query.scope == "qview_event_user":
+            if not self.is_admin(rs):
+                raise RuntimeError("Permission denied.")
+            query.constraints.append(("status", QueryOperators.equal,
+                                      const.PersonaStati.event_user))
+            query.spec['status'] = "int"
+        else:
+            raise RuntimeError("Bad scope.")
+        return self.general_query(rs, query)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

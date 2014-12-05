@@ -17,10 +17,11 @@
                                 </div>
                             </form>
                         </li>
+                        <li><a href="{{ cdedblink("core/genesis_list_cases")|e }}">Accountanfragen</a></li>
                     {% endif %}
                 </ul>
             </li>
-            {% if user.realm == "cde" %}
+            {% if "formermember" in user.roles %}
                 <li>
                     <a href="{{ cdedblink("cde/index")|e }}">CdE</a>
                     <ul>
@@ -32,11 +33,11 @@
                     </ul>
                 </li>
             {% endif %}
-            {% if user.realm in ("event", "cde") %}
+            {% if "event_user" in user.roles %}
                 <li><a href="{{ cdedblink("event/index")|e }}">Veranstaltungen</a></li>
             {% endif %}
             <li>Mailinglisten</li>
-            {% if user.realm in ("assembly", "cde") %}
+            {% if "assembly_user" in user.roles %}
                 <li>Versammlung</li>
             {% endif %}
             <li>Dateien</li>
@@ -46,7 +47,7 @@
             <li>
                 <a href="{{ cdedblink("core/index")|e }}">Start</a>
                 <ul>
-                    <li>Account anfordern</li>
+                    <li><a href="{{ cdedblink("core/genesis_request_form")|e }}">Account anfordern</a></li>
                 </ul>
             </li>
         </ul>

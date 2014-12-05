@@ -86,12 +86,12 @@
                 <td>
                     {% if data['is_active'] %}
                         {{ util.checkbox_checked(anid='activity_checkbox') }}
-                        <form action="{{ cdedblink('core/toggle_activity', {'activity' : False})|e }}" method="POST" id="activitytoggleform">
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST" id="activitytoggleform">
                             <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
                         </form>
                     {% else %}
                         {{ util.checkbox_unchecked(anid='activity_checkbox') }}
-                        <form action="{{ cdedblink('core/toggle_activity', {'activity' : True})|e }}" method="POST" id="activitytoggleform">
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST" id="activitytoggleform">
                             <div>{{ util.input_submit(value="Account aktivieren") }}</div>
                         </form>
                     {% endif %}

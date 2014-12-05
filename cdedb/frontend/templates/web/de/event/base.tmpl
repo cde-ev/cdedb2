@@ -19,18 +19,22 @@
                 {% endif %}
             </ul>
         </li>
-        {% if user.realm == "cde" %}
+        {% if "formermember" in user.roles %}
             <li><a href="{{ cdedblink("cde/index")|e }}">CdE</a></li>
         {% endif %}
-        {% if user.realm in ("event", "cde") %}
+        {% if "event_user" in user.roles %}
             <li>
                 <a href="{{ cdedblink("event/index")|e }}">Veranstaltungen</a>
                 <ul>
+                    {% if is_admin %}
+                        <li><a href="{{ cdedblink("event/create_user_form")|e }}">Neuen Nutzer anlegen</a></li>
+                        <li><a href="{{ cdedblink("event/user_search_form")|e }}">Nutzersuche</a></li>
+                    {% endif %}
                 </ul>
             </li>
         {% endif %}
         <li>Mailinglisten</li>
-        {% if user.realm in ("assembly", "cde") %}
+        {% if "assembly_user" in user.roles %}
             <li>Versammlung</li>
         {% endif %}
         <li>Dateien</li>

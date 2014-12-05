@@ -34,7 +34,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton", "berta", "emilia")
     def test_showuser(self, user):
-        self.traverse({'href' : '/mydata'})
+        self.traverse({'href': '/mydata'})
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
         self.assertIn(user['given_names'], self.response.text)
@@ -50,7 +50,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
-        self.traverse({'href' : '/changepassword'})
+        self.traverse({'href': '/changepassword'})
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
         f['new_password'] = new_password
@@ -73,7 +73,7 @@ class TestCoreFrontend(FrontendTest):
                     self.setUp()
                 user = USER_DICT[u]
                 self.get('/')
-                self.traverse({'href' : '/resetpassword'})
+                self.traverse({'href': '/resetpassword'})
                 f = self.response.forms['passwordresetform']
                 f['email'] = user['username']
                 self.submit(f)
@@ -134,7 +134,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
         new_username = "zelda@example.cde"
-        self.traverse({'href' : '/mydata'}, {'href' : '/changeusername'})
+        self.traverse({'href': '/mydata'}, {'href': '/changeusername'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)
@@ -166,7 +166,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = 2
         self.submit(f)
-        self.traverse({'href' : '/adminusernamechange'})
+        self.traverse({'href': '/adminusernamechange'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)
@@ -185,7 +185,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = 2
         self.submit(f)
-        self.traverse({'href' : '/adjustprivileges'})
+        self.traverse({'href': '/adjustprivileges'})
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)
@@ -197,7 +197,7 @@ class TestCoreFrontend(FrontendTest):
         f.get('newprivileges', index=1).checked = True
         f.get('newprivileges', index=2).checked = True
         self.submit(f)
-        self.traverse({'href' : '/adjustprivileges'})
+        self.traverse({'href': '/adjustprivileges'})
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
         self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
         self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)

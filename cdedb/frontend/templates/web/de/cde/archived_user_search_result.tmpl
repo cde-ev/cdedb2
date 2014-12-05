@@ -6,17 +6,17 @@
     <a href="{{ cdedblink("cde/archived_user_search_form", query|querytoparams)|e }}">Zurück</a>
 
     {% with TITLES = {
-        "persona_id" : "ID",
-        "username" : "Email",
-        "family_name" : "Nachname",
-        "birth_name" : "Geburtsname",
-        "given_names" : "Vorname",
-        "display_name" : "Rufname",
-        "gender" : "Geschlecht",
-        "birthday" : "Geburtstag",
-        "event_id" : "Veranstaltung",
-        "course_id" : "Kurs",
-        "notes" : "Notizen",} %}
+        "persona_id": "ID",
+        "username": "Email",
+        "family_name": "Nachname",
+        "birth_name": "Geburtsname",
+        "given_names": "Vorname",
+        "display_name": "Rufname",
+        "gender": "Geschlecht",
+        "birthday": "Geburtstag",
+        "event_id": "Veranstaltung",
+        "course_id": "Kurs",
+        "notes": "Notizen",} %}
 
         {{ util.display_query_result(result, query, TITLES) }}
     {% endwith %}

@@ -66,7 +66,7 @@ def _addvalidator(fun):
     @functools.wraps(fun)
     def new_fun(*args, **kwargs):
         args = tuple(deserialize(arg) for arg in args)
-        kwargs = {key : deserialize(value) for key, value in kwargs.items()}
+        kwargs = {key: deserialize(value) for key, value in kwargs.items()}
         return fun(*args, **kwargs)
     return new_fun
 
@@ -77,12 +77,12 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
 
     :type adict: dict
     :param adict: a :py:class:`dict` to check
-    :type mandatory_fields: {str : callable}
+    :type mandatory_fields: {str: callable}
     :param mandatory_fields: The mandatory keys to be checked for in
       :py:obj:`adict`, the callable is a validator to check the corresponding
       value in :py:obj:`adict` for conformance. A missing key is an error in
       itself.
-    :type optional_fields: {str : callable}
+    :type optional_fields: {str: callable}
     :param optional_fields: Like :py:obj:`mandatory_fields`, but facultative.
     :type strict: bool
     :param strict: If ``True`` treat the optional fields as mandatory.
@@ -177,14 +177,11 @@ def _decimal(val, argname=None, *, _convert=True):
     return val, []
 
 @_addvalidator
-def _str_type(val, argname=None, *, strip=False, zap='', sieve='',
-              _convert=True):
+def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strip: bool
-    :param strip: Mangle with :py:func:`str.strip`.
     :type zap: str
     :param zap: delete all characters in this from the result
     :type sieve: str
@@ -197,8 +194,6 @@ def _str_type(val, argname=None, *, strip=False, zap='', sieve='',
             return None, [(argname, e)]
     if not isinstance(val, str):
         return None, [(argname, TypeError("Must be a string."))]
-    if strip:
-        val = val.strip()
     if zap:
         val = val.translate(str.maketrans("", "", zap))
     if sieve:
@@ -207,20 +202,17 @@ def _str_type(val, argname=None, *, strip=False, zap='', sieve='',
 
 
 @_addvalidator
-def _str(val, argname=None, *, strip=False, zap='', sieve='',
-         _convert=True):
+def _str(val, argname=None, *, zap='', sieve='', _convert=True):
     """ Like :py:class:`_str_type` (parameters see there), but mustn't be
     empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strip: bool
     :type zap: str
     :type sieve: str
     """
-    val, errs = _str_type(val, argname, strip=strip, zap=zap, sieve=sieve,
-                          _convert=_convert)
+    val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert)
     if val is not None and not val.strip():
         errs.append((argname, ValueError("Mustn't be empty.")))
     return val, errs
@@ -259,32 +251,29 @@ def _bool(val, argname=None, *, _convert=True):
 
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')
 @_addvalidator
-def _printable_ascii_type(val, argname=None, *, strip=False, _convert=True):
+def _printable_ascii_type(val, argname=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strip: bool
-    :param strip: Mangle with :py:func:`str.strip`.
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _str_type(val, argname, strip=strip, _convert=_convert)
+    val, errs = _str_type(val, argname, _convert=_convert)
     if not errs and not _PRINTABLE_ASCII.search(val):
         errs.append((argname, ValueError("Must be printable ASCII.")))
     return val, errs
 
 @_addvalidator
-def _printable_ascii(val, argname=None, *, strip=False, _convert=True):
+def _printable_ascii(val, argname=None, *, _convert=True):
     """Like :py:func:`_printable_ascii_type` (parameters see there), but
     mustn't be empty (whitespace doesn't count).
 
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strip: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii_type(val, argname, strip=strip, _convert=_convert)
+    val, errs = _printable_ascii_type(val, argname, _convert=_convert)
     if val is not None and not val.strip():
         errs.append((argname, ValueError("Mustn't be empty.")))
     return val, errs
@@ -323,41 +312,57 @@ def _email(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, strip=True, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
     if errs:
         return None, errs
     ## normalize email addresses to lower case
-    val = val.lower()
+    val = val.strip().lower()
     if not _EMAIL_REGEX.search(val):
         errs.append((argname, ValueError("Must be a valid email address.")))
     return val, errs
 
-_PERSONA_MANDATORY_FIELDS = {'id' : _int}
+_PERSONA_MANDATORY_FIELDS = {'id': _int}
 _PERSONA_OPTIONAL_FIELDS = {
-    'username' : _email,
-    'display_name' : _str,
-    'is_active' : _bool,
-    'status' : _int,
-    'db_privileges' : _int,
-    'cloud_account' : _bool,
+    'username': _email,
+    'display_name': _str,
+    'is_active': _bool,
+    'status': _int,
+    'db_privileges': _int,
+    'cloud_account': _bool,
+}
+_PERSONA_INIT_FIELDS = {
+    'username': _email,
+    'display_name': _str,
+    'is_active': _bool,
+    'status': _int,
+    'cloud_account': _bool,
 }
 @_addvalidator
-def _persona_data(val, argname=None, *, strict=False, _convert=True):
+def _persona_data(val, argname=None, *, strict=False, initialization=False,
+                  _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :type strict: bool
     :param strict: If ``True`` allow only complete data sets.
+    :type initialization: bool
+    :param initialization: If ``True`` test the data set on fitness for creation
+      of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "persona_data"
     val, errs = _dict(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    return _examine_dictionary_fields(
-        val, _PERSONA_MANDATORY_FIELDS, _PERSONA_OPTIONAL_FIELDS,
-        strict=strict, _convert=_convert)
+    if initialization:
+        mandatory_fields = _PERSONA_INIT_FIELDS
+        optional_fields = {}
+    else:
+        mandatory_fields = _PERSONA_MANDATORY_FIELDS
+        optional_fields = _PERSONA_OPTIONAL_FIELDS
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      strict=strict, _convert=_convert)
 
 def _parse_date(val):
     """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
@@ -371,17 +376,15 @@ def _parse_date(val):
     """
     default1 = datetime.datetime(1, 1, 1)
     default2 = datetime.datetime(2, 2, 2)
-    val1 = dateutil.parser.parse(val.strip(), dayfirst=True,
-                                 default=default1).date()
-    val2 = dateutil.parser.parse(val.strip(), dayfirst=True,
-                                 default=default2).date()
+    val1 = dateutil.parser.parse(val, dayfirst=True, default=default1).date()
+    val2 = dateutil.parser.parse(val, dayfirst=True, default=default2).date()
     if val1.year == 1 and val2.year == 2:
         raise ValueError("Year missing.")
     if val1.month == 1 and val2.month == 2:
         raise ValueError("Month missing.")
     if val1.day == 1 and val2.day == 2:
         raise ValueError("Day missing.")
-    return dateutil.parser.parse(val.strip(), dayfirst=True).date()
+    return dateutil.parser.parse(val, dayfirst=True).date()
 
 @_addvalidator
 def _date(val, argname=None, *, _convert=True):
@@ -417,8 +420,8 @@ def _parse_datetime(val, default_date=None):
     """
     default1 = datetime.datetime(1, 1, 1, 1, 1)
     default2 = datetime.datetime(2, 2, 2, 2, 2)
-    val1 = dateutil.parser.parse(val.strip(), dayfirst=True, default=default1)
-    val2 = dateutil.parser.parse(val.strip(), dayfirst=True, default=default2)
+    val1 = dateutil.parser.parse(val, dayfirst=True, default=default1)
+    val2 = dateutil.parser.parse(val, dayfirst=True, default=default2)
     if not default_date and val1.year == 1 and val2.year == 2:
         raise ValueError("Year missing.")
     if not default_date and val1.month == 1 and val2.month == 2:
@@ -434,7 +437,7 @@ def _parse_datetime(val, default_date=None):
     else:
         dd = datetime.datetime.now(pytz.utc)
     default = datetime.datetime(dd.year, dd.month, dd.day)
-    ret = dateutil.parser.parse(val.strip(), dayfirst=True, default=default)
+    ret = dateutil.parser.parse(val, dayfirst=True, default=default)
     if ret.tzinfo is None:
         ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
     return ret.astimezone(pytz.utc)
@@ -468,10 +471,10 @@ def _phone(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, strip=True, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    orig = val
+    orig = val.strip()
     val = ''.join(c for c in val if c in '+1234567890')
     if len(val) < 7:
         errs.append((argname, ValueError("Too short.")))
@@ -541,58 +544,100 @@ def _german_postal_code(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
-    val, errs = _printable_ascii(val, argname, strip=True, _convert=_convert)
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    val = val.strip()
     if val not in GERMAN_POSTAL_CODES:
         errs.append((argname, ValueError("Invalid german postal code.")))
     return val, errs
 
 @_addvalidator
-def _member_data(val, argname=None, *, strict=False, _convert=True):
+def _member_data(val, argname=None, *, strict=False, initialization=False,
+                 _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :type strict: bool
     :param strict: If ``True`` allow only complete data sets.
+    :type initialization: bool
+    :param initialization: If ``True`` test the data set on fitness for creation
+      of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "member_data"
     val, errs = _dict(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _PERSONA_MANDATORY_FIELDS
-    optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
-        'family_name' : _str,
-        'given_names' : _str,
-        'title' : _str_or_None,
-        'name_supplement' : _str_or_None,
-        'gender' : _int,
-        'birthday' : _date,
-        'telephone' : _phone_or_None,
-        'mobile' : _phone_or_None,
-        'address_supplement' : _str_or_None,
-        'address' : _str_or_None,
-        'postal_code' : _printable_ascii_or_None,
-        'location' : _str_or_None,
-        'country' : _str_or_None,
-        'notes' : _str_or_None,
-        'birth_name' : _str_or_None,
-        'address_supplement2' : _str_or_None,
-        'address2' : _str_or_None,
-        'postal_code2' : _printable_ascii_or_None,
-        'location2' : _str_or_None,
-        'country2' : _str_or_None,
-        'weblink' : _str_or_None,
-        'specialisation' : _str_or_None,
-        'affiliation' : _str_or_None,
-        'timeline' : _str_or_None,
-        'interests' : _str_or_None,
-        'free_form' : _str_or_None,
-        'balance' : _decimal,
-        'decided_search' : _bool,
-        'trial_member' : _bool,
-        'bub_search' : _bool,
-    }.items()))
+    if initialization:
+        mandatory_fields = dict(chain(_PERSONA_INIT_FIELDS.items(), {
+            'family_name': _str,
+            'given_names': _str,
+            'title': _str_or_None,
+            'name_supplement': _str_or_None,
+            'gender': _int,
+            'birthday': _date,
+            'telephone': _phone_or_None,
+            'mobile': _phone_or_None,
+            'address_supplement': _str_or_None,
+            'address': _str_or_None,
+            'postal_code': _printable_ascii_or_None,
+            'location': _str_or_None,
+            'country': _str_or_None,
+            'notes': _str_or_None,
+            'birth_name': _str_or_None,
+            'address_supplement2': _str_or_None,
+            'address2': _str_or_None,
+            'postal_code2': _printable_ascii_or_None,
+            'location2': _str_or_None,
+            'country2': _str_or_None,
+            'weblink': _str_or_None,
+            'specialisation': _str_or_None,
+            'affiliation': _str_or_None,
+            'timeline': _str_or_None,
+            'interests': _str_or_None,
+            'free_form': _str_or_None,
+            'trial_member': _bool,
+        }.items()))
+        optional_fields = {
+            'decided_search': _bool,
+            'bub_search': _bool,
+        }
+    else:
+        mandatory_fields = _PERSONA_MANDATORY_FIELDS
+        optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
+            'family_name': _str,
+            'given_names': _str,
+            'title': _str_or_None,
+            'name_supplement': _str_or_None,
+            'gender': _int,
+            'birthday': _date,
+            'telephone': _phone_or_None,
+            'mobile': _phone_or_None,
+            'address_supplement': _str_or_None,
+            'address': _str_or_None,
+            'postal_code': _printable_ascii_or_None,
+            'location': _str_or_None,
+            'country': _str_or_None,
+            'notes': _str_or_None,
+            'birth_name': _str_or_None,
+            'address_supplement2': _str_or_None,
+            'address2': _str_or_None,
+            'postal_code2': _printable_ascii_or_None,
+            'location2': _str_or_None,
+            'country2': _str_or_None,
+            'weblink': _str_or_None,
+            'specialisation': _str_or_None,
+            'affiliation': _str_or_None,
+            'timeline': _str_or_None,
+            'interests': _str_or_None,
+            'free_form': _str_or_None,
+            'balance': _decimal,
+            'decided_search': _bool,
+            'trial_member': _bool,
+            'bub_search': _bool,
+        }.items()))
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,
         _convert=_convert)
@@ -602,11 +647,11 @@ def _member_data(val, argname=None, *, strict=False, _convert=True):
         ## Only validate if keys are present to allow partial data. However
         ## we require a complete address to be submitted, otherwise the
         ## validation may be tricked.
-        if any(val.get(key + suffix) for key in \
-               ('address_supplement', 'address', 'postal_code', 'location',
-                'country')):
-            if not val.get('country' + suffix) \
-              or val.get('country' + suffix) == "Deutschland":
+        if any(val.get(key + suffix)
+               for key in ('address_supplement', 'address', 'postal_code',
+                           'location', 'country')):
+            if (not val.get('country' + suffix)
+                or val.get('country' + suffix) == "Deutschland"):
                 for key in ('address', 'postal_code', 'location'):
                     if not val.get(key + suffix):
                         errs.append((key+suffix, ValueError("Missing entry.")))
@@ -623,36 +668,59 @@ def _member_data(val, argname=None, *, strict=False, _convert=True):
     return val, errs
 
 @_addvalidator
-def _event_user_data(val, argname=None, *, strict=False, _convert=True):
+def _event_user_data(val, argname=None, *, strict=False, initialization=False,
+                     _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :type strict: bool
     :param strict: If ``True`` allow only complete data sets.
+    :type initialization: bool
+    :param initialization: If ``True`` test the data set on fitness for creation
+      of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "event_user_data"
     val, errs = _dict(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _PERSONA_MANDATORY_FIELDS
-    optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
-        'family_name' : _str,
-        'given_names' : _str,
-        'title' : _str_or_None,
-        'name_supplement' : _str_or_None,
-        'gender' : _int,
-        'birthday' : _date,
-        'telephone' : _phone_or_None,
-        'mobile' : _phone_or_None,
-        'address_supplement' : _str_or_None,
-        'address' : _str_or_None,
-        'postal_code' : _printable_ascii_or_None,
-        'location' : _str_or_None,
-        'country' : _str_or_None,
-        'notes' : _str_or_None,
-    }.items()))
+    if initialization:
+        mandatory_fields = dict(chain(_PERSONA_INIT_FIELDS.items(), {
+            'family_name': _str,
+            'given_names': _str,
+            'title': _str_or_None,
+            'name_supplement': _str_or_None,
+            'gender': _int,
+            'birthday': _date,
+            'telephone': _phone_or_None,
+            'mobile': _phone_or_None,
+            'address_supplement': _str_or_None,
+            'address': _str_or_None,
+            'postal_code': _printable_ascii_or_None,
+            'location': _str_or_None,
+            'country': _str_or_None,
+            'notes': _str_or_None,
+        }.items()))
+        optional_fields = {}
+    else:
+        mandatory_fields = _PERSONA_MANDATORY_FIELDS
+        optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
+            'family_name': _str,
+            'given_names': _str,
+            'title': _str_or_None,
+            'name_supplement': _str_or_None,
+            'gender': _int,
+            'birthday': _date,
+            'telephone': _phone_or_None,
+            'mobile': _phone_or_None,
+            'address_supplement': _str_or_None,
+            'address': _str_or_None,
+            'postal_code': _printable_ascii_or_None,
+            'location': _str_or_None,
+            'country': _str_or_None,
+            'notes': _str_or_None,
+        }.items()))
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,
         _convert=_convert)
@@ -674,6 +742,34 @@ def _event_user_data(val, argname=None, *, strict=False, _convert=True):
                 if not val.get(key):
                     errs.append((key, ValueError("Missing entry.")))
     return val, errs
+
+_GENESIS_CASE_MANDATORY_FIELDS = {'id': _int}
+_GENESIS_CASE_OPTIONAL_FIELDS = {
+    'username': _email,
+    'full_name': _str,
+    'persona_status': _int,
+    'notes': _str,
+    'case_status': _int,
+    'secret': _str,
+    'reviewer': _int,
+}
+@_addvalidator
+def _genesis_case_data(val, argname=None, *, strict=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "genesis_case_data"
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    return _examine_dictionary_fields(
+        val, _GENESIS_CASE_MANDATORY_FIELDS, _GENESIS_CASE_OPTIONAL_FIELDS,
+        strict=strict, _convert=_convert)
 
 @_addvalidator
 def _input_file(val, argname=None, *, _convert=True):
@@ -734,6 +830,25 @@ def _persona_status(val, argname=None, *, _convert=True):
         return val, errs
     try:
         val = const.PersonaStati(val)
+    except ValueError as e:
+        return None, ((argname, e),)
+    return val, errs
+
+
+@_addvalidator
+def _genesis_status(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: :py:class:`cdedb.database.constants.GenesisStati` or None
+    """
+    ## this is a nop for enums
+    val, errs = _int(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    try:
+        val = const.GenesisStati(val)
     except ValueError as e:
         return None, ((argname, e),)
     return val, errs
@@ -980,7 +1095,8 @@ def _serialized_query(val, argname=None, *, _convert=True):
         errs.append(("fields_of_interest", TypeError("Must be iterable.")))
     else:
         for field in val['fields_of_interest']:
-            field, e = _csv_identifier(field, "fields_of_interest", _convert=_convert)
+            field, e = _csv_identifier(field, "fields_of_interest",
+                                       _convert=_convert)
             fields_of_interest.append(field)
             errs.extend(e)
     if not fields_of_interest:
@@ -1055,7 +1171,9 @@ def _create_assert_valid(fun):
     def new_fun(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
         if errs:
-            raise errs[0][1]
+            e = errs[0][1]
+            e.args = ("{} ({})".format(e.args[0], errs[0][0]),) + e.args[1:]
+            raise e
         return val
     return new_fun
 

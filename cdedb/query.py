@@ -34,14 +34,14 @@ _ops = QueryOperators
 #: Only a subset of all possible operators is appropriate for each data
 #: type. Order is important for UI purpose hence no sets.
 VALID_QUERY_OPERATORS = {
-    "str" : (_ops.similar, _ops.equal, _ops.containsall, _ops.oneof,
-             _ops.regex, _ops.empty, _ops.nonempty),
-    "int" : (_ops.equal, _ops.oneof, _ops.less, _ops.lessequal, _ops.between,
+    "str": (_ops.similar, _ops.equal, _ops.containsall, _ops.oneof,
+            _ops.regex, _ops.empty, _ops.nonempty),
+    "int": (_ops.equal, _ops.oneof, _ops.less, _ops.lessequal, _ops.between,
+            _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
+    "float": (_ops.less, _ops.between, _ops.greater, _ops.empty, _ops.nonempty),
+    "date": (_ops.equal, _ops.oneof, _ops.less, _ops.lessequal, _ops.between,
              _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
-    "float" : (_ops.less, _ops.between, _ops.greater, _ops.empty, _ops.nonempty),
-    "date" : (_ops.equal, _ops.oneof, _ops.less, _ops.lessequal, _ops.between,
-              _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
-    "bool" : (_ops.equal, _ops.empty, _ops.nonempty),
+    "bool": (_ops.equal, _ops.empty, _ops.nonempty),
 }
 
 #: Some operators expect several operands (that is a space delimited list of
@@ -69,7 +69,7 @@ class Query:
             enough.
         :type fields_of_interest: [str]
         :param fields_of_interest: column names to be SELECTed.
-        :type spec: {str : str}
+        :type spec: {str: str}
         :param spec: Keys are field names and values are validator names. See
             :py:const:`QUERY_SPECS`.
         :type constraints: [(str, QueryOperators, obj)]
@@ -168,25 +168,56 @@ QUERY_SPECS = {
         ("course_id", "int"),
         ("notes", "str"),
         ]),
+    "qview_event_user" :
+    collections.OrderedDict([
+        ("user_data.persona_id", "int"),
+        ("username", "str"),
+        ("is_active", "bool"),
+        ("db_privileges", "int"),
+        ("cloud_account", "bool"),
+        ("family_name", "str"),
+        ("birth_name", "str"),
+        ("given_names", "str"),
+        ("display_name", "str"),
+        ("title", "str"),
+        ("name_supplement", "str"),
+        ("gender", "int"),
+        ("birthday", "date"),
+        ("telephone", "str"),
+        ("mobile", "str"),
+        ("address", "str"),
+        ("address_supplement", "str"),
+        ("postal_code", "str"),
+        ("location", "str"),
+        ("country", "str"),
+        ("event_id", "int"),
+        ("course_id", "int"),
+        ("notes", "str"),
+        ]),
 }
 
 #: Supstitute for SQL views, this is the target of the FROM clause of the
 #: respective query. We cannot use SQL views since they do not allow multiple
 #: columns with the same name, but each join brings in an id column.
 QUERY_VIEWS = {
-    "qview_cde_member" : glue(
+    "qview_cde_member": glue(
         "(core.personas JOIN cde.member_data",
         "ON personas.id = member_data.persona_id)",
         "LEFT OUTER JOIN event.participants",
         "ON personas.id = participants.persona_id"),
-    "qview_cde_user" : glue(
+    "qview_cde_user": glue(
         "(core.personas JOIN cde.member_data",
         "ON personas.id = member_data.persona_id)",
         "LEFT OUTER JOIN event.participants",
         "ON personas.id = participants.persona_id"),
-    "qview_cde_archived_user" : glue(
+    "qview_cde_archived_user": glue(
         "(core.personas JOIN cde.member_data",
         "ON personas.id = member_data.persona_id)",
+        "LEFT OUTER JOIN event.participants",
+        "ON personas.id = participants.persona_id"),
+    "qview_event_user": glue(
+        "(core.personas JOIN event.user_data",
+        "ON personas.id = user_data.persona_id)",
         "LEFT OUTER JOIN event.participants",
         "ON personas.id = participants.persona_id"),
 }
@@ -200,9 +231,9 @@ def mangle_query_input(rs, spec):
     (which are partly handled by an absence of data).
 
     :type rs: :py:class:`cdedb.frontend.common.FrontendRequestState`
-    :type spec: {str : str}
+    :type spec: {str: str}
     :param spec: one of :py:data:`QUERY_SPECS`
-    :rtype: {str : str}
+    :rtype: {str: str}
     :returns: The raw data associated to the query described by the spec
         extracted from the request data saved in the request state.
     """

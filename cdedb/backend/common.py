@@ -19,7 +19,6 @@ from cdedb.config import Config, SecretsConfig
 import abc
 import cdedb.validation as validate
 import functools
-import copy
 import inspect
 import collections.abc
 import enum
@@ -49,9 +48,9 @@ def singularize(singular_function_name, array_param_name="ids",
     """
     def wrap(fun):
         fun.singularization_hint = {
-            'singular_function_name' : singular_function_name,
-            'array_param_name' : array_param_name,
-            'singular_param_name' : singular_param_name,
+            'singular_function_name': singular_function_name,
+            'array_param_name': array_param_name,
+            'singular_param_name': singular_param_name,
         }
         return fun
     return wrap
@@ -240,7 +239,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         outputs, if we want to add some.
 
         :type output: :py:class:`psycopg2.extras.RealDictRow`
-        :rtype: {str : object}
+        :rtype: {str: object}
         """
         if not output:
             return None
@@ -262,8 +261,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type obj: object
         :rtype: object but not tuple or IntEnum
         """
-        if isinstance(obj, collections.abc.Iterable) \
-          and not isinstance(obj, str):
+        if (isinstance(obj, collections.abc.Iterable)
+            and not isinstance(obj, str)):
             return [AbstractBackend._sanitize_db_input(x) for x in obj]
         elif isinstance(obj, enum.Enum):
             return obj.value
@@ -311,7 +310,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type rs: :py:class:`BackendRequestState`
         :type query: str
         :type params: [object]
-        :rtype: {str : object} or None
+        :rtype: {str: object} or None
         :returns: First result of query or None if there is none
         """
         with rs.conn as conn:
@@ -325,7 +324,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type rs: :py:class:`BackendRequestState`
         :type query: str
         :type params: [object]
-        :rtype: [{str : object}]
+        :rtype: [{str: object}]
         :returns: all results of query
         """
         with rs.conn as conn:
@@ -336,8 +335,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
     @staticmethod
     def diacritic_patterns(string):
-        """Replace letters with a pattern matching expressions, so that ommitting
-        diacritics in the query input is possible.
+        """Replace letters with a pattern matching expressions, so that
+        ommitting diacritics in the query input is possible.
 
         This is intended for use with the sql SIMILAR TO clause.
 
@@ -379,7 +378,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type query: :py:class:`cdedb.query.Query`
         :type distinct: bool
         :param distinct: whether only unique rows should be returned
-        :rtype: [{str : object}]
+        :rtype: [{str: object}]
         :returns: all results of the query
         """
         self.logger.debug("Performing general query {}.".format(query))
@@ -454,7 +453,7 @@ class BackendUser(CommonUser):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-def affirm_validation(assertion, value):
+def affirm_validation(assertion, value, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
     :type assertion: str
@@ -462,9 +461,9 @@ def affirm_validation(assertion, value):
     :rtype: object
     """
     checker = getattr(validate, "assert_{}".format(assertion))
-    return checker(value)
+    return checker(value, **kwargs)
 
-def affirm_array_validation(assertion, values):
+def affirm_array_validation(assertion, values, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :type assertion: str
@@ -472,7 +471,7 @@ def affirm_array_validation(assertion, values):
     :rtype: [object]
     """
     checker = getattr(validate, "assert_{}".format(assertion))
-    return tuple(checker(value) for value in values)
+    return tuple(checker(value, **kwargs) for value in values)
 
 def make_RPCDaemon(backend, socket_address, access_log=None):
     """Wrapper around :py:func:`cdedb.backend.rpc.create_RPCDaemon` which is
@@ -490,6 +489,7 @@ def make_RPCDaemon(backend, socket_address, access_log=None):
             os.environ['PYRO_LOGLEVEL'] = "DEBUG"
         else:
             os.environ['PYRO_LOGLEVEL'] = "INFO"
+    # TODO this is a cyclic import
     from cdedb.backend.rpc import create_RPCDaemon
     return create_RPCDaemon(backend, socket_address, bool(access_log))
 
@@ -538,7 +538,8 @@ class AuthShim:
                     setattr(backend, hint['singular_function_name'],
                             do_singularization(fun))
 
-    def _wrapit(self, fun):
+    @staticmethod
+    def _wrapit(fun):
         """
         :type fun: callable
         """
@@ -565,7 +566,7 @@ class AuthShim:
 def create_fulltext(data):
     """Helper to mangle data all data into a single string.
 
-    :type data: {str : object}
+    :type data: {str: object}
     :param data: one member data set to convert into a string for fulltext
       search
     :rtype: str

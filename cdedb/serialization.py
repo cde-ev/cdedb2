@@ -22,9 +22,9 @@ import cdedb.database.constants as const
 #: Skeleton for custom serialization wrapper. :py:attr:`_class` and
 #: :py:attr:`_value` have to be filled in accordingly.
 _BASE_DICT = {
-    "_CDEDB_CUSTOM_SERIALIZATION" : True,
-    "_class" : None,
-    "_value" : None,
+    "_CDEDB_CUSTOM_SERIALIZATION": True,
+    "_class": None,
+    "_value": None,
 }
 
 def _date_serializer(obj, serpent_serializer, out, level):
@@ -47,12 +47,12 @@ def _query_serializer(obj, serpent_serializer, out, level):
     ret = _BASE_DICT.copy()
     ret["_class"] = "cdedb.query.Query"
     ret["_value"] = {
-        "scope" : obj.scope,
-        "spec" : dict(obj.spec), ## convert OrderedDict to dict for serpent
-        "fields_of_interest" : obj.fields_of_interest,
-        "constraints" : tuple((field, operator.value, obj)
-                              for field, operator, obj in obj.constraints),
-        "order" : obj.order,
+        "scope": obj.scope,
+        "spec": dict(obj.spec), ## convert OrderedDict to dict for serpent
+        "fields_of_interest": obj.fields_of_interest,
+        "constraints": tuple((field, operator.value, obj)
+                             for field, operator, obj in obj.constraints),
+        "order": obj.order,
     }
     serpent_serializer._serialize(ret, out, level)
 
@@ -131,27 +131,35 @@ def _enum_deserializer_generator(atype):
         return atype(int(obj))
     return _enum_deserializer
 
+## list of enums in cdedb.database.constants to serialize
+_ENUMS = ("PersonaStati", "PrivilegeBits", "Genders", "MemberChangeStati",
+          "RegistrationPartStati", "GenesisStati")
+
 #: The custom serializers have to conform to the interface needed by
 #: serpent.
 SERIALIZERS = {
-    datetime.date : _date_serializer,
-    datetime.time : _isoformat_serializer_generator("datetime.time"),
-    float : _trivial_serializer_generator("float"),
-    decimal.Decimal : _trivial_serializer_generator("decimal.Decimal"),
-    Query : _query_serializer,
-    const.PersonaStati : _enum_serializer_generator("cdedb.database.constants.PersonaStati"),
+    datetime.date: _date_serializer,
+    datetime.time: _isoformat_serializer_generator("datetime.time"),
+    float: _trivial_serializer_generator("float"),
+    decimal.Decimal: _trivial_serializer_generator("decimal.Decimal"),
+    Query: _query_serializer,
 }
+for anenum in _ENUMS:
+    SERIALIZERS[getattr(const, anenum)] = _enum_serializer_generator(
+        "cdedb.database.constants.{}".format(anenum))
 
 #: The custom deserializers are called with one :py:class:`str` argument.
 _DESERIALIZERS = {
-    "datetime.date" : _date_deserializer,
-    "datetime.datetime" : _datetime_deserializer,
-    "datetime.time" : _time_deserializer,
-    "float" : _trivial_deserializer_generator(float),
-    "decimal.Decimal" : _trivial_deserializer_generator(decimal.Decimal),
-    "cdedb.query.Query" : _query_deserializer,
-    "cdedb.database.constants.PersonaStati" : _enum_deserializer_generator(const.PersonaStati),
+    "datetime.date": _date_deserializer,
+    "datetime.datetime": _datetime_deserializer,
+    "datetime.time": _time_deserializer,
+    "float": _trivial_deserializer_generator(float),
+    "decimal.Decimal": _trivial_deserializer_generator(decimal.Decimal),
+    "cdedb.query.Query": _query_deserializer,
 }
+for anenum in _ENUMS:
+    _DESERIALIZERS["cdedb.database.constants.{}".format(anenum)] = (
+        _enum_deserializer_generator(getattr(const, anenum)))
 
 def deserialize(obj):
     """Invert our custom serialization. The input has allready been
@@ -171,6 +179,6 @@ def deserialize(obj):
         if obj.get("_CDEDB_CUSTOM_SERIALIZATION", False):
             return _DESERIALIZERS[obj['_class']](obj['_value'])
         else:
-            return {key : deserialize(value) for key, value in obj.items()}
+            return {key: deserialize(value) for key, value in obj.items()}
     else:
         return obj

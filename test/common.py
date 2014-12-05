@@ -55,10 +55,10 @@ class BackendUsingTest(unittest.TestCase):
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         classes = {
-            "core" : CoreBackend,
-            "session" : SessionBackend,
-            "cde" : CdeBackend,
-            "event" : EventBackend,
+            "core": CoreBackend,
+            "session": SessionBackend,
+            "cde": CdeBackend,
+            "event": EventBackend,
             # TODO add more backends when they become available
         }
         for backend in self.used_backends:
@@ -83,61 +83,61 @@ class BackendTest(BackendUsingTest):
         return self.key
 
 USER_DICT = {
-    "anton" : {
-        'id' : 1,
-        'username' : "anton@example.cde",
-        'password' : "secret",
-        'displayname' : "Anton",
-        'given_names' : "Anton Armin A.",
-        'family_name' : "Administrator",
+    "anton": {
+        'id': 1,
+        'username': "anton@example.cde",
+        'password': "secret",
+        'displayname': "Anton",
+        'given_names': "Anton Armin A.",
+        'family_name': "Administrator",
     },
-    "berta" : {
-        'id' : 2,
-        'username' : "berta@example.cde",
-        'password' : "secret",
-        'displayname' : "Bertå",
-        'given_names' : "Bertålotta",
-        'family_name' : "Beispiel",
+    "berta": {
+        'id': 2,
+        'username': "berta@example.cde",
+        'password': "secret",
+        'displayname': "Bertå",
+        'given_names': "Bertålotta",
+        'family_name': "Beispiel",
     },
-    "charly" : {
-        'id' : 3,
-        'username' : "charly@example.cde",
-        'password' : "secret",
-        'displayname' : "Charly",
-        'given_names' : "Charly C.",
-        'family_name' : "Clown",
+    "charly": {
+        'id': 3,
+        'username': "charly@example.cde",
+        'password': "secret",
+        'displayname': "Charly",
+        'given_names': "Charly C.",
+        'family_name': "Clown",
     },
-    "daniel" : {
-        'id' : 4,
-        'username' : "daniel@example.cde",
-        'password' : "secret",
-        'displayname' : "Daniel",
-        'given_names' : "Daniel D.",
-        'family_name' : "Dino",
+    "daniel": {
+        'id': 4,
+        'username': "daniel@example.cde",
+        'password': "secret",
+        'displayname': "Daniel",
+        'given_names': "Daniel D.",
+        'family_name': "Dino",
     },
-    "emilia" : {
-        'id' : 5,
-        'username' : "emilia@example.cde",
-        'password' : "secret",
-        'displayname' : "Emilia",
-        'given_names' : "Emilia E.",
-        'family_name' : "Eventis",
+    "emilia": {
+        'id': 5,
+        'username': "emilia@example.cde",
+        'password': "secret",
+        'displayname': "Emilia",
+        'given_names': "Emilia E.",
+        'family_name': "Eventis",
     },
-    "ferdinand" : {
-        'id' : 6,
-        'username' : "ferdinand@example.cde",
-        'password' : "secret",
-        'displayname' : "Ferdinand",
-        'given_names' : "Ferdinand F.",
-        'family_name' : "Findus",
+    "ferdinand": {
+        'id': 6,
+        'username': "ferdinand@example.cde",
+        'password': "secret",
+        'displayname': "Ferdinand",
+        'given_names': "Ferdinand F.",
+        'family_name': "Findus",
     },
-    "garcia" : {
-        'id' : 7,
-        'username' : "garcia@example.cde",
-        'password' : "secret",
-        'displayname' : "Garcia",
-        'given_names' : "Garcia G.",
-        'family_name' : "Generalis",
+    "garcia": {
+        'id': 7,
+        'username': "garcia@example.cde",
+        'password': "secret",
+        'displayname': "Garcia",
+        'given_names': "Garcia G.",
+        'family_name': "Generalis",
     },
 }
 
@@ -185,7 +185,7 @@ class FrontendTest(unittest.TestCase):
         else:
             raise RuntimeError("Backends did not appear.")
         app = Application(os.path.join(_BASICCONF.REPOSITORY_PATH, _BASICCONF.TESTCONFIG_PATH))
-        cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR' : "127.0.0.0", 'SERVER_PROTOCOL' : "HTTP/1.1"})
+        cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR': "127.0.0.0", 'SERVER_PROTOCOL': "HTTP/1.1"})
 
     @classmethod
     def tearDownClass(cls):

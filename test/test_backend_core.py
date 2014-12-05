@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT
 import copy
 import subprocess
@@ -33,8 +34,8 @@ class TestCoreBackend(BackendTest):
     @as_users("anton", "berta", "emilia")
     def test_set_persona_data(self, user):
         new_name = "Zelda"
-        self.core.set_persona_data(self.key, {'id' : user['id'],
-                                              'display_name' : new_name})
+        self.core.set_persona_data(self.key, {'id': user['id'],
+                                              'display_name': new_name})
         self.assertEqual(new_name, self.core.retrieve_persona_data_single(
             self.key, user['id'])['display_name'])
 
@@ -94,9 +95,9 @@ class TestCoreBackend(BackendTest):
             "dn:{}\n".format(dn).encode('utf-8'), subprocess.check_output(
             ['/usr/bin/ldapwhoami', '-x', '-D', dn, '-w', newpass]))
         update = {
-            'id' : user['id'],
-            'display_name' : new_name,
-            'username' : new_address,
+            'id': user['id'],
+            'display_name': new_name,
+            'username': new_address,
         }
         if user['id'] == 1:
             update['cloud_account'] = False
@@ -113,9 +114,79 @@ class TestCoreBackend(BackendTest):
         if user['id'] == 1:
             cloud_expectation = b'FALSE'
         expectation = [(
-            dn, {'cn' : [new_name.encode('utf-8')],
-                 'displayName' : [new_name.encode('utf-8')],
-                 'mail' : [new_address.encode('utf-8')],
-                 'cloudAccount' : [cloud_expectation],})]
+            dn, {'cn': [new_name.encode('utf-8')],
+                 'displayName': [new_name.encode('utf-8')],
+                 'mail': [new_address.encode('utf-8')],
+                 'cloudAccount': [cloud_expectation],})]
         self.assertEqual(expectation, val)
         ldap_con.unbind()
+
+    @as_users("anton")
+    def test_create_persona(self, user):
+        data = {
+            "username": 'zelda@example.cde',
+            "display_name": 'Zelda',
+            "is_active": True,
+            "status": 1,
+            "cloud_account": True,
+            "db_privileges": 0,
+        }
+        new_id = self.core.create_persona(self.key, data)
+        data["id"] = new_id
+        self.assertGreater(new_id, 0)
+        new_data = self.core.get_data_single(self.key, new_id)
+        self.assertEqual(data, new_data)
+        ldap_con = ldap.initialize("ldap://localhost")
+        ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",
+                               "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")
+        val = ldap_con.search_s("ou=personas-test,dc=cde-ev,dc=de",
+                                ldap.SCOPE_ONELEVEL,
+                                filterstr='(uid={})'.format(new_id),
+                                attrlist=['cn', 'displayName', 'mail',
+                                          'cloudAccount', 'isActive'])
+        dn = "uid={},{}".format(new_id, "ou=personas-test,dc=cde-ev,dc=de")
+        expectation = [(
+            dn, {'cn': [data['display_name'].encode('utf-8')],
+                 'displayName': [data['display_name'].encode('utf-8')],
+                 'mail': [data['username'].encode('utf-8')],
+                 'cloudAccount': [b"TRUE"],
+                 'isActive': [b"TRUE"]})]
+        self.assertEqual(expectation, val)
+        ldap_con.unbind()
+
+    @as_users("anton")
+    def test_genesis(self, user):
+        data = {
+            "full_name": "Zelda",
+            "username": 'zelda@example.cde',
+            "notes": "Some blah",
+        }
+        case_id = self.core.genesis_request(
+            None, data['username'], data['full_name'], data['notes'])
+        self.assertGreater(case_id, 0)
+        self.assertEqual(1, self.core.genesis_verify(None, case_id))
+        self.assertEqual(1, len(self.core.genesis_list_cases(
+            self.key, stati=(const.GenesisStati.to_review,))))
+        expectation = data
+        expectation.update({
+            'id': case_id,
+            'persona_status': None,
+            'case_status': const.GenesisStati.to_review,
+            'secret': None,
+            'reviewer': None,
+        })
+        value = self.core.genesis_get_case(self.key, case_id)
+        del value['ctime']
+        self.assertEqual(expectation, value)
+        update = {
+            'id': case_id,
+            'persona_status': const.PersonaStati.event_user,
+            'case_status': const.GenesisStati.approved,
+            'secret': "foobar",
+            'reviewer': 1,
+        }
+        self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
+        expectation.update(update)
+        value = self.core.genesis_get_case(self.key, case_id)
+        del value['ctime']
+        self.assertEqual(expectation, value)

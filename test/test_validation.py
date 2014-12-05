@@ -118,15 +118,11 @@ class TestValidation(unittest.TestCase):
             (54, "54", None, False),
             ))
         self.do_validator_test("_str_type", (
-            ("a string", "a string", None, True),
-            (" a string ", "a string", None, True),
-            ), extraparams={'strip' : True})
-        self.do_validator_test("_str_type", (
             ("a string", "a stig", None, True),
-            ), extraparams={'zap' : 'rn'})
+            ), extraparams={'zap': 'rn'})
         self.do_validator_test("_str_type", (
             ("a string", "a sti", None, True),
-            ), extraparams={'sieve' : ' aist'})
+            ), extraparams={'sieve': ' aist'})
 
     def test_str(self):
         self.do_validator_test("_str", (
@@ -138,7 +134,7 @@ class TestValidation(unittest.TestCase):
 
     def test_dict(self):
         self.do_validator_test("_dict", (
-            ({"a" : "dict"}, {"a" : "dict"}, None, True),
+            ({"a": "dict"}, {"a": "dict"}, None, True),
             ("something else", "", TypeError, False),
             ))
 
@@ -160,10 +156,6 @@ class TestValidation(unittest.TestCase):
             ("", "", None, True),
             (54, "54", None, False),
             ))
-        self.do_validator_test("_printable_ascii_type", (
-            ("a string", "a string", None, True),
-            (" a string ", "a string", None, True),
-            ), extraparams={'strip' : True})
 
     def test_printable_ascii(self):
         self.do_validator_test("_printable_ascii", (
@@ -194,15 +186,15 @@ class TestValidation(unittest.TestCase):
 
     def test_persona_data(self):
         base_example = {
-            "id" : 42,
-            "username" : "address@domain.tld",
-            "display_name" : "Blübb the First",
-            "is_active" : True,
-            "status" : 0,
-            "db_privileges" : 2,
-            "cloud_account" : True,
+            "id": 42,
+            "username": "address@domain.tld",
+            "display_name": "Blübb the First",
+            "is_active": True,
+            "status": 0,
+            "db_privileges": 2,
+            "cloud_account": True,
             }
-        stripped_example = { "id" : 42 }
+        stripped_example = { "id": 42 }
         key_example = copy.deepcopy(base_example)
         key_example["wrong_key"] = None
         password_example = copy.deepcopy(base_example)
@@ -222,7 +214,7 @@ class TestValidation(unittest.TestCase):
             (key_example, key_example, KeyError, False),
             (password_example, password_example, KeyError, False),
             (value_example, value_example, ValueError, False),
-            ), extraparams={'strict' : True})
+            ), extraparams={'strict': True})
 
     def test_date(self):
         now = datetime.datetime.now()
@@ -288,7 +280,7 @@ class TestValidation(unittest.TestCase):
                                tzinfo=pytz.utc), None, False),
             ## see above
             # ("more garbage", None, TypeError, False),
-            ), extraparams={'default_date' : datetime.date(2000, 5, 23)})
+            ), extraparams={'default_date': datetime.date(2000, 5, 23)})
 
 
     def test_phone(self):
@@ -316,45 +308,45 @@ class TestValidation(unittest.TestCase):
     def test_member_data(self):
         self.maxDiff = None
         base_example = {
-            "id" : 42,
-            "username" : "address@domain.tld",
-            "display_name" : "Blübb the First",
-            "is_active" : True,
-            "status" : 0,
-            "db_privileges" : 2,
-            "cloud_account" : True,
-            "family_name" : "Thør",
-            "given_names" : "Blubberwing",
-            "title" : "Sir",
-            "name_supplement" : "of Łord",
-            "gender" : 1,
-            "birthday" : datetime.date(1984, 5, 25),
-            "telephone" : "+49 (3641) 12345",
-            "mobile" : "+49 (175) 12345",
-            "address_supplement" : "unterm Schrank",
-            "address" : "Weg 23",
-            "postal_code" : "07743",
-            "location" : "Eine Stadt",
-            "country" : "Deutschland",
-            "notes" : "A note",
-            "birth_name" : "Yggdrasil",
-            "address_supplement2" : "über der Treppe",
-            "address2" : "Straße 66",
-            "postal_code2" : "2XM 44",
-            "location2" : "Wolke",
-            "country2" : "Fantasien",
-            "weblink" : "http://www.example.cde",
-            "specialisation" : "Blurb",
-            "affiliation" : "More blurb",
-            "timeline" : "Even more blurb",
-            "interests" : "Still more blurb",
-            "free_form" : "And yet another blurb",
-            "balance" : decimal.Decimal("10.77"),
-            "decided_search" : True,
-            "trial_member" : False,
-            "bub_search" : True,
+            "id": 42,
+            "username": "address@domain.tld",
+            "display_name": "Blübb the First",
+            "is_active": True,
+            "status": 0,
+            "db_privileges": 2,
+            "cloud_account": True,
+            "family_name": "Thør",
+            "given_names": "Blubberwing",
+            "title": "Sir",
+            "name_supplement": "of Łord",
+            "gender": 1,
+            "birthday": datetime.date(1984, 5, 25),
+            "telephone": "+49 (3641) 12345",
+            "mobile": "+49 (175) 12345",
+            "address_supplement": "unterm Schrank",
+            "address": "Weg 23",
+            "postal_code": "07743",
+            "location": "Eine Stadt",
+            "country": "Deutschland",
+            "notes": "A note",
+            "birth_name": "Yggdrasil",
+            "address_supplement2": "über der Treppe",
+            "address2": "Straße 66",
+            "postal_code2": "2XM 44",
+            "location2": "Wolke",
+            "country2": "Fantasien",
+            "weblink": "http://www.example.cde",
+            "specialisation": "Blurb",
+            "affiliation": "More blurb",
+            "timeline": "Even more blurb",
+            "interests": "Still more blurb",
+            "free_form": "And yet another blurb",
+            "balance": decimal.Decimal("10.77"),
+            "decided_search": True,
+            "trial_member": False,
+            "bub_search": True,
             }
-        stripped_example = { "id" : 42 }
+        stripped_example = { "id": 42 }
         key_example = copy.deepcopy(base_example)
         key_example["wrong_key"] = None
         value_example = copy.deepcopy(base_example)
@@ -374,34 +366,34 @@ class TestValidation(unittest.TestCase):
             (stripped_example, stripped_example, KeyError, False),
             (key_example, key_example, KeyError, False),
             (value_example, value_example, ValueError, False),
-            ), extraparams={'strict' : True})
+            ), extraparams={'strict': True})
 
     def test_event_user_data(self):
         self.maxDiff = None
         base_example = {
-            "id" : 42,
-            "username" : "address@domain.tld",
-            "display_name" : "Blübb the First",
-            "is_active" : True,
-            "status" : 0,
-            "db_privileges" : 2,
-            "cloud_account" : False,
-            "family_name" : "Thør",
-            "given_names" : "Blubberwing",
-            "title" : "Sir",
-            "name_supplement" : "of Łord",
-            "gender" : 1,
-            "birthday" : datetime.date(1984, 5, 25),
-            "telephone" : "+49 (3641) 12345",
-            "mobile" : "+49 (175) 12345",
-            "address_supplement" : "unterm Schrank",
-            "address" : "Weg 23",
-            "postal_code" : "07743",
-            "location" : "Eine Stadt",
-            "country" : "Deutschland",
-            "notes" : "A note",
+            "id": 42,
+            "username": "address@domain.tld",
+            "display_name": "Blübb the First",
+            "is_active": True,
+            "status": 0,
+            "db_privileges": 2,
+            "cloud_account": False,
+            "family_name": "Thør",
+            "given_names": "Blubberwing",
+            "title": "Sir",
+            "name_supplement": "of Łord",
+            "gender": 1,
+            "birthday": datetime.date(1984, 5, 25),
+            "telephone": "+49 (3641) 12345",
+            "mobile": "+49 (175) 12345",
+            "address_supplement": "unterm Schrank",
+            "address": "Weg 23",
+            "postal_code": "07743",
+            "location": "Eine Stadt",
+            "country": "Deutschland",
+            "notes": "A note",
             }
-        stripped_example = { "id" : 42 }
+        stripped_example = { "id": 42 }
         key_example = copy.deepcopy(base_example)
         key_example["wrong_key"] = None
         value_example = copy.deepcopy(base_example)
@@ -421,4 +413,4 @@ class TestValidation(unittest.TestCase):
             (stripped_example, stripped_example, KeyError, False),
             (key_example, key_example, KeyError, False),
             (value_example, value_example, ValueError, False),
-            ), extraparams={'strict' : True})
+            ), extraparams={'strict': True})

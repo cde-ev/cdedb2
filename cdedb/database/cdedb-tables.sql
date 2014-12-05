@@ -19,7 +19,8 @@ CREATE TABLE core.personas (
         id                      serial PRIMARY KEY,
         -- an email address
         -- should be lower-cased
-        username                varchar NOT NULL UNIQUE,
+        -- may be NULL for archived members
+        username                varchar UNIQUE,
         -- password hash as specified by passlib.hash.sha512_crypt
         -- not logged in changelog
         password_hash           varchar NOT NULL,
@@ -43,16 +44,18 @@ GRANT UPDATE (status) ON core.personas TO cdb_member;
 GRANT INSERT, UPDATE ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
 
-CREATE TABLE core.persona_creation_challenges (
-        id                       bigserial PRIMARY KEY,
+-- table for managing creation of new accounts by arbitrary request
+CREATE TABLE core.genesis_cases (
+        id                      bigserial PRIMARY KEY,
         -- creation time
-        ctime                    timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
-        email                    varchar NOT NULL,
+        ctime                   timestamp WITH time zone NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        username                varchar NOT NULL,
+        full_name               varchar NOT NULL,
         -- status the persona is going to have initially
-        persona_status           integer NOT NULL,
+        persona_status          integer,
         -- user-supplied comment (short justification of request)
         -- may be amended during review
-        notes                    varchar,
+        notes                   varchar,
         -- A verification link is sent to the email address; upon
         -- verification an admittance email is sent to the responsible team
         --
@@ -61,13 +64,17 @@ CREATE TABLE core.persona_creation_challenges (
         -- email is sent, that persona creation can proceed
         --
         -- enum tracking the progress
-        -- see cdedb.database.constants.PersonaCreationStati
-        challenge_status         integer NOT NULL DEFAULT 0
+        -- see cdedb.database.constants.GenesisStati
+        case_status             integer NOT NULL DEFAULT 0,
+        -- After review we need a persistent and private url.
+        secret                  varchar DEFAULT NULL,
+        -- who moderated the request
+        reviewer                integer REFERENCES core.personas(id)
 );
-GRANT SELECT, INSERT ON core.persona_creation_challenges To cdb_anonymous;
-GRANT SELECT, UPDATE ON core.persona_creation_challenges_id_seq TO cdb_anonymous;
-GRANT UPDATE (challenge_status) ON core.persona_creation_challenges TO cdb_anonymous;
-GRANT UPDATE ON core.persona_creation_challenges TO cdb_admin;
+GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
+GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
+GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
+GRANT UPDATE ON core.genesis_cases TO cdb_admin;
 
 -- this table serves as access log, so entries are never deleted
 CREATE TABLE core.sessions (
@@ -235,7 +242,7 @@ CREATE TABLE cde.member_data (
         -- internal field for fulltext search
         -- this contains a concatenation of all other fields
         -- thus enabling fulltext search as substring search on this field
-        -- it is automatically updated when a change is commited
+        -- it is automatically updated when a change is committed
         -- this is not logged in the changelog
         fulltext                varchar NOT NULL
 );

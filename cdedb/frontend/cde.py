@@ -6,14 +6,12 @@ import logging
 import os.path
 import hashlib
 import werkzeug
-import io
 
 import cdedb.database.constants as const
-from cdedb.common import extract_realm, extract_roles, merge_dicts
+from cdedb.common import merge_dicts
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
-    connect_proxy, persona_dataset_guard, check_validation as check,
-    FrontendUser)
+    connect_proxy, persona_dataset_guard, check_validation as check)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 
@@ -23,8 +21,8 @@ class CdeFrontend(AbstractUserFrontend):
     realm = "cde"
     logger = logging.getLogger(__name__)
     user_management = {
-        "proxy" : lambda obj: obj.cdeproxy,
-        "validator" : "member_data",
+        "proxy": lambda obj: obj.cdeproxy,
+        "validator": "member_data",
     }
 
     def __init__(self, configpath):
@@ -43,6 +41,7 @@ class CdeFrontend(AbstractUserFrontend):
 
     @access("persona")
     def index(self, rs):
+        """Render start page."""
         return self.render(rs, "index")
 
     @access("formermember")
@@ -62,13 +61,12 @@ class CdeFrontend(AbstractUserFrontend):
             bit.name for bit in const.PrivilegeBits
             if data['db_privileges'] & bit.value)
         params = {
-            'data' : data,
-            'participation_info' : participation_info,
-            'foto' : foto,
+            'data': data,
+            'participation_info': participation_info,
+            'foto': foto,
         }
         if data['status'] == const.PersonaStati.archived_member:
             if self.is_admin(rs):
-                rs.notify("info", "Displaying archived member.")
                 return self.render(rs, "show_archived_user", params)
             else:
                 rs.notify("error", "Accessing archived member impossible.")
@@ -82,7 +80,7 @@ class CdeFrontend(AbstractUserFrontend):
         data = self.cdeproxy.get_data_single(rs, persona_id)
         data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
         merge_dicts(rs.values, data)
-        return self.render(rs, "change_user", {'username' : data['username']})
+        return self.render(rs, "change_user", {'username': data['username']})
 
     @access("formermember", {"POST"})
     @REQUESTdata(("generation", "int"))
@@ -111,12 +109,13 @@ class CdeFrontend(AbstractUserFrontend):
         data = self.cdeproxy.get_data_single(rs, persona_id)
         data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
         merge_dicts(rs.values, data)
-        return self.render(rs, "admin_change_user", {'username' : data['username']})
+        return self.render(rs, "admin_change_user",
+                           {'username': data['username']})
 
     @access("cde_admin", {"POST"})
     @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
     @REQUESTdatadict(
-        "title", "given_names", "family_name", "name_supplement",
+        "title", "given_names", "family_name", "birth_name", "name_supplement",
         "display_name", "specialisation", "affiliation", "timeline",
         "interests", "free_form", "gender", "birthday", "telephone",
         "mobile", "weblink", "address", "address_supplement", "postal_code",
@@ -139,8 +138,9 @@ class CdeFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def list_pending_changes(self, rs):
         """List non-committed changelog entries."""
-        pending = self.cdeproxy.get_pending_changes(rs)
-        return self.render(rs, "list_pending_changes", {'pending' : pending})
+        pending = self.cdeproxy.get_changes(
+            rs, stati=(const.MemberChangeStati.pending,))
+        return self.render(rs, "list_pending_changes", {'pending': pending})
 
     @access("cde_admin")
     def inspect_change(self, rs, persona_id):
@@ -152,14 +152,16 @@ class CdeFrontend(AbstractUserFrontend):
             return self.list_pending_changes(rs)
         current = history[max(
             key for key in history
-            if history[key]['change_status'] == const.MemberChangeStati.committed)]
+            if (history[key]['change_status']
+                == const.MemberChangeStati.committed))]
         diff = {key for key in pending if current[key] != pending[key]}
         return self.render(rs, "inspect_change", {
-            'pending' : pending, 'current' : current, 'diff' : diff})
+            'pending': pending, 'current': current, 'diff': diff})
 
     @access("cde_admin", {"POST"})
     @REQUESTdata(("generation", "int"), ("ack", "bool"))
     def resolve_change(self, rs, persona_id, generation, ack):
+        """Make decision."""
         if rs.errors:
             return self.list_pending_changes(rs)
         self.cdeproxy.resolve_change(rs, persona_id, generation, ack)
@@ -180,7 +182,7 @@ class CdeFrontend(AbstractUserFrontend):
     def set_foto_form(self, rs, persona_id):
         """Render form."""
         data = self.cdeproxy.get_data_single(rs, persona_id)
-        return self.render(rs, "set_foto", {'data' : data})
+        return self.render(rs, "set_foto", {'data': data})
 
     @access("formermember", {"POST"})
     @REQUESTfile("foto")
@@ -216,7 +218,7 @@ class CdeFrontend(AbstractUserFrontend):
         data = self.cdeproxy.get_data_single(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
-        return self.render(rs, "consent_decision", {'data' : data})
+        return self.render(rs, "consent_decision", {'data': data})
 
     @access("member", {"POST"})
     @REQUESTdata(("ack", "bool"))
@@ -232,9 +234,9 @@ class CdeFrontend(AbstractUserFrontend):
         else:
             status = const.PersonaStati.member.value
         new_data = {
-            'id' : rs.user.persona_id,
-            'decided_search' : True,
-            'status' : status
+            'id': rs.user.persona_id,
+            'decided_search': True,
+            'status': status
         }
         change_note = "Consent decision (is {}).".format(ack)
         num = self.cdeproxy.change_user(rs, new_data, None, may_wait=False,
@@ -261,8 +263,8 @@ class CdeFrontend(AbstractUserFrontend):
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
                       spec=spec, allow_empty=not submitform)
         if not submitform or rs.errors:
-            events = {str(k) : v
-                      for k,v in self.eventproxy.list_events(rs).items()}
+            events = {str(k): v
+                      for k, v in self.eventproxy.list_events(rs).items()}
             event_id = None
             if query:
                 for field, _, value in query.constraints:
@@ -270,23 +272,23 @@ class CdeFrontend(AbstractUserFrontend):
                         event_id = value
             courses = tuple()
             if event_id:
-                courses = {str(k) : v for k,v in
+                courses = {str(k): v for k, v in
                            self.eventproxy.list_courses(rs, event_id).items()}
-            choices = {"event_id" : events, 'course_id' : courses}
+            choices = {"event_id": events, 'course_id': courses}
             return self.render(rs, "member_search",
-                               {'spec' : spec, 'choices' : choices,
-                                'queryops' : QueryOperators,})
+                               {'spec': spec, 'choices': choices,
+                                'queryops': QueryOperators,})
         else:
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('member_data.persona_id')
             result = self.cdeproxy.submit_general_query(rs, query)
             if len(result) == 1:
                 return self.redirect_show_user(rs, result[0]['persona_id'])
-            if len(result) > self.conf.MAX_QUERY_RESULTS \
-              and not self.is_admin(rs):
+            if (len(result) > self.conf.MAX_QUERY_RESULTS
+                and not self.is_admin(rs)):
                 result = result[:self.conf.MAX_QUERY_RESULTS]
                 rs.notify("info", "Too many query results.")
-            return self.render(rs, "member_search_result", {'result' : result})
+            return self.render(rs, "member_search_result", {'result': result})
 
     @access("cde_admin")
     def user_search_form(self, rs):
@@ -295,13 +297,13 @@ class CdeFrontend(AbstractUserFrontend):
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
         events = self.eventproxy.list_events(rs)
-        choices = {'event_id' : events,
-                   'status' : self.enum_choice(rs, const.PersonaStati),
-                   'gender' : self.enum_choice(rs, const.Genders)}
+        choices = {'event_id': events,
+                   'status': self.enum_choice(rs, const.PersonaStati),
+                   'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
         return self.render(rs, "user_search", {
-            'spec' : spec, 'choices' : choices, 'queryops' : QueryOperators,
-            'default_queries' : default_queries,})
+            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'default_queries': default_queries,})
 
     @access("cde_admin")
     @REQUESTdata(("CSV", "bool"))
@@ -314,7 +316,7 @@ class CdeFrontend(AbstractUserFrontend):
             return self.user_search_form(rs)
         query.scope = "qview_cde_user"
         result = self.cdeproxy.submit_general_query(rs, query)
-        params = {'result' : result, 'query' : query}
+        params = {'result': result, 'query': query}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
             return self.send_file(rs, data=data)
@@ -328,13 +330,13 @@ class CdeFrontend(AbstractUserFrontend):
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
         events = self.eventproxy.list_events(rs)
-        choices = {'event_id' : events,
-                   'status' : self.enum_choice(rs, const.PersonaStati),
-                   'gender' : self.enum_choice(rs, const.Genders)}
+        choices = {'event_id': events,
+                   'status': self.enum_choice(rs, const.PersonaStati),
+                   'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_archived_user']
         return self.render(rs, "archived_user_search", {
-            'spec' : spec, 'choices' : choices, 'queryops' : QueryOperators,
-            'default_queries' : default_queries,})
+            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'default_queries': default_queries,})
 
     @access("cde_admin")
     @REQUESTdata(("CSV", "bool"))
@@ -347,7 +349,7 @@ class CdeFrontend(AbstractUserFrontend):
             return self.archived_user_search_form(rs)
         query.scope = "qview_cde_archived_user"
         result = self.cdeproxy.submit_general_query(rs, query)
-        params = {'result' : result, 'query' : query}
+        params = {'result': result, 'query': query}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
             return self.send_file(rs, data=data)
@@ -357,23 +359,25 @@ class CdeFrontend(AbstractUserFrontend):
     @access("cde_admin")
     @persona_dataset_guard()
     def modify_membership_form(self, rs, persona_id):
+        """Render form."""
         data = self.cdeproxy.get_data_single(rs, persona_id)
         data['is_member'] = data['status'] in const.MEMBER_STATI
         data['is_searchable'] = data['status'] in const.SEARCHMEMBER_STATI
         return self.render(rs, "modify_membership", {
-            'data' : data, 'stati' : const.PersonaStati})
+            'data': data, 'stati': const.PersonaStati})
 
     @access("cde_admin", {"POST"})
     @persona_dataset_guard()
     @REQUESTdata(("newstatus", "persona_status"))
     def modify_membership(self, rs, persona_id, newstatus):
+        """Change association status."""
         if newstatus not in const.ALL_CDE_STATI:
             rs.errors.append(("newstatus", ValueError("Wrong realm.")))
         if rs.errors:
             return self.modify_membership_form(rs, persona_id)
         data = {
-            'id' : persona_id,
-            'status' : newstatus,
+            'id': persona_id,
+            'status': newstatus,
         }
         if newstatus == const.PersonaStati.formermember:
             data['decided_search'] = False
@@ -384,3 +388,36 @@ class CdeFrontend(AbstractUserFrontend):
                                         change_note=change_note)
         self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
+
+    @access("cde_admin")
+    def create_user_form(self, rs):
+        """Render form."""
+        defaults = {
+            'status': const.PersonaStati.member.value,
+            'bub_search': False,
+            'cloud_account': True,
+        }
+        merge_dicts(rs.values, defaults)
+        return super().create_user_form(rs)
+
+    @access("cde_admin", {"POST"})
+    @REQUESTdatadict(
+        "title", "given_names", "family_name", "birth_name", "name_supplement",
+        "display_name", "specialisation", "affiliation", "timeline",
+        "interests", "free_form", "gender", "birthday", "username",
+        "telephone", "mobile", "weblink", "address", "address_supplement",
+        "postal_code", "location", "country", "address2",
+        "address_supplement2", "postal_code2", "location2", "country2",
+        "status", "trial_member", "bub_search", "cloud_account", "notes")
+    def create_user(self, rs, data):
+        """Create new user account."""
+        data['is_active'] = True
+        return super().create_user(rs, data)
+
+    def genesis_form(self, rs, case_id, secret):
+        """Member accounts cannot be requested."""
+        raise NotImplementedError("Not available in cde realm.")
+
+    def genesis(self, rs, case_id, secret, data):
+        """Member accounts cannot be requested."""
+        raise NotImplementedError("Not available in cde realm.")

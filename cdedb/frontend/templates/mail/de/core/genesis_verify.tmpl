@@ -1,0 +1,11 @@
+Hallo {{ full_name }},
+
+mit dieser Emailadresse wurde einen Account für die CdE-Datenbank beantragt.
+Wenn Du dies nicht warst, so musst Du nichts weiter tun, als diese Mail zu
+löschen. Um die Adresse zu verifizieren, besuche bitte den Link [1] mit
+einem Browser. Anschließend wird Deine Anfrage moderiert und dann ein Email
+mit dem Link zum endgültigen Erstellungsformular versandt.
+
+Liebe Grüße von der Verwaltung
+
+[1] {{ cdedblink('core/genesis_verify', {'case_id': case_id}) }}

@@ -1,0 +1,38 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
+{% block title %}Accountanfragen (zurzeit {{ to_review|length|e }} zu begutachten){% endblock %}
+{% block content %}
+    <ul>
+        {% for case_id, entry in to_review.items() %}
+            <li>
+                {{ entry['full_name']|e }} -- {{ entry['username']|e }}<br>
+                {{ entry['notes']|e|linebreaks }}<br>
+                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST" id="genesisrejectionform{{ loop.index|e }}">
+                    {{ util.input_hidden(name="case_id", value=case_id) }}
+                    {{ util.input_hidden(name="case_status", value=GenesisStati.rejected.value) }}
+                    {{ util.input_submit(value="Ablehnen") }}
+                </form>
+                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST" id="genesisapprovalform{{ loop.index|e }}">
+                    {{ util.input_hidden(name="case_id", value=case_id) }}
+                    {{ util.input_hidden(name="case_status", value=GenesisStati.approved.value) }}
+                    {{ util.input_select(name="persona_status", nulloption=True, entries=(
+                       (PersonaStati.event_user.value, "Veranstaltungsteilnehmer", None),)) }}
+                    {{ util.input_submit(value="Genehmigen") }}
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h1>Offene bestätigte Anfragen (zurzeit {{ approved|length|e }})</h1>
+    <ul>
+        {% for case_id, entry in approved.items() %}
+            <li>
+                {{ entry['full_name']|e }} -- {{ entry['username']|e }}
+                <form action="{{ cdedblink('core/genesis_timeout')|e }}" method="POST" id="genesistimeoutform{{ loop.index|e }}">
+                    {{ util.input_hidden(name="case_id", value=case_id) }}
+                    {{ util.input_submit(value="Widerrufen") }}
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

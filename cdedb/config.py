@@ -14,6 +14,7 @@ import importlib.machinery
 import os.path
 import uuid
 import pytz
+import dateutil.relativedelta
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 
@@ -27,23 +28,23 @@ _repopath = _currentpath[:-6]
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
     ## True for development instances
-    "CDEDB_DEV" : False,
+    "CDEDB_DEV": False,
     ## Logging level for CdEDBs own log files
-    "LOG_LEVEL" : logging.INFO,
+    "LOG_LEVEL": logging.INFO,
     ## Logging level for syslog
-    "SYSLOG_LEVEL" : logging.WARNING,
+    "SYSLOG_LEVEL": logging.WARNING,
     ## Logging level for stdout
-    "CONSOLE_LOG_LEVEL" : None,
+    "CONSOLE_LOG_LEVEL": None,
     ## Global log for messages unrelated to specific components
-    "GLOBAL_LOG" : "/tmp/cdedb.log",
+    "GLOBAL_LOG": "/tmp/cdedb.log",
     ## file system path to this repository
-    "REPOSITORY_PATH" : _repopath,
+    "REPOSITORY_PATH": _repopath,
     ## relative path to config file with settings for the test suite
-    "TESTCONFIG_PATH" : "test/localconfig.py",
+    "TESTCONFIG_PATH": "test/localconfig.py",
     ## port on which the database listens, preferably a pooler like pgbouncer
-    "DB_PORT" : 6432,
+    "DB_PORT": 6432,
     ## default timezone for input and output
-    "DEFAULT_TIMEZONE" : pytz.timezone('CET'),
+    "DEFAULT_TIMEZONE": pytz.timezone('CET'),
 }
 
 #: defaults for :py:class:`Config`
@@ -51,128 +52,142 @@ _DEFAULTS = {
     ## Global stuff
 
     ## name of database to use
-    "CDB_DATABASE_NAME" : "cdb",
+    "CDB_DATABASE_NAME": "cdb",
 
     ## True for offline versions running on academies
-    "CDEDB_OFFLINE_DEPLOYMENT" : False,
+    "CDEDB_OFFLINE_DEPLOYMENT": False,
 
     ## Template for server names, one parameter will be substituted in
-    "SERVER_NAME_TEMPLATE" : "{}_server",
+    "SERVER_NAME_TEMPLATE": "{}_server",
 
     ## location of ldap server
-    "LDAP_URL" : "ldap://localhost",
+    "LDAP_URL": "ldap://localhost",
 
     ## name of ldap unit (i.e. subtree) to use
-    "LDAP_UNIT_NAME" : "ou=personas,dc=cde-ev,dc=de",
+    "LDAP_UNIT_NAME": "ou=personas,dc=cde-ev,dc=de",
 
     ## name of ldap user to use
-    "LDAP_USER" : "cn=root,dc=cde-ev,dc=de",
+    "LDAP_USER": "cn=root,dc=cde-ev,dc=de",
 
     ## place for uploaded data
-    "STORAGE_DIR" : "/var/lib/cdedb/",
+    "STORAGE_DIR": "/var/lib/cdedb/",
 
     ### Frontend stuff
 
     ## log for frontend issues
-    "FRONTEND_LOG" : "/tmp/cdedb-frontend.log",
+    "FRONTEND_LOG": "/tmp/cdedb-frontend.log",
     ## timeout for protected url parameters to prevent replay
-    "URL_PARAMETER_TIMEOUT" : datetime.timedelta(seconds=300),
+    "URL_PARAMETER_TIMEOUT": datetime.timedelta(seconds=300),
+    ## maximum length of rationale for requesting an account
+    "MAX_RATIONALE": 200,
 
     ## email stuff
 
     ## default return address for mails
-    "DEFAULT_REPLY_TO" : "verwaltung@cde-ev.de",
+    "DEFAULT_REPLY_TO": "verwaltung@cde-ev.de",
     ## default sender address for mails
-    "DEFAULT_SENDER" : '"CdE-Mitgliederverwaltung" <verwaltung@cde-ev.de>',
+    "DEFAULT_SENDER": '"CdE-Mitgliederverwaltung" <verwaltung@cde-ev.de>',
     ## domain for emails (determines message id)
-    "MAIL_DOMAIN" : "db.cde-ev.de",
+    "MAIL_DOMAIN": "db.cde-ev.de",
     ## host to use for sending emails
-    "MAIL_HOST" : "localhost",
+    "MAIL_HOST": "localhost",
 
     ## query stuff
 
-    ## dict where the values are dicts mapping titles to queries for "speed dialing"
-    "DEFAULT_QUERIES" : {
-        "qview_cde_user" : {
-            "trial members" : Query(
+    ## dict where the values are dicts mapping titles to queries for "speed
+    ## dialing"
+    "DEFAULT_QUERIES": {
+        "qview_cde_user": {
+            "trial members": Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("member_data.persona_id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
                 ("family_name", "given_names"),),
         },
-        "qview_cde_archived_user" : {
-            "with notes" : Query(
-                "qview_cde_archived_user", QUERY_SPECS['qview_cde_archived_user'],
+        "qview_cde_archived_user": {
+            "with notes": Query(
+                "qview_cde_archived_user",
+                QUERY_SPECS['qview_cde_archived_user'],
                 ("member_data.persona_id", "given_names", "family_name",
                  "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
                 ("family_name", "given_names"),),
+        },
+        "qview_event_user": {
+            "minors": Query(
+                "qview_event_user", QUERY_SPECS['qview_event_user'],
+                ("user_data.persona_id", "given_names", "family_name",
+                 "birthday"),
+                (("birthday", QueryOperators.greater,
+                  datetime.datetime.now().date() +
+                  dateutil.relativedelta.relativedelta(years=-18)),),
+                ("birthday", "family_name", "given_names"),),
         },
     },
 
     ### Core stuff
 
     ## Core server configuration
-    "CORE_SOCKET" : "/run/cdedb/coreserver.sock",
-    "CORE_STATE_FILE" : "/run/cdedb/coreserver.pid",
-    "CORE_ACCESS_LOG" : "/tmp/cdedb-access-core.log",
-    "CORE_BACKEND_LOG" : "/tmp/cdedb-backend-core.log",
+    "CORE_SOCKET": "/run/cdedb/coreserver.sock",
+    "CORE_STATE_FILE": "/run/cdedb/coreserver.pid",
+    "CORE_ACCESS_LOG": "/tmp/cdedb-access-core.log",
+    "CORE_BACKEND_LOG": "/tmp/cdedb-backend-core.log",
 
     ### Session stuff
 
     ## session server configuration
-    "SESSION_SOCKET" : "/run/cdedb/sessionserver.sock",
-    "SESSION_STATE_FILE" : "/run/cdedb/sessionserver.pid",
-    "SESSION_ACCESS_LOG" : "/tmp/cdedb-access-session.log",
-    "SESSION_BACKEND_LOG" : "/tmp/cdedb-backend-session.log",
+    "SESSION_SOCKET": "/run/cdedb/sessionserver.sock",
+    "SESSION_STATE_FILE": "/run/cdedb/sessionserver.pid",
+    "SESSION_ACCESS_LOG": "/tmp/cdedb-access-session.log",
+    "SESSION_BACKEND_LOG": "/tmp/cdedb-backend-session.log",
 
     ## session parameters
-    "SESSION_TIMEOUT" : datetime.timedelta(days=2),
-    "SESSION_LIFESPAN" : datetime.timedelta(days=7),
+    "SESSION_TIMEOUT": datetime.timedelta(days=2),
+    "SESSION_LIFESPAN": datetime.timedelta(days=7),
 
     ### CdE stuff
 
     ## CdE server configuration
-    "CDE_SOCKET" : "/run/cdedb/cdeserver.sock",
-    "CDE_STATE_FILE" : "/run/cdedb/cdeserver.pid",
-    "CDE_ACCESS_LOG" : "/tmp/cdedb-access-cde.log",
-    "CDE_BACKEND_LOG" : "/tmp/cdedb-backend-cde.log",
+    "CDE_SOCKET": "/run/cdedb/cdeserver.sock",
+    "CDE_STATE_FILE": "/run/cdedb/cdeserver.pid",
+    "CDE_ACCESS_LOG": "/tmp/cdedb-access-cde.log",
+    "CDE_BACKEND_LOG": "/tmp/cdedb-backend-cde.log",
 
     ## maximal number of data sets a normal user is allowed to view per day
-    "MAX_QUERIES_PER_DAY" : 50,
+    "MAX_QUERIES_PER_DAY": 50,
     ## maximal number of results for a member search
-    "MAX_QUERY_RESULTS" : 50,
+    "MAX_QUERY_RESULTS": 50,
 
     ### event stuff
 
     ## event server configuration
-    "EVENT_SOCKET" : "/run/cdedb/eventserver.sock",
-    "EVENT_STATE_FILE" : "/run/cdedb/eventserver.pid",
-    "EVENT_ACCESS_LOG" : "/tmp/cdedb-access-event.log",
-    "EVENT_BACKEND_LOG" : "/tmp/cdedb-backend-event.log",
+    "EVENT_SOCKET": "/run/cdedb/eventserver.sock",
+    "EVENT_STATE_FILE": "/run/cdedb/eventserver.pid",
+    "EVENT_ACCESS_LOG": "/tmp/cdedb-access-event.log",
+    "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
 }
 
 #: defaults for :py:class:`SecretsConfig`
 _SECRECTS_DEFAULTS = {
     ## special session key for session initialization
-    "SESSION_LOOKUP_KEY" : "a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5",
+    "SESSION_LOOKUP_KEY": "a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5",
 
     ## database users
-    "CDB_DATABASE_ROLES" : {
-        "cdb_anonymous" : "012345678901234567890123456789",
-        "cdb_persona" : "abcdefghijklmnopqrstuvwxyzabcd",
-        "cdb_member" : "zyxwvutsrqponmlkjihgfedcbazyxw",
-        "cdb_admin" : "9876543210abcdefghijklmnopqrst"
+    "CDB_DATABASE_ROLES": {
+        "cdb_anonymous": "012345678901234567890123456789",
+        "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",
+        "cdb_member": "zyxwvutsrqponmlkjihgfedcbazyxw",
+        "cdb_admin": "9876543210abcdefghijklmnopqrst"
         },
 
     ## salting value used for verifying sensitve url parameters
-    "URL_PARAMETER_SALT" : "aoeuidhtns9KT6AOR2kNjq2zO",
+    "URL_PARAMETER_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
     ## salting value used for verifying tokens for username changes
-    "USERNAME_CHANGE_TOKEN_SALT" : "kaoslrcekhvx2387krcoekd983xRKCh309xKX",
+    "USERNAME_CHANGE_TOKEN_SALT": "kaoslrcekhvx2387krcoekd983xRKCh309xKX",
 
     ## password of ldap user above
-    "LDAP_PASSWORD" : "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0",
+    "LDAP_PASSWORD": "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0",
 }
 
 class BasicConfig:

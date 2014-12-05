@@ -5,10 +5,11 @@
 import datetime
 import logging
 import pytz
-import werkzeug
+import uuid
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, access, ProxyShim, basic_redirect,
-    connect_proxy, check_validation as check, persona_dataset_guard)
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, access, ProxyShim,
+    basic_redirect, connect_proxy, check_validation as check,
+    persona_dataset_guard)
 import cdedb.database.constants as const
 
 class CoreFrontend(AbstractFrontend):
@@ -55,7 +56,7 @@ class CoreFrontend(AbstractFrontend):
         if kind not in {"general", "database"}:
             kind = "general"
         return self.render(rs, "error", {
-            'kind' : kind, 'now' : datetime.datetime.now(pytz.utc)})
+            'kind': kind, 'now': datetime.datetime.now(pytz.utc)})
 
     @access("anonymous", {"POST"})
     @REQUESTdata(("username", "printable_ascii"), ("password", "str"),
@@ -102,7 +103,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
         realm = self.coreproxy.get_realm(rs, persona_id)
-        params = {'confirm_id' : self.encode_parameter(
+        params = {'confirm_id': self.encode_parameter(
             "{}/show_user".format(realm), "confirm_id", confirm_id)}
         return self.redirect(
             rs, "{}/show_user".format(realm), params=params)
@@ -166,11 +167,11 @@ class CoreFrontend(AbstractFrontend):
         exists = self.coreproxy.verify_existence(rs, email)
         if not exists:
             rs.errors.append(("email", ValueError("Nonexistant user.")))
-            return self.reset_password_form(r)
+            return self.reset_password_form(rs)
         self.do_mail(
             rs, "reset_password",
-            {'To' : (email,), 'Subject' : 'CdEDB password reset'},
-            {'email' : self.encode_parameter(
+            {'To': (email,), 'Subject': 'CdEDB password reset'},
+            {'email': self.encode_parameter(
                 "core/do_password_reset_form", "email", email)})
         self.logger.info("Sent password reset mail to {} for IP {}.".format(
             email, rs.request.remote_addr))
@@ -202,9 +203,9 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/reset_password_form")
         else:
             self.do_mail(rs, "password_reset_done",
-                         {'To' : (email,),
-                          'Subject' : 'CdEDB password reset successful'},
-                         {'password' : message})
+                         {'To': (email,),
+                          'Subject': 'CdEDB password reset successful'},
+                         {'password': message})
             rs.notify("success", "Password reset.")
             return self.redirect(rs, "core/index")
 
@@ -218,9 +219,9 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
         else:
             self.do_mail(rs, "password_reset_done",
-                         {'To' : (data['username'],),
-                          'Subject' : 'CdEDB password reset successful'},
-                         {'password' : message})
+                         {'To': (data['username'],),
+                          'Subject': 'CdEDB password reset successful'},
+                         {'password': message})
             rs.notify("success", "Password reset.")
             return self.redirect_show_user(rs, persona_id)
 
@@ -236,9 +237,9 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
-                     {'To' : (new_username,),
-                      'Subject' : 'CdEDB username change'},
-                     {'new_username' : self.encode_parameter(
+                     {'To': (new_username,),
+                      'Subject': 'CdEDB username change'},
+                     {'new_username': self.encode_parameter(
                          "core/do_username_change_form", "new_username",
                          new_username)})
         self.logger.info("Sent username change mail to {} for {}.".format(
@@ -250,6 +251,7 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("new_username", "#email"))
     @persona_dataset_guard(realms=None)
     def do_username_change_form(self, rs, persona_id, new_username):
+        ## persona_id is used implicitly
         """Email is now verified or we are admin."""
         if rs.errors:
             rs.notify("error", "Link expired.")
@@ -279,7 +281,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_username_change_form(self, rs, persona_id):
         """Render form."""
         data = self.coreproxy.get_data_single(rs, persona_id)
-        return self.render(rs, "admin_username_change", {'data' : data})
+        return self.render(rs, "admin_username_change", {'data': data})
 
     @access("core_admin", {'POST'})
     @REQUESTdata(('new_username', 'email'))
@@ -303,10 +305,10 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
         data = {
-            'id' : persona_id,
-            'is_active' : activity,
+            'id': persona_id,
+            'is_active': activity,
         }
-        change_note="Toggling activity to {}.".format(activity)
+        change_note = "Toggling activity to {}.".format(activity)
         num = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
         self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
@@ -319,7 +321,7 @@ class CoreFrontend(AbstractFrontend):
             if data['db_privileges'] & bit:
                 rs.values.add('newprivileges', bit.value)
         return self.render(rs, "adjust_privileges", {
-            'data' : data, 'bits' : const.PrivilegeBits})
+            'data': data, 'bits': const.PrivilegeBits})
 
     @access("admin", {"POST"})
     @REQUESTdata(("newprivileges", "[int]"))
@@ -328,11 +330,152 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.redirect_show_user(rs, persona_id)
         data = {
-            'id' : persona_id,
-            'db_privileges' : sum(newprivileges),
+            'id': persona_id,
+            'db_privileges': sum(newprivileges),
         }
-        change_note="Setting privileges to {}.".format(sum(newprivileges))
+        change_note = "Setting privileges to {}.".format(sum(newprivileges))
         num = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
         self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
 
+    @access("anonymous")
+    def genesis_request_form(self, rs):
+        """Render form."""
+        return self.render(rs, "genesis_request")
+
+    @access("anonymous", {"POST"})
+    @REQUESTdata(("username", "email"), ("rationale", "str"),
+                 ("full_name", "str"))
+    def genesis_request(self, rs, username, rationale, full_name):
+        """Voice the desire to become a persona.
+
+        This initiates the genesis process.
+        """
+        if not rs.errors and len(rationale) > self.conf.MAX_RATIONALE:
+            rs.errors.append(("rationale", "Too long."))
+        if rs.errors:
+            return self.genesis_request_form(rs)
+        case_id = self.coreproxy.genesis_request(rs, username, full_name,
+                                                 rationale)
+        if not case_id:
+            rs.notify("error", "Failed.")
+            return self.genesis_request_form(rs)
+        self.do_mail(
+            rs, "genesis_verify",
+            {'To': (username,), 'Subject': 'CdEDB account request'},
+            {'case_id': self.encode_parameter(
+                "core/genesis_verify", "case_id", case_id),
+             'full_name': full_name, })
+        rs.notify("success", "Email sent.")
+        return self.redirect(rs, "core/index")
+
+    @access("anonymous")
+    @REQUESTdata(("case_id", "#int"))
+    def genesis_verify(self, rs, case_id):
+        """Verify the email address entered in :py:meth:`genesis_request`.
+
+        This is not a POST since the link is shared via email.
+        """
+        if rs.errors:
+            rs.notify("error", "Link expired.")
+            return self.genesis_request_form(rs)
+        num = self.coreproxy.genesis_verify(rs, case_id)
+        if not num:
+            rs.notify("error", "Verification failed.")
+            return self.redirect(rs, "core/genesis_request_form")
+        rs.notify("success", "Email verified.")
+        return self.redirect(rs, "core/index")
+
+    @access("core_admin")
+    def genesis_list_cases(self, rs):
+        """Compile a list of genesis cases to review."""
+        stati = (const.GenesisStati.to_review, const.GenesisStati.approved)
+        data = self.coreproxy.genesis_list_cases(rs, stati=stati)
+        review_ids = tuple(key for key in data
+                           if (data[key]['case_status']
+                               == const.GenesisStati.to_review))
+        to_review = self.coreproxy.genesis_get_cases(rs, review_ids)
+        approved = {k: v for k, v in data.items()
+                    if v['case_status'] == const.GenesisStati.approved}
+        return self.render(rs, "genesis_list_cases", {
+            'to_review': to_review, 'approved': approved,
+            'PersonaStati': const.PersonaStati,
+            'GenesisStati': const.GenesisStati})
+
+    @access("core_admin", {"POST"})
+    @REQUESTdata(("case_id", "int"), ("case_status", "genesis_status"),
+                 ("persona_status", "persona_status_or_None"))
+    def genesis_decide(self, rs, case_id, case_status, persona_status):
+        """Approve or decline a genensis case.
+
+        This sends an email with the link of the final creation page to
+        the applicant.
+        """
+        if (case_status == const.GenesisStati.approved
+            and persona_status is None):
+            rs.errors.append(("persona_status",
+                              ValueError("Must not be None.")))
+        if rs.errors:
+            return self.genesis_list_cases(rs)
+        case = self.coreproxy.genesis_get_case(rs, case_id)
+        if case['case_status'] != const.GenesisStati.to_review:
+            rs.notify("error", "Case not to review.")
+            return self.genesis_list_cases(rs)
+        data = {
+            'id': case_id,
+            'persona_status': persona_status,
+            'case_status': case_status,
+            'reviewer': rs.user.persona_id,
+        }
+        if case_status == const.GenesisStati.approved:
+            data['secret'] = str(uuid.uuid4())
+        num = self.coreproxy.genesis_modify_case(rs, data)
+        if not num:
+            rs.notify("error", "Failed.")
+            return rs.genesis_list_cases(rs)
+        case = self.coreproxy.genesis_get_case(rs, case_id)
+        if case_status == const.GenesisStati.approved:
+            if case['persona_status'] == const.PersonaStati.event_user:
+                realm = "event"
+            else:
+                raise RuntimeError("Impossible status.")
+            self.do_mail(
+                rs, "genesis_approved",
+                {'To': (case['username'],),
+                 'Subject': 'CdEDB account approved'},
+                {'case': case, 'realm': realm})
+            rs.notify("success", "Case approved.")
+        else:
+            self.do_mail(
+                rs, "genesis_declined",
+                {'To': (case['username'],),
+                 'Subject': 'CdEDB account declined'},
+                {'case': case,})
+            rs.notify("info", "Case rejected.")
+        return self.redirect(rs, "core/genesis_list_cases")
+
+    @access("core_admin", {"POST"})
+    @REQUESTdata(("case_id", "int"))
+    def genesis_timeout(self, rs, case_id):
+        """Abandon a genesis case.
+
+        If a genesis case is approved, but the applicant loses interest,
+        it remains dangling. Thus this enables to archive them.
+        """
+        if rs.errors:
+            return self.genesis_list_cases(rs)
+        case = self.coreproxy.genesis_get_case(rs, case_id)
+        if case['case_status'] != const.GenesisStati.approved:
+            rs.notify("error", "Case not approved.")
+            return self.genesis_list_cases(rs)
+        data = {
+            'id': case_id,
+            'case_status': const.GenesisStati.timeout,
+            'reviewer': rs.user.persona_id,
+        }
+        num = self.coreproxy.genesis_modify_case(rs, data)
+        if num:
+            rs.notify("info", "Case abandoned.")
+        else:
+            rs.notify("error", "Failed.")
+        return self.redirect(rs, "core/genesis_list_cases")

@@ -26,10 +26,10 @@ class TestSerialization(unittest.TestCase):
                   decimal.Decimal(".3838848"),
                   None,
                   (datetime.datetime.now(), 123123, "some string"),
-                  { "route" : 66,
-                    None : decimal.Decimal("42.188"),
-                    666 : datetime.datetime.now(),
-                    (1, "tuple") : { 42 : datetime.datetime.now()},
+                  { "route": 66,
+                    None: decimal.Decimal("42.188"),
+                    666: datetime.datetime.now(),
+                    (1, "tuple"): { 42: datetime.datetime.now()},
                   },
                   )
         for datum in corpus:

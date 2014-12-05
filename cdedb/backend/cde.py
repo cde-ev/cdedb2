@@ -10,18 +10,17 @@ from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
     access, internal_access, make_RPCDaemon, run_RPCDaemon,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize)
+    singularize, create_fulltext)
 from cdedb.common import (
-    glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS,QuotaException)
+    glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS, QuotaException, merge_dicts)
 from cdedb.query import QueryOperators
-from cdedb.config import Config, SecretsConfig
+from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import argparse
 import datetime
 import logging
-import hashlib
-import pytz
+import decimal
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,9 +31,10 @@ class CdeBackend(AbstractUserBackend):
     """
     realm = "cde"
     user_management = {
-        "data_table" : "cde.member_data",
-        "data_fields" : MEMBER_DATA_FIELDS,
-        "validator" : "member_data",
+        "data_table": "cde.member_data",
+        "data_fields": MEMBER_DATA_FIELDS,
+        "validator": "member_data",
+        "user_status": const.PersonaStati.member,
     }
 
     def __init__(self, configpath):
@@ -56,11 +56,11 @@ class CdeBackend(AbstractUserBackend):
         """This checks for privileged fields, implements the change log and
         updates the fulltext in addition to what
         :py:meth:`cdedb.backend.common.AbstractUserBackend.set_user_data`
-        does. If a change requires review it has to be commited using
+        does. If a change requires review it has to be committed using
         :py:meth:`resolve_change` by an administrator.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
+        :type data: {str: object}
         :type generation: int or None
         :param generation: generation on which this request is based, if this
            is not the current generation we abort, may be None to override
@@ -134,7 +134,7 @@ class CdeBackend(AbstractUserBackend):
         elses data set.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
+        :type data: {str: object}
         :type may_wait: bool
         :param may_wait: override for system requests (which may not wait)
         :type change_note: str
@@ -147,6 +147,8 @@ class CdeBackend(AbstractUserBackend):
         may_wait = affirm("bool", may_wait)
         change_note = affirm("str_or_None", change_note)
         if change_note is None:
+            self.logger.info("No change note specified (persona_id={}).".format(
+                data['id']))
             change_note = "Unspecified change."
 
         return self.set_user_data(rs, data, generation, may_wait=may_wait,
@@ -167,7 +169,7 @@ class CdeBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : {str : object}}
+        :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
         return super().get_data(rs, ids)
@@ -180,7 +182,7 @@ class CdeBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : {str : object}}
+        :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
         ids = affirm_array("int", ids)
@@ -199,11 +201,65 @@ class CdeBackend(AbstractUserBackend):
             else:
                 num = num['queries']
             new = tuple(i == rs.user.persona_id for i in ids).count(False)
-            if num + new > self.conf.MAX_QUERIES_PER_DAY \
-              and not self.is_admin(rs):
+            if (num + new > self.conf.MAX_QUERIES_PER_DAY
+                and not self.is_admin(rs)):
                 raise QuotaException("Too many queries.")
             self.query_exec(rs, query, (num + new, rs.user.persona_id, today))
         return self.retrieve_user_data(rs, ids)
+
+    @access("cde_admin")
+    def create_user(self, rs, data, change_note="Member creation."):
+        """Make a new member account.
+
+        This caters to the cde realm specifics, foremost the changelog.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: The id of the newly created persona.
+        """
+        data = affirm("member_data", data, initialization=True)
+        change_note = affirm("str", change_note)
+        ## insert default for optional and non-settable fields
+        update = {
+            'balance': decimal.Decimal(0),
+            'decided_search': False,
+            'bub_search': False,
+        }
+        merge_dicts(data, update)
+
+        keys = tuple(key for key in data if key in MEMBER_DATA_FIELDS)
+        fulltext = create_fulltext(data)
+        query = "INSERT INTO {} ({}) VALUES ({})".format(
+            "cde.member_data",
+            ", ".join(("persona_id", "fulltext") + keys),
+            ", ".join(("%s",) * (2+len(keys))))
+
+        with Atomizer(rs):
+            new_id = self.core.create_persona(rs, data)
+            params = (new_id, fulltext) + tuple(data[key] for key in keys)
+            self.query_exec(rs, query, params)
+            fields = ["submitted_by", "generation", "change_status",
+                      "persona_id", "change_note"]
+            fields.extend(PERSONA_DATA_FIELDS)
+            fields.remove("id")
+            fields.extend(MEMBER_DATA_FIELDS)
+            query = "INSERT INTO core.changelog ({}) VALUES ({})".format(
+                ", ".join(fields), ", ".join(("%s",) * len(fields)))
+            params = [rs.user.persona_id, 1,
+                      const.MemberChangeStati.committed, new_id, change_note]
+            for field in fields[5:]:
+                params.append(data.get(field))
+            self.query_exec(rs, query, params)
+        return new_id
+
+    def genesis_check(self, rs, case_id, secret, username=None):
+        """Member accounts cannot be requested."""
+        raise NotImplementedError("Not available for cde realm.")
+
+    def genesis(self, rs, case_id, secret, data):
+        """Member accounts cannot be requested."""
+        raise NotImplementedError("Not available for cde realm.")
 
     @access("formermember")
     @singularize("get_generation")
@@ -213,7 +269,7 @@ class CdeBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : int}
+        :rtype: {int: int}
         :returns: dict mapping ids to generations
         """
         ids = affirm_array("int", ids)
@@ -221,15 +277,18 @@ class CdeBackend(AbstractUserBackend):
         return self.core.changelog_get_generations(rs, ids)
 
     @access("cde_admin")
-    def get_pending_changes(self, rs):
-        """Retrive currently pending changes in the changelog.
+    def get_changes(self, rs, stati):
+        """Retrive changes in the changelog.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :rtype: {int : {str : object}}
+        :type stati: [int]
+        :param stati: limit changes to those with a status in this
+        :rtype: {int: {str: object}}
         :returns: dict mapping persona ids to dicts containing information
           about the change and the persona
         """
-        return self.core.changelog_get_pending_changes(rs)
+        affirm_array("int", stati)
+        return self.core.changelog_get_changes(rs, stati)
 
     @access("cde_admin")
     def get_history(self, rs, anid, generations):
@@ -239,7 +298,7 @@ class CdeBackend(AbstractUserBackend):
         :type anid: int
         :type generations: [int] or None
         :parameter generations: generations to retrieve, all if None
-        :rtype: {int : {str : object}}
+        :rtype: {int: {str: object}}
         :returns: mapping generation to data set
         """
         anid = affirm("int", anid)
@@ -258,7 +317,7 @@ class CdeBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : str}
+        :rtype: {int: str}
         """
         ids = affirm_array("int", ids)
         query = glue("SELECT persona_id, foto FROM cde.member_data",
@@ -266,7 +325,7 @@ class CdeBackend(AbstractUserBackend):
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
             raise RuntimeError("Invalid ids requested.")
-        return {e['persona_id'] : e['foto'] for e in data}
+        return {e['persona_id']: e['foto'] for e in data}
 
     @access("formermember")
     def set_foto(self, rs, persona_id, foto):
@@ -310,7 +369,7 @@ class CdeBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type query: :py:class:`cdedb.query.Query`
-        :rtype: [{str : obj}]
+        :rtype: [{str: object}]
         """
         query = affirm("serialized_query", query)
         if query.scope == "qview_cde_member":

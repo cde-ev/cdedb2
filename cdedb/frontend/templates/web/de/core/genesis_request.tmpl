@@ -1,0 +1,26 @@
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Account anfordern{% endblock %}
+{% block content %}
+    <p>
+        Mit dem folgenden Formular kannst Du einen Account beantragen. Gib dazu
+        bitte kurz an, zu welchem Zweck Du den Account benötigst (bspw. wenn Du
+        Dich für eine Veranstaltung anmelden möchtest).
+    </p>
+    <p>
+        Nachdem Du das Formular abgeschickt hast, wird eine Email an die
+        angegebene Adresse verschickt, die einen Verifikationslink
+        enthält. Diesen musst Du dann mit einem Browser
+        besuchen. Anschließend wird Deine Anfrage moderiert und dann ein
+        Email mit dem Link zum endgültigen Erstellungsformular versandt.
+    </p>
+
+    <form action="{{ cdedblink('core/genesis_request')|e }}" method="POST" id="genesisform">
+        <div>
+            {{ util.input_text(name="full_name", label="Name") }}
+            {{ util.input_text(name="username", label="Emailadresse") }}
+            {{ util.input_textarea(name="rationale", label="Begründung (max. 200 Zeichen)") }}
+            {{ util.input_submit(value="Antrag abschicken") }}
+        </div>
+    </form>
+{% endblock %}

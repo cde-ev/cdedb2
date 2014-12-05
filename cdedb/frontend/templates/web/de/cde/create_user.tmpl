@@ -1,11 +1,9 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Administration -- {{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
+{% block title %}Neues Mitglied anlegen{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/admin_change_user')|e }}" method="POST" id="changedataform">
-        <div>{{ util.input_hidden(name="generation") }}</div>
+    <form action="{{ cdedblink('cde/create_user')|e }}" method="POST" id="newuserform">
         <table>
-            {{ util.tab_input_textarea(name="change_note", label="Kommentar", aclass="bigg") }}
             <tr> <th colspan="2">Person</th> </tr>
             {{ util.tab_input_text(name="title", label="Titel") }}
             {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
@@ -21,10 +19,7 @@
             {{ util.tab_input_select(name="gender", entries=default_selections['gender'], title="Geschlecht") }}
             {{ util.tab_input_text(name="birthday", label="Geburtstag") }}
             <tr> <th colspan="2">Kontakt</th> </tr>
-            <tr>
-                <td>Email</td>
-                <td>{{ username|e }}</td>
-            </tr>
+            {{ util.tab_input_text(name="username", label="Email") }}
             {{ util.tab_input_text(name="telephone", label="Telefon") }}
             {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
             {{ util.tab_input_text(name="weblink", label="WWW") }}
@@ -41,13 +36,18 @@
             {{ util.tab_input_text(name="location2", label="Stadt") }}
             {{ util.tab_input_text(name="country2", label="Land") }}
             <tr> <th colspan="2">Account</th> </tr>
-            {{ util.tab_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
-            {{ util.tab_input_checkbox(name="cloud_account", label="Cloud Account") }}
+            {{ util.tab_input_select(name="status", title="Sichtbarkeit", entries=(
+                (const.PersonaStati.member.value, "keine Einwilligung", None),
+                (const.PersonaStati.searchmember.value, "Einwilligung vorhanden", None),),
+                anid="input_select_status") }}
+            {{ util.tab_input_checkbox(name="trial_member", label="Probemitgliedschaft", anid="input_checkbox_trial_member") }}
+            {{ util.tab_input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}
+            {{ util.tab_input_checkbox(name="cloud_account", label="Cloud Account", anid="input_checkbox_cloud_account") }}
             {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
         </table>
         <div>
-            {{ util.input_submit(value="Speichern") }}
-            <a href="{{ show_user_link(values['persona_id'])|e }}">Abbrechen</a>
+            {{ util.input_submit(value="Mitglied anlegen") }}
+            <a href="{{ cdedblink("cde/index")|e }}">Abbrechen</a>
         </div>
     </form>
 {% endblock %}

@@ -70,7 +70,7 @@ class ProxyShim:
                 attr = getattr(self._proxy, name)
                 ## Invert our custom serialization.
                 ##
-                ## This is backend -> frontend.
+                ## This is for backend -> frontend.
                 return deserialize(attr(rs.sessionkey, *args, **kwargs))
         return proxy_fun
 
@@ -130,7 +130,7 @@ class FrontendRequestState:
         :type errors: [(str, exception)]
         :param errors: validation errors, consisting of a pair of (parameter
           name, the actual error)
-        :type values: {str : object}
+        :type values: {str: object}
         :param values: Parameter values extracted via :py:func:`REQUESTdata`
           and :py:func:`REQUESTdatadict` decorators, which allows automatically
           filling forms in. This will be a
@@ -138,7 +138,7 @@ class FrontendRequestState:
           integration with the werkzeug provided data.
         :type lang: str
         :param lang: language code for i18n, currently only 'de' is valid
-        :type coders: {str : callable}
+        :type coders: {str: callable}
         :param coders: Functions for encoding and decoding parameters primed
           with secrets. This is hacky, but sadly necessary.
         """
@@ -180,11 +180,13 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
-        self.decode_parameter = lambda target, name, param: \
-          decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param,
-                           self.conf.URL_PARAMETER_TIMEOUT)
-        self.encode_parameter = lambda target, name, param: \
-          encode_parameter(secrets.URL_PARAMETER_SALT, target, name, param)
+        self.decode_parameter = (
+            lambda target, name, param:
+            decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param,
+                             self.conf.URL_PARAMETER_TIMEOUT))
+        self.encode_parameter = (
+            lambda target, name, param:
+            encode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
 
     def encode_notification(self, ntype, nmessage):
         """Wrapper around :py:meth:`encode_parameter` for notifications.
@@ -218,7 +220,7 @@ class BaseApp(metaclass=abc.ABCMeta):
 
         :type rs: :py:class:`FrontendRequestState`
         :type target: str
-        :type params: {str : object}
+        :type params: {str: object}
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
@@ -394,7 +396,7 @@ def querytoparams_filter(val):
     painful.
 
     :type val: :py:class:`cdedb.query.Query`
-    :rtype: {str : obj}
+    :rtype: {str: obj}
     """
     params = {}
     for field in val.fields_of_interest:
@@ -438,18 +440,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             extensions=['jinja2.ext.with_'],
             finalize=sanitize_None)
         filters = {
-            'date' : date_filter,
-            'datetime' : datetime_filter,
-            'cdedbid' : cdedbid_filter,
-            'escape' : escape_filter,
-            'e' : escape_filter,
-            'gender' : gender_filter,
-            'json' : json_filter,
-            'stringIn' : stringIn_filter,
-            'querytoparams' : querytoparams_filter,
-            'numerus' : numerus_filter,
-            'genus' : genus_filter,
-            'linebreaks' : linebreaks_filter,
+            'date': date_filter,
+            'datetime': datetime_filter,
+            'cdedbid': cdedbid_filter,
+            'escape': escape_filter,
+            'e': escape_filter,
+            'gender': gender_filter,
+            'json': json_filter,
+            'stringIn': stringIn_filter,
+            'querytoparams': querytoparams_filter,
+            'numerus': numerus_filter,
+            'genus': genus_filter,
+            'linebreaks': linebreaks_filter,
         }
         self.jinja_env.filters.update(filters)
 
@@ -464,7 +466,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         part of the interface.
 
         :type rs: :py:class:`FakeFrontendRequestState`
-        :type sessiondata: {str : object}
+        :type sessiondata: {str: object}
         :param sessiondata: values from the ``core.personas`` table in the
           database
         :rtype: :py:class:`FrontendUser`
@@ -498,7 +500,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           'mail')
         :type templatename: str
         :param templatename: file name of template without extension
-        :type params: {str : object}
+        :type params: {str: object}
         :rtype: str
         """
         def _cdedblink(endpoint, params=None):
@@ -506,7 +508,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             template, hence this wrapper.
 
             :type endpoint: str
-            :type params: {str : object}
+            :type params: {str: object}
             :rtype: str
             """
             params = params or {}
@@ -523,35 +525,37 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             :rtype: str
             """
             return cdedburl(rs, 'core/show_user', params={
-                'persona_id' : persona_id,
-                'confirm_id' : self.encode_parameter("core/show_user",
-                                                     "confirm_id", persona_id)})
+                'persona_id': persona_id,
+                'confirm_id': self.encode_parameter("core/show_user",
+                                                    "confirm_id", persona_id)})
         default_selections = {
-            'gender' : tuple((k, v, None) for k, v in
-                             self.enum_choice(rs, const.Genders).items()),
+            'gender': tuple((k, v, None) for k, v in
+                            self.enum_choice(rs, const.Genders).items()),
         }
         errorsdict = {}
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
         ## here come the always accessible things promised above
-        data = {'user' : rs.user,
-                'notifications' : rs.notifications,
-                'errors' : errorsdict,
-                'values' : rs.values,
-                'cdedblink' : _cdedblink,
-                'show_user_link' : _show_user_link,
-                'staticurl' : staticurl,
-                'encode_parameter' : self.encode_parameter,
-                'is_admin' : self.is_admin(rs),
-                'VALID_QUERY_OPERATORS' : VALID_QUERY_OPERATORS,
-                'default_selections' : default_selections,
-                'i18n' : lambda string: self.i18n(string, rs.lang),}
+        data = {'user': rs.user,
+                'notifications': rs.notifications,
+                'errors': errorsdict,
+                'values': rs.values,
+                'cdedblink': _cdedblink,
+                'show_user_link': _show_user_link,
+                'staticurl': staticurl,
+                'encode_parameter': self.encode_parameter,
+                'is_admin': self.is_admin(rs),
+                'VALID_QUERY_OPERATORS': VALID_QUERY_OPERATORS,
+                'default_selections': default_selections,
+                'i18n': lambda string: self.i18n(string, rs.lang),
+                'const': const,}
         merge_dicts(data, params)
         t = self.jinja_env.get_template(os.path.join(
             modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
         return t.render(**data)
 
-    def send_file(self, rs, path=None, afile=None, data=None):
+    @staticmethod
+    def send_file(rs, path=None, afile=None, data=None):
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -586,7 +590,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :type rs: :py:class:`FrontendRequestState`
         :type templatename: str
-        :type params: {str : object}
+        :type params: {str: object}
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         params = params or {}
@@ -616,9 +620,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :type rs: :py:class:`FrontendRequestState`
         :type templatename: str
-        :type headers: {str : str}
+        :type headers: {str: str}
         :param headers: mandatory headers to supply are To and Subject
-        :type params: {str : object}
+        :type params: {str: object}
         :rtype: str or None
         :returns: see :py:meth:`_send_mail` for details, we automatically
           store the path in ``rs``
@@ -639,14 +643,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Helper for actual email instantiation from a raw message.
 .
         :type text: str
-        :type headers: {str : str}
+        :type headers: {str: str}
         :rtype: :py:class:`email.message.Message`
         """
-        defaults = {"From" : self.conf.DEFAULT_SENDER,
-                    "Reply-To" : self.conf.DEFAULT_REPLY_TO,
-                    "Cc" : tuple(),
-                    "Bcc" : tuple(),
-                    "domain" : self.conf.MAIL_DOMAIN,}
+        defaults = {"From": self.conf.DEFAULT_SENDER,
+                    "Reply-To": self.conf.DEFAULT_REPLY_TO,
+                    "Cc": tuple(),
+                    "Bcc": tuple(),
+                    "domain": self.conf.MAIL_DOMAIN,}
         merge_dicts(headers, defaults)
         msg = email.mime.text.MIMEText(text)
         email.encoders.encode_quopri(msg)
@@ -702,9 +706,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type persona_id: int
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
-        params = {'confirm_id' : self.encode_parameter(
-            "{}/show_user".format(self.realm), "confirm_id", persona_id),
-            'persona_id' : persona_id}
+        cid = self.encode_parameter("{}/show_user".format(self.realm),
+                                    "confirm_id", persona_id)
+        params = {'confirm_id': cid, 'persona_id': persona_id}
         return self.redirect(rs, '{}/show_user'.format(self.realm),
                              params=params)
 
@@ -714,15 +718,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :type rs: :py:class:`FrontendRequestState`
         :type anenum: :py:class:`enum.Enum`
-        :rtype: {str : str}
+        :rtype: {str: str}
         """
-        return {str(case.value) : self.i18n(str(case), rs.lang)
+        return {str(case.value): self.i18n(str(case), rs.lang)
                 for case in anenum}
 
     @staticmethod
     def notify_integer_success(rs, num):
-        """Small helper to issue a notification based on a return code specifying
-        the number of changed entries.
+        """Small helper to issue a notification based on a return code
+        specifying the number of changed entries.
 
         :type rs: :py:class:`FrontendRequestState`
         :type num: int
@@ -765,9 +769,9 @@ def access(role, modi=None):
             else:
                 if rs.user.roles == {"anonymous"}:
                     params = {
-                        'wants' : rs._coders['encode_parameter'](
+                        'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url),
-                        'displaynote' : rs._coders['encode_notification'](
+                        'displaynote': rs._coders['encode_notification'](
                             "error", "You must login.")
                         }
                     return basic_redirect(rs, cdedburl(rs, "core/index",
@@ -785,7 +789,7 @@ def cdedburl(rs, endpoint, params=None):
     :type rs: :py:class:`FrontendRequestState`
     :type endpoint: str
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
-    :type params: {str : object}
+    :type params: {str: object}
     :rtype: str
     """
     params = params or {}
@@ -944,9 +948,9 @@ def persona_dataset_guard(argname="persona_id", realms=tuple(),
             if realms is not None:
                 therealms = realms or (obj.realm,)
                 status = obj.coreproxy.get_data_single(rs, arg)['status']
-                if extract_realm(status) not in therealms or \
-                  (disallow_archived and status == \
-                   const.PersonaStati.archived_member):
+                if (extract_realm(status) not in therealms
+                    or (disallow_archived and status ==
+                        const.PersonaStati.archived_member)):
                     return werkzeug.exceptions.NotFound()
             return fun(obj, rs, *args, **kwargs)
         return new_fun
@@ -957,7 +961,8 @@ def encode_parameter(salt, target, name, param):
 
     * trust user submitted data (which we beforehand gave to the user in
       signed form and which he is echoing back at us); this is used for
-      example to preserve notifications during redirecting a POST-request, and
+      example to preserve notifications during redirecting a POST-request,
+      and
     * verify the origin of the data (since only we have the key for
       signing), this is convenient since we are mostly state-less (except
       the SQL layer) and thus the user can obtain a small amount of state

@@ -13,6 +13,7 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.common import (
     AbstractBackend, AuthShim, affirm_validation as affirm,
     affirm_array_validation as affirm_array)
+import cdedb.database.constants as const
 import abc
 
 class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
@@ -22,19 +23,15 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
     """
     #: Specification how user management works. To be filled by child classes.
     user_management = {
-        "data_table" : None, ## str
-        "data_fields" : None, ## [str], does not contain PERSONA_DATA_FIELDS
-        "validator" : None, ## str
+        "data_table": None, ## str
+        "data_fields": None, ## [str], does not contain PERSONA_DATA_FIELDS
+        "validator": None, ## str
+        "user_status": None, ## int, one of const.PersonaStati
     }
 
     def __init__(self, configpath):
         super().__init__(configpath)
         self.core = AuthShim(CoreBackend(configpath))
-
-    @classmethod
-    @abc.abstractmethod
-    def is_admin(cls, rs):
-        return super().is_admin(rs)
 
     def affirm_realm(self, rs, ids, realms=None):
         """Check that all personas corresponding to the ids are in the
@@ -58,7 +55,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : {str : object}}
+        :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
         query = glue(
@@ -70,13 +67,13 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return {d['id'] : d for d in data}
+        return {d['id']: d for d in data}
 
     def set_user_data(self, rs, data):
         """Update some keys of a data set.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
+        :type data: {str: object}
         :rtype: int
         :returns: number of changed entries
         """
@@ -97,10 +94,10 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
                 if not ret:
                     raise RuntimeError("Modification failed.")
             if len(ukeys) > 0:
-                query = \
-                  "UPDATE {} SET ({}) = ({}) WHERE persona_id = %s".format(
-                      self.user_management['data_table'], ", ".join(ukeys),
-                      ", ".join(("%s",) * len(ukeys)))
+                query = "UPDATE {} SET ({}) = ({}) WHERE persona_id = %s"
+                query = query.format(
+                    self.user_management['data_table'], ", ".join(ukeys),
+                    ", ".join(("%s",) * len(ukeys)))
                 params = tuple(data[key] for key in ukeys) + (data['id'],)
                 ret = self.query_exec(rs, query, params)
                 if not ret:
@@ -108,12 +105,13 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         return ret
 
     ## @access("realm_user")
+    @abc.abstractmethod
     def change_user(self, rs, data):
         """Change a data set. Note that you need privileges to edit someone
         elses data set.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
+        :type data: {str: object}
         :rtype: int
         :returns: number of users changed
         """
@@ -122,11 +120,125 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
 
     ## @access("realm_user")
     ## @singularize("get_data_single")
+    @abc.abstractmethod
     def get_data(self, rs, ids):
-        """
+        """Aquire data sets for specified ids.
+
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: [{str : object}]
+        :rtype: [{str: object}]
         """
         ids = affirm_array("int", ids)
         return self.retrieve_user_data(rs, ids)
+
+    ## @access("realm_admin")
+    @abc.abstractmethod
+    def create_user(self, rs, data):
+        """Make a new account.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: The id of the newly created persona.
+        """
+        data = affirm(self.user_management['validator'], data,
+                      initialization=True)
+
+        keys = tuple(key for key in data
+                     if key in self.user_management['data_fields'])
+        query = "INSERT INTO {} ({}) VALUES ({})".format(
+            self.user_management['data_table'],
+            ", ".join(("persona_id",) + keys),
+            ", ".join(("%s",) * (1+len(keys))))
+        with Atomizer(rs):
+            new_id = self.core.create_persona(rs, data)
+            params = (new_id,) + tuple(data[key] for key in keys)
+            num = self.query_exec(rs, query, params)
+            if not num:
+                raise RuntimeError("Modification failed.")
+        return new_id
+
+    ## @access("anonymous")
+    @abc.abstractmethod
+    def genesis_check(self, rs, case_id, secret, username=None):
+        """Verify input data for genesis case.
+
+        This is a security check, which enables us to share a
+        non-ephemeral private link after a moderator approved a request.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type case_id: int
+        :type secret: str
+        :type username: str or None
+        :param username: If provided this is checked against the deposited
+            email address.
+        :rtype: bool
+        """
+        case_id = affirm("int", case_id)
+        secret = affirm("str", secret)
+        if username is not None:
+            username = affirm("email", username)
+        query = glue("SELECT case_status, secret, persona_status, username",
+                     "FROM core.genesis_cases WHERE id = %s")
+        case = self.query_one(rs, query, (case_id,))
+        return (bool(case)
+                and case['case_status'] == const.GenesisStati.approved
+                and case['secret'] == secret
+                and (case['persona_status']
+                     == self.user_management['user_status'])
+                and (username is None or username == case['username']))
+
+    ## @access("anonymous")
+    @abc.abstractmethod
+    def genesis(self, rs, case_id, secret, data):
+        """Create a new user account upon request.
+
+        This is the final step in the genesis process and actually creates
+        the account. This heavily escalates privileges to allow the creation
+        of a user with an anonymous role.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type case_id: int
+        :type secret: str
+        :param secret: Verification for the authenticity of the invocation.
+        :type data: {str: object}
+        :rtype: int
+        :returns: The id of the newly created persona.
+        """
+        case_id = affirm("int", case_id)
+        secret = affirm("str", secret)
+        data = affirm(self.user_management['validator'], data,
+                      initialization=True)
+
+        query = glue("SELECT username, case_status, persona_status, secret",
+                     "FROM core.genesis_cases WHERE id = %s")
+
+        ## escalate priviliges
+        if rs.conn.is_contaminated:
+            raise RuntimeError("Atomized -- impossible to escalate.")
+        orig_conn = rs.conn
+        rs.conn = self.connpool['cdb_admin']
+        orig_roles = rs.user.roles
+        rs.user.roles = rs.user.roles | {"core_admin",
+                                         "{}_admin".format(self.realm)}
+
+        with Atomizer(rs):
+            case = self.query_one(rs, query, (case_id,))
+            if not case or case['secret'] != secret:
+                return None, "Invalid case."
+            if case['case_status'] != const.GenesisStati.approved:
+                return None, "Invalid state."
+            if case['persona_status'] != self.user_management['user_status']:
+                return None, "Invalid realm."
+            if data['username'] != case['username']:
+                return None, "Mismatched username."
+            ## this elevates privileges
+            ret = self.create_user(rs, data)
+            query = glue("UPDATE core.genesis_cases SET case_status = %s",
+                         "WHERE id = %s")
+            self.query_exec(rs, query, (const.GenesisStati.finished, case_id))
+
+        ## deescalate privileges
+        rs.conn = orig_conn
+        rs.user.roles = orig_roles
+        return ret

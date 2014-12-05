@@ -42,8 +42,8 @@ class I18N:
         :type translated_regex: str
         :type lang: str
         """
-        self.regexes.setdefault(re.compile(internal_regex), {})[lang] = \
-          translated_regex
+        self.regexes.setdefault(re.compile(internal_regex), {})[lang] = (
+            translated_regex)
         _LOGGER.debug("Added i18n regex '{}'->'{}' for {}.".format(
             internal_regex, translated_regex, lang))
 

@@ -13,7 +13,7 @@
         </p>
     {% endif %}
     {% if foto %}
-       <img src="{{ cdedblink('cde/get_foto', {'foto' : foto})|e }}" alt="Profilbild" class="profilepic">
+       <img src="{{ cdedblink('cde/get_foto', {'foto': foto})|e }}" alt="Profilbild" class="profilepic">
     {% else %}
        <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild" class="profilepic">
     {% endif %}
@@ -143,12 +143,12 @@
                     <td>
                         {% if data['is_active'] %}
                             {{ util.checkbox_checked(anid='activity_checkbox') }}
-                            <form action="{{ cdedblink('core/toggle_activity', {'activity' : False})|e }}" method="POST" id="activitytoggleform">
+                            <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST" id="activitytoggleform">
                                 <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
                             </form>
                         {% else %}
                             {{ util.checkbox_unchecked(anid='activity_checkbox') }}
-                            <form action="{{ cdedblink('core/toggle_activity', {'activity' : True})|e }}" method="POST" id="activitytoggleform">
+                            <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST" id="activitytoggleform">
                                 <div>{{ util.input_submit(value="Account aktivieren") }}</div>
                             </form>
                         {% endif %}
@@ -168,19 +168,19 @@
             {% if data['is_member'] %}
                 <tr>
                     <td>Sichtbarkeit</td>
-                    {% if not data['decided_search'] %}
-                        <td>
-                            Noch nicht entschieden; Daten sind nicht sichtbar.
-                            {% if data['id'] == user.persona_id %}
-                                <a href="{{ cdedblink('cde/consent_decision')|e }}">Entscheiden.</a>
-                            {% endif %}
-                        </td>
+                    {% if data['is_searchable'] %}
+                        <td>Daten sind für andere Mitglieder sichtbar.</td>
                     {% else %}
-                       {% if data['is_searchable'] %}
-                           <td>Daten sind für andere Mitglieder sichtbar.</td>
-                       {% else %}
-                           <td>Daten sind nicht sichtbar.</td>
-                       {% endif %}
+                        {% if not data['decided_search'] %}
+                            <td>
+                                Noch nicht entschieden; Daten sind nicht sichtbar.
+                                {% if data['id'] == user.persona_id %}
+                                    <a href="{{ cdedblink('cde/consent_decision')|e }}">Entscheiden.</a>
+                                {% endif %}
+                            </td>
+                        {% else %}
+                            <td>Daten sind nicht sichtbar.</td>
+                        {% endif %}
                     {% endif %}
                 </tr>
                 <tr>

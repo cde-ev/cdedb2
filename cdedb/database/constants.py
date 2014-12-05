@@ -48,10 +48,14 @@ CDE_STATI = MEMBER_STATI | {PersonaStati.formermember}
 ALL_CDE_STATI = CDE_STATI | {PersonaStati.archived_member}
 #: These personas may register for an event.
 EVENT_STATI = {PersonaStati.searchmember, PersonaStati.member,
-                  PersonaStati.formermember, PersonaStati.event_user}
+               PersonaStati.formermember, PersonaStati.event_user}
 #: These personas may participate in an assembly.
 ASSEMBLY_STATI = {PersonaStati.searchmember, PersonaStati.member,
-                     PersonaStati.assembly_user}
+                  PersonaStati.assembly_user}
+#: These personas may use the mailing lists
+ML_STATI = {PersonaStati.searchmember, PersonaStati.member,
+            PersonaStati.formermember, PersonaStati.assembly_user,
+            PersonaStati.event_user}
 
 @enum.unique
 class PrivilegeBits(enum.IntEnum):
@@ -99,8 +103,8 @@ class RegistrationPartStati(enum.IntEnum):
     rejected = 5 #:
 
 @enum.unique
-class PersonaCreationStati(enum.IntEnum):
-    """Spec for field challenge_status of core.persona_creation_challenges."""
+class GenesisStati(enum.IntEnum):
+    """Spec for field case_status of core.genesis_cases."""
     #: created, email unconfirmed
     unconfirmed = 0
     #: email confirmed, awaiting review
@@ -111,3 +115,5 @@ class PersonaCreationStati(enum.IntEnum):
     finished = 3
     #: reviewed and rejected (also a final state)
     rejected = 10
+    #: abandoned and archived (also final)
+    timeout = 11

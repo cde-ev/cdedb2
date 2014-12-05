@@ -64,19 +64,19 @@ class Application(BaseApp):
                 endpoint, args = urls.match()
                 if sessionkey and not data["persona_id"]:
                     params = {
-                        'wants' : self.encode_parameter(
+                        'wants': self.encode_parameter(
                             "core/index", "wants", request.url),
-                        'displaynote' : self.encode_notification(
+                        'displaynote': self.encode_notification(
                             "error", "Session expired.")}
                     ret = construct_redirect(request,
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
                     return ret
                 coders = {
-                    "encode_parameter" : self.encode_parameter,
-                    "decode_parameter" : self.decode_parameter,
-                    "encode_notification" : self.encode_notification,
-                    "decode_notification" : self.decode_notification,
+                    "encode_parameter": self.encode_parameter,
+                    "decode_parameter": self.decode_parameter,
+                    "encode_notification": self.encode_notification,
+                    "decode_notification": self.decode_notification,
                 }
                 rs = FrontendRequestState(sessionkey, None, request, None,
                                           [], urls, args, self.urlmap,
@@ -119,10 +119,10 @@ class Application(BaseApp):
         except psycopg2.extensions.TransactionRollbackError:
             ## Serialization error
             return construct_redirect(
-                request, urls.build("core/error", {'kind' : "database"}))
+                request, urls.build("core/error", {'kind': "database"}))
         except QuotaException:
             return construct_redirect(
-                request, urls.build("core/error", {'kind' : "quota"}))
+                request, urls.build("core/error", {'kind': "quota"}))
         except Exception as e:
             ## debug output if applicable
             if self.conf.CDEDB_DEV or ('data' in locals()
@@ -136,4 +136,4 @@ class Application(BaseApp):
             ## generic errors
             return construct_redirect(request,
                                       urls.build("core/error",
-                                                 {'kind' : "general"}))
+                                                 {'kind': "general"}))

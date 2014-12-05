@@ -21,8 +21,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """
     #: Specification how user management works. To be filled by child classes.
     user_management = {
-        "proxy" : None, ## callable
-        "validator" : None, ## str
+        "proxy": None, ## callable
+        "validator": None, ## str
     }
 
     def __init__(self, configpath):
@@ -63,6 +63,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     ## @access("user")
     ## @REQUESTdata(("confirm_id", "#int"))
+    @abc.abstractmethod
     def show_user(self, rs, persona_id, confirm_id):
         """Display user details.
 
@@ -79,20 +80,22 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data['db_privileges_ascii'] = ", ".join(
             bit.name for bit in const.PrivilegeBits
             if data['db_privileges'] & bit.value)
-        return self.render(rs, "show_user", {'data' : data})
+        return self.render(rs, "show_user", {'data': data})
 
     ## @access("user")
     ## @persona_dataset_guard()
+    @abc.abstractmethod
     def change_user_form(self, rs, persona_id):
         """Render form."""
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
         merge_dicts(rs.values, data)
-        return self.render(rs, "change_user", {'username' : data['username']})
+        return self.render(rs, "change_user", {'username': data['username']})
 
     ## @access("user", {"POST"})
     ## @REQUESTdatadict(...)
     ## @persona_dataset_guard()
+    @abc.abstractmethod
     def change_user(self, rs, persona_id, data):
         """Modify account details."""
         data = data or {}
@@ -106,16 +109,19 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     ## @access("realm_admin")
     ## @persona_dataset_guard()
+    @abc.abstractmethod
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
         data = self.user_management['proxy'](self).get_data_single(rs,
                                                                    persona_id)
         merge_dicts(rs.values, data)
-        return self.render(rs, "admin_change_user", {'username' : data['username']})
+        return self.render(rs, "admin_change_user",
+                           {'username': data['username']})
 
     ## @access("realm_admin", {"POST"})
     ## @REQUESTdatadict(...)
     ## @persona_dataset_guard()
+    @abc.abstractmethod
     def admin_change_user(self, rs, persona_id, data):
         """Modify account details by administrator."""
         data = data or {}
@@ -126,3 +132,68 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         num = self.user_management['proxy'](self).change_user(rs, data)
         self.notify_integer_success(rs, num)
         return self.redirect_show_user(rs, persona_id)
+
+    ## @access("realm_admin")
+    @abc.abstractmethod
+    def create_user_form(self, rs):
+        """Render form."""
+        return self.render(rs, "create_user")
+
+    ## @access("realm_admin", {"POST"})
+    ## @REQUESTdatadict(...)
+    @abc.abstractmethod
+    def create_user(self, rs, data):
+        """Create new user account."""
+        data = check(rs, self.user_management['validator'], data,
+                     initialization=True)
+        if rs.errors:
+            return self.create_user_form(rs)
+        new_id = self.user_management['proxy'](self).create_user(rs, data)
+        if new_id:
+            rs.notify("success", "User created.")
+            return self.redirect_show_user(rs, new_id)
+        else:
+            rs.notify("error", "Failed.")
+            return self.create_user_form(rs)
+
+    ## @access("anonymous")
+    ## @REQUESTdata(("secret", "str"), ("username", "email"))
+    @abc.abstractmethod
+    def genesis_form(self, rs, case_id, secret, username):
+        """Render form.
+
+        This does not use our standard method of ephemeral links as we
+        cannot expect the user to react quickly after we send out the
+        email containing the approval. Hence we have to store a shared
+        secret and verify this.
+        """
+        if rs.errors or not self.user_management['proxy'](self).genesis_check(
+                rs, case_id, secret, username=username):
+            rs.notify("error", "Broken link.")
+            return self.redirect(rs, "core/index")
+        return self.render(rs, "genesis")
+
+    ## @access("anonymous", {"POST"})
+    ## @REQUESTdata(("secret", "str"))
+    ## @REQUESTdatadict(...)
+    @abc.abstractmethod
+    def genesis(self, rs, case_id, secret, data):
+        """Create new user account."""
+        if rs.errors or not self.user_management['proxy'](self).genesis_check(
+                rs, case_id, secret, username=data['username']):
+            rs.notify("error", "Broken link.")
+            return self.redirect(rs, "core/index")
+        data = check(rs, self.user_management['validator'], data,
+                     initialization=True)
+        if rs.errors:
+            return self.genesis_form(rs, case_id, secret, data['username'])
+        new_id = self.user_management['proxy'](self).genesis(rs, case_id,
+                                                             secret, data)
+        if new_id:
+            rs.notify("success", "User created.")
+            return self.redirect(rs, "core/do_password_reset_form", {
+                'email': self.encode_parameter(
+                    "core/do_password_reset_form", "email", data['username'])})
+        else:
+            rs.notify("error", "Failed.")
+            return self.genesis_form(rs, case_id, secret, data['username'])

@@ -2,6 +2,7 @@
 
 from cdedb.common import QuotaException
 from cdedb.query import QUERY_SPECS, QueryOperators
+import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT
 import decimal
 import datetime
@@ -16,7 +17,7 @@ class TestCdEBackend(BackendTest):
         data = self.cde.get_data_single(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['birth_name'] = "Hylia"
-        setter = {k : v for k, v in data.items() if k in
+        setter = {k: v for k, v in data.items() if k in
                   {'id', 'birth_name', 'display_name', 'telephone'}}
         num = self.cde.change_user(self.key, setter, 1, change_note='note')
         self.assertEqual(1, num)
@@ -33,8 +34,8 @@ class TestCdEBackend(BackendTest):
     @as_users("berta")
     def test_displacement(self, user):
         self.assertEqual(
-            -1, self.cde.change_user(self.key, {'id' : user['id'],
-                                                'family_name' : "Link"}, 1))
+            -1, self.cde.change_user(self.key, {'id': user['id'],
+                                                'family_name': "Link"}, 1))
         newaddress = "newaddress@example.cde"
         ret, _ = self.core.change_username(self.key, user['id'], newaddress, user['password'])
         self.assertTrue(ret)
@@ -57,8 +58,8 @@ class TestCdEBackend(BackendTest):
     @as_users("berta")
     def test_nack_change(self, user):
         self.assertEqual(
-            -1, self.cde.change_user(self.key, {'id' : user['id'],
-                                                'family_name' : "Link"}, 1))
+            -1, self.cde.change_user(self.key, {'id': user['id'],
+                                                'family_name': "Link"}, 1))
         self.assertEqual(2, self.cde.get_generation(self.key, user['id']))
         self.core.logout(self.key)
         self.login(USER_DICT['anton'])
@@ -68,7 +69,7 @@ class TestCdEBackend(BackendTest):
     @as_users("anton", "berta")
     def test_get_data(self, user):
         data = self.cde.get_data(self.key, (1, 2))
-        expectation = {1 : {
+        expectation = {1: {
             'bub_search': True,
             'location': 'Musterstadt',
             'cloud_account': True,
@@ -106,7 +107,7 @@ class TestCdEBackend(BackendTest):
             'is_active': True,
             'postal_code2': '22335',
             'birthday': datetime.datetime(1991, 3, 30).date()},
-            2 : {'bub_search': True,
+            2: {'bub_search': True,
             'location': 'Utopia',
             'cloud_account': True,
             'specialisation': 'Alles\nUnd noch mehr',
@@ -148,13 +149,13 @@ class TestCdEBackend(BackendTest):
     @as_users("berta")
     def test_member_search(self, user):
         query = {
-            "scope" : "qview_cde_member",
-            "spec" : dict(QUERY_SPECS["qview_cde_member"]),
-            "fields_of_interest" : ("member_data.persona_id", "family_name",
+            "scope": "qview_cde_member",
+            "spec": dict(QUERY_SPECS["qview_cde_member"]),
+            "fields_of_interest": ("member_data.persona_id", "family_name",
                                     "birthday"),
-            "constraints" : (("given_names,display_name", QueryOperators.regex.value, '[ae]'),
+            "constraints": (("given_names,display_name", QueryOperators.regex.value, '[ae]'),
                              ("country,country2", QueryOperators.empty.value, None)),
-            "order" : ("family_name",),
+            "order": ("family_name",),
         }
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({1, 2, 6}, {e['persona_id'] for e in result})
@@ -162,13 +163,13 @@ class TestCdEBackend(BackendTest):
     @as_users("anton")
     def test_user_search(self, user):
         query = {
-            "scope" : "qview_cde_user",
-            "spec" : dict(QUERY_SPECS["qview_cde_user"]),
-            "fields_of_interest" : ("member_data.persona_id", "family_name",
+            "scope": "qview_cde_user",
+            "spec": dict(QUERY_SPECS["qview_cde_user"]),
+            "fields_of_interest": ("member_data.persona_id", "family_name",
                                     "birthday"),
-            "constraints" : (("given_names", QueryOperators.regex.value, '[ae]'),
+            "constraints": (("given_names", QueryOperators.regex.value, '[ae]'),
                              ("birthday", QueryOperators.less.value, datetime.datetime.now())),
-            "order" : ("family_name",),
+            "order": ("family_name",),
         }
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({1, 2, 3, 4, 6, 7}, {e['persona_id'] for e in result})
@@ -176,16 +177,16 @@ class TestCdEBackend(BackendTest):
     @as_users("anton")
     def test_user_search_operators(self, user):
         query = {
-            "scope" : "qview_cde_user",
-            "spec" : dict(QUERY_SPECS["qview_cde_user"]),
-            "fields_of_interest" : ("member_data.persona_id", "family_name",
+            "scope": "qview_cde_user",
+            "spec": dict(QUERY_SPECS["qview_cde_user"]),
+            "fields_of_interest": ("member_data.persona_id", "family_name",
                                     "birthday"),
-            "constraints" : (("given_names", QueryOperators.similar.value, 'Berta'),
+            "constraints": (("given_names", QueryOperators.similar.value, 'Berta'),
                              ("address", QueryOperators.oneof.value, ("Auf der Düne 42", "Im Garten 77")),
                              ("weblink", QueryOperators.containsall.value, ("/", ":", "http")),
                              ("birthday", QueryOperators.between.value, (datetime.datetime(1000, 1, 1),
                                                                          datetime.datetime.now()))),
-            "order" : ("family_name",),
+            "order": ("family_name",),
         }
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['persona_id'] for e in result})
@@ -203,3 +204,52 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(True, self.cde.set_foto(self.key, 2, new_foto))
         result = self.cde.get_fotos(self.key, (1, 2))
         self.assertEqual({1: None, 2: new_foto}, result)
+
+    @as_users("anton")
+    def test_create_user(self, user):
+        user_data = {
+            "username": 'zelda@example.cde',
+            "display_name": 'Zelda',
+            "is_active": True,
+            "status": const.PersonaStati.searchmember,
+            "cloud_account": True,
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
+            "title": None,
+            "name_supplement": None,
+            "gender": const.Genders.female,
+            "birthday": datetime.date(1987, 6, 5),
+            "telephone": None,
+            "mobile": None,
+            "address_supplement": None,
+            "address": "Street 7",
+            "postal_code": "12345",
+            "location": "Lynna",
+            "country": "Hyrule",
+            "notes": None,
+            "birth_name": "Impa",
+            "address_supplement2": None,
+            "address2": None,
+            "postal_code2": None,
+            "location2": None,
+            "country2": None,
+            "weblink": None,
+            "specialisation": "foo",
+            "affiliation": "bar",
+            "timeline": "baz",
+            "interests": "thud",
+            "free_form": "stuff",
+            "trial_member": True,
+        }
+        new_id = self.cde.create_user(self.key, user_data)
+        value = self.cde.get_data_single(self.key, new_id)
+        user_data.update({
+            'id': new_id,
+            'db_privileges': 0,
+            'balance': decimal.Decimal('0.00'),
+            'bub_search': False,
+            'decided_search': False,
+            "gender": 0,
+            "status": 0,
+        })
+        self.assertEqual(user_data, value)

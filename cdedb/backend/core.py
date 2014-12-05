@@ -12,16 +12,13 @@ from cdedb.backend.common import (
     create_fulltext)
 from cdedb.common import (
     glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS, extract_realm,
-    MEMBER_DATA_FIELDS)
+    MEMBER_DATA_FIELDS, GENESIS_CASE_FIELDS)
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
 import cdedb.database.constants as const
 
 from passlib.hash import sha512_crypt
-import hashlib
-import datetime
-import pytz
 import uuid
 import argparse
 import random
@@ -36,8 +33,8 @@ def ldap_bool(val):
     :rtype: str
     """
     mapping = {
-        True : 'TRUE',
-        False : 'FALSE',
+        True: 'TRUE',
+        False: 'FALSE',
     }
     return mapping[val]
 
@@ -59,6 +56,9 @@ class LDAPConnection:
 
     def modify_s(self, dn, modlist):
         self._ldap_con.modify_s(dn, modlist)
+
+    def add_s(self, dn, modlist):
+        self._ldap_con.add_s(dn, modlist)
 
     def __enter__(self):
         return self
@@ -145,11 +145,11 @@ class CoreBackend(AbstractBackend):
         """This implements the changelog and updates the fulltext in
         addition to what
         :py:meth:`cdedb.backend.common.AbstractUserBackend.set_user_data`
-        does. If a change requires review it has to be commited using
+        does. If a change requires review it has to be committed using
         :py:meth:`changelog_resolve_change` by an administrator.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
+        :type data: {str: object}
         :type generation: int or None
         :param generation: generation on which this request is based, if this
            is not the current generation we abort, may be None to override
@@ -183,16 +183,17 @@ class CoreBackend(AbstractBackend):
             history = self.changelog_get_history(
                 rs, data['id'], generations=(current_generation,))
             current_data = history[current_generation]
-            if current_data['status'] == const.PersonaStati.archived_member \
-              and data.get('status') not in const.CDE_STATI:
+            if (current_data['status'] == const.PersonaStati.archived_member
+                and data.get('status') not in const.CDE_STATI):
                 raise RuntimeError("Editing archived member impossible.")
 
             ## stash pending change if we may not wait
             diff = None
-            if current_data['change_status'] == const.MemberChangeStati.pending \
-              and not may_wait:
-                old_data = self.cde_retrieve_user_data(rs, (data['id'],))[data['id']]
-                diff = {key : current_data[key] for key in old_data
+            if (current_data['change_status']
+                == const.MemberChangeStati.pending and not may_wait):
+                old_data = self.cde_retrieve_user_data(
+                    rs, (data['id'],))[data['id']]
+                diff = {key: current_data[key] for key in old_data
                         if old_data[key] != current_data[key]}
                 current_data = old_data
                 query = glue("UPDATE core.changelog SET change_status = %s",
@@ -299,7 +300,8 @@ class CoreBackend(AbstractBackend):
         """
         if not ack:
             query = glue(
-                "UPDATE core.changelog SET reviewed_by = %s, change_status = %s",
+                "UPDATE core.changelog SET reviewed_by = %s,",
+                "change_status = %s",
                 "WHERE persona_id = %s AND change_status = %s",
                 "AND generation = %s")
             self.query_exec(rs, query, (
@@ -307,7 +309,7 @@ class CoreBackend(AbstractBackend):
                 const.MemberChangeStati.pending, generation))
             return 0
         with Atomizer(rs):
-            ## look up changelog entry and mark as commited
+            ## look up changelog entry and mark as committed
             history = self.changelog_get_history(rs, persona_id,
                                                  generations=(generation,))
             data = history[generation]
@@ -337,7 +339,7 @@ class CoreBackend(AbstractBackend):
             ## commit changes
             ret = 0
             if len(pkeys) > 1:
-                pdata = {key:data[key] for key in pkeys}
+                pdata = {key: data[key] for key in pkeys}
                 ret = self.set_persona_data(
                     rs, pdata, allow_username_change=allow_username_change,
                     change_logged=True)
@@ -369,7 +371,7 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : int}
+        :rtype: {int: int}
         :returns: dict mapping ids to generations
         """
         query = glue("SELECT persona_id, max(generation) AS generation",
@@ -380,21 +382,23 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, (ids, valid_status))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return {e['persona_id'] : e['generation'] for e in data}
+        return {e['persona_id']: e['generation'] for e in data}
 
     @internal_access("cde_admin")
-    def changelog_get_pending_changes(self, rs):
-        """Retrive currently pending changes in the changelog.
+    def changelog_get_changes(self, rs, stati):
+        """Retrive changes in the changelog.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :rtype: {int : {str : object}}
+        :type stati: [int]
+        :param stati: limit changes to those with a status in this
+        :rtype: {int: {str: object}}
         :returns: dict mapping persona ids to dicts containing information
           about the change and the persona
         """
         query = glue("SELECT persona_id, given_names, family_name, generation",
-                     "FROM core.changelog WHERE change_status = %s")
-        data = self.query_all(rs, query, (const.MemberChangeStati.pending,))
-        return {e['persona_id'] : e for e in data}
+                     "FROM core.changelog WHERE change_status = ANY(%s)")
+        data = self.query_all(rs, query, (stati,))
+        return {e['persona_id']: e for e in data}
 
     @internal_access("cde_admin")
     def changelog_get_history(self, rs, anid, generations):
@@ -404,7 +408,7 @@ class CoreBackend(AbstractBackend):
         :type anid: int
         :type generations: [int] or None
         :parameter generations: generations to retrieve, all if None
-        :rtype: {int : {str : object}}
+        :rtype: {int: {str: object}}
         :returns: mapping generation to data set
         """
         fields = list(PERSONA_DATA_FIELDS)
@@ -420,7 +424,7 @@ class CoreBackend(AbstractBackend):
             query = glue(query, "AND generation = ANY(%s)")
             params.append(generations)
         data = self.query_all(rs, query, params)
-        return {e['generation'] : e for e in data}
+        return {e['generation']: e for e in data}
 
     def cde_retrieve_user_data(self, rs, ids):
         """This is a hack.
@@ -431,7 +435,7 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : {str : object}}
+        :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
         query = glue(
@@ -441,7 +445,7 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return {d['id'] : d for d in data}
+        return {d['id']: d for d in data}
 
     ##
     ## end of changelog functionality
@@ -453,7 +457,7 @@ class CoreBackend(AbstractBackend):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : {str : object}}
+        :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
         query = "SELECT {} FROM core.personas WHERE id = ANY(%s)".format(
@@ -461,7 +465,7 @@ class CoreBackend(AbstractBackend):
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return {d['id'] : d for d in data}
+        return {d['id']: d for d in data}
 
     @internal_access("persona")
     def set_persona_data(self, rs, data, allow_username_change=False,
@@ -470,7 +474,7 @@ class CoreBackend(AbstractBackend):
         all keys available in ``data`` are updated.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
+        :type data: {str: object}
         :type allow_username_change: bool
         :param allow_username_change: Usernames are special because they
           are used for login and password recovery, hence we require an
@@ -493,10 +497,9 @@ class CoreBackend(AbstractBackend):
                              'cloud_account'}
         if not self.is_admin(rs) and (set(keys) & privileged_fields):
             ## be naughty and take a peak
-            if set(keys) == {'status'} \
-              and data['id'] == rs.user.persona_id \
-              and data['status'] == const.PersonaStati.searchmember \
-              and rs.user.is_member:
+            if (set(keys) == {'status'} and data['id'] == rs.user.persona_id
+                and data['status'] == const.PersonaStati.searchmember
+                and rs.user.is_member):
                 ## allow upgrading self to searchable member
                 pass
             else:
@@ -518,8 +521,8 @@ class CoreBackend(AbstractBackend):
         ## prevent modification of archived members
         query = "SELECT status FROM core.personas WHERE id = %s"
         current_data = self.query_one(rs, query, (data['id'],))
-        if current_data['status'] == const.PersonaStati.archived_member \
-          and data.get('status') not in const.CDE_STATI:
+        if (current_data['status'] == const.PersonaStati.archived_member
+            and data.get('status') not in const.CDE_STATI):
             raise RuntimeError("Editing archived member impossible.")
 
         query = "UPDATE core.personas SET ({}) = ({}) WHERE id = %s".format(
@@ -540,22 +543,25 @@ class CoreBackend(AbstractBackend):
             ldap_ops.append((ldap.MOD_REPLACE, 'isActive',
                              ldap_bool(data['is_active'])))
         dn = "uid={},{}".format(data['id'], self.conf.LDAP_UNIT_NAME)
-        with rs.conn as conn:
-            with conn.cursor() as cur:
-                self.execute_db_query(
-                    cur, query, tuple(
-                        data[key] for key in keys) + (data['id'],))
-                num = cur.rowcount
-                if num != 1:
-                    raise ValueError("Nonexistant user.")
-                if ldap_ops:
-                    with self.ldap_connect() as l:
-                        l.modify_s(dn, ldap_ops)
+        with Atomizer(rs):
+            num = self.query_exec(rs, query, tuple(
+                data[key] for key in keys) + (data['id'],))
+            if num != 1:
+                raise ValueError("Nonexistant user.")
+            if ldap_ops:
+                with self.ldap_connect() as l:
+                    l.modify_s(dn, ldap_ops)
         return num
 
     @access("persona")
     @singularize("get_data_single")
     def get_data(self, rs, ids):
+        """Aquire data sets for specified ids.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: [{str: object}]
+        """
         ids = affirm_array("int", ids)
         return self.retrieve_persona_data(rs, ids)
 
@@ -578,8 +584,8 @@ class CoreBackend(AbstractBackend):
         query = glue("SELECT id, password_hash FROM core.personas",
                      "WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
-        if not data or \
-          not self.verify_password(password, data["password_hash"]):
+        if (not data or
+            not self.verify_password(password, data["password_hash"])):
             ## log message to be picked up by fail2ban
             self.logger.warning("CdEDB login failure from {} for {}".format(
                 ip, username))
@@ -633,17 +639,17 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: {int : str}
+        :rtype: {int: str}
         :returns: dict mapping id to realm
         """
         ids = affirm_array("int", ids)
         if ids == (rs.user.persona_id,):
-            return {rs.user.persona_id : rs.user.realm}
+            return {rs.user.persona_id: rs.user.realm}
         query = "SELECT id, status FROM core.personas WHERE id = ANY(%s)"
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
-        return {d['id'] : extract_realm(d['status']) for d in data}
+        return {d['id']: extract_realm(d['status']) for d in data}
 
     @access("anonymous")
     def verify_existence(self, rs, email):
@@ -670,7 +676,7 @@ class CoreBackend(AbstractBackend):
         :type persona_id: int
         :type old_password: str or None
         :type new_password: str or None
-        :type data: {str : object}
+        :type data: {str: object}
         :rtype: (bool, str)
         :returns: The ``bool`` indicates success and the ``str`` is
           either the new password or an error message.
@@ -679,7 +685,7 @@ class CoreBackend(AbstractBackend):
         data = self.query_one(rs, query, (persona_id,))
         if not data:
             raise ValueError("Invalid id.")
-        if new_password is not None and (not self.is_admin(rs) \
+        if new_password is not None and (not self.is_admin(rs)
                                          or persona_id == rs.user.persona_id):
             if not validate.is_password_strength(new_password):
                 return False, "Password too weak."
@@ -688,6 +694,8 @@ class CoreBackend(AbstractBackend):
         ## escalate db privilige role in case of resetting passwords
         orig_conn = None
         if not rs.user.is_persona and new_password is None:
+            if rs.conn.is_contaminated:
+                raise RuntimeError("Atomized -- impossible to escalate.")
             orig_conn = rs.conn
             rs.conn = self.connpool['cdb_persona']
         if new_password is None:
@@ -713,6 +721,7 @@ class CoreBackend(AbstractBackend):
                     l.modify_s(dn, ((ldap.MOD_REPLACE, 'userPassword',
                                      ldap_passwd),))
         if orig_conn:
+            ## deescalate
             rs.conn = orig_conn
         return ret, new_password
 
@@ -782,13 +791,13 @@ class CoreBackend(AbstractBackend):
             elif password:
                 query = "SELECT password_hash FROM core.personas WHERE id = %s"
                 data = self.query_one(rs, query, (persona_id,))
-                if data and \
-                  self.verify_password(password, data["password_hash"]):
+                if (data and
+                    self.verify_password(password, data["password_hash"])):
                     authorized = True
             if authorized:
                 new_data = {
-                    'id' : persona_id,
-                    'username' : new_username,
+                    'id': persona_id,
+                    'username': new_username,
                 }
                 change_note = "Username change."
                 if self.set_persona_data(
@@ -806,7 +815,7 @@ class CoreBackend(AbstractBackend):
         the respective realm to change a persona.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str : object}
+        :type data: {str: object}
         :type change_note: str
         :rtype: int
         :returns: number of users changed
@@ -818,6 +827,136 @@ class CoreBackend(AbstractBackend):
         if change_note is None:
             change_note = "Unspecified change."
         return self.set_persona_data(rs, data, change_note=change_note)
+
+    @internal_access("core_admin")
+    def create_persona(self, rs, data):
+        """Make a new persona.
+
+        This is to be called by a create_user function, which creates a
+        real user and not just a persona.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: The id of the newly created persona.
+        """
+        data = {k: v for k, v in data.items() if k in PERSONA_DATA_FIELDS_MOD}
+        data['db_privileges'] = 0 ## everybody starts with no privileges
+        ## modified version of hash for 'secret' and thus safe/unknown plaintext
+        data['password_hash'] = (
+            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc"
+            "1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+        keys = tuple(key for key in data)
+        assert(set(keys) == set(PERSONA_DATA_FIELDS_MOD) | {'password_hash'})
+        query = "INSERT INTO core.personas ({}) VALUES ({}) RETURNING id"
+        query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
+        ldap_ops = (
+            ('objectClass', 'cdePersona'),
+            ('sn', "({})".format(data['username'])),
+            ('mail', data['username']),
+            ## againg slight modification of 'secret'
+            ('userPassword', "{SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWV"),
+            ('cn', data['display_name']),
+            ('displayName', data['display_name']),
+            ('cloudAccount', ldap_bool(data['cloud_account'])),
+            ('isActive', ldap_bool(data['is_active'])))
+        with Atomizer(rs):
+            ret = self.query_one(
+                rs, query, tuple(data[key] for key in keys))['id']
+            dn = "uid={},{}".format(ret, self.conf.LDAP_UNIT_NAME)
+            with self.ldap_connect() as l:
+                l.add_s(dn, ldap_ops)
+        return ret
+
+    @access("anonymous")
+    def genesis_request(self, rs, username, full_name, rationale):
+        """Log a request for a new account.
+
+        This is the initial entry point for such a request.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type username: str
+        :type rationale: str
+        :type full_name: str
+        :rtype: int
+        :returns: id of the new request or 0 if the username is allready taken
+        """
+        username = affirm("email", username)
+        rationale = affirm("str", rationale)
+        full_name = affirm("str", full_name)
+        if self.verify_existence(rs, username):
+            return 0
+        query = glue(
+            "INSERT INTO core.genesis_cases (username, full_name, notes,",
+            "case_status) VALUES (%s, %s, %s, %s) RETURNING id")
+        params = (username, full_name, rationale,
+                  const.GenesisStati.unconfirmed)
+        return self.query_one(rs, query, params)['id']
+
+    @access("anonymous")
+    def genesis_verify(self, rs, case_id):
+        """Confirm the new email address and proceed to the next stage.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type case_id: int
+        :rtype: int
+        :returns: number of affected cases
+        """
+        case_id = affirm("int", case_id)
+        query = glue("UPDATE core.genesis_cases SET case_status = %s",
+                     "WHERE id = %s AND case_status = %s")
+        params = (const.GenesisStati.to_review, case_id,
+                  const.GenesisStati.unconfirmed)
+        return self.query_exec(rs, query, params)
+
+    @access("core_admin")
+    def genesis_list_cases(self, rs, stati):
+        """List persona creation cases with certain stati.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type stati: {int}
+        :rtype: {int: {str: object}}
+        :returns: dict mapping case ids to dicts containing information
+          about the case
+        """
+        stati = affirm_array("int", stati)
+        query = glue("SELECT id, username, full_name, case_status",
+                     "FROM core.genesis_cases WHERE case_status = ANY(%s)")
+        data = self.query_all(rs, query, (stati,))
+        return {e['id']: e for e in data}
+
+    @access("core_admin")
+    @singularize("genesis_get_case")
+    def genesis_get_cases(self, rs, ids):
+        """Retrieve datasets for persona creation cases.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: {int: {str: object}}
+        :returns: dict mapping ids to the requested data
+        """
+        ids = affirm_array("int", ids)
+        query = "SELECT {} FROM core.genesis_cases WHERE id = ANY(%s)".format(
+            ", ".join(GENESIS_CASE_FIELDS))
+        data = self.query_all(rs, query, (ids,))
+        return {e['id']: e for e in data}
+
+    @access("core_admin")
+    def genesis_modify_case(self, rs, data):
+        """Modify a persona creation case.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type case_id: int
+        :rtype: int
+        :returns: number of affected cases
+        """
+        data = affirm("genesis_case_data", data)
+        keys = tuple(key for key in data if key != "id")
+        query = glue("UPDATE core.genesis_cases SET ({}) = ({})",
+                     "WHERE id = %s").format(", ".join(keys),
+                                             ", ".join(("%s",) * len(keys)))
+        return self.query_exec(rs, query,
+                               tuple(data[key] for key in keys) + (data['id'],))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
