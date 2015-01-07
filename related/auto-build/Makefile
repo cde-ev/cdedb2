@@ -186,6 +186,11 @@ ${WORKDIR}/.done_fullimage-${PORT}:${WORKDIR}/.done_install-stage3-${PORT}
 	${QEMUIMG} convert -c -f qcow2 -O qcow2 ${WORKDIR}/cdedb-run-${PORT}.qcow2 ${IMAGEDIR}/cdedb-${PORT}.qcow2
 	touch $@
 
+vdiimage: ${WORKDIR}/.done_vdiimage-${PORT}
+${WORKDIR}/.done_vdiimage-${PORT}:${WORKDIR}/.done_fullimage-${PORT}
+	${QEMUIMG} convert -f qcow2 -O vdi ${IMAGEDIR}/cdedb-${PORT}.qcow2 ${IMAGEDIR}/cdedb-${PORT}.vdi
+	touch $@
+
 run: ${WORKDIR}/.done_install-stage3
 	echo "To access the web server: https://127.0.0.1:20443/"
 	echo "To connect via ssh: ssh -p 20022 cdedb@localhost"
