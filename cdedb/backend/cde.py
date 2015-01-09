@@ -12,7 +12,8 @@ from cdedb.backend.common import (
     affirm_validation as affirm, affirm_array_validation as affirm_array,
     singularize, create_fulltext)
 from cdedb.common import (
-    glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS, QuotaException, merge_dicts)
+    glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS, QuotaException, merge_dicts,
+    PrivilegeError)
 from cdedb.query import QueryOperators
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -24,7 +25,7 @@ import decimal
 
 _LOGGER = logging.getLogger(__name__)
 
-class CdeBackend(AbstractUserBackend):
+class CdEBackend(AbstractUserBackend):
     """This is the backend with the most additional role logic.
 
     .. note:: The changelog functionality is to be found in the core backend.
@@ -84,10 +85,10 @@ class CdeBackend(AbstractUserBackend):
         self.affirm_realm(rs, (data['id'],))
 
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
-            raise RuntimeError("Permission denied.")
+            raise PrivilegeError("Not privileged.")
         privileged_fields = {'balance'}
         if set(data) & privileged_fields and not self.is_admin(rs):
-            raise RuntimeError("Modifying sensitive key forbidden.")
+            raise PrivilegeError("Modifying sensitive key forbidden.")
         if 'username' in data  and not allow_username_change:
             raise RuntimeError("Modification of username prevented.")
         if not may_wait and generation is not None:
@@ -154,8 +155,8 @@ class CdeBackend(AbstractUserBackend):
         return self.set_user_data(rs, data, generation, may_wait=may_wait,
                                   change_note=change_note)
 
-    @access("formermember")
-    @singularize("get_data_single_no_quota")
+    @access("event_user")
+    @singularize("get_data_no_quota_one")
     def get_data_no_quota(self, rs, ids):
         """This behaves like
         :py:meth:`cdedb.backend.common.AbstractUserBackend.get_data`, that is
@@ -167,15 +168,46 @@ class CdeBackend(AbstractUserBackend):
         parameter to :py:meth:`get_data`) so that its usage can be
         tracked.
 
+        This escalates privileges so non-member orgas are able to utilize
+        the administrative interfaces to an event.
+
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
-        return super().get_data(rs, ids)
+        orig_conn = None
+        if not rs.user.is_member:
+            if rs.conn.is_contaminated:
+                raise RuntimeError("Atomized -- impossible to escalate.")
+            orig_conn = rs.conn
+            rs.conn = self.connpool['cdb_member']
+        ret = super().get_data(rs, ids)
+        if orig_conn:
+            rs.conn = orig_conn
+        return ret
 
     @access("formermember")
-    @singularize("get_data_single")
+    @singularize("get_data_outline_one")
+    def get_data_outline(self, rs, ids):
+        """This is a restricted version of :py:meth:`get_data`.
+
+        It does not incorporate quotas, but returns only a limited
+        number of attributes.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :rtype: {int: {str: object}}
+        :returns: dict mapping ids to requested data
+        """
+        ret = super().get_data(rs, ids)
+        fields = ("id", "username", "display_name", "status", "family_name",
+                  "given_names", "title", "name_supplement")
+        return {key: {k: v for k, v in value.items() if k in fields}
+                for key, value in ret.items()}
+
+    @access("formermember")
+    @singularize("get_data_one")
     def get_data(self, rs, ids):
         """This checks for quota in addition to what
         :py:meth:`cdedb.backend.common.AbstractUserBackend.get_data` does.
@@ -202,7 +234,7 @@ class CdeBackend(AbstractUserBackend):
                 num = num['queries']
             new = tuple(i == rs.user.persona_id for i in ids).count(False)
             if (num + new > self.conf.MAX_QUERIES_PER_DAY
-                and not self.is_admin(rs)):
+                    and not self.is_admin(rs)):
                 raise QuotaException("Too many queries.")
             self.query_exec(rs, query, (num + new, rs.user.persona_id, today))
         return self.retrieve_user_data(rs, ids)
@@ -324,7 +356,7 @@ class CdeBackend(AbstractUserBackend):
                      "WHERE persona_id = ANY(%s)")
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
-            raise RuntimeError("Invalid ids requested.")
+            raise ValueError("Invalid ids requested.")
         return {e['persona_id']: e['foto'] for e in data}
 
     @access("formermember")
@@ -342,7 +374,7 @@ class CdeBackend(AbstractUserBackend):
         persona_id = affirm("int", persona_id)
         foto = affirm("str_or_None", foto)
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
-            raise RuntimeError("Permission denied.")
+            raise PrivilegeError("Not privileged.")
         query = "UPDATE cde.member_data SET foto = %s WHERE persona_id = %s"
         num = self.query_exec(rs, query, (foto, persona_id))
         return bool(num)
@@ -378,12 +410,12 @@ class CdeBackend(AbstractUserBackend):
             query.spec['status'] = "int"
         elif query.scope == "qview_cde_user":
             if not self.is_admin(rs):
-                raise RuntimeError("Permission denied.")
+                raise PrivilegeError("Admin only.")
             query.constraints.append(("status", QueryOperators.oneof,
                                       const.CDE_STATI))
         elif query.scope == "qview_cde_archived_user":
             if not self.is_admin(rs):
-                raise RuntimeError("Permission denied.")
+                raise PrivilegeError("Admin only.")
             query.constraints.append(("status", QueryOperators.equal,
                                       const.PersonaStati.archived_member))
             query.spec['status'] = "int"
@@ -397,7 +429,7 @@ if __name__ == "__main__":
     parser.add_argument('-c', default=None, metavar='/path/to/config',
                         dest="configpath")
     args = parser.parse_args()
-    cde_backend = CdeBackend(args.configpath)
+    cde_backend = CdEBackend(args.configpath)
     conf = Config(args.configpath)
     cde_server = make_RPCDaemon(cde_backend, conf.CDE_SOCKET,
                                 access_log=conf.CDE_ACCESS_LOG)

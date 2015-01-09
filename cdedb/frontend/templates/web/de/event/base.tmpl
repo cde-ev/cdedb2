@@ -29,7 +29,31 @@
                     {% if is_admin %}
                         <li><a href="{{ cdedblink("event/create_user_form")|e }}">Neuen Nutzer anlegen</a></li>
                         <li><a href="{{ cdedblink("event/user_search_form")|e }}">Nutzersuche</a></li>
+                        <li><a href="{{ cdedblink("event/list_past_events")|e }}">alle abg. Veranstaltungen</a></li>
+                        <li><a href="{{ cdedblink("event/create_past_event_form")|e }}">abg. Veranstaltung anlegen</a></li>
+                        <li><a href="{{ cdedblink("event/list_events")|e }}">alle DB-Veranstaltungen</a></li>
+                        <li><a href="{{ cdedblink("event/create_event_form")|e }}">DB-Veranstaltung anlegen</a></li>
                     {% endif %}
+                    <li>
+                        aktuelle Veranstaltungen
+                        <ul>
+                            {% for anid, title in sidebar_events|dictsort|reverse %}
+                                <li>
+                                    <a href="{{ cdedblink("event/show_event", {"event_id": anid})|e }}">{{ title|e }}</a>
+                                    {% if anid == values.get('event_id') %}
+                                        <ul>
+                                            <li>Anmeldung</li>
+                                            <li>Fragebogen</li>
+                                            {% if anid in user.orga or is_admin %}
+                                                <li><a href="{{ cdedblink("event/change_event", {"event_id": anid})|e }}">Konfiguration</a></li>
+                                                <li><a href="{{ cdedblink("event/create_course", {"event_id": anid})|e }}">Kurs hinzufügen</a></li>
+                                            {% endif %}
+                                        </ul>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
                 </ul>
             </li>
         {% endif %}

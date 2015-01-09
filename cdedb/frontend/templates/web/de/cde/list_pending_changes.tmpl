@@ -3,7 +3,7 @@
 {% block title %}Änderungen (zurzeit {{ pending|length|e }} zu begutachten){% endblock %}
 {% block content %}
    <ul>
-        {% for persona_id, entry in pending.items() %}
+        {% for persona_id, entry in pending|dictsort %}
            <li><a href="{{ cdedblink('cde/inspect_change', {'persona_id': persona_id})|e }}">{{ entry['given_names']|e }} {{ entry['family_name']|e }}</a></li>
         {% endfor %}
    </ul>

@@ -99,6 +99,14 @@ class QuotaException(RuntimeError):
     """
     pass
 
+class PrivilegeError(RuntimeError):
+    """
+    Exception for signalling missing privileges. This is thrown in the
+    backend and caught in :py:mod:`cdedb.frontend.application`. We use a
+    custom class so that we can distinguish it from other exceptions.
+    """
+    pass
+
 class CommonUser(metaclass=abc.ABCMeta):
     """Abstract base class for container representing a persona."""
     def __init__(self, persona_id=None, roles=None, realm=None, orga=None,
@@ -163,6 +171,34 @@ def extract_roles(db_privileges, status):
         if ret & ALL_ROLES[possiblerole]:
             ret.add(possiblerole)
     return ret
+
+def name_key(entry):
+    """Create a sorting key associated to a persona dataset.
+
+    This way we have a standardized sorting order for entries.
+
+    :type entry: {str: obj}
+    :param entry: A dataset of a persona from the cde or event realm.
+    :rtype: str
+    """
+    return (entry['family_name'] + " " + entry['given_names']).lower()
+
+def compute_checkdigit(value):
+    """Map a persona id (integer) to the checksum used for UI purposes.
+
+    This checkdigit allows for error detection if somebody messes up a
+    handwritten ID or such.
+
+    :type value: int
+    :rtype: str
+    """
+    digits = []
+    tmp = value
+    while tmp > 0:
+        digits.append(tmp % 10)
+        tmp = tmp // 10
+    dsum = sum((i+1)*d for i, d in enumerate(digits))
+    return chr(65 + (dsum % 11))
 
 #: A collection of the available privilege levels. More specifically the
 #: keys of this dict specify the roles. The corresponding value is a set of
@@ -236,13 +272,10 @@ DB_ROLE_MAPPING = collections.OrderedDict((
     ("anonymous", "cdb_anonymous"),
 ))
 
-#: Names of columns associated to a persona, which are modifyable.
+#: Names of all columns associated to a persona.
 #: This does not include the ``password_hash`` for security reasons.
-PERSONA_DATA_FIELDS_MOD = ("username", "display_name", "is_active", "status",
-                           "db_privileges", "cloud_account")
-
-#: names of all columns associated to a persona, regardless of modifyability
-PERSONA_DATA_FIELDS = ("id",) + PERSONA_DATA_FIELDS_MOD
+PERSONA_DATA_FIELDS = ("id", "username", "display_name", "is_active", "status",
+                       "db_privileges", "cloud_account")
 
 #: names of columns associated to a cde member (in addition to those which
 #: exist for every persona)
@@ -268,5 +301,22 @@ EVENT_USER_DATA_FIELDS = (
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "full_name", "persona_status", "notes",
     "case_status", "secret", "reviewer")
+
+#: Fields of a concluded event
+PAST_EVENT_FIELDS = ("id", "title", "organizer", "description")
+
+#: Fields of an event organized via the CdEDB
+EVENT_FIELDS = PAST_EVENT_FIELDS + (
+    "shortname", "registration_start", "registration_soft_limit",
+    "registration_hard_limit", "use_questionnaire", "notes", "offline_lock")
+
+#: Fields of an event part organized via CdEDB
+EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
+
+#: Fields of a concluded course
+PAST_COURSE_FIELDS = ("id", "event_id", "title", "description")
+
+#: Fields of a course associated to an event organized via the CdEDB
+COURSE_FIELDS = PAST_COURSE_FIELDS + ("nr", "shortname", "instructors", "notes")
 
 EPSILON = 10**(-6) #:

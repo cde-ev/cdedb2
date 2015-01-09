@@ -157,7 +157,6 @@ QUERY_SPECS = {
     "qview_cde_archived_user" :
     collections.OrderedDict([
         ("member_data.persona_id", "int"),
-        ("username", "str"),
         ("family_name", "str"),
         ("birth_name", "str"),
         ("given_names", "str"),
@@ -203,22 +202,22 @@ QUERY_VIEWS = {
     "qview_cde_member": glue(
         "(core.personas JOIN cde.member_data",
         "ON personas.id = member_data.persona_id)",
-        "LEFT OUTER JOIN event.participants",
+        "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_cde_user": glue(
         "(core.personas JOIN cde.member_data",
         "ON personas.id = member_data.persona_id)",
-        "LEFT OUTER JOIN event.participants",
+        "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_cde_archived_user": glue(
         "(core.personas JOIN cde.member_data",
         "ON personas.id = member_data.persona_id)",
-        "LEFT OUTER JOIN event.participants",
+        "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_event_user": glue(
         "(core.personas JOIN event.user_data",
         "ON personas.id = user_data.persona_id)",
-        "LEFT OUTER JOIN event.participants",
+        "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
 }
 

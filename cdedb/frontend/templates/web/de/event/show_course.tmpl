@@ -1,0 +1,10 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}){% endblock %}
+{% block content %}
+    {% if event_data['id'] in user.orga or is_admin %}
+        <a href="{{ cdedblink('event/change_course_form')|e }}">Bearbeiten</a>
+    {% endif %}
+    <p>Kursleiter: {{ course_data['instructors']|e }}</p>
+    <p>{{ course_data['description']|e }}</p>
+{% endblock %}

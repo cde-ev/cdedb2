@@ -92,7 +92,7 @@ class SessionBackend:
         persona_id = None
         data = None
         if (validate.is_printable_ascii(sessionkey)
-            and validate.is_printable_ascii(ip) and sessionkey):
+                and validate.is_printable_ascii(ip) and sessionkey):
             query = glue("SELECT persona_id, ip, is_active, atime, ctime",
                          "FROM core.sessions WHERE sessionkey = %s")
             with self.connpool["cdb_anonymous"] as conn:
@@ -108,9 +108,9 @@ class SessionBackend:
             if data["is_active"]:
                 if data["ip"] == ip:
                     if (data["atime"] + self.conf.SESSION_TIMEOUT
-                        >= datetime.datetime.now(pytz.utc)):
-                        if (data["ctime"] + self.conf.SESSION_LIFESPAN
                             >= datetime.datetime.now(pytz.utc)):
+                        if (data["ctime"] + self.conf.SESSION_LIFESPAN
+                                >= datetime.datetime.now(pytz.utc)):
                             ## here we finally verified the session key
                             persona_id = data["persona_id"]
                         else:

@@ -14,14 +14,14 @@ class TestCdEBackend(BackendTest):
 
     @as_users("anton", "berta")
     def test_basics(self, user):
-        data = self.cde.get_data_single(self.key, user['id'])
+        data = self.cde.get_data_one(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['birth_name'] = "Hylia"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'birth_name', 'display_name', 'telephone'}}
         num = self.cde.change_user(self.key, setter, 1, change_note='note')
         self.assertEqual(1, num)
-        new_data = self.cde.get_data_single(self.key, user['id'])
+        new_data = self.cde.get_data_one(self.key, user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("berta")
@@ -47,12 +47,12 @@ class TestCdEBackend(BackendTest):
         newuser['username'] = newaddress
         self.login(newuser)
         self.assertTrue(self.key)
-        data = self.cde.get_data_single(self.key, user['id'],)
+        data = self.cde.get_data_one(self.key, user['id'],)
         self.assertEqual(user['family_name'], data['family_name'])
         self.core.logout(self.key)
         self.login(USER_DICT['anton'])
         self.cde.resolve_change(self.key, user['id'], 4, ack=True)
-        data = self.cde.get_data_single(self.key, user['id'],)
+        data = self.cde.get_data_one(self.key, user['id'],)
         self.assertEqual("Link", data['family_name'])
 
     @as_users("berta")
@@ -144,6 +144,31 @@ class TestCdEBackend(BackendTest):
             'is_active': True,
             'postal_code2': '8XA 45-$',
             'birthday': datetime.datetime(1981, 2, 11).date()}}
+        self.assertEqual(expectation, data)
+        data = self.cde.get_data_no_quota(self.key, (1, 2))
+        self.assertEqual(expectation, data)
+        expectation = {1: {
+            'id': 1,
+            'username': 'anton@example.cde',
+            'given_names': 'Anton Armin A.',
+            'status': 0,
+            'title': '',
+            'family_name': 'Administrator',
+            'display_name': 'Anton',
+            'name_supplement': '',
+            },
+            2: {
+            'id': 2,
+            'username': 'berta@example.cde',
+            'given_names': 'Bertålotta',
+            'status': 0,
+            'title': 'Dr.',
+            'family_name': 'Beispiel',
+            'display_name': 'Bertå',
+            'name_supplement': 'MdB',
+            }
+        }
+        data = self.cde.get_data_outline(self.key, (1, 2))
         self.assertEqual(expectation, data)
 
     @as_users("berta")
@@ -242,7 +267,7 @@ class TestCdEBackend(BackendTest):
             "trial_member": True,
         }
         new_id = self.cde.create_user(self.key, user_data)
-        value = self.cde.get_data_single(self.key, new_id)
+        value = self.cde.get_data_one(self.key, new_id)
         user_data.update({
             'id': new_id,
             'db_privileges': 0,

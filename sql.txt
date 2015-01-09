@@ -1,0 +1,1 @@
+SELECT * FROM json_to_recordset(to_json(array(SELECT data FROM test))) AS X(foo int, bar int, baz int);

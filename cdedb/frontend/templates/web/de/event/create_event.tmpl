@@ -1,0 +1,23 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}DB-Veranstaltung anlegen{% endblock %}
+{% block content %}
+    <a href="{{ cdedblink("event/index")|e }}">Abbrechen</a>
+    <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform">
+        <table>
+            {{ util.tab_input_text(name="title", label="Titel") }}
+            {{ util.tab_input_text(name="organizer", label="Organisator") }}
+            {{ util.tab_input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+            {{ util.tab_input_text(name="shortname", label="Kürzel") }}
+            {{ util.tab_input_text(name="registration_start", label="Anmeldebeginn") }}
+            {{ util.tab_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss") }}
+            {{ util.tab_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss") }}
+            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.tab_input_text(name="orga_ids", label="Orga-IDs", info="Kommaseparierte Liste von Orga-IDs.") }}
+        </table>
+        <div>
+            {{ util.input_hidden(name="use_questionnaire", value=False) }}
+            {{ util.input_submit(value="Veranstaltung anlegen") }}
+        </div>
+    </form>
+{% endblock %}

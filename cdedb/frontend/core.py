@@ -212,7 +212,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", {"POST"})
     def admin_password_reset(self, rs, persona_id):
         """Administrative password reset."""
-        data = self.coreproxy.get_data_single(rs, persona_id)
+        data = self.coreproxy.get_data_one(rs, persona_id)
         success, message = self.coreproxy.reset_password(rs, data['username'])
         if not success:
             rs.notify("error", message)
@@ -280,7 +280,7 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     def admin_username_change_form(self, rs, persona_id):
         """Render form."""
-        data = self.coreproxy.get_data_single(rs, persona_id)
+        data = self.coreproxy.get_data_one(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data': data})
 
     @access("core_admin", {'POST'})
@@ -316,10 +316,11 @@ class CoreFrontend(AbstractFrontend):
     @access("admin")
     def adjust_privileges_form(self, rs, persona_id):
         """Render form."""
-        data = self.coreproxy.get_data_single(rs, persona_id)
-        for bit in const.PrivilegeBits:
-            if data['db_privileges'] & bit:
-                rs.values.add('newprivileges', bit.value)
+        data = self.coreproxy.get_data_one(rs, persona_id)
+        if 'newprivileges' not in rs.values:
+            for bit in const.PrivilegeBits:
+                if data['db_privileges'] & bit:
+                    rs.values.add('newprivileges', bit.value)
         return self.render(rs, "adjust_privileges", {
             'data': data, 'bits': const.PrivilegeBits})
 
@@ -412,7 +413,7 @@ class CoreFrontend(AbstractFrontend):
         the applicant.
         """
         if (case_status == const.GenesisStati.approved
-            and persona_status is None):
+                and persona_status is None):
             rs.errors.append(("persona_status",
                               ValueError("Must not be None.")))
         if rs.errors:

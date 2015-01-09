@@ -8,14 +8,14 @@ import hashlib
 import werkzeug
 
 import cdedb.database.constants as const
-from cdedb.common import merge_dicts
+from cdedb.common import merge_dicts, name_key
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
     connect_proxy, persona_dataset_guard, check_validation as check)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 
-class CdeFrontend(AbstractUserFrontend):
+class CdEFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
     realm = "cde"
@@ -51,8 +51,8 @@ class CdeFrontend(AbstractUserFrontend):
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
         if self.coreproxy.get_realm(rs, persona_id) != self.realm:
-            return werkzeug.exceptions.NotFound()
-        data = self.cdeproxy.get_data_single(rs, persona_id)
+            return werkzeug.exceptions.NotFound("No such user in this realm.")
+        data = self.cdeproxy.get_data_one(rs, persona_id)
         participation_info = self.eventproxy.participation_info(rs, persona_id)
         foto = self.cdeproxy.get_foto(rs, persona_id)
         data['is_member'] = data['status'] in const.MEMBER_STATI
@@ -77,7 +77,7 @@ class CdeFrontend(AbstractUserFrontend):
     @access("formermember")
     @persona_dataset_guard()
     def change_user_form(self, rs, persona_id):
-        data = self.cdeproxy.get_data_single(rs, persona_id)
+        data = self.cdeproxy.get_data_one(rs, persona_id)
         data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
         merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username': data['username']})
@@ -106,7 +106,7 @@ class CdeFrontend(AbstractUserFrontend):
     @access("cde_admin")
     @persona_dataset_guard()
     def admin_change_user_form(self, rs, persona_id):
-        data = self.cdeproxy.get_data_single(rs, persona_id)
+        data = self.cdeproxy.get_data_one(rs, persona_id)
         data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
         merge_dicts(rs.values, data)
         return self.render(rs, "admin_change_user",
@@ -173,7 +173,7 @@ class CdeFrontend(AbstractUserFrontend):
 
     @access("formermember")
     def get_foto(self, rs, foto):
-        """Retrieve profile picture"""
+        """Retrieve profile picture."""
         path = os.path.join(self.conf.STORAGE_DIR, "foto", foto)
         return self.send_file(rs, path=path)
 
@@ -181,7 +181,7 @@ class CdeFrontend(AbstractUserFrontend):
     @persona_dataset_guard()
     def set_foto_form(self, rs, persona_id):
         """Render form."""
-        data = self.cdeproxy.get_data_single(rs, persona_id)
+        data = self.cdeproxy.get_data_one(rs, persona_id)
         return self.render(rs, "set_foto", {'data': data})
 
     @access("formermember", {"POST"})
@@ -215,7 +215,7 @@ class CdeFrontend(AbstractUserFrontend):
         """
         if rs.user.realm != "cde" or rs.user.is_searchable:
             return self.redirect(rs, "core/index")
-        data = self.cdeproxy.get_data_single(rs, rs.user.persona_id)
+        data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
         return self.render(rs, "consent_decision", {'data': data})
@@ -226,7 +226,7 @@ class CdeFrontend(AbstractUserFrontend):
         """Record decision."""
         if rs.errors:
             return self.consent_decision_form(rs)
-        data = self.cdeproxy.get_data_single(rs, rs.user.persona_id)
+        data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
         if ack:
@@ -263,8 +263,8 @@ class CdeFrontend(AbstractUserFrontend):
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
                       spec=spec, allow_empty=not submitform)
         if not submitform or rs.errors:
-            events = {str(k): v
-                      for k, v in self.eventproxy.list_events(rs).items()}
+            events = {str(k): v for k, v in self.eventproxy.list_events(
+                rs, past=True).items()}
             event_id = None
             if query:
                 for field, _, value in query.constraints:
@@ -272,8 +272,8 @@ class CdeFrontend(AbstractUserFrontend):
                         event_id = value
             courses = tuple()
             if event_id:
-                courses = {str(k): v for k, v in
-                           self.eventproxy.list_courses(rs, event_id).items()}
+                courses = {str(k): v for k, v in self.eventproxy.list_courses(
+                    rs, event_id, past=True).items()}
             choices = {"event_id": events, 'course_id': courses}
             return self.render(rs, "member_search",
                                {'spec': spec, 'choices': choices,
@@ -282,10 +282,11 @@ class CdeFrontend(AbstractUserFrontend):
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('member_data.persona_id')
             result = self.cdeproxy.submit_general_query(rs, query)
+            result = sorted(result, key=name_key)
             if len(result) == 1:
                 return self.redirect_show_user(rs, result[0]['persona_id'])
             if (len(result) > self.conf.MAX_QUERY_RESULTS
-                and not self.is_admin(rs)):
+                    and not self.is_admin(rs)):
                 result = result[:self.conf.MAX_QUERY_RESULTS]
                 rs.notify("info", "Too many query results.")
             return self.render(rs, "member_search_result", {'result': result})
@@ -296,7 +297,7 @@ class CdeFrontend(AbstractUserFrontend):
         spec = QUERY_SPECS['qview_cde_user']
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
-        events = self.eventproxy.list_events(rs)
+        events = self.eventproxy.list_events(rs, past=True)
         choices = {'event_id': events,
                    'status': self.enum_choice(rs, const.PersonaStati),
                    'gender': self.enum_choice(rs, const.Genders)}
@@ -329,7 +330,7 @@ class CdeFrontend(AbstractUserFrontend):
         spec = QUERY_SPECS['qview_cde_archived_user']
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
-        events = self.eventproxy.list_events(rs)
+        events = self.eventproxy.list_events(rs, past=True)
         choices = {'event_id': events,
                    'status': self.enum_choice(rs, const.PersonaStati),
                    'gender': self.enum_choice(rs, const.Genders)}
@@ -360,7 +361,7 @@ class CdeFrontend(AbstractUserFrontend):
     @persona_dataset_guard()
     def modify_membership_form(self, rs, persona_id):
         """Render form."""
-        data = self.cdeproxy.get_data_single(rs, persona_id)
+        data = self.cdeproxy.get_data_one(rs, persona_id)
         data['is_member'] = data['status'] in const.MEMBER_STATI
         data['is_searchable'] = data['status'] in const.SEARCHMEMBER_STATI
         return self.render(rs, "modify_membership", {

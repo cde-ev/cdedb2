@@ -7,7 +7,7 @@ contained in here.
 
 All output formatting should be handled by the :py:mod:`jinja2` templates.
 """
-from cdedb.common import QuotaException
+from cdedb.common import QuotaException, PrivilegeError
 from cdedb.serialization import SERIALIZERS
 import Pyro4.util
 import psycopg2
@@ -19,9 +19,11 @@ import serpent
 
 custom_exceptions = {
     "cdedb.common.QuotaException": QuotaException,
+    "cdedb.common.PrivilegeError": PrivilegeError,
     "psycopg2.extensions.TransactionRollbackError":
         psycopg2.extensions.TransactionRollbackError,
-    "psycopg2.ProgrammingError": psycopg2.ProgrammingError,}
+    "psycopg2.ProgrammingError": psycopg2.ProgrammingError,
+}
 
 Pyro4.util.all_exceptions.update(custom_exceptions)
 

@@ -12,7 +12,8 @@ import werkzeug.utils
 import functools
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
-    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts)
+    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts,
+    compute_checkdigit)
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
@@ -290,13 +291,7 @@ def cdedbid_filter(val):
     """
     if val is None:
         return None
-    digits = []
-    tmp = val
-    while tmp > 0:
-        digits.append(tmp % 10)
-        tmp = tmp // 10
-    dsum = sum((i+1)*d for i, d in enumerate(digits))
-    return "DB-{}-{}".format(val, chr(65 + (dsum % 11)))
+    return "DB-{}-{}".format(val, compute_checkdigit(val))
 
 def escape_filter(val):
     """Custom jinja filter to reconcile escaping with the finalize method
@@ -409,7 +404,7 @@ def querytoparams_filter(val):
         params['qord_{}'.format(postfix)] = field
     return params
 
-def linebreaks_filter(val):
+def linebreaks_filter(val, replacement="<br>"):
     """Custom jinja filter to convert line breaks to <br>.
 
     :type val: str
@@ -419,7 +414,7 @@ def linebreaks_filter(val):
         return None
     ## because val is probably a jinja specific 'safe string'
     val = str(val)
-    return val.replace('\n', '<br>')
+    return val.replace('\n', replacement)
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
@@ -549,19 +544,27 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'default_selections': default_selections,
                 'i18n': lambda string: self.i18n(string, rs.lang),
                 'const': const,}
+        ## check that default values are not overridden
+        assert(not(set(data) & set(params)))
         merge_dicts(data, params)
         t = self.jinja_env.get_template(os.path.join(
             modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
         return t.render(**data)
 
     @staticmethod
-    def send_file(rs, path=None, afile=None, data=None):
+    def send_file(rs, mimetype=None, filename=None, *, path=None, afile=None,
+                  data=None):
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
         Exactly one of the inputs has to be provided.
 
         :type rs: :py:class:`FrontendRequestState`
+        :type mimetype: str or None
+        :param mimetype: If not None the mime type of the file to be sent.
+        :type filename: str or None
+        :param filename: If not None the default file name used if the user
+          tries to save the file to disk
         :type path: str
         :type afile: file like
         :param afile: should be opened in binary mode
@@ -581,8 +584,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             afile.write(data.encode('utf-8'))
             afile.seek(0)
         f = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
-        # TODO maybe add mime type
-        return werkzeug.wrappers.Response(f, direct_passthrough=True)
+        extra_args = {}
+        if mimetype is not None:
+            extra_args['mimetype'] = mimetype
+        headers = []
+        if filename is not None:
+            ## Alternative is content disposition 'attachment', which forces
+            ## a download box -- we don't want that.
+            headers.append(('Content-Disposition',
+                            'inline; filename="{}"'.format(filename)))
+        return werkzeug.wrappers.Response(
+            f, direct_passthrough=True, headers=headers, **extra_args)
 
     def render(self, rs, templatename, params=None):
         """Wrapper around :py:meth:`fill_template` specialised to generating
@@ -947,11 +959,42 @@ def persona_dataset_guard(argname="persona_id", realms=tuple(),
                 return werkzeug.exceptions.Forbidden()
             if realms is not None:
                 therealms = realms or (obj.realm,)
-                status = obj.coreproxy.get_data_single(rs, arg)['status']
+                status = obj.coreproxy.get_data_one(rs, arg)['status']
                 if (extract_realm(status) not in therealms
-                    or (disallow_archived and status ==
-                        const.PersonaStati.archived_member)):
+                        or (disallow_archived and status ==
+                            const.PersonaStati.archived_member)):
                     return werkzeug.exceptions.NotFound()
+            return fun(obj, rs, *args, **kwargs)
+        return new_fun
+    return wrap
+
+def event_guard(argname="event_id", check_offline=False):
+    """This decorator checks the access with respect to a specific event. The
+    event is specified by id which has either to be a keyword
+    parameter or the first positional parameter after the request state.
+
+    The event has to be organized via the DB. Only orgas and privileged
+    users are admitted. Additionally this can check for the offline
+    lock, so that no modifications happen to locked events.
+
+    :type argname: str
+    :param argname: name of the keyword argument specifying the id
+    :type check_offline: bool
+    :param check_offline: defaults to False
+    """
+    def wrap(fun):
+        @functools.wraps(fun)
+        def new_fun(obj, rs, *args, **kwargs):
+            if argname in kwargs:
+                arg = kwargs[argname]
+            else:
+                arg = args[0]
+            if arg not in rs.user.orga and not obj.is_admin(rs):
+                return werkzeug.exceptions.Forbidden()
+            if check_offline:
+                is_locked = obj.eventproxy.is_offline_locked(rs, event_id=arg)
+                if is_locked != obj.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                    return werkzeug.exceptions.Forbidden()
             return fun(obj, rs, *args, **kwargs)
         return new_fun
     return wrap

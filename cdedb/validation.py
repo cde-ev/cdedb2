@@ -39,10 +39,9 @@ import magic
 import PIL.Image
 import io
 
-from itertools import chain
 current_module = sys.modules[__name__]
 
-from cdedb.common import EPSILON
+from cdedb.common import EPSILON, compute_checkdigit
 from cdedb.serialization import deserialize
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
@@ -121,6 +120,19 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
 ##
 ## Below is the real stuff
 ##
+
+@_addvalidator
+def _any(val, argname=None, *, _convert=True):
+    """Dummy to allow arbitrary things.
+
+    This is mostly for deferring checks to a later point if they require
+    more logic than should be encoded in a validator.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    """
+    return val, []
 
 @_addvalidator
 def _int(val, argname=None, *, _convert=True):
@@ -249,6 +261,28 @@ def _bool(val, argname=None, *, _convert=True):
         return None, [(argname, TypeError("Must be a boolean."))]
     return val, []
 
+_CDEDBID = re.compile('^DB-([0-9]*)-([A-K])$')
+@_addvalidator
+def _cdedbid(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (int or None, [(str or None, exception)])
+    """
+    val, errs = _str(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mo = _CDEDBID.search(val)
+    if mo is None:
+        return None, [(argname, ValueError("Wrong formatting."))]
+    value = mo.group(1)
+    checkdigit = mo.group(2)
+    value, errs = _int(value, argname, _convert=True)
+    if not errs and compute_checkdigit(value) != checkdigit:
+        errs.append((argname, ValueError("Checksum failure.")))
+    return value, errs
+
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')
 @_addvalidator
 def _printable_ascii_type(val, argname=None, *, _convert=True):
@@ -321,21 +355,15 @@ def _email(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError("Must be a valid email address.")))
     return val, errs
 
-_PERSONA_MANDATORY_FIELDS = {'id': _int}
-_PERSONA_OPTIONAL_FIELDS = {
-    'username': _email,
-    'display_name': _str,
-    'is_active': _bool,
-    'status': _int,
-    'db_privileges': _int,
-    'cloud_account': _bool,
-}
 _PERSONA_INIT_FIELDS = {
     'username': _email,
     'display_name': _str,
     'is_active': _bool,
     'status': _int,
     'cloud_account': _bool,
+}
+_PERSONA_ADDITIONAL_FIELDS = {
+    'db_privileges': _int,
 }
 @_addvalidator
 def _persona_data(val, argname=None, *, strict=False, initialization=False,
@@ -359,8 +387,9 @@ def _persona_data(val, argname=None, *, strict=False, initialization=False,
         mandatory_fields = _PERSONA_INIT_FIELDS
         optional_fields = {}
     else:
-        mandatory_fields = _PERSONA_MANDATORY_FIELDS
-        optional_fields = _PERSONA_OPTIONAL_FIELDS
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_PERSONA_INIT_FIELDS,
+                               **_PERSONA_ADDITIONAL_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       strict=strict, _convert=_convert)
 
@@ -552,6 +581,43 @@ def _german_postal_code(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError("Invalid german postal code.")))
     return val, errs
 
+_MEMBER_POTENTIAL_FIELDS = {
+    'decided_search': _bool,
+    'bub_search': _bool,
+}
+## lambda since _or_None is not yet defined
+_MEMBER_INIT_FIELDS = lambda: dict(_PERSONA_INIT_FIELDS, **{
+    'family_name': _str,
+    'given_names': _str,
+    'title': _str_or_None,
+    'name_supplement': _str_or_None,
+    'gender': _int,
+    'birthday': _date,
+    'telephone': _phone_or_None,
+    'mobile': _phone_or_None,
+    'address_supplement': _str_or_None,
+    'address': _str_or_None,
+    'postal_code': _printable_ascii_or_None,
+    'location': _str_or_None,
+    'country': _str_or_None,
+    'notes': _str_or_None,
+    'birth_name': _str_or_None,
+    'address_supplement2': _str_or_None,
+    'address2': _str_or_None,
+    'postal_code2': _printable_ascii_or_None,
+    'location2': _str_or_None,
+    'country2': _str_or_None,
+    'weblink': _str_or_None,
+    'specialisation': _str_or_None,
+    'affiliation': _str_or_None,
+    'timeline': _str_or_None,
+    'interests': _str_or_None,
+    'free_form': _str_or_None,
+    'trial_member': _bool,
+})
+_MEMBER_ADDITIONAL_FIELDS = dict(_PERSONA_ADDITIONAL_FIELDS, **{
+    'balance': _decimal,
+})
 @_addvalidator
 def _member_data(val, argname=None, *, strict=False, initialization=False,
                  _convert=True):
@@ -571,73 +637,13 @@ def _member_data(val, argname=None, *, strict=False, initialization=False,
     if errs:
         return val, errs
     if initialization:
-        mandatory_fields = dict(chain(_PERSONA_INIT_FIELDS.items(), {
-            'family_name': _str,
-            'given_names': _str,
-            'title': _str_or_None,
-            'name_supplement': _str_or_None,
-            'gender': _int,
-            'birthday': _date,
-            'telephone': _phone_or_None,
-            'mobile': _phone_or_None,
-            'address_supplement': _str_or_None,
-            'address': _str_or_None,
-            'postal_code': _printable_ascii_or_None,
-            'location': _str_or_None,
-            'country': _str_or_None,
-            'notes': _str_or_None,
-            'birth_name': _str_or_None,
-            'address_supplement2': _str_or_None,
-            'address2': _str_or_None,
-            'postal_code2': _printable_ascii_or_None,
-            'location2': _str_or_None,
-            'country2': _str_or_None,
-            'weblink': _str_or_None,
-            'specialisation': _str_or_None,
-            'affiliation': _str_or_None,
-            'timeline': _str_or_None,
-            'interests': _str_or_None,
-            'free_form': _str_or_None,
-            'trial_member': _bool,
-        }.items()))
-        optional_fields = {
-            'decided_search': _bool,
-            'bub_search': _bool,
-        }
+        mandatory_fields = _MEMBER_INIT_FIELDS()
+        optional_fields = _MEMBER_POTENTIAL_FIELDS
     else:
-        mandatory_fields = _PERSONA_MANDATORY_FIELDS
-        optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
-            'family_name': _str,
-            'given_names': _str,
-            'title': _str_or_None,
-            'name_supplement': _str_or_None,
-            'gender': _int,
-            'birthday': _date,
-            'telephone': _phone_or_None,
-            'mobile': _phone_or_None,
-            'address_supplement': _str_or_None,
-            'address': _str_or_None,
-            'postal_code': _printable_ascii_or_None,
-            'location': _str_or_None,
-            'country': _str_or_None,
-            'notes': _str_or_None,
-            'birth_name': _str_or_None,
-            'address_supplement2': _str_or_None,
-            'address2': _str_or_None,
-            'postal_code2': _printable_ascii_or_None,
-            'location2': _str_or_None,
-            'country2': _str_or_None,
-            'weblink': _str_or_None,
-            'specialisation': _str_or_None,
-            'affiliation': _str_or_None,
-            'timeline': _str_or_None,
-            'interests': _str_or_None,
-            'free_form': _str_or_None,
-            'balance': _decimal,
-            'decided_search': _bool,
-            'trial_member': _bool,
-            'bub_search': _bool,
-        }.items()))
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_MEMBER_INIT_FIELDS(),
+                               **_MEMBER_POTENTIAL_FIELDS)
+        optional_fields = dict(optional_fields, **_MEMBER_ADDITIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,
         _convert=_convert)
@@ -651,7 +657,7 @@ def _member_data(val, argname=None, *, strict=False, initialization=False,
                for key in ('address_supplement', 'address', 'postal_code',
                            'location', 'country')):
             if (not val.get('country' + suffix)
-                or val.get('country' + suffix) == "Deutschland"):
+                    or val.get('country' + suffix) == "Deutschland"):
                 for key in ('address', 'postal_code', 'location'):
                     if not val.get(key + suffix):
                         errs.append((key+suffix, ValueError("Missing entry.")))
@@ -667,6 +673,23 @@ def _member_data(val, argname=None, *, strict=False, initialization=False,
                         errs.append((key+suffix, ValueError("Missing entry.")))
     return val, errs
 
+_EVENT_USER_INIT_FIELDS = lambda: dict(_PERSONA_INIT_FIELDS, **{
+    'family_name': _str,
+    'given_names': _str,
+    'title': _str_or_None,
+    'name_supplement': _str_or_None,
+    'gender': _int,
+    'birthday': _date,
+    'telephone': _phone_or_None,
+    'mobile': _phone_or_None,
+    'address_supplement': _str_or_None,
+    'address': _str_or_None,
+    'postal_code': _printable_ascii_or_None,
+    'location': _str_or_None,
+    'country': _str_or_None,
+    'notes': _str_or_None,
+})
+_EVENT_USER_ADDITIONAL_FIELDS = _PERSONA_ADDITIONAL_FIELDS
 @_addvalidator
 def _event_user_data(val, argname=None, *, strict=False, initialization=False,
                      _convert=True):
@@ -686,41 +709,12 @@ def _event_user_data(val, argname=None, *, strict=False, initialization=False,
     if errs:
         return val, errs
     if initialization:
-        mandatory_fields = dict(chain(_PERSONA_INIT_FIELDS.items(), {
-            'family_name': _str,
-            'given_names': _str,
-            'title': _str_or_None,
-            'name_supplement': _str_or_None,
-            'gender': _int,
-            'birthday': _date,
-            'telephone': _phone_or_None,
-            'mobile': _phone_or_None,
-            'address_supplement': _str_or_None,
-            'address': _str_or_None,
-            'postal_code': _printable_ascii_or_None,
-            'location': _str_or_None,
-            'country': _str_or_None,
-            'notes': _str_or_None,
-        }.items()))
+        mandatory_fields = _EVENT_USER_INIT_FIELDS()
         optional_fields = {}
     else:
-        mandatory_fields = _PERSONA_MANDATORY_FIELDS
-        optional_fields = dict(chain(_PERSONA_OPTIONAL_FIELDS.items(), {
-            'family_name': _str,
-            'given_names': _str,
-            'title': _str_or_None,
-            'name_supplement': _str_or_None,
-            'gender': _int,
-            'birthday': _date,
-            'telephone': _phone_or_None,
-            'mobile': _phone_or_None,
-            'address_supplement': _str_or_None,
-            'address': _str_or_None,
-            'postal_code': _printable_ascii_or_None,
-            'location': _str_or_None,
-            'country': _str_or_None,
-            'notes': _str_or_None,
-        }.items()))
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_EVENT_USER_INIT_FIELDS(),
+                               **_EVENT_USER_ADDITIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,
         _convert=_convert)
@@ -743,7 +737,6 @@ def _event_user_data(val, argname=None, *, strict=False, initialization=False,
                     errs.append((key, ValueError("Missing entry.")))
     return val, errs
 
-_GENESIS_CASE_MANDATORY_FIELDS = {'id': _int}
 _GENESIS_CASE_OPTIONAL_FIELDS = {
     'username': _email,
     'full_name': _str,
@@ -768,7 +761,7 @@ def _genesis_case_data(val, argname=None, *, strict=False, _convert=True):
     if errs:
         return val, errs
     return _examine_dictionary_fields(
-        val, _GENESIS_CASE_MANDATORY_FIELDS, _GENESIS_CASE_OPTIONAL_FIELDS,
+        val, {'id': _int}, _GENESIS_CASE_OPTIONAL_FIELDS,
         strict=strict, _convert=_convert)
 
 @_addvalidator
@@ -817,6 +810,26 @@ def _profilepic(val, argname=None, *, _convert=True):
     return val, errs
 
 @_addvalidator
+def _pdffile(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (:py:class:`werkzeug.datastructures.FileStorage` or None,
+        [(str or None, exception)])
+    """
+    val, errs = _input_file(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    blob = val.read()
+    val.seek(0)
+    mime = magic.from_buffer(blob, mime=True)
+    mime = mime.decode() ## python-magic is naughty and returns bytes
+    if mime != "application/pdf":
+        errs.append((argname, ValueError("Only pdf allowed.")))
+    return val, errs
+
+@_addvalidator
 def _persona_status(val, argname=None, *, _convert=True):
     """
     :type val: object
@@ -851,6 +864,294 @@ def _genesis_status(val, argname=None, *, _convert=True):
         val = const.GenesisStati(val)
     except ValueError as e:
         return None, ((argname, e),)
+    return val, errs
+
+@_addvalidator
+def _past_event_data(val, argname=None, *, strict=False, initialization=False,
+                     _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :type initialization: bool
+    :param initialization: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "past_event_data"
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if initialization:
+        mandatory_fields = {
+            'title': _str,
+            'organizer': _str,
+            'description': _str_or_None,
+        }
+        optional_fields = {}
+    else:
+        mandatory_fields = {
+            'id': _int,
+        }
+        optional_fields = {
+            'title': _str,
+            'organizer': _str,
+            'description': _str_or_None,
+        }
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      strict=strict, _convert=_convert)
+
+_EVENT_INIT_FIELDS = lambda: {
+    'title': _str,
+    'organizer': _str,
+    'description': _str_or_None,
+    'shortname': _str,
+    'registration_start': _date_or_None,
+    'registration_soft_limit': _date_or_None,
+    'registration_hard_limit': _date_or_None,
+    'use_questionnaire': _bool,
+    'notes': _str_or_None,
+}
+_EVENT_ADDITIONAL_FIELDS = {
+    'offline_lock': _bool,
+    'orgas': _any,
+    'parts': _any,
+    'fields': _any,
+}
+@_addvalidator
+def _event_data(val, argname=None, *, strict=False, initialization=False,
+                _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :type initialization: bool
+    :param initialization: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "event_data"
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if initialization:
+        mandatory_fields = _EVENT_INIT_FIELDS()
+        optional_fields = _EVENT_ADDITIONAL_FIELDS
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_EVENT_INIT_FIELDS(),
+                               **_EVENT_ADDITIONAL_FIELDS)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, strict=strict,
+        _convert=_convert)
+    if errs:
+        return val, errs
+    if 'orgas' in val:
+        if not isinstance(val['orgas'], collections.abc.Iterable):
+            errs.append(("orgas", TypeError("Must be iterable.")))
+        else:
+            orgas = set()
+            for anid in val['orgas']:
+                v, e = _int(anid, 'orgas', _convert=_convert)
+                if e:
+                    errs.extend(e)
+                else:
+                    orgas.add(v)
+            val['orgas'] = orgas
+    if 'parts' in val:
+        oldparts, e = _dict(val['parts'], 'parts', _convert=_convert)
+        if e:
+            errs.extend(e)
+        else:
+            newparts = {}
+            for anid, partdata in oldparts.items():
+                anid, e = _int(anid, 'parts', _convert=_convert)
+                partdata, ee = _event_part_data_or_None(partdata, 'parts',
+                                                        _convert=_convert)
+                if e or ee:
+                    errs.extend(e)
+                    errs.extend(ee)
+                else:
+                    newparts[anid] = partdata
+            val['parts'] = newparts
+    if 'fields' in val:
+        oldfields, e = _dict(val['fields'], 'fields', _convert=_convert)
+        if e:
+            errs.extend(e)
+        else:
+            newfields = {}
+            for anid, fielddata in oldfields.items():
+                anid, e = _int(anid, 'fields', _convert=_convert)
+                fielddata, ee = _event_field_data_or_None(
+                    fielddata, 'fields', _convert=_convert)
+                if e or ee:
+                    errs.extend(e)
+                    errs.extend(ee)
+                else:
+                    newfields[anid] = fielddata
+            val['fields'] = newfields
+    return val, errs
+
+@_addvalidator
+def _event_part_data(val, argname=None, *, strict=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "event_part_data"
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = {
+        'title': _str,
+        'part_begin': _date,
+        'part_end': _date,
+        'fee': _decimal,
+    }
+    return _examine_dictionary_fields(val, mandatory_fields, {},
+                                      strict=strict, _convert=_convert)
+
+@_addvalidator
+def _event_field_data(val, argname=None, *, strict=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "event_field_data"
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = {
+        'field_name': _identifier,
+        'kind': _str,
+        'entries': _any,
+    }
+    val, errs = _examine_dictionary_fields(val, mandatory_fields, {},
+                                           strict=strict, _convert=_convert)
+    if errs:
+        return val, errs
+    if val['entries'] is not None:
+        if isinstance(val['entries'], str) and _convert:
+            val['entries'] = tuple(tuple(y.strip() for y in x.split(';', 1))
+                                   for x in val['entries'].split('\n'))
+        if not isinstance(val['entries'], collections.abc.Iterable):
+            errs.append(("entries", TypeError("Must be iterable.")))
+        else:
+            entries = []
+            for entry in val['entries']:
+                try:
+                    value, description = entry
+                except (ValueError, TypeError) as e:
+                    errs.append(("entries", e))
+                else:
+                    value, e = _str(value, "entries", _convert=_convert)
+                    description, ee = _str(description, "entries",
+                                           _convert=_convert)
+                    if e or ee:
+                        errs.extend(e)
+                        errs.extend(ee)
+                    else:
+                        entries.append((value, description))
+            val['entries'] = entries
+    return val, errs
+
+@_addvalidator
+def _past_course_data(val, argname=None, *, strict=False, initialization=False,
+                      _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :type initialization: bool
+    :param initialization: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "past_course_data"
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if initialization:
+        mandatory_fields = {
+            'event_id': _int,
+            'title': _str,
+            'description': _str_or_None,
+        }
+        optional_fields = {}
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = {
+            'title': _str,
+            'description': _str_or_None,
+        }
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      strict=strict, _convert=_convert)
+
+_COURSE_COMMON_FIELDS = lambda: {
+    'title': _str,
+    'description': _str_or_None,
+    'nr': _str_or_None,
+    'shortname': _str,
+    'instructors': _str_or_None,
+    'notes': _str_or_None,
+}
+@_addvalidator
+def _course_data(val, argname=None, *, strict=False, initialization=False,
+                 _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :type initialization: bool
+    :param initialization: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "course_data"
+    val, errs = _dict(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if initialization:
+        mandatory_fields = dict(_COURSE_COMMON_FIELDS(), event_id=_int)
+        optional_fields = {
+            'parts': _any,
+        }
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_COURSE_COMMON_FIELDS(), parts=_any)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, strict=strict,
+        _convert=_convert)
+    if errs:
+        return val, errs
+    if 'parts' in val:
+        if not isinstance(val['parts'], collections.abc.Iterable):
+            errs.append(("parts", TypeError("Must be iterable.")))
+        else:
+            parts = set()
+            for anid in val['parts']:
+                v, e = _int(anid, 'parts', _convert=_convert)
+                if e:
+                    errs.extend(e)
+                else:
+                    parts.add(v)
+            val['parts'] = parts
     return val, errs
 
 _ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')

@@ -11,8 +11,8 @@ from cdedb.backend.common import (
     affirm_validation as affirm, affirm_array_validation as affirm_array,
     create_fulltext)
 from cdedb.common import (
-    glue, PERSONA_DATA_FIELDS_MOD, PERSONA_DATA_FIELDS, extract_realm,
-    MEMBER_DATA_FIELDS, GENESIS_CASE_FIELDS)
+    glue, PERSONA_DATA_FIELDS, extract_realm, MEMBER_DATA_FIELDS,
+    GENESIS_CASE_FIELDS, PrivilegeError)
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -184,13 +184,13 @@ class CoreBackend(AbstractBackend):
                 rs, data['id'], generations=(current_generation,))
             current_data = history[current_generation]
             if (current_data['status'] == const.PersonaStati.archived_member
-                and data.get('status') not in const.CDE_STATI):
+                    and data.get('status') not in const.CDE_STATI):
                 raise RuntimeError("Editing archived member impossible.")
 
             ## stash pending change if we may not wait
             diff = None
             if (current_data['change_status']
-                == const.MemberChangeStati.pending and not may_wait):
+                    == const.MemberChangeStati.pending and not may_wait):
                 old_data = self.cde_retrieve_user_data(
                     rs, (data['id'],))[data['id']]
                 diff = {key: current_data[key] for key in old_data
@@ -317,8 +317,8 @@ class CoreBackend(AbstractBackend):
                 return 0
             query = glue(
                 "UPDATE core.changelog SET {} change_status = %s",
-                "WHERE persona_id = %s AND generation = %s").format(
-                    "reviewed_by = %s," if reviewed else "")
+                "WHERE persona_id = %s AND generation = %s")
+            query = query.format("reviewed_by = %s," if reviewed else "")
             params = ((rs.user.persona_id,) if reviewed else tuple()) + (
                 const.MemberChangeStati.committed, persona_id, generation)
             self.query_exec(rs, query, params)
@@ -346,10 +346,10 @@ class CoreBackend(AbstractBackend):
                 if not ret:
                     raise RuntimeError("Modification failed.")
             if len(ukeys) > 0:
-                query = glue(
-                    "UPDATE cde.member_data SET ({}) = ({})",
-                    "WHERE persona_id = %s").format(
-                        ", ".join(ukeys), ", ".join(("%s",) * len(ukeys)))
+                query = glue("UPDATE cde.member_data SET ({}) = ({})",
+                             "WHERE persona_id = %s")
+                query = query.format(", ".join(ukeys),
+                                     ", ".join(("%s",) * len(ukeys)))
                 params = tuple(data[key] for key in ukeys) + (data['id'],)
                 ret = self.query_exec(rs, query, params)
                 if not ret:
@@ -440,8 +440,9 @@ class CoreBackend(AbstractBackend):
         """
         query = glue(
             "SELECT {} FROM cde.member_data AS u JOIN core.personas AS p",
-            "ON u.persona_id = p.id WHERE p.id = ANY(%s)").format(
-                ", ".join(PERSONA_DATA_FIELDS + MEMBER_DATA_FIELDS))
+            "ON u.persona_id = p.id WHERE p.id = ANY(%s)")
+        query = query.format(", ".join(PERSONA_DATA_FIELDS +
+                                       MEMBER_DATA_FIELDS))
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
@@ -452,7 +453,7 @@ class CoreBackend(AbstractBackend):
     ##
 
     @internal_access("persona")
-    @singularize("retrieve_persona_data_single")
+    @singularize("retrieve_persona_data_one")
     def retrieve_persona_data(self, rs, ids):
         """
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
@@ -490,20 +491,21 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: number of changed entries
         """
-        keys = tuple(key for key in data if key in PERSONA_DATA_FIELDS_MOD)
+        keys = tuple(key for key in data if (key in PERSONA_DATA_FIELDS
+                                             and key != "id"))
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
-            raise RuntimeError("Not enough privileges.")
+            raise PrivilegeError("Not privileged.")
         privileged_fields = {'is_active', 'status', 'db_privileges',
                              'cloud_account'}
         if not self.is_admin(rs) and (set(keys) & privileged_fields):
             ## be naughty and take a peak
             if (set(keys) == {'status'} and data['id'] == rs.user.persona_id
-                and data['status'] == const.PersonaStati.searchmember
-                and rs.user.is_member):
+                    and data['status'] == const.PersonaStati.searchmember
+                    and rs.user.is_member):
                 ## allow upgrading self to searchable member
                 pass
             else:
-                raise RuntimeError("Modifying sensitive key forbidden.")
+                raise PrivilegeError("Modifying sensitive key forbidden.")
         if 'username' in data and not allow_username_change:
             raise RuntimeError("Modification of username prevented.")
         if change_note is None:
@@ -522,7 +524,7 @@ class CoreBackend(AbstractBackend):
         query = "SELECT status FROM core.personas WHERE id = %s"
         current_data = self.query_one(rs, query, (data['id'],))
         if (current_data['status'] == const.PersonaStati.archived_member
-            and data.get('status') not in const.CDE_STATI):
+                and data.get('status') not in const.CDE_STATI):
             raise RuntimeError("Editing archived member impossible.")
 
         query = "UPDATE core.personas SET ({}) = ({}) WHERE id = %s".format(
@@ -546,7 +548,7 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             num = self.query_exec(rs, query, tuple(
                 data[key] for key in keys) + (data['id'],))
-            if num != 1:
+            if not num:
                 raise ValueError("Nonexistant user.")
             if ldap_ops:
                 with self.ldap_connect() as l:
@@ -554,7 +556,7 @@ class CoreBackend(AbstractBackend):
         return num
 
     @access("persona")
-    @singularize("get_data_single")
+    @singularize("get_data_one")
     def get_data(self, rs, ids):
         """Aquire data sets for specified ids.
 
@@ -585,7 +587,7 @@ class CoreBackend(AbstractBackend):
                      "WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
         if (not data or
-            not self.verify_password(password, data["password_hash"])):
+                not self.verify_password(password, data["password_hash"])):
             ## log message to be picked up by fail2ban
             self.logger.warning("CdEDB login failure from {} for {}".format(
                 ip, username))
@@ -742,7 +744,7 @@ class CoreBackend(AbstractBackend):
             return self.modify_password(rs, persona_id, old_password,
                                         new_password)
         else:
-            raise RuntimeError("Permission denied.")
+            raise PrivilegeError("Not privileged.")
 
     @access("anonymous")
     def reset_password(self, rs, email):
@@ -792,7 +794,7 @@ class CoreBackend(AbstractBackend):
                 query = "SELECT password_hash FROM core.personas WHERE id = %s"
                 data = self.query_one(rs, query, (persona_id,))
                 if (data and
-                    self.verify_password(password, data["password_hash"])):
+                        self.verify_password(password, data["password_hash"])):
                     authorized = True
             if authorized:
                 new_data = {
@@ -840,14 +842,15 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: The id of the newly created persona.
         """
-        data = {k: v for k, v in data.items() if k in PERSONA_DATA_FIELDS_MOD}
+        data = {k: v for k, v in data.items() if k in PERSONA_DATA_FIELDS}
         data['db_privileges'] = 0 ## everybody starts with no privileges
         ## modified version of hash for 'secret' and thus safe/unknown plaintext
         data['password_hash'] = (
             "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc"
             "1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
         keys = tuple(key for key in data)
-        assert(set(keys) == set(PERSONA_DATA_FIELDS_MOD) | {'password_hash'})
+        assert(set(keys)
+               == (set(PERSONA_DATA_FIELDS) | {'password_hash'}) - {"id"})
         query = "INSERT INTO core.personas ({}) VALUES ({}) RETURNING id"
         query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
         ldap_ops = (
@@ -939,6 +942,8 @@ class CoreBackend(AbstractBackend):
         query = "SELECT {} FROM core.genesis_cases WHERE id = ANY(%s)".format(
             ", ".join(GENESIS_CASE_FIELDS))
         data = self.query_all(rs, query, (ids,))
+        if len(data) != len(ids):
+            raise ValueError("Invalid ids requested.")
         return {e['id']: e for e in data}
 
     @access("core_admin")
@@ -951,10 +956,9 @@ class CoreBackend(AbstractBackend):
         :returns: number of affected cases
         """
         data = affirm("genesis_case_data", data)
-        keys = tuple(key for key in data if key != "id")
-        query = glue("UPDATE core.genesis_cases SET ({}) = ({})",
-                     "WHERE id = %s").format(", ".join(keys),
-                                             ", ".join(("%s",) * len(keys)))
+        keys = tuple(key for key in data)
+        query = "UPDATE core.genesis_cases SET ({}) = ({}) WHERE id = %s"
+        query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
         return self.query_exec(rs, query,
                                tuple(data[key] for key in keys) + (data['id'],))
 

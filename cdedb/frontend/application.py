@@ -6,9 +6,9 @@ import werkzeug
 import cgitb
 import sys
 from cdedb.frontend.core import CoreFrontend
-from cdedb.frontend.cde import CdeFrontend
+from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
-from cdedb.common import glue, make_root_logger, QuotaException
+from cdedb.common import glue, make_root_logger, QuotaException, PrivilegeError
 from cdedb.frontend.common import (
     FrontendRequestState, BaseApp, construct_redirect, connect_proxy,
     FakeFrontendRequestState)
@@ -38,7 +38,7 @@ class Application(BaseApp):
         self.sessionproxy = connect_proxy(
             self.conf.SERVER_NAME_TEMPLATE.format("session"))
         self.core = CoreFrontend(configpath)
-        self.cde = CdeFrontend(configpath)
+        self.cde = CdEFrontend(configpath)
         self.event = EventFrontend(configpath)
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
@@ -114,6 +114,9 @@ class Application(BaseApp):
                     self.logger.error("THIRD NESTED PYRO TRACEBACK")
                     self.logger.error("".join(e._pyroTraceback))
                 raise
+        except PrivilegeError as e:
+            ## Convert permission errors from the backend to 503
+            return werkzeug.exceptions.Forbidden(e.args)
         except werkzeug.exceptions.HTTPException as e:
             return e
         except psycopg2.extensions.TransactionRollbackError:

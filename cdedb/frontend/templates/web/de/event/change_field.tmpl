@@ -1,0 +1,17 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Datenfeld {{ data['fields'][values['field_id']]['field_name']|e }} ({{ data['title']|e }}) bearbeiten{% endblock %}
+{% block content %}
+    <a href="{{ cdedblink("event/change_event")|e }}">Abbrechen</a>
+    <form action="{{ cdedblink('event/change_field')|e }}" method="POST" id="changefieldform">
+        <table>
+            {{ util.tab_input_text(name="field_name", label="Name", readonly=True) }}
+            {{ util.tab_input_select(name="kind", title="Typ", entries=(
+                ("str", "String", None), ("bool", "Ja/Nein", None), ("int", "Zahl", None), ("date", "Datum", None), ("datetime", "Datum mit Uhrzeit", None))) }}
+            {{ util.tab_input_textarea(name="entries", label="Auswahlmöglichkeiten", info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+        </div>
+    </form>
+{% endblock %}

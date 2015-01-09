@@ -1,0 +1,51 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}{{ event_data['title']|e }}{% endblock %}
+{% block content %}
+    {% if is_admin %}
+        <a href="{{ cdedblink('event/change_past_event_form')|e }}">Bearbeiten</a>
+        <a href="{{ cdedblink('event/create_past_course_form')|e }}">Kurs hinzufügen</a>
+        <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
+            {{ util.input_text(name="persona_id", label="ID") }}
+            {{ util.input_hidden(name="course_id", value="") }}
+            {{ util.input_hidden(name="is_instructor", value=False) }}
+            {{ util.input_checkbox(name="is_orga", label="Orga") }}
+            {{ util.input_submit(value="Teilnehmer (ohne Kurs) hinzufügen") }}
+        </form>
+    {% endif %}
+    <p>Organisator: {{ event_data['organizer']|e }}</p>
+    <p>{{ event_data['description']|e }}</p>
+    {% if courses %}
+        <h2>Kurse</h2>
+        <ul>
+            {% for anid, title in courses|dictsort %}
+                <li><a href="{{ cdedblink('event/show_past_course', {'course_id' : anid})|e }}">{{ title|e }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if participants %}
+        <h2>Teilnehmer</h2>
+        <ul>
+            {% for anid in participants %}
+                <li>
+                    {% if participants[anid]['is_orga'] %}
+                        <strong>
+                    {% endif %}
+                    {{ participant_data[anid]['given_names']|e }} {{ participant_data[anid]['family_name']|e }}
+                    {% if participants[anid]['is_orga'] %}
+                        </strong>
+                    {% endif %}
+                    {# only allow removal of participants without a course #}
+                    {% if is_admin and participants[anid]['course_id'] is none %}
+                        <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST" id="removeparticipantform{{ anid|e }}">
+                            {{ util.input_hidden(name="persona_id", value=anid) }}
+                            {{ util.input_hidden(name="course_id", value=participants[anid]['course_id']) }}
+                            {{ util.input_hidden(name="course_page", value=False) }}
+                            {{ util.input_submit(value="entfernen") }}
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

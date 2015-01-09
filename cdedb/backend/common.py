@@ -13,7 +13,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import (
     glue, extract_realm, make_root_logger, extract_roles,
-    ALL_ROLES, DB_ROLE_MAPPING, CommonUser)
+    ALL_ROLES, DB_ROLE_MAPPING, CommonUser, PrivilegeError)
 from cdedb.query import QueryOperators, QUERY_VIEWS
 from cdedb.config import Config, SecretsConfig
 import abc
@@ -262,7 +262,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: object but not tuple or IntEnum
         """
         if (isinstance(obj, collections.abc.Iterable)
-            and not isinstance(obj, str)):
+                and not isinstance(obj, str)):
             return [AbstractBackend._sanitize_db_input(x) for x in obj]
         elif isinstance(obj, enum.Enum):
             return obj.value
@@ -552,7 +552,7 @@ class AuthShim:
             if rs.user.roles & access_list:
                 return fun(rs, *args, **kwargs)
             else:
-                raise RuntimeError("Permission denied")
+                raise PrivilegeError("Not in access list.")
         return new_fun
 
     def __getattr__(self, name):

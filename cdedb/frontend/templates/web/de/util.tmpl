@@ -26,7 +26,7 @@
 {% endmacro %}
 
 {% macro info_hover(info, anid='', aclass='') %}
-    <img src="{{ staticurl("icons/info.png")|e }}" alt="info" title="{{ info|e }}
+    <img src="{{ staticurl("icons/info.png")|e }}" alt="info" title="{{ info|e }}"
       {% if anid %} id="{{ anid|e }}" {% endif %} class="infoHover {{ aclass|e }}">
 {% endmacro %}
 
@@ -193,11 +193,12 @@
     </tr>
 {% endmacro %}
 
-{% macro input_checkboxes(name, entries, info='', readonly=False) %}
+{% macro input_checkboxes(name, title, entries, info='', readonly=False) %}
 {# This is the version for multiple checkboxes as opposed to input_checkbox().
    entries is of type [(str, str, str)]. #}
 
     <span {% if name in errors %} class="errorInput" {% endif %}>
+        {{ title|e }}
         <span class="stacking">
             {% if info %} {{ info_hover(info) }} {% endif %}
             {% for value, label, entry_id in entries %}
@@ -212,12 +213,13 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_checkboxes(name, entries, info='', readonly=False) %}
+{% macro tab_input_checkboxes(name, title, entries, info='', readonly=False) %}
 {# This is the version for multiple checkboxes as opposed to tab_input_checkbox().
    entries is of type [(str, str, str)]. #}
 
     <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td colspan="2">
+        <td>{{ title|e }}</td>
+        <td>
             {% if info %} {{ info_hover(info) }} {% endif %}
             {% for value, label, entry_id in entries %}
                 <label>
@@ -549,7 +551,7 @@
 {% for csvfield in query.fields_of_interest -%}
 {% for field in csvfield.split(',') -%}
 {% with afield = field.split('.')[-1] -%}
-{{ row.get(afield, "UNDEFINED") -}}
+{{ row.get(afield, "UNDEFINED")|linebreaks(replacement="        ") -}}
 {% endwith -%}
 {% if not loop.last %};{% endif -%}
 {% endfor -%}

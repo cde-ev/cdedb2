@@ -1,0 +1,12 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Alle abgeschlossenen Veranstaltungen{% endblock %}
+{% block content %}
+    <ul>
+        {% for event_id, title in events|dictsort|reverse %}
+            <li>
+                <a href="{{ cdedblink("event/show_past_event", {"event_id": event_id})|e }}">{{ title|e }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -14,7 +14,7 @@ from cdedb.frontend.application import Application
 from cdedb.backend.common import do_singularization
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
-from cdedb.backend.cde import CdeBackend
+from cdedb.backend.cde import CdEBackend
 from cdedb.backend.event import EventBackend
 
 _BASICCONF = BasicConfig()
@@ -57,7 +57,7 @@ class BackendUsingTest(unittest.TestCase):
         classes = {
             "core": CoreBackend,
             "session": SessionBackend,
-            "cde": CdeBackend,
+            "cde": CdEBackend,
             "event": EventBackend,
             # TODO add more backends when they become available
         }
@@ -87,7 +87,7 @@ USER_DICT = {
         'id': 1,
         'username': "anton@example.cde",
         'password': "secret",
-        'displayname': "Anton",
+        'display_name': "Anton",
         'given_names': "Anton Armin A.",
         'family_name': "Administrator",
     },
@@ -95,7 +95,7 @@ USER_DICT = {
         'id': 2,
         'username': "berta@example.cde",
         'password': "secret",
-        'displayname': "Bertå",
+        'display_name': "Bertå",
         'given_names': "Bertålotta",
         'family_name': "Beispiel",
     },
@@ -103,7 +103,7 @@ USER_DICT = {
         'id': 3,
         'username': "charly@example.cde",
         'password': "secret",
-        'displayname': "Charly",
+        'display_name': "Charly",
         'given_names': "Charly C.",
         'family_name': "Clown",
     },
@@ -111,7 +111,7 @@ USER_DICT = {
         'id': 4,
         'username': "daniel@example.cde",
         'password': "secret",
-        'displayname': "Daniel",
+        'display_name': "Daniel",
         'given_names': "Daniel D.",
         'family_name': "Dino",
     },
@@ -119,7 +119,7 @@ USER_DICT = {
         'id': 5,
         'username': "emilia@example.cde",
         'password': "secret",
-        'displayname': "Emilia",
+        'display_name': "Emilia",
         'given_names': "Emilia E.",
         'family_name': "Eventis",
     },
@@ -127,7 +127,7 @@ USER_DICT = {
         'id': 6,
         'username': "ferdinand@example.cde",
         'password': "secret",
-        'displayname': "Ferdinand",
+        'display_name': "Ferdinand",
         'given_names': "Ferdinand F.",
         'family_name': "Findus",
     },
@@ -135,7 +135,7 @@ USER_DICT = {
         'id': 7,
         'username': "garcia@example.cde",
         'password': "secret",
-        'displayname': "Garcia",
+        'display_name': "Garcia",
         'given_names': "Garcia G.",
         'family_name': "Generalis",
     },
@@ -198,9 +198,10 @@ class FrontendTest(unittest.TestCase):
 
     def basic_validate(self):
         self.assertNotIn(b"cgitb", self.response.body)
-        texts = self.response.lxml.xpath('/html/head/title/text()')
-        self.assertNotEqual(0, len(texts))
-        self.assertNotEqual('Fehler', texts[0])
+        if self.response.content_type == "text/html":
+            texts = self.response.lxml.xpath('/html/head/title/text()')
+            self.assertNotEqual(0, len(texts))
+            self.assertNotEqual('Fehler', texts[0])
 
     def get(self, *args, **kwargs):
         self.response = self.app.get(*args, **kwargs)

@@ -19,7 +19,7 @@ import inspect
 import stat
 import serpent
 import logging
-from cdedb.common import glue
+from cdedb.common import glue, PrivilegeError
 from cdedb.backend.common import do_singularization
 from cdedb.serialization import deserialize, SERIALIZERS
 
@@ -48,7 +48,7 @@ def _process_function(backend, fun):
                 kwargs = deserialize(kwargs)
                 return fun(rs, *args, **kwargs)
             else:
-                raise RuntimeError("Permission denied")
+                raise PrivilegeError("Establishing session failed.")
         except:
             backend.logger.error(glue(
                 ">>>\n>>>\n>>>\n>>> Exception for {} of {} with arguments",

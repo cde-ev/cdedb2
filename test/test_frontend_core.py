@@ -19,17 +19,17 @@ class TestCoreFrontend(FrontendTest):
                 f['password'] = user['password']
                 self.submit(f)
                 self.assertEqual(
-                    user['displayname'],
+                    user['display_name'],
                     self.response.lxml.get_element_by_id('displayname').text_content())
 
     @as_users("anton", "berta", "emilia")
     def test_logout(self, user):
         self.assertEqual(
-            user['displayname'],
+            user['display_name'],
             self.response.lxml.get_element_by_id('displayname').text_content())
         f = self.response.forms['logoutform']
         self.submit(f)
-        self.assertNotIn(user['displayname'], self.response)
+        self.assertNotIn(user['display_name'], self.response)
         self.assertIn('loginform', self.response.forms)
 
     @as_users("anton", "berta", "emilia")
@@ -57,14 +57,14 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f)
         self.logout()
-        self.assertNotIn(user['displayname'], self.response)
+        self.assertNotIn(user['display_name'], self.response)
         self.login(user)
         self.assertIn('loginform', self.response.forms)
         new_user = copy.deepcopy(user)
         new_user['password'] = new_password
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(user['displayname'], self.response)
+        self.assertIn(user['display_name'], self.response)
 
     def test_reset_password(self):
         for i, u in enumerate(("anton", "berta", "emilia")):
@@ -103,7 +103,7 @@ class TestCoreFrontend(FrontendTest):
                 new_user['password'] = new_password
                 self.login(new_user)
                 self.assertNotIn('loginform', self.response.forms)
-                self.assertIn(user['displayname'], self.response)
+                self.assertIn(user['display_name'], self.response)
 
     def test_admin_password_reset(self):
         anton = USER_DICT['anton']
@@ -129,7 +129,7 @@ class TestCoreFrontend(FrontendTest):
         new_berta['password'] = new_password
         self.login(new_berta)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(new_berta['displayname'], self.response)
+        self.assertIn(new_berta['display_name'], self.response)
 
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
@@ -149,14 +149,14 @@ class TestCoreFrontend(FrontendTest):
         f['password'] = user['password']
         self.submit(f)
         self.logout()
-        self.assertNotIn(user['displayname'], self.response)
+        self.assertNotIn(user['display_name'], self.response)
         self.login(user)
         self.assertIn('loginform', self.response.forms)
         new_user = copy.deepcopy(user)
         new_user['username'] = new_username
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(user['displayname'], self.response)
+        self.assertIn(user['display_name'], self.response)
 
     def test_admin_username_change(self):
         new_username = "zelda@example.cde"
@@ -178,7 +178,7 @@ class TestCoreFrontend(FrontendTest):
         new_berta['username'] = new_username
         self.login(new_berta)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(new_berta['displayname'], self.response)
+        self.assertIn(new_berta['display_name'], self.response)
 
     @as_users("anton")
     def test_adjust_privileges(self, user):
@@ -191,11 +191,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_event_admin').checked)
         f = self.response.forms['adjustmentform']
-        ## TODO multiple checkboxes with the same name can be handled as follows in webtest-2.0.17
-        ## f['newprivileges'] = ("2", "4")
-        ## the following is a hack ...
-        f.get('newprivileges', index=1).checked = True
-        f.get('newprivileges', index=2).checked = True
+        ## webtest requires a list and not a tuple on the RHS
+        f['newprivileges'] = ["2", "4"]
         self.submit(f)
         self.traverse({'href': '/adjustprivileges'})
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)

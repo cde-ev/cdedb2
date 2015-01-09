@@ -116,7 +116,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTrue(len(blob) > 10000)
 
     @as_users("anton", "berta")
-    def test_member_search_single(self, user):
+    def test_member_search_one(self, user):
         self.traverse({'href': '/membersearch'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
@@ -179,14 +179,15 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_member_data.persona_id'].checked = True
         f['qsel_birthday'].checked = True
         f['qsel_decided_search'].checked = True
+        f['qsel_free_form'].checked = True
         f['qsel_given_names'].checked = True
         f['qord_primary'] = "member_data.persona_id"
         self.response = f.submit("CSV")
-        expectation = '''member_data.persona_id;given_names;birthday;decided_search
-2;Bertålotta;1981-02-11;True
-3;Charly C.;1984-05-13;True
-4;Daniel D.;1963-02-19;False
-6;Ferdinand F.;1988-01-01;True
+        expectation = '''member_data.persona_id;given_names;birthday;free_form;decided_search
+2;Bertålotta;1981-02-11;Jede Menge Gefasel         Gut verteilt        Über mehrere Zeilen;True
+3;Charly C.;1984-05-13;;True
+4;Daniel D.;1963-02-19;;False
+6;Ferdinand F.;1988-01-01;;True
 '''.encode('utf-8')
         self.assertEqual(expectation, self.response.body)
 

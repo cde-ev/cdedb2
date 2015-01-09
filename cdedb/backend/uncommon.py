@@ -8,7 +8,7 @@ dependencies.
 """
 
 from cdedb.database.connection import Atomizer
-from cdedb.common import glue, PERSONA_DATA_FIELDS
+from cdedb.common import glue, PERSONA_DATA_FIELDS, PrivilegeError
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.common import (
     AbstractBackend, AuthShim, affirm_validation as affirm,
@@ -58,12 +58,12 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
-        query = glue(
-            "SELECT {} FROM {} AS u JOIN core.personas AS p",
-            "ON u.persona_id = p.id WHERE p.id = ANY(%s)").format(
-                ", ".join(PERSONA_DATA_FIELDS +
-                          self.user_management['data_fields']),
-                self.user_management['data_table'])
+        query = glue("SELECT {} FROM {} AS u JOIN core.personas AS p",
+                     "ON u.persona_id = p.id WHERE p.id = ANY(%s)")
+        query = query.format(
+            ", ".join(PERSONA_DATA_FIELDS +
+                      self.user_management['data_fields']),
+            self.user_management['data_table'])
         data = self.query_all(rs, query, (ids,))
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
@@ -84,7 +84,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
                       if key in self.user_management['data_fields'])
 
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
-            raise RuntimeError("Not enough privileges.")
+            raise PrivilegeError("Not privileged.")
 
         pdata = {key:data[key] for key in pkeys}
         ret = 0
@@ -119,14 +119,14 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         return self.set_user_data(rs, data)
 
     ## @access("realm_user")
-    ## @singularize("get_data_single")
+    ## @singularize("get_data_one")
     @abc.abstractmethod
     def get_data(self, rs, ids):
         """Aquire data sets for specified ids.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
-        :rtype: [{str: object}]
+        :rtype: {int: {str: object}}
         """
         ids = affirm_array("int", ids)
         return self.retrieve_user_data(rs, ids)
@@ -236,7 +236,10 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
             ret = self.create_user(rs, data)
             query = glue("UPDATE core.genesis_cases SET case_status = %s",
                          "WHERE id = %s")
-            self.query_exec(rs, query, (const.GenesisStati.finished, case_id))
+            num = self.query_exec(rs, query, (const.GenesisStati.finished,
+                                              case_id))
+            if not num:
+                raise RuntimeError("Closing case failed.")
 
         ## deescalate privileges
         rs.conn = orig_conn

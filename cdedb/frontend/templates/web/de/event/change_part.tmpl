@@ -1,0 +1,17 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}{{ data['parts'][values['part_id']]['title']|e }} ({{ data['title']|e }}) bearbeiten{% endblock %}
+{% block content %}
+    <a href="{{ cdedblink("event/change_event")|e }}">Abbrechen</a>
+    <form action="{{ cdedblink('event/change_part')|e }}" method="POST" id="changepartform">
+        <table>
+            {{ util.tab_input_text(name="title", label="Name") }}
+            {{ util.tab_input_text(name="part_begin", label="Beginn") }}
+            {{ util.tab_input_text(name="part_end", label="Ende") }}
+            {{ util.tab_input_text(name="fee", label="Teilnehmerbeitrag") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+        </div>
+    </form>
+{% endblock %}

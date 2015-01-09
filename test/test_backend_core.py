@@ -36,7 +36,7 @@ class TestCoreBackend(BackendTest):
         new_name = "Zelda"
         self.core.set_persona_data(self.key, {'id': user['id'],
                                               'display_name': new_name})
-        self.assertEqual(new_name, self.core.retrieve_persona_data_single(
+        self.assertEqual(new_name, self.core.retrieve_persona_data_one(
             self.key, user['id'])['display_name'])
 
     @as_users("anton", "berta")
@@ -134,7 +134,7 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
         self.assertGreater(new_id, 0)
-        new_data = self.core.get_data_single(self.key, new_id)
+        new_data = self.core.get_data_one(self.key, new_id)
         self.assertEqual(data, new_data)
         ldap_con = ldap.initialize("ldap://localhost")
         ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",

@@ -93,8 +93,10 @@ storage-test:
 	rm -rf "/tmp/cdedb-store/"
 	mkdir -p "/tmp/cdedb-store/foto/"
 	cp test/ancillary_files/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 /tmp/cdedb-store/foto/
+	mkdir -p "/tmp/cdedb-store/minor_form/"
 	mkdir -p "/tmp/cdedb-store/testfiles/"
 	cp test/ancillary_files/picture.png /tmp/cdedb-store/testfiles/
+	cp test/ancillary_files/form.pdf /tmp/cdedb-store/testfiles/
 
 ldap:
 	echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true

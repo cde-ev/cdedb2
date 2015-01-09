@@ -1,0 +1,15 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Veranstaltung anlegen{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/create_past_event')|e }}" method="POST" id="createeventform">
+        <table>
+            {{ util.tab_input_text(name="title", label="Titel") }}
+            {{ util.tab_input_text(name="organizer", label="Organisator") }}
+            {{ util.tab_input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Anlegen") }}
+        </div>
+    </form>
+{% endblock %}

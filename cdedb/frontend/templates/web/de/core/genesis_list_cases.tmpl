@@ -1,10 +1,10 @@
-{% extends "web/de/cde/base.tmpl" %}
+{% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block title %}Accountanfragen (zurzeit {{ to_review|length|e }} zu begutachten){% endblock %}
 {% block content %}
     <ul>
-        {% for case_id, entry in to_review.items() %}
+        {% for case_id, entry in to_review|dictsort %}
             <li>
                 {{ entry['full_name']|e }} -- {{ entry['username']|e }}<br>
                 {{ entry['notes']|e|linebreaks }}<br>
@@ -25,7 +25,7 @@
     </ul>
     <h1>Offene bestätigte Anfragen (zurzeit {{ approved|length|e }})</h1>
     <ul>
-        {% for case_id, entry in approved.items() %}
+        {% for case_id, entry in approved|dictsort %}
             <li>
                 {{ entry['full_name']|e }} -- {{ entry['username']|e }}
                 <form action="{{ cdedblink('core/genesis_timeout')|e }}" method="POST" id="genesistimeoutform{{ loop.index|e }}">

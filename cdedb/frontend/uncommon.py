@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# pylint: disable=not-callable
+## self.user_management['proxy'] confuses pylint
 
 """More common infrastructure for the frontend services.
 
@@ -75,8 +77,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.redirect(rs, "core/index")
         if self.coreproxy.get_realm(rs, persona_id) != self.realm:
             return werkzeug.exceptions.NotFound()
-        data = self.user_management['proxy'](self).get_data_single(rs,
-                                                                   persona_id)
+        data = self.user_management['proxy'](self).get_data_one(rs, persona_id)
         data['db_privileges_ascii'] = ", ".join(
             bit.name for bit in const.PrivilegeBits
             if data['db_privileges'] & bit.value)
@@ -87,8 +88,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def change_user_form(self, rs, persona_id):
         """Render form."""
-        data = self.user_management['proxy'](self).get_data_single(rs,
-                                                                   persona_id)
+        data = self.user_management['proxy'](self).get_data_one(rs, persona_id)
         merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username': data['username']})
 
@@ -112,8 +112,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
-        data = self.user_management['proxy'](self).get_data_single(rs,
-                                                                   persona_id)
+        data = self.user_management['proxy'](self).get_data_one(rs, persona_id)
         merge_dicts(rs.values, data)
         return self.render(rs, "admin_change_user",
                            {'username': data['username']})

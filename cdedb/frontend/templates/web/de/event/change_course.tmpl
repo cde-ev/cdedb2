@@ -1,0 +1,25 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}) bearbeiten{% endblock %}
+{% block content %}
+    <a href="{{ cdedblink("event/show_course")|e }}">Abbrechen</a>
+    <form action="{{ cdedblink('event/change_course')|e }}" method="POST" id="changecourseform">
+        <table>
+            {{ util.tab_input_text(name="title", label="Titel") }}
+            {{ util.tab_input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+            {{ util.tab_input_text(name="nr", label="Nummer") }}
+            {{ util.tab_input_text(name="shortname", label="Kürzel") }}
+            {{ util.tab_input_text(name="instructors", label="Kursleiter") }}
+            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for part_id, pdata in event_data['parts']|dictsort %}
+                {{ myentries.append((part_id, pdata['title'], "manipulator_checkbox_{}".format(part_id)))|e }}
+            {% endfor %}
+            {{ util.tab_input_checkboxes(name="parts", title="Veranstaltungsteile", entries=myentries) }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+        </div>
+    </form>
+{% endblock %}

@@ -1,6 +1,6 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Privilegien für {{ data['displayname']|e }} ({{ data['username']|e }}) setzen{% endblock %}
+{% block title %}Privilegien für {{ data['display_name']|e }} ({{ data['username']|e }}) setzen{% endblock %}
 {% block content %}
     Bisherige Privilegien:
     <ul>
@@ -23,9 +23,7 @@
             {% for bit in bits %}
                 {{ myentries.append((bit.value, i18n(bit|string), "manipulator_checkbox_{}".format(bit.name)))|e }}
             {% endfor %}
-            entries {{ myentries|e }}
-            values {{ values.getlist('newprivileges')|e }}
-            {{ util.input_checkboxes(name="newprivileges", entries=myentries) }}
+            {{ util.input_checkboxes(name="newprivileges", title="Bits", entries=myentries) }}
             {{ util.input_submit(value="Privilegien setzen") }}
         </div>
     </form>
