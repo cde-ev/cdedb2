@@ -205,3 +205,16 @@ Now start the apache and access ``https://localhost/db/`` with a
 browser. Finally you can shutdown the backends with::
 
   make quit-all
+
+Refreshing the running instance
+-------------------------------
+
+Changes to the code can be propagate as follows to the current instance. For
+templates no action is necessary. For the frontend updating the mtime the
+wsgi file resets the apache workers::
+
+  touch wsgi/cdedb.wsgi
+
+For the backend a restart is required (``make quit-all`` and ``make
+run-...``). For the database you should restart pgbouncer (which probably
+has some open connections left) before doing a ``make sample-data``.
