@@ -37,13 +37,19 @@
                     <li>
                         aktuelle Veranstaltungen
                         <ul>
-                            {% for anid, title in sidebar_events|dictsort|reverse %}
+                            {% for anid, entry in sidebar_events|dictsort|reverse %}
                                 <li>
-                                    <a href="{{ cdedblink("event/show_event", {"event_id": anid})|e }}">{{ title|e }}</a>
+                                    <a href="{{ cdedblink("event/show_event", {"event_id": anid})|e }}">{{ entry['title']|e }}</a>
                                     {% if anid == values.get('event_id') %}
                                         <ul>
-                                            <li>Anmeldung</li>
-                                            <li>Fragebogen</li>
+                                            {% if not entry['registered'] %}
+                                                <li>Anmelden</li>
+                                            {% else %}
+                                                <li>Anmeldungsdaten</li>
+                                                {% if entry['use_questionnaire'] %}
+                                                    <li>Fragebogen</li>
+                                                {% endif %}
+                                            {% endif %}
                                             {% if anid in user.orga or is_admin %}
                                                 <li><a href="{{ cdedblink("event/change_event", {"event_id": anid})|e }}">Konfiguration</a></li>
                                                 <li><a href="{{ cdedblink("event/create_course", {"event_id": anid})|e }}">Kurs hinzufügen</a></li>

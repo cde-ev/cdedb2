@@ -411,5 +411,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton", "garcia")
     def test_sidebar_events(self, user):
-        expectation = {1: 'Große Testakademie 2222',}
+        expectation = {1: {'registered': False,
+                           'title': 'Große Testakademie 2222',
+                           'use_questionnaire': False}}
         self.assertEqual(expectation, self.event.sidebar_events(self.key))

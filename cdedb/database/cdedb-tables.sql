@@ -437,6 +437,8 @@ CREATE TABLE event.registrations (
 CREATE INDEX idx_registrations_persona_id ON event.registrations(persona_id);
 CREATE INDEX idx_registrations_event_id ON event.registrations(event_id);
 CREATE INDEX idx_registrations_payment ON event.registrations(payment);
+GRANT SELECT, INSERT, UPDATE ON event.registrations TO cdb_persona;
+GRANT SELECT, UPDATE ON event.registrations_id_seq TO cdb_persona;
 
 CREATE TABLE event.registration_parts (
         id                      serial PRIMARY KEY,

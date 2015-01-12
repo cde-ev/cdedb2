@@ -237,25 +237,35 @@ class EventBackend(AbstractUserBackend):
     def sidebar_events(self, rs):
         """List all events which appear in the sidebar.
 
-        That is all which are currently open for registration and
-        furthermore all which were orga'd by this persona.
+        That is all which are currently under way and furthermore all which
+        are orga'd by this persona.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :rtype: {int: str}
-        :returns: Mapping of event ids to titles.
+        :rtype: {int: {str: object}}
+        :returns: Mapping of event ids to infos (title and registration status).
         """
-        query = glue("SELECT id, title, registration_start,",
-                     "registration_hard_limit FROM event.events",
-                     "WHERE registration_start IS NOT NULL")
-        data = self.query_all(rs, query, tuple())
-        ret = {e['id']: e['title'] for e in data if e['id'] in rs.user.orga}
-        today = datetime.datetime.now().date()
-        for e in data:
-            if (e['registration_start'] <= today
-                    and (e['registration_hard_limit'] is None
-                         or e['registration_hard_limit'] >= today)):
-                ret[e['id']] = e['title']
-        return ret
+        with Atomizer(rs):
+            ## outer join, so we catch all events orga'd
+            query = glue(
+                "SELECT e.id, e.registration_start, e.use_questionnaire,",
+                "e.title, MAX(p.part_end) AS event_end FROM event.events AS e",
+                "LEFT OUTER JOIN event.event_parts AS p ON p.event_id = e.id",
+                "WHERE registration_start IS NOT NULL GROUP BY e.id")
+            data = self.query_all(rs, query, tuple())
+            today = datetime.datetime.now().date()
+            ret = {e['id']: {"title": e['title'],
+                             "use_questionnaire": e["use_questionnaire"]}
+                   for e in data if (e['id'] in rs.user.orga
+                                     or (e['registration_start'] <= today
+                                         and e['event_end'] is not None
+                                         and e['event_end'] >= today))}
+            query = glue("SELECT event_id FROM event.registrations",
+                         "WHERE event_id = ANY(%s)")
+            data = self.query_all(rs, query, (tuple(ret.keys()),))
+            registered = {e['event_id'] for e in data}
+            for event_id in ret:
+                ret[event_id]["registered"] = (event_id in registered)
+            return ret
 
     @access("persona")
     def list_courses(self, rs, event_id, past):
