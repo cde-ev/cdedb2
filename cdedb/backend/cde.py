@@ -250,9 +250,9 @@ class CdEBackend(AbstractUserBackend):
         :rtype: int
         :returns: The id of the newly created persona.
         """
-        data = affirm("member_data", data, initialization=True)
+        data = affirm("member_data", data, creation=True)
         change_note = affirm("str", change_note)
-        ## insert default for optional and non-settable fields
+        ## insert default for optional and non-settable fields for changelog
         update = {
             'balance': decimal.Decimal(0),
             'decided_search': False,

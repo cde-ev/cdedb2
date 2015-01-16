@@ -144,7 +144,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     def create_user(self, rs, data):
         """Create new user account."""
         data = check(rs, self.user_management['validator'], data,
-                     initialization=True)
+                     creation=True)
         if rs.errors:
             return self.create_user_form(rs)
         new_id = self.user_management['proxy'](self).create_user(rs, data)
@@ -183,7 +183,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             rs.notify("error", "Broken link.")
             return self.redirect(rs, "core/index")
         data = check(rs, self.user_management['validator'], data,
-                     initialization=True)
+                     creation=True)
         if rs.errors:
             return self.genesis_form(rs, case_id, secret, data['username'])
         new_id = self.user_management['proxy'](self).genesis(rs, case_id,

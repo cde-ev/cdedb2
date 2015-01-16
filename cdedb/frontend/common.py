@@ -764,7 +764,7 @@ class FrontendUser(CommonUser):
 
 def access(role, modi=None):
     """The @access decorator marks a function of a frontend for publication and
-    adds initialization code around each call.
+    adds creation code around each call.
 
     :type role: str
     :param role: least level of privileges required

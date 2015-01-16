@@ -21,7 +21,7 @@ import werkzeug.wrappers
 import psycopg2.extensions
 
 class Application(BaseApp):
-    """This does initialization upon every request and then hands it on to the
+    """This does creation upon every request and then hands it on to the
     appropriate frontend."""
     def __init__(self, configpath):
         """

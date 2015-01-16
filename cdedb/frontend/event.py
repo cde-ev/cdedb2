@@ -283,7 +283,7 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdatadict("title", "organizer", "description")
     def create_past_event(self, rs, data):
         """Add new concluded event."""
-        data = check(rs, "past_event_data", data, initialization=True)
+        data = check(rs, "past_event_data", data, creation=True)
         if rs.errors:
             return self.create_past_event_form(rs)
         new_id = self.eventproxy.create_past_event(rs, data)
@@ -323,7 +323,7 @@ class EventFrontend(AbstractUserFrontend):
     def create_past_course(self, rs, event_id, data):
         """Add new concluded course."""
         data['event_id'] = event_id
-        data = check(rs, "past_course_data", data, initialization=True)
+        data = check(rs, "past_course_data", data, creation=True)
         if rs.errors:
             return self.create_past_course_form(rs, event_id)
         new_id = self.eventproxy.create_past_course(rs, data)
@@ -625,7 +625,7 @@ class EventFrontend(AbstractUserFrontend):
             data['orgas'] = {check(rs, "cdedbid", x.strip(), "orga_ids")
                              for x in data['orga_ids'].split(",")}
         del data['orga_ids']
-        data = check(rs, "event_data", data, initialization=True)
+        data = check(rs, "event_data", data, creation=True)
         if rs.errors:
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
@@ -689,7 +689,7 @@ class EventFrontend(AbstractUserFrontend):
         """Create a new course associated to an event organized via DB."""
         data['event_id'] = event_id
         data['parts'] = parts
-        data = check(rs, "course_data", data, initialization=True)
+        data = check(rs, "course_data", data, creation=True)
         if rs.errors:
             return self.create_course_form(rs, event_id)
         new_id = self.eventproxy.create_course(rs, data)

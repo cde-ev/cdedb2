@@ -10,7 +10,6 @@ import copy
 
 class TestCdEBackend(BackendTest):
     used_backends = ("core", "cde")
-    maxDiff = None
 
     @as_users("anton", "berta")
     def test_basics(self, user):
@@ -75,7 +74,7 @@ class TestCdEBackend(BackendTest):
             'cloud_account': True,
             'specialisation': None,
             'id': 1,
-            'address_supplement': '',
+            'address_supplement': None,
             'username': 'anton@example.cde',
             'affiliation': None,
             'interests': None,
@@ -85,21 +84,21 @@ class TestCdEBackend(BackendTest):
             'balance': decimal.Decimal('17.50'),
             'decided_search': True,
             'timeline': None,
-            'address_supplement2': '',
+            'address_supplement2': None,
             'given_names': 'Anton Armin A.',
             'address': 'Auf der Düne 42',
             'status': 0,
             'db_privileges': 1,
             'gender': 1,
-            'title': '',
-            'mobile': '',
-            'country': '',
-            'country2': '',
+            'title': None,
+            'mobile': None,
+            'country': None,
+            'country2': None,
             'family_name': 'Administrator',
             'trial_member': False,
             'display_name': 'Anton',
-            'name_supplement': '',
-            'notes': '',
+            'name_supplement': None,
+            'notes': None,
             'telephone': '+49 (234) 98765',
             'address2': 'Unter dem Hügel 23',
             'postal_code': '03205',
@@ -122,7 +121,7 @@ class TestCdEBackend(BackendTest):
             'balance': decimal.Decimal('12.50'),
             'decided_search': True,
             'timeline': 'Überall',
-            'address_supplement2': '',
+            'address_supplement2': None,
             'given_names': 'Bertålotta',
             'address': 'Im Garten 77',
             'status': 0,
@@ -130,13 +129,13 @@ class TestCdEBackend(BackendTest):
             'gender': 0,
             'title': 'Dr.',
             'mobile': '0163/123456789',
-            'country': '',
+            'country': None,
             'country2': 'Far Away',
             'family_name': 'Beispiel',
             'trial_member': False,
             'display_name': 'Bertå',
             'name_supplement': 'MdB',
-            'notes': '',
+            'notes': None,
             'telephone': '+49 (5432) 987654321',
             'address2': 'Strange Road 9 3/4',
             'postal_code': '34576',
@@ -152,10 +151,10 @@ class TestCdEBackend(BackendTest):
             'username': 'anton@example.cde',
             'given_names': 'Anton Armin A.',
             'status': 0,
-            'title': '',
+            'title': None,
             'family_name': 'Administrator',
             'display_name': 'Anton',
-            'name_supplement': '',
+            'name_supplement': None,
             },
             2: {
             'id': 2,
@@ -183,7 +182,7 @@ class TestCdEBackend(BackendTest):
             "order": ("family_name",),
         }
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({1, 2, 6}, {e['persona_id'] for e in result})
+        self.assertEqual({1, 2, 6, 9}, {e['persona_id'] for e in result})
 
     @as_users("anton")
     def test_user_search(self, user):
@@ -197,7 +196,7 @@ class TestCdEBackend(BackendTest):
             "order": ("family_name",),
         }
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({1, 2, 3, 4, 6, 7}, {e['persona_id'] for e in result})
+        self.assertEqual({1, 2, 3, 4, 6, 7, 9}, {e['persona_id'] for e in result})
 
     @as_users("anton")
     def test_user_search_operators(self, user):

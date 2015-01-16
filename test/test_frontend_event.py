@@ -436,10 +436,10 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Universale Akademie bearbeiten")
         self.assertNotIn("own car available", self.response.text)
         self.assertIn("broom", self.response.text)
-        f = self.response.forms['removefieldform2']
+        f = self.response.forms['removefieldform3']
         self.submit(f)
         self.assertTitle("Universale Akademie bearbeiten")
-        self.assertNotIn("transportation", self.response.text)
+        self.assertNotIn("food_stuff", self.response.text)
 
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):

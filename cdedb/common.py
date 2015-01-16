@@ -319,4 +319,17 @@ PAST_COURSE_FIELDS = ("id", "event_id", "title", "description")
 #: Fields of a course associated to an event organized via the CdEDB
 COURSE_FIELDS = PAST_COURSE_FIELDS + ("nr", "shortname", "instructors", "notes")
 
+#: Fields of a registration to an event organized via the CdEDB
+REGISTRATION_FIELDS = (
+    "id", "persona_id", "event_id", "orga_notes", "payment",
+    "parental_agreement", "mixed_lodging", "checkin", "foto_consent",
+    "field_data")
+
+#: Fields of a registration which are specific for each part of the event
+REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "course_id",
+                            "status", "lodgement_id", "course_instructor")
+
+#: Fields of a lodgement entry (one house/room)
+LODGMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
+
 EPSILON = 10**(-6) #:

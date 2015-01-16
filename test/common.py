@@ -52,6 +52,10 @@ class BackendShim:
 class BackendUsingTest(unittest.TestCase):
     used_backends = None
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.maxDiff = None
+
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         classes = {
@@ -157,6 +161,10 @@ def as_users(*users):
 
 class FrontendTest(unittest.TestCase):
     lock_file = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.maxDiff = None
 
     @classmethod
     def setUpClass(cls):

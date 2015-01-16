@@ -41,6 +41,9 @@ VALID_QUERY_OPERATORS = {
     "float": (_ops.less, _ops.between, _ops.greater, _ops.empty, _ops.nonempty),
     "date": (_ops.equal, _ops.oneof, _ops.less, _ops.lessequal, _ops.between,
              _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
+    "datetime": (
+        _ops.equal, _ops.oneof, _ops.less, _ops.lessequal, _ops.between,
+        _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
     "bool": (_ops.equal, _ops.empty, _ops.nonempty),
 }
 
@@ -193,6 +196,34 @@ QUERY_SPECS = {
         ("course_id", "int"),
         ("notes", "str"),
         ]),
+    "qview_registration" :
+    collections.OrderedDict([
+        ("reg.id", "int"),
+        ("reg.orga_notes", "str"),
+        ("reg.payment", "date"),
+        ("reg.parental_agreement", "bool"),
+        ("reg.mixed_lodging", "bool"),
+        ("reg.checkin", "datetime"),
+        ("reg.foto_consent", "bool"),
+        ("persona.username", "str"),
+        ("persona.status", "int"),
+        ("user_data.family_name", "str"),
+        ("user_data.birth_name", "str"),
+        ("user_data.given_names", "str"),
+        ("persona.display_name", "str"),
+        ("user_data.title", "str"),
+        ("user_data.name_supplement", "str"),
+        ("user_data.gender", "int"),
+        ("user_data.birthday", "date"),
+        ("user_data.telephone", "str"),
+        ("user_data.mobile", "str"),
+        ("user_data.address", "str"),
+        ("user_data.address_supplement", "str"),
+        ("user_data.postal_code", "str"),
+        ("user_data.location", "str"),
+        ("user_data.country", "str"),
+        ## This will be augmented with additional fields on the fly.
+        ]),
 }
 
 #: Supstitute for SQL views, this is the target of the FROM clause of the
@@ -219,6 +250,7 @@ QUERY_VIEWS = {
         "ON personas.id = user_data.persona_id)",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
+    "qview_registration": None, ## dummy -- value will be generated on the fly
 }
 
 def mangle_query_input(rs, spec):

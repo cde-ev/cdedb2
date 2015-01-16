@@ -142,7 +142,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :returns: The id of the newly created persona.
         """
         data = affirm(self.user_management['validator'], data,
-                      initialization=True)
+                      creation=True)
 
         keys = tuple(key for key in data
                      if key in self.user_management['data_fields'])
@@ -208,7 +208,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         case_id = affirm("int", case_id)
         secret = affirm("str", secret)
         data = affirm(self.user_management['validator'], data,
-                      initialization=True)
+                      creation=True)
 
         query = glue("SELECT username, case_status, persona_status, secret",
                      "FROM core.genesis_cases WHERE id = %s")

@@ -5,7 +5,6 @@
 -- TODO: create indices
 -- TODO: think about ctime/mtime hack for evreg
 -- TODO: tables: quota, lastschrift_*, finance_log, mailinglist_*, assembly_*, cdefiles_*
--- TODO: evreg-tables: busses, mitnahme-support
 
 ---
 --- SCHEMA core
@@ -164,8 +163,8 @@ CREATE TABLE core.changelog (
         free_form               varchar,
         balance                 numeric(8,2) NOT NULL,
         decided_search          boolean,
-        trial_member            boolean NOT NULL,
-        bub_search              boolean NOT NULL
+        trial_member            boolean,
+        bub_search              boolean
 );
 CREATE INDEX idx_changelog_change_status ON core.changelog(change_status);
 CREATE INDEX idx_changelog_persona_id ON core.changelog(persona_id);
@@ -229,7 +228,7 @@ CREATE TABLE cde.member_data (
         interests               varchar,
         -- anything else the member wants to tell
         free_form               varchar,
-        balance                 numeric(8,2) NOT NULL DEFAULT 0,
+        balance                 numeric(8,2) NOT NULL DEFAULT 0.00,
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean NOT NULL DEFAULT FALSE,
         -- True for trial members (first semester after the first official academy)
@@ -406,15 +405,18 @@ CREATE INDEX idx_field_definitions_event_id ON event.field_definitions(event_id)
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.field_definitions TO cdb_persona;
 GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
 
-CREATE TABLE event.lodgments (
-        id                       serial PRIMARY KEY,
-        event_id                 integer NOT NULL REFERENCES event.events(id),
-        moniker                  varchar NOT NULL,
-        capacity                 integer,
+CREATE TABLE event.lodgements (
+        id                      serial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        moniker                 varchar NOT NULL,
+        capacity                integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
-        reserve                  integer DEFAULT 0,
-        notes                    varchar
+        reserve                 integer NOT NULL DEFAULT 0,
+        notes                   varchar
 );
+CREATE INDEX idx_lodgements_event_id ON event.lodgements(event_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgements TO cdb_persona;
+GRANT SELECT, UPDATE ON event.lodgements_id_seq TO cdb_persona;
 
 CREATE TABLE event.registrations (
         id                      serial PRIMARY KEY,
@@ -424,7 +426,7 @@ CREATE TABLE event.registrations (
         orga_notes              varchar,
         payment                 date,
         -- parental consent for minors (NULL if not (yet) given, e.g. non-minors)
-        parental_agreement      date,
+        parental_agreement      boolean,
         mixed_lodging           boolean,
         checkin                 timestamp WITH TIME ZONE,
         -- foto consent (documentation, password protected gallery)
@@ -432,11 +434,10 @@ CREATE TABLE event.registrations (
 
         -- only basic data should be defined here and everything else will
         -- be handeled via additional fields
-        field_data                jsonb NOT NULL
+        field_data              jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX idx_registrations_persona_id ON event.registrations(persona_id);
 CREATE INDEX idx_registrations_event_id ON event.registrations(event_id);
-CREATE INDEX idx_registrations_payment ON event.registrations(payment);
 GRANT SELECT, INSERT, UPDATE ON event.registrations TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registrations_id_seq TO cdb_persona;
 
@@ -444,13 +445,17 @@ CREATE TABLE event.registration_parts (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
         part_id                 integer NOT NULL REFERENCES event.event_parts(id),
+        course_id               integer REFERENCES event.courses(id),
         -- enum for status of this registration part
         -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL DEFAULT 0,
-        logdment_id             integer REFERENCES event.lodgments(id),
+        lodgement_id            integer REFERENCES event.lodgements(id),
         -- this is NULL if not an instructor
         course_instructor       integer REFERENCES event.courses(id)
 );
+CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
+GRANT SELECT, INSERT, UPDATE ON event.registration_parts TO cdb_persona;
+GRANT SELECT, UPDATE ON event.registration_parts_id_seq TO cdb_persona;
 
 CREATE TABLE event.course_choices (
         id                      bigserial PRIMARY KEY,
@@ -459,6 +464,9 @@ CREATE TABLE event.course_choices (
         course_id               integer NOT NULL REFERENCES event.courses(id),
         rank                    integer NOT NULL
 );
+CREATE UNIQUE INDEX idx_course_choices_constraint ON event.course_choices(registration_id, part_id, course_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
+GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 
 CREATE TABLE event.questionnaire_rows (
         id                      bigserial PRIMARY KEY,
@@ -468,8 +476,11 @@ CREATE TABLE event.questionnaire_rows (
         pos                     integer NOT NULL,
         title                   varchar,
         info                    varchar,
-        readonly                boolean NOT NULL
+        readonly                boolean
 );
+CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
 
 ---
 --- SCHEMA past_event
@@ -514,7 +525,7 @@ CREATE TABLE past_event.participants (
 CREATE INDEX idx_participants_persona_id ON past_event.participants(persona_id);
 CREATE INDEX idx_participants_event_id ON past_event.participants(event_id);
 CREATE INDEX idx_participants_course_id ON past_event.participants(course_id);
-CREATE UNIQUE INDEX idx_participants_constraint ON (past_event.participants(persona_id), past_event.participants(event_id), past_event.participants(course_id));
+CREATE UNIQUE INDEX idx_participants_constraint ON past_event.participants(persona_id, event_id, course_id);
 GRANT SELECT ON past_event.participants TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;

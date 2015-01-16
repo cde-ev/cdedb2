@@ -249,10 +249,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     def _sanitize_db_input(obj):
         """Mangle data to make psycopg happy.
 
-        Convert :py:class:`tuple`s (and all other iterables) into
-        :py:class:`list`s. This is necesary because psycopg will fail to
-        insert a tuple into an 'ANY(%s)' clause -- only a list does the
-        trick.
+        Convert :py:class:`tuple`s (and all other iterables, but not strings
+        or mappings) into :py:class:`list`s. This is necesary because
+        psycopg will fail to insert a tuple into an 'ANY(%s)' clause -- only
+        a list does the trick.
 
         Convert :py:class:`enum.IntEnum` (and all other enums) into
         their numeric value. Everywhere else these automagically work
@@ -262,7 +262,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: object but not tuple or IntEnum
         """
         if (isinstance(obj, collections.abc.Iterable)
-                and not isinstance(obj, str)):
+                and not isinstance(obj, (str, collections.abc.Mapping))):
             return [AbstractBackend._sanitize_db_input(x) for x in obj]
         elif isinstance(obj, enum.Enum):
             return obj.value
@@ -370,7 +370,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             string = string.replace(normal, replacement)
         return string
 
-    def general_query(self, rs, query, distinct=True):
+    def general_query(self, rs, query, distinct=True, view=None):
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
 
@@ -378,14 +378,18 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type query: :py:class:`cdedb.query.Query`
         :type distinct: bool
         :param distinct: whether only unique rows should be returned
+        :type view: str or None
+        :param view: Override parameter to specify the target of the FROM
+          clause. This is necessary for event stuff and should be used seldom.
         :rtype: [{str: object}]
         :returns: all results of the query
         """
         self.logger.debug("Performing general query {}.".format(query))
         select = ", ".join(column for field in query.fields_of_interest
                            for column in field.split(','))
+        view = view or QUERY_VIEWS[query.scope]
         q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
-                                          select, QUERY_VIEWS[query.scope])
+                                          select, view)
         params = []
         constraints = []
         for field, operator, value in query.constraints:
@@ -402,7 +406,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             if operator == QueryOperators.empty:
                 phrase = "( {0} IS NULL OR {0} = '' )"
             elif operator == QueryOperators.nonempty:
-                phrase = "( {0} IS NOT NULL AND {0} <> '' )"
+                if query.spec[field] == "str":
+                    phrase = "( {0} IS NOT NULL AND {0} <> '' )"
+                else:
+                    phrase = "( {0} IS NOT NULL )"
             elif operator == QueryOperators.equal:
                 phrase = "{} = %s".format(sql_param_str)
                 params.extend((caser(value),)*len(columns))
@@ -586,3 +593,15 @@ def create_fulltext(data):
             return str(val)
     vals = (_sanitize(data[x]) for x in attrs)
     return " ".join(vals)
+
+#: Translate between validator names and sql data types.
+#:
+#: This is utilized during handling jsonb columns.
+PYTHON_TO_SQL_MAP = {
+    "int": "integer",
+    "str": "varchar",
+    "float": "double precision",
+    "date": "date",
+    "datetime": "timestamp",
+    "bool": "boolean",
+}

@@ -132,8 +132,8 @@ class TestValidation(unittest.TestCase):
             (54, "54", None, False),
             ))
 
-    def test_dict(self):
-        self.do_validator_test("_dict", (
+    def test_mapping(self):
+        self.do_validator_test("_mapping", (
             ({"a": "dict"}, {"a": "dict"}, None, True),
             ("something else", "", TypeError, False),
             ))
@@ -306,7 +306,6 @@ class TestValidation(unittest.TestCase):
             ))
 
     def test_member_data(self):
-        self.maxDiff = None
         base_example = {
             "id": 42,
             "username": "address@domain.tld",
@@ -369,7 +368,6 @@ class TestValidation(unittest.TestCase):
             ), extraparams={'strict': True})
 
     def test_event_user_data(self):
-        self.maxDiff = None
         base_example = {
             "id": 42,
             "username": "address@domain.tld",

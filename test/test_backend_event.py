@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from test.common import BackendTest, as_users, USER_DICT
+from cdedb.query import QUERY_SPECS, QueryOperators
 import cdedb.database.constants as const
 import datetime
 import decimal
@@ -231,7 +232,8 @@ class TestEventBackend(BackendTest):
         field_map = {}
         for field in tmp['fields']:
             for oldfield in data['fields']:
-                if tmp['fields'][field]['field_name'] == data['fields'][oldfield]['field_name']:
+                if (tmp['fields'][field]['field_name']
+                        == data['fields'][oldfield]['field_name']):
                     field_map[tmp['fields'][field]['field_name']] = field
                     data['fields'][field] = data['fields'][oldfield]
                     data['fields'][field]['id'] = field
@@ -316,7 +318,7 @@ class TestEventBackend(BackendTest):
             'description': """This is an interesting topic
 
             which will be treated.""",
-            'nr': 'ε',
+            'nr': 'ζ',
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
@@ -337,7 +339,7 @@ class TestEventBackend(BackendTest):
             'description': """This is an interesting topic
 
             which will be treated.""",
-            'nr': 'ε',
+            'nr': 'ζ',
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
@@ -362,10 +364,10 @@ class TestEventBackend(BackendTest):
         expectation = {
             1: {
                 'address': 'Auf der Düne 42',
-                'address_supplement': '',
+                'address_supplement': None,
                 'birthday': datetime.date(1991, 3, 30),
                 'cloud_account': True,
-                'country': '',
+                'country': None,
                 'db_privileges': 1,
                 'display_name': 'Anton',
                 'family_name': 'Administrator',
@@ -374,13 +376,13 @@ class TestEventBackend(BackendTest):
                 'id': 1,
                 'is_active': True,
                 'location': 'Musterstadt',
-                'mobile': '',
-                'name_supplement': '',
-                'notes': '',
+                'mobile': None,
+                'name_supplement': None,
+                'notes': None,
                 'postal_code': '03205',
                 'status': 0,
                 'telephone': '+49 (234) 98765',
-                'title': '',
+                'title': None,
                 'username': 'anton@example.cde',
             },
             5: {
@@ -397,13 +399,13 @@ class TestEventBackend(BackendTest):
                 'id': 5,
                 'is_active': True,
                 'location': 'Wolkenkuckuksheim',
-                'mobile': '',
-                'name_supplement': '',
-                'notes': '',
+                'mobile': None,
+                'name_supplement': None,
+                'notes': None,
                 'postal_code': '56767',
                 'status': 20,
                 'telephone': '+49 (5432) 555666777',
-                'title': '',
+                'title': None,
                 'username': 'emilia@example.cde',
             },
         }
@@ -411,7 +413,406 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton", "garcia")
     def test_sidebar_events(self, user):
-        expectation = {1: {'registered': False,
+        expectation = {1: {'registered': True,
                            'title': 'Große Testakademie 2222',
                            'use_questionnaire': False}}
         self.assertEqual(expectation, self.event.sidebar_events(self.key))
+
+    @as_users("emilia")
+    def test_registration_participant(self, user):
+        expectation = {
+            'checkin': None,
+            'choices': {1: [5, 4, 1], 2: [3, 4, 2], 3: [4, 2, 1]},
+            'event_id': 1,
+            'field_data': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
+            'foto_consent': True,
+            'id': 2,
+            'mixed_lodging': True,
+            'orga_notes': 'Unbedingt in die Einzelzelle.',
+            'parental_agreement': None,
+            'parts': {
+                1: {'course_id': None,
+                    'course_instructor': None,
+                    'lodgement_id': None,
+                    'part_id': 1,
+                    'registration_id': 2,
+                    'status': 2},
+                2: {'course_id': None,
+                    'course_instructor': None,
+                    'lodgement_id': 4,
+                    'part_id': 2,
+                    'registration_id': 2,
+                    'status': 3},
+                3: {'course_id': 1,
+                    'course_instructor': 1,
+                    'lodgement_id': 4,
+                    'part_id': 3,
+                    'registration_id': 2,
+                    'status': 1}},
+            'payment': datetime.date(2014, 2, 2),
+            'persona_id': 5}
+        self.assertEqual(expectation,
+                         self.event.get_registration(self.key, 2))
+        data = {
+            'id': 2,
+            'choices': {2: [2, 3, 4]},
+            'field_data': {'transportation': 'etc'},
+            'mixed_lodging': False,
+        }
+        self.assertLess(0, self.event.set_registration(self.key, data))
+        expectation['choices'][2] = [2, 3, 4]
+        expectation['field_data']['transportation'] = 'etc'
+        expectation['mixed_lodging'] = False
+        self.assertEqual(expectation,
+                         self.event.get_registration(self.key, 2))
+
+    @as_users("berta")
+    def test_registering(self, user):
+        new_reg = {
+            'checkin': None,
+            'choices': {1: [1, 4, 5]},
+            'event_id': 1,
+            'foto_consent': True,
+            'mixed_lodging': False,
+            'orga_notes': None,
+            'parental_agreement': None,
+            'parts': {
+                1: {'course_id': None,
+                    'course_instructor': None,
+                    'lodgement_id': None,
+                    'status': 0
+                },
+            },
+            'payment': None,
+            'persona_id': 2}
+        new_id = self.event.create_registration(self.key, new_reg)
+        self.assertLess(0, new_id)
+        new_reg['id'] = new_id
+        new_reg['field_data'] = {'registration_id': new_id}
+        new_reg['parts'][1]['part_id'] = 1
+        new_reg['parts'][1]['registration_id'] = new_id
+        self.assertEqual(new_reg,
+                         self.event.get_registration(self.key, new_id))
+
+    @as_users("anton", "garcia")
+    def test_entity_registration(self, user):
+        event_id = 1
+        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9},
+                         self.event.list_registrations(self.key, event_id))
+        expectation = {
+            1: {'checkin': None,
+                'choices': {1: [], 2: [2, 3, 4], 3: [1, 4, 5]},
+                'event_id': 1,
+                'field_data': {'registration_id': 1},
+                'foto_consent': True,
+                'id': 1,
+                'mixed_lodging': True,
+                'orga_notes': None,
+                'parental_agreement': None,
+                'parts': {
+                    1: {'course_id': None,
+                        'course_instructor': None,
+                        'lodgement_id': None,
+                        'part_id': 1,
+                        'registration_id': 1,
+                        'status': -1},
+                    2: {'course_id': None,
+                        'course_instructor': None,
+                        'lodgement_id': None,
+                        'part_id': 2,
+                        'registration_id': 1,
+                        'status': 0},
+                    3: {'course_id': None,
+                        'course_instructor': None,
+                        'lodgement_id': 1,
+                        'part_id': 3,
+                        'registration_id': 1,
+                        'status': 1}},
+                'payment': None,
+                'persona_id': 1},
+            2: {'checkin': None,
+                'choices': {1: [5, 4, 1], 2: [3, 4, 2], 3: [4, 2, 1]},
+                'event_id': 1,
+                'field_data': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
+                'foto_consent': True,
+                'id': 2,
+                'mixed_lodging': True,
+                'orga_notes': 'Unbedingt in die Einzelzelle.',
+                'parental_agreement': None,
+                'parts': {
+                    1: {'course_id': None,
+                        'course_instructor': None,
+                        'lodgement_id': None,
+                        'part_id': 1,
+                        'registration_id': 2,
+                        'status': 2},
+                    2: {'course_id': None,
+                        'course_instructor': None,
+                        'lodgement_id': 4,
+                        'part_id': 2,
+                        'registration_id': 2,
+                        'status': 3},
+                    3: {'course_id': 1,
+                        'course_instructor': 1,
+                        'lodgement_id': 4,
+                        'part_id': 3,
+                        'registration_id': 2,
+                        'status': 1}},
+                'payment': datetime.date(2014, 2, 2),
+                'persona_id': 5},
+            4: {'checkin': None,
+                'choices': {1: [1, 4, 5], 2: [4, 2, 3], 3: [1, 2, 4]},
+                'event_id': 1,
+                'field_data': {'registration_id': 4, 'brings_balls': False, 'transportation': 'etc'},
+                'foto_consent': True,
+                'id': 4,
+                'mixed_lodging': False,
+                'orga_notes': None,
+                'parental_agreement': None,
+                'parts': {
+                    1: {'course_id': None,
+                        'course_instructor': None,
+                        'lodgement_id': None,
+                        'part_id': 1,
+                        'registration_id': 4,
+                        'status': 5},
+                    2: {'course_id': None,
+                        'course_instructor': None,
+                        'lodgement_id': None,
+                        'part_id': 2,
+                        'registration_id': 4,
+                        'status': 4},
+                    3: {'course_id': 1,
+                        'course_instructor': None,
+                        'lodgement_id': 2,
+                        'part_id': 3,
+                        'registration_id': 4,
+                        'status': 1}},
+                'payment': datetime.date(2014, 4, 4),
+                'persona_id': 9}}
+        self.assertEqual(expectation,
+                         self.event.get_registrations(self.key, (1, 2, 4)))
+        data = {
+            'id': 4,
+            'choices': {1:[5, 4, 1], 2: [2, 3, 4]},
+            'field_data': {'transportation': 'pedes'},
+            'mixed_lodging': True,
+            'checkin': datetime.datetime.now(),
+            'parts': {
+                1: {
+                    'status': 1,
+                    'course_id': 5,
+                    'lodgement_id': 2,
+                },
+                3: {
+                    'status': 5,
+                    'course_id': None,
+                    'lodgement_id': None,
+                }
+            }
+        }
+        self.assertLess(0, self.event.set_registration(self.key, data))
+        expectation[4]['choices'].update(data['choices'])
+        expectation[4]['field_data'].update(data['field_data'])
+        expectation[4]['mixed_lodging'] = data['mixed_lodging']
+        expectation[4]['checkin'] = data['checkin']
+        for key, value in expectation[4]['parts'].items():
+            if key in data['parts']:
+                value.update(data['parts'][key])
+        data = self.event.get_registrations(self.key, (1, 2, 4))
+        # TODO handle timezone info gracefully
+        self.assertEqual(expectation[4]['checkin'].date(),
+                         data[4]['checkin'].date())
+        data[4]['checkin'] = expectation[4]['checkin']
+        self.assertEqual(expectation, data)
+        new_reg = {
+            'checkin': None,
+            'choices': {1: [1, 4, 5]},
+            'event_id': event_id,
+            'foto_consent': True,
+            'mixed_lodging': False,
+            'orga_notes': None,
+            'parental_agreement': None,
+            'parts': {
+                1: {'course_id': None,
+                    'course_instructor': None,
+                    'lodgement_id': None,
+                    'status': 0
+                },
+            },
+            'payment': None,
+            'persona_id': 2
+        }
+        new_id = self.event.create_registration(self.key, new_reg)
+        self.assertLess(0, new_id)
+        new_reg['id'] = new_id
+        new_reg['field_data'] = {'registration_id': new_id}
+        new_reg['parts'][1]['part_id'] = 1
+        new_reg['parts'][1]['registration_id'] = new_id
+        self.assertEqual(new_reg,
+                         self.event.get_registration(self.key, new_id))
+        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, new_id: 2},
+                         self.event.list_registrations(self.key, event_id))
+
+    @as_users("anton", "garcia")
+    def test_entity_lodgement(self, user):
+        event_id = 1
+        expectation = {
+            1: 'Warme Stube',
+            2: 'Kalte Kammer',
+            3: 'Kellerverlies',
+            4: 'Einzelzelle'}
+        self.assertEqual(expectation,
+                         self.event.list_lodgements(self.key, event_id))
+        expectation = {
+            1: {
+                'capacity': 5,
+                'event_id': 1,
+                'id': 1,
+                'moniker': 'Warme Stube',
+                'notes': None,
+                'reserve': 1},
+            4: {
+                'capacity': 1,
+                'event_id': 1,
+                'id': 4,
+                'moniker': 'Einzelzelle',
+                'notes': None,
+                'reserve': 0}
+        }
+        self.assertEqual(expectation, self.event.get_lodgements(self.key, (1,4)))
+        new = {
+            'capacity': 42,
+            'event_id': 1,
+            'moniker': 'Hyrule',
+            'notes': "Notizen",
+            'reserve': 11
+        }
+        new_id = self.event.create_lodgement(self.key, new)
+        self.assertLess(0, new_id)
+        new['id'] = new_id
+        self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
+        update = {
+            'capacity': 21,
+            'notes': None,
+            'id': new_id,
+        }
+        self.assertLess(0, self.event.set_lodgement(self.key, update))
+        new.update(update)
+        self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
+        expectation = {
+            1: 'Warme Stube',
+            2: 'Kalte Kammer',
+            3: 'Kellerverlies',
+            4: 'Einzelzelle',
+            new_id: 'Hyrule'}
+        self.assertEqual(expectation,
+                         self.event.list_lodgements(self.key, event_id))
+        self.assertLess(0, self.event.delete_lodgement(self.key, new_id))
+        del expectation[new_id]
+        self.assertEqual(expectation,
+                         self.event.list_lodgements(self.key, event_id))
+
+    @as_users("berta", "emilia")
+    def test_get_questionnaire(self, user):
+        event_id = 1
+        expectation = [
+            {'field_id': None,
+             'info': 'mit Text darunter',
+             'pos': 0,
+             'readonly': None,
+             'title': 'Unterüberschrift'},
+            {'field_id': 1,
+             'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
+             'pos': 1,
+             'readonly': False,
+             'title': 'Bälle'},
+            {'field_id': None,
+             'info': 'nur etwas Text',
+             'pos': 2,
+             'readonly': None,
+             'title': None},
+            {'field_id': None,
+             'info': None,
+             'pos': 3,
+             'readonly': None,
+             'title': 'Weitere Überschrift'},
+            {'field_id': 2,
+             'info': None,
+             'pos': 4,
+             'readonly': False,
+             'title': 'Vehikel'}]
+        self.assertEqual(expectation,
+                         self.event.get_questionnaire(self.key, event_id))
+
+    @as_users("anton", "garcia")
+    def test_set_questionnaire(self, user):
+        event_id = 1
+        expectation = [
+            {'field_id': None,
+             'info': None,
+             'readonly': None,
+             'title': 'Weitere bla Überschrift'},
+            {'field_id': 2,
+             'info': None,
+             'readonly': True,
+             'title': 'Vehikel'},
+            {'field_id': None,
+             'info': 'mit Text darunter und so',
+             'readonly': None,
+             'title': 'Unterüberschrift'},
+            {'field_id': None,
+             'info': 'nur etwas mehr Text',
+             'readonly': None,
+             'title': None},]
+        self.assertLess(0, self.event.set_questionnaire(
+            self.key, event_id, expectation))
+        for pos, entry in enumerate(expectation):
+            entry['pos'] = pos
+        self.assertEqual(expectation,
+                         self.event.get_questionnaire(self.key, event_id))
+
+    @as_users("anton", "garcia")
+    def test_registration_query(self, user):
+        query = {
+            "scope": "qview_registration",
+            "spec": dict(QUERY_SPECS["qview_registration"]),
+            "fields_of_interest": (
+                "reg.id", "reg.payment", "persona.status", "user_data.family_name",
+                "user_data.birthday", "part1.lodgement_id1", "part3.status3",
+                "fields.brings_balls", "fields.transportation"),
+            "constraints": (("reg.id", QueryOperators.greater.value, 0),
+                            ("user_data.given_names", QueryOperators.regex.value, '[aeiou]'),
+                            ("part2.status2", QueryOperators.nonempty.value, None),
+                            ("fields.transportation", QueryOperators.oneof.value, ['pedes', 'etc'])),
+            "order": ("reg.id",),
+        }
+        ## fix query spec (normally done by frontend)
+        query['spec'].update({
+            'part1.lodgement_id1': "int",
+            'part3.status3': "int",
+            'fields.brings_balls': "bool",
+            'fields.transportation': "str",
+            'part2.status2': "int",
+            })
+        result = self.event.submit_general_query(self.key, query, event_id=1)
+        expectation = (
+            {'birthday': datetime.date(2012, 6, 2),
+             'brings_balls': True,
+             'family_name': 'Eventis',
+             'id': 2,
+             'lodgement_id1': None,
+             'payment': datetime.date(2014, 2, 2),
+             'status': 20,
+             'status3': 1,
+             'transportation': 'pedes'},
+            {'birthday': datetime.date(2015, 1, 1),
+             'brings_balls': False,
+             'family_name': 'Iota',
+             'id': 4,
+             'lodgement_id1': None,
+             'payment': datetime.date(2014, 4, 4),
+             'status': 0,
+             'status3': 1,
+             'transportation': 'etc'})
+        self.assertEqual(expectation, result)
