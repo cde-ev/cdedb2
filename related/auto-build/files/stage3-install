@@ -28,22 +28,22 @@ sudo -u cdedb git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2 /cdedb2 || sud
 cd /cdedb2
 chmod 600 /cdedb2/.ldap_rootpw
 chmod +x /cdedb2/related/auto-build/files/stage3/make-pyro-nameserver.sh
+# build the documentation
+make doc
 
 echo ""
 echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
 mkdir /var/lib/cdedb/
-chown www-data:www-data /var/lib/cdedb
+mkdir /var/lib/cdedb/foto/
+mkdir /var/lib/cdedb/minor_form/
+chown --recursive www-data:www-data /var/lib/cdedb
 
 echo ""
 echo "Initialize LDAP..."
 echo "--------------------------------------------"
 
-# first we undo the automatically generated debian stuff
-ldapdelete -D 'cn=admin,dc=cdedb,dc=virtual' -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0 'cn=admin,dc=cdedb,dc=virtual'
-ldapdelete -D 'cn=admin,dc=cdedb,dc=virtual' -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0 'dc=cdedb,dc=virtual'
-# now we do our stuff
 ldapmodify -Y EXTERNAL -H ldapi:/// -f /cdedb2/related/auto-build/files/stage3/init.ldif
 TMPDIR=`mktemp -d`
 slaptest -f /cdedb2/related/auto-build/files/stage3/temp_ldap.conf -F $TMPDIR
