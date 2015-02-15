@@ -1,0 +1,51 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Fragebogen zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
+{% block content %}
+    <a href="{{ cdedblink("event/registration_status")|e }}">Abbrechen</a>
+    <form action="{{ cdedblink('event/questionnaire')|e }}" method="POST" id="questionnaireform">
+        <table>
+            {% for entry in questionnaire %}
+                {% if entry['field_id'] %}
+                    {% with FIELD = event_data['fields'][entry['field_id']] %}
+                        {% if FIELD['entries'] %}
+                            {# jinja does not support list comprehension ... #}
+                            {% set myentries = [] %}
+                            {% for value, description in FIELD['entries'] %}
+                                {{ myentries.append((value, description, None))|e }}
+                            {% endfor %}
+                            {{ util.tab_input_select(name=FIELD['field_name'], entries=myentries, title=entry['title'],
+                                                     info=entry['info'], readonly=(entry['readonly'] or locked)) }}
+                        {% else %}
+                            {% if FIELD['kind'] == "bool" %}
+                                {{ util.tab_input_checkbox(name=FIELD['field_name'], label=entry['title'],
+                                                           info=entry['info'], readonly=(entry['readonly'] or locked)) }}
+                            {% else %}
+                                {% if entry['input_size'] %}
+                                    {{ util.tab_input_textarea(name=FIELD['field_name'], label=entry['title'],
+                                                               info=entry['info'], readonly=(entry['readonly'] or locked),
+                                                               aclass=('bi' + entry['input_size']*'g')) }}
+                                {% else %}
+                                    {{ util.tab_input_text(name=FIELD['field_name'], label=entry['title'],
+                                                           info=entry['info'], readonly=(entry['readonly'] or locked)) }}
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                    {% endwith %}
+                {% else %}
+                    {% if entry['title'] %}
+                        <tr><th colspan="2">{{ entry['title']|e }}</th></tr>
+                    {% endif %}
+                    {% if entry['info'] %}
+                        <tr><td colspan="2">{{ entry['info']|e }}</td></tr>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        </table>
+        {% if not locked %}
+            <div>
+                {{ util.input_submit(value="Abschicken") }}
+            </div>
+        {% endif %}
+    </form>
+{% endblock %}

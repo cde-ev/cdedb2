@@ -3,8 +3,23 @@
 {% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     {% if event_data['id'] in user.orga or is_admin %}
-        <a href="{{ cdedblink('event/change_course_form')|e }}">Bearbeiten</a>
+        <a href="{{ cdedblink('event/change_course_form')|e }}" {% if locked %} disabled {% endif %}>Bearbeiten</a>
+        <a href="{{ cdedblink('event/manage_attendees_form')|e }}" {% if locked %} disabled {% endif %}>Kursteilnehmer verwalten</a>
     {% endif %}
     <p>Kursleiter: {{ course_data['instructors']|e }}</p>
     <p>{{ course_data['description']|e }}</p>
+    {% if event_data['id'] in user.orga or is_admin %}
+        <h2>Teilnehmer</h2>
+        {% for part_id in course_data['parts']|sort %}
+            <h3>{{ event_data['parts'][part_id]['title']|e }}</h3>
+            <ul>
+                {% for registration_id in attendees[(course_data['id'], part_id)] %}
+                    <li>
+                        {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                        {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    {% endif %}
 {% endblock %}

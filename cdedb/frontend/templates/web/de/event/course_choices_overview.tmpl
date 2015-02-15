@@ -1,0 +1,40 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Kurswahlen -- Übersicht ({{ event_data['title']|e }}){% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/course_choices')|e }}" method="GET" id="choiceform">
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [("", "Gesamtübersicht", None)] %}
+        {% for course_id, cdata in course_data|dictsort %}
+            {{ myentries.append((course_id, cdata['title'], None))|e }}
+        {% endfor %}
+        {{ util.input_select(name="course_id", title="Auswahl", entries=myentries) }}
+        {{ util.input_submit(value="Aktualisieren") }}
+    </form>
+    <table>
+        <tr>
+            <th>Kurs</th>
+            {% for part_id, pdata in event_data['parts']|dictsort %}
+                <th colspan="3">{{ pdata['title']|e }}</th>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th></th>
+            {% for part_id, pdata in event_data['parts']|dictsort %}
+                <th>Erstwahl</th>
+                <th>Zweitwahl</th>
+                <th>Drittwahl</th>
+            {% endfor %}
+        </tr>
+        {% for course_id, cdata in course_data|dictsort %}
+            <tr>
+                <td>{{ cdata['title']|e }}</td>
+                {% for part_id, pdata in event_data['parts']|dictsort %}
+                     {% for i in range(3) %}
+                         <td> {{ counts[course_id][(part_id, i)]|e }} </td>
+                     {% endfor %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

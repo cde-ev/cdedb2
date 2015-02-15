@@ -1,0 +1,37 @@
+<<% extends "tex/de/event/base.tmpl" %>>
+<<% block extra_preamble %>>
+    \usepackage{wrapfig}
+    \parindent 0pt\relax
+    \pagestyle{empty}
+<<% endblock %>>
+<<% block content %>>
+    <<% for course_id, cdata in course_data|dictsort %>>
+        <<% for part_id in cdata['parts']|sort %>>
+            \begin{wrapfigure}{r}{3.1cm}
+                \vspace{-2\baselineskip}
+                \begin{center}
+                    \includegraphics[keepaspectratio=true, width=3cm,height=3cm]{./logo-<<< course_id|te >>>}
+                \end{center}
+                \vspace{-2\baselineskip}
+            \end{wrapfigure}
+            \section*{<<< cdata['title']|te >>> (<<< event_data['parts'][part_id]['title']|te >>>)}
+            \begin{itemize}
+                <<% for registration_id in attendees[(course_id, part_id)] %>>
+                    \item
+                        <<% if registration_data[registration_id]['parts'][part_id]['course_instructor'] == course_id %>>
+                            \emph{%
+                                <<< user_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
+                                <<< user_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                            }
+                        <<% else %>>
+                            <<< user_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
+                            <<< user_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                        <<% endif %>>
+                <<% else %>>
+                    \item niemand
+                <<% endfor %>>
+            \end{itemize}
+            \clearpage
+        <<% endfor %>>
+    <<% endfor %>>
+<<% endblock %>>

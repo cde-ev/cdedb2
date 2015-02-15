@@ -19,9 +19,9 @@
     {% if participants %}
         <h2>Teilnehmer</h2>
         <ul>
-            {% for anid in participants %}
+            {% for anid, pdata in participants|dictsort %}
                 <li>
-                    {% if participants[anid]['is_instructor'] %}
+                    {% if pdata['is_instructor'] %}
                         <strong>
                     {% endif %}
                     {{ participant_data[anid]['given_names']|e }} {{ participant_data[anid]['family_name']|e }}
@@ -33,7 +33,7 @@
                             {{ util.input_submit(value="entfernen") }}
                         </form>
                     {% endif %}
-                    {% if participants[anid]['is_instructor'] %}
+                    {% if pdata['is_instructor'] %}
                         </strong>
                     {% endif %}
                 </li>

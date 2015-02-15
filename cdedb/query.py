@@ -77,8 +77,9 @@ class Query:
             :py:const:`QUERY_SPECS`.
         :type constraints: [(str, QueryOperators, obj)]
         :param constraints: clauses for WHERE
-        :type order: [str]
-        :param order: column names to be used for ORDER BY
+        :type order: [(str, bool)]
+        :param order: First components are the column names to be used for
+          ORDER BY and the second component toggles ascending sorting order.
         """
         self.scope = scope
         self.spec = spec
@@ -95,9 +96,9 @@ class Query:
 #: Available query templates. These may be enriched by ext-fields. Order is
 #: important for UI purposes, hence the ordered dicts.
 #:
-#: .. note For schema specified columns (like ``member_data.persona_id``)
-#:         the schema part does not survive querying and needs to be stripped
-#:         before output.
+#: .. note:: For schema specified columns (like ``member_data.persona_id``)
+#:           the schema part does not survive querying and needs to be stripped
+#:           before output.
 QUERY_SPECS = {
     "qview_cde_member" :
     collections.OrderedDict([
@@ -178,7 +179,6 @@ QUERY_SPECS = {
         ("db_privileges", "int"),
         ("cloud_account", "bool"),
         ("family_name", "str"),
-        ("birth_name", "str"),
         ("given_names", "str"),
         ("display_name", "str"),
         ("title", "str"),
@@ -199,16 +199,16 @@ QUERY_SPECS = {
     "qview_registration" :
     collections.OrderedDict([
         ("reg.id", "int"),
+        ("reg.notes", "str"),
         ("reg.orga_notes", "str"),
         ("reg.payment", "date"),
         ("reg.parental_agreement", "bool"),
         ("reg.mixed_lodging", "bool"),
         ("reg.checkin", "datetime"),
         ("reg.foto_consent", "bool"),
+        ("membership.is_member", "bool"),
         ("persona.username", "str"),
-        ("persona.status", "int"),
         ("user_data.family_name", "str"),
-        ("user_data.birth_name", "str"),
         ("user_data.given_names", "str"),
         ("persona.display_name", "str"),
         ("user_data.title", "str"),
@@ -276,6 +276,9 @@ def mangle_query_input(rs, spec):
                 params[name] = rs.values[name] = rs.request.values[name]
     for postfix in ("primary", "secondary", "tertiary"):
         name = "qord_" + postfix
+        if name in rs.request.values:
+            params[name] = rs.values[name] = rs.request.values[name]
+        name = "qord_" + postfix + "_ascending"
         if name in rs.request.values:
             params[name] = rs.values[name] = rs.request.values[name]
     return params

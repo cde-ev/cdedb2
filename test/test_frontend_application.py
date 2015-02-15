@@ -9,7 +9,7 @@ class TestApplication(FrontendTest):
         self.get("/nonexistentpath", status=404)
 
     def test_wrong_post(self):
-        self.get("/login", status=405)
+        self.get("/core/login", status=405)
 
     def test_basics(self):
         self.get("/")

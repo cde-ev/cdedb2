@@ -1,0 +1,78 @@
+<<% extends "tex/de/event/base.tmpl" %>>
+<<% block extra_preamble %>>
+    \KOMAoptions{fontsize=10pt,paper=landscape,DIV=21}
+    \usepackage[left=.5cm,right=.5cm,top=1.5cm,bottom=1cm,foot=1ex]{geometry}
+    \parindent 0pt\relax
+
+    \usepackage{lastpage}
+    \usepackage{fancyhdr}
+    \pagestyle{fancy}
+
+    \renewcommand{\headrulewidth}{0pt}
+    \chead{\Large\textbf{\textsf{Teilnehmerliste <<< event_data['title']|te >>>}}}
+    \cfoot{Seite \thepage{} von \pageref{LastPage}}
+
+    \usepackage{longtable}
+    \usepackage{xcolor}
+    \usepackage{colortbl}
+    \usepackage{tabu}
+    \usepackage{booktabs}
+<<% endblock %>>
+<<% block content %>>
+    \taburowcolors[2] 2{white .. black!5}
+    \begin{longtabu}{ll>{\raggedright}p{.3\linewidth}<<< ('l'*(event_data['parts']|length))|te >>>l}
+    \toprule
+    Vorname & Nachname & Ort &
+    <<% for part_id, pdata in event_data['parts']|dictsort -%>>
+        <<< pdata['title']|te >>> &
+    <<% endfor -%>>
+    Email \\
+    \midrule
+    \endfirsthead
+    \midrule
+    Vorname & Nachname & Ort &
+    <<% for part_id, pdata in event_data['parts']|dictsort -%>>
+        <<< pdata['title']|te >>> &
+    <<% endfor -%>>
+    Email \\
+    \midrule
+    \endhead
+    \midrule
+    \endfoot
+    \bottomrule
+    \endlastfoot
+    <<% for registration_id in ordered -%>>
+        <<% with rdata = registration_data[registration_id] -%>>
+            <<< user_data[rdata['persona_id']]['given_names']|te >>> &
+            <<< user_data[rdata['persona_id']]['family_name']|te >>> &
+            <<< user_data[rdata['persona_id']]['postal_code']|te >>>
+            <<< user_data[rdata['persona_id']]['location']|te >>>
+            <<% if user_data[rdata['persona_id']]['country'] != "Deutschland" -%>>
+                <<< user_data[rdata['persona_id']]['country']|te >>>
+            <<%- endif -%>>
+            &
+            <<% for part_id in event_data['parts']|sort -%>>
+                <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.participant -%>>
+                    <<% if rdata['parts'][part_id]['course_id'] -%>>
+                        <<% if rdata['parts'][part_id]['course_instructor'] == rdata['parts'][part_id]['course_id'] -%>>
+                            \emph{%
+                                <<< course_data[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
+                            }
+                        <<% else -%>>
+                            <<< course_data[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
+                        <<% endif -%>>
+                    <<% elif rdata['persona_id'] in event_data['orgas'] -%>>
+                        \emph{Orga}
+                    <<% else -%>>
+                        % nichts
+                    <<% endif -%>>
+                <<% else -%>>
+                    ---
+                <<% endif -%>>
+                &
+            <<% endfor -%>>
+            <<< user_data[rdata['persona_id']]['username']|te >>> \\
+        <<% endwith -%>>
+    <<% endfor -%>>
+    \end{longtabu}
+<<% endblock %>>

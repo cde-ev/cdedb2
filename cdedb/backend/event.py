@@ -14,7 +14,7 @@ from cdedb.common import (
     glue, EVENT_USER_DATA_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS,
     PERSONA_DATA_FIELDS, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS,
     COURSE_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    LODGMENT_FIELDS)
+    LODGEMENT_FIELDS)
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
@@ -22,6 +22,7 @@ import cdedb.database.constants as const
 import argparse
 import datetime
 import psycopg2.extras
+import pytz
 
 #: This is used for generating the table for general queries for
 #: registrations. We moved this rather huge blob here, so it doesn't
@@ -31,6 +32,8 @@ import psycopg2.extras
 #:
 #:     event.registrations AS reg
 #:     JOIN core.personas AS persona ON reg.persona_id = persona.id
+#:     JOIN (SELECT id, status = ANY('{0, 1}'::int[]) AS is_member FROM core.personas)
+#:          AS membership ON membership.id = persona.id
 #:     JOIN (
 #:           (SELECT persona_id, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile,
 #:                   address_supplement, address, postal_code, location, country FROM cde.member_data)
@@ -49,10 +52,12 @@ import psycopg2.extras
 #:          AS part3 ON reg.id = part3.registration_id
 #:     LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(SELECT field_data FROM event.registrations)))
 #:          AS X(registration_id int, brings_balls bool, transportation varchar)) AS fields ON reg.id = fields.registration_id
-
 _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations AS reg",
     "JOIN core.personas AS persona ON reg.persona_id = persona.id",
+    "JOIN (SELECT id, status = ANY('{{{member_stati}}}'::int[])",
+        "AS is_member FROM core.personas) AS membership",
+        "ON membership.id = persona.id",
     "JOIN ((SELECT {user_data} FROM cde.member_data)",
         "UNION (SELECT {user_data} FROM event.user_data))",
         "AS user_data ON reg.persona_id = user_data.persona_id",
@@ -289,23 +294,28 @@ class EventBackend(AbstractUserBackend):
             ## outer join, so we catch all events orga'd
             query = glue(
                 "SELECT e.id, e.registration_start, e.use_questionnaire,",
-                "e.title, MAX(p.part_end) AS event_end FROM event.events AS e",
-                "LEFT OUTER JOIN event.event_parts AS p ON p.event_id = e.id",
-                "WHERE registration_start IS NOT NULL GROUP BY e.id")
+                "e.title, e.offline_lock, MAX(p.part_end) AS event_end",
+                "FROM event.events AS e LEFT OUTER JOIN event.event_parts AS p",
+                "ON p.event_id = e.id WHERE registration_start IS NOT NULL",
+                "GROUP BY e.id")
             data = self.query_all(rs, query, tuple())
-            today = datetime.datetime.now().date()
+            today = datetime.datetime.now(pytz.utc).date()
             ret = {e['id']: {"title": e['title'],
-                             "use_questionnaire": e["use_questionnaire"]}
+                             "use_questionnaire": e["use_questionnaire"],
+                             "locked": (e['offline_lock']
+                                        != self.conf.CDEDB_OFFLINE_DEPLOYMENT)}
                    for e in data if (e['id'] in rs.user.orga
                                      or (e['registration_start'] <= today
                                          and e['event_end'] is not None
                                          and e['event_end'] >= today))}
-            query = glue("SELECT event_id FROM event.registrations",
-                         "WHERE event_id = ANY(%s)")
-            data = self.query_all(rs, query, (tuple(ret.keys()),))
-            registered = {e['event_id'] for e in data}
+            query = glue(
+                "SELECT id, event_id FROM event.registrations",
+                "WHERE event_id = ANY(%s) AND persona_id = %s")
+            data = self.query_all(rs, query, (tuple(ret.keys()),
+                                              rs.user.persona_id))
+            registered = {e['event_id']: e['id'] for e in data}
             for event_id in ret:
-                ret[event_id]["registered"] = (event_id in registered)
+                ret[event_id]["registration_id"] = registered.get(event_id)
             return ret
 
     @access("persona")
@@ -364,6 +374,8 @@ class EventBackend(AbstractUserBackend):
                 "{col} AS {col}{part_id}".format(col=col, part_id=part_id)
                 for col in part_data_columns)
             view = _REGISTRATION_VIEW_TEMPLATE.format(
+                member_stati=", ".join(str(x.value)
+                                       for x in const.MEMBER_STATI),
                 user_data=", ".join(user_data_columns),
                 part_tables=" ".join(part_table_template.format(
                     part_data=part_data_gen(part_id), part_id=part_id)
@@ -574,12 +586,13 @@ class EventBackend(AbstractUserBackend):
                                                    for key in keys)
                     ret *= self.query_exec(rs, query, params)
                 ## updated
-                query = glue("UPDATE event.field_definitions",
+                proto_query = glue("UPDATE event.field_definitions",
                              "SET ({}) = ({}) WHERE id = %s")
-                keys = ("field_name", "kind", "entries")
-                query = query.format(", ".join(keys),
-                                     ", ".join(("%s",) * len(keys)))
                 for x in updated:
+                    keys = tuple(k for k in fields[x]
+                                 if k in ("field_name", "kind", "entries"))
+                    query = proto_query.format(", ".join(keys),
+                                               ", ".join(("%s",) * len(keys)))
                     params = tuple(fields[x][key] for key in keys) + (x,)
                     ret *= self.query_exec(rs, query, params)
 
@@ -907,19 +920,28 @@ class EventBackend(AbstractUserBackend):
         return {e['persona_id']: e for e in data}
 
     @access("event_user")
-    def list_registrations(self, rs, event_id):
+    def list_registrations(self, rs, event_id, persona_id=None):
         """List all registrations of an event.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type event_id: int
+        :type persona_id: int or None
+        :param persona_id: If passed restrict to registrations by this persona.
         :rtype: {int: {str: object}}
         """
         event_id = affirm("int", event_id)
-        if (not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs)):
+        persona_id = affirm("int_or_None", persona_id)
+        if (persona_id != rs.user.persona_id
+                and not self.is_orga(rs, event_id=event_id)
+                and not self.is_admin(rs)):
             raise PrivilegeError("Not privileged.")
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
-        data = self.query_all(rs, query, (event_id,))
+        params = (event_id,)
+        if persona_id:
+            query = glue(query, "AND persona_id = %s")
+            params += (persona_id,)
+        data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
     @access("event_user")
@@ -1103,8 +1125,8 @@ class EventBackend(AbstractUserBackend):
     def create_registration(self, rs, data):
         """Make a new registration.
 
-        The data may not contain a value for 'field_data', which is
-        initialized to a default value.
+        The data must contain a dataset for each part and may not contain a
+        value for 'field_data', which is initialized to a default value.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
@@ -1118,6 +1140,11 @@ class EventBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
+            query = "SELECT id FROM event.event_parts WHERE event_id = %s"
+            part_ids = {e['id']
+                        for e in self.query_all(rs, query, (data['event_id'],))}
+            if part_ids != set(data['parts'].keys()):
+                raise ValueError("Missing part dataset.")
             keys = tuple(key for key in data if key in REGISTRATION_FIELDS)
             query = glue("INSERT INTO event.registrations ({})",
                          "VALUES ({}) RETURNING id")
@@ -1171,7 +1198,7 @@ class EventBackend(AbstractUserBackend):
             return {}
         with Atomizer(rs):
             query = "SELECT {} FROM event.lodgements WHERE id = ANY(%s)"
-            query = query.format(", ".join(LODGMENT_FIELDS))
+            query = query.format(", ".join(LODGEMENT_FIELDS))
             data = self.query_all(rs, query, (ids,))
             events = {e['event_id'] for e in data}
             if len(events) != 1:
@@ -1259,7 +1286,7 @@ class EventBackend(AbstractUserBackend):
         :returns: list of questionnaire row entries
         """
         event_id = affirm("int", event_id)
-        query = glue("SELECT field_id, pos, title, info, readonly",
+        query = glue("SELECT field_id, pos, title, info, input_size, readonly",
                      "FROM event.questionnaire_rows WHERE event_id = %s")
         data = self.query_all(rs, query, (event_id,))
         return sorted(data, key=lambda x: x['pos'])
@@ -1287,14 +1314,17 @@ class EventBackend(AbstractUserBackend):
             self.query_exec(rs, query, (event_id,))
             query = glue(
                 "INSERT INTO event.questionnaire_rows",
-                "(event_id, field_id, pos, title, info, readonly)",
-                "VALUES (%s, %s, %s, %s, %s, %s)")
+                "(event_id, field_id, pos, title, info, input_size, readonly)",
+                "VALUES (%s, %s, %s, %s, %s, %s, %s)")
             ret = 1
             for pos, row in enumerate(data):
                 ret *= self.query_exec(
                     rs, query, (event_id, row['field_id'], pos, row['title'],
-                                row['info'], row['readonly']))
+                                row['info'], row['input_size'], row['readonly']))
         return ret
+
+    # TODO maybe implement set_inhabitants for lodgements and set_attendees for courses?
+    # TODO locking, unlocking
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

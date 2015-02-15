@@ -1,0 +1,14 @@
+<<# This is just a part of a tex document, so we do not inherit the base template. #>>
+<<% for course_id, cdata in course_data|dictsort %>>
+\kurs <<< cdata['title']|te >>>
+\von <<< cdata['instructors']|te >>>
+
+In:
+<<%- for part_id in cdata['parts']|sort %>>
+    <<< event_data['parts'][part_id]['title']|te >>>
+    <<%- if not loop.last %>>,<<% endif %>>
+<<%- endfor %>>
+
+<<< cdata['description']|te >>>
+
+<<% endfor %>>

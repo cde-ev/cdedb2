@@ -58,14 +58,15 @@
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
 <p>This describes the steps necessary to get the project running on a
 machine. This is somewhat complicated and it is advised to use the virtual
-machine in most cases. This may have some Gentoo-specific bits in it, for
+machine in most cases. Instructions for obtianing and using the image can be
+found at <a class="reference internal" href="Introduction_VM.html"><em>Using the VM image</em></a>. Below may be some Gentoo-specific bits, for
 Debian-specific stuff look at the setup scripts in <tt class="docutils literal"><span class="pre">related/auto-build</span></tt>.</p>
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
 <p>We need some dependencies:</p>
 <ul class="simple">
-<li>python (at least 3.4)</li>
-<li>PostgreSQL</li>
+<li>python (at least 3.4, for subtests)</li>
+<li>PostgreSQL (at least 9.4, for jsonb)</li>
 <li>Apache (with mod_wsgi)</li>
 <li>git</li>
 <li>openldap</li>
@@ -73,26 +74,28 @@ Debian-specific stuff look at the setup scripts in <tt class="docutils literal">
 <p>Further we depend on a number of python packages:</p>
 <ul class="simple">
 <li>passlib</li>
-<li>psycopg2</li>
+<li>psycopg2 (at least 2.5.4, for jsonb support)</li>
 <li>pyro4 (which depends on serpent)</li>
-<li>werkzeug</li>
+<li>werkzeug (at least 0.9.7, bug in py3-handling of MultiDict input)</li>
 <li>dateutil</li>
 <li>jinja2</li>
 <li>pytz</li>
 <li>python-ldap (support for py3 is currently unreleased)</li>
+<li>python-magic</li>
+<li>python-imaging-library (more specifically pillow)</li>
 </ul>
 <p>At last there are some recommended dependencies:</p>
 <ul class="simple">
 <li>sphinx (for building the documentation)</li>
-<li>webtest (for tests)</li>
+<li>webtest (for tests, at least 2.0.17 for handling of multiple elements with the same name)</li>
 <li>pgbouncer (otherwise database performance may be degraded)</li>
 <li>fail2ban (for preventing brute-force attacks)</li>
 </ul>
 <p>Here are some oneliners for the lazy:</p>
 <div class="highlight-python"><div class="highlight"><pre># Gentoo
-emerge -avt &gt;=dev-lang/python-3.4.0 dev-db/postgresql-server www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib dev-python/psycopg:2 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/sphinx dev-python/webtest dev-db/pgbouncer net-analyzer/fail2ban
+emerge -avt &gt;=dev-lang/python-3.4.0 &gt;=dev-db/postgresql-server-9.4 www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib &gt;=dev-python/psycopg-2.5.4 dev-python/pyro:4 &gt;=dev-python/werkzeug-0.9.7 dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/python-magic virtual/python-imaging dev-python/sphinx &gt;=dev-python/webtest-2.0.17 dev-db/pgbouncer net-analyzer/fail2ban
 # Debian
-aptitude install apache2 libapache2-mod-wsgi slapd ldap-utils postgresql-client postgresql pgbouncer python3 python3-psycopg2 python3-pyro4 python3-werkzeug python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-webtest fail2ban # python3-passlib python3-ldap (note that the last two are not yet package)
+aptitude install apache2 libapache2-mod-wsgi slapd ldap-utils postgresql-client postgresql pgbouncer python3 python3-psycopg2 python3-pyro4 python3-werkzeug python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-webtest python3-magic python3-pil fail2ban # python3-passlib python3-ldap (note that the last two are not yet packaged)
 </pre></div>
 </div>
 </div>
@@ -206,6 +209,18 @@ Require all granted
 </pre></div>
 </div>
 <p>note, that this is syntax for apache-2.4 (which differs from apache-2.2).</p>
+<p>Finally we need to create the directory for uploaded data (where
+<tt class="docutils literal"><span class="pre">www-data</span></tt> is the user running Apache):</p>
+<div class="highlight-python"><div class="highlight"><pre>mkdir /var/lib/cdedb/
+chown www-data:www-data /var/lib/cdedb/
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For optimal experience you should run <tt class="docutils literal"><span class="pre">make</span> <span class="pre">storage-test</span></tt> and
+copy the resulting uploaded data from <tt class="docutils literal"><span class="pre">/tmp/cdedb-store</span></tt> to
+<tt class="docutils literal"><span class="pre">/var/lib/cdedb</span></tt> and make it owned by the apache user.</p>
+</div>
 </div>
 <div class="section" id="configure-the-application">
 <h2>Configure the application<a class="headerlink" href="#configure-the-application" title="Permalink to this headline">¶</a></h2>
@@ -246,6 +261,18 @@ browser. Finally you can shutdown the backends with:</p>
 </pre></div>
 </div>
 </div>
+<div class="section" id="refreshing-the-running-instance">
+<h2>Refreshing the running instance<a class="headerlink" href="#refreshing-the-running-instance" title="Permalink to this headline">¶</a></h2>
+<p>Changes to the code can be propagate as follows to the current instance. For
+templates no action is necessary. For the frontend updating the mtime the
+wsgi file resets the apache workers:</p>
+<div class="highlight-python"><div class="highlight"><pre>touch wsgi/cdedb.wsgi
+</pre></div>
+</div>
+<p>For the backend a restart is required (<tt class="docutils literal"><span class="pre">make</span> <span class="pre">quit-all</span></tt> and <tt class="docutils literal"><span class="pre">make</span>
+<span class="pre">run-...</span></tt>). For the database you should restart pgbouncer (which probably
+has some open connections left) before doing a <tt class="docutils literal"><span class="pre">make</span> <span class="pre">sample-data</span></tt>.</p>
+</div>
 </div>
 
 
@@ -262,6 +289,7 @@ browser. Finally you can shutdown the backends with:</p>
 <li><a class="reference internal" href="#prepare-environment">Prepare environment</a></li>
 <li><a class="reference internal" href="#configure-the-application">Configure the application</a></li>
 <li><a class="reference internal" href="#running-it">Running it</a></li>
+<li><a class="reference internal" href="#refreshing-the-running-instance">Refreshing the running instance</a></li>
 </ul>
 </li>
 </ul>
@@ -315,7 +343,7 @@ browser. Finally you can shutdown the backends with:</p>
     </div>
     <div class="footer">
         &copy; Copyright 2014, CdE Datenbank Team.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

@@ -1,0 +1,18 @@
+* actionable items
+** get test suite to run in the VM
+** run validator on all html output
+** do css layout
+** improve ui
+** implement ml realm
+** implement assembly realm
+** implement offline mode
+** write tests for uncovered code
+** add translations
+** adjust LDAP indices
+* abstract items
+** Finalize SQL
+** use framework for html? (maybe pure?) -- CSS is really rudimentary
+** investigate mypy and pytypedecl
+** more logging
+** make test-suite faster
+** investigate python3 ldap library (there are actually two of them!)

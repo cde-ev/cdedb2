@@ -1,0 +1,34 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block title %}Fragebogen umordnen ({{ event_data['title']|e }}){% endblock %}
+{% block content %}
+    <ul id="rowlist">
+        {% for entry in questionnaire %}
+            <li id="{{ loop.index0|e }}">
+                {% if entry['field_id'] %}
+                    Abfrage: {{ event_data['fields'][entry['field_id']]['field_name']|e }}
+                {% else %}
+                    Überschrift: {{ entry['title']|e }}<br>
+                    Text: {{ entry['info']|e }}
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+    <form action="{{ cdedblink('event/reorder_questionnaire')|e }}" method="POST" id="reorderquestionnaireform">
+        {{ util.input_hidden(name="order", value="", anid="orderinput") }}
+        {{ util.input_submit(value="Umordnen", readonly=True, aclass="jsEnabled") }}
+    </form>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $(".jsEnabled").prop('disabled', false);
+            $("#rowlist").sortable();
+            $("#rowlist").disableSelection();
+            $("#reorderquestionnaireform").submit(function(){
+                var sorted = $("#rowlist").sortable("toArray")
+                $("#orderinput").val(sorted.join(","))
+            });
+        });
+    </script>
+{% endblock %}

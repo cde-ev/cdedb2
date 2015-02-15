@@ -13,6 +13,7 @@ Contents:
    Auxiliary
    Specification
    Paraphernalia
+   Orga_Hints
 
 Indices and tables
 ==================

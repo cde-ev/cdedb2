@@ -12,18 +12,19 @@ Prerequisites
 
 We need some dependencies:
 
-* python (at least 3.4; for subtests)
-* PostgreSQL (at least 9.4; for jsonb)
+* python (at least 3.4, for subtests)
+* PostgreSQL (at least 9.4, for jsonb)
 * Apache (with mod_wsgi)
 * git
 * openldap
+* texlive (for generating pdf documents)
 
 Further we depend on a number of python packages:
 
 * passlib
-* psycopg2 (at least 2.5.4; for jsonb support)
+* psycopg2 (at least 2.5.4, for jsonb support)
 * pyro4 (which depends on serpent)
-* werkzeug
+* werkzeug (at least 0.10, bug in py3-handling of MultiDict input)
 * dateutil
 * jinja2
 * pytz
@@ -41,9 +42,11 @@ At last there are some recommended dependencies:
 Here are some oneliners for the lazy::
 
   # Gentoo
-  emerge -avt >=dev-lang/python-3.4.0 >=dev-db/postgresql-server-9.4 www-servers/apache dev-vcs/git net-nds/openldap dev-python/passlib >=dev-python/psycopg-2.5.4 dev-python/pyro:4 dev-python/werkzeug dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/python-magic virtual/python-imaging dev-python/sphinx >=dev-python/webtest-2.0.17 dev-db/pgbouncer net-analyzer/fail2ban
+  emerge -avt >=dev-lang/python-3.4.0 >=dev-db/postgresql-server-9.4 www-servers/apache dev-vcs/git net-nds/openldap app-text/texlive dev-python/passlib >=dev-python/psycopg-2.5.4 dev-python/pyro:4 >=dev-python/werkzeug-0.10 dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/python-magic virtual/python-imaging dev-python/sphinx >=dev-python/webtest-2.0.17 dev-db/pgbouncer net-analyzer/fail2ban
   # Debian
-  aptitude install apache2 libapache2-mod-wsgi slapd ldap-utils postgresql-client postgresql pgbouncer python3 python3-psycopg2 python3-pyro4 python3-werkzeug python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-webtest python3-magic python3-pil fail2ban # python3-passlib python3-ldap (note that the last two are not yet packaged)
+  aptitude install apache2 libapache2-mod-wsgi-py3 fail2ban slapd ldap-utils postgresql-client postgresql pgbouncer texlive-full python3 python3-psycopg2 python3-pyro4 python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-lxml python3-magic python3-pil # python3-webtest python3-werkzeug python3-passlib python3-ldap python3-serpent (note these last are not package or outdated)
+
+      
 
 
 Checkout the repository

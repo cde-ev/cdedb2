@@ -19,9 +19,11 @@ import werkzeug.routing
 import werkzeug.exceptions
 import werkzeug.wrappers
 import psycopg2.extensions
+import datetime
+import pytz
 
 class Application(BaseApp):
-    """This does creation upon every request and then hands it on to the
+    """This does state creation upon every request and then hands it on to the
     appropriate frontend."""
     def __init__(self, configpath):
         """
@@ -54,6 +56,8 @@ class Application(BaseApp):
         try:
             #second try for logging exceptions
             try:
+                ## note time for performance measurement
+                begin = datetime.datetime.now(pytz.utc)
                 sessionkey = request.cookies.get("sessionkey")
                 ## we have to do the work the ProxyShim normally does
                 with self.sessionproxy:
@@ -80,7 +84,7 @@ class Application(BaseApp):
                 }
                 rs = FrontendRequestState(sessionkey, None, request, None,
                                           [], urls, args, self.urlmap,
-                                          [], {}, "de", coders)
+                                          [], {}, "de", coders, begin)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
                 notes = rs.request.values.getlist("displaynote")

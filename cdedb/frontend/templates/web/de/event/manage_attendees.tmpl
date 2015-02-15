@@ -1,0 +1,84 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block title %}Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['title']|e }}){% endblock %}
+{% block content %}
+    {% for part_id in course_data['parts']|sort %}
+        <h2>{{ event_data['parts'][part_id]['title']|e }}</h2>
+        <div>
+            Kursteilnehmer
+            <ul id="attendees_{{ part_id|e }}" class="connect_{{ part_id|e }} nonVanish">
+                {% for registration_id in attendees[(course_data['id'], part_id)] %}
+                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
+                     regid="{{ registration_id|e }}">
+                        {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                        {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            Personen ohne Kurs
+            (Namen suchen
+             <input type="text" name="selector_without_{{ part_id|e }}" id="selector_without_{{ part_id|e }}"
+              class="jsEnabled" value="" disabled>)
+            <ul id="without_{{ part_id|e }}" class="scrollList connect_{{ part_id|e }} nonVanish">
+                {% for registration_id in without_course[part_id] %}
+                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
+                     regid="{{ registration_id|e }}">
+                        {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                        {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            Personen mit Kurs
+            (Namen suchen
+             <input type="text" name="selector_with_{{ part_id|e }}" id="selector_with_{{ part_id|e }}"
+              class="jsEnabled" value="" disabled>)
+            <ul id="with_{{ part_id|e }}"  class="shortScrollList connect_{{ part_id|e }} nonVanish">
+                {% for registration_id in with_course[part_id] %}
+                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
+                     regid="{{ registration_id|e }}">
+                        {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                        {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <script type="text/javascript">
+            $(document).ready(function(){
+                $("#attendees_{{ part_id|e }}, #with_{{ part_id|e }}, #without_{{ part_id|e }}").sortable(
+                    {connectWith: ".connect_{{ part_id|e }}"}).disableSelection();
+                $("#selector_without_{{ part_id|e }}").keyup(function(){
+                    $("#without_{{ part_id|e }} .selectee_{{ part_id|e }}").hide();
+                    $("#without_{{ part_id|e }} .selectee_{{ part_id|e }}:contains('" + $(this).val() + "')").show();
+                });
+                $("#selector_with_{{ part_id|e }}").keyup(function(){
+                    $("#with_{{ part_id|e }} .selectee_{{ part_id|e }}").hide();
+                    $("#with_{{ part_id|e }} .selectee_{{ part_id|e }}:contains('" + $(this).val() + "')").show();
+                });
+            });
+        </script>
+    {% endfor %}
+    <form action="{{ cdedblink('event/manage_attendees')|e }}" method="POST" id="manageattendeesform">
+        {% for part_id in course_data['parts']|sort %}
+            {{ util.input_hidden(name="attendees_{}".format(part_id), value="",
+                                 anid="attendeesinput_{}".format(part_id)) }}
+        {% endfor %}
+        {{ util.input_submit(value="Speichern", readonly=True, aclass="jsEnabled") }}
+    </form>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $(".jsEnabled").prop('disabled', false);
+            $("#manageattendeesform").submit(function(){
+                {% for part_id in course_data['parts']|sort %}
+                    var sorted = $("#attendees_{{ part_id|e }}").sortable("toArray", { attribute: "regid" })
+                    $("#attendeesinput_{{ part_id|e }}").val(sorted.join(","))
+                {% endfor %}
+            });
+        });
+    </script>
+{% endblock %}

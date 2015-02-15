@@ -54,7 +54,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         :type persona_id: int
         :type target: str
         :rtype: :py:class:`werkzeug.wrappers.Response` or None
-
         """
         if not self.coreproxy.verify_ids(rs, (persona_id,)):
             raise werkzeug.exceptions.BadRequest("Nonexistant user.")
@@ -71,7 +70,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
         This has an additional encoded parameter to make links to this
         target ephemeral. Thus it is more difficult to algorithmically
-        extract user data from the web frontend."""
+        extract user data from the web frontend.
+        """
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
@@ -84,28 +84,27 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         return self.render(rs, "show_user", {'data': data})
 
     ## @access("user")
-    ## @persona_dataset_guard()
     @abc.abstractmethod
-    def change_user_form(self, rs, persona_id):
+    def change_user_form(self, rs):
         """Render form."""
-        data = self.user_management['proxy'](self).get_data_one(rs, persona_id)
+        data = self.user_management['proxy'](self).get_data_one(
+            rs, rs.user.persona_id)
         merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username': data['username']})
 
     ## @access("user", {"POST"})
     ## @REQUESTdatadict(...)
-    ## @persona_dataset_guard()
     @abc.abstractmethod
-    def change_user(self, rs, persona_id, data):
-        """Modify account details."""
+    def change_user(self, rs, data):
+        """Modify own account details."""
         data = data or {}
-        data['id'] = persona_id
+        data['id'] = rs.user.persona_id
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
-            return self.change_user_form(rs, persona_id)
+            return self.change_user_form(rs)
         num = self.user_management['proxy'](self).change_user(rs, data)
         self.notify_integer_success(rs, num)
-        return self.redirect_show_user(rs, persona_id)
+        return self.redirect_show_user(rs, rs.user.persona_id)
 
     ## @access("realm_admin")
     ## @persona_dataset_guard()
@@ -177,7 +176,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     ## @REQUESTdatadict(...)
     @abc.abstractmethod
     def genesis(self, rs, case_id, secret, data):
-        """Create new user account."""
+        """Create new user account by anonymous."""
         if rs.errors or not self.user_management['proxy'](self).genesis_check(
                 rs, case_id, secret, username=data['username']):
             rs.notify("error", "Broken link.")

@@ -1,0 +1,30 @@
+<<% extends "tex/de/event/base.tmpl" %>>
+<<% block extra_preamble %>>
+    \usepackage{wrapfig}
+    \parindent 0pt\relax
+    \pagestyle{empty}
+<<% endblock %>>
+<<% block content %>>
+    <<% for lodgement_id, ldata in lodgement_data|dictsort %>>
+        <<% for part_id, pdata in event_data['parts']|dictsort %>>
+            \begin{wrapfigure}{r}{3.1cm}
+                \vspace{-2\baselineskip}
+                \begin{center}
+                    \includegraphics[keepaspectratio=true, width=3cm,height=3cm]{./aka-logo}
+                \end{center}
+                \vspace{-2\baselineskip}
+            \end{wrapfigure}
+            \section*{<<< ldata['moniker']|te >>> (<<< pdata['title']|te >>>)}
+            \begin{itemize}
+                <<% for registration_id in inhabitants[(lodgement_id, part_id)] %>>
+                    \item
+                        <<< user_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
+                        <<< user_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                <<% else %>>
+                    \item niemand
+                <<% endfor %>>
+            \end{itemize}
+            \clearpage
+        <<% endfor %>>
+    <<% endfor %>>
+<<% endblock %>>

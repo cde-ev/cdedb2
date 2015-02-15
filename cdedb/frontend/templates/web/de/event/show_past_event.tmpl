@@ -26,20 +26,20 @@
     {% if participants %}
         <h2>Teilnehmer</h2>
         <ul>
-            {% for anid in participants %}
+            {% for anid, pdata in participants|dictsort %}
                 <li>
-                    {% if participants[anid]['is_orga'] %}
+                    {% if pdata['is_orga'] %}
                         <strong>
                     {% endif %}
                     {{ participant_data[anid]['given_names']|e }} {{ participant_data[anid]['family_name']|e }}
-                    {% if participants[anid]['is_orga'] %}
+                    {% if pdata['is_orga'] %}
                         </strong>
                     {% endif %}
                     {# only allow removal of participants without a course #}
-                    {% if is_admin and participants[anid]['course_id'] is none %}
+                    {% if is_admin and pdata['course_id'] is none %}
                         <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST" id="removeparticipantform{{ anid|e }}">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
-                            {{ util.input_hidden(name="course_id", value=participants[anid]['course_id']) }}
+                            {{ util.input_hidden(name="course_id", value=pdata['course_id']) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(value="entfernen") }}
                         </form>

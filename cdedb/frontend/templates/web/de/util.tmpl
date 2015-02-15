@@ -5,13 +5,27 @@
    <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
 {% endmacro %}
 
-{% macro checkbox_checked(anid='', aclass='') %}
-   <input type="checkbox" checked disabled {% if anid %} id="{{ anid|e }}" {% endif %}
-     {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+{% macro jquery_with_ui_preamble() %}
+   <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
+   <script type="text/javascript" src="{{ staticurl("jquery-ui/jquery-ui.js")|e }}"></script>
+   <link rel="stylesheet" type="text/css" href="{{ staticurl("jquery-ui/jquery-ui.css")|e }}">
 {% endmacro %}
 
-{% macro checkbox_unchecked(anid='', aclass='') %}
-   <input type="checkbox" disabled {% if anid %} id="{{ anid|e }}" {% endif %}
+{% macro javascript_hint() %}
+    <noscript>
+        <div class="jsDeleted">
+            Diese Seite funktioniert besser mit Javascript.
+        </div>
+    </noscript>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $(".jsDeleted").remove();
+        });
+    </script>
+{% endmacro %}
+
+{% macro deko_checkbox(checked, anid='', aclass='') %}
+   <input type="checkbox" {% if checked %} checked {% endif %} disabled {% if anid %} id="{{ anid|e }}" {% endif %}
      {% if aclass %} class="{{ aclass|e }}" {% endif %}>
 {% endmacro %}
 
@@ -385,39 +399,40 @@
     {% if info %} {{ info_hover(info) }} {% endif %}
 {% endmacro %}
 
-{% macro format_query(spec, titles, choices, output_selection=True) %}
+{% macro format_query(spec, titles, choices, output_selection=True, selection_blacklist=[]) %}
     <script type="text/javascript">
         // adjust input element to the selected operator
         // this should be called from the corresponding change trigger
         function update_choices(field, choices, validator) {
-            var previous = $("#qinput_" + field).val();
-            $("#qinput_" + field).remove();
+            var esc_field = field.replace(".", "\\.") // escape dot for selectors
+            var previous = $("#qinput_" + esc_field).val();
+            $("#qinput_" + esc_field).remove();
             // NOTE cdedb.query.QueryOperator values are embedded
-            if ($('#qop_'+field).val() == "0" || $('#qop_'+field).val() == "1") {
+            if ($('#qop_' + esc_field).val() == "0" || $('#qop_' + esc_field).val() == "1") {
                 // do nothing
-            } else if ($('#qop_'+field).val() == "2") {
+            } else if ($('#qop_' + esc_field).val() == "2") {
                 if (!$.isEmptyObject(choices)) {
-                    $("#qspan_"+field).append($("<select>", {"name": "qval_" + field, "id": "qinput_"+field}));
-                    $("#qinput_"+field).append($("<option>", {"value": ""}));
+                    $("#qspan_" + esc_field).append($("<select>", {"name": "qval_" + field, "id": "qinput_" + field}));
+                    $("#qinput_" + esc_field).append($("<option>", {"value": ""}));
                     for (var key in choices) {
                         if (choices.hasOwnProperty(key)) {
-                            $("#qinput_"+field).append($("<option>", {"value": key, "html": choices[key], selected: (key == previous)}));
+                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": choices[key], selected: (String(key) == previous)}));
                         }
                     }
                 } else {
                     if (validator == "bool") {
-                        $("#qspan_"+field).append($("<select>", {"name": "qval_" + field, "id": "qinput_"+field}));
-                        $("#qinput_"+field).append($("<option>", {"value": ""}));
+                        $("#qspan_" + esc_field).append($("<select>", {"name": "qval_" + field, "id": "qinput_" + field}));
+                        $("#qinput_" + esc_field).append($("<option>", {"value": ""}));
                         var bool_choices = {"True": "wahr", "False": "falsch"};
                         for (var key in bool_choices) {
-                            $("#qinput_"+field).append($("<option>", {"value": key, "html": bool_choices[key], selected: (key == previous)}));
+                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": bool_choices[key], selected: (key == previous)}));
                         }
                     } else {
-                        $("#qspan_"+field).append($("<input>", {"name": "qval_" + field, "id": "qinput_"+field, "type": "text", "value": previous}));
+                        $("#qspan_" + esc_field).append($("<input>", {"name": "qval_" + field, "id": "qinput_" + field, "type": "text", "value": previous}));
                     }
                 }
             } else {
-                $("#qspan_"+field).append($("<input>", {"name": "qval_" + field, "id": "qinput_"+field, "type": "text", "value": previous}));
+                $("#qspan_" + esc_field).append($("<input>", {"name": "qval_" + field, "id": "qinput_" + field, "type": "text", "value": previous}));
             }
         }
     </script>
@@ -435,45 +450,45 @@
                                14: "größer",} %}
         <table>
             {% for field in spec %}
-                {# NOTE: We split of schemas for ids, since the dot messes up jQuery selectors. #}
-                {% with normalized_field = field.split('.')[-1] %}
-                    <tr {% if field in errors %} class="errorInput" {% endif %}>
-                        <td>
+                <tr {% if field in errors %} class="errorInput" {% endif %}>
+                    <td>
+                        {# multi-fields are not reliably selectable, so we disable selection #}
+                        {% if ',' not in field and field not in selection_blacklist %}
                             {% with name = "qsel_{}".format(field) %}
                                 {% if output_selection %}
-                                    {{ input_checkbox(name, aclass="outputSelector") }}
+                                        {{ input_checkbox(name, aclass="outputSelector") }}
                                 {% else %}
                                     {{ input_hidden(name, value=True) }}
                                 {% endif %}
                             {% endwith %}
-                        </td>
-                        <td> {{ titles[field]|e }} </td>
-                        <td>
-                            {% with name = "qop_{}".format(field) %}
-                                {% with theid = "qop_{}".format(normalized_field) %}
-                                    {# jinja does not support list comprehension ... #}
-                                    {% set myentries = [] %}
-                                    {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
-                                        {{ myentries.append((op.value, OPERATOR_LABELS[op.value], None))|e }}
-                                    {% endfor %}
-                                    {{ input_select(name, entries=myentries, defaultvalue=VALID_QUERY_OPERATORS[spec[field]][0].value,
-                                                    anid=theid) }}
-                                    <script type="text/javascript">
-                                        $(document).ready(function(){
-                                            $("#{{ theid|e }}").change(function (){ update_choices("{{ normalized_field|e }}", {{ choices.get(field, '')|json }}, "{{ spec[field]|e }}") });
-                                            $("#{{ theid|e }}").trigger('change');
-                                        });
-                                    </script>
-                                {% endwith %}
+                        {% endif %}
+                    </td>
+                    <td> {{ titles[field]|e }} </td>
+                    <td>
+                        {% with name = "qop_{}".format(field) %}
+                            {% with theid = "qop_{}".format(field) %}
+                                {# jinja does not support list comprehension ... #}
+                                {% set myentries = [] %}
+                                {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
+                                    {{ myentries.append((op.value, OPERATOR_LABELS[op.value], None))|e }}
+                                {% endfor %}
+                                {{ input_select(name, entries=myentries, defaultvalue=VALID_QUERY_OPERATORS[spec[field]][0].value,
+                                                anid=theid) }}
+                                <script type="text/javascript">
+                                    $(document).ready(function(){
+                                        $("#{{ theid.replace('.', '\\\\.')|e }}").change(function (){ update_choices("{{ field|e }}", {{ choices.get(field, '')|json }}, "{{ spec[field]|e }}") });
+                                        $("#{{ theid.replace('.', '\\\\.')|e }}").trigger('change');
+                                    });
+                                </script>
                             {% endwith %}
-                        </td>
-                        <td>
-                            <span id="qspan_{{ normalized_field|e }}">
-                                {{ input_text("qval_{}".format(field), anid="qinput_{}".format(normalized_field)) }}
-                            </span>
-                        </td>
-                    </tr>
-                {% endwith %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        <span id="qspan_{{ field|e }}">
+                            {{ input_text("qval_{}".format(field), anid="qinput_{}".format(field)) }}
+                        </span>
+                    </td>
+                </tr>
             {% endfor %}
             {% for title, name in (("1. Sortierung nach", "qord_primary"), ("2. Sortierung nach", "qord_secondary"), ("3. Sortierung nach", "qord_tertiary"))%}
                 <tr>
@@ -482,9 +497,12 @@
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
                         {% for field in spec %}
-                            {{ myentries.append((field, titles[field], None))|e }}
+                            {% if ',' not in field %}
+                                {{ myentries.append((field, titles[field], None))|e }}
+                            {% endif %}
                         {% endfor %}
                         {{ input_select(name, entries=myentries, nulloption=True)}}
+                        {{ input_select(name + "_ascending", entries=((True, "aufsteigend", None), (False, "absteigend", None)), defaultvalue=True) }}
                     </td>
                 </tr>
             {% endfor %}
@@ -503,7 +521,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_query_result(result, query, titles) %}
+{% macro display_query_result(result, query, titles, choices) %}
     {% if not result|length %}
         Keine Ergebnisse!
     {% else %}
@@ -518,20 +536,28 @@
                 {% endfor %}
             </tr>
             {% for row in result %}
-                {% set outerloopindex = loop.index%}
+                {% set outerloopindex = loop.index0 %}
                 <tr>
                     <td>
-                        {{ input_checkbox("row_{}".format(loop.index), anid="row_{}".format(loop.index), aclass="rowSelector") }}
+                        {{ input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
+                                          aclass="rowSelector") }}
                     </td>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
-                            {# NOTE that we split off any possible schema specification since they're not preserved by the query #}
+                            {# NOTE that we split off any possible schema specification since they're not preserved
+                                    by the query #}
                             {% with afield = field.split('.')[-1] %}
                                 <td>
                                     {% if afield == "persona_id" %}
-                                        <a href="{{ show_user_link(row[afield])|e }}">{{ row[afield]|e }}</a>
+                                        <a href="{{ show_user_link(row[afield])|e }}">{{ row[afield]|cdedbid|e }}</a>
+                                    {% elif field == "reg.id" %}
+                                        {# This should occur only if the context allows the following link. #}
+                                        <a href="{{ cdedblink("event/show_registration",
+                                                    {'registration_id': row[afield]})|e }}">{{ row[afield]|e }}</a>
+                                    {% elif query.spec[csvfield] == "bool" %}
+                                        {{ deko_checkbox(row.get(afield)) }}
                                     {% else %}
-                                        {{ row.get(afield, "UNDEFINED")|e }}
+                                        {{ choices.get(csvfield, {}).get(row.get(afield), row.get(afield, "UNDEFINED"))|e }}
                                     {% endif %}
                                     {{ input_hidden("row_{}_{}".format(outerloopindex, afield), row.get(afield),
                                                     anid="row_{}_{}".format(outerloopindex, afield)) }}
@@ -545,13 +571,76 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_csv_query_result(result, query) -%}
+{% macro event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False, defaultvalue='',
+                           anid='', aclass='') %}
+    {% if not name %}
+        {% set name = "fields.{}".format(field_data['field_name']) %}
+    {% endif %}
+    {% if not label %}
+        {% set label = field_data['field_name'] %}
+    {% endif %}
+    {% if field_data['entries'] %}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for value, description in field_data['entries'] %}
+            {{ myentries.append((value, description, None))|e }}
+        {% endfor %}
+        {{ input_select(name=name, title=label, entries=myentries, nulloption=True,
+                        readonly=readonly, defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+   {% else %}
+        {% if field_data['kind'] == "bool" %}
+            {{ input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
+                              aclass=aclass) }}
+        {% elif field_data['kind'] == "str" %}
+            {{ input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                              defaultvalue=defaultvalue, anid=anid, aclass=(aclass + " bigg")) }}
+        {% else %}
+            {{ input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                          defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+        {% endif %}
+   {% endif %}
+{% endmacro %}
+
+{% macro tab_event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False, defaultvalue='',
+                               anid='', aclass='') %}
+    {% if not name %}
+        {% set name = "fields.{}".format(field_data['field_name']) %}
+    {% endif %}
+    {% if not label %}
+        {% set label = field_data['field_name'] %}
+    {% endif %}
+    {% if field_data['entries'] %}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for value, description in field_data['entries'] %}
+            {{ myentries.append((value, description, None))|e }}
+        {% endfor %}
+        {{ tab_input_select(name=name, title=label, entries=myentries, nulloption=True,
+                            readonly=readonly, defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+   {% else %}
+        {% if field_data['kind'] == "bool" %}
+            {{ tab_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
+                                  aclass=aclass) }}
+        {% elif field_data['kind'] == "str" %}
+            {{ tab_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                                  defaultvalue=defaultvalue, anid=anid, aclass=(aclass + " bigg")) }}
+        {% else %}
+            {{ tab_input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                              defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+        {% endif %}
+   {% endif %}
+{% endmacro %}
+
+{% macro display_csv_query_result(result, query, choices) -%}
 {{ ";".join(query.fields_of_interest).replace(',', ';') }}
 {% for row in result -%}
 {% for csvfield in query.fields_of_interest -%}
 {% for field in csvfield.split(',') -%}
 {% with afield = field.split('.')[-1] -%}
-{{ row.get(afield, "UNDEFINED")|linebreaks(replacement="        ") -}}
+{% if row.get(afield) is not none -%}
+{{ (choices.get(csvfield, {}).get(row[afield], row[afield])|linebreaks(replacement="        ")).replace(';', ',') -}}
+{# else we print nothing -#}
+{% endif -%}
 {% endwith -%}
 {% if not loop.last %};{% endif -%}
 {% endfor -%}

@@ -8,6 +8,9 @@ import sys
 import logging
 import logging.handlers
 import collections
+import collections.abc
+import enum
+import copy
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
                      console_log_level=None):
@@ -172,6 +175,7 @@ def extract_roles(db_privileges, status):
             ret.add(possiblerole)
     return ret
 
+# TODO decide whether we sort by first or last name
 def name_key(entry):
     """Create a sorting key associated to a persona dataset.
 
@@ -199,6 +203,96 @@ def compute_checkdigit(value):
         tmp = tmp // 10
     dsum = sum((i+1)*d for i, d in enumerate(digits))
     return chr(65 + (dsum % 11))
+
+def unwrap(single_element_list, keys=False):
+    """Remove one nesting layer (of lists, etc.).
+
+    This is here to replace code like ``foo = bar[0]`` where bar is a
+    list with a single element. This offers some more amenities: it
+    works on dicts and performs validation.
+
+    In case of an error (e.g. wrong number of elements) this returns
+    ``None``.
+
+    :type single_element_list: [obj]
+    :type keys: bool
+    :param keys: If a mapping is input, this toggles between returning
+      the key or value.
+    :rtype: obj or None
+    """
+    if not isinstance(single_element_list, collections.abc.Iterable):
+        return None
+    if len(single_element_list) != 1:
+        return None
+    if isinstance(single_element_list, collections.abc.Mapping):
+        if keys:
+            single_element_list = single_element_list.keys()
+        else:
+            single_element_list = single_element_list.values()
+    return next(i for i in single_element_list)
+
+@enum.unique
+class AgeClasses(enum.Enum):
+    """Abstraction for encapsulating properties like legal status changing with
+    age.
+
+    If there is any need for additional detail in differentiating this
+    can be centrally added here.
+    """
+    full = 0 #: at least 18 years old
+    u18 = 1 #: between 16 and 18 years old
+    u16 = 2 #: between 14 and 16 years old
+    u14 = 3 #: less than 14 years old
+
+    def is_minor(self):
+        """Checks whether a legal guardian is required.
+
+        :rtype: bool
+        """
+        return self in {AgeClasses.u14, AgeClasses.u16, AgeClasses.u18}
+
+    def may_mix(self):
+        """Whether persons of this age may be legally accomodated in a mixed
+        lodging together with the opposite gender.
+
+        :rtype: bool
+        """
+        return self in {AgeClasses.full, AgeClasses.u18}
+
+def deduct_years(date, years):
+    """Convenience function to go back in time.
+
+    Dates are nasty, in theory this should be a simple subtraction, but
+    leap years create problems.
+
+    :type date: datetime.datetime
+    :type years: int
+    :rtype: datetime.datetime
+    """
+    try:
+        return date.replace(year=date.year-years)
+    except ValueError:
+        ## this can happen in only one situation: we tried to move a leap
+        ## day into a year without leap
+        assert(date.month == 2 and date.day == 29)
+        return date.replace(year=date.year-years, day=28)
+
+def determine_age_class(birth, reference):
+    """Basically a constructor for :py:class:`AgeClasses`.
+
+    :type birth: datetime.date
+    :type reference: datetime.date
+    :param reference: Time at which to check age status (e.g. the first day of
+      a scheduled event).
+    :rtype: :py:class:`AgeClasses`
+    """
+    if birth <= deduct_years(reference, 18):
+        return AgeClasses.full
+    if birth <= deduct_years(reference, 16):
+        return AgeClasses.u18
+    if birth <= deduct_years(reference, 14):
+        return AgeClasses.u16
+    return AgeClasses.u14
 
 #: A collection of the available privilege levels. More specifically the
 #: keys of this dict specify the roles. The corresponding value is a set of
@@ -308,7 +402,8 @@ PAST_EVENT_FIELDS = ("id", "title", "organizer", "description")
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = PAST_EVENT_FIELDS + (
     "shortname", "registration_start", "registration_soft_limit",
-    "registration_hard_limit", "use_questionnaire", "notes", "offline_lock")
+    "registration_hard_limit", "iban", "use_questionnaire", "notes",
+    "offline_lock")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
@@ -321,15 +416,15 @@ COURSE_FIELDS = PAST_COURSE_FIELDS + ("nr", "shortname", "instructors", "notes")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
-    "id", "persona_id", "event_id", "orga_notes", "payment",
+    "id", "persona_id", "event_id", "notes", "orga_notes", "payment",
     "parental_agreement", "mixed_lodging", "checkin", "foto_consent",
-    "field_data")
+    "field_data", "real_persona_id")
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "course_id",
                             "status", "lodgement_id", "course_instructor")
 
 #: Fields of a lodgement entry (one house/room)
-LODGMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
+LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
 
 EPSILON = 10**(-6) #:

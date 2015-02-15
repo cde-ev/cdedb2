@@ -1,6 +1,7 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}CdE Archivsuche{% endblock %}
 {% block content %}
     <h3>Standardabfragen</h3>
@@ -27,7 +28,7 @@
             <div>
                 {{ util.input_submit(value="Suchen") }}
                 {{ util.input_submit(value="CSV-Datei", name="CSV") }}
-                {{ util.format_query(spec, TITLES, choices) }}
+                {{ util.format_query(spec, TITLES, choices, selection_blacklist=("event_id", "course_id")) }}
                 {{ util.input_submit(value="Suchen") }}
                 {{ util.input_submit(value="CSV-Datei", name="CSV") }}
             </div>

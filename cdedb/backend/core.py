@@ -653,13 +653,35 @@ class CoreBackend(AbstractBackend):
             raise ValueError("Invalid ids requested.")
         return {d['id']: extract_realm(d['status']) for d in data}
 
+    @access("persona")
+    def verify_personas(self, rs, ids, stati=None):
+        """Check wether certain ids map to actual personas.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :type stati: [int] or None
+        :param stati: If provided restrict matches to these PersonaStati.
+        :rtype: [int]
+        :returns: All ids which successfully validated.
+        """
+        ids = affirm_array("int", ids)
+        if stati is not None:
+            stati = affirm_array("int", stati)
+        query = "SELECT id FROM core.personas WHERE id = ANY(%s)"
+        params = (ids,)
+        if stati:
+            query = glue(query, "AND status = ANY(%s)")
+            params += (stati,)
+        data = self.query_all(rs, query, params)
+        return tuple(e['id'] for e in data)
+
     @access("anonymous")
     def verify_existence(self, rs, email):
-        """Check wether a certain email belongs to a persona.
+        """Check wether a certain email belongs to any persona.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type email: str
-        :rtype bool:
+        :rtype: bool
         """
         email = affirm("email", email)
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE username = %s"

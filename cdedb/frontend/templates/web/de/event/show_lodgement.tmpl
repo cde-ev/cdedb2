@@ -1,0 +1,59 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Unterkunft {{ lodgement_data['moniker'] }} ({{ event_data['title']|e }}){% endblock %}
+{% block content %}
+    {% if problems %}
+        <h2>Probleme</h2>
+        <ul>
+            {% for description, lodgement_id, part_id, affected_regs in problems %}
+                <li>
+                    {{ event_data['parts'][part_id]['title']|e }} --
+                    {{ i18n(description)|e }}
+                    {% if affected_regs %}
+                        (
+                            {% for reg_id in affected_regs %}
+                                {{ user_data[registration_data[reg_id]['persona_id']]['given_names']|e }}
+                                {{ user_data[registration_data[reg_id]['persona_id']]['family_name']|e }}
+                                {% if not loop.last %} , {% endif %}
+                            {% endfor%}
+                        )
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <h2>Aktionen</h2>
+    <a href="{{ cdedblink("event/change_lodgement_form")|e }}" {% if locked %} disabled {% endif %}>bearbeiten</a>
+    <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform">
+        {{ util.input_submit("Löschen", readonly=locked) }}
+    </form>
+    <a href="{{ cdedblink("event/manage_inhabitants_form")|e }}" {% if locked %} disabled {% endif %}>Belegung ändern</a>
+    <h2>Allgemeine Angaben</h2>
+    <table>
+        <tr>
+            <td>normale Plätze</td>
+            <td>{{ lodgement_data['capacity']|e }}</td>
+        <tr>
+        </tr>
+            <td>Reserveplätze</td>
+            <td>{{ lodgement_data['reserve']|e }}</td>
+        <tr>
+        </tr>
+            <td>Notizen</td>
+            <td>{{ lodgement_data['notes']|e|linebreaks }}</td>
+        </tr>
+    </table>
+    <h2>Belegung</h2>
+    {% for part_id, pdata in event_data['parts']|dictsort %}
+        {# TODO make this multi-column #}
+        <h3>{{ pdata['title']|e }} -- {{ inhabitants[(values['lodgement_id'], part_id)]|length|e }} Bewohner</h3>
+        <ul>
+            {% for registration_id in inhabitants[(values['lodgement_id'], part_id)] %}
+                <li>
+                    {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                    {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+{% endblock %}

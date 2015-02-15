@@ -22,6 +22,7 @@ import argparse
 import datetime
 import logging
 import decimal
+import pytz
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -222,7 +223,7 @@ class CdEBackend(AbstractUserBackend):
         with Atomizer(rs):
             query = glue("SELECT queries FROM core.quota WHERE persona_id = %s",
                          "AND qdate = %s")
-            today = datetime.datetime.now().date()
+            today = datetime.datetime.now(pytz.utc).date()
             num = self.query_one(rs, query, (rs.user.persona_id, today))
             query = glue("UPDATE core.quota SET queries = %s",
                          "WHERE persona_id = %s AND qdate = %s")

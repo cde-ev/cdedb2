@@ -210,23 +210,42 @@ class FrontendTest(unittest.TestCase):
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
             self.assertNotEqual('Fehler', texts[0])
+        self.log_generation_time()
+
+    def log_generation_time(self, response=None):
+        if response is None:
+            response = self.response
+        if _BASICCONF.TIMING_LOG:
+            with open(_BASICCONF.TIMING_LOG, 'a') as f:
+                output = "{} {} {} {}\n".format(
+                    response.request.path, response.request.method,
+                    response.headers.get('X-Generation-Time'),
+                    response.request.query_string)
+                f.write(output)
 
     def get(self, *args, **kwargs):
         self.response = self.app.get(*args, **kwargs)
         self.basic_validate()
 
     def follow(self):
+        oldresponse = self.response
         self.response = self.response.maybe_follow()
+        if self.response != oldresponse:
+            self.log_generation_time(oldresponse)
 
     def post(self, *args, **kwargs):
         self.response = self.app.post(*args, **kwargs)
         self.follow()
         self.basic_validate()
 
-    def submit(self, form, button="submitform"):
+    def submit(self, form, button="submitform", check_notification=True):
+        method = form.method
         self.response = form.submit(button)
         self.follow()
         self.basic_validate()
+        if method == "POST" and check_notification:
+            ## check that we acknowledged the POST with a notification
+            self.assertIn("successNotification", self.response.text)
 
     def traverse(self, *links):
         for link in links:
@@ -239,11 +258,11 @@ class FrontendTest(unittest.TestCase):
         f = self.response.forms['loginform']
         f['username'] = user['username']
         f['password'] = user['password']
-        self.submit(f)
+        self.submit(f, check_notification=False)
 
     def logout(self):
         f = self.response.forms['logoutform']
-        self.submit(f)
+        self.submit(f, check_notification=False)
 
     def fetch_mail(self):
         elements = self.response.lxml.xpath("//div[@class='notification infoNotification']/span/text()")

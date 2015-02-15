@@ -1,0 +1,42 @@
+<<% extends "tex/de/event/base.tmpl" %>>
+<<% block extra_preamble %>>
+    \parindent 0pt\relax
+<<% endblock %>>
+<<% block content %>>
+    <<% for course_id, cdata in course_data|dictsort %>>
+        <<% for part_id in cdata['parts']|sort %>>
+            \section*{<<< cdata['title']|te >>> (<<< event_data['parts'][part_id]['title']|te >>>)}
+            Kursleiter: <<< cdata['instructors']|te >>>
+            \par
+            Notizen: <<< cdata['notes']|te >>>
+            \par
+            Erst-/Zweit-/Drittwahlen: <<< counts[course_id][(part_id, 0)] >>>/%
+                                      <<< counts[course_id][(part_id, 1)] >>>/%
+                                      <<< counts[course_id][(part_id, 2)] >>>
+            \par
+        <<% endfor %>>
+    <<% endfor %>>
+    \clearpage
+    <<% for registration_id, rdata in registration_data|dictsort %>>
+        <<% if rdata['persona_id'] not in event_data['orgas'] %>>
+            <<% for part_id, pdata in event_data['parts']|dictsort %>>
+                <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.participant %>>
+                    \section*{%
+                        <<< user_data[rdata['persona_id']]['given_names']|te >>>
+                        <<< user_data[rdata['persona_id']]['family_name']|te >>>
+                        (<<< pdata['title']|te >>>)}
+                    <<% if rdata['parts'][part_id]['course_instructor'] %>>
+                        Kursleiter: <<< course_data[rdata['parts'][part_id]['course_instructor']]['title']|te >>>
+                        \par
+                    <<% endif %>>
+                    <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") %>>
+                        <<% if rdata['choices'][part_id]|length > loop.index0 %>>
+                            <<< label|te >>>: <<< course_data[rdata['choices'][part_id][loop.index0]]['title']|te >>>
+                            \par
+                        <<% endif %>>
+                    <<% endfor %>>
+                <<% endif %>>
+            <<% endfor %>>
+        <<% endif %>>
+    <<% endfor %>>
+<<% endblock %>>

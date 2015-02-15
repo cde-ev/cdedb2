@@ -1,0 +1,52 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Unterkunftsübersicht ({{ event_data['title']|e }}){% endblock %}
+{% block content %}
+    {% if problems %}
+        <h2>Probleme</h2>
+        <ul>
+            {% for description, lodgement_id, part_id, affected_regs in problems %}
+                <li>
+                    {{ lodgement_data[lodgement_id]['moniker']|e }}/{{ event_data['parts'][part_id]['title']|e }} --
+                    {{ i18n(description)|e }}
+                    {% if affected_regs %}
+                        (
+                            {% for reg_id in affected_regs %}
+                                {{ user_data[registration_data[reg_id]['persona_id']]['given_names']|e }}
+                                {{ user_data[registration_data[reg_id]['persona_id']]['family_name']|e }}
+                                {% if not loop.last %} , {% endif %}
+                            {% endfor%}
+                        )
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <h2>Neue Unterkunft anlegen</h2>
+    <a href="{{ cdedblink("event/create_lodgement_form")|e }}" {% if locked %} disabled {% endif %}>anlegen</a>
+    <h2>Alle Unterkünfte</h2>
+    <table class="checkeredTable">
+        <tr>
+            <th>Unterkunft</th>
+            <th>Plätze</th>
+            <th>Reserveplätze</th>
+            {% for part_id, pdata in event_data['parts']|dictsort %}
+                <th>Belegung {{ pdata['title']|e }}</th>
+            {% endfor %}
+            <th>Aktionen</th>
+        </tr>
+        {% for lodgement_id, ldata in lodgement_data|dictsort %}
+            <tr>
+                <td>{{ ldata['moniker']|e }}</td>
+                <td>{{ ldata['capacity']|e }}</td>
+                <td>{{ ldata['reserve']|e }}</td>
+                {% for part_id in event_data['parts']|sort %}
+                    <td>{{ inhabitants[(lodgement_id, part_id)]|length|e }}</td>
+                {% endfor %}
+                <td>
+                    <a href="{{ cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}) }}">Details</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

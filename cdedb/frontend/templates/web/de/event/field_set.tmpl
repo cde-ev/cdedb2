@@ -1,0 +1,19 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Feld {{ event_data['fields'][values['field_id']|int]['field_name']|e }} setzen ({{ event_data['title']|e }}){% endblock %}
+{% block content %}
+    <a href="{{ cdedblink("event/show_event")|e }}">Abbrechen</a>
+    <form action="{{ cdedblink('event/field_set')|e }}" method="POST" id="fieldform">
+        <table>
+            {% for registration_id in ordered %}
+                {{ util.tab_event_field_input(event_data['fields'][values['field_id']|int], name="input{}".format(registration_id),
+                                              label="{} {}".format(user_data[registration_data[registration_id]['persona_id']]['given_names'],
+                                                                   user_data[registration_data[registration_id]['persona_id']]['family_name'])) }}
+            {% endfor %}
+        </table>
+        <div>
+            {{ util.input_hidden(name="field_id") }}
+            {{ util.input_submit(value="Speichern") }}
+        </div>
+    </form>
+{% endblock %}

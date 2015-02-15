@@ -102,6 +102,26 @@ class RegistrationPartStati(enum.IntEnum):
     cancelled = 4 #:
     rejected = 5 #:
 
+    @property
+    def is_involved(self):
+        """Any status which warrants further attention by the orgas.
+
+        :rtype: bool
+        """
+        return self in (RegistrationPartStati.applied,
+                        RegistrationPartStati.participant,
+                        RegistrationPartStati.waitlist,
+                        RegistrationPartStati.guest,)
+
+    @property
+    def is_present(self):
+        """Any status which will be on site for the event.
+
+        :rtype: bool
+        """
+        return self in (RegistrationPartStati.participant,
+                        RegistrationPartStati.guest,)
+
 @enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""

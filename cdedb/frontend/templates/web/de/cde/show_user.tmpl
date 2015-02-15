@@ -124,13 +124,9 @@
             <tr>
                 <td>CdE-Mitglied</td>
                 <td>
-                    {% if data['is_member'] %}
-                        {{ util.checkbox_checked(anid="membership_checkbox") }}
-                        {% if data['trial_member'] %}
-                            (Probemitgliedschaft)
-                        {% endif %}
-                    {% else %}
-                        {{ util.checkbox_unchecked(anid="membership_checkbox") }}
+                    {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
+                    {% if data['trial_member'] %}
+                        (Probemitgliedschaft)
                     {% endif %}
                     {% if is_admin %}
                         <a href="{{ cdedblink('cde/modify_membership_form')|e }}">Mitgliedsstatus ändern</a>
@@ -141,13 +137,12 @@
                 <tr>
                     <td>Account aktiv</td>
                     <td>
+                        {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}
                         {% if data['is_active'] %}
-                            {{ util.checkbox_checked(anid='activity_checkbox') }}
                             <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST" id="activitytoggleform">
                                 <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
                             </form>
                         {% else %}
-                            {{ util.checkbox_unchecked(anid='activity_checkbox') }}
                             <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST" id="activitytoggleform">
                                 <div>{{ util.input_submit(value="Account aktivieren") }}</div>
                             </form>
@@ -157,13 +152,7 @@
             {% endif %}
             <tr>
                 <td>CdE-Wolken-Zugriff</td>
-                <td>
-                    {% if data['cloud_account'] %}
-                        {{ util.checkbox_checked() }}
-                    {% else %}
-                        {{ util.checkbox_unchecked() }}
-                    {% endif %}
-                </td>
+                <td>{{ util.deko_checkbox(checked=data['cloud_account']) }}</td>
             </tr>
             {% if data['is_member'] %}
                 <tr>
@@ -185,13 +174,7 @@
                 </tr>
                 <tr>
                     <td>Datenzugriff für BuB</td>
-                    <td>
-                        {% if data['bub_search'] %}
-                            {{ util.checkbox_checked() }}
-                        {% else %}
-                            {{ util.checkbox_unchecked() }}
-                        {% endif %}
-                    </td>
+                    <td>{{ util.deko_checkbox(checked=data['bub_search']) }}</td>
                 </tr>
             {% endif %}
             <tr>

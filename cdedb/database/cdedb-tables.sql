@@ -330,6 +330,7 @@ CREATE TABLE event.events (
         -- actual end of registration, in between participants are
         -- automatically warned about registering late
         registration_hard_limit date,
+        iban                    varchar,
         use_questionnaire       boolean NOT NULL DEFAULT False,
         notes                   varchar,
         offline_lock            boolean NOT NULL DEFAULT False
@@ -421,16 +422,23 @@ GRANT SELECT, UPDATE ON event.lodgements_id_seq TO cdb_persona;
 CREATE TABLE event.registrations (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
+        -- to be used by offline deployments
+        --
+        -- There we have to create new personas for everybody registering
+        -- offline, which will not be imported into the online database, but
+        -- have to be mapped to an existing persona.
+        real_persona_id         integer DEFAULT NULL,
         event_id                integer NOT NULL REFERENCES event.events(id),
 
-        orga_notes              varchar,
-        payment                 date,
+        notes                   varchar,
+        orga_notes              varchar DEFAULT NULL,
+        payment                 date DEFAULT NULL,
         -- parental consent for minors (NULL if not (yet) given, e.g. non-minors)
-        parental_agreement      boolean,
+        parental_agreement      boolean DEFAULT NULL,
         mixed_lodging           boolean,
-        checkin                 timestamp WITH TIME ZONE,
+        checkin                 timestamp WITH TIME ZONE DEFAULT NULL,
         -- foto consent (documentation, password protected gallery)
-        foto_consent            boolean DEFAULT NULL,
+        foto_consent            boolean,
 
         -- only basic data should be defined here and everything else will
         -- be handeled via additional fields
@@ -438,6 +446,7 @@ CREATE TABLE event.registrations (
 );
 CREATE INDEX idx_registrations_persona_id ON event.registrations(persona_id);
 CREATE INDEX idx_registrations_event_id ON event.registrations(event_id);
+CREATE UNIQUE INDEX idx_registrations_constraint ON event.registrations(persona_id, event_id);
 GRANT SELECT, INSERT, UPDATE ON event.registrations TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registrations_id_seq TO cdb_persona;
 
@@ -445,11 +454,11 @@ CREATE TABLE event.registration_parts (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
         part_id                 integer NOT NULL REFERENCES event.event_parts(id),
-        course_id               integer REFERENCES event.courses(id),
+        course_id               integer REFERENCES event.courses(id) DEFAULT NULL,
         -- enum for status of this registration part
         -- see cdedb.database.constants.RegistrationPartStati
-        status                  integer NOT NULL DEFAULT 0,
-        lodgement_id            integer REFERENCES event.lodgements(id),
+        status                  integer NOT NULL,
+        lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL,
         -- this is NULL if not an instructor
         course_instructor       integer REFERENCES event.courses(id)
 );
@@ -476,6 +485,7 @@ CREATE TABLE event.questionnaire_rows (
         pos                     integer NOT NULL,
         title                   varchar,
         info                    varchar,
+        input_size              integer,
         readonly                boolean
 );
 CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_id);
@@ -598,23 +608,36 @@ CREATE TABLE assembly.assemblies (
         -- TODO maybe some dates?
 );
 
-CREATE TABLE assembly.decisions (
+CREATE TABLE assembly.proposals (
         id                      serial PRIMARY KEY,
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
         title                   varchar NOT NULL,
         description             varchar
+        -- TODO maybe some dates?
+);
+
+CREATE TABLE assembly.candidates (
+        id                      serial PRIMARY KEY,
+        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
+        text                    varchar NOT NULL,
+        moniker                 varchar NOT NULL
 );
 
 CREATE TABLE assembly.voting_secrets (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
+        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
         secret                  varchar
 );
 
 CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
-        decision_id             integer NOT NULL REFERENCES assembly.decisions(id),
+        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
+        -- The vote is of the form '2>3=1>0>4' where the pieces between the
+        -- relation symbols are the corresponding monikers from
+        -- assembly.candidates.
         vote                    varchar,
+        -- This is the SHA512 of the concatenation of vote and voting secret.
         hash                    varchar
 );
 

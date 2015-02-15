@@ -1,0 +1,104 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Status der Anmeldung zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
+{% block content %}
+    {% if event_data['registration_soft_limit'] >= today %}
+        <p>
+            Änderungen sind bis zum Anmeldeschluss ({{ event_data['registration_soft_limit']|date|e }}) möglich.
+        </p>
+    {% endif %}
+    {% if not registration_data['payment'] %}
+        <p>
+             Beachte bitte, dass deine Anmeldung erst mit Überweisung des
+             Teilnehmerbeitrags gültig wird. Überweise dazu bitte {{ fee|e}}€
+             auf folgendes Konto. Achte bitte bei internationalen
+             Überweisungen darauf, dass der Empfänger keine Gebühren zahlen
+             muss.
+        </p>
+        <p>
+            Kontoinhaber: CdE e.V.<br>
+            IBAN: {{ event_data['iban']|e }}<br>
+            BIC:  BFSWDE33XXX (BIC = SWIFT-Code)<br>
+            Bank: Bank für Sozialwirtschaft<br>
+            Verwendungszweck: {{ user_data['given_names']|e }} {{ user_data['family_name']|e }},
+                              {{ user_data['id']|cdedbid|e }}, {{ event_data['title']|e }}
+        </p>
+    {% endif %}
+    {% if age.is_minor() and not registration_data['parental_agreement'] %}
+        Du musst noch die Einverständniserklärung deiner
+        Erziehungsberechtigten an die Orgas schicken. Du findest die Vorlage
+        <a href="{{ cdedblink('event/get_minor_form')|e }}">hier</a>.
+    {% endif %}
+    <table>
+        <tr><th colspan="2">Status</th></tr>
+        {% for part_id, pdata in registration_data['parts']|dictsort %}
+            <tr>
+                <td>{{ event_data['parts'][part_id]['title']|e }}</td>
+                <td>{{ i18n(pdata['status']|enum(const.RegistrationPartStati))|e }}</td>
+            </tr>
+        {% endfor %}
+        <tr><th colspan="2">Sonstige Angaben</th></tr>
+        <tr>
+            <td>Gemischte Unterbringung</td>
+            <td>
+                {% if not age.may_mix() %}
+                    Keine gemischte Unterbringung.
+                {% else %}
+                    {% if registration_data['mixed_lodging'] %}
+                        Ich bin mit einer gemischten Unterbringung einverstanden.
+                    {% else %}
+                        Ich will geschlechter-getrennt untergebracht werden.
+                    {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>Fotos</td>
+            <td>
+                Ich bin
+                {% if not registration_data['foto_consent'] %}
+                    <strong>nicht</strong>
+                {% endif %}
+                damit einverstanden, dass Fotos und Aufnahmen meiner Person,
+                die im Rahmen dieser Veranstaltung entstehen, für die
+                Veranstaltungsdokumentation und eine CdE-interne,
+                passwortgeschützte Fotogalerie verwendet werden. Einzelne
+                Fotos können auf gesonderten Wunsch davon ausgenommen
+                werden.
+            </td>
+        </tr>
+        <tr>
+            <td>Anmerkungen</td>
+            <td>
+                {{ registration_data['notes']|e|linebreaks }}
+            </td>
+        </tr>
+        {% for part_id, pdata in registration_data['parts']|dictsort %}
+            {% if const.RegistrationPartStati(pdata['status']).is_involved
+                  and registration_data['choices'].get(part_id) %}
+                <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
+                {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}
+                    <tr>
+                            <td>{{ prio|e }}</td>
+                            <td>{{ course_data[registration_data['choices'][part_id][loop.index0]]['title']|e }}</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                        <td>Kursleiter</td>
+                        <td>
+                            {% if not pdata['instructor'] %}
+                                Keine Kursleitung.
+                            {% else %}
+                                {{ course_data[pdata['instructor']]['title']|e }}
+                            {% endif %}
+                        </td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+    {% if event_data['registration_soft_limit'] >= today %}
+        <p>
+            <a href="{{ cdedblink("event/amend_registration_form")|e }}">Ändern</a>
+        </p>
+    {% endif %}
+{% endblock %}

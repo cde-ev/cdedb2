@@ -1,0 +1,200 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}{{ data['title']|e }} Details{% endblock %}
+{% block content %}
+    <table>
+        <tr>
+            <td>Titel</td>
+            <td>{{ data['title']|e }}</td>
+        </tr>
+        <tr>
+            <td>Organisator</td>
+            <td>{{ data['organizer']|e }}</td>
+        </tr>
+        <tr>
+            <td>Beschreibung</td>
+            <td>{{ data['description']|e|linebreaks }}</td>
+        </tr>
+        <tr>
+            <td>Kürzel</td>
+            <td>{{ data['shortname']|e }}</td>
+        </tr>
+        <tr>
+            <td>Anmeldebeginn</td>
+            <td>{{ data['registration_start']|date|e }}</td>
+        </tr>
+        <tr>
+            <td>offizieller Anmeldeschluss</td>
+            <td>{{ data['registration_soft_limit']|date|e }}</td>
+        </tr>
+        <tr>
+            <td>tatsächlicher Anmeldeschluss</td>
+            <td>{{ data['registration_hard_limit']|date|e }}</td>
+        </tr>
+        <tr>
+            <td>CdE-Konto IBAN</td>
+            <td>{{ data['iban']|e }}</td>
+        </tr>
+        <tr>
+            <td>Fragebogeneinsatz</td>
+            <td>{{ util.deko_checkbox(checked=data['use_questionnaire']) }}</td>
+        </tr>
+        <tr>
+            <td>Notizen</td>
+            <td>{{ data['notes']|e|linebreaks }}</td>
+        </tr>
+    </table>
+    <a href="{{ cdedblink('event/change_event_form')|e }}" {% if locked %} disabled {% endif %}>bearbeiten</a>
+    <h2>Kurs hinzufügen</h2>
+        <a href="{{ cdedblink("event/create_course_form")|e }}" {% if locked %} disabled {% endif %}>Kurs hinzufügen</a>
+    <h2>Minderjährigenformular</h2>
+    {% if minor_form_present %}
+        <a href="{{ cdedblink('event/get_minor_form')|e }}">aktuelles Formular</a>
+    {% else %}
+        <strong>Kein Formular vorhanden -- Minderjährige können sich nicht anmelden.</strong>
+    {% endif %}
+    <form action="{{ cdedblink('event/change_minor_form')|e }}" method="POST" enctype="multipart/form-data" id="changeminorformform">
+        <div>
+            {{ util.input_file(name="minor_form", accept="application/pdf", info="Eine pdf-Datei.") }}
+            {{ util.input_submit(value="Hochladen", readonly=locked) }}
+        </div>
+    </form>
+    <h2>Teile</h2>
+    <ul>
+        {% for anid, entry in data['parts']|dictsort %}
+            <li>
+                {{ entry['title']|e }} ({{ entry['part_begin']|date|e }}--{{ entry['part_end']|date|e }}; {{ entry['fee']|e }}€)
+                <a href="{{ cdedblink('event/change_part_form', {'part_id': anid})|e }}" {% if locked %} disabled {% endif %}>bearbeiten</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <h3>Teil hinzufügen</h3>
+    <form action="{{ cdedblink('event/add_part')|e }}" method="POST" id="addpartform">
+        <table>
+            {{ util.tab_input_text(name="part_title", label="Name") }}
+            {{ util.tab_input_text(name="part_begin", label="Beginn") }}
+            {{ util.tab_input_text(name="part_end", label="Ende") }}
+            {{ util.tab_input_text(name="fee", label="Teilnehmerbeitrag") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Teil hinzufügen", readonly=locked) }}
+        </div>
+    </form>
+    <h2>Orgas</h2>
+    <ul>
+        {% for anid, entry in orgas|dictsort %}
+            <li>
+                {{ entry['given_names']|e }} {{ entry['family_name']|e }} ({{ anid|cdedbid|e }})
+                <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST" id="removeorgaform{{ anid|e }}">
+                    <div>
+                        {{ util.input_hidden(name="orga_id", value=anid) }}
+                        {{ util.input_submit(value="Orga löschen", readonly=locked) }}
+                    </div>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h3>Orga hinzufügen</h3>
+    <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform">
+        <div>
+            {{ util.input_text(name="orga_id", label="ID") }}
+            {{ util.input_submit(value="Orga hinzufügen", readonly=locked) }}
+        </div>
+    </form>
+    <h2>Datenfelder</h2>
+    <ul>
+        {% for anid, entry in data['fields']|dictsort %}
+            <li>
+                <p>
+                    {{ entry['field_name']|e }} ({{ entry['kind']|e }})
+                </p>
+                {% if entry['entries'] %}
+                    <p>
+                        Auswahlmöglichkeiten
+                        <table>
+                            <tr>
+                                <th>Möglichkeit</th>
+                                <th>Beschreibung</th>
+                            </tr>
+                            {% for value, description in entry['entries'] %}
+                                <tr>
+                                    <td>{{ value|e }}</td>
+                                    <td>{{ description|e }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </p>
+                {% endif %}
+                <a href="{{ cdedblink('event/change_field_form', {'field_id': anid})|e }}" {% if locked %} disabled {% endif %}>bearbeiten</a>
+                <form action="{{ cdedblink('event/remove_field', {'field_id': anid})|e }}" method="POST" id="removefieldform{{ anid|e }}">
+                    <div>
+                        {{ util.input_hidden(name="field_id", value=anid) }}
+                        {{ util.input_submit(value="Feld löschen", readonly=locked) }}
+                    </div>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h3>Feld hinzufügen</h3>
+    <form action="{{ cdedblink('event/add_field')|e }}" method="POST" id="addfieldform">
+        <table>
+            {{ util.tab_input_text(name="field_name", label="Name") }}
+            {{ util.tab_input_select(name="kind", title="Typ", entries=(
+                ("str", "String", None), ("bool", "Ja/Nein", None), ("int", "Zahl", None), ("date", "Datum", None), ("datetime", "Datum mit Uhrzeit", None))) }}
+            {{ util.tab_input_textarea(name="entries", label="Auswahlmöglichkeiten", info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Feld hinzufügen", readonly=locked) }}
+        </div>
+    </form>
+    <h2>Fragebogen</h2>
+    {% with INPUT_SIZE_LABELS = {0: "einzeilig",
+                                 2: "mehrzeilig",
+                                 3: "mehrzeilig+",
+                                 4: "mehrzeilig++",}%}
+        <ul>
+            {% for entry in questionnaire %}
+                <li>
+                    {% if entry['field_id'] %}
+                        Abfrage: {{ data['fields'][entry['field_id']]['field_name']|e }}<br>
+                        Label: {{ entry['title']|e }}<br>
+                        Hilfstext: {{ entry['info']|e }}<br>
+                        Eingabefeldgröße: {{ INPUT_SIZE_LABELS.get(entry['input_size'])|e }}<br>
+                        Schreibgeschützt: {{ util.deko_checkbox(entry['readonly']) }}
+                    {% else %}
+                        Überschrift: {{ entry['title']|e }}<br>
+                        Text: {{ entry['info']|e }}
+                    {% endif %}
+                    <form action="{{ cdedblink('event/remove_questionnaire_row', {'num': loop.index0})|e }}" method="POST"
+                     id="removequestionnairerowform{{ loop.index0|e }}">
+                        {{ util.input_submit(value="Zeile löschen", readonly=locked) }}
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ cdedblink('event/change_questionnaire_form')|e }}" {% if locked %} disabled {% endif %}>bearbeiten</a>
+        <a href="{{ cdedblink('event/reorder_questionnaire_form')|e }}" {% if locked %} disabled {% endif %}>umordnen</a>
+        <h3>Zeile anfügen</h3>
+        <form action="{{ cdedblink('event/add_questionnaire_row')|e }}" method="POST" id="addquestionnairerowform">
+            <table>
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [("", "nur Text", None)] %}
+                {% for field_id, fdata in data['fields']|dictsort %}
+                    {{ myentries.append((field_id, fdata['field_name'], None))|e }}
+                {% endfor %}
+                {{ util.tab_input_select("row_field_id", title="Abfrage", entries=myentries) }}
+                {{ util.tab_input_text(name="row_title", label="Label/Überschrift") }}
+                {{ util.tab_input_textarea(name="row_info", label="Text") }}
+                {{ util.tab_input_select("row_input_size", title="Eingabefeldgröße",
+                                         entries=((0, INPUT_SIZE_LABELS[0], None), (2, INPUT_SIZE_LABELS[2], None),
+                                                  (3, INPUT_SIZE_LABELS[3], None), (4, INPUT_SIZE_LABELS[4], None))) }}
+                {{ util.tab_input_checkbox("row_readonly", label="Schreibgeschützt") }}
+            </table>
+            <div>
+                {{ util.input_submit(value="Zeile anfügen", readonly=locked) }}
+            </div>
+        </form>
+    {% endwith %}
+    <h2>Offline Nutzung</h2>
+    TODO
+{% endblock %}

@@ -1,0 +1,46 @@
+<<% extends "tex/de/event/base.tmpl" %>>
+<<% block extra_preamble %>>
+    \parindent 0pt\relax
+<<% endblock %>>
+<<% block content %>>
+    <<% for lodgement_id, ldata in lodgement_data|dictsort %>>
+        <<% for part_id, pdata in event_data['parts']|dictsort %>>
+            \section*{<<< ldata['moniker']|te >>> (<<< pdata['title']|te >>>)}
+            Kapazität: <<< ldata['capacity']|te >>>
+            \par
+            Reserve: <<< ldata['reserve']|te >>>
+            \par
+            Notizen: <<< ldata['notes']|te >>>
+            \par
+        <<% endfor %>>
+    <<% endfor %>>
+    \clearpage
+    <<% for registration_id, rdata in registration_data|dictsort %>>
+        <<% for part_id, pdata in event_data['parts']|dictsort %>>
+            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present %>>
+                \section*{%
+                    <<< user_data[rdata['persona_id']]['given_names']|te >>>
+                    <<< user_data[rdata['persona_id']]['family_name']|te >>>
+                    (%
+                        <<< pdata['title']|te >>>%
+                        <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.guest -%>>
+                            [Gast]
+                        <<%- endif -%>>
+                    )%
+                }
+                Gemischte Unterbringung: <<< rdata['mixed_lodging']|te >>>
+                \par
+                Altersklasse: <<< i18n(rdata['age']|string)|te >>>
+                \par
+                <<% if lodge_present %>>
+                    Wunsch: <<< rdata['field_data'].get('lodge')|te >>>
+                    \par
+                <<% endif %>>
+                <<% if may_reserve_present %>>
+                    nimmt Reserveplatz: <<< rdata['field_data'].get('may_reserve')|te >>>
+                    \par
+                <<% endif %>>
+            <<% endif %>>
+        <<% endfor %>>
+    <<% endfor %>>
+<<% endblock %>>

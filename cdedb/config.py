@@ -17,6 +17,7 @@ import pytz
 import dateutil.relativedelta
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
+from cdedb.common import deduct_years
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,6 +46,8 @@ _BASIC_DEFAULTS = {
     "DB_PORT": 6432,
     ## default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
+    ## path to log file for recording performance information during test runs
+    "TIMING_LOG": "/tmp/cdedb-timing.log",
 }
 
 #: defaults for :py:class:`Config`
@@ -102,7 +105,7 @@ _DEFAULTS = {
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("member_data.persona_id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
-                ("family_name", "given_names"),),
+                (("family_name", True), ("given_names", True)),),
         },
         "qview_cde_archived_user": {
             "with notes": Query(
@@ -111,7 +114,7 @@ _DEFAULTS = {
                 ("member_data.persona_id", "given_names", "family_name",
                  "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
-                ("family_name", "given_names"),),
+                (("family_name", True), ("given_names", True)),),
         },
         "qview_event_user": {
             "minors": Query(
@@ -119,9 +122,12 @@ _DEFAULTS = {
                 ("user_data.persona_id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
-                  datetime.datetime.now().date() +
-                  dateutil.relativedelta.relativedelta(years=-18)),),
-                ("birthday", "family_name", "given_names"),),
+                  deduct_years(datetime.datetime.now(pytz.utc).date(), 18)),),
+                (("birthday", True), ("family_name", True),
+                 ("given_names", True)),),
+        },
+        "qview_registration": {
+            ## none since they need additional input, will be created on the fly
         },
     },
 

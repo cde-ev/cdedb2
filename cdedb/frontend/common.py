@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 """Common code for all frontends. This is a kind of a mixed bag with no
-overall topic."""
+overall topic.
+"""
 
 import os
 import os.path
@@ -26,6 +27,8 @@ import hashlib
 import Pyro4
 import logging
 import io
+import re
+import subprocess
 
 import urllib.parse
 import smtplib
@@ -113,7 +116,8 @@ class FrontendRequestState:
     to not be non-nice).
     """
     def __init__(self, sessionkey, user, request, response, notifications,
-                 mapadapter, requestargs, urlmap, errors, values, lang, coders):
+                 mapadapter, requestargs, urlmap, errors, values, lang, coders,
+                 begin):
         """
         :type sessionkey: str or None
         :type user: :py:class:`FrontendUser`
@@ -124,7 +128,7 @@ class FrontendRequestState:
           submitted by :py:meth:`notify`
         :type mapadapter: :py:class:`werkzeug.routing.MapAdapter`
         :param mapadapter: URL generator (specific for this request)
-        :type requestargs: :py:class:`werkzeug.datastructures.MultiDict`
+        :type requestargs: {str: object}
         :param requestargs: verbatim copy of the arguments contained in the URL
         :type urlmap: :py:class:`werkzeug.routing.Map`
         :param urlmap: abstract URL information
@@ -142,6 +146,8 @@ class FrontendRequestState:
         :type coders: {str: callable}
         :param coders: Functions for encoding and decoding parameters primed
           with secrets. This is hacky, but sadly necessary.
+        :type begin: datetime.datetime
+        :param begin: time where we started to process the request
         """
         self.sessionkey = sessionkey
         self.user = user
@@ -157,6 +163,7 @@ class FrontendRequestState:
         self.values = values
         self.lang = lang
         self._coders = coders
+        self.begin = begin
 
     def notify(self, ntype, message):
         """Store a notification for later delivery to the user.
@@ -311,6 +318,27 @@ def escape_filter(val):
     else:
         return jinja2.escape(val)
 
+LATEX_ESCAPE_REGEX = (
+    (re.compile(r'\\'), r'\\textbackslash'),
+    (re.compile(r'([{}_#%&$])'), r'\\\1'),
+    (re.compile(r'~'), r'\~{}'),
+    (re.compile(r'\^'), r'\^{}'),
+    (re.compile(r'"'), r"''"),
+)
+def tex_escape_filter(val):
+    """Custom jinja filter for escaping LaTeX-relevant charakters.
+
+    :type val: obj or None
+    :rtype: str or None
+    """
+    if val is None:
+        return None
+    else:
+        val = str(val)
+        for pattern, replacement in LATEX_ESCAPE_REGEX:
+            val = pattern.sub(replacement, val)
+        return val
+
 def json_filter(val):
     """Custom jinja filter to create json representation of objects. This is
     intended to allow embedding of values into generated javascript code.
@@ -334,6 +362,18 @@ def gender_filter(val):
         return '♂'
     else:
         return '⚧'
+
+def enum_filter(val, enum):
+    """Custom jinja filter to convert enums to something printable.
+
+    This exists mainly because of the possibility of None values.
+
+    :type val: int
+    :rtype: str
+    """
+    if val is None:
+        return None
+    return str(enum(val))
 
 def numerus_filter(val, singular, plural):
     """Custom jinja filter to select singular or plural form.
@@ -399,9 +439,11 @@ def querytoparams_filter(val):
     for field, op, value in val.constraints:
         params['qop_{}'.format(field)] = op.value
         params['qval_{}'.format(field)] = value
-    for field, postfix in zip(val.order,
+    for entry, postfix in zip(val.order,
                               ("primary", "secondary", "tertiary")):
+        field, ascending = entry
         params['qord_{}'.format(postfix)] = field
+        params['qord_{}_ascending'.format(postfix)] = ascending
     return params
 
 def linebreaks_filter(val, replacement="<br>"):
@@ -447,6 +489,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'numerus': numerus_filter,
             'genus': genus_filter,
             'linebreaks': linebreaks_filter,
+            'enum': enum_filter,
+            'tex_escape': tex_escape_filter,
+            'te': tex_escape_filter,
         }
         self.jinja_env.filters.update(filters)
 
@@ -486,8 +531,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return "{}_admin".format(cls.realm) in rs.user.roles
 
     def fill_template(self, rs, modus, templatename, params):
-        """Central function for generating output from a template. This does
-        makes several values always accessible to the templates.
+        """Central function for generating output from a template. This
+        makes several values always accessible to all templates.
+
+        .. note:: We change the templating syntax for TeX templates since
+                  jinjas default syntax is nasty for this.
 
         :type rs: :py:class:`FrontendRequestState`
         :type modus: str
@@ -543,11 +591,25 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'VALID_QUERY_OPERATORS': VALID_QUERY_OPERATORS,
                 'default_selections': default_selections,
                 'i18n': lambda string: self.i18n(string, rs.lang),
-                'const': const,}
+                'const': const,
+                'glue': glue,
+                'generation_time': lambda: (datetime.datetime.now(pytz.utc)
+                                            - rs.begin),}
         ## check that default values are not overridden
         assert(not(set(data) & set(params)))
         merge_dicts(data, params)
-        t = self.jinja_env.get_template(os.path.join(
+        if modus == "tex":
+            jinja_env = self.jinja_env.overlay(
+                block_start_string="<<%",
+                block_end_string="%>>",
+                variable_start_string="<<<",
+                variable_end_string=">>>",
+                comment_start_string="<<#",
+                comment_end_string="#>>",
+            )
+        else:
+            jinja_env = self.jinja_env
+        t = jinja_env.get_template(os.path.join(
             modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
         return t.render(**data)
 
@@ -568,7 +630,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type path: str
         :type afile: file like
         :param afile: should be opened in binary mode
-        :type data: str
+        :type data: str or bytes
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         if not path and not afile and not data:
@@ -581,7 +643,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             afile = open(path, 'rb')
         elif data is not None:
             afile = io.BytesIO()
-            afile.write(data.encode('utf-8'))
+            if isinstance(data, str):
+                afile.write(data.encode('utf-8'))
+            else:
+                afile.write(data)
             afile.seek(0)
         f = werkzeug.wsgi.wrap_file(rs.request.environ, afile)
         extra_args = {}
@@ -593,12 +658,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             ## a download box -- we don't want that.
             headers.append(('Content-Disposition',
                             'inline; filename="{}"'.format(filename)))
+        headers.append(('X-Generation-Time', str(
+            datetime.datetime.now(pytz.utc) - rs.begin)))
         return werkzeug.wrappers.Response(
             f, direct_passthrough=True, headers=headers, **extra_args)
 
     def render(self, rs, templatename, params=None):
         """Wrapper around :py:meth:`fill_template` specialised to generating
-        HTTP responses.
+        HTML responses.
 
         :type rs: :py:class:`FrontendRequestState`
         :type templatename: str
@@ -624,6 +691,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             ## eliminate empty lines, since they don't matter
             html = "\n".join(line for line in html.split('\n') if line.strip())
         rs.response = werkzeug.wrappers.Response(html, mimetype='text/html')
+        rs.response.headers.add('X-Generation-Time', str(
+            datetime.datetime.now(pytz.utc) - rs.begin))
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None):
@@ -653,7 +722,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def _create_mail(self, text, headers):
         """Helper for actual email instantiation from a raw message.
-.
+
         :type text: str
         :type headers: {str: str}
         :rtype: :py:class:`email.message.Message`
@@ -724,15 +793,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return self.redirect(rs, '{}/show_user'.format(self.realm),
                              params=params)
 
-    def enum_choice(self, rs, anenum):
+    @classmethod
+    def enum_choice(cls, rs, anenum):
         """Convert an enum into a dict suitable for consumption by the template
         code (this will turn into an HTML select in the end).
 
         :type rs: :py:class:`FrontendRequestState`
         :type anenum: :py:class:`enum.Enum`
-        :rtype: {str: str}
+        :rtype: {int: str}
         """
-        return {str(case.value): self.i18n(str(case), rs.lang)
+        return {case.value: cls.i18n(str(case), rs.lang)
                 for case in anenum}
 
     @staticmethod
@@ -750,6 +820,114 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             rs.notify("warning", "Change failed.")
 
+    def latex_compile(self, data, num=2):
+        """Run LaTeX on the provided document.
+
+        This takes care of the necessary temporary files.
+
+        :type data: str
+        :type num: int
+        :param num: number of times LaTeX is run (for references etc.)
+        :rtype: bytes
+        :returns: the compiled document as blob
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with tempfile.NamedTemporaryFile(dir=tmp_dir) as tmp_file:
+                tmp_file.write(data.encode('utf8'))
+                tmp_file.flush()
+                args = ("pdflatex", "-interaction", "batchmode", tmp_file.name)
+                for _ in range(num):
+                    self.logger.info("Invoking {}".format(args))
+                    subprocess.check_call(args, stdout=subprocess.DEVNULL,
+                                          cwd=tmp_dir)
+                with open("{}.pdf".format(tmp_file.name), 'rb') as pdf:
+                    return pdf.read()
+
+    def serve_latex_document(self, rs, data, filename, num=2):
+        """Generate a response from a LaTeX document.
+
+        This takes care of the necessary temporary files.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type data: str
+        :param data: the LaTeX document
+        :type filename: str
+        :param filename: name to serve the document as, without extension
+        :type num: int
+        :param num: Number of times LaTeX is run (for references etc.). If this
+          is zero, we serve the source tex file, instead of the compiled pdf.
+        :rtype: werkzeug.Response
+        """
+        if not num:
+            return self.send_file(
+                rs, data=data,
+                filename=self.i18n("{}.tex".format(filename, rs.lang)))
+        else:
+            pdf_data = self.latex_compile(data, num=num)
+            return self.send_file(
+                rs, mimetype="application/pdf", data=pdf_data,
+                filename=self.i18n("{}.pdf".format(filename), rs.lang))
+
+    def serve_complex_latex_document(self, rs, tmp_dir, work_dir_name,
+                                     tex_file_name, num=2):
+        """Generate a response from a LaTeX document.
+
+        In contrast to :py:meth:`serve_latex_document` this expects that the
+        caller takes care of creating a temporary directory and doing the
+        setup. Actually this is only usefull if the caller does some
+        additional setup (like providing image files).
+
+        Everything has to happen inside a working directory, so the layout
+        is as follows::
+
+            tmp_dir
+            +------ work_dir
+                    |------- tex_file.tex
+                    +------- ...
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type tmp_dir: str
+        :param tmp_dir: path of temporary directory
+        :type work_dir_name: str
+        :param work_dir_name: name of working directory inside temporary
+          directory.
+        :type tex_file_name: str
+        :param tex_file_name: name of the tex file (including extension),
+          this will be used to derived the name to use when serving the
+          compiled pdf file.
+        :type num: int
+        :param num: Number of times LaTeX is run (for references etc.). If this
+          is zero, we serve the source tex file, instead of the compiled
+          pdf. More specifically we serve a gzipped tar archive containing
+          the working directory.
+        :rtype: werkzeug.Response
+        """
+        if not num:
+            target = os.path.join(
+                tmp_dir, "{}.tar.gz".format(work_dir_name))
+            args = ("tar", "-vczf", target, work_dir_name)
+            self.logger.info("Invoking {}".format(args))
+            subprocess.check_call(args, stdout=subprocess.DEVNULL,
+                                  cwd=tmp_dir)
+            return self.send_file(
+                rs, path=target,
+                filename="{}.tar.gz".format(work_dir_name))
+        else:
+            work_dir = os.path.join(tmp_dir, work_dir_name)
+            if tex_file_name.endswith('.tex'):
+                pdf_file = "{}.pdf".format(tex_file_name[:-4])
+            else:
+                pdf_file = "{}.pdf".format(tex_file_name)
+            args = ("pdflatex", "-interaction", "batchmode",
+                    os.path.join(work_dir, tex_file_name))
+            for _ in range(num):
+                self.logger.info("Invoking {}".format(args))
+                subprocess.check_call(args, stdout=subprocess.DEVNULL,
+                                      cwd=work_dir)
+            return self.send_file(
+                rs, mimetype="application/pdf",
+                path=os.path.join(work_dir, pdf_file),
+                filename=self.i18n(pdf_file, rs.lang))
 
 class FrontendUser(CommonUser):
     """Container for a persona in the frontend."""
@@ -764,7 +942,7 @@ class FrontendUser(CommonUser):
 
 def access(role, modi=None):
     """The @access decorator marks a function of a frontend for publication and
-    adds creation code around each call.
+    adds initialization code around each call.
 
     :type role: str
     :param role: least level of privileges required
@@ -805,15 +983,16 @@ def cdedburl(rs, endpoint, params=None):
     :rtype: str
     """
     params = params or {}
-    allparams = {}
+    allparams = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
         if rs.urlmap.is_endpoint_expecting(endpoint, arg):
             allparams[arg] = rs.requestargs[arg]
-    ## be careful and not use allparams.update since params may be a
-    ## werkzeug.datastructures.MultiDict which produces unwanted lists in
-    ## this context
-    for key in params:
-        allparams[key] = params[key]
+    if isinstance(params, werkzeug.datastructures.MultiDict):
+        for key in params:
+            allparams.setlist(key, params.getlist(key))
+    else:
+        for key in params:
+            allparams[key] =  params[key]
     return rs.urls.build(endpoint, allparams)
 
 def staticurl(path):
@@ -909,6 +1088,41 @@ def REQUESTdatadict(*proto_spec):
             return fun(obj, rs, *args, data=data, **kwargs)
         return new_fun
     return wrap
+
+def request_data_extractor(rs, args):
+    """Utility to apply REQUESTdata later than usual.
+
+    This is intended to bu used, when the parameter list is not known before
+    hand. Prime example are the event specific fields of event
+    registrations, here the parameter list has to be constructed from data
+    retrieved from the backend.
+
+    :type rs: :py:class:`FrontendRequestState`
+    :type args: [(str, str)]
+    :param args: handed through to the decorator
+    :rtype: {str: object}
+    :returns: dict containing the requested values
+    """
+    @REQUESTdata(*args)
+    def fun(_, rs, **kwargs):
+        return kwargs
+    return fun(None, rs)
+
+def request_data_dict_extractor(rs, args):
+    """Utility to apply REQUESTdatadict later than usual.
+
+    Like :py:meth:`request_data_extractor`.
+
+    :type rs: :py:class:`FrontendRequestState`
+    :type args: [(str, str)]
+    :param args: handed through to the decorator
+    :rtype: {str: object}
+    :returns: dict containing the requested values
+    """
+    @REQUESTdatadict(*args)
+    def fun(_, rs, data):
+        return data
+    return fun(None, rs)
 
 def REQUESTfile(*args):
     """Decorator to extract file uploads from requests.
@@ -1096,6 +1310,8 @@ def basic_redirect(rs, url):
     :rtype: :py:class:`werkzeug.wrappers.Response`
     """
     rs.response = construct_redirect(rs.request, url)
+    rs.response.headers.add('X-Generation-Time', str(
+        datetime.datetime.now(pytz.utc) - rs.begin))
     return rs.response
 
 def construct_redirect(request, url):

@@ -2,7 +2,8 @@
 
 The documentation can be found under doc/source/*.rst which can be viewed as
 html pages at doc/build/html/ after issuing the command 'make doc' (needs
-sphinx).
+sphinx). Additionally the link manual.html redirects to the documentation
+(which is available after running 'make doc') for convenience.
 
 For a setup guide see the INSTALL.html (which is an excerpt of the above
 documentation for bootstrapping).

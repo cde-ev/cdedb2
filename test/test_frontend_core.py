@@ -17,7 +17,7 @@ class TestCoreFrontend(FrontendTest):
                 f = self.response.forms['loginform']
                 f['username'] = user['username']
                 f['password'] = user['password']
-                self.submit(f)
+                self.submit(f, check_notification=False)
                 self.assertEqual(
                     user['display_name'],
                     self.response.lxml.get_element_by_id('displayname').text_content())
@@ -28,13 +28,13 @@ class TestCoreFrontend(FrontendTest):
             user['display_name'],
             self.response.lxml.get_element_by_id('displayname').text_content())
         f = self.response.forms['logoutform']
-        self.submit(f)
+        self.submit(f, check_notification=False)
         self.assertNotIn(user['display_name'], self.response)
         self.assertIn('loginform', self.response.forms)
 
     @as_users("anton", "berta", "emilia")
     def test_showuser(self, user):
-        self.traverse({'href': '/mydata'})
+        self.traverse({'href': '/core/self/show'})
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
         self.assertIn(user['given_names'], self.response.text)
@@ -50,7 +50,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
-        self.traverse({'href': '/changepassword'})
+        self.traverse({'href': '/core/self/password/change'})
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
         f['new_password'] = new_password
@@ -73,10 +73,12 @@ class TestCoreFrontend(FrontendTest):
                     self.setUp()
                 user = USER_DICT[u]
                 self.get('/')
-                self.traverse({'href': '/resetpassword'})
+                self.traverse({'href': '/core/password/reset'})
+                self.assertTitle("Passwort zurücksetzen")
                 f = self.response.forms['passwordresetform']
                 f['email'] = user['username']
                 self.submit(f)
+                self.assertTitle("CdE Datenbank")
                 mail = self.fetch_mail()[0]
                 link = None
                 for line in mail.split('\n'):
@@ -84,12 +86,15 @@ class TestCoreFrontend(FrontendTest):
                         link = line[4:]
                 link = quopri.decodestring(link).decode('utf-8')
                 self.get(link)
+                self.assertTitle("Passwort zurücksetzen -- Bestätigung")
                 f = self.response.forms['passwordresetform']
-                self.submit(f)
                 if u in {"anton"}:
+                    self.submit(f, check_notification=False)
                     ## admins are not resettable
                     self.assertEqual([], self.fetch_mail())
                     continue
+                else:
+                    self.submit(f)
                 mail = self.fetch_mail()[0]
                 for line in mail.split('\n'):
                     if line.startswith('zur'):
@@ -134,7 +139,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
         new_username = "zelda@example.cde"
-        self.traverse({'href': '/mydata'}, {'href': '/changeusername'})
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/username/change'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)
@@ -166,7 +171,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = 2
         self.submit(f)
-        self.traverse({'href': '/adminusernamechange'})
+        self.traverse({'href': '/username/adminchange'})
         f = self.response.forms['usernamechangeform']
         f['new_username'] = new_username
         self.submit(f)
@@ -185,7 +190,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = 2
         self.submit(f)
-        self.traverse({'href': '/adjustprivileges'})
+        self.traverse({'href': '/privileges/change'})
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)
@@ -194,7 +199,7 @@ class TestCoreFrontend(FrontendTest):
         ## webtest requires a list and not a tuple on the RHS
         f['newprivileges'] = ["2", "4"]
         self.submit(f)
-        self.traverse({'href': '/adjustprivileges'})
+        self.traverse({'href': '/privileges/change'})
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
         self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
         self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)

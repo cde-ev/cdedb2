@@ -40,7 +40,6 @@ body{
     width: 100%;
 }
 
-
 #footer{
     background: yellow;
     width: 100%;
@@ -138,6 +137,21 @@ body{
 .bigggg{
     height: 32ex;
     width: 20em;
+}
+
+.scrollList{
+    max-height: 32ex;
+    overflow-y: scroll;
+}
+
+.shortScrollList{
+    max-height: 16ex;
+    overflow-y: scroll;
+}
+
+.nonVanish{
+    min-height: 3ex;
+    min-width: 9em;
 }
 
 .checkeredTable tr:nth-child(odd) {

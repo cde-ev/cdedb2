@@ -1,3 +1,5 @@
+.. _vm:
+
 Using the VM image
 ==================
 
@@ -7,7 +9,7 @@ development and offline usage (i.e. at events).
 Prerequisites
 -------------
 
-To run the image you need the Qemu and KVM software for
+To run the image you need the Qemu/KVM or VirtualBox software for
 virtualization. Furthermore some software is recommended for working with
 the running image: ssh for shell access and sshfs for mounting the
 repository in the VM into your local file system.

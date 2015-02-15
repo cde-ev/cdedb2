@@ -360,8 +360,8 @@ def _csv_alphanumeric(val, argname=None, *, _convert=True):
 _IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+$')
 @_addvalidator
 def _identifier(val, argname=None, *, _convert=True):
-    """Identifiers encompass everything from file names over sql column
-    names to short names for events.
+    """Identifiers encompass everything from file names to short names for
+    events.
 
     :type val: object
     :type argname: str or None
@@ -373,6 +373,26 @@ def _identifier(val, argname=None, *, _convert=True):
         return val, errs
     if not _IDENTIFIER_REGEX.search(val):
         errs.append((argname, ValueError("Must be an identifier.")))
+    return val, errs
+
+_RESTRICTIVE_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_]+$')
+@_addvalidator
+def _restrictive_identifier(val, argname=None, *, _convert=True):
+    """Restrictive identifiers are for situations, where normal identifiers
+    are too lax.
+
+    One example ar sql column names.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _printable_ascii(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if not _RESTRICTIVE_IDENTIFIER_REGEX.search(val):
+        errs.append((argname, ValueError("Must be a restrictiveidentifier.")))
     return val, errs
 
 _CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
@@ -391,6 +411,32 @@ def _csv_identifier(val, argname=None, *, _convert=True):
         errs.append((argname,
                      ValueError("Must be comma separated identifiers.")))
     return val, errs
+
+@_addvalidator
+def _int_csv_list(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    """
+    if _convert:
+        if isinstance(val, str):
+            vals = val.split(",")
+            val = []
+            for entry in vals:
+                if not entry:
+                    ## skip empty entries which can be produced by Javscript
+                    continue
+                entry, errs = _int(entry, argname, _convert=_convert)
+                if errs:
+                    return val, errs
+                val.append(entry)
+    if not isinstance(val, collections.abc.Sequence):
+        return None, [(argname, TypeError("Must be sequence."))]
+    for entry in val:
+        if not isinstance(entry, int):
+            return None, [(argname, TypeError("Must contain integers."))]
+    return val, []
 
 @_addvalidator
 def _password_strength(val, argname=None, *, _convert=True):
@@ -978,10 +1024,11 @@ _EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
     'organizer': _str,
     'description': _str_or_None,
-    'shortname': _str,
+    'shortname': _identifier,
     'registration_start': _date_or_None,
     'registration_soft_limit': _date_or_None,
     'registration_hard_limit': _date_or_None,
+    'iban': _str_or_None,
     'use_questionnaire': _bool,
     'notes': _str_or_None,
 }
@@ -1110,7 +1157,6 @@ def _event_part_data(val, argname=None, *, strict=False, creation=False,
                                       strict=strict, _convert=_convert)
 
 _EVENT_FIELD_COMMON_FIELDS = {
-    'field_name': _identifier,
     'kind': _str,
     'entries': _any,
 }
@@ -1133,7 +1179,8 @@ def _event_field_data(val, argname=None, *, strict=False, creation=False,
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = _EVENT_FIELD_COMMON_FIELDS
+        mandatory_fields = dict(_EVENT_FIELD_COMMON_FIELDS,
+                                field_name=_restrictive_identifier)
         optional_fields = {}
     else:
         mandatory_fields = {}
@@ -1148,6 +1195,7 @@ def _event_field_data(val, argname=None, *, strict=False, creation=False,
             val['entries'] = tuple(tuple(y.strip() for y in x.split(';', 1))
                                    for x in val['entries'].split('\n'))
         oldentries, e = _iterable(val['entries'], "entries", _convert=_convert)
+        seen_values = set()
         if e:
             errs.extend(e)
         else:
@@ -1161,11 +1209,14 @@ def _event_field_data(val, argname=None, *, strict=False, creation=False,
                     value, e = _str(value, "entries", _convert=_convert)
                     description, ee = _str(description, "entries",
                                            _convert=_convert)
+                    if value in seen_values:
+                        e.append(("entries", ValueError("Duplicate value.")))
                     if e or ee:
                         errs.extend(e)
                         errs.extend(ee)
                     else:
                         entries.append((value, description))
+                        seen_values.add(value)
             val['entries'] = entries
     return val, errs
 
@@ -1259,16 +1310,18 @@ def _course_data(val, argname=None, *, strict=False, creation=False,
     return val, errs
 
 _REGISTRATION_COMMON_FIELDS = lambda: {
-    "orga_notes": _str_or_None,
-    "payment": _date_or_None,
-    "parental_agreement": _date_or_None,
-    "mixed_lodging": _bool,
-    "checkin": _datetime_or_None,
-    "foto_consent": _bool,
-}
-_REGISTRATION_OPTIONAL_FIELDS = {
+    'mixed_lodging': _bool,
+    'foto_consent': _bool,
+    'notes': _str_or_None,
     'parts': _any,
-    'choices': _any
+}
+_REGISTRATION_OPTIONAL_FIELDS = lambda: {
+    'parental_agreement': _bool_or_None,
+    'real_persona_id': _int_or_None,
+    'choices': _any,
+    'orga_notes': _str_or_None,
+    'payment': _date_or_None,
+    'checkin': _datetime_or_None,
 }
 @_addvalidator
 def _registration_data(val, argname=None, *, strict=False,
@@ -1293,12 +1346,12 @@ def _registration_data(val, argname=None, *, strict=False,
         ## creation does not allow field_data for sake of simplicity
         mandatory_fields = dict(_REGISTRATION_COMMON_FIELDS(),
                                 persona_id=_int, event_id=_int)
-        optional_fields = _REGISTRATION_OPTIONAL_FIELDS
+        optional_fields = _REGISTRATION_OPTIONAL_FIELDS()
     else:
         ## no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': _int}
         optional_fields = dict(_REGISTRATION_COMMON_FIELDS(),
-                               field_data=_any, **_REGISTRATION_OPTIONAL_FIELDS)
+                               field_data=_any, **_REGISTRATION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,
         _convert=_convert)
@@ -1409,7 +1462,7 @@ def _registration_field_data(val, argname=None, fields=None, *, strict=False,
                 errs.append((field, ValueError("Entry in definition list.")))
     return val, errs
 
-_LODGMENT_COMMON_FIELDS = lambda: {
+_LODGEMENT_COMMON_FIELDS = lambda: {
     'moniker': _str,
     'capacity': _int,
     'reserve': _int,
@@ -1434,12 +1487,12 @@ def _lodgement_data(val, argname=None, *, strict=False, creation=False,
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_LODGMENT_COMMON_FIELDS(), event_id=_int)
+        mandatory_fields = dict(_LODGEMENT_COMMON_FIELDS(), event_id=_int)
         optional_fields = {}
     else:
         ## no event_id, since the associated event should be fixed
         mandatory_fields = {'id': _int}
-        optional_fields = _LODGMENT_COMMON_FIELDS()
+        optional_fields = _LODGEMENT_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       strict=strict, _convert=_convert)
 
@@ -1467,6 +1520,7 @@ def _questionnaire_data(val, argname=None, *, strict=False, _convert=True):
                 'field_id': _int_or_None,
                 'title': _str_or_None,
                 'info': _str_or_None,
+                'input_size': _int_or_None,
                 'readonly': _bool_or_None,
             }
             value, e = _examine_dictionary_fields(
@@ -1585,9 +1639,12 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
         value, e = _csv_identifier_or_None(val["qord_" + postfix],
                                            "qord_" + postfix, _convert=_convert)
         errs.extend(e)
+        tmp = "qord_" + postfix + "_ascending"
+        ascending, e = _bool(val.get(tmp, "True"), tmp,  _convert=_convert)
+        errs.extend(e)
         if value:
             if value in fields_of_interest:
-                order.append(value)
+                order.append((value, ascending))
             else:
                 errs.append(("qord_" + postfix, KeyError("Must be selected.")))
     if errs:
@@ -1631,7 +1688,7 @@ def _serialized_query(val, argname=None, *, _convert=True):
     ## scope
     scope, e = _identifier(val['scope'], "scope", _convert=_convert)
     errs.extend(e)
-    if not scope.startswith("qview_"):
+    if scope and not scope.startswith("qview_"):
         errs.append(("scope", ValueError("Must start with 'qview_'.")))
     ## spec
     spec_val, e = _mapping(val['spec'], "spec", _convert=_convert)
@@ -1711,10 +1768,21 @@ def _serialized_query(val, argname=None, *, _convert=True):
     if e:
         errs.extend(e)
     else:
-        for field in oldorder:
-            field, e = _csv_identifier(field, "order", _convert=_convert)
-            order.append(field)
+        for entry in oldorder:
+            entry, e = _iterable(entry, 'order', _convert=_convert)
             errs.extend(e)
+            if e:
+                continue
+            try:
+                field, ascending = entry
+            except ValueError as e:
+                errs.append(('order', e))
+            else:
+                field, e = _csv_identifier(field, "order", _convert=_convert)
+                ascending, ee = _bool(ascending, "order", _convert=_convert)
+                order.append((field, ascending))
+                errs.extend(e)
+                errs.extend(ee)
     if errs:
         return None, errs
     else:

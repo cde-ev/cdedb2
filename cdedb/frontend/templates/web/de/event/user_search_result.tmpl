@@ -1,6 +1,7 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden{% endblock %}
 {% block content %}
     <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>
@@ -30,7 +31,7 @@
         "course_id": "Kurs",
         "notes": "Notizen",} %}
 
-        {{ util.display_query_result(result, query, TITLES) }}
+        {{ util.display_query_result(result, query, TITLES, choices) }}
     {% endwith %}
 
     <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>

@@ -75,10 +75,10 @@ class CdEFrontend(AbstractUserFrontend):
             return self.render(rs, "show_user", params)
 
     @access("formermember")
-    @persona_dataset_guard()
-    def change_user_form(self, rs, persona_id):
-        data = self.cdeproxy.get_data_one(rs, persona_id)
-        data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
+    def change_user_form(self, rs):
+        data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
+        data['generation'] = self.cdeproxy.get_generation(rs,
+                                                          rs.user.persona_id)
         merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username': data['username']})
 
@@ -91,17 +91,16 @@ class CdEFrontend(AbstractUserFrontend):
         "address_supplement2", "address2", "postal_code2", "location2",
         "country2", "weblink", "specialisation", "affiliation", "timeline",
         "interests", "free_form", "bub_search")
-    @persona_dataset_guard()
-    def change_user(self, rs, persona_id, generation, data):
-        data['id'] = persona_id
+    def change_user(self, rs, generation, data):
+        data['id'] = rs.user.persona_id
         data = check(rs, "member_data", data)
         if rs.errors:
-            return self.change_user_form(rs, persona_id)
+            return self.change_user_form(rs)
         change_note = "Normal dataset change."
         num = self.cdeproxy.change_user(rs, data, generation,
                                         change_note=change_note)
         self.notify_integer_success(rs, num)
-        return self.redirect_show_user(rs, persona_id)
+        return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("cde_admin")
     @persona_dataset_guard()
@@ -212,6 +211,9 @@ class CdEFrontend(AbstractUserFrontend):
     def consent_decision_form(self, rs):
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
+
+        This is the default page after login, but most users will instantly
+        be redirected.
         """
         if rs.user.realm != "cde" or rs.user.is_searchable:
             return self.redirect(rs, "core/index")
@@ -263,7 +265,7 @@ class CdEFrontend(AbstractUserFrontend):
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
                       spec=spec, allow_empty=not submitform)
         if not submitform or rs.errors:
-            events = {str(k): v for k, v in self.eventproxy.list_events(
+            events = {k: v for k, v in self.eventproxy.list_events(
                 rs, past=True).items()}
             event_id = None
             if query:
@@ -272,7 +274,7 @@ class CdEFrontend(AbstractUserFrontend):
                         event_id = value
             courses = tuple()
             if event_id:
-                courses = {str(k): v for k, v in self.eventproxy.list_courses(
+                courses = {k: v for k, v in self.eventproxy.list_courses(
                     rs, event_id, past=True).items()}
             choices = {"event_id": events, 'course_id': courses}
             return self.render(rs, "member_search",
@@ -317,10 +319,13 @@ class CdEFrontend(AbstractUserFrontend):
             return self.user_search_form(rs)
         query.scope = "qview_cde_user"
         result = self.cdeproxy.submit_general_query(rs, query)
-        params = {'result': result, 'query': query}
+        choices = {'status': self.enum_choice(rs, const.PersonaStati),
+                   'gender': self.enum_choice(rs, const.Genders)}
+        params = {'result': result, 'query': query, 'choices': choices}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data)
+            return self.send_file(rs, data=data,
+                                  filename=self.i18n("result.txt", rs.lang))
         else:
             return self.render(rs, "user_search_result", params)
 
@@ -342,7 +347,11 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     @REQUESTdata(("CSV", "bool"))
     def archived_user_search(self, rs, CSV):
-        """Perform search."""
+        """Perform search.
+
+        Archived users are somewhat special since they are not visible
+        otherwise.
+        """
         spec = QUERY_SPECS['qview_cde_archived_user']
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
                       spec=spec, allow_empty=False)
@@ -350,10 +359,13 @@ class CdEFrontend(AbstractUserFrontend):
             return self.archived_user_search_form(rs)
         query.scope = "qview_cde_archived_user"
         result = self.cdeproxy.submit_general_query(rs, query)
-        params = {'result': result, 'query': query}
+        choices = {'status': self.enum_choice(rs, const.PersonaStati),
+                   'gender': self.enum_choice(rs, const.Genders)}
+        params = {'result': result, 'query': query, 'choices': choices}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data)
+            return self.send_file(rs, data=data,
+                                  filename=self.i18n("result.txt", rs.lang))
         else:
             return self.render(rs, "archived_user_search_result", params)
 
@@ -392,7 +404,6 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     def create_user_form(self, rs):
-        """Render form."""
         defaults = {
             'status': const.PersonaStati.member.value,
             'bub_search': False,
@@ -411,7 +422,6 @@ class CdEFrontend(AbstractUserFrontend):
         "address_supplement2", "postal_code2", "location2", "country2",
         "status", "trial_member", "bub_search", "cloud_account", "notes")
     def create_user(self, rs, data):
-        """Create new user account."""
         data['is_active'] = True
         return super().create_user(rs, data)
 

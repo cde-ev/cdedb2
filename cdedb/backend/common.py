@@ -452,7 +452,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))
         if query.order:
             q = glue(q, "ORDER BY",
-                     ", ".join(entry.split(',')[0] for entry in query.order))
+                     ", ".join("{} {}".format(entry.split(',')[0],
+                                              "ASC" if ascending else "DESC")
+                               for entry, ascending in query.order))
         return self.query_all(rs, q, params)
 
 class BackendUser(CommonUser):

@@ -1,0 +1,28 @@
+<<# This is the base template to be extended by (nearly) all tex templates.
+    It provides a skeleton where only the content needs to be filled in.
+
+    Note that we change the syntax for TeX templates so that curly braces
+    aren't overloaded that much. Mor specifically comments (see this),
+    blocks (<<% if %>>) and variables (<<< datum|te >>>) change.
+#>>
+
+<<% block preamble %>>
+    \documentclass[12pt]{scrartcl}
+    \KOMAoptions{paper=A4,pagesize,DIV=16}
+
+    \usepackage[T1]{fontenc}
+    \usepackage[utf8]{inputenc}
+    \usepackage[ngerman]{babel}
+    \usepackage{graphicx}
+    \usepackage{microtype}
+<<% endblock %>>
+
+<<% block extra_preamble %>>
+    % no extras
+<<% endblock %>>
+
+\begin{document}
+<<% block content %>>
+    % no content
+<<% endblock %>>
+\end{document}

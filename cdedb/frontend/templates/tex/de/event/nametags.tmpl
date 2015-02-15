@@ -1,0 +1,106 @@
+<<% extends "tex/de/event/base.tmpl" %>>
+<<% block extra_preamble %>>
+    \KOMAoptions{DIV=21}
+    \raggedright
+    \parindent 0pt\relax
+    \pagestyle{empty}
+    \usepackage{ifthen}
+
+    \newcommand\debugbox[1]{#1} % no debugging
+    % \newcommand\debugbox[1]{\fbox{#1}} % frames around content
+
+    \newcommand\nametag[5]{\framebox{\parbox[t][5.3cm][t]{8.7cm}{%
+        % name
+        \parbox[t][0pt][t]{0pt}{%
+            \vspace{5pt}%
+            \hspace*{5pt}%
+            \debugbox{\parbox[t][2.75cm][t]{5.5cm}{%
+                \raggedright%
+                \Huge\textbf{#1}%
+            }}%
+        }%
+        % course
+        \parbox[t][0pt][t]{0pt}{%
+            \vspace{3.25cm}%
+            \hspace*{2.25cm}%
+            \debugbox{\parbox[t][.5cm][t]{6cm}{%
+                #2%
+            }}%
+        }%
+        % lodgement
+        \parbox[t][0pt][t]{0pt}{%
+            \vspace{4.25cm}%
+            \hspace*{2.25cm}%
+            \debugbox{\parbox[t][.5cm][t]{5cm}{%
+                #3%
+            }}%
+        }%
+        % course/orga logo
+        \parbox[t][0pt][t]{0pt}{%
+            \vspace{5pt}%
+            \hspace*{6cm}%
+            \debugbox{\parbox[t][2.5cm][t]{2.5cm}{%
+                \ifthenelse{\equal{#4}{}}{}{%
+                    \includegraphics[keepaspectratio=true,width=2.5cm,height=2.5cm]{#4}%
+                }%
+            }}%
+        }%
+        % event logo
+        \parbox[t][0pt][t]{0pt}{%
+            \vspace{3.25cm}%
+            \hspace*{5pt}%
+            \debugbox{\parbox[t][1.75cm][t]{1.75cm}{%
+                \includegraphics[keepaspectratio=true,width=1.75cm,height=1.75cm]{./aka-logo}%
+            }}%
+        }%
+        % minor notifier
+        \parbox[t][0pt][t]{0pt}{%
+            \vspace{4.25cm}%
+            \hspace*{7.75cm}%
+            \debugbox{\parbox[t][.75cm][t]{.75cm}{%
+                \ifthenelse{\equal{#5}{}}{~}{%
+                    \includegraphics[keepaspectratio=true,width=.75cm,height=.75cm]{#5}%
+                }%
+            }}%
+        }%
+        ~%
+    }}\hskip 0pt\relax}
+<<% endblock %>>
+<<% block content %>>
+    <<% for part_id, pdata in event_data['parts']|dictsort -%>>
+        <<% for registration_id, rdata in registration_data|dictsort -%>>
+            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present -%>>
+                <<% with name = "{} {}".format(user_data[rdata['persona_id']]['given_names'],
+                                               user_data[rdata['persona_id']]['family_name']) -%>>
+                    \nametag{<<< name|te >>>}{
+                            <<%- if rdata['parts'][part_id]['course_id'] -%>>
+                                <<%- if (rdata['parts'][part_id]['course_id']
+                                         == rdata['parts'][part_id]['course_instructor']) -%>>
+                                    \emph{<<< course_data[rdata['parts'][part_id]['course_id']]['title']|te >>>}
+                                <<%- else -%>>
+                                    <<< course_data[rdata['parts'][part_id]['course_id']]['title']|te >>>
+                                <<%- endif -%>>
+                            <<%- elif rdata['persona_id'] in event_data['orgas'] -%>>
+                                \emph{Orga}
+                            <<%- endif -%>>
+                        }{
+                            <<%- if rdata['parts'][part_id]['lodgement_id'] -%>>
+                                <<< lodgement_data[rdata['parts'][part_id]['lodgement_id']]['moniker']|te >>>
+                            <<%- endif -%>>
+                        }{
+                            <<%- if rdata['parts'][part_id]['course_id'] -%>>
+                                ./logo-<<< rdata['parts'][part_id]['course_id']|te >>>
+                            <<%- elif rdata['persona_id'] in event_data['orgas'] -%>>
+                                ./orga-logo
+                            <<%- endif -%>>
+                        }{
+                            <<%- if rdata['age'].is_minor() -%>>
+                                ./minor-pictogram
+                            <<%- endif -%>>
+                        }% <<< registration_id|te >>>
+                <<% endwith -%>>
+            <<% endif -%>>
+        <<% endfor -%>>
+        \clearpage
+    <<% endfor -%>>
+<<% endblock %>>

@@ -190,3 +190,9 @@ class TestCoreBackend(BackendTest):
         value = self.core.genesis_get_case(self.key, case_id)
         del value['ctime']
         self.assertEqual(expectation, value)
+
+    @as_users("anton")
+    def test_verify_personas(self, user):
+        self.assertEqual(
+            {1, 2, 4, 5, 6},
+            set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 1000), (0, 2, 20))))

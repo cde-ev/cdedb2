@@ -8,8 +8,7 @@ import pytz
 import uuid
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, ProxyShim,
-    basic_redirect, connect_proxy, check_validation as check,
-    persona_dataset_guard)
+    basic_redirect, connect_proxy, check_validation as check)
 import cdedb.database.constants as const
 
 class CoreFrontend(AbstractFrontend):
@@ -51,7 +50,7 @@ class CoreFrontend(AbstractFrontend):
         """Fault page.
 
         This may happen upon a database serialization failure during
-        concurrent accesses.
+        concurrent accesses. Other errors are bugs.
         """
         if kind not in {"general", "database"}:
             kind = "general"
@@ -154,7 +153,10 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous")
     def reset_password_form(self, rs):
-        """Render form."""
+        """Render form.
+
+        This starts the process of anonymously resetting a password.
+        """
         return self.render(rs, "reset_password")
 
     @access("anonymous")
@@ -233,7 +235,7 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata(("new_username", "email"))
     def send_username_change_link(self, rs, new_username):
-        """Verify new name with test email."""
+        """First verify new name with test email."""
         if rs.errors:
             return self.change_username_form(rs)
         self.do_mail(rs, "change_username",
@@ -249,9 +251,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona")
     @REQUESTdata(("new_username", "#email"))
-    @persona_dataset_guard(realms=None)
-    def do_username_change_form(self, rs, persona_id, new_username):
-        ## persona_id is used implicitly
+    def do_username_change_form(self, rs, new_username):
         """Email is now verified or we are admin."""
         if rs.errors:
             rs.notify("error", "Link expired.")
@@ -262,14 +262,13 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona", {'POST'})
     @REQUESTdata(('new_username', '#email'), ('password', 'str'))
-    @persona_dataset_guard(realms=None)
-    def do_username_change(self, rs, persona_id, new_username, password):
+    def do_username_change(self, rs, new_username, password):
         """Now we can do the actual change."""
         if rs.errors:
             rs.notify("error", "Link expired")
             return self.redirect(rs, "core/change_username_form")
         success, message = self.coreproxy.change_username(
-            rs, persona_id, new_username, password)
+            rs, rs.user.persona_id, new_username, password)
         if not success:
             rs.notify("error", message)
             return self.redirect(rs, "core/username_change_form")
@@ -409,8 +408,8 @@ class CoreFrontend(AbstractFrontend):
     def genesis_decide(self, rs, case_id, case_status, persona_status):
         """Approve or decline a genensis case.
 
-        This sends an email with the link of the final creation page to
-        the applicant.
+        This sends an email with the link of the final creation page or a
+        rejection note to the applicant.
         """
         if (case_status == const.GenesisStati.approved
                 and persona_status is None):
@@ -476,7 +475,7 @@ class CoreFrontend(AbstractFrontend):
         }
         num = self.coreproxy.genesis_modify_case(rs, data)
         if num:
-            rs.notify("info", "Case abandoned.")
+            rs.notify("success", "Case abandoned.")
         else:
             rs.notify("error", "Failed.")
         return self.redirect(rs, "core/genesis_list_cases")

@@ -3,12 +3,12 @@
 {% block title %}{{ event_data['title']|e }}{% endblock %}
 {% block content %}
     {% if event_data['id'] in user.orga or is_admin %}
-        <a href="{{ cdedblink('event/change_event_form')|e }}">Konfiguration</a>
+        <a href="{{ cdedblink('event/event_config')|e }}">Konfiguration</a>
         <a href="{{ cdedblink('event/create_course_form')|e }}" {% if locked %} disabled {% endif %}>Kurs hinzufügen</a>
     {% endif %}
     <p>{{ event_data['description']|e }}</p>
     {% if event_data['is_open'] %}
-        <a href="TODO">Zur Anmeldung</a>
+        <a href="{{ cdedblink("event/register")|e }}" {% if locked %} disabled {% endif %}>Zur Anmeldung</a>
     {% endif %}
     {% if course_data %}
         <h2>Kurse</h2>
@@ -26,6 +26,6 @@
         </ul>
     {% endif %}
     {% if event_data['is_open'] %}
-        <a href="TODO" {% if locked %} disabled {% endif %}>Zur Anmeldung</a>
+        <a href="{{ cdedblink("event/register")|e }}" {% if locked %} disabled {% endif %}>Zur Anmeldung</a>
     {% endif %}
 {% endblock %}

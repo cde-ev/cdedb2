@@ -1,8 +1,0 @@
-* Finalize SQL
-* use framework for html? (maybe pure?) -- CSS is really rudimentary
-* investigate mypy and pytypedecl
-* more logging
-* make test-suite faster
-* make automatic VM build
-* investigate python3 ldap library (there are actually two of them!)
-* adjust LDAP indices

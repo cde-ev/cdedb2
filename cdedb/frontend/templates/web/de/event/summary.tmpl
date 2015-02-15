@@ -1,0 +1,79 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Übersicht {{ event_data['title']|e }}{% endblock %}
+{% block content %}
+    <h2>Statistik</h2>
+        {% with HEADINGS = {
+            'total': "Anmeldungen gesamt",
+            'pending': "Offene Anmeldungen",
+            'participant': "Teilnehmer",
+            ' u18': "U18",
+            ' u16': "U16",
+            ' u14': "U14",
+            ' checked in': "Eingecheckt",
+            ' not checked in': "Noch nicht da",
+            ' orgas': "Orgas",
+            ' instructors': "Kursleiter",
+            ' attendees': "Kursteilnehmer",
+            ' first choice': "Erstwahl zugeteilt",
+            ' second choice': "Zweitwahl zugeteilt",
+            ' third choice': "Drittwahl zugeteilt",
+            'waitlist': "Wareliste",
+            'guest': "Gast",
+            'cancelled': "Abgemeldet",
+            'rejected': "Abgelehnt."
+        } %}
+            <table>
+                <tr>
+                    <th>Angabe</th>
+                    <th></th>
+                    {% for part_id, pdata in event_data['parts']|dictsort %}
+                        <th>{{ pdata['title']|e }}</th>
+                    {% endfor %}
+                </tr>
+                {% for row, rdata in statistics.items() %}
+                    <tr>
+                        {% if row.startswith(" ") %}
+                            <th></th>
+                            <th>{{ HEADINGS.get(row, row)|e }}</th>
+                        {% else %}
+                            <th colspan="2">{{ HEADINGS.get(row, row)|e }}</th>
+                        {% endif %}
+                        {% for part_id, datum in rdata|dictsort %}
+                            <td>{{ datum|e }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endwith %}
+    {% for key, course_only, heading in (
+        ('not payed', False, "Unbezahlte Anmeldungen"),
+        ('pending', False, "Offene Anmeldungen"),
+        ('no parental agreement', False, "Einverständniserklärung fehlt"),
+        ('no lodgement', False, "Ohne Unterkunft"),
+        ('no course', True, "Ohne Kurs"),
+        ('wrong choice', True, "Ungewählter Kurs zugeteilt"),) %}
+        {% if not course_only or courses %}
+            <h2>{{ heading|e }}</h2>
+            {% for part_id, pdata in event_data['parts']|dictsort %}
+                <h3>{{ pdata['title']|e }} -- {{ listings[key][part_id]|length|e }}
+                    Anmeldung{{ listings[key][part_id]|length|numerus("", "en")|e }} </h3>
+                {% if 3*(listings[key][part_id]|length) < registration_data|length %}
+                    <ul>
+                        {% for registration_id in listings[key][part_id] %}
+                            <li>
+                                <a href="{{ cdedblink("event/show_registration",
+                                                      {'registration_id': registration_id})|e }}">
+                                    {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                                    {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    Mindestens ein Drittel -- wir sparen uns die Liste.
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+{% endblock %}

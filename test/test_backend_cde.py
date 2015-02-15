@@ -179,7 +179,7 @@ class TestCdEBackend(BackendTest):
                                     "birthday"),
             "constraints": (("given_names,display_name", QueryOperators.regex.value, '[ae]'),
                              ("country,country2", QueryOperators.empty.value, None)),
-            "order": ("family_name",),
+            "order": (("family_name", True),),
         }
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({1, 2, 6, 9}, {e['persona_id'] for e in result})
@@ -193,10 +193,10 @@ class TestCdEBackend(BackendTest):
                                     "birthday"),
             "constraints": (("given_names", QueryOperators.regex.value, '[ae]'),
                              ("birthday", QueryOperators.less.value, datetime.datetime.now())),
-            "order": ("family_name",),
+            "order": (("family_name", True),),
         }
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({1, 2, 3, 4, 6, 7, 9}, {e['persona_id'] for e in result})
+        self.assertEqual({1, 2, 3, 4, 6, 7}, {e['persona_id'] for e in result})
 
     @as_users("anton")
     def test_user_search_operators(self, user):
@@ -210,7 +210,7 @@ class TestCdEBackend(BackendTest):
                              ("weblink", QueryOperators.containsall.value, ("/", ":", "http")),
                              ("birthday", QueryOperators.between.value, (datetime.datetime(1000, 1, 1),
                                                                          datetime.datetime.now()))),
-            "order": ("family_name",),
+            "order": (("family_name", True),),
         }
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['persona_id'] for e in result})

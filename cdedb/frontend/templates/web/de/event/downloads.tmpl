@@ -1,0 +1,89 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Downloads zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
+{% block content %}
+    <ul>
+        <li>
+            Namensschilder
+            <form action="{{ cdedblink('event/download_nametags')|e }}" method="GET" id="nametagpdfform">
+                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_submit(value="PDF") }}
+            </form>
+            <form action="{{ cdedblink('event/download_nametags')|e }}" method="GET" id="nametagtexform">
+                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_submit(value="TeX") }}
+            </form>
+        </li>
+        <li>
+            Bastelsatz Kurswahl
+            <form action="{{ cdedblink('event/download_course_puzzle')|e }}" method="GET" id="coursepuzzlepdfform">
+                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_submit(value="PDF") }}
+            </form>
+            <form action="{{ cdedblink('event/download_course_puzzle')|e }}" method="GET" id="coursepuzzletexform">
+                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_submit(value="TeX") }}
+            </form>
+        </li>
+        <li>
+            Bastelsatz Unterkunftseinteilung
+            <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET" id="lodgementpuzzlepdfform">
+                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_submit(value="PDF") }}
+            </form>
+            <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET" id="lodgementpuzzletexform">
+                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_submit(value="TeX") }}
+            </form>
+        </li>
+        <li>
+            Kurslisten
+            <form action="{{ cdedblink('event/download_course_lists')|e }}" method="GET" id="courselistspdfform">
+                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_submit(value="PDF") }}
+            </form>
+            <form action="{{ cdedblink('event/download_course_lists')|e }}" method="GET" id="courseliststexform">
+                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_submit(value="TeX") }}
+            </form>
+        </li>
+        <li>
+            Unterkunftslisten
+            <form action="{{ cdedblink('event/download_lodgement_lists')|e }}" method="GET" id="lodgementlistspdfform">
+                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_submit(value="PDF") }}
+            </form>
+            <form action="{{ cdedblink('event/download_lodgement_lists')|e }}" method="GET" id="lodgementliststexform">
+                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_submit(value="TeX") }}
+            </form>
+        </li>
+        <li>
+            Teilnehmerliste
+            <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET" id="participantlistpdfform">
+                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_submit(value="PDF") }}
+            </form>
+            <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET" id="participantlisttexform">
+                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_submit(value="TeX") }}
+            </form>
+        </li>
+        <li>
+            Kursliste für den ExPuls
+            <form action="{{ cdedblink('event/download_expuls')|e }}" method="GET" id="expulsform">
+                {{ util.input_submit(value="Download") }}
+            </form>
+        </li>
+        <li>
+            Export zur Initialisierung der Offline-Version
+            {% if event_data['offline_lock'] %}
+                <form action="{{ cdedblink('event/download_export')|e }}" method="GET" id="exportform">
+                    {{ util.input_submit(value="Download") }}
+                </form>
+            {% else %}
+                Veranstaltung noch nicht gesperrt.
+            {% endif %}
+        </li>
+    </ul>
+{% endblock %}
