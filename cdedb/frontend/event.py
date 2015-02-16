@@ -931,9 +931,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "downloads", {'event_data': event_data})
 
     @access("event_user")
-    @REQUESTdata(("raw", "bool"))
+    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_nametags(self, rs, event_id, raw):
+    def download_nametags(self, rs, event_id, runs):
         """Create nametags.
 
         You probably want to edit the provided tex file.
@@ -968,13 +968,12 @@ class EventFrontend(AbstractUserFrontend):
                 shutil.copy(src, os.path.join(
                     work_dir, "logo-{}.png".format(course_id)))
             return self.serve_complex_latex_document(
-                rs, tmp_dir, event_data['shortname'], "nametags.tex",
-                num=0 if raw else 2)
+                rs, tmp_dir, event_data['shortname'], "nametags.tex", runs)
 
     @access("event_user")
-    @REQUESTdata(("raw", "bool"))
+    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_course_puzzle(self, rs, event_id, raw):
+    def download_course_puzzle(self, rs, event_id, runs):
         """Aggregate course choice information.
 
         This can be printed and cut to help with distribution of participants.
@@ -1003,13 +1002,12 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "course_puzzle", {
             'event_data': event_data, 'course_data': course_data, 'counts': counts,
             'registration_data': registration_data, 'user_data': user_data})
-        return self.serve_latex_document(rs, tex, "course_puzzle",
-                                         num=0 if raw else 2)
+        return self.serve_latex_document(rs, tex, "course_puzzle", runs)
 
     @access("event_user")
-    @REQUESTdata(("raw", "bool"))
+    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_lodgement_puzzle(self, rs, event_id, raw):
+    def download_lodgement_puzzle(self, rs, event_id, runs):
         """Aggregate lodgement information.
 
         This can be printed and cut to help with distribution of
@@ -1035,13 +1033,12 @@ class EventFrontend(AbstractUserFrontend):
             'registration_data': registration_data, 'user_data': user_data,
             'lodge_present': lodge_present,
             'may_reserve_present': may_reserve_present})
-        return self.serve_latex_document(rs, tex, "lodgement_puzzle",
-                                         num=0 if raw else 2)
+        return self.serve_latex_document(rs, tex, "lodgement_puzzle", runs)
 
     @access("event_user")
-    @REQUESTdata(("raw", "bool"))
+    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_course_lists(self, rs, event_id, raw):
+    def download_course_lists(self, rs, event_id, runs):
         """Create lists to post to course rooms."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         courses = self.eventproxy.list_courses(rs, event_id, past=False)
@@ -1067,13 +1064,12 @@ class EventFrontend(AbstractUserFrontend):
                     os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png"),
                     os.path.join(work_dir, "logo-{}.png".format(course_id)))
             return self.serve_complex_latex_document(
-                rs, tmp_dir, event_data['shortname'], "course_lists.tex",
-                num=0 if raw else 2)
+                rs, tmp_dir, event_data['shortname'], "course_lists.tex", runs)
 
     @access("event_user")
-    @REQUESTdata(("raw", "bool"))
+    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_lodgement_lists(self, rs, event_id, raw):
+    def download_lodgement_lists(self, rs, event_id, runs):
         """Create lists to post to lodgements."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         lodgements = self.eventproxy.list_lodgements(rs, event_id)
@@ -1099,12 +1095,12 @@ class EventFrontend(AbstractUserFrontend):
                 os.path.join(work_dir, "aka-logo.png"))
             return self.serve_complex_latex_document(
                 rs, tmp_dir, event_data['shortname'], "lodgement_lists.tex",
-                num=0 if raw else 2)
+                runs)
 
     @access("event_user")
-    @REQUESTdata(("raw", "bool"))
+    @REQUESTdata(("runs", "single_digit_int"))
     @event_guard()
-    def download_participant_list(self, rs, event_id, raw):
+    def download_participant_list(self, rs, event_id, runs):
         """Create list to send to all participants."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         courses = self.eventproxy.list_courses(rs, event_id, past=False)
@@ -1126,8 +1122,7 @@ class EventFrontend(AbstractUserFrontend):
             'event_data': event_data, 'course_data': course_data,
             'registration_data': registration_data, 'user_data': user_data,
             'ordered': ordered})
-        return self.serve_latex_document(rs, tex, "participant_list",
-                                         num=0 if raw else 2)
+        return self.serve_latex_document(rs, tex, "participant_list", runs)
 
     @access("event_user")
     @event_guard()

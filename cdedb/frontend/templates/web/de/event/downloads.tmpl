@@ -6,66 +6,66 @@
         <li>
             Namensschilder
             <form action="{{ cdedblink('event/download_nametags')|e }}" method="GET" id="nametagpdfform">
-                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
             <form action="{{ cdedblink('event/download_nametags')|e }}" method="GET" id="nametagtexform">
-                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>
         </li>
         <li>
             Bastelsatz Kurswahl
             <form action="{{ cdedblink('event/download_course_puzzle')|e }}" method="GET" id="coursepuzzlepdfform">
-                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
             <form action="{{ cdedblink('event/download_course_puzzle')|e }}" method="GET" id="coursepuzzletexform">
-                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>
         </li>
         <li>
             Bastelsatz Unterkunftseinteilung
             <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET" id="lodgementpuzzlepdfform">
-                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
             <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET" id="lodgementpuzzletexform">
-                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>
         </li>
         <li>
             Kurslisten
             <form action="{{ cdedblink('event/download_course_lists')|e }}" method="GET" id="courselistspdfform">
-                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
             <form action="{{ cdedblink('event/download_course_lists')|e }}" method="GET" id="courseliststexform">
-                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>
         </li>
         <li>
             Unterkunftslisten
             <form action="{{ cdedblink('event/download_lodgement_lists')|e }}" method="GET" id="lodgementlistspdfform">
-                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
             <form action="{{ cdedblink('event/download_lodgement_lists')|e }}" method="GET" id="lodgementliststexform">
-                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>
         </li>
         <li>
             Teilnehmerliste
             <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET" id="participantlistpdfform">
-                {{ util.input_hidden(name="raw", value=False) }}
+                {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
             <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET" id="participantlisttexform">
-                {{ util.input_hidden(name="raw", value=True) }}
+                {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>
         </li>

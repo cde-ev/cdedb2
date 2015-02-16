@@ -820,14 +820,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             rs.notify("warning", "Change failed.")
 
-    def latex_compile(self, data, num=2):
+    def latex_compile(self, data, runs=2):
         """Run LaTeX on the provided document.
 
         This takes care of the necessary temporary files.
 
         :type data: str
-        :type num: int
-        :param num: number of times LaTeX is run (for references etc.)
+        :type runs: int
+        :param runs: number of times LaTeX is run (for references etc.)
         :rtype: bytes
         :returns: the compiled document as blob
         """
@@ -836,14 +836,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 tmp_file.write(data.encode('utf8'))
                 tmp_file.flush()
                 args = ("pdflatex", "-interaction", "batchmode", tmp_file.name)
-                for _ in range(num):
+                for _ in range(runs):
                     self.logger.info("Invoking {}".format(args))
                     subprocess.check_call(args, stdout=subprocess.DEVNULL,
                                           cwd=tmp_dir)
                 with open("{}.pdf".format(tmp_file.name), 'rb') as pdf:
                     return pdf.read()
 
-    def serve_latex_document(self, rs, data, filename, num=2):
+    def serve_latex_document(self, rs, data, filename, runs=2):
         """Generate a response from a LaTeX document.
 
         This takes care of the necessary temporary files.
@@ -853,23 +853,23 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param data: the LaTeX document
         :type filename: str
         :param filename: name to serve the document as, without extension
-        :type num: int
-        :param num: Number of times LaTeX is run (for references etc.). If this
+        :type runs: int
+        :param runs: Number of times LaTeX is run (for references etc.). If this
           is zero, we serve the source tex file, instead of the compiled pdf.
         :rtype: werkzeug.Response
         """
-        if not num:
+        if not runs:
             return self.send_file(
                 rs, data=data,
                 filename=self.i18n("{}.tex".format(filename, rs.lang)))
         else:
-            pdf_data = self.latex_compile(data, num=num)
+            pdf_data = self.latex_compile(data, runs=runs)
             return self.send_file(
                 rs, mimetype="application/pdf", data=pdf_data,
                 filename=self.i18n("{}.pdf".format(filename), rs.lang))
 
     def serve_complex_latex_document(self, rs, tmp_dir, work_dir_name,
-                                     tex_file_name, num=2):
+                                     tex_file_name, runs=2):
         """Generate a response from a LaTeX document.
 
         In contrast to :py:meth:`serve_latex_document` this expects that the
@@ -895,14 +895,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param tex_file_name: name of the tex file (including extension),
           this will be used to derived the name to use when serving the
           compiled pdf file.
-        :type num: int
-        :param num: Number of times LaTeX is run (for references etc.). If this
+        :type runs: int
+        :param runs: Number of times LaTeX is run (for references etc.). If this
           is zero, we serve the source tex file, instead of the compiled
           pdf. More specifically we serve a gzipped tar archive containing
           the working directory.
         :rtype: werkzeug.Response
         """
-        if not num:
+        if not runs:
             target = os.path.join(
                 tmp_dir, "{}.tar.gz".format(work_dir_name))
             args = ("tar", "-vczf", target, work_dir_name)
@@ -920,7 +920,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 pdf_file = "{}.pdf".format(tex_file_name)
             args = ("pdflatex", "-interaction", "batchmode",
                     os.path.join(work_dir, tex_file_name))
-            for _ in range(num):
+            for _ in range(runs):
                 self.logger.info("Invoking {}".format(args))
                 subprocess.check_call(args, stdout=subprocess.DEVNULL,
                                       cwd=work_dir)

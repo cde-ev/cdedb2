@@ -619,6 +619,22 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None):
     return val, []
 
 @_addvalidator
+def _single_digit_int(val, argname=None, *, _convert=True):
+    """Like _int, but between +9 and -9.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (int or None, [(str or None, exception)])
+    """
+    val, errs = _int(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if val > 9 or val < -9:
+        return None, [(argname, ValueError("More than one digit."))]
+    return val, []
+
+@_addvalidator
 def _phone(val, argname=None, *, _convert=True):
     """
     :type val: object
