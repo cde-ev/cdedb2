@@ -139,11 +139,13 @@
                     <td>
                         {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}
                         {% if data['is_active'] %}
-                            <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST" id="activitytoggleform">
+                            <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
+                             id="activitytoggleform">
                                 <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
                             </form>
                         {% else %}
-                            <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST" id="activitytoggleform">
+                            <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
+                             id="activitytoggleform">
                                 <div>{{ util.input_submit(value="Account aktivieren") }}</div>
                             </form>
                         {% endif %}
@@ -205,12 +207,15 @@
         {% for info in participation_info|sort(attribute="event_id") %}
             <tr>
                 <td colspan="2">
-                    <a href="{{ cdedblink("event/show_event", {"event_id": info['event_id']})|e }}">{{ info['event_name']|e }}</a>
+                    <a href="{{ cdedblink("event/show_event", {"event_id": info['event_id']})|e }}">
+                        {{ info['event_name']|e }}
+                    </a>
                     {% if info['is_orga'] %}
                         (Orga)
                     {% else %}
                         {% if info['course_name'] %}
-                            <a href="{{ cdedblink("event/show_course", {"event_id": info['event_id'], "course_id": info['course_id']})|e }}">
+                            <a href="{{ cdedblink("event/show_course", {"event_id": info['event_id'],
+                                                                        "course_id": info['course_id']})|e }}">
                                 {{ info['course_name']|e }}
                             </a>
                             {% if info['is_instructor'] %}

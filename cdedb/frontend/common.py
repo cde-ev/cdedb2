@@ -861,7 +861,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not runs:
             return self.send_file(
                 rs, data=data,
-                filename=self.i18n("{}.tex".format(filename, rs.lang)))
+                filename=self.i18n("{}.tex".format(filename), rs.lang))
         else:
             pdf_data = self.latex_compile(data, runs=runs)
             return self.send_file(
@@ -992,7 +992,7 @@ def cdedburl(rs, endpoint, params=None):
             allparams.setlist(key, params.getlist(key))
     else:
         for key in params:
-            allparams[key] =  params[key]
+            allparams[key] = params[key]
     return rs.urls.build(endpoint, allparams)
 
 def staticurl(path):

@@ -101,3 +101,5 @@ it right away.
   other methods which want to redisplay the content need to call this
   point. Hence the rendering point must be able to cope with user input (as
   in data which failed to validate, but should not be discarded).
+* Generally use a line length limit of 80 columns, except for templates,
+  where 120 columns seems appropriate.

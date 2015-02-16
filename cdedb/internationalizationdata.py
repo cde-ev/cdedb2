@@ -1,7 +1,12 @@
+#!/usr/bin/env python3
+
 """Actual translations used by :py:module:`cdedb.internationalization`."""
 
+from cdedb.common import glue
+
 I18N_STRINGS = {
-    "Must be printable ASCII.": "Darf nur aus druckbaren ASCII-Zeichen bestehen.",
+    "Must be printable ASCII.": glue("Darf nur aus druckbaren ASCII-Zeichen",
+                                     "bestehen."),
     "Session expired.": "Die Sitzung ist abgelaufen.",
     "": "",
     None: "Undefiniert.",

@@ -27,7 +27,9 @@
     <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform">
         {{ util.input_submit("Löschen", readonly=locked) }}
     </form>
-    <a href="{{ cdedblink("event/manage_inhabitants_form")|e }}" {% if locked %} disabled {% endif %}>Belegung ändern</a>
+    <a href="{{ cdedblink("event/manage_inhabitants_form")|e }}" {% if locked %} disabled {% endif %}>
+        Belegung ändern
+    </a>
     <h2>Allgemeine Angaben</h2>
     <table>
         <tr>

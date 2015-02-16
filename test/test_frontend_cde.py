@@ -156,7 +156,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
-        self.assertTitle("Mitgliedersuche -- 2 Mitglieder gefunden")
+        self.assertTitle("\nMitgliedersuche -- 2 Mitglieder gefunden\n")
         self.assertIn("Anton", self.response.text)
         self.assertIn("Bertålotta", self.response.text)
 
@@ -170,7 +170,7 @@ class TestCdEFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("CdE Nutzersuche -- 1 Ergebnis gefunden")
+        self.assertTitle("\nCdE Nutzersuche -- 1 Ergebnis gefunden\n")
         self.assertIn("persona_id=2", self.response.text)
 
     @as_users("anton")
@@ -205,7 +205,7 @@ class TestCdEFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("CdE Archivsuche -- 1 Ergebnis gefunden")
+        self.assertTitle("\nCdE Archivsuche -- 1 Ergebnis gefunden\n")
         self.assertIn("Hell", self.response.text)
 
     @as_users("anton")

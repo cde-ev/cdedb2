@@ -40,9 +40,11 @@
                 (const.PersonaStati.member.value, "keine Einwilligung", None),
                 (const.PersonaStati.searchmember.value, "Einwilligung vorhanden", None),),
                 anid="input_select_status") }}
-            {{ util.tab_input_checkbox(name="trial_member", label="Probemitgliedschaft", anid="input_checkbox_trial_member") }}
+            {{ util.tab_input_checkbox(name="trial_member", label="Probemitgliedschaft",
+                                       anid="input_checkbox_trial_member") }}
             {{ util.tab_input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}
-            {{ util.tab_input_checkbox(name="cloud_account", label="Cloud Account", anid="input_checkbox_cloud_account") }}
+            {{ util.tab_input_checkbox(name="cloud_account", label="Cloud Account",
+                                       anid="input_checkbox_cloud_account") }}
             {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
         </table>
         <div>

@@ -10,7 +10,6 @@ import logging.handlers
 import collections
 import collections.abc
 import enum
-import copy
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
                      console_log_level=None):

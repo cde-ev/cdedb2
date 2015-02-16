@@ -2,9 +2,12 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }}{% endblock %}
+{% block title %}
+Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }}
+{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/registration_query_action', query|querytoparams)|e }}" method="POST" id="actionform">
+    <form action="{{ cdedblink('event/registration_query_action', query|querytoparams)|e }}" method="POST"
+     id="actionform">
         <a href="{{ cdedblink("event/registration_query", query|querytoparams)|e }}">Zurück</a>
 
         {{ titles.update({
@@ -54,7 +57,8 @@
                             $("#value_input").append($("<option>", {"value": ""}));
                             for (var key in choices[selected]) {
                                 if (choices[selected].hasOwnProperty(key)) {
-                                    $("#value_input").append($("<option>", {"value": key, "html": choices[selected][key], selected: (key == previous)}));
+                                    $("#value_input").append($("<option>", {
+                                        "value": key, "html": choices[selected][key], "selected": (key == previous)}));
                                 }
                             }
                         } else if (spec[selected] == "bool") {
@@ -62,23 +66,27 @@
                             $("#value_input").append($("<option>", {"value": ""}));
                             var bool_choices = {"True": "wahr", "False": "falsch"};
                             for (var key in bool_choices) {
-                                $("#value_input").append($("<option>", {"value": key, "html": bool_choices[key], selected: (key == previous)}));
+                                $("#value_input").append($("<option>", {"value": key, "html": bool_choices[key],
+                                                                        "selected": (key == previous)}));
                             }
                         } else {
-                            $("#value_span").append($("<input>", {"name": "value", "id": "value_input", "type": "text", "value": previous}));
+                            $("#value_span").append($("<input>", {"name": "value", "id": "value_input", "type": "text",
+                                                                  "value": previous}));
                         }
                     }
                     $(document).ready(function(){
-                        $("#column_selector").change(function (){ update_choices({{ choices|json }}, {{ spec|json }}, $(this).val()) });
+                        $("#column_selector").change(function (){
+                            update_choices({{ choices|json }}, {{ spec|json }}, $(this).val()) });
                         $("#column_selector").trigger('change');
                     });
                 </script>
                 {# some fields are not sensibly modifyable #}
                 {% with BLACKLIST = (
-                    "reg.id", "reg.notes", "reg.orga_notes", "membership.is_member", "persona.username", "user_data.family_name",
-                    "user_data.given_names", "persona.display_name", "user_data.title", "user_data.name_supplement",
-                    "user_data.gender", "user_data.birthday", "user_data.telephone", "user_data.mobile", "user_data.address",
-                    "user_data.address_supplement", "user_data.postal_code", "user_data.location", "user_data.country") %}
+                    "reg.id", "reg.notes", "reg.orga_notes", "membership.is_member", "persona.username",
+                    "user_data.family_name", "user_data.given_names", "persona.display_name", "user_data.title",
+                    "user_data.name_supplement", "user_data.gender", "user_data.birthday", "user_data.telephone",
+                    "user_data.mobile", "user_data.address", "user_data.address_supplement", "user_data.postal_code",
+                    "user_data.location", "user_data.country") %}
 
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
@@ -87,7 +95,8 @@
                             {{ myentries.append((field, titles[field], None))|e }}
                         {% endif %}
                     {% endfor %}
-                    {{ util.input_select(name="column", title="", entries=myentries, anid="column_selector", readonly=locked) }}
+                    {{ util.input_select(name="column", title="", entries=myentries, anid="column_selector",
+                                         readonly=locked) }}
                 {% endwith %}
                 <span id="value_span">
                     {{ util.input_text(name="value", anid="value_input", readonly=locked) }}

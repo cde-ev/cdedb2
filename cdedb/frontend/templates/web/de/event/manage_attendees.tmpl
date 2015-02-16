@@ -2,7 +2,9 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['title']|e }}){% endblock %}
+{% block title %}
+Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['title']|e }})
+{% endblock %}
 {% block content %}
     {% for part_id in course_data['parts']|sort %}
         <h2>{{ event_data['parts'][part_id]['title']|e }}</h2>

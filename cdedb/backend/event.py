@@ -377,8 +377,9 @@ class EventBackend(AbstractUserBackend):
                 member_stati=", ".join(str(x.value)
                                        for x in const.MEMBER_STATI),
                 user_data=", ".join(user_data_columns),
-                part_tables=" ".join(part_table_template.format(
-                    part_data=part_data_gen(part_id), part_id=part_id)
+                part_tables=" ".join(
+                    part_table_template.format(
+                        part_data=part_data_gen(part_id), part_id=part_id)
                     for part_id in event_data['parts']),
                 json_fields=", ".join(("registration_id int", ", ".join(
                     "{} {}".format(e['field_name'],
@@ -587,7 +588,7 @@ class EventBackend(AbstractUserBackend):
                     ret *= self.query_exec(rs, query, params)
                 ## updated
                 proto_query = glue("UPDATE event.field_definitions",
-                             "SET ({}) = ({}) WHERE id = %s")
+                                   "SET ({}) = ({}) WHERE id = %s")
                 for x in updated:
                     keys = tuple(k for k in fields[x]
                                  if k in ("field_name", "kind", "entries"))
@@ -974,8 +975,8 @@ class EventBackend(AbstractUserBackend):
                     "Only registrations from exactly one event allowed!")
             event_id = events.pop()
             if (not self.is_orga(rs, event_id=event_id)
-                   and not self.is_admin(rs)
-                   and not ({rs.user.persona_id} >= personas)):
+                    and not self.is_admin(rs)
+                    and not ({rs.user.persona_id} >= personas)):
                 raise PrivilegeError("Not privileged.")
 
             query = "SELECT {} FROM event.registrations WHERE id = ANY(%s)"
@@ -1053,7 +1054,8 @@ class EventBackend(AbstractUserBackend):
             if keys:
                 query = glue("UPDATE event.registrations SET ({}) = ({})",
                              "WHERE id = %s")
-                query = query.format(", ".join(keys), ", ".join(("%s",)* len(keys)))
+                query = query.format(", ".join(keys),
+                                     ", ".join(("%s",)*len(keys)))
                 params = tuple(data[key] for key in keys) + (data['id'],)
                 ret *= self.query_exec(rs, query, params)
             if 'field_data' in data:
@@ -1176,7 +1178,7 @@ class EventBackend(AbstractUserBackend):
         :returns: dict mapping ids to names
         """
         event_id = affirm("int", event_id)
-        if (not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs)):
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         query = "SELECT id, moniker FROM event.lodgements WHERE event_id = %s"
         data = self.query_all(rs, query, (event_id,))
@@ -1306,7 +1308,7 @@ class EventBackend(AbstractUserBackend):
         """
         event_id = affirm("int", event_id)
         data = affirm("questionnaire_data", data)
-        if (not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs)):
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
@@ -1320,10 +1322,10 @@ class EventBackend(AbstractUserBackend):
             for pos, row in enumerate(data):
                 ret *= self.query_exec(
                     rs, query, (event_id, row['field_id'], pos, row['title'],
-                                row['info'], row['input_size'], row['readonly']))
+                                row['info'], row['input_size'],
+                                row['readonly']))
         return ret
 
-    # TODO maybe implement set_inhabitants for lodgements and set_attendees for courses?
     # TODO locking, unlocking
 
 if __name__ == "__main__":

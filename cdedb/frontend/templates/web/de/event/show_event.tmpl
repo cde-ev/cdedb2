@@ -15,9 +15,14 @@
         <ul>
             {% for anid, entry in course_data|dictsort %}
                 <li>
-                    <a href="{{ cdedblink('event/show_course', {'course_id' : anid})|e }}">{{ entry['nr']|e }} -- {{ entry['title']|e }}</a>
+                    <a href="{{ cdedblink('event/show_course', {'course_id' : anid})|e }}">
+                        {{ entry['nr']|e }} -- {{ entry['title']|e }}
+                    </a>
                     {% if event_data['id'] in user.orga or is_admin %}
-                        <a href="{{ cdedblink('event/change_course_form', {'course_id' : anid})|e }}" {% if locked %} disabled {% endif %}>Bearbeiten</a>
+                        <a href="{{ cdedblink('event/change_course_form', {'course_id' : anid})|e }}"
+                         {% if locked %} disabled {% endif %}>
+                            Bearbeiten
+                        </a>
                     {% endif %}
                     <p>Kursleiter: {{ entry['instructors']|e }}</p>
                     <p>{{ entry['description']|e }}</p>

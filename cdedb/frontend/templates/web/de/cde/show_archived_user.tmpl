@@ -32,12 +32,15 @@
         {% for info in participation_info|sort(attribute="event_id") %}
             <tr>
                 <td colspan="2">
-                    <a href="{{ cdedblink("event/show_event", {"event_id": info['event_id']})|e }}">{{ info['event_name']|e }}</a>
+                    <a href="{{ cdedblink("event/show_event", {"event_id": info['event_id']})|e }}">
+                        {{ info['event_name']|e }}
+                    </a>
                     {% if info['is_orga'] %}
                         (Orga)
                     {% else %}
                         {% if info['course_name'] %}
-                            <a href="{{ cdedblink("event/show_course", {"event_id": info['event_id'], "course_id": info['course_id']})|e }}">
+                            <a href="{{ cdedblink("event/show_course", {"event_id": info['event_id'],
+                                                                        "course_id": info['course_id']})|e }}">
                                 {{ info['course_name']|e }}
                             </a>
                             {% if info['is_instructor'] %}

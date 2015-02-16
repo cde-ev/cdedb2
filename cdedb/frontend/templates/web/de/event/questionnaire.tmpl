@@ -18,16 +18,19 @@
                                                      info=entry['info'], readonly=(entry['readonly'] or locked)) }}
                         {% else %}
                             {% if FIELD['kind'] == "bool" %}
-                                {{ util.tab_input_checkbox(name=FIELD['field_name'], label=entry['title'],
-                                                           info=entry['info'], readonly=(entry['readonly'] or locked)) }}
+                                {{ util.tab_input_checkbox(
+                                    name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                                    readonly=(entry['readonly'] or locked)) }}
                             {% else %}
                                 {% if entry['input_size'] %}
-                                    {{ util.tab_input_textarea(name=FIELD['field_name'], label=entry['title'],
-                                                               info=entry['info'], readonly=(entry['readonly'] or locked),
-                                                               aclass=('bi' + entry['input_size']*'g')) }}
+                                    {{ util.tab_input_textarea(
+                                        name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                                        readonly=(entry['readonly'] or locked),
+                                        aclass=('bi' + entry['input_size']*'g')) }}
                                 {% else %}
-                                    {{ util.tab_input_text(name=FIELD['field_name'], label=entry['title'],
-                                                           info=entry['info'], readonly=(entry['readonly'] or locked)) }}
+                                    {{ util.tab_input_text(
+                                        name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                                        readonly=(entry['readonly'] or locked)) }}
                                 {% endif %}
                             {% endif %}
                         {% endif %}

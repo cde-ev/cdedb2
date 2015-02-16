@@ -16,14 +16,18 @@
 
                 <td> <input type="hidden" name="qsel_family_name,birth_name" value="True"  > </td>
                 <td> Nachname </td>
-                <td> <input type="hidden" name="qop_family_name,birth_name" value="{{ queryops.similar.value|e }}"  > </td>
+                <td>
+                    <input type="hidden" name="qop_family_name,birth_name" value="{{ queryops.similar.value|e }}">
+                </td>
                 <td> <input type="text" name="qval_family_name,birth_name", value="" > </td>
             </tr>
             <tr {% if "given_names,display_name" in errors %} class="errorInput" {% endif %} >
 
                 <td> <input type="hidden" name="qsel_given_names,display_name" value="True"  > </td>
                 <td> Vorname </td>
-                <td> <input type="hidden" name="qop_given_names,display_name" value="{{ queryops.similar.value|e }}"  > </td>
+                <td>
+                    <input type="hidden" name="qop_given_names,display_name" value="{{ queryops.similar.value|e }}">
+                </td>
                 <td> <input type="text" name="qval_given_names,display_name", value="" > </td>
             </tr>
             <tr {% if "username" in errors %} class="errorInput" {% endif %} >
@@ -40,18 +44,29 @@
                 <td> <input type="hidden" name="qop_telephone,mobile" value="{{ queryops.similar.value|e }}"  > </td>
                 <td> <input type="text" name="qval_telephone,mobile", value="" > </td>
             </tr>
-            <tr {% if "address,address_supplement,address2,address_supplement2" in errors %} class="errorInput" {% endif %} >
+            <tr {% if "address,address_supplement,address2,address_supplement2" in errors %}
+                    class="errorInput" {% endif %}>
 
-                <td> <input type="hidden" name="qsel_address,address_supplement,address2,address_supplement2" value="True"  > </td>
+                <td>
+                    <input type="hidden" name="qsel_address,address_supplement,address2,address_supplement2"
+                     value="True">
+                </td>
                 <td> Adresse </td>
-                <td> <input type="hidden" name="qop_address,address_supplement,address2,address_supplement2" value="{{ queryops.similar.value|e }}"  > </td>
-                <td> <input type="text" name="qval_address,address_supplement,address2,address_supplement2", value="" > </td>
+                <td>
+                    <input type="hidden" name="qop_address,address_supplement,address2,address_supplement2"
+                     value="{{ queryops.similar.value|e }}">
+                </td>
+                <td>
+                    <input type="text" name="qval_address,address_supplement,address2,address_supplement2", value="">
+                </td>
             </tr>
             <tr {% if "postal_code,postal_code2" in errors %} class="errorInput" {% endif %} >
 
                 <td> <input type="hidden" name="qsel_postal_code,postal_code2" value="True"  > </td>
                 <td> PLZ </td>
-                <td> <input type="hidden" name="qop_postal_code,postal_code2" value="{{ queryops.similar.value|e }}"  > </td>
+                <td>
+                    <input type="hidden" name="qop_postal_code,postal_code2" value="{{ queryops.similar.value|e }}">
+                </td>
                 <td> <input type="text" name="qval_postal_code,postal_code2", value="" > </td>
             </tr>
             <tr {% if "location,location2" in errors %} class="errorInput" {% endif %} >
@@ -68,12 +83,22 @@
                 <td> <input type="hidden" name="qop_country,country2" value="{{ queryops.similar.value|e }}"  > </td>
                 <td> <input type="text" name="qval_country,country2", value="" > </td>
             </tr>
-            <tr {% if "weblink,specialisation,affiliation,timeline,interests,free_form" in errors %} class="errorInput" {% endif %} >
+            <tr {% if "weblink,specialisation,affiliation,timeline,interests,free_form" in errors %}
+                    class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_weblink,specialisation,affiliation,timeline,interests,free_form" value="True"  > </td>
+                <td>
+                    <input type="hidden" name="qsel_weblink,specialisation,affiliation,timeline,interests,free_form"
+                     value="True">
+                </td>
                 <td> Interessen, Werdegang, ... </td>
-                <td> <input type="hidden" name="qop_weblink,specialisation,affiliation,timeline,interests,free_form" value="{{ queryops.similar.value|e }}"  > </td>
-                <td> <input type="text" name="qval_weblink,specialisation,affiliation,timeline,interests,free_form", value="" > </td>
+                <td>
+                    <input type="hidden" name="qop_weblink,specialisation,affiliation,timeline,interests,free_form"
+                     value="{{ queryops.similar.value|e }}">
+                </td>
+                <td>
+                    <input type="text" name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
+                     value="">
+                </td>
             </tr>
             <tr>
 
@@ -84,7 +109,8 @@
                     <select name="qval_event_id" >
                         <option value="" > </option>
                         {% for key in choices['event_id']|sort %}
-                            <option value="{{ key|e }}" {% if values.get('qval_event_id') == key|string %} selected {% endif %} >
+                            <option value="{{ key|e }}"
+                             {% if values.get('qval_event_id') == key|string %} selected {% endif %} >
                                 {{ choices['event_id'][key]|e }}
                             </option>
                         {% endfor %}
@@ -100,7 +126,8 @@
                     <select name="qval_course_id" >
                         <option value="" > </option>
                         {% for key in choices['course_id']|sort %}
-                            <option value="{{ key|e }}" {% if values.get('qval_course_id') == key|string %} selected {% endif %} >
+                            <option value="{{ key|e }}"
+                             {% if values.get('qval_course_id') == key|string %} selected {% endif %} >
                                 {{ choices['course_id'][key]|e }}
                             </option>
                         {% endfor %}

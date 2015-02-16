@@ -83,7 +83,8 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro tab_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
+                        aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td>
             <label for="{{ name|e }}">{{ label|e }}</label>
@@ -103,7 +104,8 @@
     </tr>
 {% endmacro %}
 
-{% macro input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
+                        aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
             {{ label|e }}
@@ -115,15 +117,16 @@
                     <textarea name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
                       class="{{ aclass|e }} invisible">{{ values.get(name, defaultvalue)|e }}</textarea>
                 {% else %}
-                    <textarea name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-                      {% if aclass %} class="{{ aclass|e }}" {% endif %}>{{ values.get(name, defaultvalue)|e }}</textarea>
+                    <textarea name="{{ name|e }}" {% if aclass %} class="{{ aclass|e }}" {% endif %}
+                      {% if anid %} id="{{ anid|e }}" {% endif %}>{{ values.get(name, defaultvalue)|e }}</textarea>
                 {% endif %}
             </span>
         </label>
     </span>
 {% endmacro %}
 
-{% macro tab_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
+{% macro tab_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
+                            aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td>
             <label for="{{ name|e }}">{{ label|e }}</label>
@@ -184,8 +187,9 @@
     <span {% if name in errors %} class="errorInput" {% endif %}>
         <label>
             <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-              {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %} {% if readonly %} disabled {% endif %}
-              {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+              {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
+              {% if readonly %} disabled {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
+              {% if aclass %} class="{{ aclass|e }}" {% endif %}>
             {{ label|e }}
             {% if info %} {{ info_hover(info) }} {% endif %}
         </label>
@@ -198,8 +202,9 @@
         <td colspan="2">
             <label>
                 <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                  {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %} {% if readonly %} disabled {% endif %}
-                  {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+                  {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
+                  {% if readonly %} disabled {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
+                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
                 {{ label|e }}
             </label>
             {% if info %} {{ info_hover(info) }} {% endif %}
@@ -218,8 +223,8 @@
             {% for value, label, entry_id in entries %}
                 <label>
                     <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %} {% if readonly %} disabled {% endif %}
-                      {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
+                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %}
+                      {% if readonly %} disabled {% endif %} {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                     {{ label|e }}
                 </label>
             {% endfor %}
@@ -238,8 +243,8 @@
             {% for value, label, entry_id in entries %}
                 <label>
                     <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %} {% if readonly %} disabled {% endif %}
-                      {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
+                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %}
+                      {% if readonly %} disabled {% endif %} {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                     {{ label|e }}
                 </label>
             {% endfor %}
@@ -291,7 +296,8 @@
     </tr>
 {% endmacro %}
 
-{% macro input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
+{% macro input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False, anid='',
+                      aclass='') %}
     <span {% if name in errors %} class="errorInput" {% endif %}>
         {{ title|e }}
         {% if info %} {{ info_hover(info) }} {% endif %}
@@ -306,7 +312,8 @@
                      <option value=""> </option>
                 {% endif %}
                 {% for value, label, entry_id in entries %}
-                    <option value="{{ value|e }}" {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
+                    <option value="{{ value|e }}"
+                      {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
                       {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                         {{ label|e }}
                     </option>
@@ -316,7 +323,8 @@
     </span>
 {% endmacro %}
 
-{% macro tab_input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False, anid='', aclass='') %}
+{% macro tab_input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False,
+                          anid='', aclass='') %}
     <tr {% if name in errors %} class="errorInput" {% endif %}>
         <td>
             {{ title|e }}
@@ -334,7 +342,8 @@
                          <option value=""> </option>
                     {% endif %}
                     {% for value, label, entry_id in entries %}
-                        <option value="{{ value|e }}" {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
+                        <option value="{{ value|e }}"
+                          {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
                           {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                             {{ label|e }}
                         </option>
@@ -416,23 +425,28 @@
                     $("#qinput_" + esc_field).append($("<option>", {"value": ""}));
                     for (var key in choices) {
                         if (choices.hasOwnProperty(key)) {
-                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": choices[key], selected: (String(key) == previous)}));
+                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": choices[key],
+                                                                            "selected": (String(key) == previous)}));
                         }
                     }
                 } else {
                     if (validator == "bool") {
-                        $("#qspan_" + esc_field).append($("<select>", {"name": "qval_" + field, "id": "qinput_" + field}));
+                        $("#qspan_" + esc_field).append($("<select>", {"name": "qval_" + field,
+                                                                       "id": "qinput_" + field}));
                         $("#qinput_" + esc_field).append($("<option>", {"value": ""}));
                         var bool_choices = {"True": "wahr", "False": "falsch"};
                         for (var key in bool_choices) {
-                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": bool_choices[key], selected: (key == previous)}));
+                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": bool_choices[key],
+                                                                            "selected": (key == previous)}));
                         }
                     } else {
-                        $("#qspan_" + esc_field).append($("<input>", {"name": "qval_" + field, "id": "qinput_" + field, "type": "text", "value": previous}));
+                        $("#qspan_" + esc_field).append($("<input>", {
+                            "name": "qval_" + field, "id": "qinput_" + field, "type": "text", "value": previous}));
                     }
                 }
             } else {
-                $("#qspan_" + esc_field).append($("<input>", {"name": "qval_" + field, "id": "qinput_" + field, "type": "text", "value": previous}));
+                $("#qspan_" + esc_field).append($("<input>", {"name": "qval_" + field, "id": "qinput_" + field,
+                                                              "type": "text", "value": previous}));
             }
         }
     </script>
@@ -472,11 +486,13 @@
                                 {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
                                     {{ myentries.append((op.value, OPERATOR_LABELS[op.value], None))|e }}
                                 {% endfor %}
-                                {{ input_select(name, entries=myentries, defaultvalue=VALID_QUERY_OPERATORS[spec[field]][0].value,
-                                                anid=theid) }}
+                                {{ input_select(name, entries=myentries,
+                                                defaultvalue=VALID_QUERY_OPERATORS[spec[field]][0].value, anid=theid) }}
                                 <script type="text/javascript">
                                     $(document).ready(function(){
-                                        $("#{{ theid.replace('.', '\\\\.')|e }}").change(function (){ update_choices("{{ field|e }}", {{ choices.get(field, '')|json }}, "{{ spec[field]|e }}") });
+                                        $("#{{ theid.replace('.', '\\\\.')|e }}").change(function (){
+                                            update_choices("{{ field|e }}", {{ choices.get(field, '')|json }},
+                                                           "{{ spec[field]|e }}") });
                                         $("#{{ theid.replace('.', '\\\\.')|e }}").trigger('change');
                                     });
                                 </script>
@@ -490,7 +506,8 @@
                     </td>
                 </tr>
             {% endfor %}
-            {% for title, name in (("1. Sortierung nach", "qord_primary"), ("2. Sortierung nach", "qord_secondary"), ("3. Sortierung nach", "qord_tertiary"))%}
+            {% for title, name in (("1. Sortierung nach", "qord_primary"), ("2. Sortierung nach", "qord_secondary"),
+                                   ("3. Sortierung nach", "qord_tertiary"))%}
                 <tr>
                     <td colspan="2"> {{ title|e }} </td>
                     <td colspan="2">
@@ -502,7 +519,8 @@
                             {% endif %}
                         {% endfor %}
                         {{ input_select(name, entries=myentries, nulloption=True)}}
-                        {{ input_select(name + "_ascending", entries=((True, "aufsteigend", None), (False, "absteigend", None)), defaultvalue=True) }}
+                        {{ input_select(name + "_ascending", defaultvalue=True,
+                                        entries=((True, "aufsteigend", None), (False, "absteigend", None))) }}
                     </td>
                 </tr>
             {% endfor %}
@@ -515,7 +533,11 @@
     {% if queries %}
         <ul>
             {% for query in queries %}
-                <li><a href="{{ cdedblink(target, queries[query]|querytoparams)|e }}">{{ titles.get(query, query)|e }}</a></li>
+                <li>
+                    <a href="{{ cdedblink(target, queries[query]|querytoparams)|e }}">
+                        {{ titles.get(query, query)|e }}
+                    </a>
+                </li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -557,7 +579,8 @@
                                     {% elif query.spec[csvfield] == "bool" %}
                                         {{ deko_checkbox(row.get(afield)) }}
                                     {% else %}
-                                        {{ choices.get(csvfield, {}).get(row.get(afield), row.get(afield, "UNDEFINED"))|e }}
+                                        {{ choices.get(csvfield, {}).get(row.get(afield),
+                                                                         row.get(afield, "UNDEFINED"))|e }}
                                     {% endif %}
                                     {{ input_hidden("row_{}_{}".format(outerloopindex, afield), row.get(afield),
                                                     anid="row_{}_{}".format(outerloopindex, afield)) }}
@@ -601,8 +624,8 @@
    {% endif %}
 {% endmacro %}
 
-{% macro tab_event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-                               anid='', aclass='') %}
+{% macro tab_event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False,
+                               defaultvalue='', anid='', aclass='') %}
     {% if not name %}
         {% set name = "fields.{}".format(field_data['field_name']) %}
     {% endif %}

@@ -29,17 +29,23 @@
                 {% for course_id in course_choices[part_id] %}
                     {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.course_id".format(part_id), title="Kurs", entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_0".format(part_id), title="Erstwahl", entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_1".format(part_id), title="Zweitwahl", entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_2".format(part_id), title="Drittwahl", entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_instructor".format(part_id), title="Kursleiter", entries=myentries, nulloption=True) }}
+                {{ util.tab_input_select(name="part{}.course_id".format(part_id), title="Kurs", entries=myentries,
+                                         nulloption=True) }}
+                {{ util.tab_input_select(name="part{}.course_choice_0".format(part_id), title="Erstwahl",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.tab_input_select(name="part{}.course_choice_1".format(part_id), title="Zweitwahl",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.tab_input_select(name="part{}.course_choice_2".format(part_id), title="Drittwahl",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.tab_input_select(name="part{}.course_instructor".format(part_id), title="Kursleiter",
+                                         entries=myentries, nulloption=True) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for lodgement_id, ldata in lodgement_data|dictsort %}
                     {{ myentries.append((lodgement_id, ldata['moniker'], None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.lodgement_id".format(part_id), title="Unterkunft", entries=myentries, nulloption=True) }}
+                {{ util.tab_input_select(name="part{}.lodgement_id".format(part_id), title="Unterkunft",
+                                         entries=myentries, nulloption=True) }}
             {% endfor %}
         </table>
         <div>

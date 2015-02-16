@@ -10,7 +10,8 @@ Kontoinhaber: CdE e.V.
 IBAN: {{ event_data['iban']|e }}
 BIC:  BFSWDE33XXX (BIC = SWIFT-Code)
 Bank: Bank für Sozialwirtschaft
-Verwendungszweck: {{ user_data['given_names'] }} {{ user_data['family_name'] }}, {{ user_data['id']|cdedbid }}, {{ event_data['title'] }}
+Verwendungszweck: {{ user_data['given_names'] }} {{ user_data['family_name'] }}, {{ user_data['id']|cdedbid }}
+                  {{ event_data['title'] }}
 
 {% if age.is_minor() %}
 Da Du zur Veranstaltung nicht volljährig sein wirs, musst Du außerdem noch

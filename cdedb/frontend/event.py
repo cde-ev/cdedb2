@@ -25,7 +25,6 @@ import re
 import itertools
 import tempfile
 import shutil
-import subprocess
 
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
@@ -888,10 +887,10 @@ class EventFrontend(AbstractUserFrontend):
                     (part_id, i): sum(
                         1 for rdata in registration_data.values()
                         if (len(rdata['choices'][part_id]) > i
-                             and rdata['choices'][part_id][i] == course_id
-                             and (rdata['parts'][part_id]['status']
-                                  == const.RegistrationPartStati.participant)
-                             and rdata['persona_id'] not in event_data['orgas']))
+                            and rdata['choices'][part_id][i] == course_id
+                            and (rdata['parts'][part_id]['status']
+                                 == const.RegistrationPartStati.participant)
+                            and rdata['persona_id'] not in event_data['orgas']))
                     for part_id in event_data['parts']
                     for i in range(3)
                 }
@@ -990,18 +989,19 @@ class EventFrontend(AbstractUserFrontend):
                 (part_id, i): sum(
                     1 for rdata in registration_data.values()
                     if (len(rdata['choices'][part_id]) > i
-                         and rdata['choices'][part_id][i] == course_id
-                         and (rdata['parts'][part_id]['status']
-                              == const.RegistrationPartStati.participant)
-                         and rdata['persona_id'] not in event_data['orgas']))
+                        and rdata['choices'][part_id][i] == course_id
+                        and (rdata['parts'][part_id]['status']
+                             == const.RegistrationPartStati.participant)
+                        and rdata['persona_id'] not in event_data['orgas']))
                 for part_id in event_data['parts']
                 for i in range(3)
             }
             for course_id in courses
         }
         tex = self.fill_template(rs, "tex", "course_puzzle", {
-            'event_data': event_data, 'course_data': course_data, 'counts': counts,
-            'registration_data': registration_data, 'user_data': user_data})
+            'event_data': event_data, 'course_data': course_data,
+            'counts': counts, 'registration_data': registration_data,
+            'user_data': user_data})
         return self.serve_latex_document(rs, tex, "course_puzzle", runs)
 
     @access("event_user")
@@ -1139,7 +1139,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_user")
     @event_guard()
     def download_export(self, rs, event_id):
-        """Retrieve all data for this event to initialize an offline instance."""
+        """Retrieve all data for this event to initialize an offline
+        instance."""
         raise NotImplementedError("TODO")
 
     @access("event_user")
@@ -1148,7 +1149,6 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if rs.user.persona_id in registrations.values():
-            registration_id = next(i for i in registrations)
             rs.notify("info", "Allready registered.")
             return self.redirect(rs, "event/registration_status")
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
@@ -1209,7 +1209,8 @@ class EventFrontend(AbstractUserFrontend):
                 part_id for part_id, entry in parts.items()
                 if const.RegistrationPartStati(entry['status']).is_involved)
         choice_params = (("course_choice{}_{}".format(part_id, i), "int")
-                         for part_id in standard_data['parts'] for i in range(3))
+                         for part_id in standard_data['parts']
+                         for i in range(3))
         choices = request_data_extractor(rs, choice_params)
         instructor_params = (
             ("course_instructor{}".format(part_id), "int_or_None")
@@ -1235,7 +1236,7 @@ class EventFrontend(AbstractUserFrontend):
         part_data = {
             part_id: {
                 'course_instructor':
-                     instructor.get("course_instructor{}".format(part_id)),
+                    instructor.get("course_instructor{}".format(part_id)),
             }
             for part_id in event_data['parts']
         }
@@ -1289,7 +1290,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         registration_data['mixed_lodging'] = (registration_data['mixed_lodging']
                                               and age.may_mix())
-        new_id = self.eventproxy.create_registration(rs, registration_data)
+        self.eventproxy.create_registration(rs, registration_data)
         fee = sum(event_data['parts'][part_id]['fee']
                   for part_id, entry in registration_data['parts'].items()
                   if const.RegistrationPartStati(entry['status']).is_involved)
@@ -1448,8 +1449,6 @@ class EventFrontend(AbstractUserFrontend):
         if not registration_id:
             rs.notify("warning", "Not registered for event.")
             return self.redirect(rs, "event/show_event")
-        registration_data = self.eventproxy.get_registration(rs,
-                                                             registration_id)
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         if not event_data['use_questionnaire']:
             rs.notify("error", "Questionnaire disabled.")
@@ -1499,16 +1498,16 @@ class EventFrontend(AbstractUserFrontend):
         :rtype: [{str: object}]
         """
         spec = {
-                'field_id': "int_or_None",
-                'title': "str_or_None",
-                'info': "str_or_None",
-                'input_size': "int_or_None",
-                'readonly': "bool_or_None",
+            'field_id': "int_or_None",
+            'title': "str_or_None",
+            'info': "str_or_None",
+            'input_size': "int_or_None",
+            'readonly': "bool_or_None",
         }
         params = tuple(x
-            for i in range(num)
-            for x in (("{}_{}".format(key, i), value)
-                      for key, value in spec.items()))
+                       for i in range(num)
+                       for x in (("{}_{}".format(key, i), value)
+                                 for key, value in spec.items()))
         data = request_data_extractor(rs, params)
         questionnaire = tuple(
             {key: data["{}_{}".format(key, i)] for key in spec}
@@ -1908,10 +1907,10 @@ class EventFrontend(AbstractUserFrontend):
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
                 if (cls.event_has_field(event_data, 'reserve')
-                        and len(group) - ldata['capacity'] != _reserve(group,
-                                                                       part_id)
+                        and (len(group) - ldata['capacity']
+                             != _reserve(group, part_id))
                         and ((len(group) - ldata['capacity'] > 0)
-                             or _reserve(group))):
+                             or _reserve(group, part_id))):
                     ret.append(_reserve_problem(lodgement_id, part_id))
         return ret
 
@@ -2045,7 +2044,8 @@ class EventFrontend(AbstractUserFrontend):
                for pdata in rdata['parts'].values()):
             ## In contrast to calculate_groups this also takes rejected
             ## and cancelled entries into account.
-            rs.notify("error", "Lodgement not empty (includes non-participants!).")
+            rs.notify("error",
+                      "Lodgement not empty (includes non-participants!).")
             return self.redirect(rs, "event/show_lodgement")
 
         num = self.eventproxy.delete_lodgement(rs, lodgement_id)
@@ -2110,7 +2110,6 @@ class EventFrontend(AbstractUserFrontend):
         This tries to be a bit smart and write only changed state.
         """
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        lodgement_data = self.eventproxy.get_lodgement(rs, lodgement_id)
         params = tuple(("inhabitants_{}".format(part_id), "int_csv_list")
                        for part_id in event_data['parts'])
         data = request_data_extractor(rs, params)
@@ -2128,7 +2127,8 @@ class EventFrontend(AbstractUserFrontend):
                 inhabits = (registration_id
                             in data["inhabitants_{}".format(part_id)])
                 if (inhabits
-                    != (lodgement_id == rdata['parts'][part_id]['lodgement_id'])):
+                        != (lodgement_id
+                            == rdata['parts'][part_id]['lodgement_id'])):
                     new_reg['parts'][part_id] = {
                         'lodgement_id': (lodgement_id if inhabits else None)
                     }
@@ -2191,7 +2191,6 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def manage_attendees(self, rs, event_id, course_id):
         """Alter who is assigned to this course."""
-        event_data = self.eventproxy.get_event_data_one(rs, event_id)
         course_data = self.eventproxy.get_course_data_one(rs, course_id)
         params = tuple(("attendees_{}".format(part_id), "int_csv_list")
                        for part_id in course_data['parts'])
@@ -2210,7 +2209,7 @@ class EventFrontend(AbstractUserFrontend):
                 attends = (registration_id
                            in data["attendees_{}".format(part_id)])
                 if (attends
-                    != (course_id == rdata['parts'][part_id]['course_id'])):
+                        != (course_id == rdata['parts'][part_id]['course_id'])):
                     new_reg['parts'][part_id] = {
                         'course_id': (course_id if attends else None)
                     }
@@ -2242,7 +2241,7 @@ class EventFrontend(AbstractUserFrontend):
         spec[",".join("part{0}.lodgement{0}".format(part_id)
                       for part_id in event_data['parts'])] = "int"
         spec[",".join("part{0}.course_instructor{0}".format(part_id)
-                     for part_id in event_data['parts'])] = "int"
+                      for part_id in event_data['parts'])] = "int"
         for e in sorted(event_data['fields'].values(),
                         key=lambda e: e['field_name']):
             spec["fields.{}".format(e['field_name'])] = e['kind']
@@ -2407,7 +2406,7 @@ class EventFrontend(AbstractUserFrontend):
                 new_data = {'id': id_data["row_{}_id".format(i)]}
                 field = column.split('.', 1)[1]
                 if column.startswith("part"):
-                    mo = re.search("^part([0-9]+)\.([a-zA-Z_]+)[0-9]+$", column)
+                    mo = re.search(r"^part([0-9]+)\.([a-zA-Z_]+)[0-9]+$", column)
                     part_id = int(mo.group(1))
                     field = mo.group(2)
                     new_data['parts'] = {part_id: {field: value}}

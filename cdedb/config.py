@@ -14,7 +14,6 @@ import importlib.machinery
 import os.path
 import uuid
 import pytz
-import dateutil.relativedelta
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 from cdedb.common import deduct_years

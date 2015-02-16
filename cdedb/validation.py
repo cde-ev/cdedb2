@@ -1367,7 +1367,8 @@ def _registration_data(val, argname=None, *, strict=False,
         ## no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': _int}
         optional_fields = dict(_REGISTRATION_COMMON_FIELDS(),
-                               field_data=_any, **_REGISTRATION_OPTIONAL_FIELDS())
+                               field_data=_any,
+                               **_REGISTRATION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, strict=strict,
         _convert=_convert)
@@ -1486,7 +1487,7 @@ _LODGEMENT_COMMON_FIELDS = lambda: {
 }
 @_addvalidator
 def _lodgement_data(val, argname=None, *, strict=False, creation=False,
-                   _convert=True):
+                    _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1656,7 +1657,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                                            "qord_" + postfix, _convert=_convert)
         errs.extend(e)
         tmp = "qord_" + postfix + "_ascending"
-        ascending, e = _bool(val.get(tmp, "True"), tmp,  _convert=_convert)
+        ascending, e = _bool(val.get(tmp, "True"), tmp, _convert=_convert)
         errs.extend(e)
         if value:
             if value in fields_of_interest:

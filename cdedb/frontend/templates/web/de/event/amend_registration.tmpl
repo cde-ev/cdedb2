@@ -14,7 +14,8 @@
                 </tr>
             {% else %}
                 {% if age.is_minor() %}
-                    {% set mix_info = "Die Auswahl muss mit der Einverständniserklärung der Erziehungsberechtigten übereinstimmen." %}
+                    {% set mix_info = glue("Die Auswahl muss mit der Einverständniserklärung der",
+                                           "Erziehungsberechtigten kompatibel sein.") %}
                 {% else %}
                     {% set mix_info = "" %}
                 {% endif %}
@@ -30,22 +31,27 @@
                     "Wunsch davon ausgenommen werden.")) }}
             {{ util.tab_input_textarea(name="notes", label="Anmerkungen", aclass="biggg", readonly=readonly) }}
             {% for part_id, course_list in course_choices|dictsort %}
-                {% if course_list and part_id in parts and const.RegistrationPartStati(parts[part_id]['status']).is_involved %}
+                {% if (course_list and part_id in parts
+                       and const.RegistrationPartStati(parts[part_id]['status']).is_involved) %}
                     <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.tab_input_select(name="course_choice{}_0".format(part_id), entries=myentries, title="Erstwahl", readonly=readonly) }}
-                    {{ util.tab_input_select(name="course_choice{}_1".format(part_id), entries=myentries, title="Zweitwahl", readonly=readonly) }}
-                    {{ util.tab_input_select(name="course_choice{}_2".format(part_id), entries=myentries, title="Drittwahl", readonly=readonly) }}
+                    {{ util.tab_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
+                                             title="Erstwahl", readonly=readonly) }}
+                    {{ util.tab_input_select(name="course_choice{}_1".format(part_id), entries=myentries,
+                                             title="Zweitwahl", readonly=readonly) }}
+                    {{ util.tab_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
+                                             title="Drittwahl", readonly=readonly) }}
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [("", "Ich bin kein Kursleiter.", None)] %}
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.tab_input_select(name="course_instructor{}".format(part_id), entries=myentries, title="Kursleiter", readonly=readonly) }}
+                    {{ util.tab_input_select(name="course_instructor{}".format(part_id), entries=myentries,
+                                             title="Kursleiter", readonly=readonly) }}
                 {% endif %}
             {% endfor %}
         </table>

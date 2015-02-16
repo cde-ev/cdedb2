@@ -5,7 +5,8 @@
     <a href="{{ cdedblink("event/index")|e }}">Abbrechen</a>
     <p>
         {% if event_data['registration_soft_limit'] >= today %}
-            Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss ({{ event_data['registration_soft_limit']|date|e }}) geändert werden.
+            Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss
+            ({{ event_data['registration_soft_limit']|date|e }}) geändert werden.
         {% else %}
             Der Anmeldeschluss ist bereits vorbei. Deine Anmeldung wird nach Möglichkeit berücksichtigt.
         {% endif %}
@@ -28,7 +29,8 @@
                 </tr>
             {% else %}
                 {% if age.is_minor() %}
-                    {% set mix_info = "Die Auswahl muss mit der Einverständniserklärung der Erziehungsberechtigten übereinstimmen." %}
+                    {% set mix_info = glue("Die Auswahl muss mit der Einverständniserklärung der",
+                                           "Erziehungsberechtigten kompatibel sein.") %}
                 {% else %}
                     {% set mix_info = "" %}
                 {% endif %}
@@ -51,15 +53,19 @@
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.tab_input_select(name="course_choice{}_0".format(part_id), entries=myentries, title="Erstwahl") }}
-                    {{ util.tab_input_select(name="course_choice{}_1".format(part_id), entries=myentries, title="Zweitwahl") }}
-                    {{ util.tab_input_select(name="course_choice{}_2".format(part_id), entries=myentries, title="Drittwahl") }}
+                    {{ util.tab_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
+                                             title="Erstwahl") }}
+                    {{ util.tab_input_select(name="course_choice{}_1".format(part_id), entries=myentries,
+                                             title="Zweitwahl") }}
+                    {{ util.tab_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
+                                             title="Drittwahl") }}
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [("", "Ich bin kein Kursleiter.", None)] %}
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.tab_input_select(name="course_instructor{}".format(part_id), entries=myentries, title="Kursleiter") }}
+                    {{ util.tab_input_select(name="course_instructor{}".format(part_id), entries=myentries,
+                                             title="Kursleiter") }}
                 {% endif %}
             {% endfor %}
         </table>
@@ -74,7 +80,12 @@
         <table>
             <tr>
                 <td>Name</td>
-                <td>{{ user_data['title']|e }} {{ user_data['given_names']|e }} {{ user_data['family_name']|e }} {{ user_data['name_supplement']|e }}</td>
+                <td>
+                    {{ user_data['title']|e }}
+                    {{ user_data['given_names']|e }}
+                    {{ user_data['family_name']|e }}
+                    {{ user_data['name_supplement']|e }}
+                </td>
             </tr>
             <tr>
                 <td>Geburtstag</td>

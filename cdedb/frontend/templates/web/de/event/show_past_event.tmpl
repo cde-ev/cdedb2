@@ -37,7 +37,8 @@
                     {% endif %}
                     {# only allow removal of participants without a course #}
                     {% if is_admin and pdata['course_id'] is none %}
-                        <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST" id="removeparticipantform{{ anid|e }}">
+                        <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST"
+                         id="removeparticipantform{{ anid|e }}">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_id", value=pdata['course_id']) }}
                             {{ util.input_hidden(name="course_page", value=False) }}

@@ -67,7 +67,7 @@ class TestEventFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Veranstaltungsnutzersuche -- 1 Ergebnis gefunden")
+        self.assertTitle("\nVeranstaltungsnutzersuche -- 1 Ergebnis gefunden\n")
         self.assertIn("Hohle Gasse 13", self.response.text)
 
     @as_users("anton")
@@ -427,7 +427,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Universale Akademie Details")
         self.assertIn("food_stuff", self.response.text)
         self.traverse({'href': '/event/event/1/field/2/change'})
-        self.assertTitle("Datenfeld transportation (Universale Akademie) bearbeiten")
+        self.assertTitle("\nDatenfeld transportation (Universale Akademie) bearbeiten\n")
         self.assertIn("own car available", self.response.text)
         self.assertNotIn("broom", self.response.text)
         f = self.response.forms['changefieldform']
@@ -614,7 +614,7 @@ class TestEventFrontend(FrontendTest):
         f['qval_user_data.family_name'] = 'e'
         f['qord_primary'] = 'reg.id'
         self.submit(f)
-        self.assertTitle("Anmeldungen (Große Testakademie 2222) -- 2 Ergebnisse")
+        self.assertTitle("\nAnmeldungen (Große Testakademie 2222) -- 2 Ergebnisse\n")
         self.assertIn("Emilia", self.response.text)
         self.assertIn("Garcia", self.response.text)
         self.assertEqual(
@@ -629,7 +629,7 @@ class TestEventFrontend(FrontendTest):
         f['column'] = 'part2.lodgement_id2'
         f['value'] = 3
         self.submit(f)
-        self.assertTitle("Anmeldungen (Große Testakademie 2222) -- 2 Ergebnisse")
+        self.assertTitle("\nAnmeldungen (Große Testakademie 2222) -- 2 Ergebnisse\n")
         self.assertEqual(
             '3',
             self.response.lxml.get_element_by_id('row_0_lodgement_id2').value)
@@ -643,9 +643,9 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
-        self.traverse({'description': '^Alle Anmeldungen$'},
+        self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'})
-        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+        self.assertTitle("\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
         self.assertIn("56767 Wolkenkuckuksheim", self.response.text)
         self.assertIn("Einzelzelle", self.response.text)
         self.assertIn("Planetenretten für Anfänger", self.response.text)
@@ -657,10 +657,10 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/registration/query'})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
-        self.traverse({'description': '^Alle Anmeldungen$'},
+        self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
-        self.assertTitle("Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
+        self.assertTitle("\nAnmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)\n")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
         f['reg.orga_notes'] = "Wir wllen mal nicht so sein."
@@ -677,7 +677,7 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("", f['fields.lodge'].value)
         f['fields.lodge'] = "Om nom nom nom"
         self.submit(f)
-        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+        self.assertTitle("\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
         self.assertIn("Om nom nom nom", self.response.text)
         self.traverse({'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
@@ -706,7 +706,7 @@ class TestEventFrontend(FrontendTest):
         f['part1.course_id'] = 5
         f['part1.course_choice_0'] = 5
         self.submit(f)
-        self.assertTitle("Anmeldung von Bertålotta Beispiel (Große Testakademie 2222)")
+        self.assertTitle("\nAnmeldung von Bertålotta Beispiel (Große Testakademie 2222)\n")
         self.assertIn("Du entkommst uns nicht.", self.response.text)
         self.traverse({'href': '/event/event/1/registration/5/change'})
         f = self.response.forms['changeregistrationform']
@@ -772,7 +772,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
         self.submit(f)
-        self.assertTitle("Feld transportation setzen (Große Testakademie 2222)")
+        self.assertTitle("\nFeld transportation setzen (Große Testakademie 2222)\n")
         f = self.response.forms['fieldform']
         self.assertEqual("pedes", f['input2'].value)
         f['input2'] = "etc"
@@ -782,7 +782,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
         self.submit(f)
-        self.assertTitle("Feld transportation setzen (Große Testakademie 2222)")
+        self.assertTitle("\nFeld transportation setzen (Große Testakademie 2222)\n")
         f = self.response.forms['fieldform']
         self.assertEqual("etc", f['input2'].value)
 
@@ -791,7 +791,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
         self.submit(f)
-        self.assertTitle("Feld lodge setzen (Große Testakademie 2222)")
+        self.assertTitle("\nFeld lodge setzen (Große Testakademie 2222)\n")
         f = self.response.forms['fieldform']
         self.assertEqual("", f['input4'].value)
         f['input4'] = "Test\nmit\n\nLeerzeilen"
@@ -801,7 +801,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
         self.submit(f)
-        self.assertTitle("Feld lodge setzen (Große Testakademie 2222)")
+        self.assertTitle("\nFeld lodge setzen (Große Testakademie 2222)\n")
         f = self.response.forms['fieldform']
         self.assertEqual("Test\nmit\nLeerzeilen", f['input4'].value)
 
@@ -824,7 +824,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['choiceform']
         f['course_id'] = 1
         self.submit(f)
-        self.assertTitle("Kurswahlen -- Planetenretten für Anfänger (Große Testakademie 2222)")
+        self.assertTitle("\nKurswahlen -- Planetenretten für Anfänger (Große Testakademie 2222)\n")
         self.assertIn("Emilia E.", self.response.text)
 
     @as_users("garcia")
@@ -992,7 +992,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/1/show'},
                       {'href': '/event/event/1/course/1/manage'})
-        self.assertTitle("Kursteilnehmer für Kurs Planetenretten für Anfänger verwalten (Große Testakademie 2222)")
+        self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger verwalten (Große Testakademie 2222)\n")
         f = self.response.forms['manageattendeesform']
         f['attendees_1'] = ""
         f['attendees_3'] = "2,3"
@@ -1011,7 +1011,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("Inga", self.response.text)
         self.assertNotIn("Emilia", self.response.text)
         self.traverse({'href': '/event/event/1/lodgement/2/manage'})
-        self.assertTitle("Bewohner der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)")
+        self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)\n")
         f = self.response.forms['manageinhabitantsform']
         f['inhabitants_1'] = ""
         f['inhabitants_2'] = "3"

@@ -15,7 +15,12 @@
         <tr> <th colspan="2">Person</th> </tr>
         <tr>
             <td>Name</td>
-            <td>{{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }} {{ data['name_supplement']|e }}</td>
+            <td>
+                {{ data['title']|e }}
+                {{ data['given_names']|e }}
+                {{ data['family_name']|e }}
+                {{ data['name_supplement']|e }}
+            </td>
         </tr>
         <tr>
             <td>Rufname</td>
@@ -82,11 +87,13 @@
                 <td>
                     {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}
                     {% if data['is_active'] %}
-                        <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST" id="activitytoggleform">
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
+                         id="activitytoggleform">
                             <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
                         </form>
                     {% else %}
-                        <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST" id="activitytoggleform">
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
+                         id="activitytoggleform">
                             <div>{{ util.input_submit(value="Account aktivieren") }}</div>
                         </form>
                     {% endif %}

@@ -1,5 +1,53 @@
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+
+{% macro one_event_links(event_id, event_entry) %}
+{# Uninlined code to generate links for the current relevant event. #}
+    <ul>
+        {% if not event_entry['registration_id'] %}
+            <li>
+                <a href="{{ cdedblink("event/register_form", {"event_id": event_id})|e }}"
+                 {% if event_entry['locked'] %} disabled {% endif %}>
+                    Anmelden
+                </a>
+            </li>
+        {% else %}
+            <li>
+                <a href="{{ cdedblink("event/registration_status", {"event_id": event_id})|e }}"> Meine Anmeldung </a>
+            </li>
+            {% if event_entry['use_questionnaire'] %}
+                <li><a href="{{ cdedblink("event/questionnaire_form", {"event_id": event_id})|e }}"> Fragebogen </a></li>
+            {% endif %}
+        {% endif %}
+        {% if event_id in user.orga or is_admin %}
+            <li><a href="{{ cdedblink("event/summary", {"event_id": event_id})|e }}">Übersicht</a></li>
+            <li><a href="{{ cdedblink("event/event_config", {"event_id": event_id})|e }}">Konfiguration</a></li>
+            <li><a href="{{ cdedblink("event/registration_query", {"event_id": event_id})|e }}">Anmeldungen</a></li>
+            <li>
+                <a href="{{ cdedblink("event/add_registration_form", {"event_id": event_id})|e }}"
+                 {% if event_entry['locked'] %} disabled {% endif %}>
+                    Neuer Teilnehmer
+                </a>
+            </li>
+            <li><a href="{{ cdedblink("event/lodgements", {"event_id": event_id})|e }}">Unterkunft</a></li>
+            <li>
+                <a href="{{ cdedblink("event/field_set_select", {"event_id": event_id})|e }}"
+                 {% if event_entry['locked'] %} disabled {% endif %}>
+                    Datenfeld setzen
+                </a>
+            </li>
+            <li><a href="{{ cdedblink("event/course_choices", {"event_id": event_id})|e }}">Kurswahlen</a></li>
+            <li><a href="{{ cdedblink("event/downloads", {"event_id": event_id})|e }}">Downloads</a></li>
+            <li>
+                <a href="{{ cdedblink("event/checkin_form", {"event_id": event_id})|e }}"
+                 {% if event_entry['locked'] %} disabled {% endif %}>
+                    Checkin
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+{% endmacro %}
+
 {% block navigation %}
     <ul>
         <li>
@@ -30,7 +78,11 @@
                         <li><a href="{{ cdedblink("event/create_user_form")|e }}">Neuen Nutzer anlegen</a></li>
                         <li><a href="{{ cdedblink("event/user_search_form")|e }}">Nutzersuche</a></li>
                         <li><a href="{{ cdedblink("event/list_past_events")|e }}">alle abg. Veranstaltungen</a></li>
-                        <li><a href="{{ cdedblink("event/create_past_event_form")|e }}">abg. Veranstaltung anlegen</a></li>
+                        <li>
+                            <a href="{{ cdedblink("event/create_past_event_form")|e }}">
+                                abg. Veranstaltung anlegen
+                            </a>
+                        </li>
                         <li><a href="{{ cdedblink("event/list_events")|e }}">alle DB-Veranstaltungen</a></li>
                         <li><a href="{{ cdedblink("event/create_event_form")|e }}">DB-Veranstaltung anlegen</a></li>
                     {% endif %}
@@ -39,33 +91,11 @@
                         <ul>
                             {% for anid, entry in sidebar_events|dictsort|reverse %}
                                 <li>
-                                    <a href="{{ cdedblink("event/show_event", {"event_id": anid})|e }}">{{ entry['title']|e }}</a>
+                                    <a href="{{ cdedblink("event/show_event", {"event_id": anid})|e }}">
+                                        {{ entry['title']|e }}
+                                    </a>
                                     {% if anid == values.get('event_id') %}
-                                        <ul>
-                                            {% if not entry['registration_id'] %}
-                                                <li><a href="{{ cdedblink("event/register_form", {"event_id": anid})|e }}" {% if entry['locked'] %} disabled {% endif %}>Anmelden</a></li>
-                                            {% else %}
-                                                <li><a href="{{ cdedblink("event/registration_status", {"event_id": anid})|e }}">
-                                                    Meine Anmeldung
-                                                </a></li>
-                                                {% if entry['use_questionnaire'] %}
-                                                    <li><a href="{{ cdedblink("event/questionnaire_form", {"event_id": anid})|e }}">
-                                                        Fragebogen
-                                                    </a></li>
-                                                {% endif %}
-                                            {% endif %}
-                                            {% if anid in user.orga or is_admin %}
-                                                <li><a href="{{ cdedblink("event/summary", {"event_id": anid})|e }}">Übersicht</a></li>
-                                                <li><a href="{{ cdedblink("event/event_config", {"event_id": anid})|e }}">Konfiguration</a></li>
-                                                <li><a href="{{ cdedblink("event/registration_query", {"event_id": anid})|e }}">Anmeldungen</a></li>
-                                                <li><a href="{{ cdedblink("event/add_registration_form", {"event_id": anid})|e }}" {% if entry['locked'] %} disabled {% endif %}>Neuer Teilnehmer</a></li>
-                                                <li><a href="{{ cdedblink("event/lodgements", {"event_id": anid})|e }}">Unterkunft</a></li>
-                                                <li><a href="{{ cdedblink("event/field_set_select", {"event_id": anid})|e }}" {% if entry['locked'] %} disabled {% endif %}>Datenfeld setzen</a></li>
-                                                <li><a href="{{ cdedblink("event/course_choices", {"event_id": anid})|e }}">Kurswahlen</a></li>
-                                                <li><a href="{{ cdedblink("event/downloads", {"event_id": anid})|e }}">Downloads</a></li>
-                                                <li><a href="{{ cdedblink("event/checkin_form", {"event_id": anid})|e }}" {% if entry['locked'] %} disabled {% endif %}>Checkin</a></li>
-                                            {% endif %}
-                                        </ul>
+                                        {{ one_event_links(anid, entry) }}
                                     {% endif %}
                                 </li>
                             {% endfor %}

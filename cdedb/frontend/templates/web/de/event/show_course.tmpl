@@ -4,7 +4,9 @@
 {% block content %}
     {% if event_data['id'] in user.orga or is_admin %}
         <a href="{{ cdedblink('event/change_course_form')|e }}" {% if locked %} disabled {% endif %}>Bearbeiten</a>
-        <a href="{{ cdedblink('event/manage_attendees_form')|e }}" {% if locked %} disabled {% endif %}>Kursteilnehmer verwalten</a>
+        <a href="{{ cdedblink('event/manage_attendees_form')|e }}" {% if locked %} disabled {% endif %}>
+            Kursteilnehmer verwalten
+        </a>
     {% endif %}
     <p>Kursleiter: {{ course_data['instructors']|e }}</p>
     <p>{{ course_data['description']|e }}</p>

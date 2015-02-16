@@ -1,7 +1,13 @@
 {% extends "web/de/cde/base.tmpl" %}
-{% block title %}Mitgliedersuche -- {{ result|length|e }} Mitglied{{ result|length|numerus("", "er")|e }} gefunden{% endblock %}
+{% block title %}
+Mitgliedersuche -- {{ result|length|e }} Mitglied{{ result|length|numerus("", "er")|e }} gefunden
+{% endblock %}
 {% block content %}
     {% for dataset in result %}
-        <p> <a href="{{ show_user_link(dataset['persona_id'])|e }}">{{ dataset['family_name']|e }}, {{ dataset['given_names']|e }}</a> </p>
+        <p>
+            <a href="{{ show_user_link(dataset['persona_id'])|e }}">
+                {{ dataset['family_name']|e }}, {{ dataset['given_names']|e }}
+            </a>
+        </p>
     {% endfor %}
 {% endblock %}

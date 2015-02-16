@@ -27,11 +27,13 @@
         </li>
         <li>
             Bastelsatz Unterkunftseinteilung
-            <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET" id="lodgementpuzzlepdfform">
+            <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET"
+             id="lodgementpuzzlepdfform">
                 {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
-            <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET" id="lodgementpuzzletexform">
+            <form action="{{ cdedblink('event/download_lodgement_puzzle')|e }}" method="GET"
+             id="lodgementpuzzletexform">
                 {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>
@@ -60,11 +62,13 @@
         </li>
         <li>
             Teilnehmerliste
-            <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET" id="participantlistpdfform">
+            <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET"
+             id="participantlistpdfform">
                 {{ util.input_hidden(name="runs", value=2) }}
                 {{ util.input_submit(value="PDF") }}
             </form>
-            <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET" id="participantlisttexform">
+            <form action="{{ cdedblink('event/download_participant_list')|e }}" method="GET"
+             id="participantlisttexform">
                 {{ util.input_hidden(name="runs", value=0) }}
                 {{ util.input_submit(value="TeX") }}
             </form>

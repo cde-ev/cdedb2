@@ -8,12 +8,14 @@
             <li>
                 {{ entry['full_name']|e }} -- {{ entry['username']|e }}<br>
                 {{ entry['notes']|e|linebreaks }}<br>
-                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST" id="genesisrejectionform{{ loop.index|e }}">
+                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST"
+                 id="genesisrejectionform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_hidden(name="case_status", value=GenesisStati.rejected.value) }}
                     {{ util.input_submit(value="Ablehnen") }}
                 </form>
-                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST" id="genesisapprovalform{{ loop.index|e }}">
+                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST"
+                 id="genesisapprovalform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_hidden(name="case_status", value=GenesisStati.approved.value) }}
                     {{ util.input_select(name="persona_status", nulloption=True, entries=(
@@ -28,7 +30,8 @@
         {% for case_id, entry in approved|dictsort %}
             <li>
                 {{ entry['full_name']|e }} -- {{ entry['username']|e }}
-                <form action="{{ cdedblink('core/genesis_timeout')|e }}" method="POST" id="genesistimeoutform{{ loop.index|e }}">
+                <form action="{{ cdedblink('core/genesis_timeout')|e }}" method="POST"
+                 id="genesistimeoutform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_submit(value="Widerrufen") }}
                 </form>

@@ -4,7 +4,11 @@
 {% block content %}
    <ul>
         {% for persona_id, entry in pending|dictsort %}
-           <li><a href="{{ cdedblink('cde/inspect_change', {'persona_id': persona_id})|e }}">{{ entry['given_names']|e }} {{ entry['family_name']|e }}</a></li>
+           <li>
+               <a href="{{ cdedblink('cde/inspect_change', {'persona_id': persona_id})|e }}">
+                   {{ entry['given_names']|e }} {{ entry['family_name']|e }}
+               </a>
+           </li>
         {% endfor %}
    </ul>
 {% endblock %}

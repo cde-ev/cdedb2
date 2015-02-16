@@ -2,7 +2,9 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}CdE Nutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden{% endblock %}
+{% block title %}
+CdE Nutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden
+{% endblock %}
 {% block content %}
     <a href="{{ cdedblink("cde/user_search_form", query|querytoparams)|e }}">Zurück</a>
 
