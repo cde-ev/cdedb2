@@ -283,8 +283,8 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "past_event_data", data)
         if rs.errors:
             return self.change_past_event_form(rs, event_id)
-        num = self.eventproxy.set_past_event_data(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_past_event_data(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_past_event")
 
     @access("event_admin")
@@ -300,7 +300,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.create_past_event_form(rs)
         new_id = self.eventproxy.create_past_event(rs, data)
-        rs.notify("success", "Event created.")
+        self.notify_return_code(rs, new_id, success="Event created.")
         return self.redirect(rs, "event/show_past_event", {'event_id': new_id})
 
     @access("event_admin")
@@ -322,8 +322,8 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "past_course_data", data)
         if rs.errors:
             return self.change_past_course_form(rs, event_id, course_id)
-        num = self.eventproxy.set_past_course_data(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_past_course_data(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_past_course")
 
     @access("event_admin")
@@ -341,7 +341,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.create_past_course_form(rs, event_id)
         new_id = self.eventproxy.create_past_course(rs, data)
-        rs.notify("success", "Course created.")
+        self.notify_return_code(rs, new_id, success="Course created.")
         return self.redirect(rs, "event/show_past_course",
                              {'course_id': new_id})
 
@@ -351,8 +351,8 @@ class EventFrontend(AbstractUserFrontend):
 
         This also deletes all participation information w.r.t. this course.
         """
-        num = self.eventproxy.delete_past_course(rs, course_id, cascade=True)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.delete_past_course(rs, course_id, cascade=True)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_past_event")
 
     @access("event_admin", {"POST"})
@@ -363,9 +363,9 @@ class EventFrontend(AbstractUserFrontend):
         """Add participant to concluded event."""
         if rs.errors:
             return self.show_past_course(rs, event_id, course_id)
-        num = self.eventproxy.create_participant(
+        code = self.eventproxy.create_participant(
             rs, event_id, course_id, persona_id, is_instructor, is_orga)
-        self.notify_integer_success(rs, num)
+        self.notify_return_code(rs, code)
         if course_id:
             return self.redirect(rs, "event/show_past_course",
                                  {'course_id': course_id})
@@ -378,9 +378,9 @@ class EventFrontend(AbstractUserFrontend):
         """Remove participant."""
         if rs.errors:
             return self.show_event(rs, event_id)
-        num = self.eventproxy.delete_participant(
+        code = self.eventproxy.delete_participant(
             rs, event_id, course_id, persona_id)
-        self.notify_integer_success(rs, num)
+        self.notify_return_code(rs, code)
         if course_id:
             return self.redirect(rs, "event/show_past_course", {
                 'course_id': course_id})
@@ -443,8 +443,8 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "event_data", data)
         if rs.errors:
             return self.change_event_form(rs, event_id)
-        num = self.eventproxy.set_event_data(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user")
@@ -486,8 +486,8 @@ class EventFrontend(AbstractUserFrontend):
             'id': event_id,
             'orgas': data['orgas'] | {orga_id}
         }
-        num = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, newdata)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user", {"POST"})
@@ -505,8 +505,8 @@ class EventFrontend(AbstractUserFrontend):
             'id': event_id,
             'orgas': data['orgas'] - {orga_id}
         }
-        num = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, newdata)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user")
@@ -533,8 +533,8 @@ class EventFrontend(AbstractUserFrontend):
                 part_id: data
             }
         }
-        num = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, newdata)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user", {"POST"})
@@ -554,8 +554,8 @@ class EventFrontend(AbstractUserFrontend):
                 -1: data
             }
         }
-        num = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, newdata)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user")
@@ -587,8 +587,8 @@ class EventFrontend(AbstractUserFrontend):
                 field_id: data
             }
         }
-        num = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, newdata)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user", {"POST"})
@@ -605,8 +605,8 @@ class EventFrontend(AbstractUserFrontend):
                 -1: data
             }
         }
-        num = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, newdata)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user", {"POST"})
@@ -626,8 +626,8 @@ class EventFrontend(AbstractUserFrontend):
                 field_id: None
             }
         }
-        num = self.eventproxy.set_event_data(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_event_data(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_admin")
@@ -652,7 +652,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.create_event_form(rs)
         new_id = self.eventproxy.create_event(rs, data)
         # TODO create mailing lists
-        rs.notify("success", "Event created.")
+        self.notify_return_code(rs, new_id, success="Event created.")
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
     @access("event_user")
@@ -706,8 +706,8 @@ class EventFrontend(AbstractUserFrontend):
         data = check(rs, "course_data", data)
         if rs.errors:
             return self.change_course_form(rs, event_id, course_id)
-        num = self.eventproxy.set_course_data(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_course_data(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_course")
 
     @access("event_user")
@@ -733,7 +733,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.create_course_form(rs, event_id)
         new_id = self.eventproxy.create_course(rs, data)
-        rs.notify("success", "Course created.")
+        self.notify_return_code(rs, new_id, success="Course created.")
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event_user")
@@ -1290,7 +1290,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         registration_data['mixed_lodging'] = (registration_data['mixed_lodging']
                                               and age.may_mix())
-        self.eventproxy.create_registration(rs, registration_data)
+        new_id = self.eventproxy.create_registration(rs, registration_data)
         fee = sum(event_data['parts'][part_id]['fee']
                   for part_id, entry in registration_data['parts'].items()
                   if const.RegistrationPartStati(entry['status']).is_involved)
@@ -1300,7 +1300,7 @@ class EventFrontend(AbstractUserFrontend):
              'Subject': 'Registered for event {}'.format(event_data['title'])},
             {'user_data': user_data, 'event_data': event_data, 'fee': fee,
              'age': age})
-        rs.notify("success", "Registered for event.")
+        self.notify_return_code(rs, new_id, success="Registered for event.")
         return self.redirect(rs, "event/registration_status")
 
     @access("event_user")
@@ -1408,8 +1408,8 @@ class EventFrontend(AbstractUserFrontend):
             min(p['part_begin'] for p in event_data['parts'].values()))
         registration_data['mixed_lodging'] = (registration_data['mixed_lodging']
                                               and age.may_mix())
-        num = self.eventproxy.set_registration(rs, registration_data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_registration(rs, registration_data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/registration_status")
 
     @access("event_user")
@@ -1466,9 +1466,9 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.questionnaire_form(rs, event_id, registration_id)
 
-        num = self.eventproxy.set_registration(rs, {
+        code = self.eventproxy.set_registration(rs, {
             'id': registration_id, 'field_data': data,})
-        self.notify_integer_success(rs, num)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/questionnaire_form")
 
     @access("event_user")
@@ -1530,8 +1530,9 @@ class EventFrontend(AbstractUserFrontend):
             rs, len(questionnaire))
         if rs.errors:
             return self.change_questionnaire_form(rs, event_id)
-        num = self.eventproxy.set_questionnaire(rs, event_id, new_questionnaire)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_questionnaire(rs, event_id,
+                                                 new_questionnaire)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @staticmethod
@@ -1573,8 +1574,9 @@ class EventFrontend(AbstractUserFrontend):
         new_questionnaire = tuple(
             self._sanitize_questionnaire_row(questionnaire[i])
             for i in order)
-        num = self.eventproxy.set_questionnaire(rs, event_id, new_questionnaire)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_questionnaire(rs, event_id,
+                                                 new_questionnaire)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user", {"POST"})
@@ -1593,8 +1595,9 @@ class EventFrontend(AbstractUserFrontend):
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         new_questionnaire = tuple(self._sanitize_questionnaire_row(row)
                                   for row in questionnaire) + tuple(data)
-        num = self.eventproxy.set_questionnaire(rs, event_id, new_questionnaire)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_questionnaire(rs, event_id,
+                                                 new_questionnaire)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
     @access("event_user", {"POST"})
@@ -1605,8 +1608,9 @@ class EventFrontend(AbstractUserFrontend):
         new_questionnaire = tuple(
             self._sanitize_questionnaire_row(row)
             for i, row in enumerate(questionnaire) if i != num)
-        num = self.eventproxy.set_questionnaire(rs, event_id, new_questionnaire)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_questionnaire(rs, event_id,
+                                                 new_questionnaire)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/event_config")
 
 
@@ -1755,8 +1759,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.change_registration_form(rs, event_id, registration_id)
 
         registration_data['id'] = registration_id
-        num = self.eventproxy.set_registration(rs, registration_data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_registration(rs, registration_data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_registration")
 
     @access("event_user")
@@ -1805,7 +1809,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_data['persona_id'] = persona_id
         registration_data['event_id'] = event_id
         new_id = self.eventproxy.create_registration(rs, registration_data)
-        self.notify_integer_success(rs, new_id)
+        self.notify_return_code(rs, new_id)
         return self.redirect(rs, "event/show_registration",
                              {'registration_id': new_id})
 
@@ -1990,7 +1994,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.create_lodgement_form(rs, event_id)
 
         new_id = self.eventproxy.create_lodgement(rs, data)
-        self.notify_integer_success(rs, new_id)
+        self.notify_return_code(rs, new_id)
         return self.redirect(rs, "event/show_lodgement",
                              {'lodgement_id': new_id})
 
@@ -2023,8 +2027,8 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.change_lodgement_form(rs, event_id, lodgement_id)
 
-        num = self.eventproxy.set_lodgement(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_lodgement(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event_user", {"POST"})
@@ -2048,8 +2052,8 @@ class EventFrontend(AbstractUserFrontend):
                       "Lodgement not empty (includes non-participants!).")
             return self.redirect(rs, "event/show_lodgement")
 
-        num = self.eventproxy.delete_lodgement(rs, lodgement_id)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.delete_lodgement(rs, lodgement_id)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgements")
 
     @access("event_user")
@@ -2117,7 +2121,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
-        num = 1
+        code = 1
         for registration_id, rdata in registration_data.items():
             new_reg = {
                 'id': registration_id,
@@ -2133,8 +2137,8 @@ class EventFrontend(AbstractUserFrontend):
                         'lodgement_id': (lodgement_id if inhabits else None)
                     }
             if new_reg['parts']:
-                num *= self.eventproxy.set_registration(rs, new_reg)
-        self.notify_integer_success(rs, num)
+                code *= self.eventproxy.set_registration(rs, new_reg)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event_user")
@@ -2199,7 +2203,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.manage_attendees_form(rs, event_id, course_id)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
-        num = 1
+        code = 1
         for registration_id, rdata in registration_data.items():
             new_reg = {
                 'id': registration_id,
@@ -2214,8 +2218,8 @@ class EventFrontend(AbstractUserFrontend):
                         'course_id': (course_id if attends else None)
                     }
             if new_reg['parts']:
-                num *= self.eventproxy.set_registration(rs, new_reg)
-        self.notify_integer_success(rs, num)
+                code *= self.eventproxy.set_registration(rs, new_reg)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_course")
 
     @staticmethod
@@ -2400,7 +2404,7 @@ class EventFrontend(AbstractUserFrontend):
         id_data = request_data_extractor(rs, id_params)
         if rs.errors:
             return self.registration_query_result(rs, event_id, CSV=False)
-        success = 1
+        code = 1
         for i in range(num_rows):
             if selection_data["row_{}".format(i)]:
                 new_data = {'id': id_data["row_{}_id".format(i)]}
@@ -2414,8 +2418,8 @@ class EventFrontend(AbstractUserFrontend):
                     new_data['field_data'] = {field: value}
                 else:
                     new_data[field] = value
-                success *= self.eventproxy.set_registration(rs, new_data)
-        self.notify_integer_success(rs, success)
+                code *= self.eventproxy.set_registration(rs, new_data)
+        self.notify_return_code(rs, code)
         params = {key: value for key, value in rs.request.values.items()
                   if key.startswith(("qsel_", "qop_", "qval_", "qord_"))}
         params['CSV'] = False
@@ -2469,8 +2473,8 @@ class EventFrontend(AbstractUserFrontend):
             'id': registration_id,
             'checkin': datetime.datetime.now(pytz.utc),
         }
-        num = self.eventproxy.set_registration(rs, new_reg)
-        self.notify_integer_success(rs, num)
+        code = self.eventproxy.set_registration(rs, new_reg)
+        self.notify_return_code(rs, code)
         return self.checkin_form(rs, event_id)
 
     @access("event_user")
@@ -2533,7 +2537,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.field_set_form(rs, event_id, field_id)
 
         registration_data = self.eventproxy.get_registrations(rs, registrations)
-        num = 1
+        code = 1
         field_name = event_data['fields'][field_id]['field_name']
         for registration_id, rdata in registration_data.items():
             if (data["input{}".format(registration_id)]
@@ -2544,8 +2548,8 @@ class EventFrontend(AbstractUserFrontend):
                         field_name: data["input{}".format(registration_id)]
                     }
                 }
-                num *= self.eventproxy.set_registration(rs, new_data)
-        self.notify_integer_success(rs, num)
+                code *= self.eventproxy.set_registration(rs, new_data)
+        self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
     @access("event_user", {"POST"})

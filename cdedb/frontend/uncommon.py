@@ -102,8 +102,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
             return self.change_user_form(rs)
-        num = self.user_management['proxy'](self).change_user(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.user_management['proxy'](self).change_user(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     ## @access("realm_admin")
@@ -127,8 +127,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         data = check(rs, self.user_management['validator'], data)
         if rs.errors:
             return self.admin_change_user_form(rs, persona_id)
-        num = self.user_management['proxy'](self).change_user(rs, data)
-        self.notify_integer_success(rs, num)
+        code = self.user_management['proxy'](self).change_user(rs, data)
+        self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
     ## @access("realm_admin")
@@ -147,11 +147,10 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if rs.errors:
             return self.create_user_form(rs)
         new_id = self.user_management['proxy'](self).create_user(rs, data)
+        self.notify_return_code(rs, new_id, success="User created.")
         if new_id:
-            rs.notify("success", "User created.")
             return self.redirect_show_user(rs, new_id)
         else:
-            rs.notify("error", "Failed.")
             return self.create_user_form(rs)
 
     ## @access("anonymous")
@@ -187,11 +186,10 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.genesis_form(rs, case_id, secret, data['username'])
         new_id = self.user_management['proxy'](self).genesis(rs, case_id,
                                                              secret, data)
+        self.notify_return_code(rs, new_id, success="User created.")
         if new_id:
-            rs.notify("success", "User created.")
             return self.redirect(rs, "core/do_password_reset_form", {
                 'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", data['username'])})
         else:
-            rs.notify("error", "Failed.")
             return self.genesis_form(rs, case_id, secret, data['username'])

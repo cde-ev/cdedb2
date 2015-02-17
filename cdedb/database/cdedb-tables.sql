@@ -548,7 +548,8 @@ CREATE SCHEMA ml;
 
 CREATE TABLE ml.user_data (
         persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
-        full_name               varchar NOT NULL,
+        given_names             varchar NOT NULL,
+        family_name             varchar NOT NULL,
         -- administrative notes about this user
         notes                   varchar
 );
@@ -561,16 +562,44 @@ CREATE TABLE ml.mailinglists (
         sub_policy              integer NOT NULL,
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,
-        subject_prefix          varchar
-        -- TODO add event awareness
+        -- see cdedb.database.constants.AttachementPolicy
+        attachement_policy      integer NOT NULL,
+        -- list of PersonaStati
+        audience                integer[] NOT NULL,
+        subject_prefix          varchar,
+        maxsize                 integer, -- in kB
+        is_active               boolean NOT NULL,
+        -- Define a list X as gateway for this list, that is everybody
+        -- subscribed to X may subscribe to this list (only usefull with a
+        -- restrictive subscription policy).
+        --
+        -- Main use case is the Aktivenforums list.
+        gateway                 integer REFERENCES ml.mailinglists(id),
+        -- event awareness
+        -- event_id is not NULL if associated to an event
+        event_id                integer REFERENCES event.events(id),
+        -- which stati to address
+        -- (cf. cdedb.database.constants.RegistrationPartStati)
+        -- this may be NULL or empty, in which case this is an orga list
+        registration_stati      integer[],
+        -- assembly awareness
+        -- assembly_id is not NULL if associated to an assembly
+        assembly_id             integer REFERENCES assembly.assemblies(id)
 );
 
+-- This also handles unsubscriptions for opt-out lists.
 CREATE TABLE ml.subscriptions (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         address                 varchar,
         is_subscribed           boolean
+);
+
+CREATE TABLE ml.subscription_requests (
+        id                      serial PRIMARY KEY,
+        mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
+        persona_id              integer NOT NULL REFERENCES core.personas(id)
 );
 
 CREATE TABLE ml.whitelist (
@@ -585,6 +614,15 @@ CREATE TABLE ml.moderators (
         persona_id              integer NOT NULL REFERENCES core.personas(id)
 );
 
+CREATE TABLE ml.log (
+        id                      bigserial PRIMARY KEY,
+        mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
+        owner_id                integer NOT NULL REFERENCES core.personas(id),
+        target_id               integer NOT NULL REFERENCES core.personas(id),
+        ctime                   timestamp WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'UTC'),
+        message                 varchar NOT NULL
+);
+
 -- TODO implement
 
 ---
@@ -595,7 +633,8 @@ CREATE SCHEMA assembly;
 
 CREATE TABLE assembly.user_data (
         persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
-        full_name               varchar NOT NULL,
+        given_names             varchar NOT NULL,
+        family_name             varchar NOT NULL,
         -- who does this person represent
         organisation            varchar NOT NULL,
         -- administrative notes about this user
@@ -614,6 +653,7 @@ CREATE TABLE assembly.proposals (
         title                   varchar NOT NULL,
         description             varchar
         -- TODO maybe some dates?
+        -- TODO linked files?
 );
 
 CREATE TABLE assembly.candidates (

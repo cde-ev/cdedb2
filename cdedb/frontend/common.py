@@ -806,19 +806,30 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 for case in anenum}
 
     @staticmethod
-    def notify_integer_success(rs, num):
-        """Small helper to issue a notification based on a return code
-        specifying the number of changed entries.
+    def notify_return_code(rs, code, success="Change committed.",
+                           pending="Change pending.", error="Change failed."):
+        """Small helper to issue a notification based on a return code.
+
+        We allow some flexibility in what type of return code we accept. It
+        may be a boolean (with the obvious meanings), an integer (specifying
+        the number of changed entries, and negative numbers for entries with
+        pending review) or None (signalling failure to acquire something).
 
         :type rs: :py:class:`FrontendRequestState`
-        :type num: int
+        :type success: str
+        :type code: int or bool or None
+        :param success: Affirmative message for positive return codes.
+        :param pending: Message for negative return codes signalling review.
+        :param error: Exception message for zero return codes.
         """
-        if num > 0:
-            rs.notify("success", "Change committed.")
-        elif num < 0:
-            rs.notify("info", "Change pending.")
+        if not code:
+            rs.notify("error", error)
+        elif code == True or code > 0:
+            rs.notify("success", success)
+        elif code < 0:
+            rs.notify("info", pending)
         else:
-            rs.notify("warning", "Change failed.")
+            raise RuntimeError("Impossible.")
 
     def latex_compile(self, data, runs=2):
         """Run LaTeX on the provided document.

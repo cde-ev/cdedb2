@@ -138,17 +138,17 @@ class CoreFrontend(AbstractFrontend):
                              "new_password")
         if rs.errors:
             return self.change_password_form(rs)
-        success, message = self.coreproxy.change_password(
+        code, message = self.coreproxy.change_password(
             rs, rs.user.persona_id, old_password, new_password)
-        if not success:
+        self.notify_return_code(rs, code, success="Password changed.",
+                                error=message)
+        if not code:
             rs.errors.append(("old_password", ValueError("Wrong password.")))
-            rs.notify("error", message)
             self.logger.info(
                 "Unsuccessful password change for persona {}.".format(
                     rs.user.persona_id))
             return self.change_password_form(rs)
         else:
-            rs.notify("success", "Password changed.")
             return self.redirect(rs, "core/index")
 
     @access("anonymous")
@@ -199,32 +199,32 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/reset_password_form")
-        success, message = self.coreproxy.reset_password(rs, email)
-        if not success:
-            rs.notify("error", message)
+        code, message = self.coreproxy.reset_password(rs, email)
+        self.notify_return_code(rs, code, success="Password reset.",
+                                error=message)
+        if not code:
             return self.redirect(rs, "core/reset_password_form")
         else:
             self.do_mail(rs, "password_reset_done",
                          {'To': (email,),
                           'Subject': 'CdEDB password reset successful'},
                          {'password': message})
-            rs.notify("success", "Password reset.")
             return self.redirect(rs, "core/index")
 
     @access("core_admin", {"POST"})
     def admin_password_reset(self, rs, persona_id):
         """Administrative password reset."""
         data = self.coreproxy.get_data_one(rs, persona_id)
-        success, message = self.coreproxy.reset_password(rs, data['username'])
-        if not success:
-            rs.notify("error", message)
+        code, message = self.coreproxy.reset_password(rs, data['username'])
+        self.notify_return_code(rs, code, success="Password reset.",
+                                error=message)
+        if not code:
             return self.redirect_show_user(rs, persona_id)
         else:
             self.do_mail(rs, "password_reset_done",
                          {'To': (data['username'],),
                           'Subject': 'CdEDB password reset successful'},
                          {'password': message})
-            rs.notify("success", "Password reset.")
             return self.redirect_show_user(rs, persona_id)
 
     @access("persona")
@@ -267,13 +267,13 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             rs.notify("error", "Link expired")
             return self.redirect(rs, "core/change_username_form")
-        success, message = self.coreproxy.change_username(
+        code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
-        if not success:
-            rs.notify("error", message)
+        self.notify_return_code(rs, code, success="Username changed.",
+                                error=message)
+        if not code:
             return self.redirect(rs, "core/username_change_form")
         else:
-            rs.notify("success", "Username changed.")
             return self.redirect(rs, "core/index")
 
     @access("core_admin")
@@ -288,13 +288,13 @@ class CoreFrontend(AbstractFrontend):
         """Change username without verification."""
         if rs.errors:
             return self.redirect(rs, "core/admin_username_change_form")
-        success, message = self.coreproxy.change_username(
+        code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
-        if not success:
-            rs.notify("error", message)
+        self.notify_return_code(rs, code, success="Username changed.",
+                                error=message)
+        if not code:
             return self.redirect(rs, "core/admin_username_change_form")
         else:
-            rs.notify("success", "Username changed.")
             return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", {"POST"})
@@ -308,8 +308,8 @@ class CoreFrontend(AbstractFrontend):
             'is_active': activity,
         }
         change_note = "Toggling activity to {}.".format(activity)
-        num = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
-        self.notify_integer_success(rs, num)
+        code = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
+        self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("admin")
@@ -334,8 +334,8 @@ class CoreFrontend(AbstractFrontend):
             'db_privileges': sum(newprivileges),
         }
         change_note = "Setting privileges to {}.".format(sum(newprivileges))
-        num = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
-        self.notify_integer_success(rs, num)
+        code = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
+        self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("anonymous")
@@ -379,11 +379,11 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.genesis_request_form(rs)
-        num = self.coreproxy.genesis_verify(rs, case_id)
-        if not num:
-            rs.notify("error", "Verification failed.")
+        code = self.coreproxy.genesis_verify(rs, case_id)
+        self.notify_return_code(rs, code, success="Email verified.",
+                                error="Verification failed.")
+        if not code:
             return self.redirect(rs, "core/genesis_request_form")
-        rs.notify("success", "Email verified.")
         return self.redirect(rs, "core/index")
 
     @access("core_admin")
@@ -429,8 +429,8 @@ class CoreFrontend(AbstractFrontend):
         }
         if case_status == const.GenesisStati.approved:
             data['secret'] = str(uuid.uuid4())
-        num = self.coreproxy.genesis_modify_case(rs, data)
-        if not num:
+        code = self.coreproxy.genesis_modify_case(rs, data)
+        if not code:
             rs.notify("error", "Failed.")
             return rs.genesis_list_cases(rs)
         case = self.coreproxy.genesis_get_case(rs, case_id)
@@ -473,9 +473,6 @@ class CoreFrontend(AbstractFrontend):
             'case_status': const.GenesisStati.timeout,
             'reviewer': rs.user.persona_id,
         }
-        num = self.coreproxy.genesis_modify_case(rs, data)
-        if num:
-            rs.notify("success", "Case abandoned.")
-        else:
-            rs.notify("error", "Failed.")
+        code = self.coreproxy.genesis_modify_case(rs, data)
+        self.notify_return_code(rs, code, success="Case abandoned.")
         return self.redirect(rs, "core/genesis_list_cases")

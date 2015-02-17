@@ -137,3 +137,23 @@ class GenesisStati(enum.IntEnum):
     rejected = 10
     #: abandoned and archived (also final)
     timeout = 11
+
+@enum.unique
+class SubscriptionPolicy(enum.IntEnum):
+    mandatory = 0 #:
+    opt_out = 1 #:
+    opt_in = 2 #:
+    moderated_opt_in = 3 #:
+    invitation_only = 4 #:
+
+@enum.unique
+class ModerationPolicy(enum.IntEnum):
+    unmoderated = 0 #:
+    non_subscribers = 1 #:
+    fully_moderated = 2 #:
+
+@enum.unique
+class AttachementPolicy(enum.IntEnum):
+    allow = 0 #:
+    pdf_only = 1 #:
+    forbid = 2 #:

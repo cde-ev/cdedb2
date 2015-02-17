@@ -97,9 +97,9 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.change_user_form(rs)
         change_note = "Normal dataset change."
-        num = self.cdeproxy.change_user(rs, data, generation,
-                                        change_note=change_note)
-        self.notify_integer_success(rs, num)
+        code = self.cdeproxy.change_user(rs, data, generation,
+                                         change_note=change_note)
+        self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("cde_admin")
@@ -129,9 +129,9 @@ class CdEFrontend(AbstractUserFrontend):
             change_note = "Admin dataset change."
         if rs.errors:
             return self.admin_change_user_form(rs, persona_id)
-        num = self.cdeproxy.change_user(rs, data, generation,
-                                        change_note=change_note)
-        self.notify_integer_success(rs, num)
+        code = self.cdeproxy.change_user(rs, data, generation,
+                                         change_note=change_note)
+        self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
@@ -163,11 +163,9 @@ class CdEFrontend(AbstractUserFrontend):
         """Make decision."""
         if rs.errors:
             return self.list_pending_changes(rs)
-        self.cdeproxy.resolve_change(rs, persona_id, generation, ack)
-        if ack:
-            rs.notify("success", "Change comitted.")
-        else:
-            rs.notify("info", "Change dropped.")
+        code = self.cdeproxy.resolve_change(rs, persona_id, generation, ack)
+        message = "Change comitted." if ack else "Change dropped."
+        self.notify_return_code(rs, code, success=message)
         return self.redirect(rs, "cde/list_pending_changes")
 
     @access("formermember")
@@ -199,12 +197,12 @@ class CdEFrontend(AbstractUserFrontend):
         if not os.path.isfile(path):
             with open(path, 'wb') as f:
                 f.write(blob)
-        self.cdeproxy.set_foto(rs, persona_id, myhash.hexdigest())
+        code = self.cdeproxy.set_foto(rs, persona_id, myhash.hexdigest())
         if previous:
             if not self.cdeproxy.foto_usage(rs, myhash.hexdigest()):
                 path = os.path.join(self.conf.STORAGE_DIR, 'foto', previous)
                 os.remove(path)
-        rs.notify("success", "Foto updated.")
+        self.notify_return_code(rs, code, success="Foto updated.")
         return self.redirect_show_user(rs, persona_id)
 
     @access("persona")
@@ -241,15 +239,12 @@ class CdEFrontend(AbstractUserFrontend):
             'status': status
         }
         change_note = "Consent decision (is {}).".format(ack)
-        num = self.cdeproxy.change_user(rs, new_data, None, may_wait=False,
-                                        change_note=change_note)
-        if num != 1:
-            rs.notify("error", "Failed.")
+        code = self.cdeproxy.change_user(rs, new_data, None, may_wait=False,
+                                         change_note=change_note)
+        message = "Consent noted." if ack else "Decision noted."
+        self.notify_return_code(rs, code, success=message)
+        if not code:
             return self.consent_decision_form(rs)
-        if ack:
-            rs.notify("success", "Consent noted.")
-        else:
-            rs.notify("info", "Decision noted.")
         return self.redirect(rs, "core/index")
 
     @access("searchmember")
@@ -397,9 +392,9 @@ class CdEFrontend(AbstractUserFrontend):
         elif newstatus == const.PersonaStati.archived_member:
             raise NotImplementedError("TODO")
         change_note = "Membership change to {}".format(newstatus.name)
-        num = self.cdeproxy.change_user(rs, data, None, may_wait=False,
-                                        change_note=change_note)
-        self.notify_integer_success(rs, num)
+        code = self.cdeproxy.change_user(rs, data, None, may_wait=False,
+                                         change_note=change_note)
+        self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
