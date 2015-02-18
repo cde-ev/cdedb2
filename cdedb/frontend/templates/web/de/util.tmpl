@@ -2,13 +2,19 @@
    create html-elements. #}
 
 {% macro jquery_preamble() %}
-   <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
+    <script type="text/javascript">
+        cdedb_javascript = true;
+    </script>
+    <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
 {% endmacro %}
 
 {% macro jquery_with_ui_preamble() %}
-   <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
-   <script type="text/javascript" src="{{ staticurl("jquery-ui/jquery-ui.js")|e }}"></script>
-   <link rel="stylesheet" type="text/css" href="{{ staticurl("jquery-ui/jquery-ui.css")|e }}">
+    <script type="text/javascript">
+        cdedb_javascript = true;
+    </script>
+    <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
+    <script type="text/javascript" src="{{ staticurl("jquery-ui/jquery-ui.js")|e }}"></script>
+    <link rel="stylesheet" type="text/css" href="{{ staticurl("jquery-ui/jquery-ui.css")|e }}">
 {% endmacro %}
 
 {% macro javascript_hint() %}
@@ -17,11 +23,6 @@
             Diese Seite funktioniert besser mit Javascript.
         </div>
     </noscript>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $(".jsDeleted").remove();
-        });
-    </script>
 {% endmacro %}
 
 {% macro deko_checkbox(checked, anid='', aclass='') %}

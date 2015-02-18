@@ -55,10 +55,39 @@
                     This should not be visible.
                 {% endblock %}
             </div>
+            <div id="confirmation_dialogue"><!-- for later user --></div>
         </div>
         <div id="footer">
             {% block footer %}{{ debugstring|e }} ; time taken: {{ generation_time()|e }}{% endblock %}
         </div>
+        <!-- common script snippets -->
+        <script type="text/javascript">
+            if (typeof cdedb_javascript !== 'undefined') {
+                $(document).ready(function(){
+                    $(".jsEnabled").prop('disabled', false);
+                    $(".jsDeleted").remove();
+                    $(".jsConfirmed").submit(function(e){
+                        e.preventDefault()
+                        var form = this;
+                        $("#confirmation_dialogue").html("Sind Sie sich sicher?")
+                        $("#confirmation_dialogue").dialog({
+                            modal: true,
+                            title: "Bestätigen",
+                            buttons: {
+                                "Ja": function() {
+                                    $(this).dialog("close");
+                                    form.submit();
+                                },
+                                "Nein": function() {
+                                    $(this).dialog("close");
+                                }
+                            }
+                        });
+                    });
+
+                });
+            };
+        </script>
     </body>
     {% if errors %}
         <!-- error listing for debugging

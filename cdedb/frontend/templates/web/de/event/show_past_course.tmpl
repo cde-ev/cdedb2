@@ -1,5 +1,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     {% if is_admin %}
@@ -11,7 +13,8 @@
             {{ util.input_checkbox(name="is_orga", label="Orga") }}
             {{ util.input_submit(value="Teilnehmer hinzufügen") }}
         </form>
-        <form action="{{ cdedblink('event/delete_past_course')|e }}" method="POST" id="deletecourseform">
+        <form action="{{ cdedblink('event/delete_past_course')|e }}" method="POST" class="jsConfirmed"
+         id="deletecourseform">
             {{ util.input_submit(value="Gesamten Kurs löschen") }}
         </form>
     {% endif %}

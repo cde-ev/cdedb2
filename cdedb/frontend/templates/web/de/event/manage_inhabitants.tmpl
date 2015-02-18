@@ -74,7 +74,6 @@ Bewohner der Unterkunft {{ lodgement_data['moniker']|e }} verwalten ({{ event_da
     </form>
     <script type="text/javascript">
         $(document).ready(function(){
-            $(".jsEnabled").prop('disabled', false);
             $("#manageinhabitantsform").submit(function(){
                 {% for part_id in event_data['parts']|sort %}
                     var sorted = $("#inhabitants_{{ part_id|e }}").sortable("toArray", { attribute: "regid" })

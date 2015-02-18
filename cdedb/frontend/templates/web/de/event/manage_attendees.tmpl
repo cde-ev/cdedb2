@@ -74,7 +74,6 @@ Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['
     </form>
     <script type="text/javascript">
         $(document).ready(function(){
-            $(".jsEnabled").prop('disabled', false);
             $("#manageattendeesform").submit(function(){
                 {% for part_id in course_data['parts']|sort %}
                     var sorted = $("#attendees_{{ part_id|e }}").sortable("toArray", { attribute: "regid" })

@@ -22,7 +22,6 @@
     </ul>
     <script type="text/javascript">
         $(document).ready(function(){
-            $(".jsEnabled").prop('disabled', false);
             $("#selector").keyup(function(){
                 $(".selectee").hide();
                 $(".selectee:contains('" + $(this).val() + "')").show();
