@@ -2396,7 +2396,12 @@ class EventFrontend(AbstractUserFrontend):
         """Apply changes to a selection of registrations."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         spec = self.make_registration_query_spec(event_data)
-        value = request_data_extractor(rs, (("value", spec[column]),))['value']
+        ## The following should be safe, as there are no columns which
+        ## forbid NULL and are settable this way. If the aforementioned
+        ## sentence is wrong all we get is a validation error in the
+        ## backend.
+        value = unwrap(request_data_extractor(
+            rs, (("value", "{}_or_None".format(spec[column])),)))
         selection_params = (("row_{}".format(i), "bool")
                             for i in range(num_rows))
         selection_data = request_data_extractor(rs, selection_params)
