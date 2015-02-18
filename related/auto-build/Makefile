@@ -111,7 +111,7 @@ ${WORKDIR}/.done_cdimage:${WORKDIR}/.done_patch
 build-stage1:${WORKDIR}/.done_stage1
 ${WORKDIR}/.done_stage1:${WORKDIR}/.done_cdimage
 	rm -f ${WORKDIR}/stage1.qcow2
-	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 10G
+	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 20G
 	${QEMU} ${QEMUOPTIONS} -no-reboot -drive file=${WORKDIR}/stage1.qcow2,cache=writeback,if=virtio -drive file=${WORKDIR}/bootstrap.iso,media=cdrom,index=2 -boot order=d
 	touch $@
 
