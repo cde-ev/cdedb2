@@ -100,6 +100,12 @@ class CdEFrontend(AbstractUserFrontend):
         code = self.cdeproxy.change_user(rs, data, generation,
                                          change_note=change_note)
         self.notify_return_code(rs, code)
+        if code < 0:
+            ## send a mail since changes needing review should be seldom enough
+            self.do_mail(
+                rs, "pending_changes",
+                {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                 'Subject': 'CdEDB pending changes',})
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("cde_admin")

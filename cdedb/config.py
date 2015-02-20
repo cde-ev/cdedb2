@@ -85,6 +85,8 @@ _DEFAULTS = {
 
     ## email stuff
 
+    ## email for administrative notifications
+    "MANAGEMENT_ADDRESS": "verwaltung@cde-ev.de",
     ## default return address for mails
     "DEFAULT_REPLY_TO": "verwaltung@cde-ev.de",
     ## default sender address for mails
