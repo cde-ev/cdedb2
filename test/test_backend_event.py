@@ -148,10 +148,10 @@ class TestEventBackend(BackendTest):
                           'is_orga': False, 'persona_id': 5}
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))
-        self.assertEqual(0, self.event.delete_participant(self.key, 1, 1, 5))
+        self.assertEqual(0, self.event.remove_participant(self.key, 1, 1, 5))
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))
-        self.assertEqual(1, self.event.delete_participant(self.key, 1, None, 5))
+        self.assertEqual(1, self.event.remove_participant(self.key, 1, None, 5))
         del expectation[5]
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))
@@ -160,10 +160,10 @@ class TestEventBackend(BackendTest):
                           'is_orga': False, 'persona_id': 5}
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))
-        self.assertEqual(0, self.event.delete_participant(self.key, 1, None, 5))
+        self.assertEqual(0, self.event.remove_participant(self.key, 1, None, 5))
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))
-        self.assertEqual(1, self.event.delete_participant(self.key, 1, 1, 5))
+        self.assertEqual(1, self.event.remove_participant(self.key, 1, 1, 5))
         del expectation[5]
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))

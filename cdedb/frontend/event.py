@@ -378,7 +378,7 @@ class EventFrontend(AbstractUserFrontend):
         """Remove participant."""
         if rs.errors:
             return self.show_event(rs, event_id)
-        code = self.eventproxy.delete_participant(
+        code = self.eventproxy.remove_participant(
             rs, event_id, course_id, persona_id)
         self.notify_return_code(rs, code)
         if course_id:
@@ -825,17 +825,17 @@ class EventFrontend(AbstractUserFrontend):
                 for part_id in event_data['parts']}
         tests = {
             'not payed': (lambda edata, rdata, pdata: (
-                stati(pdata['status']).is_involved
+                stati(pdata['status']).is_involved()
                 and not rdata['payment'])),
             'pending': (lambda edata, rdata, pdata: (
                 pdata['status'] == stati.applied
                 and rdata['payment'])),
             'no parental agreement': (lambda edata, rdata, pdata: (
-                stati(pdata['status']).is_involved
+                stati(pdata['status']).is_involved()
                 and get_age(user_data[rdata['persona_id']]).is_minor()
                 and not rdata['parental_agreement'])),
             'no lodgement': (lambda edata, rdata, pdata: (
-                stati(pdata['status']).is_present
+                stati(pdata['status']).is_present()
                 and not pdata['lodgement_id'])),
             'no course': (lambda edata, rdata, pdata: (
                 pdata['status'] == stati.participant
@@ -1207,7 +1207,7 @@ class EventFrontend(AbstractUserFrontend):
         if parts is not None:
             standard_data['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
-                if const.RegistrationPartStati(entry['status']).is_involved)
+                if const.RegistrationPartStati(entry['status']).is_involved())
         choice_params = (("course_choice{}_{}".format(part_id, i), "int")
                          for part_id in standard_data['parts']
                          for i in range(3))
@@ -1293,7 +1293,7 @@ class EventFrontend(AbstractUserFrontend):
         new_id = self.eventproxy.create_registration(rs, registration_data)
         fee = sum(event_data['parts'][part_id]['fee']
                   for part_id, entry in registration_data['parts'].items()
-                  if const.RegistrationPartStati(entry['status']).is_involved)
+                  if const.RegistrationPartStati(entry['status']).is_involved())
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
@@ -1322,7 +1322,7 @@ class EventFrontend(AbstractUserFrontend):
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         fee = sum(event_data['parts'][part_id]['fee']
                   for part_id, entry in registration_data['parts'].items()
-                  if const.RegistrationPartStati(entry['status']).is_involved)
+                  if const.RegistrationPartStati(entry['status']).is_involved())
         return self.render(rs, "registration_status", {
             'registration_data': registration_data, 'event_data': event_data,
             'user_data': user_data, 'age': age, 'course_data': course_data,
@@ -1701,10 +1701,11 @@ class EventFrontend(AbstractUserFrontend):
         part_params = []
         for part_id in event_data['parts']:
             prefix = "part{}".format(part_id)
-            part_params.append(("{}.status".format(prefix), "int"))
+            part_params.append(("{}.status".format(prefix),
+                                "enum_registrationpartstati"))
             part_params.extend(
                 ("{}.{}".format(prefix, suffix), "int_or_None")
-                for suffix in ("status", "course_id", "course_choice_0",
+                for suffix in ("course_id", "course_choice_0",
                                "course_choice_1", "course_choice_2",
                                "course_instructor", "lodgement_id"))
         part_data = request_data_extractor(rs, part_params)
@@ -1834,8 +1835,9 @@ class EventFrontend(AbstractUserFrontend):
         def _check_belonging(entity_id, part_id, registration_id):
             """The actual check, un-inlined."""
             pdata = registration_data[registration_id]['parts'][part_id]
-            return (pdata[key] == entity_id
-                    and const.RegistrationPartStati(pdata['status']).is_present)
+            return (
+                pdata[key] == entity_id
+                and const.RegistrationPartStati(pdata['status']).is_present())
         if user_data is None:
             sorter = lambda x: x
         else:
@@ -2072,7 +2074,7 @@ class EventFrontend(AbstractUserFrontend):
         def _check_without_lodgement(registration_id, part_id):
             """Un-inlined check for registration without lodgement."""
             pdata = registration_data[registration_id]['parts'][part_id]
-            return (const.RegistrationPartStati(pdata['status']).is_present
+            return (const.RegistrationPartStati(pdata['status']).is_present()
                     and not pdata['lodgement_id'])
         without_lodgement = {
             part_id: sorted(
@@ -2087,7 +2089,7 @@ class EventFrontend(AbstractUserFrontend):
         def _check_with_lodgement(registration_id, part_id):
             """Un-inlined check for registration with different lodgement."""
             pdata = registration_data[registration_id]['parts'][part_id]
-            return (const.RegistrationPartStati(pdata['status']).is_present
+            return (const.RegistrationPartStati(pdata['status']).is_present()
                     and pdata['lodgement_id']
                     and pdata['lodgement_id'] != lodgement_id)
         with_lodgement = {
@@ -2448,7 +2450,7 @@ class EventFrontend(AbstractUserFrontend):
                 rs, registrations).items()
             if (not v['checkin']
                 and (not current_part or const.RegistrationPartStati(
-                    v['parts'][current_part]['status']).is_present))}
+                    v['parts'][current_part]['status']).is_present()))}
         user_data = self.eventproxy.acquire_data(rs, tuple(
             rdata['persona_id'] for rdata in registration_data.values()))
         for rdata in registration_data.values():

@@ -12,7 +12,7 @@ from cdedb.backend.common import (
     create_fulltext)
 from cdedb.common import (
     glue, PERSONA_DATA_FIELDS, extract_realm, MEMBER_DATA_FIELDS,
-    GENESIS_CASE_FIELDS, PrivilegeError)
+    GENESIS_CASE_FIELDS, PrivilegeError, unwrap)
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -136,7 +136,7 @@ class CoreBackend(AbstractBackend):
         """
         query = glue("SELECT COUNT(*) AS num FROM core.changelog",
                      "WHERE persona_id = %s")
-        return self.query_one(rs, query, (anid,))['num'] > 0
+        return unwrap(self.query_one(rs, query, (anid,))) > 0
 
     @internal_access("formermember")
     def changelog_submit_change(
@@ -172,8 +172,8 @@ class CoreBackend(AbstractBackend):
         """
         with Atomizer(rs):
             ## check for race
-            current_generation = self.changelog_get_generations(
-                rs, (data['id'],))[data['id']]
+            current_generation = unwrap(self.changelog_get_generations(
+                rs, (data['id'],)))
             if generation is not None and current_generation != generation:
                 self.logger.info("Generation mismatch {} != {} for {}".format(
                     current_generation, generation, data['id']))
@@ -191,8 +191,8 @@ class CoreBackend(AbstractBackend):
             diff = None
             if (current_data['change_status']
                     == const.MemberChangeStati.pending and not may_wait):
-                old_data = self.cde_retrieve_user_data(
-                    rs, (data['id'],))[data['id']]
+                old_data = unwrap(self.cde_retrieve_user_data(
+                    rs, (data['id'],)))
                 diff = {key: current_data[key] for key in old_data
                         if old_data[key] != current_data[key]}
                 current_data = old_data
@@ -225,8 +225,8 @@ class CoreBackend(AbstractBackend):
             ## prepare for inserting a new changelog entry
             query = glue("SELECT COUNT(*) AS num FROM core.changelog",
                          "WHERE persona_id = %s")
-            next_generation = self.query_one(
-                rs, query, (data['id'],))['num'] + 1
+            next_generation = unwrap(self.query_one(
+                rs, query, (data['id'],))) + 1
             ## the following is a nop, if there is no pending change
             query = glue("UPDATE core.changelog SET change_status = %s",
                          "WHERE persona_id = %s AND change_status = %s")
@@ -324,8 +324,7 @@ class CoreBackend(AbstractBackend):
             self.query_exec(rs, query, params)
 
             ## determine changed fields
-            old_data = self.cde_retrieve_user_data(rs,
-                                                   (persona_id,))[persona_id]
+            old_data = unwrap(self.cde_retrieve_user_data(rs, (persona_id,)))
             relevant_keys = tuple(key for key in old_data
                                   if data[key] != old_data[key])
             relevant_keys += ('id',)
@@ -356,8 +355,8 @@ class CoreBackend(AbstractBackend):
                     raise RuntimeError("Modification failed.")
         if ret > 0:
             with Atomizer(rs):
-                new_data = self.cde_retrieve_user_data(rs, (data['id'],))[
-                    data['id']]
+                new_data = unwrap(self.cde_retrieve_user_data(rs,
+                                                              (data['id'],)))
                 text = create_fulltext(new_data)
                 query = glue("UPDATE cde.member_data SET fulltext = %s",
                              "WHERE persona_id = %s")
@@ -665,8 +664,7 @@ class CoreBackend(AbstractBackend):
         :returns: All ids which successfully validated.
         """
         ids = affirm_array("int", ids)
-        if stati is not None:
-            stati = affirm_array("int", stati)
+        stati = affirm_array("int", stati, allow_None=True)
         query = "SELECT id FROM core.personas WHERE id = ANY(%s)"
         params = (ids,)
         if stati:
@@ -886,8 +884,8 @@ class CoreBackend(AbstractBackend):
             ('cloudAccount', ldap_bool(data['cloud_account'])),
             ('isActive', ldap_bool(data['is_active'])))
         with Atomizer(rs):
-            ret = self.query_one(
-                rs, query, tuple(data[key] for key in keys))['id']
+            ret = unwrap(self.query_one(
+                rs, query, tuple(data[key] for key in keys)))
             dn = "uid={},{}".format(ret, self.conf.LDAP_UNIT_NAME)
             with self.ldap_connect() as l:
                 l.add_s(dn, ldap_ops)
@@ -916,7 +914,7 @@ class CoreBackend(AbstractBackend):
             "case_status) VALUES (%s, %s, %s, %s) RETURNING id")
         params = (username, full_name, rationale,
                   const.GenesisStati.unconfirmed)
-        return self.query_one(rs, query, params)['id']
+        return unwrap(self.query_one(rs, query, params))
 
     @access("anonymous")
     def genesis_verify(self, rs, case_id):

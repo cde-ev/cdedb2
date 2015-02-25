@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     singularize, create_fulltext)
 from cdedb.common import (
     glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS, QuotaException, merge_dicts,
-    PrivilegeError)
+    PrivilegeError, unwrap)
 from cdedb.query import QueryOperators
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
@@ -23,8 +23,6 @@ import datetime
 import logging
 import decimal
 import pytz
-
-_LOGGER = logging.getLogger(__name__)
 
 class CdEBackend(AbstractUserBackend):
     """This is the backend with the most additional role logic.
@@ -40,9 +38,6 @@ class CdEBackend(AbstractUserBackend):
     }
 
     def __init__(self, configpath):
-        """
-        :type configpath: str
-        """
         super().__init__(configpath)
 
     def establish(self, sessionkey, method, allow_internal=False):
@@ -335,9 +330,7 @@ class CdEBackend(AbstractUserBackend):
         :returns: mapping generation to data set
         """
         anid = affirm("int", anid)
-        if generations is not None:
-            generations = affirm_array("int", generations)
-
+        generations = affirm_array("int", generations, allow_None=True)
         return self.core.changelog_get_history(rs, anid, generations)
 
     @access("formermember")

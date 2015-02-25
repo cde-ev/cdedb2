@@ -85,3 +85,25 @@ mail: hades@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: FALSE
 isActive: FALSE
+
+dn: uid=9,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
+objectClass: cdePersona
+sn: (inga@example.cde)
+cn: Inga
+displayName: Inga
+uid: 9
+mail: inga@example.cde
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
+cloudAccount: TRUE
+isActive: TRUE
+
+dn: uid=10,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
+objectClass: cdePersona
+sn: (janis@example.cde)
+cn: Janis
+displayName: Janis
+uid: 10
+mail: janis@example.cde
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
+cloudAccount: FALSE
+isActive: TRUE

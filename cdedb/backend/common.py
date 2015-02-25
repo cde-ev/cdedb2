@@ -472,13 +472,18 @@ def affirm_validation(assertion, value, **kwargs):
     checker = getattr(validate, "assert_{}".format(assertion))
     return checker(value, **kwargs)
 
-def affirm_array_validation(assertion, values, **kwargs):
+def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array.
 
     :type assertion: str
-    :type values: [object]
-    :rtype: [object]
+    :type allow_None: bool
+    :param allow_None: Since we don't have the luxury of an automatic
+      '_or_None' variant like with other validators we have this parameter.
+    :type values: [object] (or None)
+    :rtype: [object] (or None)
     """
+    if allow_None and values is None:
+        return None
     checker = getattr(validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
 

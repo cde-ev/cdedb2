@@ -14,6 +14,7 @@ Contents:
    Specification
    Paraphernalia
    Orga_Hints
+   Migration
 
 Indices and tables
 ==================

@@ -1224,6 +1224,28 @@ def event_guard(argname="event_id", check_offline=False):
         return new_fun
     return wrap
 
+def mailinglist_guard(argname="mailinglist_id"):
+    """This decorator checks the access with respect to a specific
+    mailinglist. The list is specified by id which has either to be a
+    keyword parameter or the first positional parameter after the
+    request state. Only moderators and privileged users are admitted.
+
+    :type argname: str
+    :param argname: name of the keyword argument specifying the id
+    """
+    def wrap(fun):
+        @functools.wraps(fun)
+        def new_fun(obj, rs, *args, **kwargs):
+            if argname in kwargs:
+                arg = kwargs[argname]
+            else:
+                arg = args[0]
+            if arg not in rs.user.moderator and not obj.is_admin(rs):
+                return werkzeug.exceptions.Forbidden()
+            return fun(obj, rs, *args, **kwargs)
+        return new_fun
+    return wrap
+
 def encode_parameter(salt, target, name, param):
     """Crypographically secure a parameter. This allows two things:
 

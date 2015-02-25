@@ -172,6 +172,12 @@ _DEFAULTS = {
     "EVENT_STATE_FILE": "/run/cdedb/eventserver.pid",
     "EVENT_ACCESS_LOG": "/tmp/cdedb-access-event.log",
     "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
+
+    ## ml server configuration
+    "ML_SOCKET": "/run/cdedb/mlserver.sock",
+    "ML_STATE_FILE": "/run/cdedb/mlserver.pid",
+    "ML_ACCESS_LOG": "/tmp/cdedb-access-ml.log",
+    "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
 }
 
 #: defaults for :py:class:`SecretsConfig`
@@ -195,6 +201,9 @@ _SECRECTS_DEFAULTS = {
 
     ## password of ldap user above
     "LDAP_PASSWORD": "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0",
+
+    ## key to use by mailing list software for authentification
+    "ML_SCRIPT_KEY": "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3",
 }
 
 class BasicConfig:

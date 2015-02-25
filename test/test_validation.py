@@ -3,6 +3,7 @@
 import unittest
 from test.common import BackendTest
 import cdedb.validation as validate
+import cdedb.database.constants as const
 import decimal
 import copy
 import datetime
@@ -402,13 +403,31 @@ class TestValidation(unittest.TestCase):
             (base_example, base_example, None, True),
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
-            (key_example, key_example, KeyError, False),
-            (value_example, value_example, ValueError, False),
+            (key_example, None, KeyError, False),
+            (value_example, None, ValueError, False),
             ))
         self.do_validator_test("_event_user_data", (
             (base_example, base_example, None, True),
             (convert_example, base_example, None, False),
-            (stripped_example, stripped_example, KeyError, False),
-            (key_example, key_example, KeyError, False),
-            (value_example, value_example, ValueError, False),
+            (stripped_example, None, KeyError, False),
+            (key_example, None, KeyError, False),
+            (value_example, None, ValueError, False),
             ), extraparams={'strict': True})
+
+    def test_enum_validators(self):
+        stati = const.PersonaStati
+        self.do_validator_test("_enum_personastati", (
+            (stati.member, stati.member, None, True),
+            (1, stati.member, None, True),
+            ("1", stati.member, None, False),
+            (-1, None, ValueError, False),
+            ("alorecuh", None, ValueError, False),
+            ))
+        stati = const.RegistrationPartStati
+        self.do_validator_test("_enum_registrationpartstati", (
+            (stati.participant, stati.participant, None, True),
+            (1, stati.participant, None, True),
+            ("1", stati.participant, None, False),
+            (-2, None, ValueError, False),
+            ("alorecuh", None, ValueError, False),
+            ))

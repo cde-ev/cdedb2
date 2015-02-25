@@ -324,7 +324,7 @@ class CoreFrontend(AbstractFrontend):
             'data': data, 'bits': const.PrivilegeBits})
 
     @access("admin", {"POST"})
-    @REQUESTdata(("newprivileges", "[int]"))
+    @REQUESTdata(("newprivileges", "[enum_privilegebits]"))
     def adjust_privileges(self, rs, persona_id, newprivileges):
         """Allocate permissions. This is for global admins only."""
         if rs.errors:
@@ -403,8 +403,8 @@ class CoreFrontend(AbstractFrontend):
             'GenesisStati': const.GenesisStati})
 
     @access("core_admin", {"POST"})
-    @REQUESTdata(("case_id", "int"), ("case_status", "genesis_status"),
-                 ("persona_status", "persona_status_or_None"))
+    @REQUESTdata(("case_id", "int"), ("case_status", "enum_genesisstati"),
+                 ("persona_status", "enum_personastati_or_None"))
     def genesis_decide(self, rs, case_id, case_status, persona_status):
         """Approve or decline a genensis case.
 

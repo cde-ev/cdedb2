@@ -382,7 +382,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", {"POST"})
     @persona_dataset_guard()
-    @REQUESTdata(("newstatus", "persona_status"))
+    @REQUESTdata(("newstatus", "enum_personastati"))
     def modify_membership(self, rs, persona_id, newstatus):
         """Change association status."""
         if newstatus not in const.ALL_CDE_STATI:

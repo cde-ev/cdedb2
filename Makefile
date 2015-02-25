@@ -1,9 +1,9 @@
 SHELL := /bin/bash
 
 help:
-	@echo "run-core, run-cde, run-event, run-session"
+	@echo "run-core, run-cde, run-event, run-ml, run-session"
 	@echo "         -- run the respective backend (CONFIGPATH specifies configuration)"
-	@echo "quit-core, quit-cde, quit-event, quit-session"
+	@echo "quit-core, quit-cde, quit-event, quit-ml, quit-session"
 	@echo "          -- quit the respective backend"
 	@echo "quit-all -- quit all running backends"
 	@echo "quit-test-backends -- quit all running backends started by the test suite"
@@ -54,6 +54,12 @@ run-event:
 quit-event:
 	[ -f /run/cdedb/eventserver.pid ] && kill `cat /run/cdedb/eventserver.pid` || true
 
+run-ml:
+	${PYTHONBIN} -m cdedb.backend.ml -c ${CONFIGPATH}
+
+quit-ml:
+	[ -f /run/cdedb/mlserver.pid ] && kill `cat /run/cdedb/mlserver.pid` || true
+
 run-session:
 	${PYTHONBIN} -m cdedb.backend.session -c ${CONFIGPATH}
 
@@ -63,14 +69,16 @@ quit-session:
 quit-all:
 	make quit-core
 	make quit-cde
-	make quit-session
 	make quit-event
+	make quit-ml
+	make quit-session
 
 quit-test-backends:
 	[ -f /run/cdedb/test-coreserver.pid ] && kill `cat /run/cdedb/test-coreserver.pid` || true
 	[ -f /run/cdedb/test-sessionserver.pid ] && kill `cat /run/cdedb/test-sessionserver.pid` || true
 	[ -f /run/cdedb/test-cdeserver.pid ] && kill `cat /run/cdedb/test-cdeserver.pid` || true
 	[ -f /run/cdedb/test-eventserver.pid ] && kill `cat /run/cdedb/test-eventserver.pid` || true
+	[ -f /run/cdedb/test-mlserver.pid ] && kill `cat /run/cdedb/test-mlserver.pid` || true
 
 doc:
 	make -C doc html

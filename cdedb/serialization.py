@@ -17,6 +17,7 @@ import collections.abc
 import decimal
 
 from cdedb.query import Query
+from cdedb.enums import ALL_ENUMS
 import cdedb.database.constants as const
 
 #: Skeleton for custom serialization wrapper. :py:attr:`_class` and
@@ -138,10 +139,6 @@ def _enum_deserializer_generator(atype):
         return atype(int(obj))
     return _enum_deserializer
 
-## list of enums in cdedb.database.constants to serialize
-_ENUMS = ("PersonaStati", "PrivilegeBits", "Genders", "MemberChangeStati",
-          "RegistrationPartStati", "GenesisStati")
-
 #: The custom serializers have to conform to the interface needed by
 #: serpent.
 SERIALIZERS = {
@@ -155,9 +152,9 @@ SERIALIZERS = {
     collections.abc.KeysView: _view_serializer,
     collections.abc.ValuesView: _view_serializer,
 }
-for anenum in _ENUMS:
-    SERIALIZERS[getattr(const, anenum)] = _enum_serializer_generator(
-        "cdedb.database.constants.{}".format(anenum))
+for anenum in ALL_ENUMS:
+    SERIALIZERS[anenum] = _enum_serializer_generator(
+        "cdedb_enum_{}".format(anenum.__name__))
 
 #: The custom deserializers are called with one :py:class:`str` argument.
 _DESERIALIZERS = {
@@ -168,9 +165,9 @@ _DESERIALIZERS = {
     "decimal.Decimal": _trivial_deserializer_generator(decimal.Decimal),
     "cdedb.query.Query": _query_deserializer,
 }
-for anenum in _ENUMS:
-    _DESERIALIZERS["cdedb.database.constants.{}".format(anenum)] = (
-        _enum_deserializer_generator(getattr(const, anenum)))
+for anenum in ALL_ENUMS:
+    _DESERIALIZERS["cdedb_enum_{}".format(anenum.__name__)] = (
+        _enum_deserializer_generator(anenum))
 
 def deserialize(obj):
     """Invert our custom serialization. The input has allready been

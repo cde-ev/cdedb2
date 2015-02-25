@@ -55,7 +55,7 @@ ASSEMBLY_STATI = {PersonaStati.searchmember, PersonaStati.member,
 #: These personas may use the mailing lists
 ML_STATI = {PersonaStati.searchmember, PersonaStati.member,
             PersonaStati.formermember, PersonaStati.assembly_user,
-            PersonaStati.event_user}
+            PersonaStati.event_user, PersonaStati.ml_user}
 
 @enum.unique
 class PrivilegeBits(enum.IntEnum):
@@ -102,7 +102,6 @@ class RegistrationPartStati(enum.IntEnum):
     cancelled = 4 #:
     rejected = 5 #:
 
-    @property
     def is_involved(self):
         """Any status which warrants further attention by the orgas.
 
@@ -113,7 +112,6 @@ class RegistrationPartStati(enum.IntEnum):
                         RegistrationPartStati.waitlist,
                         RegistrationPartStati.guest,)
 
-    @property
     def is_present(self):
         """Any status which will be on site for the event.
 
@@ -140,20 +138,72 @@ class GenesisStati(enum.IntEnum):
 
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):
-    mandatory = 0 #:
+    """Regulate (un)subscriptions to mailinglists."""
+    #: everybody is subscribed (think CdE-all)
+    mandatory = 0
     opt_out = 1 #:
     opt_in = 2 #:
-    moderated_opt_in = 3 #:
-    invitation_only = 4 #:
+    #: everybody may subscribe, but only after approval
+    moderated_opt_in = 3
+    #: nobody may subscribe by themselves
+    invitation_only = 4
+
+    def is_additive(self):
+        """Differentiate between additive and subtractive mailing lists.
+
+        Additive means, that only explicit subscriptions are on the list,
+        while subtractive means, that only explicit unsubscriptions are not
+        on the list.
+
+        :rtype: bool
+        """
+        return self in (SubscriptionPolicy.opt_in,
+                        SubscriptionPolicy.moderated_opt_in,
+                        SubscriptionPolicy.invitation_only)
+
+    def privileged_transition(self, new_state):
+        """Most of the time subscribing or unsubscribing is simply allowed,
+        but in some cases you must be privileged to do it.
+
+        :rtype: bool
+        """
+        if new_state:
+            return self == SubscriptionPolicy.invitation_only
+        else:
+            return self == SubscriptionPolicy.mandatory
 
 @enum.unique
 class ModerationPolicy(enum.IntEnum):
+    """Regulate posting of mail to a list."""
     unmoderated = 0 #:
-    non_subscribers = 1 #:
+    #: subscribers may post without moderation, but external mail is reviewed
+    non_subscribers = 1
     fully_moderated = 2 #:
 
 @enum.unique
 class AttachementPolicy(enum.IntEnum):
+    """Regulate allowed payloads for mails to lists.
+
+    This is currently only a tri-state, so we implement it as an enum.
+    """
     allow = 0 #:
-    pdf_only = 1 #:
+    #: allow the mime-type application/pdf but nothing else
+    pdf_only = 1
     forbid = 2 #:
+
+@enum.unique
+class MlLogCodes(enum.IntEnum):
+    """Available log messages."""
+    list_created = 0 #:
+    list_changed = 1 #:
+    list_deleted = 2 #:
+    moderator_added = 10 #:
+    moderator_removed = 11 #:
+    whitelist_added = 12 #:
+    whitelist_removed = 13 #:
+    subscription_requested = 20 #:
+    subscribed = 21 #:
+    subscription_changed = 22 #:
+    unsubscribed = 23 #:
+    request_approved = 30 #:
+    request_denied = 31 #:

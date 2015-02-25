@@ -38,11 +38,6 @@ Then there are some more specialised realms.
 * core -- basic infrastructure, servicing all realms, no user accounts
 * session -- backend only, used for resolving session keys stored in cookies
 
-Currently undecided fate (will maybe be integrated into other realms):
-
-* files -- file storage
-* i25p -- Initiative 25+
-
 .. _privileges:
 
 Privileges

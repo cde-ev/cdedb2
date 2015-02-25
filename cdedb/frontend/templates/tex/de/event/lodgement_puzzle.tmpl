@@ -17,7 +17,7 @@
     \clearpage
     <<% for registration_id, rdata in registration_data|dictsort %>>
         <<% for part_id, pdata in event_data['parts']|dictsort %>>
-            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present %>>
+            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present() %>>
                 \section*{%
                     <<< user_data[rdata['persona_id']]['given_names']|te >>>
                     <<< user_data[rdata['persona_id']]['family_name']|te >>>

@@ -16,6 +16,7 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
 
 _BASICCONF = BasicConfig()
 
@@ -63,6 +64,7 @@ class BackendUsingTest(unittest.TestCase):
             "session": SessionBackend,
             "cde": CdEBackend,
             "event": EventBackend,
+            "ml": MlBackend,
             # TODO add more backends when they become available
         }
         for backend in self.used_backends:
@@ -143,6 +145,22 @@ USER_DICT = {
         'given_names': "Garcia G.",
         'family_name': "Generalis",
     },
+    "inga": {
+        'id': 9,
+        'username': "inga@example.cde",
+        'password': "secret",
+        'display_name': "Inga",
+        'given_names': "Inga",
+        'family_name': "Iota",
+    },
+    "janis": {
+        'id': 10,
+        'username': "janis@example.cde",
+        'password': "secret",
+        'display_name': "Janis",
+        'given_names': "Janis",
+        'family_name': "Jalapeño",
+    },
 }
 
 def as_users(*users):
@@ -173,11 +191,13 @@ class FrontendTest(unittest.TestCase):
         subprocess.Popen(("make", "run-session"), stdout=subprocess.DEVNULL)
         subprocess.Popen(("make", "run-cde"), stdout=subprocess.DEVNULL)
         subprocess.Popen(("make", "run-event"), stdout=subprocess.DEVNULL)
+        subprocess.Popen(("make", "run-ml"), stdout=subprocess.DEVNULL)
         ## wait until the backend servers appear
         pid_files = ('/run/cdedb/test-coreserver.pid',
                      '/run/cdedb/test-cdeserver.pid',
                      '/run/cdedb/test-sessionserver.pid',
-                     '/run/cdedb/test-eventserver.pid')
+                     '/run/cdedb/test-eventserver.pid',
+                     '/run/cdedb/test-mlserver.pid')
         tries = 0
         while tries < 10**4:
             found = []

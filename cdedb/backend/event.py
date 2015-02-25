@@ -14,7 +14,7 @@ from cdedb.common import (
     glue, EVENT_USER_DATA_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS,
     PERSONA_DATA_FIELDS, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS,
     COURSE_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    LODGEMENT_FIELDS)
+    LODGEMENT_FIELDS, unwrap)
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
@@ -86,8 +86,8 @@ class EventBackend(AbstractUserBackend):
         ret = super().establish(sessionkey, method,
                                 allow_internal=allow_internal)
         if ret and ret.user.is_persona:
-            ret.user.orga = self.orga_infos(
-                ret, (ret.user.persona_id,))[ret.user.persona_id]
+            ret.user.orga = unwrap(self.orga_infos(
+                ret, (ret.user.persona_id,)))
         return ret
 
     @classmethod
@@ -110,7 +110,7 @@ class EventBackend(AbstractUserBackend):
             raise ValueError("Too many inputs specified.")
         if course_id is not None:
             query = "SELECT event_id FROM event.courses WHERE id = %s"
-            event_id = self.query_one(rs, query, (course_id,))['event_id']
+            event_id = unwrap(self.query_one(rs, query, (course_id,)))
         return event_id in rs.user.orga
 
     @access("event_user")
@@ -482,7 +482,7 @@ class EventBackend(AbstractUserBackend):
         The syntax for updating the associated data on orgas, parts and
         fields is as follows:
 
-        * If the key 'orgas' is present you have to pass the complete list
+        * If the key 'orgas' is present you have to pass the complete set
           of orga IDs, which will superseed the current list of orgas.
         * If the keys 'parts' or 'fields' are present, the associated dict
           mapping the part or field ids to the respective data sets can
@@ -618,7 +618,7 @@ class EventBackend(AbstractUserBackend):
         query = query.format(", ".join(keys),
                              ", ".join(("%s",) * len(keys)))
         params = tuple(data[key] for key in keys)
-        return self.query_one(rs, query, params)['id']
+        return unwrap(self.query_one(rs, query, params))
 
     @access("event_admin")
     def create_event(self, rs, data):
@@ -637,7 +637,7 @@ class EventBackend(AbstractUserBackend):
                                  ", ".join(("%s",) * len(keys)))
             params = tuple(data[key] for key in keys)
 
-            new_id = self.query_one(rs, query, params)['id']
+            new_id = unwrap(self.query_one(rs, query, params))
             for aspect in ('parts', 'orgas', 'fields'):
                 if aspect in data:
                     adata = {
@@ -749,8 +749,7 @@ class EventBackend(AbstractUserBackend):
                                  for e in self.query_all(rs, query, (new,))}
                     query = glue("SELECT event_id FROM event.courses",
                                  "WHERE id = %s")
-                    event_id = self.query_one(rs, query, (data['id'],))[
-                        'event_id']
+                    event_id = unwrap(self.query_one(rs, query, (data['id'],)))
                     if {event_id} != event_ids:
                         raise ValueError("Non-associated parts found.")
 
@@ -778,7 +777,7 @@ class EventBackend(AbstractUserBackend):
         query = "INSERT INTO past_event.courses ({}) VALUES ({}) RETURNING id"
         query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
         params = tuple(data[key] for key in keys)
-        return self.query_one(rs, query, params)['id']
+        return unwrap(self.query_one(rs, query, params))
 
     @access("event_user")
     def create_course(self, rs, data):
@@ -800,7 +799,7 @@ class EventBackend(AbstractUserBackend):
             query = query.format(", ".join(keys),
                                  ", ".join(("%s",) * len(keys)))
             params = tuple(data[key] for key in keys)
-            new_id = self.query_one(rs, query, params)['id']
+            new_id = unwrap(self.query_one(rs, query, params))
             if 'parts' in data:
                 pdata = {
                     'id': new_id,
@@ -827,12 +826,9 @@ class EventBackend(AbstractUserBackend):
         """
         course_id = affirm("int", course_id)
         with Atomizer(rs):
-            participants = self.list_participants(rs, course_id=course_id)
-            if not cascade and participants:
-                raise RuntimeError("Participants remaining and not cascading.")
-            else:
+            if cascade and self.list_participants(rs, course_id=course_id):
                 cdata = self.get_past_course_data_one(rs, course_id)
-                for pid in participants:
+                for pid in self.list_participants(rs, course_id=course_id):
                     self.delete_participant(rs, cdata['event_id'], course_id,
                                             pid)
             query = "DELETE FROM past_event.courses WHERE id = %s"
@@ -870,7 +866,7 @@ class EventBackend(AbstractUserBackend):
                                            is_instructor, is_orga))
 
     @access("event_admin")
-    def delete_participant(self, rs, event_id, course_id, persona_id):
+    def remove_participant(self, rs, event_id, course_id, persona_id):
         """Remove a participant from a concluded event.
 
         All attributes have to match exactly, so that if someone
@@ -1033,9 +1029,9 @@ class EventBackend(AbstractUserBackend):
         data = affirm("registration_data", data)
         with Atomizer(rs):
             query = "SELECT persona_id FROM event.registrations WHERE id = %s"
-            persona_id = self.query_one(rs, query, (data['id'],))['persona_id']
+            persona_id = unwrap(self.query_one(rs, query, (data['id'],)))
             query = "SELECT event_id FROM event.registrations WHERE id = %s"
-            event_id = self.query_one(rs, query, (data['id'],))['event_id']
+            event_id = unwrap(self.query_one(rs, query, (data['id'],)))
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
                     and not self.is_orga(rs, event_id=event_id)
@@ -1061,7 +1057,7 @@ class EventBackend(AbstractUserBackend):
             if 'field_data' in data:
                 query = glue("SELECT field_data FROM event.registrations",
                              "WHERE id = %s")
-                fdata = self.query_one(rs, query, (data['id'],))['field_data']
+                fdata = unwrap(self.query_one(rs, query, (data['id'],)))
                 fdata.update(data['field_data'])
                 query = glue("UPDATE event.registrations SET field_data = %s",
                              "WHERE id = %s")
@@ -1153,7 +1149,7 @@ class EventBackend(AbstractUserBackend):
             query = query.format(", ".join(keys),
                                  ", ".join(("%s",) * len(keys)))
             params = tuple(data[key] for key in keys)
-            new_id = self.query_one(rs, query, params)['id']
+            new_id = unwrap(self.query_one(rs, query, params))
             for aspect in ('parts', 'choices'):
                 if aspect in data:
                     new_data = {
@@ -1224,7 +1220,7 @@ class EventBackend(AbstractUserBackend):
         data = affirm("lodgement_data", data)
         with Atomizer(rs):
             query = "SELECT event_id FROM event.lodgements WHERE id = %s"
-            event_id = self.query_one(rs, query, (data['id'],))['event_id']
+            event_id = unwrap(self.query_one(rs, query, (data['id'],)))
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
@@ -1253,7 +1249,7 @@ class EventBackend(AbstractUserBackend):
         query = "INSERT INTO event.lodgements ({}) VALUES ({}) RETURNING id"
         query = query.format(", ".join(keys), ", ".join(("%s",)* len(keys)))
         params = tuple(data[key] for key in keys)
-        return self.query_one(rs, query, params)['id']
+        return unwrap(self.query_one(rs, query, params))
 
     @access("event_user")
     def delete_lodgement(self, rs, lodgement_id):
@@ -1270,7 +1266,7 @@ class EventBackend(AbstractUserBackend):
         lodgement_id = affirm("int", lodgement_id)
         with Atomizer(rs):
             query = "SELECT event_id FROM event.lodgements WHERE id = %s"
-            event_id = self.query_one(rs, query, (lodgement_id,))['event_id']
+            event_id = unwrap(self.query_one(rs, query, (lodgement_id,)))
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")

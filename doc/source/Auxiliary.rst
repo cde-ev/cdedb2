@@ -33,6 +33,12 @@ cdedb.query
 .. automodule:: cdedb.query
    :members:
 
+cdedb.enums
+------------
+
+.. automodule:: cdedb.enums
+   :members:
+
 cdedb.validation
 ----------------
 

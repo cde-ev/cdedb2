@@ -49,6 +49,7 @@ from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
+from cdedb.enums import ALL_ENUMS
 _BASICCONF = BasicConfig()
 import cdedb.database.constants as const
 
@@ -101,20 +102,25 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
     mandatory_fields_found = []
     for key, value in adict.items():
         if key in mandatory_fields:
-            mandatory_fields_found.append(key)
             v, e = mandatory_fields[key](value, argname=key, _convert=_convert)
-            errs.extend(e)
-            retval[key] = v
+            if e:
+                errs.extend(e)
+            else:
+                mandatory_fields_found.append(key)
+                retval[key] = v
         elif key in optional_fields:
             v, e = optional_fields[key](value, argname=key, _convert=_convert)
-            errs.extend(e)
-            retval[key] = v
+            if e:
+                errs.extend(e)
+            else:
+                retval[key] = v
         elif not allow_superfluous:
             errs.append((key, KeyError("Superfluous key found.")))
     if len(mandatory_fields) != len(mandatory_fields_found):
         missing = set(mandatory_fields) - set(mandatory_fields_found)
         for key in missing:
             errs.append((key, KeyError("Mandatory key missing.")))
+        retval = None
     return retval, errs
 
 ##
@@ -131,6 +137,7 @@ def _any(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :rtype: (object or None, [(str or None, exception)])
     """
     return val, []
 
@@ -140,6 +147,7 @@ def _int(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :rtype: (int or None, [(str or None, exception)])
     """
     if _convert:
         if isinstance(val, str):
@@ -161,6 +169,7 @@ def _float(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :rtype: (float or None, [(str or None, exception)])
     """
     if _convert:
         try:
@@ -198,6 +207,7 @@ def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
     :param zap: delete all characters in this from the result
     :type sieve: str
     :param sieve: allow only the characters in this into the result
+    :rtype: (str or None, [(str or None, exception)])
     """
     if _convert and val is not None:
         try:
@@ -223,6 +233,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True):
     :type _convert: bool
     :type zap: str
     :type sieve: str
+    :rtype: (str or None, [(str or None, exception)])
     """
     val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert)
     if val is not None and not val.strip():
@@ -236,6 +247,7 @@ def _mapping(val, argname=None, *, _convert=True):
     :type argname: str or None
     :type _convert: bool
     :param _convert: is ignored since no useful default conversion is available
+    :rtype: (dict or None, [(str or None, exception)])
     """
     if not isinstance(val, collections.abc.Mapping):
         return None, [(argname, TypeError("Must be a mapping."))]
@@ -248,6 +260,7 @@ def _iterable(val, argname=None, *, _convert=True):
     :type argname: str or None
     :type _convert: bool
     :param _convert: is ignored since no useful default conversion is available
+    :rtype: ([object] or None, [(str or None, exception)])
     """
     if not isinstance(val, collections.abc.Iterable):
         return None, [(argname, TypeError("Must be an iterable."))]
@@ -259,6 +272,7 @@ def _bool(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :rtype: (bool or None, [(str or None, exception)])
     """
     if _convert and val is not None:
         if val in ("True", "true", "yes", "y"):
@@ -418,6 +432,7 @@ def _int_csv_list(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
+    :rtype: ([int] or None, [(str or None, exception)])
     """
     if _convert:
         if isinstance(val, str):
@@ -481,11 +496,11 @@ def _email(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError("Must be a valid email address.")))
     return val, errs
 
-_PERSONA_COMMON_FIELDS = {
+_PERSONA_COMMON_FIELDS = lambda: {
     'username': _email,
     'display_name': _str,
     'is_active': _bool,
-    'status': _int,
+    'status': _enum_personastati,
     'cloud_account': _bool,
 }
 _PERSONA_ADDITIONAL_FIELDS = {
@@ -510,11 +525,11 @@ def _persona_data(val, argname=None, *, strict=False, creation=False,
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = _PERSONA_COMMON_FIELDS
+        mandatory_fields = _PERSONA_COMMON_FIELDS()
         optional_fields = {}
     else:
         mandatory_fields = {'id': _int}
-        optional_fields = dict(_PERSONA_COMMON_FIELDS,
+        optional_fields = dict(_PERSONA_COMMON_FIELDS(),
                                **_PERSONA_ADDITIONAL_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       strict=strict, _convert=_convert)
@@ -724,12 +739,12 @@ def _german_postal_code(val, argname=None, *, _convert=True):
     return val, errs
 
 ## lambda since _or_None is not yet defined
-_MEMBER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS, **{
+_MEMBER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
     'family_name': _str,
     'given_names': _str,
     'title': _str_or_None,
     'name_supplement': _str_or_None,
-    'gender': _int,
+    'gender': _enum_genders,
     'birthday': _date,
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
@@ -812,12 +827,12 @@ def _member_data(val, argname=None, *, strict=False, creation=False,
                         errs.append((key+suffix, ValueError("Missing entry.")))
     return val, errs
 
-_EVENT_USER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS, **{
+_EVENT_USER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
     'family_name': _str,
     'given_names': _str,
     'title': _str_or_None,
     'name_supplement': _str_or_None,
-    'gender': _int,
+    'gender': _enum_genders,
     'birthday': _date,
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
@@ -875,12 +890,46 @@ def _event_user_data(val, argname=None, *, strict=False, creation=False,
                     errs.append((key, ValueError("Missing entry.")))
     return val, errs
 
-_GENESIS_CASE_OPTIONAL_FIELDS = {
+_ML_USER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
+    'family_name': _str,
+    'given_names': _str,
+    'notes': _str_or_None,
+})
+@_addvalidator
+def _ml_user_data(val, argname=None, *, strict=False, creation=False,
+                  _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "ml_user_data"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _ML_USER_COMMON_FIELDS()
+        optional_fields = {}
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_ML_USER_COMMON_FIELDS(),
+                               **_PERSONA_ADDITIONAL_FIELDS)
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, strict=strict,
+        _convert=_convert)
+
+_GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
     'username': _email,
     'full_name': _str,
-    'persona_status': _int,
+    'persona_status': _enum_personastati,
     'notes': _str,
-    'case_status': _int,
+    'case_status': _enum_genesisstati,
     'secret': _str,
     'reviewer': _int,
 }
@@ -899,7 +948,7 @@ def _genesis_case_data(val, argname=None, *, strict=False, _convert=True):
     if errs:
         return val, errs
     return _examine_dictionary_fields(
-        val, {'id': _int}, _GENESIS_CASE_OPTIONAL_FIELDS,
+        val, {'id': _int}, _GENESIS_CASE_OPTIONAL_FIELDS(),
         strict=strict, _convert=_convert)
 
 @_addvalidator
@@ -965,43 +1014,6 @@ def _pdffile(val, argname=None, *, _convert=True):
     mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime != "application/pdf":
         errs.append((argname, ValueError("Only pdf allowed.")))
-    return val, errs
-
-@_addvalidator
-def _persona_status(val, argname=None, *, _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :rtype: :py:class:`cdedb.database.constants.PersonaStati` or None
-    """
-    ## this is a nop for enums
-    val, errs = _int(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
-    try:
-        val = const.PersonaStati(val)
-    except ValueError as e:
-        return None, ((argname, e),)
-    return val, errs
-
-
-@_addvalidator
-def _genesis_status(val, argname=None, *, _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :rtype: :py:class:`cdedb.database.constants.GenesisStati` or None
-    """
-    ## this is a nop for enums
-    val, errs = _int(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
-    try:
-        val = const.GenesisStati(val)
-    except ValueError as e:
-        return None, ((argname, e),)
     return val, errs
 
 _PAST_EVENT_COMMON_FIELDS = lambda: {
@@ -1438,7 +1450,7 @@ def _registration_part_data(val, argname=None, *, strict=False, _convert=True):
         return val, errs
     optional_fields = {
         'course_id': _int_or_None,
-        'status': _int,
+        'status': _enum_registrationpartstati,
         'lodgement_id': _int_or_None,
         'course_instructor': _int_or_None
     }
@@ -1548,6 +1560,75 @@ def _questionnaire_data(val, argname=None, *, strict=False, _convert=True):
                 ret.append(value)
     return ret, errs
 
+
+_MAILINGLIST_COMMON_FIELDS = lambda: {
+    'title': _str,
+    'address': _email,
+    'sub_policy': _enum_subscriptionpolicy,
+    'mod_policy': _enum_moderationpolicy,
+    'attachement_policy': _enum_attachementpolicy,
+    'audience': _any,
+    'subject_prefix': _str_or_None,
+    'maxsize': _int_or_None,
+    'is_active': _bool,
+    'gateway': _int_or_None,
+    'event_id': _int_or_None,
+    'registration_stati': _any,
+    'assembly_id': _int_or_None,
+    'notes': _str_or_None,
+}
+_MAILINGLIST_OPTIONAL_FIELDS = {
+    'moderators': _any,
+    'whitelist': _any,
+}
+@_addvalidator
+def _mailinglist_data(val, argname=None, *, strict=False, creation=False,
+                      _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type strict: bool
+    :param strict: If ``True`` allow only complete data sets.
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "mailinglist_data"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _MAILINGLIST_COMMON_FIELDS()
+        optional_fields = _MAILINGLIST_OPTIONAL_FIELDS
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_MAILINGLIST_COMMON_FIELDS(),
+                               **_MAILINGLIST_OPTIONAL_FIELDS)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, strict=strict,
+        _convert=_convert)
+    if errs:
+        return val, errs
+    for key, validator in (('audience', _int),
+                           ('registration_stati', _enum_registrationpartstati),
+                           ('moderators', _int), ('whitelist', _email)):
+        if key in val:
+            oldarray, e = _iterable(val[key], key, _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                newarray = set()
+                for anid in oldarray:
+                    v, e = validator(anid, key, _convert=_convert)
+                    if e:
+                        errs.extend(e)
+                    else:
+                        newarray.add(v)
+                val[key] = newarray
+    return val, errs
+
 @_addvalidator
 def _regex(val, argname=None, *, _convert=True):
     """
@@ -1563,7 +1644,7 @@ def _regex(val, argname=None, *, _convert=True):
         re.compile(val)
     # TODO Is there something more specific we can catch? This is bad style.
     except Exception as e:
-        errs.append((argname, e))
+        return None, [(argname, e)]
     return val, errs
 
 @_addvalidator
@@ -1603,8 +1684,8 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
         if selected:
             fields_of_interest.append(field)
         ## Second the constraints
-        operator, e = _query_operator_or_None(val.get("qop_{}".format(field)),
-                                              field, _convert=_convert)
+        operator, e = _enum_queryoperators_or_None(
+            val.get("qop_{}".format(field)), field, _convert=_convert)
         errs.extend(e)
         if e or not operator:
             continue
@@ -1667,25 +1748,6 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     if errs:
         return None, errs
     return Query(None, spec, fields_of_interest, constraints, order), errs
-
-@_addvalidator
-def _query_operator(val, argname=None, *, _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :rtype: (:py:class:`cdedb.query.QueryOperators` or None,
-        [(str or None, exception)])
-    """
-    val, errs = _int(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
-    try:
-        val = QueryOperators(val)
-    except ValueError as e:
-        errs.append((argname, e))
-        return None, errs
-    return val, errs
 
 @_addvalidator
 def _serialized_query(val, argname=None, *, _convert=True):
@@ -1751,14 +1813,9 @@ def _serialized_query(val, argname=None, *, _convert=True):
             if field not in spec:
                 errs.append(("constraints", KeyError("Invalid field.")))
                 continue
-            operator, e = _int(operator, "constraints/{}".format(field),
-                               _convert=_convert)
+            operator, e = _enum_queryoperators(
+                operator, "constraints/{}".format(field), _convert=_convert)
             errs.extend(e)
-            try:
-                operator = QueryOperators(operator)
-            except ValueError as e:
-                errs.append(("constraints", e))
-                continue
             if operator not in VALID_QUERY_OPERATORS[spec[field]]:
                 errs.append(("constraints/{}".format(field),
                              ValueError("Invalid operator.")))
@@ -1804,6 +1861,39 @@ def _serialized_query(val, argname=None, *, _convert=True):
         return None, errs
     else:
         return Query(scope, spec, fields_of_interest, constraints, order), errs
+
+def _enum_validator_maker(anenum, name=None):
+    """Automate validator creation for enums.
+
+    Since this is pretty generic we do this all in one go.
+
+    :type anenum: enum
+    :type name: str or None
+    :param name: If given determines the name of the validator, otherwise the
+      name is inferred from the name of the enum.
+    """
+    def the_validator(val, argname=None, *, _convert=True):
+        """
+        :type val: object
+        :type argname: str or None
+        :type _convert: bool
+        :rtype: (enum or None, [(str or None, exception)])
+        """
+        val, errs = _int(val, argname=argname, _convert=_convert)
+        if errs:
+            return val, errs
+        try:
+            val = anenum(val)
+        except ValueError as e:
+            return None, [(argname, e)]
+        return val, errs
+
+    the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
+    _addvalidator(the_validator)
+    setattr(current_module, the_validator.__name__, the_validator)
+
+for anenum in ALL_ENUMS:
+    _enum_validator_maker(anenum)
 
 ##
 ## Above is the real stuff

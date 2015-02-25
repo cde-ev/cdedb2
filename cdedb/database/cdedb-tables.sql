@@ -37,6 +37,7 @@ CREATE TABLE core.personas (
         cloud_account           boolean NOT NULL DEFAULT False
 );
 CREATE INDEX idx_personas_status ON core.personas(status);
+CREATE INDEX idx_personas_username ON core.personas(username);
 GRANT SELECT ON core.personas TO cdb_anonymous;
 GRANT UPDATE (username, password_hash, display_name) ON core.personas TO cdb_persona;
 GRANT UPDATE (status) ON core.personas TO cdb_member;
@@ -70,6 +71,7 @@ CREATE TABLE core.genesis_cases (
         -- who moderated the request
         reviewer                integer REFERENCES core.personas(id)
 );
+CREATE INDEX idx_genesis_cases_case_status ON core.genesis_cases(case_status);
 GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
 GRANT SELECT, UPDATE ON core.genesis_cases_id_seq TO cdb_anonymous;
 GRANT UPDATE (case_status) ON core.genesis_cases TO cdb_anonymous;
@@ -89,7 +91,6 @@ CREATE TABLE core.sessions (
 );
 CREATE INDEX idx_sessions_persona_id ON core.sessions(persona_id);
 CREATE INDEX idx_sessions_is_active ON core.sessions(is_active);
-CREATE INDEX idx_sessions_ip ON core.sessions(ip);
 GRANT SELECT, INSERT ON core.sessions TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.sessions_id_seq TO cdb_anonymous;
 GRANT UPDATE (is_active) ON core.sessions TO cdb_anonymous;
@@ -367,6 +368,7 @@ CREATE TABLE event.courses (
         instructors             varchar,
         notes                   varchar
 );
+CREATE INDEX idx_courses_event_id ON event.courses(event_id);
 GRANT SELECT, INSERT, UPDATE ON event.courses TO cdb_persona;
 GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_persona;
 
@@ -541,10 +543,104 @@ GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
 
 ---
+--- SCHEMA assembly
+---
+DROP SCHEMA IF EXISTS assembly;
+CREATE SCHEMA assembly;
+GRANT USAGE ON SCHEMA assembly TO cdb_persona;
+.
+CREATE TABLE assembly.user_data (
+        persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
+        given_names             varchar NOT NULL,
+        family_name             varchar NOT NULL,
+        -- who does this person represent
+        organisation            varchar NOT NULL,
+        -- administrative notes about this user
+        notes                   varchar
+);
+
+CREATE TABLE assembly.assemblies (
+        id                      serial PRIMARY KEY,
+        title                   varchar NOT NULL,
+        description             varchar
+);
+
+CREATE TABLE assembly.proposals (
+        id                      serial PRIMARY KEY,
+        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
+        title                   varchar NOT NULL,
+        description             varchar,
+        vote_begin              timestamp WITH TIME ZONE NOT NULL,
+        -- normal end, at this point in time the quorum is checked
+        vote_end                timestamp WITH TIME ZONE NOT NULL,
+        -- if the quorum is not met the time is extended
+        vote_extension_end      timestamp WITH TIME ZONE,
+        -- Special option which means "options below this are not acceptable
+        -- as outcome to me". For electing a person an alternative title may
+        -- be "reopen nominations".
+        --
+        -- This is a bit complicated since a bar references a candidate
+        -- references a proposal. But this seems to be the least ugly way to
+        -- do it.
+        bar                     integer, -- REFERENCES assembly.candidates(id),
+        -- number of submitted ballots necessary to not trigger extension
+        quorum                  integer NOT NULL DEFAULT 0,
+        -- number of votes per ballot
+        --
+        -- 0 means arbitrary preference list
+        -- n > 0 means, that the list must be of the form
+        --       a_1=a_2=...=a_m>0>b_1=b_2=...=b_l
+        --       with m non-negative and at most n, and where '0' is the
+        --       bar's moniker (which must be non-NULL)
+        votes                   integer NOT NULL DEFAULT 0
+);
+
+CREATE TABLE assembly.candidates (
+        id                      serial PRIMARY KEY,
+        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
+        text                    varchar NOT NULL,
+        moniker                 varchar NOT NULL
+);
+
+-- create previously impossible reference
+ALTER TABLE assembly.proposals ADD FOREIGN KEY (bar) REFERENCES assembly.candidates(id);
+
+CREATE TABLE assembly.attendees (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
+        secret                  varchar
+);
+CREATE INDEX idx_attendees_assembly_id ON assembly.attendees(assembly_id);
+CREATE INDEX idx_attendees_persona_id ON assembly.attendees(persona_id);
+GRANT SELECT, INSERT, UPDATE ON assembly.attendees TO cdb_persona;
+GRANT DELETE ON assembly.attendees TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_persona;
+
+CREATE TABLE assembly.votes (
+        id                      serial PRIMARY KEY,
+        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
+        -- The vote is of the form '2>3=1>0>4' where the pieces between the
+        -- relation symbols are the corresponding monikers from
+        -- assembly.candidates.
+        vote                    varchar,
+        -- This is the SHA512 of the concatenation of vote and voting secret.
+        hash                    varchar
+);
+
+CREATE TABLE assembly.attachements (
+       id                       serial PRIMARY KEY,
+       assembly_id              integer REFERENCES assembly.assemblies(id),
+       proposal_id              integer REFERENCES assembly.proposals(id),
+       title                    varchar NOT NULL
+);
+
+---
 --- SCHEMA ml
 ---
 DROP SCHEMA IF EXISTS ml;
 CREATE SCHEMA ml;
+GRANT USAGE ON SCHEMA ml TO cdb_persona;
 
 CREATE TABLE ml.user_data (
         persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
@@ -553,6 +649,8 @@ CREATE TABLE ml.user_data (
         -- administrative notes about this user
         notes                   varchar
 );
+GRANT SELECT, UPDATE ON ml.user_data TO cdb_persona;
+GRANT INSERT ON ml.user_data TO cdb_admin;
 
 CREATE TABLE ml.mailinglists (
         id                      serial PRIMARY KEY,
@@ -569,6 +667,7 @@ CREATE TABLE ml.mailinglists (
         subject_prefix          varchar,
         maxsize                 integer, -- in kB
         is_active               boolean NOT NULL,
+        notes                   varchar,
         -- Define a list X as gateway for this list, that is everybody
         -- subscribed to X may subscribe to this list (only usefull with a
         -- restrictive subscription policy).
@@ -580,113 +679,67 @@ CREATE TABLE ml.mailinglists (
         event_id                integer REFERENCES event.events(id),
         -- which stati to address
         -- (cf. cdedb.database.constants.RegistrationPartStati)
-        -- this may be NULL or empty, in which case this is an orga list
-        registration_stati      integer[],
+        -- this may be empty, in which case this is an orga list
+        registration_stati      integer[] NOT NULL,
         -- assembly awareness
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)
 );
+GRANT SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
+GRANT INSERT, DELETE ON ml.mailinglists TO cdb_admin;
+GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_admin;
 
--- This also handles unsubscriptions for opt-out lists.
-CREATE TABLE ml.subscriptions (
+CREATE TABLE ml.subscription_states (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         address                 varchar,
         is_subscribed           boolean
 );
+CREATE INDEX idx_subscription_states_mailinglist_id ON ml.subscription_states(mailinglist_id);
+CREATE INDEX idx_subscription_states_persona_id ON ml.subscription_states(persona_id);
+GRANT SELECT, INSERT, UPDATE ON ml.subscription_states TO cdb_persona;
+GRANT DELETE ON ml.subscription_states TO cdb_admin;
+GRANT SELECT, UPDATE ON ml.subscription_states_id_seq TO cdb_persona;
 
 CREATE TABLE ml.subscription_requests (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id)
 );
+GRANT SELECT, INSERT, UPDATE, DELETE ON ml.subscription_requests TO cdb_persona;
+GRANT SELECT, UPDATE ON ml.subscription_requests_id_seq TO cdb_persona;
 
 CREATE TABLE ml.whitelist (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         address                 varchar NOT NULL
 );
+CREATE INDEX idx_whitelist_mailinglist_id ON ml.whitelist(mailinglist_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON ml.whitelist TO cdb_persona;
+GRANT SELECT, UPDATE ON ml.whitelist_id_seq TO cdb_persona;
 
 CREATE TABLE ml.moderators (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id)
 );
+CREATE INDEX idx_moderators_mailinglist_id ON ml.moderators(mailinglist_id);
+CREATE INDEX idx_moderators_persona_id ON ml.moderators(persona_id);
+GRANT SELECT, UPDATE, INSERT, DELETE ON ml.moderators TO cdb_persona;
+GRANT SELECT, UPDATE ON ml.moderators_id_seq TO cdb_persona;
 
 CREATE TABLE ml.log (
         id                      bigserial PRIMARY KEY,
-        mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
-        owner_id                integer NOT NULL REFERENCES core.personas(id),
-        target_id               integer NOT NULL REFERENCES core.personas(id),
         ctime                   timestamp WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'UTC'),
-        message                 varchar NOT NULL
+        -- see cdedb.database.constants.MlLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        mailinglist_id          integer REFERENCES ml.mailinglists(id),
+        persona_id              integer REFERENCES core.personas(id), -- affected user
+        additional_info         varchar
 );
-
--- TODO implement
-
----
---- SCHEMA assembly
----
-DROP SCHEMA IF EXISTS assembly;
-CREATE SCHEMA assembly;
-
-CREATE TABLE assembly.user_data (
-        persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
-        given_names             varchar NOT NULL,
-        family_name             varchar NOT NULL,
-        -- who does this person represent
-        organisation            varchar NOT NULL,
-        -- administrative notes about this user
-        notes                   varchar
-);
-
-CREATE TABLE assembly.assemblies (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL
-        -- TODO maybe some dates?
-);
-
-CREATE TABLE assembly.proposals (
-        id                      serial PRIMARY KEY,
-        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
-        title                   varchar NOT NULL,
-        description             varchar
-        -- TODO maybe some dates?
-        -- TODO linked files?
-);
-
-CREATE TABLE assembly.candidates (
-        id                      serial PRIMARY KEY,
-        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
-        text                    varchar NOT NULL,
-        moniker                 varchar NOT NULL
-);
-
-CREATE TABLE assembly.voting_secrets (
-        id                      serial PRIMARY KEY,
-        persona_id              integer NOT NULL REFERENCES core.personas(id),
-        assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
-        secret                  varchar
-);
-
-CREATE TABLE assembly.votes (
-        id                      serial PRIMARY KEY,
-        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
-        -- The vote is of the form '2>3=1>0>4' where the pieces between the
-        -- relation symbols are the corresponding monikers from
-        -- assembly.candidates.
-        vote                    varchar,
-        -- This is the SHA512 of the concatenation of vote and voting secret.
-        hash                    varchar
-);
-
--- TODO implement
-
----
---- SCHEMA files
----
-DROP SCHEMA IF EXISTS files;
-CREATE SCHEMA files;
-
--- TODO implement
+CREATE INDEX idx_log_mailinglist_id ON ml.log(mailinglist_id);
+GRANT SELECT, INSERT ON ml.log TO cdb_persona;
+GRANT DELETE ON ml.log TO cdb_admin;
+GRANT SELECT, UPDATE ON ml.log_id_seq TO cdb_persona;

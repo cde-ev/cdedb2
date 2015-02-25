@@ -74,7 +74,7 @@
             </td>
         </tr>
         {% for part_id, pdata in registration_data['parts']|dictsort %}
-            {% if const.RegistrationPartStati(pdata['status']).is_involved
+            {% if const.RegistrationPartStati(pdata['status']).is_involved()
                   and registration_data['choices'].get(part_id) %}
                 <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
                 {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}

@@ -69,7 +69,7 @@
 <<% block content %>>
     <<% for part_id, pdata in event_data['parts']|dictsort -%>>
         <<% for registration_id, rdata in registration_data|dictsort -%>>
-            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present -%>>
+            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present() -%>>
                 <<% with name = "{} {}".format(user_data[rdata['persona_id']]['given_names'],
                                                user_data[rdata['persona_id']]['family_name']) -%>>
                     \nametag{<<< name|te >>>}{

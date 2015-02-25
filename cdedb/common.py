@@ -77,7 +77,14 @@ def merge_dicts(*dicts):
                 dicts[0][key] = adict[key]
 
 def extract_realm(status):
-    """
+    """Which realm does a persona belong to?
+
+    Note how the conditions look, especially that they do not
+    commute. The point being, that this symbols the interdependencies
+    between backends. If we have a cycle in this dependency tree, we
+    have a problem -- and we won't be able to make this function work
+    properly too, so this is a nice indicator.
+
     :type status: int
     :rtype: str
     """
@@ -89,6 +96,8 @@ def extract_realm(status):
         return "event"
     elif status in const.ASSEMBLY_STATI:
         return "assembly"
+    elif status in const.ML_STATI:
+        return "ml"
     else:
         raise ValueError("Invalid status {} found.".format(status))
 
@@ -302,7 +311,7 @@ ALL_ROLES = {
                   "formermember", "member", "searchmember", "cde_admin",
                   "event_user", "event_admin",
                   "assembly_user", "assembly_admin",
-                  "ml_user", "ml_admin",
+                  "ml_user", "ml_admin", "ml_script",
                   "admin"},
     "persona": {"persona", "core_admin",
                 "formermember", "member", "searchmember", "cde_admin",
@@ -337,6 +346,7 @@ ALL_ROLES = {
                 "admin"},
     "ml_admin": {"ml_admin",
                  "admin"},
+    "ml_script": {"admin"}, # FIXME add ml_script to svg
     "admin": {"admin"},
 }
 
@@ -390,6 +400,10 @@ EVENT_USER_DATA_FIELDS = (
     "birthday", "telephone", "mobile", "address_supplement", "address",
     "postal_code", "location", "country", "notes")
 
+#: Names of columns associated to an ml user (in addition to those which
+#: exist for every persona).
+ML_USER_DATA_FIELDS = ("family_name", "given_names", "notes")
+
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "full_name", "persona_status", "notes",
@@ -425,5 +439,11 @@ REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "course_id",
 
 #: Fields of a lodgement entry (one house/room)
 LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
+
+#: Fields of a mailing list entry (that is one mailinglist)
+MAILINGLIST_FIELDS = (
+    "id", "title", "address", "sub_policy", "mod_policy", "notes",
+    "attachement_policy", "audience", "subject_prefix", "maxsize",
+    "is_active", "gateway", "event_id", "registration_stati", "assembly_id")
 
 EPSILON = 10**(-6) #:

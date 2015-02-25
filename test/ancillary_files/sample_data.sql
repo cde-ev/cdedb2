@@ -10,7 +10,8 @@ INSERT INTO core.personas (id, username, password_hash, display_name, is_active,
     (6, 'ferdinand@example.cde', '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Ferdinand', True, 0, 254, True),
     (7, 'garcia@example.cde', '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Garcia', True, 1, 0, True),
     (8, NULL, '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Hades', False, 10, 0, False),
-    (9, 'inga@example.cde', '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Inga', True, 0, 0, True);
+    (9, 'inga@example.cde', '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Inga', True, 0, 0, True),
+    (10, 'janis@example.cde', '$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/', 'Janis', True, 40, 0, False);
 INSERT INTO cde.member_data (persona_id, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, notes, birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, balance, decided_search, trial_member, bub_search, fulltext, foto) VALUES
     (1, 'Administrator', 'Anton Armin A.', NULL, NULL, 1, date '1991-03-30', '+49 (234) 98765', NULL, NULL, 'Auf der Düne 42', '03205', 'Musterstadt', NULL, NULL, NULL, NULL, 'Unter dem Hügel 23', '22335', 'Hintertupfingen', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 17.5, True, False, True, 'anton@example.cde  Anton Armin A. Anton Administrator   1991-03-30 +49 (234) 98765  Auf der Düne 42  03205 Musterstadt  Unter dem Hügel 23  22335 Hintertupfingen', NULL),
     (2, 'Beispiel', 'Bertålotta', 'Dr.', 'MdB', 0, date '1981-02-11', '+49 (5432) 987654321', '0163/123456789', 'bei Spielmanns', 'Im Garten 77', '34576', 'Utopia', NULL, NULL, 'Gemeinser', NULL, 'Strange Road 9 3/4', '8XA 45-$', 'Foreign City', 'Far Away', 'https://www.bundestag.cde', E'Alles\nUnd noch mehr', 'Jedermann', 'Überall', 'Immer', E'Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen', 12.5, True, False, True, E'berta@example.cde Dr. Bertålotta Bertå Beispiel Gemeinser MdB 1981-02-11 +49 (5432) 987654321 0163/123456789 Im Garten 77 bei Spielmanns 34576 Utopia  Strange Road 9 3/4  8XA 45-$ Foreign City Far Away https://www.bundestag.cde Alles\nUnd noch mehr Jedermann Überall Immer Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen', 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9'),
@@ -22,6 +23,8 @@ INSERT INTO cde.member_data (persona_id, family_name, given_names, title, name_s
     (9, 'Iota', 'Inga', NULL, NULL, 0, date '2222-01-01', NULL, '0163/456897', NULL, 'Zwergstraße 1', '1111', 'Liliput', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5, True, True, True, 'inga@example.cde Inga Iota 2222-01-01 Zwergstraße 1 1111 Liliput', NULL);
 INSERT INTO event.user_data (persona_id, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, notes) VALUES
     (5, 'Eventis', 'Emilia E.', NULL, NULL, 0, date '2012-06-02', '+49 (5432) 555666777', NULL, NULL, 'Hohle Gasse 13', '56767', 'Wolkenkuckuksheim', 'Deutschland', NULL);
+INSERT INTO ml.user_data (persona_id, family_name, given_names, notes) VALUES
+    (10, 'Jalapeño', 'Janis', 'sharp tounge');
 INSERT INTO core.changelog (submitted_by, reviewed_by, cdate, generation, change_note, change_status, persona_id, username, display_name, is_active, status, db_privileges, cloud_account, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address, postal_code, location, country, notes, birth_name, address_supplement2, address2, postal_code2, location2, country2, weblink, specialisation, affiliation, timeline, interests, free_form, balance, decided_search, trial_member, bub_search) VALUES
     (1, NULL, now(), 1, 'Init.', 1, 1, 'anton@example.cde', 'Anton', True, 0, 1, True,'Administrator', 'Anton Armin A.', NULL, NULL, 1, date '1991-03-30', '+49 (234) 98765', NULL, NULL, 'Auf der Düne 42', '03205', 'Musterstadt', NULL, NULL, NULL, NULL, 'Unter dem Hügel 23', '22335', 'Hintertupfingen', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 17.5, True, False, True),
     (2, NULL, now(), 1, 'Init.', 1, 2, 'berta@example.cde', 'Bertå', True, 0, 0, True, 'Beispiel', 'Bertålotta', 'Dr.', 'MdB', 0, date '1981-02-11', '+49 (5432) 987654321', '0163/123456789', 'bei Spielmanns', 'Im Garten 77', '34576', 'Utopia', NULL, NULL, 'Gemeinser', NULL, 'Strange Road 9 3/4', '8XA 45-$', 'Foreign City', 'Far Away', 'https://www.bundestag.cde', E'Alles\nUnd noch mehr', 'Jedermann', 'Überall', 'Immer', E'Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen', 12.5, True, False, True),
@@ -143,10 +146,74 @@ INSERT INTO event.questionnaire_rows (event_id, field_id, pos, title, info, inpu
     (1, 3, 5, 'Hauswunsch', NULL, 3, False);
 
 --
+-- assembly
+--
+INSERT INTO assembly.assemblies (id, title, description) VALUES
+    (1, 'Internationaler Kongress', 'Proletarier aller Länder vereinigt Euch!');
+
+INSERT INTO assembly.attendees (assembly_id, persona_id, secret) VALUES
+    (1, 1, 'aoeuidhtns'),
+    (1, 2, 'snthdiueoa'),
+    (1, 9, 'asonetuhid');
+
+--
+-- ml
+--
+INSERT INTO ml.mailinglists (id, title, address, sub_policy, mod_policy, attachement_policy, audience, subject_prefix, maxsize, is_active, gateway, event_id, registration_stati, assembly_id) VALUES
+    (1, 'Verkündungen', 'announce@example.cde', 0, 2, 2, ARRAY[0, 1], '[Hört, hört]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (2, 'Werbung', 'werbung@example.cde', 1, 2, 0, ARRAY[0, 1, 2, 40], '[werbung]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (3, 'Witz des Tages', 'witz@example.cde', 2, 1, 1, ARRAY[0, 1, 2, 40], '[witz]', 2048, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (4, 'Klatsch und Tratsch', 'klatsch@example.cde', 3, 0, 0, ARRAY[0, 1, 2, 40], '[klatsch]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (5, 'Sozialistischer Kampfbrief', 'kongress@example.cde', 4, 1, 1, ARRAY[0, 1, 30], '[kampf]', 1024, True, NULL, NULL, ARRAY[]::integer[], 1),
+    (6, 'Aktivenforum 2000', 'aktivenforum@example.cde', 4, 1, 1, ARRAY[0, 1], '[aktivenforum]', 1024, False, NULL, NULL, ARRAY[]::integer[], NULL),
+    (7, 'Aktivenforum 2001', 'aktivenforum@example.cde', 4, 1, 1, ARRAY[0, 1], '[aktivenforum]', 1024, True, 6, NULL, ARRAY[]::integer[], NULL),
+    (8, 'Orga-Liste', 'aka@example.cde', 4, 0, 0, ARRAY[0, 1, 2, 20], '[orga]', NULL, True, NULL, 1, ARRAY[]::integer[], NULL),
+    (9, 'Teilnehmer-Liste', 'participants@example.cde', 4, 1, 0, ARRAY[0, 1, 2, 20], '[aka]', NULL, True, NULL, 1, ARRAY[1, 3], NULL),
+    (10, 'Warte-Liste', 'wait@example.cde', 4, 2, 0, ARRAY[0, 1, 2, 20], '[wait]', NULL, True, NULL, 1, ARRAY[2], NULL);
+
+INSERT INTO ml.subscription_states (mailinglist_id, persona_id, address, is_subscribed) VALUES
+    (1, 3, NULL, False),
+    (2, 6, NULL, False),
+    (3, 1, NULL, True),
+    (3, 2, NULL, False),
+    (3, 10, 'janis-spam@example.cde', True),
+    (4, 1, NULL, True),
+    (4, 2, NULL, True),
+    (4, 6, 'ferdinand-unterhaltung@example.cde', True),
+    (4, 10, NULL, True),
+    (6, 1, NULL, True),
+    (6, 2, NULL, True),
+    (7, 2, NULL, True),
+    (7, 3, NULL, True);
+
+INSERT INTO ml.whitelist (mailinglist_id, address) VALUES
+    (2, 'honeypot@example.cde'),
+    (6, 'aliens@example.cde'),
+    (6, 'drwho@example.cde'),
+    (7, 'aliens@example.cde'),
+    (7, 'drwho@example.cde'),
+    (7, 'captiankirk@example.cde');
+
+INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
+    (1, 2),
+    (2, 10),
+    (3, 2),
+    (3, 3),
+    (3, 10),
+    (4, 2),
+    (5, 2),
+    (6, 2),
+    (7, 2),
+    (7, 10),
+    (8, 7),
+    (9, 7),
+    (10, 7);
+
+--
 -- fix serials (we want to have total control over some ids so we reference
 -- the correct things)
 --
-SELECT setval('core.personas_id_seq', 9);
+SELECT setval('core.personas_id_seq', 10);
 SELECT setval('past_event.events_id_seq', 1);
 SELECT setval('past_event.courses_id_seq', 1);
 SELECT setval('event.events_id_seq', 1);
@@ -155,3 +222,5 @@ SELECT setval('event.courses_id_seq', 5);
 SELECT setval('event.field_definitions_id_seq', 7);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
+SELECT setval('ml.mailinglists_id_seq', 10);
+SELECT setval('assembly.assemblies_id_seq', 1);
