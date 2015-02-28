@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from test.common import BackendTest, as_users, USER_DICT
+from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators
 import cdedb.database.constants as const
 import datetime
+import pytz
 import decimal
 
 class TestEventBackend(BackendTest):
@@ -143,7 +144,7 @@ class TestEventBackend(BackendTest):
                            'is_orga': False, 'persona_id': 2}}
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))
-        self.event.create_participant(self.key, 1, None, 5, False, False)
+        self.event.add_participant(self.key, 1, None, 5, False, False)
         expectation[5] = {'course_id': None, 'is_instructor': False,
                           'is_orga': False, 'persona_id': 5}
         self.assertEqual(expectation,
@@ -155,7 +156,7 @@ class TestEventBackend(BackendTest):
         del expectation[5]
         self.assertEqual(expectation,
                          self.event.list_participants(self.key, event_id=1))
-        self.event.create_participant(self.key, 1, 1, 5, False, False)
+        self.event.add_participant(self.key, 1, 1, 5, False, False)
         expectation[5] = {'course_id': 1, 'is_instructor': False,
                           'is_orga': False, 'persona_id': 5}
         self.assertEqual(expectation,
@@ -626,7 +627,7 @@ class TestEventBackend(BackendTest):
             'choices': {1:[5, 4, 1], 2: [2, 3, 4]},
             'field_data': {'transportation': 'pedes'},
             'mixed_lodging': True,
-            'checkin': datetime.datetime.now(),
+            'checkin': datetime.datetime.now(pytz.utc),
             'parts': {
                 1: {
                     'status': 1,
@@ -644,15 +645,11 @@ class TestEventBackend(BackendTest):
         expectation[4]['choices'].update(data['choices'])
         expectation[4]['field_data'].update(data['field_data'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
-        expectation[4]['checkin'] = data['checkin']
+        expectation[4]['checkin'] = nearly_now()
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
                 value.update(data['parts'][key])
         data = self.event.get_registrations(self.key, (1, 2, 4))
-        # TODO handle timezone info gracefully
-        self.assertEqual(expectation[4]['checkin'].date(),
-                         data[4]['checkin'].date())
-        data[4]['checkin'] = expectation[4]['checkin']
         self.assertEqual(expectation, data)
         new_reg = {
             'checkin': None,
@@ -881,3 +878,486 @@ class TestEventBackend(BackendTest):
              'status3': 1,
              'transportation': 'etc'})
         self.assertEqual(expectation, result)
+
+    @as_users("anton")
+    def test_past_log(self, user):
+        ## first generate some data
+        data = {
+            'title': "New Link Academy",
+            'organizer': "Illuminati",
+            'description': """Some more text
+
+            on more lines.""",
+        }
+        new_id = self.event.create_past_event(self.key, data)
+        self.event.set_past_event_data(self.key, {
+            'id': new_id, 'title': "Alternate Universe Academy"})
+        data = {
+            'event_id': 1,
+            'title': "Topos theory for the kindergarden",
+            'description': """This is an interesting topic
+
+            which will be treated.""",
+        }
+        new_id = self.event.create_past_course(self.key, data)
+        self.event.set_past_course_data(self.key, {
+            'id': new_id, 'title': "New improved title"})
+        self.event.delete_past_course(self.key, new_id)
+        self.event.add_participant(self.key, 1, None, 5, False, False)
+        self.event.remove_participant(self.key, 1, None, 5)
+
+        ## now check it
+        expectation = ({'additional_info': None,
+                        'code': 21,
+                        'ctime': nearly_now(),
+                        'event_id': 1,
+                        'persona_id': 5,
+                        'submitted_by': 1},
+                       {'additional_info': None,
+                        'code': 20,
+                        'ctime': nearly_now(),
+                        'event_id': 1,
+                        'persona_id': 5,
+                        'submitted_by': 1},
+                       {'additional_info': 'New improved title',
+                        'code': 12,
+                        'ctime': nearly_now(),
+                        'event_id': 1,
+                        'persona_id': None,
+                        'submitted_by': 1},
+                       {'additional_info': 'New improved title',
+                        'code': 11,
+                        'ctime': nearly_now(),
+                        'event_id': 1,
+                        'persona_id': None,
+                        'submitted_by': 1},
+                       {'additional_info': 'Topos theory for the kindergarden',
+                        'code': 10,
+                        'ctime': nearly_now(),
+                        'event_id': 1,
+                        'persona_id': None,
+                        'submitted_by': 1},
+                       {'additional_info': None,
+                        'code': 1,
+                        'ctime': nearly_now(),
+                        'event_id': 1,
+                        'persona_id': None,
+                        'submitted_by': 1},
+                       {'additional_info': None,
+                        'code': 0,
+                        'ctime': nearly_now(),
+                        'event_id': 2,
+                        'persona_id': None,
+                        'submitted_by': 1})
+        self.assertEqual(expectation, self.event.retrieve_past_log(self.key))
+
+    @as_users("anton")
+    def test_log(self, user):
+        ## first generate some data
+        data = {
+            'title': "New Link Academy",
+            'organizer': "Illuminati",
+            'description': """Some more text
+
+            on more lines.""",
+            'shortname': 'link',
+            'registration_start': datetime.date(2000, 11, 22),
+            'registration_soft_limit': datetime.date(2022, 1, 2),
+            'registration_hard_limit': None,
+            'iban': None,
+            'use_questionnaire': False,
+            'notes': None,
+            'orgas': {2, 7},
+            'parts': {
+                -1: {
+                    'title': "First coming",
+                    'part_begin': datetime.date(2109, 8, 7),
+                    'part_end': datetime.date(2109, 8, 20),
+                    'fee': decimal.Decimal("234.56")},
+                -2: {
+                    'title': "Second coming",
+                    'part_begin': datetime.date(2110, 8, 7),
+                    'part_end': datetime.date(2110, 8, 20),
+                    'fee': decimal.Decimal("0.00")},
+            },
+            'fields': {
+                -1: {
+                    'field_name': "instrument",
+                    'kind': "str",
+                    'entries': None,
+                },
+                -2: {
+                    'field_name': "preferred_excursion_date",
+                    'kind': "date",
+                    'entries': [["2109-8-16", "In the first coming"],
+                                ["2110-8-16", "During the second coming"]],
+                },
+            },
+        }
+        new_id = self.event.create_event(self.key, data)
+        ## correct part and field ids
+        tmp = self.event.get_event_data_one(self.key, new_id)
+        part_map = {}
+        for part in tmp['parts']:
+            for oldpart in data['parts']:
+                if tmp['parts'][part]['title'] == data['parts'][oldpart]['title']:
+                    part_map[tmp['parts'][part]['title']] = part
+                    data['parts'][part] = data['parts'][oldpart]
+                    data['parts'][part]['id'] = part
+                    data['parts'][part]['event_id'] = new_id
+                    break
+            del data['parts'][oldpart]
+        field_map = {}
+        for field in tmp['fields']:
+            for oldfield in data['fields']:
+                if (tmp['fields'][field]['field_name']
+                        == data['fields'][oldfield]['field_name']):
+                    field_map[tmp['fields'][field]['field_name']] = field
+                    data['fields'][field] = data['fields'][oldfield]
+                    data['fields'][field]['id'] = field
+                    data['fields'][field]['event_id'] = new_id
+                    break
+            del data['fields'][oldfield]
+
+        data['title'] = "Alternate Universe Academy"
+        data['orgas'] = {1, 7}
+        newpart = {
+            'title': "Third coming",
+            'part_begin': datetime.date(2111, 8, 7),
+            'part_end': datetime.date(2111, 8, 20),
+            'fee': decimal.Decimal("123.40")}
+        changed_part = {
+            'title': "Second coming",
+            'part_begin': datetime.date(2110, 9, 8),
+            'part_end': datetime.date(2110, 9, 21),
+            'fee': decimal.Decimal("1.23")}
+        newfield = {
+            'field_name': "kuea",
+            'kind': "str",
+            'entries': None,
+        }
+        changed_field = {
+            'kind': "date",
+            'entries': [["2110-8-15", "early second coming"],
+                        ["2110-8-17", "late second coming"],],
+        }
+        self.event.set_event_data(self.key, {
+            'id': new_id,
+            'title': data['title'],
+            'orgas': data['orgas'],
+            'parts': {
+                part_map["First coming"]: None,
+                part_map["Second coming"]: changed_part,
+                -1: newpart,
+                },
+            'fields': {
+                field_map["instrument"]: None,
+                field_map["preferred_excursion_date"]: changed_field,
+                -1: newfield,
+                },
+            })
+        data = {
+            'event_id': 1,
+            'title': "Topos theory for the kindergarden",
+            'description': """This is an interesting topic
+
+            which will be treated.""",
+            'nr': 'ζ',
+            'shortname': "Topos",
+            'instructors': "Alexander Grothendieck",
+            'notes': "Beware of dragons.",
+            'parts': {2, 3},
+        }
+        new_id = self.event.create_course(self.key, data)
+        data['title'] = "Alternate Universes"
+        data['parts'] = {1, 3}
+        self.event.set_course_data(self.key, {
+            'id': new_id, 'title': data['title'], 'parts': data['parts']})
+        new_reg = {
+            'checkin': None,
+            'choices': {1: [1, 4, 5]},
+            'event_id': 1,
+            'foto_consent': True,
+            'mixed_lodging': False,
+            'orga_notes': None,
+            'parental_agreement': None,
+            'parts': {
+                1: {'course_id': None,
+                    'course_instructor': None,
+                    'lodgement_id': None,
+                    'status': 0
+                },
+                2: {'course_id': None,
+                    'course_instructor': None,
+                    'lodgement_id': None,
+                    'status': 0
+                },
+                3: {'course_id': None,
+                    'course_instructor': None,
+                    'lodgement_id': None,
+                    'status': 0
+                },
+            },
+            'notes': "Some bla.",
+            'payment': None,
+            'persona_id': 2,
+            'real_persona_id': None}
+        new_id = self.event.create_registration(self.key, new_reg)
+        data = {
+            'id': 4,
+            'choices': {1:[5, 4, 1], 2: [2, 3, 4]},
+            'field_data': {'transportation': 'pedes'},
+            'mixed_lodging': True,
+            'checkin': datetime.datetime.now(pytz.utc),
+            'parts': {
+                1: {
+                    'status': 1,
+                    'course_id': 5,
+                    'lodgement_id': 2,
+                },
+                3: {
+                    'status': 5,
+                    'course_id': None,
+                    'lodgement_id': None,
+                }
+            }
+        }
+        self.event.set_registration(self.key, data)
+        new = {
+            'capacity': 42,
+            'event_id': 1,
+            'moniker': 'Hyrule',
+            'notes': "Notizen",
+            'reserve': 11
+        }
+        new_id = self.event.create_lodgement(self.key, new)
+        update = {
+            'capacity': 21,
+            'notes': None,
+            'id': new_id,
+        }
+        self.event.set_lodgement(self.key, update)
+        self.event.delete_lodgement(self.key, new_id)
+        data = [
+            {'field_id': None,
+             'info': None,
+             'readonly': None,
+             'input_size': None,
+             'title': 'Weitere bla Überschrift'},
+            {'field_id': 2,
+             'info': None,
+             'readonly': True,
+             'input_size': None,
+             'title': 'Vehikel'},
+            {'field_id': None,
+             'info': 'mit Text darunter und so',
+             'readonly': None,
+             'input_size': None,
+             'title': 'Unterüberschrift'},
+            {'field_id': 3,
+             'info': None,
+             'readonly': True,
+             'input_size': 5,
+             'title': 'Vehikel'},
+            {'field_id': None,
+             'info': 'nur etwas mehr Text',
+             'readonly': None,
+             'input_size': None,
+             'title': None},]
+        self.event.set_questionnaire(self.key, 1, data)
+
+        ## now check it
+        expectation = (
+            {'additional_info': None,
+             'code': 30,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Hyrule',
+             'code': 27,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Hyrule',
+             'code': 25,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Hyrule',
+             'code': 26,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 51,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': 9,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 50,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 51,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 51,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'additional_info': 'Topos theory for the kindergarden',
+             'code': 42,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Topos theory for the kindergarden',
+             'code': 41,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Topos theory for the kindergarden',
+             'code': 40,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Topos theory for the kindergarden',
+             'code': 42,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Topos theory for the kindergarden',
+             'code': 41,
+             'ctime': nearly_now(),
+             'event_id': 1,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'instrument',
+             'code': 22,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'preferred_excursion_date',
+             'code': 21,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'kuea',
+             'code': 20,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'First coming',
+             'code': 17,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Second coming',
+             'code': 16,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Third coming',
+             'code': 15,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 11,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 10,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': 1,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 1,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 0,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'instrument',
+             'code': 20,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'preferred_excursion_date',
+             'code': 20,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 1,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 10,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': 7,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 10,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': 2,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 1,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'First coming',
+             'code': 15,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Second coming',
+             'code': 15,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': None,
+             'code': 1,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1})
+        self.assertEqual(expectation, self.event.retrieve_log(self.key))

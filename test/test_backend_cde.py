@@ -3,7 +3,7 @@
 from cdedb.common import QuotaException
 from cdedb.query import QUERY_SPECS, QueryOperators
 import cdedb.database.constants as const
-from test.common import BackendTest, as_users, USER_DICT
+from test.common import BackendTest, as_users, USER_DICT, nearly_now
 import decimal
 import datetime
 import copy
@@ -277,3 +277,74 @@ class TestCdEBackend(BackendTest):
             "status": 0,
         })
         self.assertEqual(user_data, value)
+
+    @as_users("anton")
+    def test_cde_log(self, user):
+        ## first generate some data
+        new_foto = "rkorechkorekchoreckhoreckhorechkrocehkrocehk"
+        self.cde.set_foto(self.key, 2, new_foto)
+        # TODO more when available
+
+        ## now check it
+        expectation = (
+            {'additional_info': None,
+             'code': 0,
+             'ctime': nearly_now(),
+             'persona_id': 2,
+             'submitted_by': 1},)
+        self.assertEqual(expectation, self.cde.retrieve_cde_log(self.key))
+
+    @as_users("anton")
+    def test_changelog_meta(self, user):
+        expectation = (
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 9,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 7,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 6,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 4,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 3,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 2,
+             'reviewed_by': None,
+             'submitted_by': 2},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 1,
+             'reviewed_by': None,
+             'submitted_by': 1})
+        self.assertEqual(expectation,
+                         self.cde.retrieve_changelog_meta(self.key))

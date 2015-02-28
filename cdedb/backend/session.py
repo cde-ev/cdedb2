@@ -6,7 +6,8 @@ basically providing the data for instantiating
 it's own realm, which does not occur anywhere else. We have to make do
 without most of the infrastructure, since we are providing it;
 additionally we mock out some of it (like e.g. the @access
-decorator). Everything is a bit special in here."""
+decorator). Everything is a bit special in here.
+"""
 
 from cdedb.database.connection import connection_pool_factory
 from cdedb.backend.common import make_RPCDaemon, run_RPCDaemon
@@ -141,7 +142,7 @@ class SessionBackend:
                'username': "",}
         if persona_id:
             query = glue("UPDATE core.sessions SET atime = now()",
-                         "AT TIME ZONE 'UTC' WHERE sessionkey = %s")
+                         "WHERE sessionkey = %s")
             query2 = glue("SELECT status, db_privileges, display_name,",
                           "is_active, username FROM core.personas",
                           "WHERE id = %s")

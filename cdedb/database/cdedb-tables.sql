@@ -48,7 +48,7 @@ GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
 CREATE TABLE core.genesis_cases (
         id                      bigserial PRIMARY KEY,
         -- creation time
-        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         username                varchar NOT NULL,
         full_name               varchar NOT NULL,
         -- status the persona is going to have initially
@@ -83,9 +83,9 @@ CREATE TABLE core.sessions (
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         is_active               boolean NOT NULL DEFAULT True,
         -- login time
-        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         -- last access time
-        atime                   timestamp WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        atime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         ip                      varchar NOT NULL,
         sessionkey              varchar NOT NULL UNIQUE
 );
@@ -107,6 +107,21 @@ GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
 GRANT UPDATE (queries) ON core.quota TO cdb_member;
 
+CREATE TABLE core.log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.CoreLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer REFERENCES core.personas(id),
+        persona_id              integer REFERENCES core.personas(id), -- affected user
+        additional_info         varchar
+);
+CREATE INDEX idx_core_log_code ON core.log(code);
+CREATE INDEX idx_core_log_persona_id ON core.log(persona_id);
+GRANT SELECT ON core.log TO cdb_admin;
+GRANT INSERT ON core.log TO cdb_anonymous;
+GRANT SELECT, UPDATE ON core.log_id_seq TO cdb_anonymous;
+
 -- log all changes made to the personal data of members (require approval)
 --
 -- this is in the core realm since the core backend has to be aware of the
@@ -118,7 +133,7 @@ CREATE TABLE core.changelog (
         --
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
         reviewed_by             integer REFERENCES core.personas(id) DEFAULT NULL,
-        cdate                   timestamp WITH TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         generation              integer NOT NULL,
         change_note             varchar,
         -- enum for progress of change
@@ -276,6 +291,20 @@ CREATE TABLE cde.expuls (
         addresscheck_state      integer REFERENCES core.personas(id),
         addresscheck_done       timestamp WITH TIME ZONE DEFAULT NULL
 );
+
+CREATE TABLE cde.log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.CdeLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        persona_id              integer REFERENCES core.personas(id), -- affected user
+        additional_info         varchar
+);
+CREATE INDEX idx_cde_log_code ON cde.log(code);
+CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
+GRANT SELECT, INSERT ON cde.log TO cdb_persona;
+GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_persona;
 
 ---
 --- SCHEMA event
@@ -494,6 +523,22 @@ CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_i
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
 GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
 
+CREATE TABLE event.log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.EventLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        event_id                integer REFERENCES event.events(id),
+        persona_id              integer REFERENCES core.personas(id), -- affected user
+        additional_info         varchar
+);
+CREATE INDEX idx_event_log_code ON event.log(code);
+CREATE INDEX idx_event_log_event_id ON event.log(event_id);
+GRANT SELECT, INSERT ON event.log TO cdb_persona;
+GRANT DELETE ON event.log TO cdb_admin;
+GRANT SELECT, UPDATE ON event.log_id_seq TO cdb_persona;
+
 ---
 --- SCHEMA past_event
 ---
@@ -542,13 +587,29 @@ GRANT SELECT ON past_event.participants TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
 
+CREATE TABLE past_event.log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.PastEventLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        event_id                integer REFERENCES past_event.events(id),
+        persona_id              integer REFERENCES core.personas(id), -- affected user
+        additional_info         varchar
+);
+CREATE INDEX idx_past_event_log_code ON past_event.log(code);
+CREATE INDEX idx_past_event_log_event_id ON past_event.log(event_id);
+GRANT SELECT, INSERT ON past_event.log TO cdb_persona;
+GRANT DELETE ON past_event.log TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_persona;
+
 ---
 --- SCHEMA assembly
 ---
 DROP SCHEMA IF EXISTS assembly;
 CREATE SCHEMA assembly;
 GRANT USAGE ON SCHEMA assembly TO cdb_persona;
-.
+
 CREATE TABLE assembly.user_data (
         persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
         given_names             varchar NOT NULL,
@@ -634,6 +695,22 @@ CREATE TABLE assembly.attachements (
        proposal_id              integer REFERENCES assembly.proposals(id),
        title                    varchar NOT NULL
 );
+
+CREATE TABLE assembly.log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.AssembyLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        assembly_id             integer REFERENCES assembly.assemblies(id),
+        persona_id              integer REFERENCES core.personas(id), -- affected user
+        additional_info         varchar
+);
+CREATE INDEX idx_assembly_log_code ON assembly.log(code);
+CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
+GRANT SELECT, INSERT ON assembly.log TO cdb_persona;
+GRANT DELETE ON assembly.log TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_persona;
 
 ---
 --- SCHEMA ml
@@ -731,7 +808,7 @@ GRANT SELECT, UPDATE ON ml.moderators_id_seq TO cdb_persona;
 
 CREATE TABLE ml.log (
         id                      bigserial PRIMARY KEY,
-        ctime                   timestamp WITH TIME ZONE DEFAULT (now() AT TIME ZONE 'UTC'),
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
         -- see cdedb.database.constants.MlLogCodes
         code                    integer NOT NULL,
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
@@ -739,7 +816,8 @@ CREATE TABLE ml.log (
         persona_id              integer REFERENCES core.personas(id), -- affected user
         additional_info         varchar
 );
-CREATE INDEX idx_log_mailinglist_id ON ml.log(mailinglist_id);
+CREATE INDEX idx_ml_log_code ON ml.log(code);
+CREATE INDEX idx_ml_log_mailinglist_id ON ml.log(mailinglist_id);
 GRANT SELECT, INSERT ON ml.log TO cdb_persona;
 GRANT DELETE ON ml.log TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.log_id_seq TO cdb_persona;

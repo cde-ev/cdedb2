@@ -192,8 +192,63 @@ class AttachementPolicy(enum.IntEnum):
     forbid = 2 #:
 
 @enum.unique
+class CoreLogCodes(enum.IntEnum):
+    """Available log messages core.log."""
+    persona_creation = 0 #:
+    persona_change = 1 #:
+    password_change = 10 #:
+    password_reset = 11 #:
+    genesis_request = 20 #:
+    genesis_approved = 21 #:
+    genesis_rejected = 22 #:
+
+@enum.unique
+class CdeLogCodes(enum.IntEnum):
+    """Available log messages cde.log."""
+    foto_update = 0 #:
+
+@enum.unique
+class EventLogCodes(enum.IntEnum):
+    """Available log messages event.log."""
+    event_created = 0 #:
+    event_changed = 1 #:
+    orga_added = 10 #:
+    orga_removed = 11 #:
+    part_created = 15 #:
+    part_changed = 16 #:
+    part_deleted = 17 #:
+    field_added = 20 #:
+    field_updated = 21 #:
+    field_removed = 22 #:
+    lodgement_changed = 25 #:
+    lodgement_created = 26 #:
+    lodgement_deleted = 27 #:
+    questionnaire_changed = 30 #:
+    course_created = 40 #:
+    course_changed = 41 #:
+    course_parts_changed = 42 #:
+    registration_created = 50 #:
+    registration_changed = 51 #:
+
+@enum.unique
+class PastEventLogCodes(enum.IntEnum):
+    """Available log messages past_event.log."""
+    event_created = 0 #:
+    event_changed = 1 #:
+    course_created = 10 #:
+    course_changed = 11 #:
+    course_deleted = 12 #:
+    participant_added = 20 #:
+    participant_removed = 21 #:
+
+@enum.unique
+class AssemblyLogCodes(enum.IntEnum):
+    """Available log messages core.log."""
+    pass
+
+@enum.unique
 class MlLogCodes(enum.IntEnum):
-    """Available log messages."""
+    """Available log messages for ml.log."""
     list_created = 0 #:
     list_changed = 1 #:
     list_deleted = 2 #:

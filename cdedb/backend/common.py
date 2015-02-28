@@ -12,8 +12,8 @@ import logging
 from cdedb.database.connection import connection_pool_factory
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import (
-    glue, extract_realm, make_root_logger, extract_roles,
-    ALL_ROLES, DB_ROLE_MAPPING, CommonUser, PrivilegeError)
+    glue, extract_realm, make_root_logger, extract_roles, ALL_ROLES,
+    DB_ROLE_MAPPING, CommonUser, PrivilegeError)
 from cdedb.query import QueryOperators, QUERY_VIEWS
 from cdedb.config import Config, SecretsConfig
 import abc
@@ -456,6 +456,70 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                                               "ASC" if ascending else "DESC")
                                for entry, ascending in query.order))
         return self.query_all(rs, q, params)
+
+    def generic_retrieve_log(self, rs, code_validator, entity_name, table,
+                             codes=None, entity_id=None, start=None, stop=None):
+        """Get recorded activity.
+
+        Each realm has it's own log as well as potentially additional
+        special purpose logs. This method fetches entries in a generic
+        way. It allows to filter the entries for specific
+        codes or a specific entity (think event or mailinglist).
+
+        This does not do authentication, which has to be done by the
+        caller. However it does validation which thus may be omitted by the
+        caller.
+
+        This is separate from the changelog for member data (which keeps
+        a lot more information to be able to reconstruct the entire
+        history).
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type code_validator: str
+        :param code_validator: e.g. "enum_mllogcodes"
+        :type entity_name: str
+        :param entity_name: e.g. "event" or "mailinglist"
+        :type table: str
+        :param table: e.g. "ml.log" or "event.log"
+        :type code_validator: str
+        :param code_validator: e.g. "enum_mllogcodes"
+        :type codes: [int] or None
+        :type entity_id: int or None
+        :type start: int or None
+        :param start: How many entries to skip at the start.
+        :type stop: int or None
+        :param stop: At which entry to halt, in sum you get ``stop-start``
+          entries (works like python sequence slices).
+        :rtype: [{str: object}]
+        """
+        codes = affirm_array_validation(code_validator, codes, allow_None=True)
+        entity_id = affirm_validation("int_or_None", entity_id)
+        start = affirm_validation("int_or_None", start)
+        stop = affirm_validation("int_or_None", stop)
+        start = start or 0
+        if stop:
+            stop = max(start, stop)
+        query = glue(
+            "SELECT ctime, code, submitted_by, {entity}_id, persona_id,",
+            "additional_info FROM {table} {condition} ORDER BY id DESC")
+        if stop:
+            query = glue(query, "LIMIT {}".format(stop-start))
+        if start:
+            query = glue(query, "OFFSET {}".format(start))
+        connector = "WHERE"
+        condition = ""
+        params = []
+        if codes:
+            connector = "AND"
+            condition = glue(condition, "WHERE code = ANY(%s)")
+            params.append(codes)
+        if entity_id:
+            condition = glue(
+                condition, "{} {}_id = %s").format(connector, entity_name)
+            params.append(entity_id)
+        query = query.format(entity=entity_name, table=table,
+                             condition=condition)
+        return self.query_all(rs, query, params)
 
 class BackendUser(CommonUser):
     """Container for a persona in the backend."""

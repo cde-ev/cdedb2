@@ -208,3 +208,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_core_admin').checked)
         self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_cde_admin').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_event_admin').checked)
+
+    def test_log(self):
+        ## First: generate data
+        self.test_adjust_privileges()
+        self.logout()
+        self.test_admin_password_reset()
+        self.logout()
+
+        ## Now check it
+        self.login(USER_DICT['anton'])
+        self.traverse({'description': '^Start$'},
+                      {'href': '/core/log'})
+        self.assertTitle("\nAccounts -- Logs (0--2)\n")

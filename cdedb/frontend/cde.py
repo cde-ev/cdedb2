@@ -433,3 +433,38 @@ class CdEFrontend(AbstractUserFrontend):
     def genesis(self, rs, case_id, secret, data):
         """Member accounts cannot be requested."""
         raise NotImplementedError("Not available in cde realm.")
+
+    @access("cde_admin")
+    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("start", "int_or_None"), ("stop", "int_or_None"))
+    def view_cde_log(self, rs, codes, persona_id, start, stop):
+        """View general activity."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.cdeproxy.retrieve_cde_log(rs, codes, persona_id, start, stop)
+        personas = (
+            {entry['submitted_by'] for entry in log}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        user_data = self.cdeproxy.get_data(rs, personas)
+        return self.render(rs, "view_cde_log", {
+            'log': log, 'user_data': user_data})
+
+    @access("cde_admin")
+    @REQUESTdata(("stati", "[int]"), ("start", "int_or_None"),
+                 ("stop", "int_or_None"))
+    def view_changelog_meta(self, rs, stati, start, stop):
+        """View changelog activity."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.cdeproxy.retrieve_changelog_meta(rs, stati, start, stop)
+        personas = (
+            {entry['submitted_by'] for entry in log}
+            | {entry['reviewed_by'] for entry in log if entry['reviewed_by']}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        user_data = self.cdeproxy.get_data(rs, personas)
+        return self.render(rs, "view_changelog_meta", {
+            'log': log, 'user_data': user_data})

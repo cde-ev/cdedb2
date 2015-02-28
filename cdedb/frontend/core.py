@@ -476,3 +476,20 @@ class CoreFrontend(AbstractFrontend):
         code = self.coreproxy.genesis_modify_case(rs, data)
         self.notify_return_code(rs, code, success="Case abandoned.")
         return self.redirect(rs, "core/genesis_list_cases")
+
+    @access("core_admin")
+    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("start", "int_or_None"), ("stop", "int_or_None"))
+    def view_log(self, rs, codes, persona_id, start, stop):
+        """View activity."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop)
+        personas = (
+            {entry['submitted_by'] for entry in log}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        user_data = self.coreproxy.get_data(rs, personas)
+        return self.render(rs, "view_log", {'log': log, 'user_data': user_data})
+

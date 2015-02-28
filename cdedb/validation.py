@@ -1218,6 +1218,8 @@ def _event_field_data(val, argname=None, *, strict=False, creation=False,
         _convert=_convert)
     if errs:
         return val, errs
+    if not val.get('entries', True):
+        val['entries'] = None
     if 'entries' in val and val['entries'] is not None:
         if isinstance(val['entries'], str) and _convert:
             val['entries'] = tuple(tuple(y.strip() for y in x.split(';', 1))

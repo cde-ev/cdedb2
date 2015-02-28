@@ -260,6 +260,101 @@ class EventBackend(AbstractUserBackend):
             ret.update(temp)
         return ret
 
+    def event_log(self, rs, code, event_id, persona_id=None,
+                  additional_info=None):
+        """Make an entry in the log.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type code: int
+        :param code: One of :py:class:`cdedb.database.constants.EventLogCodes`.
+        :type event_id: int or None
+        :type persona_id: int or None
+        :param persona_id: ID of affected user
+        :type additional_info: str or None
+        :param additional_info: Infos not conveyed by other columns.
+        :rtype: int
+        :returns: number of entries written
+        """
+        query = glue(
+            "INSERT INTO event.log",
+            "(code, event_id, submitted_by, persona_id, additional_info)",
+            "VALUES (%s, %s, %s, %s, %s)")
+        return self.query_exec(
+            rs, query, (code, event_id, rs.user.persona_id, persona_id,
+                        additional_info))
+
+    @access("event_user")
+    def retrieve_log(self, rs, codes=None, event_id=None, start=None,
+                     stop=None):
+        """Get recorded activity.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type codes: [int] or None
+        :type event_id: int or None
+        :type start: int or None
+        :type stop: int or None
+        :rtype: [{str: object}]
+        """
+        event_id = affirm("int_or_None", event_id)
+        if (not (event_id and self.is_orga(rs, event_id=event_id))
+                and not self.is_admin(rs)):
+            raise PrivilegeError("Not privileged.")
+        return self.generic_retrieve_log(
+            rs, "enum_eventlogcodes", "event", "event.log", codes, event_id,
+            start, stop)
+
+    def past_event_log(self, rs, code, event_id, persona_id=None,
+                       additional_info=None):
+        """Make an entry in the log for concluded events.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type code: int
+        :param code: One of
+          :py:class:`cdedb.database.constants.PastEventLogCodes`.
+        :type event_id: int or None
+        :type persona_id: int or None
+        :param persona_id: ID of affected user
+        :type additional_info: str or None
+        :param additional_info: Infos not conveyed by other columns.
+        :rtype: int
+        :returns: number of entries written
+        """
+        query = glue(
+            "INSERT INTO past_event.log",
+            "(code, event_id, submitted_by, persona_id, additional_info)",
+            "VALUES (%s, %s, %s, %s, %s)")
+        return self.query_exec(
+            rs, query, (code, event_id, rs.user.persona_id, persona_id,
+                        additional_info))
+
+    @access("event_admin")
+    def retrieve_past_log(self, rs, codes=None, event_id=None, start=None,
+                     stop=None):
+        """Get recorded activity for concluded events.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type codes: [int] or None
+        :type event_id: int or None
+        :type start: int or None
+        :type stop: int or None
+        :rtype: [{str: object}]
+        """
+        return self.generic_retrieve_log(
+            rs, "enum_pasteventlogcodes", "event", "past_event.log", codes,
+            event_id, start, stop)
+
     @access("persona")
     def list_events(self, rs, past):
         """List all events, either concluded or organized via DB.
@@ -473,7 +568,9 @@ class EventBackend(AbstractUserBackend):
         query = "UPDATE past_event.events SET ({}) = ({}) WHERE id = %s".format(
             ", ".join(keys), ", ".join(("%s",) * len(keys)))
         params = tuple(data[key] for key in keys) + (data['id'],)
-        return self.query_exec(rs, query, params)
+        ret = self.query_exec(rs, query, params)
+        self.past_event_log(rs, const.PastEventLogCodes.event_changed, ret)
+        return ret
 
     @access("event_user")
     def set_event_data(self, rs, data):
@@ -515,6 +612,8 @@ class EventBackend(AbstractUserBackend):
                                      ", ".join(("%s",) * len(keys)))
                 params = tuple(data[key] for key in keys) + (data['id'],)
                 ret *= self.query_exec(rs, query, params)
+                self.event_log(rs, const.EventLogCodes.event_changed,
+                               data['id'])
             if 'orgas' in data:
                 query = glue("SELECT persona_id FROM event.orgas",
                              "WHERE event_id = %s")
@@ -527,10 +626,15 @@ class EventBackend(AbstractUserBackend):
                                  "(persona_id, event_id) VALUES (%s, %s)")
                     for anid in new:
                         ret *= self.query_exec(rs, query, (anid, data['id']))
+                        self.event_log(rs, const.EventLogCodes.orga_added,
+                                       data['id'], persona_id=anid)
                 if deleted:
                     query = glue("DELETE FROM event.orgas",
                                  "WHERE persona_id = ANY(%s) AND event_id = %s")
                     ret *= self.query_exec(rs, query, (deleted, data['id']))
+                    for anid in deleted:
+                        self.event_log(rs, const.EventLogCodes.orga_removed,
+                                       data['id'], persona_id=anid)
             if 'parts' in data:
                 parts = data['parts']
                 query = glue("SELECT id FROM event.event_parts",
@@ -552,6 +656,14 @@ class EventBackend(AbstractUserBackend):
                     params = tuple(parts[x][key] for key in keys)
                     params += (data['id'],)
                     ret *= self.query_exec(rs, query, params)
+                    self.event_log(
+                        rs, const.EventLogCodes.part_created, data['id'],
+                        additional_info=parts[x]['title'])
+                query = glue("SELECT id, title FROM event.event_parts",
+                             "WHERE id = ANY(%s)")
+                titles = {e['id']: e['title']
+                          for e in self.query_all(rs, query,
+                                                  (updated | deleted,))}
                 for x in updated:
                     query = glue("UPDATE event.event_parts SET ({}) = ({})",
                                  "WHERE id = %s")
@@ -560,9 +672,16 @@ class EventBackend(AbstractUserBackend):
                                          ", ".join(("%s",) * len(keys)))
                     params = tuple(parts[x][key] for key in keys) + (x,)
                     ret *= self.query_exec(rs, query, params)
+                    self.event_log(
+                        rs, const.EventLogCodes.part_changed, data['id'],
+                        additional_info=titles[x])
                 if deleted:
                     query = "DELETE FROM event.event_parts WHERE id = ANY(%s)"
                     ret *= self.query_exec(rs, query, (deleted,))
+                    for x in deleted:
+                        self.event_log(
+                            rs, const.EventLogCodes.part_deleted, data['id'],
+                            additional_info=titles[x])
             if 'fields' in data:
                 fields = data['fields']
                 query = glue("SELECT id FROM event.field_definitions",
@@ -576,6 +695,12 @@ class EventBackend(AbstractUserBackend):
                            if x > 0 and fields[x] is not None}
                 deleted = {x for x in fields
                            if x > 0 and fields[x] is None}
+                query = glue(
+                    "SELECT id, field_name FROM event.field_definitions",
+                    "WHERE id = ANY(%s)")
+                field_names = {e['id']: e['field_name']
+                               for e in self.query_all(rs, query,
+                                                       (updated | deleted,))}
                 ## new
                 query = glue("INSERT INTO event.field_definitions ({})",
                              "VALUES ({})")
@@ -586,6 +711,9 @@ class EventBackend(AbstractUserBackend):
                     params = (data['id'],) + tuple(fields[x][key]
                                                    for key in keys)
                     ret *= self.query_exec(rs, query, params)
+                    self.event_log(
+                        rs, const.EventLogCodes.field_added, data['id'],
+                        additional_info=fields[x]['field_name'])
                 ## updated
                 proto_query = glue("UPDATE event.field_definitions",
                                    "SET ({}) = ({}) WHERE id = %s")
@@ -596,11 +724,19 @@ class EventBackend(AbstractUserBackend):
                                                ", ".join(("%s",) * len(keys)))
                     params = tuple(fields[x][key] for key in keys) + (x,)
                     ret *= self.query_exec(rs, query, params)
+                    self.event_log(
+                        rs, const.EventLogCodes.field_updated, data['id'],
+                        additional_info=field_names[x])
 
+                ## deleted
                 if deleted:
                     query = glue("DELETE FROM event.field_definitions",
                                  "WHERE id = ANY(%s)")
                     ret *= self.query_exec(rs, query, (deleted,))
+                    for x in deleted:
+                        self.event_log(
+                            rs, const.EventLogCodes.field_removed, data['id'],
+                            additional_info=field_names[x])
         return ret
 
     @access("event_admin")
@@ -618,7 +754,9 @@ class EventBackend(AbstractUserBackend):
         query = query.format(", ".join(keys),
                              ", ".join(("%s",) * len(keys)))
         params = tuple(data[key] for key in keys)
-        return unwrap(self.query_one(rs, query, params))
+        ret = unwrap(self.query_one(rs, query, params))
+        self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
+        return ret
 
     @access("event_admin")
     def create_event(self, rs, data):
@@ -645,6 +783,7 @@ class EventBackend(AbstractUserBackend):
                         aspect: data[aspect],
                     }
                     self.set_event_data(rs, adata)
+        self.event_log(rs, const.EventLogCodes.event_created, new_id)
         return new_id
 
     @access("event_user")
@@ -705,7 +844,12 @@ class EventBackend(AbstractUserBackend):
         query = "UPDATE past_event.courses SET ({}) = ({}) WHERE id = %s"
         query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
         params = tuple(data[key] for key in keys) + (data['id'],)
-        return self.query_exec(rs, query, params)
+        ret = self.query_exec(rs, query, params)
+        query = "SELECT title FROM past_event.courses WHERE id = %s"
+        title = unwrap(self.query_one(rs, query, (data['id'],)))
+        self.past_event_log(rs, const.PastEventLogCodes.course_changed, ret,
+                            additional_info=title)
+        return ret
 
     @access("event_user")
     def set_course_data(self, rs, data):
@@ -725,6 +869,8 @@ class EventBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, course_id=data['id'])
         ret = 1
+        query = "SELECT title, event_id FROM event.courses WHERE id = %s"
+        current = self.query_one(rs, query, (data['id'],))
         with Atomizer(rs):
             keys = tuple(key for key in data if key in COURSE_FIELDS)
             if keys:
@@ -733,6 +879,9 @@ class EventBackend(AbstractUserBackend):
                                      ", ".join(("%s",) * len(keys)))
                 params = tuple(data[key] for key in keys) + (data['id'],)
                 ret *= self.query_exec(rs, query, params)
+                self.event_log(
+                    rs, const.EventLogCodes.course_changed, current['event_id'],
+                    additional_info=current['title'])
             if 'parts' in data:
                 query = glue("SELECT part_id FROM event.course_parts",
                              "WHERE course_id = %s")
@@ -761,6 +910,10 @@ class EventBackend(AbstractUserBackend):
                     query = glue("DELETE FROM event.course_parts",
                                  "WHERE course_id = %s AND part_id = ANY(%s)")
                     ret *= self.query_exec(rs, query, (data['id'], deleted))
+                if new or deleted:
+                    self.event_log(
+                        rs, const.EventLogCodes.course_parts_changed,
+                        current['event_id'], additional_info=current['title'])
         return ret
 
     @access("event_admin")
@@ -777,7 +930,10 @@ class EventBackend(AbstractUserBackend):
         query = "INSERT INTO past_event.courses ({}) VALUES ({}) RETURNING id"
         query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
         params = tuple(data[key] for key in keys)
-        return unwrap(self.query_one(rs, query, params))
+        ret = unwrap(self.query_one(rs, query, params))
+        self.past_event_log(rs, const.PastEventLogCodes.course_created,
+                            data['event_id'], additional_info=data['title'])
+        return ret
 
     @access("event_user")
     def create_course(self, rs, data):
@@ -806,6 +962,8 @@ class EventBackend(AbstractUserBackend):
                     'parts': data['parts'],
                 }
                 self.set_course_data(rs, pdata)
+        self.event_log(rs, const.EventLogCodes.course_created,
+                       data['event_id'], additional_info=data['title'])
         return new_id
 
     @access("event_admin")
@@ -825,6 +983,8 @@ class EventBackend(AbstractUserBackend):
         :returns: the number of removed entries
         """
         course_id = affirm("int", course_id)
+        query = "SELECT event_id, title FROM past_event.courses WHERE id = %s"
+        current = self.query_one(rs, query, (course_id,))
         with Atomizer(rs):
             if cascade and self.list_participants(rs, course_id=course_id):
                 cdata = self.get_past_course_data_one(rs, course_id)
@@ -832,11 +992,15 @@ class EventBackend(AbstractUserBackend):
                     self.delete_participant(rs, cdata['event_id'], course_id,
                                             pid)
             query = "DELETE FROM past_event.courses WHERE id = %s"
-            return self.query_exec(rs, query, (course_id,))
+            ret = self.query_exec(rs, query, (course_id,))
+            self.past_event_log(
+                rs, const.PastEventLogCodes.course_deleted, current['event_id'],
+                additional_info=current['title'])
+        return ret
 
     @access("event_admin")
-    def create_participant(self, rs, event_id, course_id, persona_id,
-                           is_instructor, is_orga):
+    def add_participant(self, rs, event_id, course_id, persona_id,
+                        is_instructor, is_orga):
         """Add a participant to a concluded event.
 
         A persona can participate multiple times in a single event. For
@@ -862,8 +1026,12 @@ class EventBackend(AbstractUserBackend):
             "INSERT INTO past_event.participants",
             "(persona_id, event_id, course_id, is_instructor, is_orga)",
             "VALUES (%s, %s, %s, %s, %s)")
-        return self.query_exec(rs, query, (persona_id, event_id, course_id,
-                                           is_instructor, is_orga))
+        ret = self.query_exec(rs, query, (persona_id, event_id, course_id,
+                                          is_instructor, is_orga))
+        self.past_event_log(
+            rs, const.PastEventLogCodes.participant_added, event_id,
+            persona_id=persona_id)
+        return ret
 
     @access("event_admin")
     def remove_participant(self, rs, event_id, course_id, persona_id):
@@ -886,7 +1054,11 @@ class EventBackend(AbstractUserBackend):
         query = glue("DELETE FROM past_event.participants WHERE event_id = %s",
                      "AND persona_id = %s AND course_id {} %s")
         query = query.format("IS" if course_id is None else "=")
-        return self.query_exec(rs, query, (event_id, persona_id, course_id))
+        ret = self.query_exec(rs, query, (event_id, persona_id, course_id))
+        self.past_event_log(
+            rs, const.PastEventLogCodes.participant_removed, event_id,
+            persona_id=persona_id)
+        return ret
 
     @access("event_user")
     def list_participants(self, rs, *, event_id=None, course_id=None):
@@ -1117,6 +1289,12 @@ class EventBackend(AbstractUserBackend):
                     for rank, course_id in enumerate(choices[part_id]):
                         ret *= self.query_exec(
                             rs, query, (data['id'], part_id, course_id, rank))
+        query = glue("SELECT event_id, persona_id FROM event.registrations",
+                     "WHERE id = %s")
+        current = self.query_one(rs, query, (data['id'],))
+        self.event_log(
+            rs, const.EventLogCodes.registration_changed, current['event_id'],
+            persona_id=current['persona_id'])
         return ret
 
     @access("event_user")
@@ -1162,6 +1340,9 @@ class EventBackend(AbstractUserBackend):
                          "WHERE id = %s")
             self.query_exec(rs, query, (
                 psycopg2.extras.Json({'registration_id': new_id}), new_id))
+        self.event_log(
+            rs, const.EventLogCodes.registration_created, data['event_id'],
+            persona_id=data['persona_id'])
         return new_id
 
     @access("event_user")
@@ -1229,7 +1410,14 @@ class EventBackend(AbstractUserBackend):
             query = "UPDATE event.lodgements SET ({}) = ({}) WHERE id = %s"
             query = query.format(", ".join(keys), ", ".join(("%s",)* len(keys)))
             params = tuple(data[key] for key in keys) + (data['id'],)
-            return self.query_exec(rs, query, params)
+            ret = self.query_exec(rs, query, params)
+            query = glue("SELECT event_id, moniker FROM event.lodgements",
+                         "WHERE id = %s")
+            current = self.query_one(rs, query, (data['id'],))
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_changed, current['event_id'],
+                additional_info=current['moniker'])
+            return ret
 
     @access("event_user")
     def create_lodgement(self, rs, data):
@@ -1249,7 +1437,11 @@ class EventBackend(AbstractUserBackend):
         query = "INSERT INTO event.lodgements ({}) VALUES ({}) RETURNING id"
         query = query.format(", ".join(keys), ", ".join(("%s",)* len(keys)))
         params = tuple(data[key] for key in keys)
-        return unwrap(self.query_one(rs, query, params))
+        ret = unwrap(self.query_one(rs, query, params))
+        self.event_log(
+            rs, const.EventLogCodes.lodgement_created, data['event_id'],
+            additional_info=data['moniker'])
+        return ret
 
     @access("event_user")
     def delete_lodgement(self, rs, lodgement_id):
@@ -1264,6 +1456,9 @@ class EventBackend(AbstractUserBackend):
         :returns: number of affected entries
         """
         lodgement_id = affirm("int", lodgement_id)
+        query = glue("SELECT event_id, moniker FROM event.lodgements",
+                     "WHERE id = %s")
+        current = self.query_one(rs, query, (lodgement_id,))
         with Atomizer(rs):
             query = "SELECT event_id FROM event.lodgements WHERE id = %s"
             event_id = unwrap(self.query_one(rs, query, (lodgement_id,)))
@@ -1272,7 +1467,11 @@ class EventBackend(AbstractUserBackend):
                 raise PrivilegeError("Not privileged.")
             self.assert_offline_lock(rs, event_id=event_id)
             query = "DELETE FROM event.lodgements WHERE id = %s"
-            return self.query_exec(rs, query, (lodgement_id,))
+            ret = self.query_exec(rs, query, (lodgement_id,))
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_deleted, current['event_id'],
+                additional_info=current['moniker'])
+            return ret
 
     @access("event_user")
     def get_questionnaire(self, rs, event_id):
@@ -1320,6 +1519,7 @@ class EventBackend(AbstractUserBackend):
                     rs, query, (event_id, row['field_id'], pos, row['title'],
                                 row['info'], row['input_size'],
                                 row['readonly']))
+        self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 
     # TODO locking, unlocking

@@ -1,5 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}) bearbeiten{% endblock %}
 {% block content %}
     <a href="{{ cdedblink("event/show_course")|e }}">Abbrechen</a>

@@ -1,5 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     {% if event_data['id'] in user.orga or is_admin %}

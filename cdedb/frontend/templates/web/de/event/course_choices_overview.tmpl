@@ -1,5 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}Kurswahlen -- Übersicht ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/course_choices')|e }}" method="GET" id="choiceform">

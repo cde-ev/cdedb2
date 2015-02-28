@@ -1,5 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}Downloads zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
 {% block content %}
     <ul>

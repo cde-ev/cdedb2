@@ -5,7 +5,7 @@
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, ProxyShim, connect_proxy,
     check_validation as check, persona_dataset_guard, event_guard,
-    REQUESTfile, request_data_extractor)
+    REQUESTfile, request_data_extractor, cdedbid_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -363,7 +363,7 @@ class EventFrontend(AbstractUserFrontend):
         """Add participant to concluded event."""
         if rs.errors:
             return self.show_past_course(rs, event_id, course_id)
-        code = self.eventproxy.create_participant(
+        code = self.eventproxy.add_participant(
             rs, event_id, course_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
         if course_id:
@@ -1672,6 +1672,9 @@ class EventFrontend(AbstractUserFrontend):
         field_values = {
             "fields.{}".format(key): value
             for key, value in registration_data['field_data'].items()}
+        ## Fix formatting of ID
+        reg_values['reg.real_persona_id'] = cdedbid_filter(
+            reg_values['reg.real_persona_id'])
         merge_dicts(rs.values, reg_values, field_values, *part_values)
         return self.render(rs, "change_registration", {
             'registration_data': registration_data, 'event_data': event_data,
@@ -2571,4 +2574,66 @@ class EventFrontend(AbstractUserFrontend):
         """Unlock an event after offline usage and incorporate the offline
         changes."""
         raise NotImplementedError("TODO")
+
+    @access("event_admin")
+    @REQUESTdata(("codes", "[int]"), ("event_id", "int_or_None"),
+                 ("start", "int_or_None"), ("stop", "int_or_None"))
+    def view_log(self, rs, codes, event_id, start, stop):
+        """View activities concerning events organized via DB."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
+        personas = (
+            {entry['submitted_by'] for entry in log}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        user_data = self.eventproxy.acquire_data(rs, personas)
+        events = {entry['event_id'] for entry in log if entry['event_id']}
+        event_data = self.eventproxy.get_event_data(rs, events)
+        events = self.eventproxy.list_events(rs, past=False)
+        return self.render(rs, "view_log", {
+            'log': log, 'user_data': user_data, 'event_data': event_data,
+            'events': events})
+
+    @access("event_admin")
+    @REQUESTdata(("codes", "[int]"), ("event_id", "int_or_None"),
+                 ("start", "int_or_None"), ("stop", "int_or_None"))
+    def view_past_log(self, rs, codes, event_id, start, stop):
+        """View activities concerning concluded events."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.eventproxy.retrieve_past_log(rs, codes, event_id, start,
+                                                stop)
+        personas = (
+            {entry['submitted_by'] for entry in log}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        user_data = self.eventproxy.acquire_data(rs, personas)
+        events = {entry['event_id'] for entry in log if entry['event_id']}
+        event_data = self.eventproxy.get_past_event_data(rs, events)
+        events = self.eventproxy.list_events(rs, past=True)
+        return self.render(rs, "view_past_log", {
+            'log': log, 'user_data': user_data, 'event_data': event_data,
+            'events': events})
+
+    @access("event_user")
+    @event_guard()
+    @REQUESTdata(("codes", "[int]"), ("start", "int_or_None"),
+                 ("stop", "int_or_None"))
+    def view_event_log(self, rs, event_id, codes, start, stop):
+        """View activities concerning one event organized via DB."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
+        personas = (
+            {entry['submitted_by'] for entry in log}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        user_data = self.eventproxy.acquire_data(rs, personas)
+        event_data = self.eventproxy.get_event_data_one(rs, event_id)
+        return self.render(rs, "view_event_log", {
+            'log': log, 'user_data': user_data, 'event_data': event_data})
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import cdedb.database.constants as const
-from test.common import BackendTest, as_users, USER_DICT
+from test.common import BackendTest, as_users, USER_DICT, nearly_now
 import copy
 import subprocess
 import ldap
@@ -196,3 +196,57 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(
             {1, 2, 4, 5, 6},
             set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 1000), (0, 2, 20))))
+
+    @as_users("anton")
+    def test_log(self, user):
+        ## first generate some data
+        data = {
+            "username": 'zelda@example.cde',
+            "display_name": 'Zelda',
+            "is_active": True,
+            "status": 1,
+            "cloud_account": True,
+            "db_privileges": 0,
+        }
+        self.core.create_persona(self.key, data)
+        data = {
+            "full_name": "Zelda",
+            "username": 'zeldax@example.cde',
+            "notes": "Some blah",
+        }
+        case_id = self.core.genesis_request(
+            None, data['username'], data['full_name'], data['notes'])
+        update = {
+            'id': case_id,
+            'persona_status': const.PersonaStati.event_user,
+            'case_status': const.GenesisStati.approved,
+            'secret': "foobar",
+            'reviewer': 1,
+        }
+        self.core.genesis_modify_case(self.key, update)
+        newpass = "er3NQ_5bkrc#"
+        self.core.change_password(self.key, user['id'], user['password'], newpass)
+
+        ## now check it
+        expectation = (
+            {'additional_info': None,
+             'code': 10,
+             'ctime': nearly_now(),
+             'persona_id': 1,
+             'submitted_by': 1},
+            {'additional_info': 'zeldax@example.cde',
+             'code': 21,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'zeldax@example.cde',
+             'code': 20,
+             'ctime': nearly_now(),
+             'persona_id': None,
+             'submitted_by': None},
+            {'additional_info': None,
+             'code': 0,
+             'ctime': nearly_now(),
+             'persona_id': 11,
+             'submitted_by': 1})
+        self.assertEqual(expectation, self.core.retrieve_log(self.key))

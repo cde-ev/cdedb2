@@ -16,14 +16,13 @@ from cdedb.backend.common import (
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    glue, merge_dicts, PrivilegeError, ML_USER_DATA_FIELDS, unwrap,
-    PERSONA_DATA_FIELDS, MAILINGLIST_FIELDS)
+    glue, PrivilegeError, ML_USER_DATA_FIELDS, unwrap, PERSONA_DATA_FIELDS,
+    MAILINGLIST_FIELDS)
 from cdedb.config import Config, SecretsConfig
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import argparse
-import logging
 
 class MlBackend(AbstractUserBackend):
     """Take note of the fact that some personas are moderators and thus have
@@ -65,8 +64,10 @@ class MlBackend(AbstractUserBackend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def is_moderator(self, rs, ml_id=None):
-        """Check for moderator privileges as specified in the ml.moderators table.
+    @staticmethod
+    def is_moderator(rs, ml_id=None):
+        """Check for moderator privileges as specified in the ml.moderators
+        table.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ml_id: int
@@ -118,8 +119,8 @@ class MlBackend(AbstractUserBackend):
                additional_info=None):
         """Make an entry in the log.
 
-        The log provides an overview of the recent changes. Note that this
-        may be filtered for specific codes to focus on certain changes.
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type code: int
@@ -139,6 +140,28 @@ class MlBackend(AbstractUserBackend):
         return self.query_exec(
             rs, query, (code, mailinglist_id, rs.user.persona_id, persona_id,
                         additional_info))
+
+    @access("ml_user")
+    def retrieve_log(self, rs, codes=None, mailinglist_id=None,
+                     start=None, stop=None):
+        """Get recorded activity.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type codes: [int] or None
+        :type mailinglist_id: int or None
+        :type start: int or None
+        :type stop: int or None
+        :rtype: [{str: object}]
+        """
+        mailinglist_id = affirm("int_or_None", mailinglist_id)
+        if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
+            raise PrivilegeError("Not privileged.")
+        return self.generic_retrieve_log(
+            rs, "enum_mllogcodes", "mailinglist", "ml.log", codes,
+            mailinglist_id, start, stop)
 
     @access("ml_user")
     @singularize("acquire_data_one")
@@ -534,7 +557,7 @@ class MlBackend(AbstractUserBackend):
             return ret
 
     def write_subscription_state(self, rs, mailinglist_id, persona_id,
-                                  is_subscribed, address):
+                                 is_subscribed, address):
         """Helper to persist a (un)subscription.
 
         We want to update existing infos instead of simply deleting all
@@ -666,53 +689,6 @@ class MlBackend(AbstractUserBackend):
             return self.write_subscription_state(
                 rs, mailinglist_id, persona_id, is_subscribed=True,
                 address=None)
-
-    @access("ml_admin")
-    def retrieve_log(self, rs, codes=None, mailinglist_ids=None,
-                     persona_ids=None, start=None, stop=None):
-        """Get recorded activity.
-
-        This allows to filter the entries for specific characteristics, like
-        only those pertaining to a certain set of lists. Thus we get for
-        example list specific logs.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type codes: [int] or None
-        :type mailinglist_ids: [int] or None
-        :type persona_ids: [int] or None
-        :type start: int or None
-        :param start: How many entries to skip at the start.
-        :type stop: int or None
-        :param stop: At which entry to halt, in sum you get ``stop-start``
-          entries (works like python sequence slices).
-        :rtype: [{str: object}]
-        """
-        codes = affirm_array("enum_mllogcodes", codes, allow_None=True)
-        mailinglist_ids = affirm_array("int", mailinglist_ids, allow_None=True)
-        persona_ids = affirm_array("int", persona_ids, allow_None=True)
-        start = affirm("int_or_None", start)
-        stop = affirm("int_or_None", stop)
-        start = start or 0
-        query = glue(
-            "SELECT ctime, code, submitted_by, mailinglist_id, persona_id,",
-            "additional_info FROM ml.log {} ORDER BY id DESC")
-        if stop:
-            query = glue(query, "LIMIT {}".format(stop-start))
-        if start:
-            query = glue(query, "OFFSET {}".format(start))
-        connector = "WHERE"
-        condition = ""
-        params = []
-        for column, values in (("code", codes),
-                               ("mailinglist_id", mailinglist_ids),
-                               ("persona_id", persona_ids),):
-            if values:
-                condition = glue(condition, "{} {} = ANY(%s)").format(connector,
-                                                                      column)
-                connector = "AND"
-                params.append(values)
-        query = query.format(condition)
-        return self.query_all(rs, query, params)
 
     @access("ml_admin")
     def check_states(self, rs, mailinglist_ids):

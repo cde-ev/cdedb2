@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from test.common import BackendTest, as_users, USER_DICT
+from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators
 from cdedb.common import PrivilegeError
 import cdedb.database.constants as const
@@ -277,74 +277,77 @@ class TestMlBackend(BackendTest):
         self.ml.create_mailinglist(self.key, new_data)
         self.ml.delete_mailinglist(self.key, 3, cascade=True)
 
-        ## helper to get rid of varying timestamps
-        def sanitize_log(log):
-            return tuple({k: v for k, v in entry.items() if k != 'ctime'}
-                         for entry in log)
-
+        ## now check it
         expectation = (
             {'additional_info': 'Witz des Tages (witz@example.cde)',
              'code': 2,
+             'ctime': nearly_now(),
              'mailinglist_id': None,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 0,
+             'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'che@example.cde',
              'code': 12,
+             'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 1,
+             'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 10,
+             'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': 2,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 10,
+             'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 1,
+             'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 21,
+             'ctime': nearly_now(),
              'mailinglist_id': 7,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': 'devnull@example.cde',
              'code': 22,
+             'ctime': nearly_now(),
              'mailinglist_id': 4,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 23,
+             'ctime': nearly_now(),
              'mailinglist_id': 1,
              'persona_id': 1,
              'submitted_by': 1})
-        self.assertEqual(expectation,
-                         sanitize_log(self.ml.retrieve_log(self.key)))
+        self.assertEqual(expectation, self.ml.retrieve_log(self.key))
         self.assertEqual(
             expectation[2:5],
-            sanitize_log(self.ml.retrieve_log(self.key, start=2, stop=5)))
+            self.ml.retrieve_log(self.key, start=2, stop=5))
         self.assertEqual(
             expectation[2:6],
-            sanitize_log(self.ml.retrieve_log(self.key, mailinglist_ids=(11,),
-                                              start=1, stop=5)))
-        self.assertEqual(
-            expectation[4:6],
-            sanitize_log(self.ml.retrieve_log(self.key, codes=(10,))))
+            self.ml.retrieve_log(self.key, mailinglist_id=11, start=1, stop=5))
+        self.assertEqual(expectation[4:6],
+                         self.ml.retrieve_log(self.key, codes=(10,)))
 
     @as_users("anton")
     def test_check_states(self, user):

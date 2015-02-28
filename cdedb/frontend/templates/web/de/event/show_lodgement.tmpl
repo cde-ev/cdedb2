@@ -2,6 +2,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}Unterkunft {{ lodgement_data['moniker'] }} ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     {% if problems %}

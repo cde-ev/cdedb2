@@ -109,6 +109,48 @@ class CoreBackend(AbstractBackend):
         """
         return sha512_crypt.encrypt(password)
 
+    def core_log(self, rs, code, persona_id, additional_info=None):
+        """Make an entry in the log.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type code: int
+        :param code: One of :py:class:`cdedb.database.constants.CoreLogCodes`.
+        :type persona_id: int or None
+        :param persona_id: ID of affected user
+        :type additional_info: str or None
+        :param additional_info: Infos not conveyed by other columns.
+        :rtype: int
+        :returns: number of entries written
+        """
+        query = glue(
+            "INSERT INTO core.log",
+            "(code, submitted_by, persona_id, additional_info)",
+            "VALUES (%s, %s, %s, %s)")
+        return self.query_exec(
+            rs, query, (code, rs.user.persona_id, persona_id, additional_info))
+
+    @access("core_admin")
+    def retrieve_log(self, rs, codes=None, persona_id=None, start=None,
+                     stop=None):
+        """Get recorded activity.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type codes: [int] or None
+        :type persona_id: int or None
+        :type start: int or None
+        :type stop: int or None
+        :rtype: [{str: object}]
+        """
+        return self.generic_retrieve_log(
+            rs, "enum_corelogcodes", "persona", "core.log", codes, persona_id,
+            start, stop)
+
     ##
     ## changelog functionality
     ## =======================
@@ -414,7 +456,7 @@ class CoreBackend(AbstractBackend):
         fields.remove("id")
         fields.append("persona_id AS id")
         fields.extend(MEMBER_DATA_FIELDS)
-        fields.extend(("submitted_by", "reviewed_by", "cdate", "generation",
+        fields.extend(("submitted_by", "reviewed_by", "ctime", "generation",
                        "change_status"))
         query = "SELECT {} FROM core.changelog WHERE persona_id = %s".format(
             ", ".join(fields))
@@ -492,6 +534,10 @@ class CoreBackend(AbstractBackend):
         """
         keys = tuple(key for key in data if (key in PERSONA_DATA_FIELDS
                                              and key != "id"))
+        if not keys:
+            ## this is a bit of a nitpick, but we choose to say, that an
+            ## empty change applies successfully
+            return 1
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         privileged_fields = {'is_active', 'status', 'db_privileges',
@@ -544,11 +590,13 @@ class CoreBackend(AbstractBackend):
             ldap_ops.append((ldap.MOD_REPLACE, 'isActive',
                              ldap_bool(data['is_active'])))
         dn = "uid={},{}".format(data['id'], self.conf.LDAP_UNIT_NAME)
+        ## Atomize so that ldap and postgres do not diverge.
         with Atomizer(rs):
             num = self.query_exec(rs, query, tuple(
                 data[key] for key in keys) + (data['id'],))
             if not num:
                 raise ValueError("Nonexistant user.")
+            self.core_log(rs, const.CoreLogCodes.persona_change, data['id'])
             if ldap_ops:
                 with self.ldap_connect() as l:
                     l.modify_s(dn, ldap_ops)
@@ -593,17 +641,15 @@ class CoreBackend(AbstractBackend):
             return None
         else:
             sessionkey = str(uuid.uuid4())
-            query = glue("UPDATE core.sessions SET is_active = False",
-                         "WHERE (persona_id = %s OR ip = %s)",
-                         "AND is_active = True")
-            query2 = glue("INSERT INTO core.sessions (persona_id, ip,",
-                          "sessionkey) VALUES (%s, %s, %s)")
-            with rs.conn as conn:
-                with conn.cursor() as cur:
-                    self.execute_db_query(cur, query, (data["id"], ip))
-                    self.execute_db_query(cur, query2, (data["id"], ip,
-                                                        sessionkey))
-                    return sessionkey
+            query = glue(
+                "UPDATE core.sessions SET is_active = False",
+                "WHERE (persona_id = %s OR ip = %s) AND is_active = True;\n",
+                ## next
+                "INSERT INTO core.sessions (persona_id, ip, sessionkey)",
+                "VALUES (%s, %s, %s)")
+            self.query_exec(rs, query,
+                            (data["id"], ip, data["id"], ip, sessionkey))
+            return sessionkey
 
     @access("persona")
     def logout(self, rs):
@@ -613,9 +659,9 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: number of sessions invalidated
         """
-        query = glue("UPDATE core.sessions SET is_active = False,",
-                     "atime = now() AT TIME ZONE 'UTC' WHERE sessionkey = %s",
-                     "AND is_active = True")
+        query = glue(
+            "UPDATE core.sessions SET is_active = False, atime = now()",
+            "WHERE sessionkey = %s AND is_active = True")
         return self.query_exec(rs, query, (rs.sessionkey,))
 
     @access("persona")
@@ -761,8 +807,10 @@ class CoreBackend(AbstractBackend):
         old_password = affirm("str_or_None", old_password)
         new_password = affirm("str_or_None", new_password)
         if rs.user.persona_id == persona_id or self.is_admin(rs):
-            return self.modify_password(rs, persona_id, old_password,
-                                        new_password)
+            ret = self.modify_password(rs, persona_id, old_password,
+                                       new_password)
+            self.core_log(rs, const.CoreLogCodes.password_change, persona_id)
+            return ret
         else:
             raise PrivilegeError("Not privileged.")
 
@@ -788,7 +836,10 @@ class CoreBackend(AbstractBackend):
             ## users, otherwise we incur a security degradation on the
             ## RPC-interface
             return False, "Privileged user."
-        return self.modify_password(rs, data['id'], None, None)
+        ret = self.modify_password(rs, data['id'], None, None)
+        self.core_log(rs, const.CoreLogCodes.password_reset, persona_id=None,
+                      additional_info=email)
+        return ret
 
     @access("persona")
     def change_username(self, rs, persona_id, new_username, password):
@@ -887,6 +938,7 @@ class CoreBackend(AbstractBackend):
             ret = unwrap(self.query_one(
                 rs, query, tuple(data[key] for key in keys)))
             dn = "uid={},{}".format(ret, self.conf.LDAP_UNIT_NAME)
+            self.core_log(rs, const.CoreLogCodes.persona_creation, ret)
             with self.ldap_connect() as l:
                 l.add_s(dn, ldap_ops)
         return ret
@@ -914,7 +966,10 @@ class CoreBackend(AbstractBackend):
             "case_status) VALUES (%s, %s, %s, %s) RETURNING id")
         params = (username, full_name, rationale,
                   const.GenesisStati.unconfirmed)
-        return unwrap(self.query_one(rs, query, params))
+        ret = unwrap(self.query_one(rs, query, params))
+        self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
+                      additional_info=username)
+        return ret
 
     @access("anonymous")
     def genesis_verify(self, rs, case_id):
@@ -977,10 +1032,27 @@ class CoreBackend(AbstractBackend):
         """
         data = affirm("genesis_case_data", data)
         keys = tuple(key for key in data)
-        query = "UPDATE core.genesis_cases SET ({}) = ({}) WHERE id = %s"
-        query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
-        return self.query_exec(rs, query,
-                               tuple(data[key] for key in keys) + (data['id'],))
+        with Atomizer(rs):
+            query = glue("SELECT case_status, username",
+                         "FROM core.genesis_cases WHERE id = %s")
+            current = self.query_one(rs, query, (data['id'],))
+            query = glue("UPDATE core.genesis_cases SET ({}) = ({})",
+                         "WHERE id = %s")
+            query = query.format(", ".join(keys),
+                                 ", ".join(("%s",) * len(keys)))
+            ret = self.query_exec(
+                rs, query, tuple(data[key] for key in keys) + (data['id'],))
+        if (data.get('case_status')
+                and data['case_status'] != current['case_status']):
+            if data['case_status'] == const.GenesisStati.approved:
+                self.core_log(
+                    rs, const.CoreLogCodes.genesis_approved, persona_id=None,
+                    additional_info=current['username'])
+            elif data['case_status'] == const.GenesisStati.rejected:
+                self.core_log(
+                    rs, const.CoreLogCodes.genesis_rejected, persona_id=None,
+                    additional_info=current['username'])
+        return ret
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

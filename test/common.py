@@ -9,6 +9,8 @@ import os
 import time
 import os.path
 import webtest
+import datetime
+import pytz
 from cdedb.config import BasicConfig
 from cdedb.frontend.application import Application
 from cdedb.backend.common import do_singularization
@@ -19,6 +21,28 @@ from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 
 _BASICCONF = BasicConfig()
+
+class NearlyNow(datetime.datetime):
+    """This is something, that equals an automatically generated timestamp.
+
+    Since automatically generated timestamp are not totally predictible,
+    we use this to avoid nasty work arounds.
+    """
+    def __eq__(self, other):
+        if isinstance(other, datetime.datetime):
+            delta = self - other
+            return (delta < datetime.timedelta(minutes=10)
+                    and delta > datetime.timedelta(minutes=-10))
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+def nearly_now():
+    """Create a NearlyNow."""
+    now = datetime.datetime.now(pytz.utc)
+    return NearlyNow(year=now.year, month=now.month, day=now.day, hour=now.hour,
+                     minute=now.minute, second=now.second, tzinfo=pytz.utc)
 
 class BackendShim:
     def __init__(self, backend):

@@ -346,7 +346,7 @@ ALL_ROLES = {
                 "admin"},
     "ml_admin": {"ml_admin",
                  "admin"},
-    "ml_script": {"admin"}, # FIXME add ml_script to svg
+    "ml_script": {"admin"},
     "admin": {"admin"},
 }
 

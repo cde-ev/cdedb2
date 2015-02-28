@@ -273,11 +273,11 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/pastevent/create'})
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
-        f['title'] = "Link Academy"
+        f['title'] = "Link Academy II"
         f['organizer'] = "Privatvergnügen"
         f['description'] = "Ganz ohne Minderjährige."
         self.submit(f)
-        self.assertTitle("Link Academy")
+        self.assertTitle("Link Academy II")
         self.assertIn("Privatvergnügen", self.response.text)
         self.assertIn("Ganz ohne Minderjährige.", self.response.text)
 
@@ -1020,3 +1020,59 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
         self.assertIn("Emilia", self.response.text)
         self.assertNotIn("Inga", self.response.text)
+
+    def test_log(self):
+        ## First: generate data
+        self.test_register()
+        self.logout()
+        self.test_create_course()
+        self.logout()
+        self.test_lodgements()
+        self.logout()
+        self.test_create_event()
+        self.logout()
+        self.test_manage_attendees()
+        self.logout()
+
+        ## Now check it
+        self.login(USER_DICT['anton'])
+        self.traverse({'description': '^Veranstaltungen$'},
+                      {'href': '/event/log'})
+        self.assertTitle("\nVeranstaltungen -- Logs (0--16)\n")
+        f = self.response.forms['logshowform']
+        f['codes'] = [10, 27, 51]
+        f['event_id'] = 1
+        f['start'] = 1
+        f['stop'] = 10
+        self.submit(f)
+        self.assertTitle("\nVeranstaltungen -- Logs (1--6)\n")
+
+        self.traverse({'description': '^Veranstaltungen$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/log'})
+        self.assertTitle("\nGroße Testakademie 2222 -- Logs (0--12)\n")
+
+    def test_past_log(self):
+        ## First: generate data
+        self.test_participant_manipulation()
+        self.logout()
+        self.test_change_past_course()
+        self.logout()
+        self.test_create_past_course()
+        self.logout()
+        self.test_change_past_event()
+        self.logout()
+        self.test_create_past_event()
+        self.logout()
+
+        ## Now check it
+        self.login(USER_DICT['anton'])
+        self.traverse({'description': '^Veranstaltungen$'},
+                      {'href': '/pastevent/log'})
+        self.assertTitle("\nAbgeschlossene Veranstaltungen -- Logs (0--8)\n")
+        f = self.response.forms['logshowform']
+        f['codes'] = [0, 10, 21]
+        f['start'] = 1
+        f['stop'] = 10
+        self.submit(f)
+        self.assertTitle("\nAbgeschlossene Veranstaltungen -- Logs (1--4)\n")

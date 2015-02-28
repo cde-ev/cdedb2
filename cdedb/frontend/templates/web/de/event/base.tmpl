@@ -22,6 +22,7 @@
         {% if event_id in user.orga or is_admin %}
             <li><a href="{{ cdedblink("event/summary", {"event_id": event_id})|e }}">Übersicht</a></li>
             <li><a href="{{ cdedblink("event/event_config", {"event_id": event_id})|e }}">Konfiguration</a></li>
+            <li><a href="{{ cdedblink("event/view_event_log", {"event_id": event_id})|e }}">Log</a></li>
             <li><a href="{{ cdedblink("event/registration_query", {"event_id": event_id})|e }}">Anmeldungen</a></li>
             <li>
                 <a href="{{ cdedblink("event/add_registration_form", {"event_id": event_id})|e }}"
@@ -48,7 +49,7 @@
     </ul>
 {% endmacro %}
 
-{% block navigation %}
+{% macro event_navigation(unfold=False) %}
     <ul>
         <li>
             <a href="{{ cdedblink("core/index")|e }}">Start</a>
@@ -77,12 +78,7 @@
                     {% if is_admin %}
                         <li><a href="{{ cdedblink("event/create_user_form")|e }}">Neuen Nutzer anlegen</a></li>
                         <li><a href="{{ cdedblink("event/user_search_form")|e }}">Nutzersuche</a></li>
-                        <li><a href="{{ cdedblink("event/list_past_events")|e }}">alle abg. Veranstaltungen</a></li>
-                        <li>
-                            <a href="{{ cdedblink("event/create_past_event_form")|e }}">
-                                abg. Veranstaltung anlegen
-                            </a>
-                        </li>
+                        <li><a href="{{ cdedblink("event/view_log")|e }}">Log</a></li>
                         <li><a href="{{ cdedblink("event/list_events")|e }}">alle DB-Veranstaltungen</a></li>
                         <li><a href="{{ cdedblink("event/create_event_form")|e }}">DB-Veranstaltung anlegen</a></li>
                     {% endif %}
@@ -94,13 +90,31 @@
                                     <a href="{{ cdedblink("event/show_event", {"event_id": anid})|e }}">
                                         {{ entry['title']|e }}
                                     </a>
-                                    {% if anid == values.get('event_id') %}
+                                    {% if unfold and anid == values.get('event_id') %}
                                         {{ one_event_links(anid, entry) }}
                                     {% endif %}
                                 </li>
                             {% endfor %}
                         </ul>
                     </li>
+                    {% if is_admin %}
+                        <li>
+                            abgeschlossene Veranstaltungen
+                            <ul>
+                                <li>
+                                    <a href="{{ cdedblink("event/list_past_events")|e }}">
+                                        alle abg. Veranstaltungen
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ cdedblink("event/create_past_event_form")|e }}">
+                                        abg. Veranstaltung anlegen
+                                    </a>
+                                </li>
+                                <li><a href="{{ cdedblink("event/view_past_log")|e }}">Log</a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
                 </ul>
             </li>
         {% endif %}
@@ -110,4 +124,6 @@
         {% endif %}
         <li>Dateien</li>
     </ul>
-{% endblock %}
+{% endmacro %}
+
+{% block navigation %}{{ event_navigation() }}{% endblock %}

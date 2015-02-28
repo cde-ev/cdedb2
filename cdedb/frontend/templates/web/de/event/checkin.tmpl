@@ -2,6 +2,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}Checkin ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     <div>

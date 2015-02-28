@@ -20,7 +20,6 @@ from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import argparse
 import datetime
-import logging
 import decimal
 import pytz
 
@@ -47,6 +46,82 @@ class CdEBackend(AbstractUserBackend):
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
+
+    def cde_log(self, rs, code, persona_id, additional_info=None):
+        """Make an entry in the log.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type code: int
+        :param code: One of :py:class:`cdedb.database.constants.CdeLogCodes`.
+        :type persona_id: int or None
+        :param persona_id: ID of affected user
+        :type additional_info: str or None
+        :param additional_info: Infos not conveyed by other columns.
+        :rtype: int
+        :returns: number of entries written
+        """
+        query = glue(
+            "INSERT INTO cde.log",
+            "(code, submitted_by, persona_id, additional_info)",
+            "VALUES (%s, %s, %s, %s)")
+        return self.query_exec(
+            rs, query, (code, rs.user.persona_id, persona_id, additional_info))
+
+    @access("cde_admin")
+    def retrieve_cde_log(self, rs, codes=None, persona_id=None, start=None,
+                         stop=None):
+        """Get recorded activity.
+
+        See
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type codes: [int] or None
+        :type persona_id: int or None
+        :type start: int or None
+        :type stop: int or None
+        :rtype: [{str: object}]
+        """
+        return self.generic_retrieve_log(
+            rs, "enum_cdelogcodes", "persona", "cde.log", codes, persona_id,
+            start, stop)
+
+    @access("cde_admin")
+    def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None):
+        """Get changelog activity.
+
+        Similar to
+        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type stati: [int] or None
+        :type start: int or None
+        :type stop: int or None
+        :rtype: [{str: object}]
+        """
+        stati = affirm_array("enum_memberchangestati", stati, allow_None=True)
+        start = affirm("int_or_None", start)
+        stop = affirm("int_or_None", stop)
+        start = start or 0
+        if stop:
+            stop = max(start, stop)
+        query = glue(
+            "SELECT submitted_by, reviewed_by, ctime, generation, change_note,",
+            "change_status, persona_id FROM core.changelog {} ORDER BY id DESC")
+        if stop:
+            query = glue(query, "LIMIT {}".format(stop-start))
+        if start:
+            query = glue(query, "OFFSET {}".format(start))
+        condition = ""
+        params = []
+        if stati:
+            condition = glue(condition, "WHERE change_status = ANY(%s)")
+            params.append(stati)
+        query = query.format(condition)
+        return self.query_all(rs, query, params)
 
     def set_user_data(self, rs, data, generation, allow_username_change=False,
                       may_wait=True, change_note=''):
@@ -301,7 +376,6 @@ class CdEBackend(AbstractUserBackend):
         :returns: dict mapping ids to generations
         """
         ids = affirm_array("int", ids)
-
         return self.core.changelog_get_generations(rs, ids)
 
     @access("cde_admin")
@@ -371,6 +445,7 @@ class CdEBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         query = "UPDATE cde.member_data SET foto = %s WHERE persona_id = %s"
         num = self.query_exec(rs, query, (foto, persona_id))
+        self.cde_log(rs, const.CdeLogCodes.foto_update, persona_id)
         return bool(num)
 
     @access("formermember")
@@ -385,8 +460,7 @@ class CdEBackend(AbstractUserBackend):
         """
         foto = affirm("str", foto)
         query = "SELECT COUNT(*) AS num FROM cde.member_data WHERE foto = %s"
-        data = self.query_one(rs, query, (foto,))
-        return data['num']
+        return unwrap(self.query_one(rs, query, (foto,)))
 
     @access("searchmember")
     def submit_general_query(self, rs, query):

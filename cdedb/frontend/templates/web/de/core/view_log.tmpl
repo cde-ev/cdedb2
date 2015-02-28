@@ -1,0 +1,50 @@
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}
+Accounts -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+{% endblock %}
+{% block content %}
+    <table>
+        <tr>
+            <th>Zeitstempel</th>
+            <th>Code</th>
+            <th>Verantwortlich</th>
+            <th>Betroffen</th>
+            <th>Zusatz</th>
+        </tr>
+        {% for entry in log %}
+            <tr>
+                <td>{{ entry['ctime']|datetime|e }}</td>
+                <td>{{ i18n(const.CoreLogCodes(entry['code'])|string)|e }}</td>
+                <td>
+                    {{ user_data[entry['submitted_by']]['display_name']|e }}
+                    ({{ user_data[entry['submitted_by']]['username']|e }})
+                </td>
+                <td>
+                    {% if entry['persona_id'] %}
+                        {{ user_data[entry['persona_id']]['display_name']|e }}
+                        ({{ user_data[entry['persona_id']]['username']|e }})
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ entry['additional_info']|e }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <form action="{{ cdedblink('core/view_log')|e }}" method="GET" id="logshowform">
+        <div>
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for code in const.CoreLogCodes %}
+                {{ myentries.append((code.value, i18n(code|string), None))|e }}
+            {% endfor %}
+            {{ util.input_checkboxes("codes", title="Kategorien", info="Keine Auswahl entspricht allem.",
+                                     entries=myentries) }}
+            {{ util.input_text(name="persona_id", label="Account") }}
+            {{ util.input_text(name="start", label="Anfang") }}
+            {{ util.input_text(name="stop", label="Ende") }}
+            {{ util.input_submit(value="Anzeigen") }}
+        </div>
+    </form>
+{% endblock %}

@@ -294,3 +294,20 @@ class TestCdEFrontend(FrontendTest):
         self.assertIn("12345", self.response.text)
         self.assertIn("Probemitgliedschaft", self.response.text)
         self.assertIn("Daten sind für andere Mitglieder sichtbar.", self.response.text)
+
+    def test_cde_log(self):
+        ## First: generate data
+        self.test_set_foto()
+        self.logout()
+
+        ## Now check it
+        self.login(USER_DICT['anton'])
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/log'})
+        self.assertTitle("\nCdE allgemein -- Logs (0--1)\n")
+
+    @as_users("anton")
+    def test_changelog_meta(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/changelog/view'})
+        self.assertTitle("\nCdE Nutzerdaten -- Logs (0--7)\n")
