@@ -1,0 +1,68 @@
+{% extends "web/de/ml/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block inner_navigation %}{{ ml_inner_navigation(mailinglist_data) }}{% endblock %}
+{% block title %}{{ mailinglist_data['title']|e }}{% endblock %}
+{% block content %}
+    {% if mailinglist_data['id'] in user.moderator or is_admin %}
+        <a href="{{ cdedblink('ml/management')|e }}">Verwalten</a>
+    {% endif %}
+    {% if is_admin %}
+        <a href="{{ cdedblink('ml/change_mailinglist_form')|e }}">Konfiguration</a>
+    {% endif %}
+    <p>{{ mailinglist_data['description']|e }}</p>
+    {% if mailinglist_data['gateway'] %}
+        <p>Abonennten der Liste {{ gateway_data['title']|e }} können sich in diese Liste eintragen.</p>
+    {% endif %}
+    {% if mailinglist_data['event_id'] %}
+        <p>Diese Liste ist zur Veranstaltung {{ event_data['title']|e }} assoziiert.</p>
+    {% endif %}
+    {% if mailinglist_data['assembly_id'] %}
+        <p>Diese Liste ist zur Versammlung {{ assembly_data['title']|e }} assoziiert.</p>
+    {% endif %}
+    {% if not mailinglist_data['is_active'] %}
+        <p><strong>Diese Liste ist nicht mehr aktiv.</strong></p>
+    {% else %}
+        {% if is_subscribed %}
+            <p>
+                Eingeschrieben. Adresse:
+                {% if sub_address %}
+                    {{ sub_address|e }}
+                {% else %}
+                    {{ user.username|e }} (default)
+                {% endif %}
+                {% if may_toggle %}
+                    <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST" id="unsubscribeform">
+                        <div>
+                            {{ util.input_hidden(name="subscribe", value=False) }}
+                            {{ util.input_submit(value="Abbestellen") }}
+                        </div>
+                    </form>
+                    <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="changeaddressform">
+                        <div>
+                            {{ util.input_text(name="email", label="Neue Emailadresse") }}
+                            {{ util.input_submit(value="Adresse ändern") }}
+                        </div>
+                    </form>
+                    <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="resetaddressform">
+                        <div>
+                            {{ util.input_hidden(name="email", value="") }}
+                            {{ util.input_submit(value="Adresse zurücksetzen") }}
+                        </div>
+                    </form>
+                {% endif %}
+            </p>
+        {% else %}
+            <p>
+                Nicht eingeschrieben.
+                {% if may_toggle %}
+                    <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST" id="subscribeform">
+                        <div>
+                            {{ util.input_hidden(name="subscribe", value=True) }}
+                            {{ util.input_submit(value="Einschreiben") }}
+                        </div>
+                    </form>
+                {% endif %}
+            </p>
+        {% endif %}
+    {% endif %}
+{% endblock %}

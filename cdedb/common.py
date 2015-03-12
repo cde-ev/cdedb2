@@ -120,8 +120,8 @@ class PrivilegeError(RuntimeError):
 
 class CommonUser(metaclass=abc.ABCMeta):
     """Abstract base class for container representing a persona."""
-    def __init__(self, persona_id=None, roles=None, realm=None, orga=None,
-                 moderator=None):
+    def __init__(self, persona_id=None, roles=None, realm=None, status=None,
+                 orga=None, moderator=None):
         """
         :type persona_id: int or None
         :type roles: {str}
@@ -129,6 +129,8 @@ class CommonUser(metaclass=abc.ABCMeta):
         :type realm: str or None
         :param realm: realm of origin, describing which component is
           responsible for handling the basic aspects of this user
+        :type status: int or None
+        :param status: Value of column status in core.personas if not anonymous.
         :type orga: {int} or None
         :param orga: Set of event ids for which this user is orga, only
           available in the event realm.
@@ -139,6 +141,7 @@ class CommonUser(metaclass=abc.ABCMeta):
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
         self.realm = realm
+        self.status = status
         self.orga = orga or set()
         self.moderator = moderator or set()
 
@@ -442,8 +445,8 @@ LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
-    "id", "title", "address", "sub_policy", "mod_policy", "notes",
-    "attachement_policy", "audience", "subject_prefix", "maxsize",
+    "id", "title", "address", "description", "sub_policy", "mod_policy",
+    "notes", "attachement_policy", "audience", "subject_prefix", "maxsize",
     "is_active", "gateway", "event_id", "registration_stati", "assembly_id")
 
 EPSILON = 10**(-6) #:

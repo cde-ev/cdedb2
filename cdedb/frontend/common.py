@@ -516,7 +516,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                               sessiondata["status"])
         return FrontendUser(
             persona_id=sessiondata['persona_id'], roles=roles, realm=realm,
-            username=sessiondata['username'],
+            status=sessiondata['status'], username=sessiondata['username'],
             display_name=sessiondata['display_name'])
 
     @classmethod

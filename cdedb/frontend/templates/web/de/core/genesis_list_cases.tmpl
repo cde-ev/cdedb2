@@ -19,7 +19,8 @@
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_hidden(name="case_status", value=GenesisStati.approved.value) }}
                     {{ util.input_select(name="persona_status", nulloption=True, entries=(
-                       (PersonaStati.event_user.value, "Veranstaltungsteilnehmer", None),)) }}
+                       (PersonaStati.event_user.value, "Veranstaltungsteilnehmer", None),
+                       (PersonaStati.ml_user.value, "Mailinglistennutzer", None),)) }}
                     {{ util.input_submit(value="Genehmigen") }}
                 </form>
             </li>

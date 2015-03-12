@@ -42,7 +42,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_adminshowuser(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = 2
+        f['id_to_show'] = "DB-2-C"
         self.submit(f)
         berta = USER_DICT['berta']
         self.assertTitle("Bertålotta Beispiel")
@@ -115,7 +115,7 @@ class TestCoreFrontend(FrontendTest):
         self.get('/')
         self.login(anton)
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = 2
+        f['id_to_show'] = "DB-2-C"
         self.submit(f)
         f = self.response.forms['adminpasswordresetform']
         self.submit(f)
@@ -169,7 +169,7 @@ class TestCoreFrontend(FrontendTest):
         self.get('/')
         self.login(anton)
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = 2
+        f['id_to_show'] = "DB-2-C"
         self.submit(f)
         self.traverse({'href': '/username/adminchange'})
         f = self.response.forms['usernamechangeform']
@@ -188,7 +188,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_adjust_privileges(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = 2
+        f['id_to_show'] = "DB-2-C"
         self.submit(f)
         self.traverse({'href': '/privileges/change'})
         self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)

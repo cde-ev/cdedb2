@@ -189,7 +189,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 realm = extract_realm(data["status"])
                 roles = extract_roles(data["db_privileges"], data["status"])
                 user = BackendUser(persona_id=persona_id, roles=roles,
-                                   realm=realm)
+                                   realm=realm, status=data["status"])
             else:
                 self.logger.warning("Found inactive user {}".format(persona_id))
         try:

@@ -1,0 +1,29 @@
+{% extends "web/de/ml/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Mailinglistenaccount anlegen{% endblock %}
+{% block content %}
+    Gib unten Deine Daten ein um den Account anzulegen. Abschließend kannst
+    Du Dir ein neues Passwort zugeschicken lassen.
+
+    <form action="{{ cdedblink('ml/genesis')|e }}" method="POST" id="newuserform">
+        <table>
+            <tr> <th colspan="2">Person</th> </tr>
+            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.tab_input_text(name="family_name", label="Nachname") }}
+            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+            <tr>
+                <td>Email</td>
+                <td>
+                    {{ username|e }}
+                    {{ util.input_hidden(name="username") }}
+                </td>
+            </tr>
+        </table>
+        <div>
+            {{ util.input_hidden(name="case_id") }}
+            {{ util.input_hidden(name="secret") }}
+            {{ util.input_submit(value="Account anlegen") }}
+            <a href="{{ cdedblink('core/index')|e }}">Abbrechen</a>
+        </div>
+    </form>
+{% endblock %}

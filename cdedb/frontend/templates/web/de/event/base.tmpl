@@ -56,16 +56,6 @@
             <ul>
                 <li><a href="{{ cdedblink("core/mydata")|e }}">Meine Daten</a></li>
                 <li><a href="{{ cdedblink("core/change_password_form")|e }}">Passwort ändern</a></li>
-                {% if is_admin %}
-                    <li>
-                        <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
-                            <div>
-                                {{ util.input_text(name="id_to_show") }}
-                                {{ util.input_submit(value="ID") }}
-                            </div>
-                        </form>
-                    </li>
-                {% endif %}
             </ul>
         </li>
         {% if "formermember" in user.roles %}
@@ -118,11 +108,12 @@
                 </ul>
             </li>
         {% endif %}
-        <li>Mailinglisten</li>
+        {% if "ml_user" in user.roles %}
+            <li><a href="{{ cdedblink("ml/index")|e }}">Mailinglisten</a></li>
+        {% endif %}
         {% if "assembly_user" in user.roles %}
             <li>Versammlung</li>
         {% endif %}
-        <li>Dateien</li>
     </ul>
 {% endmacro %}
 

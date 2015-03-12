@@ -1,0 +1,96 @@
+{% extends "web/de/ml/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block inner_navigation %}{{ ml_inner_navigation(mailinglist_data) }}{% endblock %}
+{% block title %}{{ mailinglist_data['title']|e }} -- Verwalten{% endblock %}
+{% block content %}
+    <a href="{{ cdedblink('ml/check_states')|e }}">Konsistenzcheck</a>
+    <h2>Moderatoren</h2>
+    <ul>
+        {% for moderator in mailinglist_data['moderators']|sort %}
+            <li>
+                {{ user_data[moderator]['given_names']|e }} {{ user_data[moderator]['family_name']|e }}
+                <form action="{{ cdedblink('ml/remove_moderator')|e }}" method="POST"
+                  id="removemoderatorform{{ moderator|e }}">
+                    <div>
+                        {{ util.input_hidden(name="moderator_id", value=moderator) }}
+                        {{ util.input_submit(value="Moderator löschen") }}
+                    </div>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h3>Moderator hinzufügen</h3>
+    <form action="{{ cdedblink('ml/add_moderator')|e }}" method="POST" id="addmoderatorform">
+        <div>
+            {{ util.input_text(name="moderator_id", label="ID") }}
+            {{ util.input_submit(value="Moderator hinzufügen") }}
+        </div>
+    </form>
+    <h2>Abonnement-Anfragen</h2>
+    <ul>
+        {% for request in requests|sort %}
+            <li>
+                {{ user_data[request]['given_names']|e }} {{ user_data[request]['family_name']|e }}
+                <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST" id="ackrequestform{{ request|e }}">
+                    <div>
+                        {{ util.input_hidden(name="ack", value=True) }}
+                        {{ util.input_hidden(name="persona_id", value=request) }}
+                        {{ util.input_submit(value="Annehmen") }}
+                    </div>
+                </form>
+                <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST" id="nackrequestform{{ request|e }}">
+                    <div>
+                        {{ util.input_hidden(name="ack", value=False) }}
+                        {{ util.input_hidden(name="persona_id", value=request) }}
+                        {{ util.input_submit(value="Ablehnen") }}
+                    </div>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h2>Whitelist</h2>
+    <ul>
+        {% for email in mailinglist_data['whitelist']|sort %}
+            <li>
+                {{ email|e }}
+                <form action="{{ cdedblink('ml/remove_whitelist')|e }}" method="POST"
+                  id="removewhitelistform{{ loop.index|e }}">
+                    <div>
+                        {{ util.input_hidden(name="email", value=email) }}
+                        {{ util.input_submit(value="Löschen") }}
+                    </div>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h3>Whitelisteintrag hinzufügen</h3>
+    <form action="{{ cdedblink('ml/add_whitelist')|e }}" method="POST" id="addwhitelistform">
+        <div>
+            {{ util.input_text(name="email", label="Emailadresse") }}
+            {{ util.input_submit(value="Eintrag hinzufügen") }}
+        </div>
+    </form>
+    <h2>Abonennten</h2>
+    <h3>Abonennt hinzufügen</h3>
+    <form action="{{ cdedblink('ml/add_subscriber')|e }}" method="POST" id="addsubscriberform">
+        <div>
+            {{ util.input_text(name="subscriber_id", label="ID") }}
+            {{ util.input_submit(value="Abonennt eintragen") }}
+        </div>
+    </form>
+    <h3>Abonenntenliste</h3>
+    <ul>
+        {% for anid in subscribers %} {# allready sorted #}
+            <li>
+                {{ user_data[anid]['given_names']|e }} {{ user_data[anid]['family_name']|e }}
+                <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
+                  id="removesubscriberform{{ anid|e }}">
+                    <div>
+                        {{ util.input_hidden(name="subscriber_id", value=anid) }}
+                        {{ util.input_submit(value="Abonennt austragen") }}
+                    </div>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

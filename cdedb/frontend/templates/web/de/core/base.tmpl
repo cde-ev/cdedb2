@@ -1,8 +1,8 @@
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block navigation %}
-    {% if user.persona_id %}
-        <ul>
+    <ul>
+        {% if user.persona_id %}
             <li>
                 <a href="{{ cdedblink("core/index")|e }}">Start</a>
                 <ul>
@@ -38,20 +38,19 @@
             {% if "event_user" in user.roles %}
                 <li><a href="{{ cdedblink("event/index")|e }}">Veranstaltungen</a></li>
             {% endif %}
-            <li>Mailinglisten</li>
+            {% if "ml_user" in user.roles %}
+                <li><a href="{{ cdedblink("ml/index")|e }}">Mailinglisten</a></li>
+            {% endif %}
             {% if "assembly_user" in user.roles %}
                 <li>Versammlung</li>
             {% endif %}
-            <li>Dateien</li>
-        </ul>
-    {% else %}
-        <ul>
+        {% else %}
             <li>
                 <a href="{{ cdedblink("core/index")|e }}">Start</a>
                 <ul>
                     <li><a href="{{ cdedblink("core/genesis_request_form")|e }}">Account anfordern</a></li>
                 </ul>
             </li>
-        </ul>
-    {% endif %}
+        {% endif %}
+    </ul>
 {% endblock %}

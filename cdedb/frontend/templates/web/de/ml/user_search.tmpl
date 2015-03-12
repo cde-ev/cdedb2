@@ -1,15 +1,21 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}
-Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden
-{% endblock %}
+{% block title %}Mailinglistennutzersuche{% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>
-
+    <h3>Standardabfragen</h3>
     {% with TITLES = {
-        "persona_id": "ID",
+        "all": "Alle Accounts",} %}
+
+        <div>
+            {{ util.place_default_queries("ml/user_search", default_queries, TITLES) }}
+        </div>
+    {% endwith %}
+
+    <h3>Suchmaske</h3>
+    {% with TITLES = {
+        "user_data.persona_id": "ID",
         "username": "Email",
         "is_active": "Aktiv",
         "db_privileges": "DB-Rechte",
@@ -17,25 +23,19 @@ Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|nume
         "family_name": "Nachname",
         "given_names": "Vorname",
         "display_name": "Rufname",
-        "title": "Titel",
-        "name_supplement": "Namenszusatz",
-        "gender": "Geschlecht",
-        "birthday": "Geburtstag",
-        "telephone": "Telefon",
-        "mobile": "Mobilfunk",
-        "address": "Anschrift",
-        "address_supplement": "Adresszusatz",
-        "postal_code": "PLZ",
-        "location": "Ort",
-        "country": "Land",
-        "event_id": "Veranstaltung",
-        "course_id": "Kurs",
         "notes": "Notizen",} %}
 
-        {{ util.display_query_result(result, query, TITLES, choices) }}
-    {% endwith %}
+        <form action="{{ cdedblink('ml/user_search')|e }}" method="GET" id="usersearchform">
+            <div>
+                {{ util.input_submit(value="Suchen") }}
+                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+                {{ util.format_query(spec, TITLES, choices) }}
+                {{ util.input_submit(value="Suchen") }}
+                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+            </div>
+        </form>
 
-    <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>
+    {% endwith %}
 
     <h3>Aktionen</h3>
     <p>
@@ -46,13 +46,13 @@ Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|nume
     <script type="text/javascript">
         $(document).ready(function(){
             $("#action_select_all").click(function (){
-                 $(".rowSelector").prop('checked', true);
+                 $(".outputSelector").prop('checked', true);
                  });
             $("#action_select_none").click(function (){
-                 $(".rowSelector").prop('checked', false);
+                 $(".outputSelector").prop('checked', false);
                  });
             $("#action_select_invert").click(function (){
-                 $(".rowSelector").each(function (){
+                 $(".outputSelector").each(function (){
                      $(this).prop('checked', !$(this).prop('checked'));
                  })});
         });

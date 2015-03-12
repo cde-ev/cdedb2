@@ -130,6 +130,13 @@ _DEFAULTS = {
         "qview_registration": {
             ## none since they need additional input, will be created on the fly
         },
+        "qview_ml_user": {
+            "all": Query(
+                "qview_ml_user", QUERY_SPECS['qview_ml_user'],
+                ("user_data.persona_id", "given_names", "family_name"),
+                tuple(),
+                tuple(),)
+        },
     },
 
     ### Core stuff

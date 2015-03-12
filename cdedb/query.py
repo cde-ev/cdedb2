@@ -224,6 +224,18 @@ QUERY_SPECS = {
         ("user_data.country", "str"),
         ## This will be augmented with additional fields on the fly.
         ]),
+    "qview_ml_user" :
+    collections.OrderedDict([
+        ("user_data.persona_id", "int"),
+        ("username", "str"),
+        ("is_active", "bool"),
+        ("db_privileges", "int"),
+        ("cloud_account", "bool"),
+        ("family_name", "str"),
+        ("given_names", "str"),
+        ("display_name", "str"),
+        ("notes", "str"),
+        ]),
 }
 
 #: Supstitute for SQL views, this is the target of the FROM clause of the
@@ -251,6 +263,8 @@ QUERY_VIEWS = {
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_registration": None, ## dummy -- value will be generated on the fly
+    "qview_ml_user": glue("core.personas JOIN ml.user_data",
+                          "ON personas.id = user_data.persona_id"),
 }
 
 def mangle_query_input(rs, spec):

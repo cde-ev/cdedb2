@@ -108,7 +108,7 @@ class CoreFrontend(AbstractFrontend):
             rs, "{}/show_user".format(realm), params=params)
 
     @access("core_admin")
-    @REQUESTdata(("id_to_show", "int"))
+    @REQUESTdata(("id_to_show", "cdedbid"))
     def admin_show_user(self, rs, id_to_show):
         """Allow admins to view any user data set."""
         if rs.errors:
@@ -437,6 +437,8 @@ class CoreFrontend(AbstractFrontend):
         if case_status == const.GenesisStati.approved:
             if case['persona_status'] == const.PersonaStati.event_user:
                 realm = "event"
+            elif case['persona_status'] == const.PersonaStati.ml_user:
+                realm = "ml"
             else:
                 raise RuntimeError("Impossible status.")
             self.do_mail(

@@ -8,6 +8,7 @@ import sys
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.ml import MlFrontend
 from cdedb.common import glue, make_root_logger, QuotaException, PrivilegeError
 from cdedb.frontend.common import (
     FrontendRequestState, BaseApp, construct_redirect, connect_proxy,
@@ -42,6 +43,7 @@ class Application(BaseApp):
         self.core = CoreFrontend(configpath)
         self.cde = CdEFrontend(configpath)
         self.event = EventFrontend(configpath)
+        self.ml = MlFrontend(configpath)
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
         self.session_lookup_key = secrets.SESSION_LOOKUP_KEY

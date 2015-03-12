@@ -1,12 +1,12 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}
-Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden
+Mailinglistennutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden
 {% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>
+    <a href="{{ cdedblink("ml/user_search_form", query|querytoparams)|e }}">Zurück</a>
 
     {% with TITLES = {
         "persona_id": "ID",
@@ -17,25 +17,12 @@ Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|nume
         "family_name": "Nachname",
         "given_names": "Vorname",
         "display_name": "Rufname",
-        "title": "Titel",
-        "name_supplement": "Namenszusatz",
-        "gender": "Geschlecht",
-        "birthday": "Geburtstag",
-        "telephone": "Telefon",
-        "mobile": "Mobilfunk",
-        "address": "Anschrift",
-        "address_supplement": "Adresszusatz",
-        "postal_code": "PLZ",
-        "location": "Ort",
-        "country": "Land",
-        "event_id": "Veranstaltung",
-        "course_id": "Kurs",
         "notes": "Notizen",} %}
 
         {{ util.display_query_result(result, query, TITLES, choices) }}
     {% endwith %}
 
-    <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>
+    <a href="{{ cdedblink("ml/user_search_form", query|querytoparams)|e }}">Zurück</a>
 
     <h3>Aktionen</h3>
     <p>

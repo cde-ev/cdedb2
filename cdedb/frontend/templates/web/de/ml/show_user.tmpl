@@ -1,25 +1,22 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
             {% if is_admin %}
-                <a href="{{ cdedblink('event/admin_change_user_form')|e }}">Bearbeiten</a>
+                <a href="{{ cdedblink('ml/admin_change_user_form')|e }}">Bearbeiten</a>
             {% else %}
-                <a href="{{ cdedblink('event/change_user_form')|e }}">Bearbeiten</a>
+                <a href="{{ cdedblink('ml/change_user_form')|e }}">Bearbeiten</a>
             {% endif %}
         </p>
     {% endif %}
     <table>
-        <tr> <th colspan="2">Person</th> </tr>
         <tr>
             <td>Name</td>
             <td>
-                {{ data['title']|e }}
                 {{ data['given_names']|e }}
                 {{ data['family_name']|e }}
-                {{ data['name_supplement']|e }}
             </td>
         </tr>
         <tr>
@@ -27,18 +24,9 @@
             <td>{{ data['display_name']|e }}</td>
         </tr>
         <tr>
-            <td>Geburtstag</td>
-            <td>{{ data['birthday']|e }}</td>
-        </tr>
-        <tr>
-            <td>Geschlecht</td>
-            <td>{{ data['gender']|gender|e }}</td>
-        </tr>
-        <tr>
             <td>CdEDB-ID</td>
             <td>{{ data['id']|cdedbid|e }}</td>
         </tr>
-        <tr> <th colspan="2">Kontakt</th> </tr>
         <tr>
             <td>Email</td>
             <td>
@@ -49,31 +37,6 @@
                     <a href="{{ cdedblink('core/change_username_form')|e }}">Email ändern</a>
                 {% endif %}
             </td>
-        </tr>
-        <tr>
-            <td>Telefon</td>
-            <td>{{ data['telephone']|e }}</td>
-        </tr>
-        <tr>
-            <td>Mobiltelefon</td>
-            <td>{{ data['mobile']|e }}</td>
-        </tr>
-        <tr> <th colspan="2">Adresse</th> </tr>
-        <tr>
-            <td>Straße</td>
-            <td>{{ data['address']|e }}</td>
-        </tr>
-        <tr>
-            <td>Adresszusatz</td>
-            <td>{{ data['address_supplement']|e }}</td>
-        </tr>
-        <tr>
-            <td>Stadt</td>
-            <td>{{ data['postal_code']|e }} {{ data['location']|e }}</td>
-        </tr>
-        <tr>
-            <td>Land</td>
-            <td>{{ data['country']|e }}</td>
         </tr>
         <tr>
             <td>CdE-Wolken-Zugriff</td>
@@ -118,9 +81,9 @@
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
             {% if is_admin %}
-                <a href="{{ cdedblink('event/admin_change_user_form')|e }}">Bearbeiten</a>
+                <a href="{{ cdedblink('ml/admin_change_user_form')|e }}">Bearbeiten</a>
             {% else %}
-                <a href="{{ cdedblink('event/change_user_form')|e }}">Bearbeiten</a>
+                <a href="{{ cdedblink('ml/change_user_form')|e }}">Bearbeiten</a>
             {% endif %}
         </p>
     {% endif %}

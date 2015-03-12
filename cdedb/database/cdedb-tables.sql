@@ -3,7 +3,7 @@
 
 -- TODO: grant priveleges
 -- TODO: create indices
--- TODO: think about ctime/mtime hack for evreg
+-- TODO: maybe add given_names and family_name to persona --> kill table ml.user_data
 -- TODO: tables: quota, lastschrift_*, finance_log, mailinglist_*, assembly_*, cdefiles_*
 
 ---
@@ -733,6 +733,7 @@ CREATE TABLE ml.mailinglists (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
         address                 varchar NOT NULL,
+        description             varchar,
         -- see cdedb.database.constants.SubscriptionPolicy
         sub_policy              integer NOT NULL,
         -- see cdedb.database.constants.ModerationPolicy

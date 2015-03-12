@@ -324,8 +324,8 @@ class MlBackend(AbstractUserBackend):
                              "WHERE mailinglist_id = %s")
                 existing = {e['persona_id']
                             for e in self.query_all(rs, query, (data['id'],))}
-                new = data['moderators'] - existing
-                deleted = existing - data['moderators']
+                new = set(data['moderators']) - existing
+                deleted = existing - set(data['moderators'])
                 if new:
                     query = glue(
                         "INSERT INTO ml.moderators",
@@ -347,8 +347,8 @@ class MlBackend(AbstractUserBackend):
                              "WHERE mailinglist_id = %s")
                 existing = {e['address']
                             for e in self.query_all(rs, query, (data['id'],))}
-                new = data['whitelist'] - existing
-                deleted = existing - data['whitelist']
+                new = set(data['whitelist']) - existing
+                deleted = existing - set(data['whitelist'])
                 if new:
                     query = glue(
                         "INSERT INTO ml.whitelist",
@@ -486,6 +486,18 @@ class MlBackend(AbstractUserBackend):
             return ret
 
     @access("ml_user")
+    def is_subscribed(self, rs, persona_id, mailinglist_id):
+        """Sugar coating around :py:meth:`subscriptions`.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type persona_id: int
+        :type mailinglist_id: int
+        :rtype: bool
+        """
+        ## validation is done inside
+        return bool(self.subscriptions(rs, persona_id, lists=(mailinglist_id,)))
+
+    @access("ml_user")
     def subscriptions(self, rs, persona_id, lists=None):
         """Which lists is a persona subscribed to.
 
@@ -504,7 +516,9 @@ class MlBackend(AbstractUserBackend):
         """
         persona_id = affirm("int", persona_id)
         lists = affirm_array("int", lists, allow_None=True)
-        if persona_id != rs.user.persona_id and not self.is_admin(rs):
+        if (persona_id != rs.user.persona_id
+                and not self.is_admin(rs)
+                and not all(self.is_moderator(rs, anid) for anid in lists)):
             raise PrivilegeError("Not privileged.")
         event_list_query = glue(
             "SELECT DISTINCT regs.persona_id FROM event.registrations AS regs",
@@ -618,12 +632,10 @@ class MlBackend(AbstractUserBackend):
 
         privileged = self.is_moderator(rs, mailinglist_id) or self.is_admin(rs)
         with Atomizer(rs):
-            current = self.subscriptions(rs, persona_id,
-                                         lists=(mailinglist_id,))
             ml_data = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             if not privileged and not ml_data['is_active']:
                 return 0
-            if bool(current) == subscribe:
+            if self.is_subscribed(rs, persona_id, mailinglist_id) == subscribe:
                 self.ml_log(rs, const.MlLogCodes.subscription_changed,
                             mailinglist_id, persona_id=persona_id,
                             additional_info=address)
@@ -631,9 +643,7 @@ class MlBackend(AbstractUserBackend):
                     rs, mailinglist_id, persona_id, subscribe, address)
             gateway = False
             if subscribe and ml_data['gateway']:
-                gateway_sub = self.subscriptions(
-                    rs, persona_id, lists=(ml_data['gateway'],))
-                gateway = bool(gateway_sub)
+                gateway = self.is_subscribed(rs, persona_id, ml_data['gateway'])
             policy = const.SubscriptionPolicy
             if (subscribe and not privileged and not gateway
                     and ml_data['sub_policy'] == policy.moderated_opt_in):
@@ -657,6 +667,24 @@ class MlBackend(AbstractUserBackend):
             self.ml_log(rs, code, mailinglist_id, persona_id=persona_id)
             return self.write_subscription_state(rs, mailinglist_id, persona_id,
                                                  subscribe, address)
+
+    @access("ml_user")
+    def list_requests(self, rs, mailinglist_id):
+        """Retrieve open subscription requests.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type mailinglist_id: int
+        :rtype: [int]
+        :returns: personas waiting for subscription
+        """
+        mailinglist_id = affirm("int", mailinglist_id)
+        if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
+            raise PrivilegeError("Not privileged.")
+
+        query = glue("SELECT persona_id FROM ml.subscription_requests",
+                     "WHERE mailinglist_id = %s")
+        data = self.query_all(rs, query, (mailinglist_id,))
+        return tuple(e['persona_id'] for e in data)
 
     @access("ml_user")
     def decide_request(self, rs, mailinglist_id, persona_id, ack):
@@ -691,6 +719,7 @@ class MlBackend(AbstractUserBackend):
                 address=None)
 
     @access("ml_admin")
+    @singularize("check_states_one")
     def check_states(self, rs, mailinglist_ids):
         """Verify that all explicit subscriptions are by the target audience.
 

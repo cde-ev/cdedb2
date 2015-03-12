@@ -1566,6 +1566,7 @@ def _questionnaire_data(val, argname=None, *, strict=False, _convert=True):
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,
     'address': _email,
+    'description': _str_or_None,
     'sub_policy': _enum_subscriptionpolicy,
     'mod_policy': _enum_moderationpolicy,
     'attachement_policy': _enum_attachementpolicy,
@@ -1613,7 +1614,7 @@ def _mailinglist_data(val, argname=None, *, strict=False, creation=False,
         _convert=_convert)
     if errs:
         return val, errs
-    for key, validator in (('audience', _int),
+    for key, validator in (('audience', _enum_personastati),
                            ('registration_stati', _enum_registrationpartstati),
                            ('moderators', _int), ('whitelist', _email)):
         if key in val:
@@ -1621,13 +1622,13 @@ def _mailinglist_data(val, argname=None, *, strict=False, creation=False,
             if e:
                 errs.extend(e)
             else:
-                newarray = set()
+                newarray = []
                 for anid in oldarray:
                     v, e = validator(anid, key, _convert=_convert)
                     if e:
                         errs.extend(e)
                     else:
-                        newarray.add(v)
+                        newarray.append(v)
                 val[key] = newarray
     return val, errs
 

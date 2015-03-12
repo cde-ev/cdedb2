@@ -43,6 +43,7 @@ class TestMlBackend(BackendTest):
             self.key, status=40, active_only=False))
         expectation = {
             3: {'address': 'witz@example.cde',
+                'description': "Einer geht noch ...",
                 'assembly_id': None,
                 'attachement_policy': 1,
                 'audience': [0, 1, 2, 40],
@@ -52,7 +53,7 @@ class TestMlBackend(BackendTest):
                 'is_active': True,
                 'maxsize': 2048,
                 'mod_policy': 1,
-                'moderators': {10, 3, 2},
+                'moderators': {2, 3, 10},
                 'registration_stati': [],
                 'sub_policy': 2,
                 'subject_prefix': '[witz]',
@@ -60,6 +61,7 @@ class TestMlBackend(BackendTest):
                 'notes': None,
                 'whitelist': set()},
             5: {'address': 'kongress@example.cde',
+                'description': None,
                 'assembly_id': 1,
                 'attachement_policy': 1,
                 'audience': [0, 1, 30],
@@ -77,6 +79,7 @@ class TestMlBackend(BackendTest):
                 'notes': None,
                 'whitelist': set()},
             7: {'address': 'aktivenforum@example.cde',
+                'description': None,
                 'assembly_id': None,
                 'attachement_policy': 1,
                 'audience': [0, 1],
@@ -119,6 +122,7 @@ class TestMlBackend(BackendTest):
         oldlists = self.ml.list_mailinglists(self.key)
         new_data = {
             'address': 'revolution@example.cde',
+            'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachement_policy': 2,
             'audience': [0],
@@ -259,6 +263,7 @@ class TestMlBackend(BackendTest):
         self.ml.change_subscription_state(self.key, 7, 1, True, 'devnull@example.cde')
         new_data = {
             'address': 'revolution@example.cde',
+            'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachement_policy': 2,
             'audience': [0],

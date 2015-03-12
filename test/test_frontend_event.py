@@ -31,7 +31,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangeuser(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = 5
+        f['id_to_show'] = "DB-5-F"
         self.submit(f)
         self.traverse({'href': '/event/user/5/adminchange', 'index': 0})
         f = self.response.forms['changedataform']
@@ -45,7 +45,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_toggleactivity(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = 5
+        f['id_to_show'] = "DB-5-F"
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertEqual(

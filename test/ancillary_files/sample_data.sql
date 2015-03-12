@@ -159,17 +159,17 @@ INSERT INTO assembly.attendees (assembly_id, persona_id, secret) VALUES
 --
 -- ml
 --
-INSERT INTO ml.mailinglists (id, title, address, sub_policy, mod_policy, attachement_policy, audience, subject_prefix, maxsize, is_active, gateway, event_id, registration_stati, assembly_id) VALUES
-    (1, 'Verkündungen', 'announce@example.cde', 0, 2, 2, ARRAY[0, 1], '[Hört, hört]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
-    (2, 'Werbung', 'werbung@example.cde', 1, 2, 0, ARRAY[0, 1, 2, 40], '[werbung]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
-    (3, 'Witz des Tages', 'witz@example.cde', 2, 1, 1, ARRAY[0, 1, 2, 40], '[witz]', 2048, True, NULL, NULL, ARRAY[]::integer[], NULL),
-    (4, 'Klatsch und Tratsch', 'klatsch@example.cde', 3, 0, 0, ARRAY[0, 1, 2, 40], '[klatsch]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
-    (5, 'Sozialistischer Kampfbrief', 'kongress@example.cde', 4, 1, 1, ARRAY[0, 1, 30], '[kampf]', 1024, True, NULL, NULL, ARRAY[]::integer[], 1),
-    (6, 'Aktivenforum 2000', 'aktivenforum@example.cde', 4, 1, 1, ARRAY[0, 1], '[aktivenforum]', 1024, False, NULL, NULL, ARRAY[]::integer[], NULL),
-    (7, 'Aktivenforum 2001', 'aktivenforum@example.cde', 4, 1, 1, ARRAY[0, 1], '[aktivenforum]', 1024, True, 6, NULL, ARRAY[]::integer[], NULL),
-    (8, 'Orga-Liste', 'aka@example.cde', 4, 0, 0, ARRAY[0, 1, 2, 20], '[orga]', NULL, True, NULL, 1, ARRAY[]::integer[], NULL),
-    (9, 'Teilnehmer-Liste', 'participants@example.cde', 4, 1, 0, ARRAY[0, 1, 2, 20], '[aka]', NULL, True, NULL, 1, ARRAY[1, 3], NULL),
-    (10, 'Warte-Liste', 'wait@example.cde', 4, 2, 0, ARRAY[0, 1, 2, 20], '[wait]', NULL, True, NULL, 1, ARRAY[2], NULL);
+INSERT INTO ml.mailinglists (id, title, address, description, sub_policy, mod_policy, attachement_policy, audience, subject_prefix, maxsize, is_active, gateway, event_id, registration_stati, assembly_id) VALUES
+    (1, 'Verkündungen', 'announce@example.cde', NULL, 0, 2, 2, ARRAY[0, 1], '[Hört, hört]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (2, 'Werbung', 'werbung@example.cde', 'Wir werden auch gut bezahlt dafür', 1, 2, 0, ARRAY[0, 1, 2, 40], '[werbung]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (3, 'Witz des Tages', 'witz@example.cde', 'Einer geht noch ...', 2, 1, 1, ARRAY[0, 1, 2, 40], '[witz]', 2048, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (4, 'Klatsch und Tratsch', 'klatsch@example.cde', NULL, 3, 0, 0, ARRAY[0, 1, 2, 40], '[klatsch]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
+    (5, 'Sozialistischer Kampfbrief', 'kongress@example.cde', NULL, 4, 1, 1, ARRAY[0, 1, 30], '[kampf]', 1024, True, NULL, NULL, ARRAY[]::integer[], 1),
+    (6, 'Aktivenforum 2000', 'aktivenforum@example.cde', NULL, 4, 1, 1, ARRAY[0, 1], '[aktivenforum]', 1024, False, NULL, NULL, ARRAY[]::integer[], NULL),
+    (7, 'Aktivenforum 2001', 'aktivenforum@example.cde', NULL, 4, 1, 1, ARRAY[0, 1], '[aktivenforum]', 1024, True, 6, NULL, ARRAY[]::integer[], NULL),
+    (8, 'Orga-Liste', 'aka@example.cde', NULL, 4, 0, 0, ARRAY[0, 1, 2, 20], '[orga]', NULL, True, NULL, 1, ARRAY[]::integer[], NULL),
+    (9, 'Teilnehmer-Liste', 'participants@example.cde', NULL, 4, 1, 0, ARRAY[0, 1, 2, 20], '[aka]', NULL, True, NULL, 1, ARRAY[1, 3], NULL),
+    (10, 'Warte-Liste', 'wait@example.cde', NULL, 4, 2, 0, ARRAY[0, 1, 2, 20], '[wait]', NULL, True, NULL, 1, ARRAY[2], NULL);
 
 INSERT INTO ml.subscription_states (mailinglist_id, persona_id, address, is_subscribed) VALUES
     (1, 3, NULL, False),
