@@ -13,7 +13,7 @@ from cdedb.database.connection import connection_pool_factory
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import (
     glue, extract_realm, make_root_logger, extract_roles, ALL_ROLES,
-    DB_ROLE_MAPPING, CommonUser, PrivilegeError)
+    DB_ROLE_MAPPING, CommonUser, PrivilegeError, unwrap)
 from cdedb.query import QueryOperators, QUERY_VIEWS
 from cdedb.config import Config, SecretsConfig
 import abc
@@ -332,6 +332,123 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.execute_db_query(cur, query, params)
                 return tuple(
                     self._sanitize_db_output(x) for x in cur.fetchall())
+
+    def sql_insert(self, rs, table, data, entity_key="id"):
+        """Generic SQL insertion query.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type data: {str: object}
+        :type entity_key: str
+        :rtype: int
+        :returns: id of inserted row
+        """
+        keys = tuple(key for key in data)
+        query = glue("INSERT INTO {table} ({keys}) VALUES ({placeholders})",
+                     "RETURNING {entity_key}")
+        query = query.format(
+            table=table, keys=", ".join(keys),
+            placeholders=", ".join(("%s",) * len(keys)), entity_key=entity_key)
+        params = tuple(data[key] for key in keys)
+        return unwrap(self.query_one(rs, query, params))
+
+    def sql_select(self, rs, table, columns, entities, entity_key="id"):
+        """Generic SQL select query.
+
+        This is one of a set of functions which provides formatting and
+        execution of SQL queries. These are for the most common types of
+        queries and apply in the majority of cases. They are
+        intentionally simplistic and free of feature creep to make them
+        unambiguous. In a minority case of a query which is not covered
+        here the formatting and execution are left as an exercise to the
+        reader. ;)
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type columns: [str]
+        :type entities: [int]
+        :type entity_key: str
+        :rtype: [{str: object}]
+        """
+        query = "SELECT {columns} FROM {table} WHERE {entity_key} = ANY(%s)"
+        query = query.format(table=table, columns=", ".join(columns),
+                             entity_key=entity_key)
+        return self.query_all(rs, query, (entities,))
+
+    def sql_select_one(self, rs, table, columns, entity, entity_key="id"):
+        """Generic SQL select query for one row.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type columns: [str]
+        :type entity: int
+        :type entity_key: str
+        :rtype: {str: object}
+        """
+        query = "SELECT {columns} FROM {table} WHERE {entity_key} = %s"
+        query = query.format(table=table, columns=", ".join(columns),
+                             entity_key=entity_key)
+        return self.query_one(rs, query, (entity,))
+
+    def sql_update(self, rs, table, data, entity_key="id"):
+        """Generic SQL update query.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type data: {str: object}
+        :type entity_key: str
+        :rtype: int
+        :returns: number of affected rows
+        """
+        keys = tuple(key for key in data if key != entity_key)
+        if not keys:
+            ## no input is an automatic success
+            return 1
+        query = glue("UPDATE {table} SET ({keys}) = ({placeholders})",
+                     "WHERE {entity_key} = %s")
+        query = query.format(
+            table=table, keys=", ".join(keys),
+            placeholders=", ".join(("%s",) * len(keys)), entity_key=entity_key)
+        params = tuple(data[key] for key in keys) + (data[entity_key],)
+        return self.query_exec(rs, query, params)
+
+    def sql_delete(self, rs, table, entities, entity_key="id"):
+        """Generic SQL deletion query.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type entities: [int]
+        :type entity_key: str
+        :rtype: int
+        :returns: number of affected rows
+        """
+        query = "DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
+        query = query.format(table=table, entity_key=entity_key)
+        return self.query_exec(rs, query, (entities,))
+
+    def sql_delete_one(self, rs, table, entity, entity_key="id"):
+        """Generic SQL deletion query for a single row.
+
+        See :py:meth:`sql_select` for thoughts on this.
+
+        :type rs: :py:class:`BackendRequestState`
+        :type table: str
+        :type entity: int
+        :type entity_key: str
+        :rtype: int
+        :returns: number of affected rows
+        """
+        query = "DELETE FROM {table} WHERE {entity_key} = %s"
+        query = query.format(table=table, entity_key=entity_key)
+        return self.query_exec(rs, query, (entity,))
 
     @staticmethod
     def diacritic_patterns(string):

@@ -9,7 +9,7 @@
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}
-            <a href="{{ cdedblink("event/show_past_course")|e }}">Abbrechen</a>
+            {{ util.href(cdedblink("event/show_past_course"), "Abbrechen") }}
         </div>
     </form>
 {% endblock %}

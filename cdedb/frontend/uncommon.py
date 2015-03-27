@@ -154,9 +154,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.create_user_form(rs)
 
     ## @access("anonymous")
-    ## @REQUESTdata(("secret", "str"), ("username", "email"))
+    ## @REQUESTdata(("secret", "str"))
     @abc.abstractmethod
-    def genesis_form(self, rs, case_id, secret, username):
+    def genesis_form(self, rs, case_id, secret):
         """Render form.
 
         This does not use our standard method of ephemeral links as we
@@ -165,10 +165,11 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         secret and verify this.
         """
         if rs.errors or not self.user_management['proxy'](self).genesis_check(
-                rs, case_id, secret, username=username):
+                rs, case_id, secret):
             rs.notify("error", "Broken link.")
             return self.redirect(rs, "core/index")
-        return self.render(rs, "genesis")
+        case = self.coreproxy.genesis_my_case(rs, case_id, secret)
+        return self.render(rs, "genesis", {'case': case})
 
     ## @access("anonymous", {"POST"})
     ## @REQUESTdata(("secret", "str"))
@@ -177,13 +178,16 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     def genesis(self, rs, case_id, secret, data):
         """Create new user account by anonymous."""
         if rs.errors or not self.user_management['proxy'](self).genesis_check(
-                rs, case_id, secret, username=data['username']):
+                rs, case_id, secret):
             rs.notify("error", "Broken link.")
             return self.redirect(rs, "core/index")
+        case = self.coreproxy.genesis_my_case(rs, case_id, secret)
+        for key in ("username", "given_names", "family_name"):
+            data[key] = case[key]
         data = check(rs, self.user_management['validator'], data,
                      creation=True)
         if rs.errors:
-            return self.genesis_form(rs, case_id, secret, data['username'])
+            return self.genesis_form(rs, case_id, secret)
         new_id = self.user_management['proxy'](self).genesis(rs, case_id,
                                                              secret, data)
         self.notify_return_code(rs, new_id, success="User created.")
@@ -192,4 +196,4 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
                 'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", data['username'])})
         else:
-            return self.genesis_form(rs, case_id, secret, data['username'])
+            return self.genesis_form(rs, case_id, secret)

@@ -9,20 +9,14 @@
         <table>
             <tr> <th colspan="2">Person</th> </tr>
             {{ util.tab_input_text(name="title", label="Titel") }}
-            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.tab_input_text(name="family_name", label="Nachname") }}
+            <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
+            <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
             {{ util.tab_input_text(name="name_supplement", label="Namenszusatz") }}
             {{ util.tab_input_text(name="display_name", label="Rufname") }}
             {{ util.tab_input_text(name="birthday", label="Geburtstag") }}
             {{ util.tab_input_select(name="gender", entries=default_selections['gender'], title="Geschlecht") }}
             <tr> <th colspan="2">Kontakt</th> </tr>
-            <tr>
-                <td>Email</td>
-                <td>
-                    {{ username|e }}
-                    {{ util.input_hidden(name="username") }}
-                </td>
-            </tr>
+            <tr> <td>Email</td> <td> {{ case['username']|e }} </td> </tr>
             {{ util.tab_input_text(name="telephone", label="Telefon") }}
             {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
             <tr> <th colspan="2">Adresse</th> </tr>
@@ -36,7 +30,7 @@
             {{ util.input_hidden(name="case_id") }}
             {{ util.input_hidden(name="secret") }}
             {{ util.input_submit(value="Account anlegen") }}
-            <a href="{{ cdedblink('core/index')|e }}">Abbrechen</a>
+            {{ util.href(cdedblink('core/index'), "Abbrechen") }}
         </div>
     </form>
 {% endblock %}

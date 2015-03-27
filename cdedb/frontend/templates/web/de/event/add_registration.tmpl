@@ -3,7 +3,7 @@
 {% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}Neue Anmeldung ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/show_event")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/add_registration')|e }}" method="POST" id="addregistrationform">
         <table>
             <tr><th colspan="2">Person</th></tr>

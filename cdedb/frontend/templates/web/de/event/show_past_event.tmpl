@@ -3,8 +3,8 @@
 {% block title %}{{ event_data['title']|e }}{% endblock %}
 {% block content %}
     {% if is_admin %}
-        <a href="{{ cdedblink('event/change_past_event_form')|e }}">Bearbeiten</a>
-        <a href="{{ cdedblink('event/create_past_course_form')|e }}">Kurs hinzufügen</a>
+        {{ util.href(cdedblink('event/change_past_event_form'), "Bearbeiten") }}
+        {{ util.href(cdedblink('event/create_past_course_form'), "Kurs hinzufügen") }}
         <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
             {{ util.input_text(name="persona_id", label="ID") }}
             {{ util.input_hidden(name="course_id", value="") }}
@@ -19,7 +19,7 @@
         <h2>Kurse</h2>
         <ul>
             {% for anid, title in courses|dictsort %}
-                <li><a href="{{ cdedblink('event/show_past_course', {'course_id' : anid})|e }}">{{ title|e }}</a></li>
+                <li>{{ util.href(cdedblink('event/show_past_course', {'course_id' : anid}), title) }}</li>
             {% endfor %}
         </ul>
     {% endif %}

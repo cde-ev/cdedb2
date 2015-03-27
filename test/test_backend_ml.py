@@ -227,11 +227,10 @@ class TestMlBackend(BackendTest):
         self.ml.change_subscription_state(self.key, 9, 9, False)
         expectation = {1: None, 3: 'devnull@example.cde', 5: None}
         self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
-        self.assertEqual(-1, self.ml.change_subscription_state(
+        self.assertGreater(0, self.ml.change_subscription_state(
             self.key, 4, 9, True, None))
         self.login(USER_DICT['berta'])
-        self.assertEqual(1, self.ml.decide_request(
-            self.key, 4, 9, True))
+        self.assertLess(0, self.ml.decide_request(self.key, 4, 9, True))
         self.login(USER_DICT['inga'])
         self.assertEqual(1, self.ml.change_subscription_state(
             self.key, 4, 9, True, 'devnull@example.cde'))
@@ -245,7 +244,7 @@ class TestMlBackend(BackendTest):
             self.key, 4, 9, False))
         expectation = {1: None, 3: 'devnull@example.cde', 5: None}
         self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
-        self.assertEqual(-1, self.ml.change_subscription_state(
+        self.assertGreater(0, self.ml.change_subscription_state(
             self.key, 4, 9, True))
         self.login(USER_DICT['berta'])
         self.assertEqual(1, self.ml.decide_request(
@@ -303,12 +302,6 @@ class TestMlBackend(BackendTest):
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
-             'code': 1,
-             'ctime': nearly_now(),
-             'mailinglist_id': 11,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': None,
              'code': 10,
              'ctime': nearly_now(),
              'mailinglist_id': 11,
@@ -319,12 +312,6 @@ class TestMlBackend(BackendTest):
              'ctime': nearly_now(),
              'mailinglist_id': 11,
              'persona_id': 1,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': 1,
-             'ctime': nearly_now(),
-             'mailinglist_id': 11,
-             'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 21,
@@ -349,9 +336,9 @@ class TestMlBackend(BackendTest):
             expectation[2:5],
             self.ml.retrieve_log(self.key, start=2, stop=5))
         self.assertEqual(
-            expectation[2:6],
+            expectation[2:5],
             self.ml.retrieve_log(self.key, mailinglist_id=11, start=1, stop=5))
-        self.assertEqual(expectation[4:6],
+        self.assertEqual(expectation[3:5],
                          self.ml.retrieve_log(self.key, codes=(10,)))
 
     @as_users("anton")
@@ -377,11 +364,11 @@ class TestMlBackend(BackendTest):
         with self.assertRaises(PrivilegeError):
             self.ml.change_subscription_state(self.key, 7, 9, True)
         self.login(USER_DICT['anton'])
-        self.assertEqual(
-            1, self.ml.change_subscription_state(self.key, 6, 9, True))
+        self.assertLess(
+            0, self.ml.change_subscription_state(self.key, 6, 9, True))
         self.login(USER_DICT['inga'])
-        self.assertEqual(
-            1, self.ml.change_subscription_state(self.key, 7, 9, True))
+        self.assertLess(
+            0, self.ml.change_subscription_state(self.key, 7, 9, True))
 
     def test_export(self):
         with self.assertRaises(NotImplementedError):

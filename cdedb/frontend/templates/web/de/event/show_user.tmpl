@@ -5,9 +5,9 @@
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
             {% if is_admin %}
-                <a href="{{ cdedblink('event/admin_change_user_form')|e }}">Bearbeiten</a>
+                {{ util.href(cdedblink('event/admin_change_user_form'), "Bearbeiten") }}
             {% else %}
-                <a href="{{ cdedblink('event/change_user_form')|e }}">Bearbeiten</a>
+                {{ util.href(cdedblink('event/change_user_form'), "Bearbeiten") }}
             {% endif %}
         </p>
     {% endif %}
@@ -44,9 +44,9 @@
             <td>
                 {{ data['username']|e }}
                 {% if is_admin and data['id'] != user.persona_id %}
-                    <a href="{{ cdedblink('core/admin_username_change_form')|e }}">Email ändern</a>
-                {% else %}
-                    <a href="{{ cdedblink('core/change_username_form')|e }}">Email ändern</a>
+                    {{ util.href(cdedblink('core/admin_username_change_form'), "Email ändern") }}
+                {% elif data['id'] == user.persona_id %}
+                    {{ util.href(cdedblink('core/change_username_form'), "Email ändern") }}
                 {% endif %}
             </td>
         </tr>
@@ -104,7 +104,7 @@
                 <td>
                     {{ data['db_privileges_ascii']|e }}
                     {% if "admin" in user.roles %}
-                        <a href="{{ cdedblink("core/adjust_privileges_form")|e }}">Ändern</a>
+                        {{ util.href(cdedblink("core/adjust_privileges_form"), "Ändern") }}
                     {% endif %}
                 </td>
             </tr>
@@ -118,9 +118,9 @@
     {% if data['id'] == user.persona_id or is_admin %}
         <p>
             {% if is_admin %}
-                <a href="{{ cdedblink('event/admin_change_user_form')|e }}">Bearbeiten</a>
+                {{ util.href(cdedblink('event/admin_change_user_form'), "Bearbeiten") }}
             {% else %}
-                <a href="{{ cdedblink('event/change_user_form')|e }}">Bearbeiten</a>
+                {{ util.href(cdedblink('event/change_user_form'), "Bearbeiten") }}
             {% endif %}
         </p>
     {% endif %}

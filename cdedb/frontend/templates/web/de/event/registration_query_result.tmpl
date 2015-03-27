@@ -9,7 +9,7 @@ Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ re
 {% block content %}
     <form action="{{ cdedblink('event/registration_query_action', query|querytoparams)|e }}" method="POST"
      id="actionform">
-        <a href="{{ cdedblink("event/registration_query", query|querytoparams)|e }}">Zurück</a>
+        {{ util.href(cdedblink("event/registration_query", query|querytoparams), "Zurück") }}
 
         {{ titles.update({
             "reg.id": "ID",
@@ -39,7 +39,7 @@ Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ re
 
             {{ util.display_query_result(result, query, titles, choices) }}
 
-        <a href="{{ cdedblink("event/registration_query", query|querytoparams)|e }}">Zurück</a>
+        {{ util.href(cdedblink("event/registration_query", query|querytoparams), "Zurück") }}
 
         <h3>Aktionen</h3>
         <p>

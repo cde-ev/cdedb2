@@ -40,12 +40,12 @@ class TestEventBackend(BackendTest):
     @as_users("anton")
     def test_genesis(self, user):
         data = {
-            "full_name": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
             "username": 'zelda@example.cde',
             "notes": "Some blah",
         }
-        case_id = self.core.genesis_request(
-            None, data['username'], data['full_name'], data['notes'])
+        case_id = self.core.genesis_request(None, data)
         self.core.genesis_verify(None, case_id)
         update = {
             'id': case_id,
@@ -79,6 +79,7 @@ class TestEventBackend(BackendTest):
             "notes": None,
         }
         new_id = self.event.genesis(None, case_id, update['secret'], user_data)
+        self.assertLess(0, new_id)
         value = self.event.get_data_one(self.key, new_id)
         user_data.update({
             'id': new_id,
@@ -840,11 +841,11 @@ class TestEventBackend(BackendTest):
             "scope": "qview_registration",
             "spec": dict(QUERY_SPECS["qview_registration"]),
             "fields_of_interest": (
-                "reg.id", "reg.payment", "persona.status", "user_data.family_name",
+                "reg.id", "reg.payment", "persona.status", "persona.family_name",
                 "user_data.birthday", "part1.lodgement_id1", "part3.status3",
                 "fields.brings_balls", "fields.transportation"),
             "constraints": (("reg.id", QueryOperators.greater.value, 0),
-                            ("user_data.given_names", QueryOperators.regex.value, '[aeiou]'),
+                            ("persona.given_names", QueryOperators.regex.value, '[aeiou]'),
                             ("part2.status2", QueryOperators.nonempty.value, None),
                             ("fields.transportation", QueryOperators.oneof.value, ['pedes', 'etc'])),
             "order": (("reg.id", True),),
@@ -1240,12 +1241,6 @@ class TestEventBackend(BackendTest):
              'event_id': 1,
              'persona_id': None,
              'submitted_by': 1},
-            {'additional_info': 'Topos theory for the kindergarden',
-             'code': 41,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': None,
-             'submitted_by': 1},
             {'additional_info': 'instrument',
              'code': 22,
              'ctime': nearly_now(),
@@ -1319,12 +1314,6 @@ class TestEventBackend(BackendTest):
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
-             'code': 1,
-             'ctime': nearly_now(),
-             'event_id': 2,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': None,
              'code': 10,
              'ctime': nearly_now(),
              'event_id': 2,
@@ -1336,12 +1325,6 @@ class TestEventBackend(BackendTest):
              'event_id': 2,
              'persona_id': 2,
              'submitted_by': 1},
-            {'additional_info': None,
-             'code': 1,
-             'ctime': nearly_now(),
-             'event_id': 2,
-             'persona_id': None,
-             'submitted_by': 1},
             {'additional_info': 'First coming',
              'code': 15,
              'ctime': nearly_now(),
@@ -1350,12 +1333,6 @@ class TestEventBackend(BackendTest):
              'submitted_by': 1},
             {'additional_info': 'Second coming',
              'code': 15,
-             'ctime': nearly_now(),
-             'event_id': 2,
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': 1,
              'ctime': nearly_now(),
              'event_id': 2,
              'persona_id': None,

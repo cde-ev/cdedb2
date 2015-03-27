@@ -517,7 +517,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return FrontendUser(
             persona_id=sessiondata['persona_id'], roles=roles, realm=realm,
             status=sessiondata['status'], username=sessiondata['username'],
-            display_name=sessiondata['display_name'])
+            display_name=sessiondata['display_name'],
+            given_names=sessiondata['given_names'],
+            family_name=sessiondata['family_name'])
 
     @classmethod
     @abc.abstractmethod
@@ -596,7 +598,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'generation_time': lambda: (datetime.datetime.now(pytz.utc)
                                             - rs.begin),}
         ## check that default values are not overridden
-        assert(not(set(data) & set(params)))
+        assert(not set(data) & set(params))
         merge_dicts(data, params)
         if modus == "tex":
             jinja_env = self.jinja_env.overlay(
@@ -942,7 +944,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
 class FrontendUser(CommonUser):
     """Container for a persona in the frontend."""
-    def __init__(self, display_name="", username="", **kwargs):
+    def __init__(self, display_name="", given_names="", family_name="",
+                 username="", **kwargs):
         """
         :type display_name: str or None
         :type username: str or None
@@ -950,6 +953,8 @@ class FrontendUser(CommonUser):
         super().__init__(**kwargs)
         self.username = username
         self.display_name = display_name
+        self.given_names = given_names
+        self.family_name = family_name
 
 def access(role, modi=None):
     """The @access decorator marks a function of a frontend for publication and

@@ -18,7 +18,6 @@ import decimal
 
 from cdedb.query import Query
 from cdedb.enums import ALL_ENUMS
-import cdedb.database.constants as const
 
 #: Skeleton for custom serialization wrapper. :py:attr:`_class` and
 #: :py:attr:`_value` have to be filled in accordingly.

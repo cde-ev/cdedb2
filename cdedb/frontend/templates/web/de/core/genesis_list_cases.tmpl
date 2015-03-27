@@ -6,21 +6,21 @@
     <ul>
         {% for case_id, entry in to_review|dictsort %}
             <li>
-                {{ entry['full_name']|e }} -- {{ entry['username']|e }}<br>
+                {{ entry['given_names']|e }} {{ entry['family_name']|e }} -- {{ entry['username']|e }}<br>
                 {{ entry['notes']|e|linebreaks }}<br>
-                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST"
+                <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                  id="genesisrejectionform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.input_hidden(name="case_status", value=GenesisStati.rejected.value) }}
+                    {{ util.input_hidden(name="case_status", value=const.GenesisStati.rejected.value) }}
                     {{ util.input_submit(value="Ablehnen") }}
                 </form>
-                <form action="{{ cdedblink('core/genesis_decide')|e }}" method="POST"
+                <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                  id="genesisapprovalform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.input_hidden(name="case_status", value=GenesisStati.approved.value) }}
+                    {{ util.input_hidden(name="case_status", value=const.GenesisStati.approved.value) }}
                     {{ util.input_select(name="persona_status", nulloption=True, entries=(
-                       (PersonaStati.event_user.value, "Veranstaltungsteilnehmer", None),
-                       (PersonaStati.ml_user.value, "Mailinglistennutzer", None),)) }}
+                       (const.PersonaStati.event_user.value, "Veranstaltungsteilnehmer", None),
+                       (const.PersonaStati.ml_user.value, "Mailinglistennutzer", None),)) }}
                     {{ util.input_submit(value="Genehmigen") }}
                 </form>
             </li>
@@ -30,8 +30,8 @@
     <ul>
         {% for case_id, entry in approved|dictsort %}
             <li>
-                {{ entry['full_name']|e }} -- {{ entry['username']|e }}
-                <form action="{{ cdedblink('core/genesis_timeout')|e }}" method="POST"
+                {{ entry['given_names']|e }} {{ entry['family_name']|e }} -- {{ entry['username']|e }}
+                <form action="{{ cdedblink('core/genesis_timeout', {'case_id': case_id})|e }}" method="POST"
                  id="genesistimeoutform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_submit(value="Widerrufen") }}

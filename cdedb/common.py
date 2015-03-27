@@ -222,8 +222,8 @@ def unwrap(single_element_list, keys=False):
     list with a single element. This offers some more amenities: it
     works on dicts and performs validation.
 
-    In case of an error (e.g. wrong number of elements) this returns
-    ``None``.
+    In case of an error (e.g. wrong number of elements) this raises an
+    error.
 
     :type single_element_list: [obj]
     :type keys: bool
@@ -231,10 +231,9 @@ def unwrap(single_element_list, keys=False):
       the key or value.
     :rtype: obj or None
     """
-    if not isinstance(single_element_list, collections.abc.Iterable):
-        return None
-    if len(single_element_list) != 1:
-        return None
+    if (not isinstance(single_element_list, collections.abc.Iterable)
+            or len(single_element_list) != 1):
+        raise RuntimeError("Unable to unwrap!")
     if isinstance(single_element_list, collections.abc.Mapping):
         if keys:
             single_element_list = single_element_list.keys()
@@ -380,37 +379,36 @@ DB_ROLE_MAPPING = collections.OrderedDict((
 
 #: Names of all columns associated to a persona.
 #: This does not include the ``password_hash`` for security reasons.
-PERSONA_DATA_FIELDS = ("id", "username", "display_name", "is_active", "status",
-                       "db_privileges", "cloud_account")
+PERSONA_DATA_FIELDS = (
+    "id", "username", "display_name", "family_name", "given_names",
+    "is_active", "status", "db_privileges", "cloud_account", "notes")
 
 #: names of columns associated to a cde member (in addition to those which
 #: exist for every persona)
 MEMBER_DATA_FIELDS = (
-    "family_name", "given_names", "title", "name_supplement", "gender",
-    "birthday", "telephone", "mobile", "address_supplement", "address",
-    "postal_code", "location", "country", "notes", "birth_name",
-    "address_supplement2", "address2", "postal_code2", "location2",
-    "country2", "weblink", "specialisation", "affiliation", "timeline",
-    "interests", "free_form", "balance", "decided_search", "trial_member",
-    "bub_search")
+    "title", "name_supplement", "gender", "birthday", "telephone", "mobile",
+    "address_supplement", "address", "postal_code", "location", "country",
+    "birth_name", "address_supplement2", "address2", "postal_code2",
+    "location2", "country2", "weblink", "specialisation", "affiliation",
+    "timeline", "interests", "free_form", "balance", "decided_search",
+    "trial_member", "bub_search")
 
 #: Names of columns associated to an event user (in addition to those which
 #: exist for every persona). This should be a subset of
 #: :py:data:`MEMBER_DATA_FIELDS` to facilitate upgrading of event users to
 #: memebers.
 EVENT_USER_DATA_FIELDS = (
-    "family_name", "given_names", "title", "name_supplement", "gender",
-    "birthday", "telephone", "mobile", "address_supplement", "address",
-    "postal_code", "location", "country", "notes")
+    "title", "name_supplement", "gender", "birthday", "telephone", "mobile",
+    "address_supplement", "address", "postal_code", "location", "country")
 
 #: Names of columns associated to an ml user (in addition to those which
 #: exist for every persona).
-ML_USER_DATA_FIELDS = ("family_name", "given_names", "notes")
+ML_USER_DATA_FIELDS = None
 
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (
-    "id", "ctime", "username", "full_name", "persona_status", "notes",
-    "case_status", "secret", "reviewer")
+    "id", "ctime", "username", "given_names", "family_name",
+    "persona_status", "notes", "case_status", "secret", "reviewer")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "organizer", "description")

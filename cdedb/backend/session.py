@@ -139,23 +139,23 @@ class SessionBackend:
                'db_privileges': None,
                'status': None,
                'display_name': "",
+               'given_names': "",
+               'family_name': "",
                'username': "",}
         if persona_id:
             query = glue("UPDATE core.sessions SET atime = now()",
                          "WHERE sessionkey = %s")
-            query2 = glue("SELECT status, db_privileges, display_name,",
-                          "is_active, username FROM core.personas",
-                          "WHERE id = %s")
+            query2 = glue(
+                "SELECT status, db_privileges, display_name, given_names,",
+                "family_name, is_active, username FROM core.personas",
+                "WHERE id = %s")
             with self.connpool["cdb_persona"] as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, (sessionkey,))
                     cur.execute(query2, (persona_id,))
                     data = cur.fetchone()
             if data["is_active"]:
-                ret['db_privileges'] = data["db_privileges"]
-                ret['status'] = data["status"]
-                ret['display_name'] = data["display_name"]
-                ret['username'] = data["username"]
+                ret.update(data)
             else:
                 self.logger.warning("Found inactive user {}".format(persona_id))
         return ret

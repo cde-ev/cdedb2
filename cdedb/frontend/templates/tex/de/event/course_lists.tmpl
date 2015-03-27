@@ -21,12 +21,12 @@
                         <<% if (registration_data[registration_id]['parts'][part_id]['course_instructor']
                                 == course_id) %>>
                             \emph{%
-                                <<< user_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
-                                <<< user_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                                <<< persona_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
+                                <<< persona_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
                             }
                         <<% else %>>
-                            <<< user_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
-                            <<< user_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                            <<< persona_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
+                            <<< persona_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
                         <<% endif %>>
                 <<% else %>>
                     \item niemand

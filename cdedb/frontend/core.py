@@ -344,28 +344,28 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "genesis_request")
 
     @access("anonymous", {"POST"})
-    @REQUESTdata(("username", "email"), ("rationale", "str"),
-                 ("full_name", "str"))
-    def genesis_request(self, rs, username, rationale, full_name):
+    @REQUESTdatadict("username", "notes", "given_names", "family_name")
+    def genesis_request(self, rs, data):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
-        if not rs.errors and len(rationale) > self.conf.MAX_RATIONALE:
-            rs.errors.append(("rationale", "Too long."))
+        data = check(rs, "genesis_case_data", data, creation=True)
+        if not rs.errors and len(data['notes']) > self.conf.MAX_RATIONALE:
+            rs.errors.append(("notes", ValueError("Too long.")))
         if rs.errors:
             return self.genesis_request_form(rs)
-        case_id = self.coreproxy.genesis_request(rs, username, full_name,
-                                                 rationale)
+        case_id = self.coreproxy.genesis_request(rs, data)
         if not case_id:
             rs.notify("error", "Failed.")
             return self.genesis_request_form(rs)
         self.do_mail(
             rs, "genesis_verify",
-            {'To': (username,), 'Subject': 'CdEDB account request'},
+            {'To': (data['username'],), 'Subject': 'CdEDB account request'},
             {'case_id': self.encode_parameter(
                 "core/genesis_verify", "case_id", case_id),
-             'full_name': full_name, })
+             'given_names': data['given_names'],
+             'family_name': data['family_name'],})
         rs.notify("success", "Email sent.")
         return self.redirect(rs, "core/index")
 
@@ -391,19 +391,17 @@ class CoreFrontend(AbstractFrontend):
         """Compile a list of genesis cases to review."""
         stati = (const.GenesisStati.to_review, const.GenesisStati.approved)
         data = self.coreproxy.genesis_list_cases(rs, stati=stati)
-        review_ids = tuple(key for key in data
-                           if (data[key]['case_status']
-                               == const.GenesisStati.to_review))
+        review_ids = tuple(
+            k for k in data
+            if data[k]['case_status'] == const.GenesisStati.to_review)
         to_review = self.coreproxy.genesis_get_cases(rs, review_ids)
         approved = {k: v for k, v in data.items()
                     if v['case_status'] == const.GenesisStati.approved}
         return self.render(rs, "genesis_list_cases", {
-            'to_review': to_review, 'approved': approved,
-            'PersonaStati': const.PersonaStati,
-            'GenesisStati': const.GenesisStati})
+            'to_review': to_review, 'approved': approved,})
 
     @access("core_admin", {"POST"})
-    @REQUESTdata(("case_id", "int"), ("case_status", "enum_genesisstati"),
+    @REQUESTdata(("case_status", "enum_genesisstati"),
                  ("persona_status", "enum_personastati_or_None"))
     def genesis_decide(self, rs, case_id, case_status, persona_status):
         """Approve or decline a genensis case.
@@ -457,15 +455,12 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/genesis_list_cases")
 
     @access("core_admin", {"POST"})
-    @REQUESTdata(("case_id", "int"))
     def genesis_timeout(self, rs, case_id):
         """Abandon a genesis case.
 
         If a genesis case is approved, but the applicant loses interest,
         it remains dangling. Thus this enables to archive them.
         """
-        if rs.errors:
-            return self.genesis_list_cases(rs)
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if case['case_status'] != const.GenesisStati.approved:
             rs.notify("error", "Case not approved.")

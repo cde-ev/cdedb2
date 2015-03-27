@@ -20,11 +20,11 @@
         <div id="middle">
             <div id="strut"></div>
             <div id="navigation">
-                <h1><a href="{{ cdedblink("core/index")|e }}">CdEDB</a></h1>
+                <h1>{{ util.href(cdedblink("core/index"), "CdEDB") }}</h1>
                 {% if not user.is_persona %}
                     <p>
                         Nicht eingeloggt<br>
-                        <a href="{{ cdedblink("core/index")|e }}">Login</a>
+                        {{ util.href(cdedblink("core/index"), "Login") }}
                     </p>
                 {% else %}
                     <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform">

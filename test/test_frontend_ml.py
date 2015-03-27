@@ -92,9 +92,10 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/request'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['full_name'] = "Zelda"
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
-        f['rationale'] = "Gimme!"
+        f['notes'] = "Gimme!"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None
@@ -126,8 +127,7 @@ class TestMlFrontend(FrontendTest):
             "display_name": 'Zelda',
         }
         f = self.response.forms['newuserform']
-        for key, value in data.items():
-            f.set(key, value)
+        f['display_name'] = data['display_name']
         self.submit(f)
         self.assertTitle("Passwort zurücksetzen -- Bestätigung")
         f = self.response.forms['passwordresetform']
@@ -353,7 +353,7 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'description': '^Mailinglisten$'},
                       {'href': '/ml/log'})
-        self.assertTitle("\nMailinglisten -- Logs (0--11)\n")
+        self.assertTitle("\nMailinglisten -- Logs (0--7)\n")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
@@ -366,4 +366,4 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log', 'index': 0})
-        self.assertTitle("\nKlatsch und Tratsch -- Logs (0--10)\n")
+        self.assertTitle("\nKlatsch und Tratsch -- Logs (0--6)\n")

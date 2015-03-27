@@ -6,7 +6,7 @@
 Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden
 {% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>
+    {{ util.href(cdedblink("event/user_search_form", query|querytoparams), "Zurück") }}
 
     {% with TITLES = {
         "persona_id": "ID",
@@ -35,7 +35,7 @@ Veranstaltungsnutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|nume
         {{ util.display_query_result(result, query, TITLES, choices) }}
     {% endwith %}
 
-    <a href="{{ cdedblink("event/user_search_form", query|querytoparams)|e }}">Zurück</a>
+    {{ util.href(cdedblink("event/user_search_form", query|querytoparams), "Zurück") }}
 
     <h3>Aktionen</h3>
     <p>

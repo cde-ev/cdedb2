@@ -63,11 +63,11 @@
                     <ul>
                         {% for registration_id in listings[key][part_id] %}
                             <li>
-                                <a href="{{ cdedblink("event/show_registration",
-                                                      {'registration_id': registration_id})|e }}">
-                                    {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                                    {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
-                                </a>
+                                {% with ud = user_data[registration_data[registration_id]['persona_id']] %}
+                                    {{ util.href(cdedblink("event/show_registration",
+                                                           {'registration_id': registration_id}),
+                                                 "{} {}".format(ud['given_names'], ud['family_name'])) }}
+                                {% endwith %}
                             </li>
                         {% endfor %}
                     </ul>

@@ -1,6 +1,8 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Administration -- Emailadresse ändern für {{ data['display_name']|e }}{% endblock %}
+{% block title %}
+Administration -- Emailadresse ändern für {{ data['given_names']|e }} {{ data['family_name']|e }}
+{% endblock %}
 {% block content %}
     Bisherige Emailadresse: {{ data['username']|e }}
 

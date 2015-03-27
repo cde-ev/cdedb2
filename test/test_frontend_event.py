@@ -105,9 +105,10 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/request'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['full_name'] = "Zelda"
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
-        f['rationale'] = "Gimme!"
+        f['notes'] = "Gimme!"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None
@@ -135,8 +136,6 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Veranstaltungsaccount anlegen")
         data = {
             "title": "Dr.",
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
             "name_supplement": 'von und zu',
             "display_name": 'Zelda',
             "birthday": "5.6.1987",
@@ -153,6 +152,8 @@ class TestEventFrontend(FrontendTest):
         for key, value in data.items():
             f.set(key, value)
         self.submit(f)
+        data["given_names"] = "Zelda",
+        data["family_name"] = "Zeruda-Hime",
         self.assertTitle("Passwort zurücksetzen -- Bestätigung")
         f = self.response.forms['passwordresetform']
         self.submit(f)
@@ -182,9 +183,10 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/request'})
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        f['full_name'] = "Zelda"
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
-        f['rationale'] = "Gimme!"
+        f['notes'] = "Gimme!"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None
@@ -611,7 +613,7 @@ class TestEventFrontend(FrontendTest):
         for field in f.fields:
             if field.startswith('qsel_'):
                 f[field].checked = True
-        f['qval_user_data.family_name'] = 'e'
+        f['qval_persona.family_name'] = 'e'
         f['qord_primary'] = 'reg.id'
         self.submit(f)
         self.assertTitle("\nAnmeldungen (Große Testakademie 2222) -- 2 Ergebnisse\n")
@@ -660,7 +662,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
-        self.assertTitle("\nAnmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)\n")
+        self.assertTitle("\nAnmeldung von Emilia E. Eventis bearbeiten\n(Große Testakademie 2222)\n")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
         f['reg.orga_notes'] = "Wir wllen mal nicht so sein."
@@ -1038,7 +1040,7 @@ class TestEventFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/log'})
-        self.assertTitle("\nVeranstaltungen -- Logs (0--16)\n")
+        self.assertTitle("\nVeranstaltungen -- Logs (0--14)\n")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
@@ -1050,7 +1052,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("\nGroße Testakademie 2222 -- Logs (0--12)\n")
+        self.assertTitle("\nGroße Testakademie 2222 -- Logs (0--11)\n")
 
     def test_past_log(self):
         ## First: generate data

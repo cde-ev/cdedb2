@@ -208,8 +208,8 @@ QUERY_SPECS = {
         ("reg.foto_consent", "bool"),
         ("membership.is_member", "bool"),
         ("persona.username", "str"),
-        ("user_data.family_name", "str"),
-        ("user_data.given_names", "str"),
+        ("persona.family_name", "str"),
+        ("persona.given_names", "str"),
         ("persona.display_name", "str"),
         ("user_data.title", "str"),
         ("user_data.name_supplement", "str"),
@@ -226,7 +226,7 @@ QUERY_SPECS = {
         ]),
     "qview_ml_user" :
     collections.OrderedDict([
-        ("user_data.persona_id", "int"),
+        ("id", "int"),
         ("username", "str"),
         ("is_active", "bool"),
         ("db_privileges", "int"),
@@ -263,8 +263,7 @@ QUERY_VIEWS = {
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_registration": None, ## dummy -- value will be generated on the fly
-    "qview_ml_user": glue("core.personas JOIN ml.user_data",
-                          "ON personas.id = user_data.persona_id"),
+    "qview_ml_user": "core.personas",
 }
 
 def mangle_query_input(rs, spec):

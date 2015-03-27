@@ -4,10 +4,10 @@
     <ul>
         {% if user.persona_id %}
             <li>
-                <a href="{{ cdedblink("core/index")|e }}">Start</a>
+                {{ util.href(cdedblink("core/index"), "Start") }}
                 <ul>
-                    <li><a href="{{ cdedblink("core/mydata")|e }}">Meine Daten</a></li>
-                    <li><a href="{{ cdedblink("core/change_password_form")|e }}">Passwort ändern</a></li>
+                    <li>{{ util.href(cdedblink("core/mydata"), "Meine Daten") }}</li>
+                    <li>{{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}</li>
                     {% if is_admin %}
                         <li>
                             <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET"
@@ -18,37 +18,37 @@
                                 </div>
                             </form>
                         </li>
-                        <li><a href="{{ cdedblink("core/genesis_list_cases")|e }}">Accountanfragen</a></li>
-                        <li><a href="{{ cdedblink("core/view_log")|e }}">Account-Log</a></li>
+                        <li>{{ util.href(cdedblink("core/genesis_list_cases"), "Accountanfragen") }}</li>
+                        <li>{{ util.href(cdedblink("core/view_log"), "Account-Log") }}</li>
                     {% endif %}
                 </ul>
             </li>
             {% if "formermember" in user.roles %}
                 <li>
-                    <a href="{{ cdedblink("cde/index")|e }}">CdE</a>
+                    {{ util.href(cdedblink("cde/index"), "CdE") }}
                     <ul>
                         {% if user.is_searchable %}
-                            <li><a href="{{ cdedblink("cde/member_search")|e }}">Mitgliedersuche</a></li>
+                            <li>{{ util.href(cdedblink("cde/member_search"), "Mitgliedersuche") }}</li>
                         {% else %}
-                            <li><a href="{{ cdedblink("cde/consent_decision_form")|e }}">Datenschutzerklärung</a></li>
+                            <li>{{ util.href(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung") }}</li>
                         {% endif %}
                     </ul>
                 </li>
             {% endif %}
             {% if "event_user" in user.roles %}
-                <li><a href="{{ cdedblink("event/index")|e }}">Veranstaltungen</a></li>
+                <li>{{ util.href(cdedblink("event/index"), "Veranstaltungen") }}</li>
             {% endif %}
             {% if "ml_user" in user.roles %}
-                <li><a href="{{ cdedblink("ml/index")|e }}">Mailinglisten</a></li>
+                <li>{{ util.href(cdedblink("ml/index"), "Mailinglisten") }}</li>
             {% endif %}
             {% if "assembly_user" in user.roles %}
                 <li>Versammlung</li>
             {% endif %}
         {% else %}
             <li>
-                <a href="{{ cdedblink("core/index")|e }}">Start</a>
+                {{ util.href(cdedblink("core/index"), "Start") }}
                 <ul>
-                    <li><a href="{{ cdedblink("core/genesis_request_form")|e }}">Account anfordern</a></li>
+                    <li>{{ util.href(cdedblink("core/genesis_request_form"), "Account anfordern") }}</li>
                 </ul>
             </li>
         {% endif %}

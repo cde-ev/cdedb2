@@ -3,7 +3,6 @@
 
 -- TODO: grant priveleges
 -- TODO: create indices
--- TODO: maybe add given_names and family_name to persona --> kill table ml.user_data
 -- TODO: tables: quota, lastschrift_*, finance_log, mailinglist_*, assembly_*, cdefiles_*
 
 ---
@@ -25,6 +24,10 @@ CREATE TABLE core.personas (
         password_hash           varchar NOT NULL,
         -- name to use when adressing user/"Rufname"
         display_name            varchar NOT NULL,
+        -- "Vornamen" (including middle names)
+        given_names             varchar NOT NULL,
+        -- "Nachname"
+        family_name             varchar NOT NULL,
         -- inactive accounts may not log in
         is_active               boolean NOT NULL DEFAULT True,
         -- nature of this entry
@@ -34,12 +37,14 @@ CREATE TABLE core.personas (
         -- see cdedb.database.constants.PrivilegeBits
         db_privileges           integer NOT NULL DEFAULT 0,
         -- grant access to the CdE cloud (this is utilized via LDAP)
-        cloud_account           boolean NOT NULL DEFAULT False
+        cloud_account           boolean NOT NULL DEFAULT False,
+        -- administrative notes about this user
+        notes                   varchar
 );
 CREATE INDEX idx_personas_status ON core.personas(status);
 CREATE INDEX idx_personas_username ON core.personas(username);
 GRANT SELECT ON core.personas TO cdb_anonymous;
-GRANT UPDATE (username, password_hash, display_name) ON core.personas TO cdb_persona;
+GRANT UPDATE (username, password_hash, display_name, given_names, family_name) ON core.personas TO cdb_persona;
 GRANT UPDATE (status) ON core.personas TO cdb_member;
 GRANT INSERT, UPDATE ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
@@ -50,9 +55,10 @@ CREATE TABLE core.genesis_cases (
         -- creation time
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         username                varchar NOT NULL,
-        full_name               varchar NOT NULL,
+        given_names             varchar NOT NULL,
+        family_name             varchar NOT NULL,
         -- status the persona is going to have initially
-        persona_status          integer,
+        persona_status          integer DEFAULT NULL,
         -- user-supplied comment (short justification of request)
         -- may be amended during review
         notes                   varchar,
@@ -69,7 +75,7 @@ CREATE TABLE core.genesis_cases (
         -- After review we need a persistent and private url.
         secret                  varchar DEFAULT NULL,
         -- who moderated the request
-        reviewer                integer REFERENCES core.personas(id)
+        reviewer                integer REFERENCES core.personas(id) DEFAULT NULL
 );
 CREATE INDEX idx_genesis_cases_case_status ON core.genesis_cases(case_status);
 GRANT SELECT, INSERT ON core.genesis_cases To cdb_anonymous;
@@ -201,10 +207,6 @@ CREATE TABLE cde.member_data (
         persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
 
         -- the data fields
-        -- "Nachname"
-        family_name             varchar NOT NULL,
-        -- "Vornamen" (including middle names)
-        given_names             varchar NOT NULL,
         -- in front of name
         title                   varchar DEFAULT NULL,
         -- after name
@@ -220,8 +222,6 @@ CREATE TABLE cde.member_data (
         -- probably a city
         location                varchar,
         country                 varchar,
-        -- administrative notes about this user
-        notes                   varchar,
         --
         -- here is the cut for event.user_data
         --
@@ -321,8 +321,6 @@ CREATE TABLE event.user_data (
         persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
 
         -- the data fields
-        family_name             varchar NOT NULL,
-        given_names             varchar NOT NULL,
         -- in front of name
         title                   varchar DEFAULT NULL,
         -- after name
@@ -337,9 +335,7 @@ CREATE TABLE event.user_data (
         postal_code             varchar,
         -- probably a city
         location                varchar,
-        country                 varchar,
-        -- administrative notes about this user
-        notes                   varchar
+        country                 varchar
 );
 GRANT SELECT, UPDATE ON event.user_data TO cdb_persona;
 GRANT INSERT ON event.user_data TO cdb_admin;
@@ -610,16 +606,6 @@ DROP SCHEMA IF EXISTS assembly;
 CREATE SCHEMA assembly;
 GRANT USAGE ON SCHEMA assembly TO cdb_persona;
 
-CREATE TABLE assembly.user_data (
-        persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
-        given_names             varchar NOT NULL,
-        family_name             varchar NOT NULL,
-        -- who does this person represent
-        organisation            varchar NOT NULL,
-        -- administrative notes about this user
-        notes                   varchar
-);
-
 CREATE TABLE assembly.assemblies (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
@@ -718,16 +704,6 @@ GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_persona;
 DROP SCHEMA IF EXISTS ml;
 CREATE SCHEMA ml;
 GRANT USAGE ON SCHEMA ml TO cdb_persona;
-
-CREATE TABLE ml.user_data (
-        persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
-        given_names             varchar NOT NULL,
-        family_name             varchar NOT NULL,
-        -- administrative notes about this user
-        notes                   varchar
-);
-GRANT SELECT, UPDATE ON ml.user_data TO cdb_persona;
-GRANT INSERT ON ml.user_data TO cdb_admin;
 
 CREATE TABLE ml.mailinglists (
         id                      serial PRIMARY KEY,

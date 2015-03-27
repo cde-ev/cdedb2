@@ -4,10 +4,10 @@
 {% block title %}{{ mailinglist_data['title']|e }}{% endblock %}
 {% block content %}
     {% if mailinglist_data['id'] in user.moderator or is_admin %}
-        <a href="{{ cdedblink('ml/management')|e }}">Verwalten</a>
+        {{ util.href(cdedblink('ml/management'), "Verwalten") }}
     {% endif %}
     {% if is_admin %}
-        <a href="{{ cdedblink('ml/change_mailinglist_form')|e }}">Konfiguration</a>
+        {{ util.href(cdedblink('ml/change_mailinglist_form'), "Konfiguration") }}
     {% endif %}
     <p>{{ mailinglist_data['description']|e }}</p>
     {% if mailinglist_data['gateway'] %}

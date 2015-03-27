@@ -61,14 +61,15 @@ class CdEBackend(AbstractUserBackend):
         :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
-        :returns: number of entries written
+        :returns: a positive number for success, zero otherwise
         """
-        query = glue(
-            "INSERT INTO cde.log",
-            "(code, submitted_by, persona_id, additional_info)",
-            "VALUES (%s, %s, %s, %s)")
-        return self.query_exec(
-            rs, query, (code, rs.user.persona_id, persona_id, additional_info))
+        data = {
+            "code": code,
+            "submitted_by": rs.user.persona_id,
+            "persona_id": persona_id,
+            "additional_info": additional_info,
+        }
+        return self.sql_insert(rs, "cde.log", data)
 
     @access("cde_admin")
     def retrieve_cde_log(self, rs, codes=None, persona_id=None, start=None,
@@ -331,32 +332,27 @@ class CdEBackend(AbstractUserBackend):
         }
         merge_dicts(data, update)
 
-        keys = tuple(key for key in data if key in MEMBER_DATA_FIELDS)
-        fulltext = create_fulltext(data)
-        query = "INSERT INTO {} ({}) VALUES ({})".format(
-            "cde.member_data",
-            ", ".join(("persona_id", "fulltext") + keys),
-            ", ".join(("%s",) * (2+len(keys))))
-
         with Atomizer(rs):
             new_id = self.core.create_persona(rs, data)
-            params = (new_id, fulltext) + tuple(data[key] for key in keys)
-            self.query_exec(rs, query, params)
-            fields = ["submitted_by", "generation", "change_status",
-                      "persona_id", "change_note"]
-            fields.extend(PERSONA_DATA_FIELDS)
-            fields.remove("id")
-            fields.extend(MEMBER_DATA_FIELDS)
-            query = "INSERT INTO core.changelog ({}) VALUES ({})".format(
-                ", ".join(fields), ", ".join(("%s",) * len(fields)))
-            params = [rs.user.persona_id, 1,
-                      const.MemberChangeStati.committed, new_id, change_note]
-            for field in fields[5:]:
-                params.append(data.get(field))
-            self.query_exec(rs, query, params)
+            udata = {k: v for k, v in data.items() if k in MEMBER_DATA_FIELDS}
+            udata['persona_id'] = new_id
+            udata['fulltext'] = create_fulltext(data)
+            self.sql_insert(rs, "cde.member_data", udata,
+                            entity_key="persona_id")
+            keys = list(PERSONA_DATA_FIELDS + MEMBER_DATA_FIELDS)
+            keys.remove("id")
+            cdata = {k: data.get(k) for k in keys}
+            cdata.update({
+                "submitted_by": rs.user.persona_id,
+                "generation": 1,
+                "change_status": const.MemberChangeStati.committed,
+                "persona_id": new_id,
+                "change_note": change_note,
+            })
+            self.sql_insert(rs, "core.changelog", cdata)
         return new_id
 
-    def genesis_check(self, rs, case_id, secret, username=None):
+    def genesis_check(self, rs, case_id, secret):
         """Member accounts cannot be requested."""
         raise NotImplementedError("Not available for cde realm.")
 
@@ -420,9 +416,8 @@ class CdEBackend(AbstractUserBackend):
         :rtype: {int: str}
         """
         ids = affirm_array("int", ids)
-        query = glue("SELECT persona_id, foto FROM cde.member_data",
-                     "WHERE persona_id = ANY(%s)")
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(rs, "cde.member_data", ("persona_id", "foto"),
+                               ids, entity_key="persona_id")
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
         return {e['persona_id']: e['foto'] for e in data}
@@ -443,8 +438,12 @@ class CdEBackend(AbstractUserBackend):
         foto = affirm("str_or_None", foto)
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
-        query = "UPDATE cde.member_data SET foto = %s WHERE persona_id = %s"
-        num = self.query_exec(rs, query, (foto, persona_id))
+        data = {
+            'persona_id': persona_id,
+            'foto': foto,
+        }
+        num = self.sql_update(rs, "cde.member_data", data,
+                              entity_key="persona_id")
         self.cde_log(rs, const.CdeLogCodes.foto_update, persona_id)
         return bool(num)
 

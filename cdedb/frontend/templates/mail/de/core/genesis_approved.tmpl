@@ -1,4 +1,4 @@
-Hallo {{ full_name }},
+Hallo {{ case['given_names'] }} {{ case['family_name'] }},
 
 Deine Anfrage bezüglich eines Accounts in der CdE-Datenbank wurde positiv
 begutachtet. Als letzten Schritt kannst Du nun den Account jetzt unter dem
@@ -6,5 +6,4 @@ Link [1] anlegen.
 
 Liebe Grüße von der Verwaltung
 
-[1] {{ cdedblink('{}/genesis_form'.format(realm), {'case_id': case['id'], 'secret': case['secret'],
-                                                   'username': case['username']}) }}
+[1] {{ cdedblink('{}/genesis_form'.format(realm), {'case_id': case['id'], 'secret': case['secret']}) }}

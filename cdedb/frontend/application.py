@@ -114,7 +114,7 @@ class Application(BaseApp):
                     ">>>\n>>>\n>>>\n>>> Exception while serving {}",
                     "<<<\n<<<\n<<<\n<<<").format(request.url))
                 self.logger.exception("FIRST AS SIMPLE TRACEBACK")
-                self.logger.error("SECOND TRY CGITB   ")
+                self.logger.error("SECOND TRY CGITB")
                 self.logger.error(cgitb.text(sys.exc_info(), context=7))
                 if hasattr(e, '_pyroTraceback'):
                     self.logger.error("THIRD NESTED PYRO TRACEBACK")

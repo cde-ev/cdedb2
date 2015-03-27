@@ -5,14 +5,15 @@
 Feld {{ event_data['fields'][values['field_id']|int]['field_name']|e }} setzen ({{ event_data['title']|e }})
 {% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/show_event")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/field_set')|e }}" method="POST" id="fieldform">
         <table>
             {% for registration_id in ordered %}
                 {{ util.tab_event_field_input(
                     event_data['fields'][values['field_id']|int], name="input{}".format(registration_id),
-                    label="{} {}".format(user_data[registration_data[registration_id]['persona_id']]['given_names'],
-                                         user_data[registration_data[registration_id]['persona_id']]['family_name'])) }}
+                    label="{} {}".format(
+                        persona_data[registration_data[registration_id]['persona_id']]['given_names'],
+                        persona_data[registration_data[registration_id]['persona_id']]['family_name'])) }}
             {% endfor %}
         </table>
         <div>

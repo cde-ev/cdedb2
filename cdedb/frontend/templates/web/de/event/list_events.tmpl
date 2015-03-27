@@ -5,7 +5,7 @@
     <ul>
         {% for event_id, entry in data|dictsort|reverse %}
             <li>
-                <a href="{{ cdedblink("event/show_event", {"event_id": event_id})|e }}">{{ entry['title']|e }}</a>
+                {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
             </li>
         {% endfor %}
     </ul>

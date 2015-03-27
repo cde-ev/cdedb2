@@ -7,7 +7,7 @@
     <ul>
         {% for problem in problems|sort %}
             <li>
-                {{ user_data[problem]['given_names']|e }} {{ user_data[problem]['family_name']|e }}
+                {{ persona_data[problem]['given_names']|e }} {{ persona_data[problem]['family_name']|e }}
                 <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
                   id="removeproblemform{{ moderator|e }}">
                     <div>

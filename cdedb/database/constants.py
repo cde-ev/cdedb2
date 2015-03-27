@@ -20,8 +20,8 @@ class PersonaStati(enum.IntEnum):
       default values (most queries will need to filter for status in (0, 1))
       archived members may not login, thus is_active must be False
     * 20 ... a matching entry event.user_data
-    * 30 ... a matching entry assembly.user_data
-    * 40 ... a matching entry ml.user_data
+    * 30 ... no additional data
+    * 40 ... no additional data
 
     Searchability (see statusses 0 and 1) means the user has given
     (at any point in time) permission for his data to be accessible

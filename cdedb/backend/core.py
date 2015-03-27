@@ -19,6 +19,7 @@ import cdedb.validation as validate
 import cdedb.database.constants as const
 
 from passlib.hash import sha512_crypt
+import copy
 import uuid
 import argparse
 import random
@@ -124,7 +125,7 @@ class CoreBackend(AbstractBackend):
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
         :returns: number of entries written
-        """
+         """
         query = glue(
             "INSERT INTO core.log",
             "(code, submitted_by, persona_id, additional_info)",
@@ -256,10 +257,12 @@ class CoreBackend(AbstractBackend):
                                                 data['id'], current_generation))
                 return 0
 
-            ## determine if something requiring a review changed
+            ## Determine if something requiring a review changed.
             ##
-            ## NOTE: These may not include fields from PERSONA_DATA_FIELDS
-            ## otherwise the core backend might get unhappy.
+            ## This is a bit delicate, since the core backend doesn't handle
+            ## changes which require review. The cde backend has to do the
+            ## right thing, so that this works (i.e. not calling
+            ## :py:meth:`set_persona_data` directly).
             fields_requiring_review = {'birthday', 'family_name', 'given_names'}
             requires_review = (changed_fields & fields_requiring_review
                                and not self.is_admin(rs))
@@ -277,18 +280,17 @@ class CoreBackend(AbstractBackend):
                 const.MemberChangeStati.pending))
 
             ## insert new changelog entry
-            fields = ["submitted_by", "generation", "change_status",
-                      "persona_id", "change_note"]
-            fields.extend(PERSONA_DATA_FIELDS)
-            fields.remove("id")
-            fields.extend(MEMBER_DATA_FIELDS)
-            query = "INSERT INTO core.changelog ({}) VALUES ({})".format(
-                ", ".join(fields), ", ".join(("%s",) * len(fields)))
-            params = [rs.user.persona_id, next_generation,
-                      const.MemberChangeStati.pending, data['id'], change_note]
-            for field in fields[5:]:
-                params.append(data.get(field, current_data[field]))
-            self.query_exec(rs, query, params)
+            insert = copy.deepcopy(current_data)
+            insert.update(data)
+            insert.update({
+                "submitted_by": rs.user.persona_id,
+                "generation": next_generation,
+                "change_status": const.MemberChangeStati.pending,
+                "persona_id": data['id'],
+                "change_note": change_note,
+            })
+            del insert['id']
+            self.sql_insert(rs, "core.changelog", insert)
 
             ## resolve change if it doesn't require review
             if not requires_review:
@@ -304,19 +306,18 @@ class CoreBackend(AbstractBackend):
             if diff:
                 if set(diff) & changed_fields:
                     raise RuntimeError("Conflicting pending change.")
-                query = "INSERT INTO core.changelog ({}) VALUES ({})".format(
-                    ", ".join(fields), ", ".join(("%s",) * len(fields)))
-                params = [rs.user.persona_id, next_generation + 1,
-                          const.MemberChangeStati.pending, data['id'],
-                          change_note]
-                for field in fields[5:]:
-                    if field in diff:
-                        params.append(diff[field])
-                    elif field in data:
-                        params.append(data[field])
-                    else:
-                        params.append(current_data[field])
-                self.query_exec(rs, query, params)
+                insert = copy.deepcopy(current_data)
+                insert.update(data)
+                insert.update(diff)
+                insert.update({
+                    "submitted_by": rs.user.persona_id,
+                    "generation": next_generation + 1,
+                    "change_status": const.MemberChangeStati.pending,
+                    "persona_id": data['id'],
+                    "change_note": "Displaced change.",
+                })
+                del insert['id']
+                self.sql_insert(rs, "core.changelog", insert)
         return ret
 
     @internal_access("cde_admin")
@@ -502,9 +503,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
-        query = "SELECT {} FROM core.personas WHERE id = ANY(%s)".format(
-            ", ".join(PERSONA_DATA_FIELDS))
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(rs, "core.personas", PERSONA_DATA_FIELDS, ids)
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
         return {d['id']: d for d in data}
@@ -692,8 +691,7 @@ class CoreBackend(AbstractBackend):
         ids = affirm_array("int", ids)
         if ids == (rs.user.persona_id,):
             return {rs.user.persona_id: rs.user.realm}
-        query = "SELECT id, status FROM core.personas WHERE id = ANY(%s)"
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(rs, "core.personas", ("id", "status"), ids)
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
         return {d['id']: extract_realm(d['status']) for d in data}
@@ -749,15 +747,13 @@ class CoreBackend(AbstractBackend):
         :returns: The ``bool`` indicates success and the ``str`` is
           either the new password or an error message.
         """
-        query = "SELECT password_hash FROM core.personas WHERE id = %s"
-        data = self.query_one(rs, query, (persona_id,))
-        if not data:
-            raise ValueError("Invalid id.")
+        password_hash = unwrap(self.sql_select_one(
+            rs, "core.personas", ("password_hash",), persona_id))
         if new_password is not None and (not self.is_admin(rs)
                                          or persona_id == rs.user.persona_id):
             if not validate.is_password_strength(new_password):
                 return False, "Password too weak."
-            if not self.verify_password(old_password, data['password_hash']):
+            if not self.verify_password(old_password, password_hash):
                 return False, "Password verification failed."
         ## escalate db privilige role in case of resetting passwords
         orig_conn = None
@@ -826,9 +822,9 @@ class CoreBackend(AbstractBackend):
         :returns: see :py:meth:`modify_password`
         """
         email = affirm("email", email)
-        query = glue("SELECT id, db_privileges FROM core.personas",
-                     "WHERE username = %s")
-        data = self.query_one(rs, query, (email,))
+        data = self.sql_select_one(
+            rs, "core.personas", ("id", "db_privileges"), email,
+            entity_key="username")
         if not data:
             return False, "Nonexistant user."
         if data['db_privileges'] > 0 and not self.is_admin(rs):
@@ -862,10 +858,9 @@ class CoreBackend(AbstractBackend):
             if self.is_admin(rs):
                 authorized = True
             elif password:
-                query = "SELECT password_hash FROM core.personas WHERE id = %s"
-                data = self.query_one(rs, query, (persona_id,))
-                if (data and
-                        self.verify_password(password, data["password_hash"])):
+                data = self.sql_select_one(rs, "core.personas",
+                                           ("password_hash",), persona_id)
+                if data and self.verify_password(password, unwrap(data)):
                     authorized = True
             if authorized:
                 new_data = {
@@ -913,17 +908,15 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: The id of the newly created persona.
         """
+        ## filter relevant parts of the dict
         data = {k: v for k, v in data.items() if k in PERSONA_DATA_FIELDS}
         data['db_privileges'] = 0 ## everybody starts with no privileges
         ## modified version of hash for 'secret' and thus safe/unknown plaintext
-        data['password_hash'] = (
-            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/S6TDc"
-            "1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
-        keys = tuple(key for key in data)
-        assert(set(keys)
+        data['password_hash'] = glue(
+            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/",
+            "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+        assert(set(data.keys())
                == (set(PERSONA_DATA_FIELDS) | {'password_hash'}) - {"id"})
-        query = "INSERT INTO core.personas ({}) VALUES ({}) RETURNING id"
-        query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
         ldap_ops = (
             ('objectClass', 'cdePersona'),
             ('sn', "({})".format(data['username'])),
@@ -935,40 +928,31 @@ class CoreBackend(AbstractBackend):
             ('cloudAccount', ldap_bool(data['cloud_account'])),
             ('isActive', ldap_bool(data['is_active'])))
         with Atomizer(rs):
-            ret = unwrap(self.query_one(
-                rs, query, tuple(data[key] for key in keys)))
-            dn = "uid={},{}".format(ret, self.conf.LDAP_UNIT_NAME)
-            self.core_log(rs, const.CoreLogCodes.persona_creation, ret)
+            new_id = self.sql_insert(rs, "core.personas", data)
+            dn = "uid={},{}".format(new_id, self.conf.LDAP_UNIT_NAME)
+            self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
             with self.ldap_connect() as l:
                 l.add_s(dn, ldap_ops)
-        return ret
+        return new_id
 
     @access("anonymous")
-    def genesis_request(self, rs, username, full_name, rationale):
+    def genesis_request(self, rs, data):
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type username: str
-        :type rationale: str
-        :type full_name: str
+        :type data: {str: object}
         :rtype: int
         :returns: id of the new request or 0 if the username is allready taken
         """
-        username = affirm("email", username)
-        rationale = affirm("str", rationale)
-        full_name = affirm("str", full_name)
-        if self.verify_existence(rs, username):
+        data = affirm("genesis_case_data", data, creation=True)
+        if self.verify_existence(rs, data['username']):
             return 0
-        query = glue(
-            "INSERT INTO core.genesis_cases (username, full_name, notes,",
-            "case_status) VALUES (%s, %s, %s, %s) RETURNING id")
-        params = (username, full_name, rationale,
-                  const.GenesisStati.unconfirmed)
-        ret = unwrap(self.query_one(rs, query, params))
+        data['case_status'] = const.GenesisStati.unconfirmed
+        ret = self.sql_insert(rs, "core.genesis_cases", data)
         self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
-                      additional_info=username)
+                      additional_info=data['username'])
         return ret
 
     @access("anonymous")
@@ -993,15 +977,37 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type stati: {int}
+        :param stati: restrict to these stati
         :rtype: {int: {str: object}}
         :returns: dict mapping case ids to dicts containing information
           about the case
         """
         stati = affirm_array("int", stati)
-        query = glue("SELECT id, username, full_name, case_status",
-                     "FROM core.genesis_cases WHERE case_status = ANY(%s)")
-        data = self.query_all(rs, query, (stati,))
+        fields = ("id", "ctime", "username", "given_names", "family_name",
+                  "case_status")
+        data = self.sql_select(rs, "core.genesis_cases", fields, stati,
+                               entity_key="case_status")
         return {e['id']: e for e in data}
+
+    @access("anonymous")
+    def genesis_my_case(self, rs, case_id, secret):
+        """Retrieve one dataset.
+
+        This is seperately to allow secure anonymous access.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type case_id: int
+        :type secret: str
+        :rtype: {int: {str: object}}
+        :returns: the requested data or None if wrong secret
+        """
+        case_id = affirm("int", case_id)
+        secret = affirm("str", secret)
+        data = self.sql_select_one(rs, "core.genesis_cases",
+                                   GENESIS_CASE_FIELDS, case_id)
+        if secret != data['secret']:
+            return None
+        return data
 
     @access("core_admin")
     @singularize("genesis_get_case")
@@ -1014,9 +1020,8 @@ class CoreBackend(AbstractBackend):
         :returns: dict mapping ids to the requested data
         """
         ids = affirm_array("int", ids)
-        query = "SELECT {} FROM core.genesis_cases WHERE id = ANY(%s)".format(
-            ", ".join(GENESIS_CASE_FIELDS))
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
+                               ids)
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
         return {e['id']: e for e in data}
@@ -1026,22 +1031,16 @@ class CoreBackend(AbstractBackend):
         """Modify a persona creation case.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type case_id: int
+        :type data: {str: object}
         :rtype: int
         :returns: number of affected cases
         """
         data = affirm("genesis_case_data", data)
-        keys = tuple(key for key in data)
         with Atomizer(rs):
-            query = glue("SELECT case_status, username",
-                         "FROM core.genesis_cases WHERE id = %s")
-            current = self.query_one(rs, query, (data['id'],))
-            query = glue("UPDATE core.genesis_cases SET ({}) = ({})",
-                         "WHERE id = %s")
-            query = query.format(", ".join(keys),
-                                 ", ".join(("%s",) * len(keys)))
-            ret = self.query_exec(
-                rs, query, tuple(data[key] for key in keys) + (data['id'],))
+            current = self.sql_select_one(
+                rs, "core.genesis_cases", ("case_status", "username"),
+                data['id'])
+            ret = self.sql_update(rs, "core.genesis_cases", data)
         if (data.get('case_status')
                 and data['case_status'] != current['case_status']):
             if data['case_status'] == const.GenesisStati.approved:

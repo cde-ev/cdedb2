@@ -1,47 +1,11 @@
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}
 Mailinglistennutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden
 {% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("ml/user_search_form", query|querytoparams)|e }}">Zurück</a>
-
-    {% with TITLES = {
-        "persona_id": "ID",
-        "username": "Email",
-        "is_active": "Aktiv",
-        "db_privileges": "DB-Rechte",
-        "cloud_account": "Cloud Zugriff",
-        "family_name": "Nachname",
-        "given_names": "Vorname",
-        "display_name": "Rufname",
-        "notes": "Notizen",} %}
-
-        {{ util.display_query_result(result, query, TITLES, choices) }}
-    {% endwith %}
-
-    <a href="{{ cdedblink("ml/user_search_form", query|querytoparams)|e }}">Zurück</a>
-
-    <h3>Aktionen</h3>
-    <p>
-        <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
-        <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
-        <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
-    </p>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $("#action_select_all").click(function (){
-                 $(".rowSelector").prop('checked', true);
-                 });
-            $("#action_select_none").click(function (){
-                 $(".rowSelector").prop('checked', false);
-                 });
-            $("#action_select_invert").click(function (){
-                 $(".rowSelector").each(function (){
-                     $(this).prop('checked', !$(this).prop('checked'));
-                 })});
-        });
-    </script>
+    {{ generic.user_search_result('ml') }}
 {% endblock %}

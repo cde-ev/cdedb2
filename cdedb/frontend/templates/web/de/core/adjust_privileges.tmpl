@@ -1,6 +1,6 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Privilegien für {{ data['display_name']|e }} ({{ data['username']|e }}) setzen{% endblock %}
+{% block title %}Privilegien für {{ data['given_names']|e }} {{ data['family_name']|e }} setzen{% endblock %}
 {% block content %}
     Bisherige Privilegien:
     <ul>

@@ -24,6 +24,6 @@
                 {{ util.input_submit(value="Anmelden") }}
             </p>
         </form>
-        <a href="{{ cdedblink('core/reset_password_form')|e }}">Passwort vergessen?</a>
+        {{ util.href(cdedblink('core/reset_password_form'), "Passwort vergessen?") }}
     {% endif %}
 {% endblock %}

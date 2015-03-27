@@ -12,12 +12,8 @@ from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
     access, internal_access, make_RPCDaemon, run_RPCDaemon,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, AuthShim, BackendUser, BackendRequestState)
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.event import EventBackend
-from cdedb.common import (
-    glue, PrivilegeError, ML_USER_DATA_FIELDS, unwrap, PERSONA_DATA_FIELDS,
-    MAILINGLIST_FIELDS)
+    singularize, BackendUser, BackendRequestState)
+from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
 from cdedb.config import Config, SecretsConfig
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -29,18 +25,14 @@ class MlBackend(AbstractUserBackend):
     additional actions available."""
     realm = "ml"
     user_management = {
-        "data_table": "ml.user_data",
-        "data_fields": ML_USER_DATA_FIELDS,
+        "data_table": None,
+        "data_fields": None,
         "validator": "ml_user_data",
         "user_status": const.PersonaStati.ml_user,
     }
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        # TODO enable assembly
-        # self.assembly = AuthShim(AssemblyBackend(configpath))
-        self.cde = AuthShim(CdEBackend(configpath))
-        self.event = AuthShim(EventBackend(configpath))
         secrets = SecretsConfig(configpath)
         self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
 
@@ -73,7 +65,7 @@ class MlBackend(AbstractUserBackend):
         :type ml_id: int
         :rtype: bool
         """
-        return (ml_id in rs.user.moderator or "ml_script" in rs.user.roles)
+        return ml_id in rs.user.moderator or "ml_script" in rs.user.roles
 
     @access("persona")
     @singularize("moderator_info")
@@ -85,9 +77,9 @@ class MlBackend(AbstractUserBackend):
         :rtype: {int: {int}}
         """
         ids = affirm_array("int", ids)
-        query = glue("SELECT persona_id, mailinglist_id FROM ml.moderators",
-                     "WHERE persona_id = ANY(%s)")
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(
+            rs, "ml.moderators", ("persona_id", "mailinglist_id"), ids,
+            entity_key="persona_id")
         ret = {}
         for anid in ids:
             ret[anid] = {x['mailinglist_id']
@@ -108,8 +100,8 @@ class MlBackend(AbstractUserBackend):
         return super().create_user(rs, data)
 
     @access("anonymous")
-    def genesis_check(self, rs, case_id, secret, username=None):
-        return super().genesis_check(rs, case_id, secret, username=username)
+    def genesis_check(self, rs, case_id, secret):
+        return super().genesis_check(rs, case_id, secret)
 
     @access("anonymous")
     def genesis(self, rs, case_id, secret, data):
@@ -133,13 +125,15 @@ class MlBackend(AbstractUserBackend):
         :rtype: int
         :returns: number of entries written
         """
-        query = glue(
-            "INSERT INTO ml.log",
-            "(code, mailinglist_id, submitted_by, persona_id, additional_info)",
-            "VALUES (%s, %s, %s, %s, %s)")
-        return self.query_exec(
-            rs, query, (code, mailinglist_id, rs.user.persona_id, persona_id,
-                        additional_info))
+        new_log = {
+            "code": code,
+            "mailinglist_id": mailinglist_id,
+            "submitted_by": rs.user.persona_id,
+            "persona_id": persona_id,
+            "additional_info": additional_info,
+
+        }
+        return self.sql_insert(rs, "ml.log", new_log)
 
     @access("ml_user")
     def retrieve_log(self, rs, codes=None, mailinglist_id=None,
@@ -168,48 +162,15 @@ class MlBackend(AbstractUserBackend):
     def acquire_data(self, rs, ids):
         """Return user data sets.
 
-        This is somewhat like :py:meth:`get_data`, but more general in that
-        it allows ids from assembly, cde, event and ml realm and dispatches
-        the request to the correct place. Thus this is the default way to
-        obtain persona data pertaining to a subscription.
-
-        This has the special behaviour that it can retrieve cde member
-        datasets without interacting with the quota mechanism. Thus
-        usage should be limited privileged users (basically moderators).
-
-        .. warning:: It is impossible to atomize this operation. Since this
-          allows a non-member to retrieve member data we have to escalate
-          privileges (which happens in
-          :py:meth:`cdedb.backend.cde.CdEBackend.get_data_no_quota`) thus
-          breaking any attempt at atomizing.
+        Since the ml realm does not define any additional attributes this
+        delegates to :py:meth:`cdedb.backend.core.CoreBackendget_data`.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
         ids = affirm_array("int", ids)
-        realms = self.core.get_realms(rs, ids)
-        ret = {}
-        ids_ml = tuple(anid for anid in realms if realms[anid] == "ml")
-        if ids_ml:
-            ret.update(self.get_data(rs, ids_ml))
-        external = {}
-        # TODO enable assembly
-        # ids_assembly = tuple(anid for anid in realms
-        #                      if realms[anid] == "assembly")
-        # if ids_assembly:
-        #     external.update(self.assembly.get_data(rs, ids_assembly))
-        ids_cde = tuple(anid for anid in realms if realms[anid] == "cde")
-        if ids_cde:
-            external.update(self.cde.get_data_no_quota(rs, ids_cde))
-        ids_event = tuple(anid for anid in realms if realms[anid] == "event")
-        if ids_event:
-            external.update(self.event.get_data(rs, ids_cde))
-        ## filter fields, so that we do not leak infos
-        ret.update({key: {k: v for k, v in value.items()
-                          if k in PERSONA_DATA_FIELDS + ML_USER_DATA_FIELDS}
-                    for key, value in external.items()})
-        return ret
+        return self.core.get_data(rs, ids)
 
     @access("ml_admin")
     def submit_general_query(self, rs, query):
@@ -270,21 +231,20 @@ class MlBackend(AbstractUserBackend):
         """
         ids = affirm_array("int", ids)
         with Atomizer(rs):
-            query = "SELECT {} FROM ml.mailinglists WHERE id = ANY(%s)"
-            query = query.format(", ".join(MAILINGLIST_FIELDS))
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
+                                   ids)
             ret = {e['id']: e for e in data}
-            query = glue("SELECT persona_id, mailinglist_id FROM ml.moderators",
-                         "WHERE mailinglist_id = ANY(%s)")
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(
+                rs, "ml.moderators", ("persona_id", "mailinglist_id"), ids,
+                entity_key="mailinglist_id")
             for anid in ids:
                 moderators = {d['persona_id']
                               for d in data if d['mailinglist_id'] == anid}
                 assert('moderators' not in ret[anid])
                 ret[anid]['moderators'] = moderators
-            query = glue("SELECT address, mailinglist_id FROM ml.whitelist",
-                         "WHERE mailinglist_id = ANY(%s)")
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(
+                rs, "ml.whitelist", ("address", "mailinglist_id"), ids,
+                entity_key="mailinglist_id")
             for anid in ids:
                 whitelist = {d['address']
                              for d in data if d['mailinglist_id'] == anid}
@@ -311,27 +271,23 @@ class MlBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         ret = 1
         with Atomizer(rs):
-            keys = tuple(key for key in data if key in MAILINGLIST_FIELDS)
-            if keys:
-                query = "UPDATE ml.mailinglists SET ({}) = ({}) WHERE id = %s"
-                query = query.format(", ".join(keys),
-                                     ", ".join(("%s",) * len(keys)))
-                params = tuple(data[key] for key in keys) + (data['id'],)
-                ret *= self.query_exec(rs, query, params)
+            mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
+            if len(mdata) > 1:
+                ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
             if 'moderators' in data:
-                query = glue("SELECT persona_id FROM ml.moderators",
-                             "WHERE mailinglist_id = %s")
-                existing = {e['persona_id']
-                            for e in self.query_all(rs, query, (data['id'],))}
+                existing = {e['persona_id'] for e in self.sql_select(
+                    rs, "ml.moderators", ("persona_id",), (data['id'],),
+                    entity_key="mailinglist_id")}
                 new = set(data['moderators']) - existing
                 deleted = existing - set(data['moderators'])
                 if new:
-                    query = glue(
-                        "INSERT INTO ml.moderators",
-                        "(persona_id, mailinglist_id) VALUES (%s, %s)")
                     for anid in new:
-                        ret *= self.query_exec(rs, query, (anid, data['id']))
+                        new_mod = {
+                            'persona_id': anid,
+                            'mailinglist_id': data['id']
+                        }
+                        ret *= self.sql_insert(rs, "ml.moderators", new_mod)
                         self.ml_log(rs, const.MlLogCodes.moderator_added,
                                     data['id'], persona_id=anid)
                 if deleted:
@@ -343,18 +299,18 @@ class MlBackend(AbstractUserBackend):
                         self.ml_log(rs, const.MlLogCodes.moderator_removed,
                                     data['id'], persona_id=anid)
             if 'whitelist' in data:
-                query = glue("SELECT address FROM ml.whitelist",
-                             "WHERE mailinglist_id = %s")
-                existing = {e['address']
-                            for e in self.query_all(rs, query, (data['id'],))}
+                existing = {e['address'] for e in self.sql_select(
+                    rs, "ml.whitelist", ("address",), (data['id'],),
+                    entity_key="mailinglist_id")}
                 new = set(data['whitelist']) - existing
                 deleted = existing - set(data['whitelist'])
                 if new:
-                    query = glue(
-                        "INSERT INTO ml.whitelist",
-                        "(address, mailinglist_id) VALUES (%s, %s)")
                     for address in new:
-                        ret *= self.query_exec(rs, query, (address, data['id']))
+                        new_white = {
+                            'address': address,
+                            'mailinglist_id': data['id'],
+                        }
+                        ret *= self.sql_insert(rs, "ml.whitelist", new_white)
                         self.ml_log(rs, const.MlLogCodes.whitelist_added,
                                     data['id'], additional_info=address)
                 if deleted:
@@ -378,13 +334,8 @@ class MlBackend(AbstractUserBackend):
         """
         data = affirm("mailinglist_data", data, creation=True)
         with Atomizer(rs):
-            keys = tuple(key for key in data if key in MAILINGLIST_FIELDS)
-            query = "INSERT INTO ml.mailinglists ({}) VALUES ({}) RETURNING id"
-            query = query.format(", ".join(keys),
-                                 ", ".join(("%s",) * len(keys)))
-            params = tuple(data[key] for key in keys)
-
-            new_id = unwrap(self.query_one(rs, query, params))
+            mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
+            new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
             for aspect in ('moderators', 'whitelist'):
                 if aspect in data:
                     adata = {
@@ -415,12 +366,11 @@ class MlBackend(AbstractUserBackend):
             if cascade:
                 tables = ("ml.subscription_states", "ml.subscription_requests",
                           "ml.whitelist", "ml.moderators", "ml.log")
-                query = "DELETE FROM {} WHERE mailinglist_id = %s"
                 for table in tables:
-                    self.query_exec(rs, query.format(table), (mailinglist_id,))
-            query = "DELETE FROM ml.mailinglists WHERE id = %s"
-            ret = self.query_exec(rs, query, (mailinglist_id,))
-            self.ml_log(rs, const.MlLogCodes.list_deleted, None,
+                    self.sql_delete_one(rs, table, mailinglist_id,
+                                        entity_key="mailinglist_id")
+            ret = self.sql_delete_one(rs, "ml.mailinglists", mailinglist_id)
+            self.ml_log(rs, const.MlLogCodes.list_deleted, mailinglist_id=None,
                         additional_info="{} ({})".format(
                             data['title'], data['address']))
             return ret
@@ -446,28 +396,28 @@ class MlBackend(AbstractUserBackend):
         ret = {}
         with Atomizer(rs):
             ml_data = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
-            query = glue(
-                "SELECT persona_id, address, is_subscribed",
-                "FROM ml.subscription_states WHERE mailinglist_id = %s")
-            sub_data = self.query_all(rs, query, (mailinglist_id,))
+            sub_data = self.sql_select(
+                rs, "ml.subscription_states",
+                ("persona_id", "address", "is_subscribed"), (mailinglist_id,),
+                entity_key="mailinglist_id")
             explicits = {e['persona_id']: e['address']
                          for e in sub_data if e['is_subscribed']}
             excludes = {e['persona_id']
                         for e in sub_data if not e['is_subscribed']}
             if ml_data['event_id']:
                 if not ml_data['registration_stati']:
-                    query = glue("SELECT persona_id FROM event.orgas",
-                                 "WHERE event_id = %s")
-                    odata = self.query_all(rs, query, (ml_data['event_id'],))
+                    odata = self.sql_select(
+                        rs, "event.orgas", ("persona_id",),
+                        (ml_data['event_id'],), entity_key="event_id")
                     ret = {e['persona_id']: None for e in odata}
                 else:
                     rdata = self.query_all(rs, event_list_query, (
                         ml_data['event_id'], ml_data['registration_stati']))
                     ret = {e['persona_id']: None for e in rdata}
             elif ml_data['assembly_id']:
-                query = glue("SELECT persona_id FROM assembly.attendees",
-                             "WHERE assembly_id = %s")
-                adata = self.query_all(rs, query, (ml_data['assembly_id'],))
+                adata = self.sql_select(
+                    rs, "assembly.attendees", ("persona_id",),
+                    (ml_data['assembly_id'],), entity_key="assembly_id")
                 ret = {e['persona_id']: None for e in adata}
             elif const.SubscriptionPolicy(ml_data['sub_policy']).is_additive():
                 ## explicits take care of everything
@@ -480,8 +430,8 @@ class MlBackend(AbstractUserBackend):
             ret = {k: v for k, v in ret.items() if k not in excludes}
             ret.update(explicits)
             defaults = tuple(k for k, v in ret.items() if not v)
-            query = "SELECT id, username FROM core.personas WHERE id = ANY(%s)"
-            udata = self.query_all(rs, query, (defaults,))
+            udata = self.sql_select(rs, "core.personas",
+                                    ("id", "username"), defaults)
             ret.update({e['id']: e['username'] for e in udata})
             return ret
 
@@ -530,11 +480,10 @@ class MlBackend(AbstractUserBackend):
         with Atomizer(rs):
             lists = lists or self.list_mailinglists(rs)
             ml_data = self.get_mailinglists(rs, lists)
-            query = glue(
-                "SELECT persona_id, mailinglist_id, address, is_subscribed",
-                "FROM ml.subscription_states WHERE persona_id = %s")
-            sub_data = {e['mailinglist_id']: e
-                        for e in self.query_all(rs, query, (persona_id,))}
+            sub_data = {e['mailinglist_id']: e for e in self.sql_select(
+                rs, "ml.subscription_states",
+                ("persona_id", "mailinglist_id", "address", "is_subscribed"),
+                (persona_id,), entity_key="persona_id")}
             for mailinglist_id in ml_data:
                 if mailinglist_id in sub_data:
                     this_data = sub_data[mailinglist_id]
@@ -585,21 +534,21 @@ class MlBackend(AbstractUserBackend):
         :rtype: int
         :returns: number of entries written
         """
-        fields = ("mailinglist_id", "persona_id", "is_subscribed", "address")
         with Atomizer(rs):
             query = glue("SELECT id FROM ml.subscription_states",
                          "WHERE mailinglist_id = %s AND persona_id = %s")
             data = self.query_one(rs, query, (mailinglist_id, persona_id))
-            params = [mailinglist_id, persona_id, is_subscribed, address]
+            new_data = {
+                'mailinglist_id': mailinglist_id,
+                'persona_id': persona_id,
+                'is_subscribed': is_subscribed,
+                'address': address,
+            }
             if data is None:
-                query = glue("INSERT INTO ml.subscription_states ({})",
-                             "VALUES (%s, %s, %s, %s)")
+                return self.sql_insert(rs, "ml.subscription_states", new_data)
             else:
-                query = glue("UPDATE ml.subscription_states",
-                             "SET ({}) = (%s, %s, %s, %s) WHERE id = %s")
-                params.append(unwrap(data))
-            query = query.format(", ".join(fields))
-            return self.query_exec(rs, query, params)
+                new_data['id'] = unwrap(data)
+                return self.sql_update(rs, "ml.subscription_states", new_data)
 
     @access("ml_user")
     def change_subscription_state(self, rs, mailinglist_id, persona_id,
@@ -652,11 +601,13 @@ class MlBackend(AbstractUserBackend):
                 rdata = self.query_one(rs, query, (mailinglist_id, persona_id))
                 if rdata:
                     return 0
-                query = glue("INSERT INTO ml.subscription_requests",
-                             "(mailinglist_id, persona_id) VALUES (%s, %s)")
                 self.ml_log(rs, const.MlLogCodes.subscription_requested,
                             mailinglist_id, persona_id=persona_id)
-                return -self.query_exec(rs, query, (mailinglist_id, persona_id))
+                request = {
+                    'mailinglist_id': mailinglist_id,
+                    'persona_id': persona_id,
+                }
+                return -self.sql_insert(rs, "ml.subscription_requests", request)
             if (policy(ml_data['sub_policy']).privileged_transition(subscribe)
                     and not privileged and not gateway):
                 raise PrivilegeError("Must be moderator.")
@@ -681,9 +632,9 @@ class MlBackend(AbstractUserBackend):
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
 
-        query = glue("SELECT persona_id FROM ml.subscription_requests",
-                     "WHERE mailinglist_id = %s")
-        data = self.query_all(rs, query, (mailinglist_id,))
+        data = self.sql_select(
+            rs, "ml.subscription_requests", ("persona_id",),
+            (mailinglist_id,), entity_key="mailinglist_id")
         return tuple(e['persona_id'] for e in data)
 
     @access("ml_user")

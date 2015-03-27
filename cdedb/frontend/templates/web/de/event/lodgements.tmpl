@@ -24,7 +24,7 @@
         </ul>
     {% endif %}
     <h2>Neue Unterkunft anlegen</h2>
-    <a href="{{ cdedblink("event/create_lodgement_form")|e }}" {% if locked %} disabled {% endif %}>anlegen</a>
+    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", disabled=locked) }}
     <h2>Alle Unterkünfte</h2>
     <table class="checkeredTable">
         <tr>
@@ -44,9 +44,7 @@
                 {% for part_id in event_data['parts']|sort %}
                     <td>{{ inhabitants[(lodgement_id, part_id)]|length|e }}</td>
                 {% endfor %}
-                <td>
-                    <a href="{{ cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}) }}">Details</a>
-                </td>
+                <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}), "Details") }}</td>
             </tr>
         {% endfor %}
     </table>

@@ -3,12 +3,12 @@
 {% block inner_navigation %}{{ ml_inner_navigation(mailinglist_data) }}{% endblock %}
 {% block title %}{{ mailinglist_data['title']|e }} -- Verwalten{% endblock %}
 {% block content %}
-    <a href="{{ cdedblink('ml/check_states')|e }}">Konsistenzcheck</a>
+    {{ util.href(cdedblink('ml/check_states'), "Konsistenzcheck") }}
     <h2>Moderatoren</h2>
     <ul>
         {% for moderator in mailinglist_data['moderators']|sort %}
             <li>
-                {{ user_data[moderator]['given_names']|e }} {{ user_data[moderator]['family_name']|e }}
+                {{ persona_data[moderator]['given_names']|e }} {{ persona_data[moderator]['family_name']|e }}
                 <form action="{{ cdedblink('ml/remove_moderator')|e }}" method="POST"
                   id="removemoderatorform{{ moderator|e }}">
                     <div>
@@ -30,7 +30,7 @@
     <ul>
         {% for request in requests|sort %}
             <li>
-                {{ user_data[request]['given_names']|e }} {{ user_data[request]['family_name']|e }}
+                {{ persona_data[request]['given_names']|e }} {{ persona_data[request]['family_name']|e }}
                 <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST" id="ackrequestform{{ request|e }}">
                     <div>
                         {{ util.input_hidden(name="ack", value=True) }}
@@ -82,7 +82,7 @@
     <ul>
         {% for anid in subscribers %} {# allready sorted #}
             <li>
-                {{ user_data[anid]['given_names']|e }} {{ user_data[anid]['family_name']|e }}
+                {{ persona_data[anid]['given_names']|e }} {{ persona_data[anid]['family_name']|e }}
                 <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
                   id="removesubscriberform{{ anid|e }}">
                     <div>

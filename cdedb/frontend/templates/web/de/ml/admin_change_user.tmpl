@@ -1,17 +1,7 @@
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Administration -- {{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('ml/admin_change_user')|e }}" method="POST" id="changedataform">
-        <table>
-            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.tab_input_text(name="family_name", label="Nachname") }}
-            {{ util.tab_input_text(name="display_name", label="Rufname") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
-        </table>
-        <div>
-            {{ util.input_submit(value="Speichern") }}
-            <a href="{{ show_user_link(values['persona_id'])|e }}">Abbrechen</a>
-        </div>
-    </form>
+    {{ generic.admin_change_user('ml') }}
 {% endblock %}

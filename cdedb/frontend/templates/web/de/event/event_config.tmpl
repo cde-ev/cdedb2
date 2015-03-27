@@ -45,12 +45,12 @@
             <td>{{ data['notes']|e|linebreaks }}</td>
         </tr>
     </table>
-    <a href="{{ cdedblink('event/change_event_form')|e }}" {% if locked %} disabled {% endif %}>bearbeiten</a>
+    {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", disabled=locked) }}
     <h2>Kurs hinzufügen</h2>
-        <a href="{{ cdedblink("event/create_course_form")|e }}" {% if locked %} disabled {% endif %}>Kurs hinzufügen</a>
+    {{ util.href(cdedblink("event/create_course_form"), ">Kurs hinzufügen", disabled=locked) }}
     <h2>Minderjährigenformular</h2>
     {% if minor_form_present %}
-        <a href="{{ cdedblink('event/get_minor_form')|e }}">aktuelles Formular</a>
+        {{ util.href(cdedblink('event/get_minor_form'), "aktuelles Formular") }}
     {% else %}
         <strong>Kein Formular vorhanden -- Minderjährige können sich nicht anmelden.</strong>
     {% endif %}
@@ -67,10 +67,7 @@
             <li>
                 {{ entry['title']|e }}
                 ({{ entry['part_begin']|date|e }}--{{ entry['part_end']|date|e }}; {{ entry['fee']|e }}€)
-                <a href="{{ cdedblink('event/change_part_form', {'part_id': anid})|e }}"
-                 {% if locked %} disabled {% endif %}>
-                    bearbeiten
-                </a>
+                {{ util.href(cdedblink('event/change_part_form', {'part_id': anid}), "bearbeiten", disabled=locked) }}
             </li>
         {% endfor %}
     </ul>
@@ -131,10 +128,7 @@
                         </table>
                     </p>
                 {% endif %}
-                <a href="{{ cdedblink('event/change_field_form', {'field_id': anid})|e }}"
-                 {% if locked %} disabled {% endif %}>
-                    bearbeiten
-                </a>
+                {{ util.href(cdedblink('event/change_field_form', {'field_id': anid}), "bearbeiten", disabled=locked) }}
                 <form action="{{ cdedblink('event/remove_field', {'field_id': anid})|e }}" method="POST"
                  id="removefieldform{{ anid|e }}">
                     <div>
@@ -184,12 +178,8 @@
                 </li>
             {% endfor %}
         </ul>
-        <a href="{{ cdedblink('event/change_questionnaire_form')|e }}" {% if locked %} disabled {% endif %}>
-            bearbeiten
-        </a>
-        <a href="{{ cdedblink('event/reorder_questionnaire_form')|e }}" {% if locked %} disabled {% endif %}>
-            umordnen
-        </a>
+        {{ util.href(cdedblink('event/change_questionnaire_form'), "bearbeiten", disabled=locked) }}
+        {{ util.href(cdedblink('event/reorder_questionnaire_form'), "umordnen", disabled=locked) }}
         <h3>Zeile anfügen</h3>
         <form action="{{ cdedblink('event/add_questionnaire_row')|e }}" method="POST" id="addquestionnairerowform">
             <table>

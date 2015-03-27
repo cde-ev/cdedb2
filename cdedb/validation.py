@@ -51,7 +51,6 @@ from cdedb.query import (
 from cdedb.config import BasicConfig
 from cdedb.enums import ALL_ENUMS
 _BASICCONF = BasicConfig()
-import cdedb.database.constants as const
 
 _ALL = []
 def _addvalidator(fun):
@@ -924,32 +923,45 @@ def _ml_user_data(val, argname=None, *, strict=False, creation=False,
         val, mandatory_fields, optional_fields, strict=strict,
         _convert=_convert)
 
-_GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
+_GENESIS_CASE_COMMON_FIELDS = lambda: {
     'username': _email,
-    'full_name': _str,
-    'persona_status': _enum_personastati,
+    'given_names': _str,
+    'family_name': _str,
     'notes': _str,
+}
+_GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
+    'persona_status': _enum_personastati,
     'case_status': _enum_genesisstati,
     'secret': _str,
     'reviewer': _int,
 }
 @_addvalidator
-def _genesis_case_data(val, argname=None, *, strict=False, _convert=True):
+def _genesis_case_data(val, argname=None, *, strict=False, creation=False,
+                       _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :type strict: bool
     :param strict: If ``True`` allow only complete data sets.
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "genesis_case_data"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    return _examine_dictionary_fields(
-        val, {'id': _int}, _GENESIS_CASE_OPTIONAL_FIELDS(),
-        strict=strict, _convert=_convert)
+    if creation:
+        mandatory_fields = _GENESIS_CASE_COMMON_FIELDS()
+        optional_fields = _GENESIS_CASE_OPTIONAL_FIELDS()
+    else:
+        mandatory_fields = {'id': _int,}
+        optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
+                               **_GENESIS_CASE_OPTIONAL_FIELDS())
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      strict=strict, _convert=_convert)
 
 @_addvalidator
 def _input_file(val, argname=None, *, _convert=True):
@@ -1895,8 +1907,8 @@ def _enum_validator_maker(anenum, name=None):
     _addvalidator(the_validator)
     setattr(current_module, the_validator.__name__, the_validator)
 
-for anenum in ALL_ENUMS:
-    _enum_validator_maker(anenum)
+for oneenum in ALL_ENUMS:
+    _enum_validator_maker(oneenum)
 
 ##
 ## Above is the real stuff

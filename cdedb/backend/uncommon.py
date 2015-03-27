@@ -58,13 +58,15 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :rtype: {int: {str: object}}
         :returns: dict mapping ids to requested data
         """
-        query = glue("SELECT {} FROM {} AS u JOIN core.personas AS p",
-                     "ON u.persona_id = p.id WHERE p.id = ANY(%s)")
-        query = query.format(
-            ", ".join(PERSONA_DATA_FIELDS +
-                      self.user_management['data_fields']),
-            self.user_management['data_table'])
-        data = self.query_all(rs, query, (ids,))
+        if not self.user_management['data_table']:
+            return self.core.retrieve_persona_data(rs, ids)
+        else:
+            table = "{} AS u JOIN core.personas AS p ON u.persona_id = p.id"
+            table = table.format(self.user_management['data_table'])
+            data = self.sql_select(
+                rs, table,
+                PERSONA_DATA_FIELDS + self.user_management['data_fields'], ids,
+                entity_key="p.id")
         if len(data) != len(ids):
             raise ValueError("Invalid ids requested.")
         return {d['id']: d for d in data}
@@ -75,34 +77,30 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: number of changed entries
+        :returns: a positive number for success, zero otherwise
         """
         self.affirm_realm(rs, (data['id'],))
-
-        pkeys = tuple(key for key in data if key in PERSONA_DATA_FIELDS)
-        ukeys = tuple(key for key in data
-                      if key in self.user_management['data_fields'])
-
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
 
-        pdata = {key:data[key] for key in pkeys}
-        ret = 0
-        with Atomizer(rs):
-            if len(pkeys) > 1:
-                ret = self.core.set_persona_data(rs, pdata)
+        if not self.user_management['data_table']:
+            return self.core.set_persona_data(rs, data)
+        else:
+            pdata = {k: v for k, v in data.items() if k in PERSONA_DATA_FIELDS}
+            udata = {k: v for k, v in data.items()
+                     if k in self.user_management['data_fields']}
+            udata['persona_id'] = pdata['id']
+            ret = 1
+            with Atomizer(rs):
+                if len(pdata) > 1:
+                    ret *= self.core.set_persona_data(rs, pdata)
+                if len(udata) > 1:
+                    ret *= self.sql_update(
+                        rs, self.user_management['data_table'], udata,
+                        entity_key="persona_id")
                 if not ret:
                     raise RuntimeError("Modification failed.")
-            if len(ukeys) > 0:
-                query = "UPDATE {} SET ({}) = ({}) WHERE persona_id = %s"
-                query = query.format(
-                    self.user_management['data_table'], ", ".join(ukeys),
-                    ", ".join(("%s",) * len(ukeys)))
-                params = tuple(data[key] for key in ukeys) + (data['id'],)
-                ret = self.query_exec(rs, query, params)
-                if not ret:
-                    raise RuntimeError("Modification failed.")
-        return ret
+            return ret
 
     ## @access("realm_user")
     @abc.abstractmethod
@@ -113,7 +111,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: number of users changed
+        :returns: a positive number for success, zero otherwise
         """
         data = affirm(self.user_management['validator'], data)
         return self.set_user_data(rs, data)
@@ -144,23 +142,23 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         data = affirm(self.user_management['validator'], data,
                       creation=True)
 
-        keys = tuple(key for key in data
-                     if key in self.user_management['data_fields'])
-        query = "INSERT INTO {} ({}) VALUES ({})".format(
-            self.user_management['data_table'],
-            ", ".join(("persona_id",) + keys),
-            ", ".join(("%s",) * (1+len(keys))))
         with Atomizer(rs):
             new_id = self.core.create_persona(rs, data)
-            params = (new_id,) + tuple(data[key] for key in keys)
-            num = self.query_exec(rs, query, params)
-            if not num:
-                raise RuntimeError("Modification failed.")
-        return new_id
+            num = 1
+            if self.user_management['data_fields']:
+                udata = {k: v for k, v in data.items()
+                         if k in self.user_management['data_fields']}
+                udata['persona_id'] = new_id
+                num = self.sql_insert(
+                    rs, self.user_management['data_table'], udata,
+                    entity_key="persona_id")
+            if not (num and new_id):
+                raise RuntimeError("User creation failed.")
+            return new_id
 
     ## @access("anonymous")
     @abc.abstractmethod
-    def genesis_check(self, rs, case_id, secret, username=None):
+    def genesis_check(self, rs, case_id, secret):
         """Verify input data for genesis case.
 
         This is a security check, which enables us to share a
@@ -169,24 +167,18 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type case_id: int
         :type secret: str
-        :type username: str or None
-        :param username: If provided this is checked against the deposited
-            email address.
         :rtype: bool
         """
         case_id = affirm("int", case_id)
         secret = affirm("str", secret)
-        if username is not None:
-            username = affirm("email", username)
-        query = glue("SELECT case_status, secret, persona_status, username",
+        query = glue("SELECT case_status, secret, persona_status",
                      "FROM core.genesis_cases WHERE id = %s")
         case = self.query_one(rs, query, (case_id,))
         return (bool(case)
                 and case['case_status'] == const.GenesisStati.approved
                 and case['secret'] == secret
                 and (case['persona_status']
-                     == self.user_management['user_status'])
-                and (username is None or username == case['username']))
+                     == self.user_management['user_status']))
 
     ## @access("anonymous")
     @abc.abstractmethod
@@ -210,9 +202,6 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         data = affirm(self.user_management['validator'], data,
                       creation=True)
 
-        query = glue("SELECT username, case_status, persona_status, secret",
-                     "FROM core.genesis_cases WHERE id = %s")
-
         ## escalate priviliges
         if rs.conn.is_contaminated:
             raise RuntimeError("Atomized -- impossible to escalate.")
@@ -223,21 +212,25 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
                                          "{}_admin".format(self.realm)}
 
         with Atomizer(rs):
-            case = self.query_one(rs, query, (case_id,))
+            case = self.sql_select_one(
+                rs, "core.genesis_cases",
+                ("username", "given_names", "family_name", "case_status",
+                 "persona_status", "secret"), case_id)
             if not case or case['secret'] != secret:
                 return None, "Invalid case."
             if case['case_status'] != const.GenesisStati.approved:
                 return None, "Invalid state."
             if case['persona_status'] != self.user_management['user_status']:
                 return None, "Invalid realm."
-            if data['username'] != case['username']:
-                return None, "Mismatched username."
-            ## this elevates privileges
+            data['username'] = case['username']
+            data['given_names'] = case['given_names']
+            data['family_name'] = case['family_name']
             ret = self.create_user(rs, data)
-            query = glue("UPDATE core.genesis_cases SET case_status = %s",
-                         "WHERE id = %s")
-            num = self.query_exec(rs, query, (const.GenesisStati.finished,
-                                              case_id))
+            update = {
+                'id': case_id,
+                'case_status': const.GenesisStati.finished,
+            }
+            num = self.sql_update(rs, "core.genesis_cases", update)
             if not num:
                 raise RuntimeError("Closing case failed.")
 

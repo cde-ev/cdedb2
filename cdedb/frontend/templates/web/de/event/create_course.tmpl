@@ -3,7 +3,7 @@
 {% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}DB-Kurs hinzufügen ({{ data['title']|e }}){% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/show_event")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/create_course')|e }}" method="POST" id="createcourseform">
         <table>
             {{ util.tab_input_text(name="title", label="Titel") }}

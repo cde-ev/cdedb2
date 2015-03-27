@@ -15,8 +15,8 @@ Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['
                 {% for registration_id in attendees[(course_data['id'], part_id)] %}
                     <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
                      regid="{{ registration_id|e }}">
-                        {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                        {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                        {{ persona_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                        {{ persona_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
                     </li>
                 {% endfor %}
             </ul>
@@ -30,8 +30,8 @@ Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['
                 {% for registration_id in without_course[part_id] %}
                     <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
                      regid="{{ registration_id|e }}">
-                        {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                        {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                        {{ persona_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                        {{ persona_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
                     </li>
                 {% endfor %}
             </ul>
@@ -45,8 +45,8 @@ Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['
                 {% for registration_id in with_course[part_id] %}
                     <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
                      regid="{{ registration_id|e }}">
-                        {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                        {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                        {{ persona_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
+                        {{ persona_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
                     </li>
                 {% endfor %}
             </ul>

@@ -20,7 +20,9 @@ session per user or per IP.
 
 The basic account is referred to as persona. Each persona has an associated
 realm to which it belongs. Thus it is possible to uniquely identify the
-users of all realms by there persona id.
+users of all realms by there persona id. Each realm may associate additional
+data to its users, however if the general dataset provided by the core realm
+is enough this is optional.
 
 Realms
 ------

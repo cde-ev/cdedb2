@@ -3,7 +3,7 @@
 {% block inner_navigation %}{{ ml_inner_navigation(mailinglist_data) }}{% endblock %}
 {% block title %}{{ mailinglist_data['title']|e }} -- Konfiguration{% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("ml/index")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("ml/index"), "Abbrechen") }}
     <form action="{{ cdedblink('ml/change_mailinglist')|e }}" method="POST" id="changelistform">
         <table>
             {{ util.tab_input_text(name="title", label="Titel") }}

@@ -30,6 +30,10 @@
      {% if aclass %} class="{{ aclass|e }}" {% endif %}>
 {% endmacro %}
 
+{% macro href(ref, label, disabled=False) %}
+    <a href="{{ ref|e }}" {% if disabled %}disabled{% endif %}>{{ label|e }}</a>
+{% endmacro %}
+
 {% macro output_errors(name, displayerrors=True) %}
     {% if displayerrors %}
         {% for error in errors.get(name, []) %}
@@ -534,11 +538,7 @@
     {% if queries %}
         <ul>
             {% for query in queries %}
-                <li>
-                    <a href="{{ cdedblink(target, queries[query]|querytoparams)|e }}">
-                        {{ titles.get(query, query)|e }}
-                    </a>
-                </li>
+                <li>{{ href(cdedblink(target, queries[query]|querytoparams), titles.get(query, query)) }}</li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -572,11 +572,11 @@
                             {% with afield = field.split('.')[-1] %}
                                 <td>
                                     {% if afield == "persona_id" %}
-                                        <a href="{{ show_user_link(row[afield])|e }}">{{ row[afield]|cdedbid|e }}</a>
+                                        {{ href(show_user_link(row[afield]), row[afield]|cdedbid) }}
                                     {% elif field == "reg.id" %}
                                         {# This should occur only if the context allows the following link. #}
-                                        <a href="{{ cdedblink("event/show_registration",
-                                                    {'registration_id': row[afield]})|e }}">{{ row[afield]|e }}</a>
+                                        {{ href(cdedblink("event/show_registration", {'registration_id': row[afield]}),
+                                             row[afield]) }}
                                     {% elif query.spec[csvfield] == "bool" %}
                                         {{ deko_checkbox(row.get(afield)) }}
                                     {% else %}

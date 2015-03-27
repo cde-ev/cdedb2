@@ -3,7 +3,7 @@
 {% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}Fragebogen zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/registration_status")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("event/registration_status"), "Abbrechen") }}
     <form action="{{ cdedblink('event/questionnaire')|e }}" method="POST" id="questionnaireform">
         <table>
             {% for entry in questionnaire %}

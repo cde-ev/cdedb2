@@ -5,7 +5,7 @@
 Datenfeld {{ data['fields'][values['field_id']]['field_name']|e }} ({{ data['title']|e }}) bearbeiten
 {% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/change_event")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("event/change_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/change_field')|e }}" method="POST" id="changefieldform">
         <table>
             {{ util.tab_input_text(name="field_name", label="Name", readonly=True) }}

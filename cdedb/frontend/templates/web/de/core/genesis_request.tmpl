@@ -17,9 +17,10 @@
 
     <form action="{{ cdedblink('core/genesis_request')|e }}" method="POST" id="genesisform">
         <div>
-            {{ util.input_text(name="full_name", label="Name") }}
+            {{ util.input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.input_text(name="family_name", label="Nachname") }}
             {{ util.input_text(name="username", label="Emailadresse") }}
-            {{ util.input_textarea(name="rationale", label="Begründung (max. 200 Zeichen)") }}
+            {{ util.input_textarea(name="notes", label="Begründung (max. 200 Zeichen)") }}
             {{ util.input_submit(value="Antrag abschicken") }}
         </div>
     </form>

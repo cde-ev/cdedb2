@@ -5,7 +5,7 @@
 {% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     {% if is_admin %}
-        <a href="{{ cdedblink('event/change_past_course_form')|e }}">Bearbeiten</a>
+        {{ util.href(cdedblink('event/change_past_course_form'), "Bearbeiten") }}
         <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
             {{ util.input_hidden(name="course_id", value=values['course_id']) }}
             {{ util.input_text(name="persona_id", label="ID") }}

@@ -126,10 +126,13 @@ class TestCoreBackend(BackendTest):
         data = {
             "username": 'zelda@example.cde',
             "display_name": 'Zelda',
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
             "is_active": True,
             "status": 1,
             "cloud_account": True,
             "db_privileges": 0,
+            "notes": "foo bar",
         }
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
@@ -157,12 +160,12 @@ class TestCoreBackend(BackendTest):
     @as_users("anton")
     def test_genesis(self, user):
         data = {
-            "full_name": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
             "username": 'zelda@example.cde',
             "notes": "Some blah",
         }
-        case_id = self.core.genesis_request(
-            None, data['username'], data['full_name'], data['notes'])
+        case_id = self.core.genesis_request(None, data)
         self.assertGreater(case_id, 0)
         self.assertEqual(1, self.core.genesis_verify(None, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
@@ -202,20 +205,23 @@ class TestCoreBackend(BackendTest):
         ## first generate some data
         data = {
             "username": 'zelda@example.cde',
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
             "display_name": 'Zelda',
             "is_active": True,
             "status": 1,
             "cloud_account": True,
             "db_privileges": 0,
+            "notes": "foo bar",
         }
         self.core.create_persona(self.key, data)
         data = {
-            "full_name": "Zelda",
+            "family_name": "Zeruda-Hime",
+            "given_names": "Zelda",
             "username": 'zeldax@example.cde',
             "notes": "Some blah",
         }
-        case_id = self.core.genesis_request(
-            None, data['username'], data['full_name'], data['notes'])
+        case_id = self.core.genesis_request(None, data)
         update = {
             'id': case_id,
             'persona_status': const.PersonaStati.event_user,

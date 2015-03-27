@@ -1,4 +1,5 @@
 {% extends "web/de/ml/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
 {% block title %}
     {%- if complete -%}
         Mailinglisten Komplettübersicht
@@ -9,7 +10,7 @@
 {% macro format_entry(mailinglist_id, title) %}
     <li>
         {{ util.deko_checkbox(mailinglist_id in subscriptions) }}
-        <a href="{{ cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}) }}"> {{ title|e }} </a>
+        {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if not mailinglist_data[mailinglist_id]['is_active'] %}
             (inaktiv)
         {% endif %}

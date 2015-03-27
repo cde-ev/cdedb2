@@ -18,8 +18,8 @@
             \begin{itemize}
                 <<% for registration_id in inhabitants[(lodgement_id, part_id)] %>>
                     \item
-                        <<< user_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
-                        <<< user_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                        <<< persona_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
+                        <<< persona_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
                 <<% else %>>
                     \item niemand
                 <<% endfor %>>

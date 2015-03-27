@@ -20,6 +20,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 import argparse
+import copy
 import datetime
 import psycopg2.extras
 import pytz
@@ -35,11 +36,11 @@ import pytz
 #:     JOIN (SELECT id, status = ANY('{0, 1}'::int[]) AS is_member FROM core.personas)
 #:          AS membership ON membership.id = persona.id
 #:     JOIN (
-#:           (SELECT persona_id, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile,
-#:                   address_supplement, address, postal_code, location, country FROM cde.member_data)
+#:           (SELECT persona_id, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address,
+#:                   postal_code, location, country FROM cde.member_data)
 #:           UNION
-#:           (SELECT persona_id, family_name, given_names, title, name_supplement, gender, birthday, telephone, mobile,
-#:                   address_supplement, address, postal_code, location, country FROM event.user_data)
+#:           (SELECT persona_id, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address,
+#:                   postal_code, location, country FROM event.user_data)
 #:          ) AS user_data ON reg.persona_id = user_data.persona_id
 #:     LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1, status AS status1, lodgement_id AS lodgement_id1,
 #:                             course_instructor AS course_instructor1 FROM event.registration_parts WHERE part_id = 1)
@@ -109,8 +110,8 @@ class EventBackend(AbstractUserBackend):
         if event_id is not None and course_id is not None:
             raise ValueError("Too many inputs specified.")
         if course_id is not None:
-            query = "SELECT event_id FROM event.courses WHERE id = %s"
-            event_id = unwrap(self.query_one(rs, query, (course_id,)))
+            event_id = unwrap(self.sql_select_one(rs, "event.courses",
+                                                  ("event_id",), course_id))
         return event_id in rs.user.orga
 
     @access("event_user")
@@ -167,9 +168,8 @@ class EventBackend(AbstractUserBackend):
         :rtype: {int: {int}}
         """
         ids = affirm_array("int", ids)
-        query = glue("SELECT persona_id, event_id FROM event.orgas",
-                     "WHERE persona_id = ANY(%s)")
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(rs, "event.orgas", ("persona_id", "event_id"),
+                               ids, entity_key="persona_id")
         ret = {}
         for anid in ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
@@ -192,7 +192,7 @@ class EventBackend(AbstractUserBackend):
             "FROM past_event.participants AS p",
             "INNER JOIN past_event.events AS e ON (p.event_id = e.id)",
             "LEFT OUTER JOIN past_event.courses AS c ON (p.course_id = c.id)",
-            "WHERE p.persona_id = ANY(%s) ORDER BY p.event_id")
+            "WHERE p.persona_id = ANY(%s)")
         event_data = self.query_all(rs, query, (ids,))
         ret = {}
         for anid in ids:
@@ -213,8 +213,8 @@ class EventBackend(AbstractUserBackend):
         return super().create_user(rs, data)
 
     @access("anonymous")
-    def genesis_check(self, rs, case_id, secret, username=None):
-        return super().genesis_check(rs, case_id, secret, username=username)
+    def genesis_check(self, rs, case_id, secret):
+        return super().genesis_check(rs, case_id, secret)
 
     @access("anonymous")
     def genesis(self, rs, case_id, secret, data):
@@ -276,15 +276,16 @@ class EventBackend(AbstractUserBackend):
         :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
-        :returns: number of entries written
+        :returns: a positive number for success, zero otherwise
         """
-        query = glue(
-            "INSERT INTO event.log",
-            "(code, event_id, submitted_by, persona_id, additional_info)",
-            "VALUES (%s, %s, %s, %s, %s)")
-        return self.query_exec(
-            rs, query, (code, event_id, rs.user.persona_id, persona_id,
-                        additional_info))
+        data = {
+            "code": code,
+            "event_id": event_id,
+            "submitted_by": rs.user.persona_id,
+            "persona_id": persona_id,
+            "additional_info": additional_info,
+        }
+        return self.sql_insert(rs, "event.log", data)
 
     @access("event_user")
     def retrieve_log(self, rs, codes=None, event_id=None, start=None,
@@ -328,17 +329,18 @@ class EventBackend(AbstractUserBackend):
         :rtype: int
         :returns: number of entries written
         """
-        query = glue(
-            "INSERT INTO past_event.log",
-            "(code, event_id, submitted_by, persona_id, additional_info)",
-            "VALUES (%s, %s, %s, %s, %s)")
-        return self.query_exec(
-            rs, query, (code, event_id, rs.user.persona_id, persona_id,
-                        additional_info))
+        data = {
+            "code": code,
+            "event_id": event_id,
+            "submitted_by": rs.user.persona_id,
+            "persona_id": persona_id,
+            "additional_info": additional_info,
+        }
+        return self.sql_insert(rs, "past_event.log", data)
 
     @access("event_admin")
     def retrieve_past_log(self, rs, codes=None, event_id=None, start=None,
-                     stop=None):
+                          stop=None):
         """Get recorded activity for concluded events.
 
         See
@@ -427,12 +429,11 @@ class EventBackend(AbstractUserBackend):
         """
         event_id = affirm("int", event_id)
         if past:
-            schema = "past_event"
+            table = "past_event.courses"
         else:
-            schema = "event"
-        query = "SELECT id, title FROM {}.courses WHERE event_id = %s"
-        query = query.format(schema)
-        data = self.query_all(rs, query, (event_id,))
+            table = "event.courses"
+        data = self.sql_select(rs, table, ("id", "title"), (event_id,),
+                               entity_key="event_id")
         return {e['id']: e['title'] for e in data}
 
     @access("event_user")
@@ -455,10 +456,9 @@ class EventBackend(AbstractUserBackend):
                 raise PrivilegeError("Not privileged.")
             event_data = self.get_event_data_one(rs, event_id)
             user_data_columns = (
-                "persona_id", "family_name", "given_names", "title",
-                "name_supplement", "gender", "birthday", "telephone",
-                "mobile", "address_supplement", "address", "postal_code",
-                "location", "country",)
+                "persona_id", "title", "name_supplement", "gender", "birthday",
+                "telephone", "mobile", "address_supplement", "address",
+                "postal_code", "location", "country",)
             part_table_template = glue(
                 "LEFT OUTER JOIN (SELECT registration_id, {part_data}",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
@@ -503,9 +503,7 @@ class EventBackend(AbstractUserBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_array("int", ids)
-        query = "SELECT {} FROM past_event.events WHERE id = ANY(%s)".format(
-            ", ".join(PAST_EVENT_FIELDS))
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
 
     @access("event_user")
@@ -526,28 +524,25 @@ class EventBackend(AbstractUserBackend):
         """
         ids = affirm_array("int", ids)
         with Atomizer(rs):
-            query = "SELECT {} FROM event.events WHERE id = ANY(%s)"
-            query = query.format(", ".join(EVENT_FIELDS))
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(rs, "event.events", EVENT_FIELDS, ids)
             ret = {e['id']: e for e in data}
-            query = "SELECT {} FROM event.event_parts WHERE event_id = ANY(%s)"
-            query = query.format(", ".join(EVENT_PART_FIELDS))
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(rs, "event.event_parts", EVENT_PART_FIELDS,
+                                   ids, entity_key="event_id")
             for anid in ids:
                 parts = {d['id']: d for d in data if d['event_id'] == anid}
                 assert('parts' not in ret[anid])
                 ret[anid]['parts'] = parts
-            query = glue("SELECT persona_id, event_id FROM event.orgas",
-                         "WHERE event_id = ANY(%s)")
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(
+                rs, "event.orgas", ("persona_id", "event_id"), ids,
+                entity_key="event_id")
             for anid in ids:
                 orgas = {d['persona_id'] for d in data if d['event_id'] == anid}
                 assert('orgas' not in ret[anid])
                 ret[anid]['orgas'] = orgas
-            query = glue(
-                "SELECT id, event_id, field_name, kind, entries",
-                "FROM event.field_definitions WHERE event_id = ANY(%s)")
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(
+                rs, "event.field_definitions",
+                ("id", "event_id", "field_name", "kind", "entries"), ids,
+                entity_key="event_id")
             for anid in ids:
                 fields = {d['id']: d for d in data if d['event_id'] == anid}
                 assert('fields' not in ret[anid])
@@ -564,11 +559,7 @@ class EventBackend(AbstractUserBackend):
         :returns: number of changed entries
         """
         data = affirm("past_event_data", data)
-        keys = tuple(data.keys())
-        query = "UPDATE past_event.events SET ({}) = ({}) WHERE id = %s".format(
-            ", ".join(keys), ", ".join(("%s",) * len(keys)))
-        params = tuple(data[key] for key in keys) + (data['id'],)
-        ret = self.query_exec(rs, query, params)
+        ret = self.sql_update(rs, "past_event.events", data)
         self.past_event_log(rs, const.PastEventLogCodes.event_changed, ret)
         return ret
 
@@ -605,27 +596,24 @@ class EventBackend(AbstractUserBackend):
         self.assert_offline_lock(rs, event_id=data['id'])
         ret = 1
         with Atomizer(rs):
-            keys = tuple(key for key in data if key in EVENT_FIELDS)
-            if keys:
-                query = "UPDATE event.events SET ({}) = ({}) WHERE id = %s"
-                query = query.format(", ".join(keys),
-                                     ", ".join(("%s",) * len(keys)))
-                params = tuple(data[key] for key in keys) + (data['id'],)
-                ret *= self.query_exec(rs, query, params)
+            edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
+            if len(edata) > 1:
+                ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
             if 'orgas' in data:
-                query = glue("SELECT persona_id FROM event.orgas",
-                             "WHERE event_id = %s")
-                existing = {e['persona_id']
-                            for e in self.query_all(rs, query, (data['id'],))}
+                current = self.sql_select(rs, "event.orgas", ("persona_id",),
+                                          (data['id'],), entity_key="event_id")
+                existing = {unwrap(e) for e in current}
                 new = data['orgas'] - existing
                 deleted = existing - data['orgas']
                 if new:
-                    query = glue("INSERT INTO event.orgas",
-                                 "(persona_id, event_id) VALUES (%s, %s)")
                     for anid in new:
-                        ret *= self.query_exec(rs, query, (anid, data['id']))
+                        new_orga = {
+                            'persona_id': anid,
+                            'event_id': data['id'],
+                        }
+                        ret *= self.sql_insert(rs, "event.orgas", new_orga)
                         self.event_log(rs, const.EventLogCodes.orga_added,
                                        data['id'], persona_id=anid)
                 if deleted:
@@ -637,10 +625,9 @@ class EventBackend(AbstractUserBackend):
                                        data['id'], persona_id=anid)
             if 'parts' in data:
                 parts = data['parts']
-                query = glue("SELECT id FROM event.event_parts",
-                             "WHERE event_id = %s")
-                existing = {e['id'] for e in self.query_all(rs, query,
-                                                            (data['id'],))}
+                current = self.sql_select(rs, "event.event_parts", ("id",),
+                                          (data['id'],), entity_key="event_id")
+                existing = {unwrap(e) for e in current}
                 if not(existing >= {x for x in parts if x > 0}):
                     raise ValueError("Non-existing parts specified.")
                 new = {x for x in parts if x < 0}
@@ -649,45 +636,34 @@ class EventBackend(AbstractUserBackend):
                 deleted = {x for x in parts
                            if x > 0 and parts[x] is None}
                 for x in new:
-                    query = "INSERT INTO event.event_parts ({}) VALUES ({})"
-                    keys = tuple(parts[x].keys())
-                    query = query.format(", ".join(keys + ("event_id",)),
-                                         ", ".join(("%s",) * (len(keys)+1)))
-                    params = tuple(parts[x][key] for key in keys)
-                    params += (data['id'],)
-                    ret *= self.query_exec(rs, query, params)
+                    new_part = copy.deepcopy(parts[x])
+                    new_part['event_id'] = data['id']
+                    ret *= self.sql_insert(rs, "event.event_parts", new_part)
                     self.event_log(
                         rs, const.EventLogCodes.part_created, data['id'],
-                        additional_info=parts[x]['title'])
-                query = glue("SELECT id, title FROM event.event_parts",
-                             "WHERE id = ANY(%s)")
-                titles = {e['id']: e['title']
-                          for e in self.query_all(rs, query,
-                                                  (updated | deleted,))}
+                        additional_info=new_part['title'])
+                current = self.sql_select(
+                    rs, "event.event_parts", ("id", "title"), updated | deleted)
+                titles = {e['id']: e['title'] for e in current}
                 for x in updated:
-                    query = glue("UPDATE event.event_parts SET ({}) = ({})",
-                                 "WHERE id = %s")
-                    keys = tuple(parts[x].keys())
-                    query = query.format(", ".join(keys),
-                                         ", ".join(("%s",) * len(keys)))
-                    params = tuple(parts[x][key] for key in keys) + (x,)
-                    ret *= self.query_exec(rs, query, params)
+                    update = copy.deepcopy(parts[x])
+                    update['id'] = x
+                    ret *= self.sql_update(rs, "event.event_parts", update)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, data['id'],
                         additional_info=titles[x])
                 if deleted:
-                    query = "DELETE FROM event.event_parts WHERE id = ANY(%s)"
-                    ret *= self.query_exec(rs, query, (deleted,))
+                    ret *= self.sql_delete(rs, "event.event_parts", deleted)
                     for x in deleted:
                         self.event_log(
                             rs, const.EventLogCodes.part_deleted, data['id'],
                             additional_info=titles[x])
             if 'fields' in data:
                 fields = data['fields']
-                query = glue("SELECT id FROM event.field_definitions",
-                             "WHERE event_id = %s")
-                existing = {e['id'] for e in self.query_all(rs, query,
-                                                            (data['id'],))}
+                current = self.sql_select(
+                    rs, "event.field_definitions", ("id",), (data['id'],),
+                    entity_key="event_id")
+                existing = {e['id'] for e in current}
                 if not(existing >= {x for x in fields if x > 0}):
                     raise ValueError("Non-existing fields specified.")
                 new = {x for x in fields if x < 0}
@@ -695,44 +671,33 @@ class EventBackend(AbstractUserBackend):
                            if x > 0 and fields[x] is not None}
                 deleted = {x for x in fields
                            if x > 0 and fields[x] is None}
-                query = glue(
-                    "SELECT id, field_name FROM event.field_definitions",
-                    "WHERE id = ANY(%s)")
-                field_names = {e['id']: e['field_name']
-                               for e in self.query_all(rs, query,
-                                                       (updated | deleted,))}
+                current = self.sql_select(
+                    rs, "event.field_definitions", ("id", "field_name"),
+                    updated | deleted)
+                field_names = {e['id']: e['field_name'] for e in current}
                 ## new
-                query = glue("INSERT INTO event.field_definitions ({})",
-                             "VALUES ({})")
-                keys = ("field_name", "kind", "entries")
-                query = query.format(", ".join(("event_id",) + keys),
-                                     ", ".join(("%s",) * (len(keys)+1)))
                 for x in new:
-                    params = (data['id'],) + tuple(fields[x][key]
-                                                   for key in keys)
-                    ret *= self.query_exec(rs, query, params)
+                    new_field = copy.deepcopy(fields[x])
+                    new_field['event_id'] = data['id']
+                    ret *= self.sql_insert(rs, "event.field_definitions",
+                                           new_field)
                     self.event_log(
                         rs, const.EventLogCodes.field_added, data['id'],
                         additional_info=fields[x]['field_name'])
                 ## updated
-                proto_query = glue("UPDATE event.field_definitions",
-                                   "SET ({}) = ({}) WHERE id = %s")
                 for x in updated:
-                    keys = tuple(k for k in fields[x]
-                                 if k in ("field_name", "kind", "entries"))
-                    query = proto_query.format(", ".join(keys),
-                                               ", ".join(("%s",) * len(keys)))
-                    params = tuple(fields[x][key] for key in keys) + (x,)
-                    ret *= self.query_exec(rs, query, params)
+                    update = copy.deepcopy(fields[x])
+                    update['id'] = x
+                    ret *= self.sql_update(rs, "event.field_definitions",
+                                           update)
                     self.event_log(
                         rs, const.EventLogCodes.field_updated, data['id'],
                         additional_info=field_names[x])
 
                 ## deleted
                 if deleted:
-                    query = glue("DELETE FROM event.field_definitions",
-                                 "WHERE id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (deleted,))
+                    ret *= self.sql_delete(rs, "event.field_definitions",
+                                           deleted)
                     for x in deleted:
                         self.event_log(
                             rs, const.EventLogCodes.field_removed, data['id'],
@@ -749,12 +714,7 @@ class EventBackend(AbstractUserBackend):
         :returns: the id of the new event
         """
         data = affirm("past_event_data", data, creation=True)
-        keys = tuple(data.keys())
-        query = "INSERT INTO past_event.events ({}) VALUES ({}) RETURNING id"
-        query = query.format(", ".join(keys),
-                             ", ".join(("%s",) * len(keys)))
-        params = tuple(data[key] for key in keys)
-        ret = unwrap(self.query_one(rs, query, params))
+        ret = self.sql_insert(rs, "past_event.events", data)
         self.past_event_log(rs, const.PastEventLogCodes.event_created, ret)
         return ret
 
@@ -769,13 +729,8 @@ class EventBackend(AbstractUserBackend):
         """
         data = affirm("event_data", data, creation=True)
         with Atomizer(rs):
-            keys = tuple(key for key in data if key in EVENT_FIELDS)
-            query = "INSERT INTO event.events ({}) VALUES ({}) RETURNING id"
-            query = query.format(", ".join(keys),
-                                 ", ".join(("%s",) * len(keys)))
-            params = tuple(data[key] for key in keys)
-
-            new_id = unwrap(self.query_one(rs, query, params))
+            edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
+            new_id = self.sql_insert(rs, "event.events", edata)
             for aspect in ('parts', 'orgas', 'fields'):
                 if aspect in data:
                     adata = {
@@ -798,9 +753,8 @@ class EventBackend(AbstractUserBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_array("int", ids)
-        query = "SELECT {} FROM past_event.courses WHERE id = ANY(%s)".format(
-            ", ".join(PAST_COURSE_FIELDS))
-        data = self.query_all(rs, query, (ids,))
+        data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
+                               ids)
         return {e['id']: e for e in data}
 
     @access("event_user")
@@ -817,13 +771,11 @@ class EventBackend(AbstractUserBackend):
         """
         ids = affirm_array("int", ids)
         with Atomizer(rs):
-            query = "SELECT {} FROM event.courses WHERE id = ANY(%s)".format(
-                ", ".join(COURSE_FIELDS))
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(rs, "event.courses", COURSE_FIELDS, ids)
             ret = {e['id']: e for e in data}
-            query = glue("SELECT part_id, course_id FROM event.course_parts",
-                         "WHERE course_id = ANY(%s)")
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(
+                rs, "event.course_parts", ("part_id", "course_id"), ids,
+                entity_key="course_id")
             for anid in ids:
                 parts = {p['part_id'] for p in data if p['course_id'] == anid}
                 assert('parts' not in ret[anid])
@@ -840,13 +792,9 @@ class EventBackend(AbstractUserBackend):
         :returns: number of changed entries
         """
         data = affirm("past_course_data", data)
-        keys = tuple(data.keys())
-        query = "UPDATE past_event.courses SET ({}) = ({}) WHERE id = %s"
-        query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
-        params = tuple(data[key] for key in keys) + (data['id'],)
-        ret = self.query_exec(rs, query, params)
-        query = "SELECT title FROM past_event.courses WHERE id = %s"
-        title = unwrap(self.query_one(rs, query, (data['id'],)))
+        ret = self.sql_update(rs, "past_event.courses", data)
+        title = unwrap(self.sql_select_one(rs, "past_event.courses",
+                                           ("title",), data['id']))
         self.past_event_log(rs, const.PastEventLogCodes.course_changed, ret,
                             additional_info=title)
         return ret
@@ -869,43 +817,38 @@ class EventBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, course_id=data['id'])
         ret = 1
-        query = "SELECT title, event_id FROM event.courses WHERE id = %s"
-        current = self.query_one(rs, query, (data['id'],))
         with Atomizer(rs):
-            keys = tuple(key for key in data if key in COURSE_FIELDS)
-            if keys:
-                query = "UPDATE event.courses SET ({}) = ({}) WHERE id = %s"
-                query = query.format(", ".join(keys),
-                                     ", ".join(("%s",) * len(keys)))
-                params = tuple(data[key] for key in keys) + (data['id'],)
-                ret *= self.query_exec(rs, query, params)
+            current = self.sql_select_one(rs, "event.courses",
+                                          ("title", "event_id"), data['id'])
+            cdata = {k: v for k, v in data.items() if k in COURSE_FIELDS}
+            if len(cdata) > 1:
+                ret *= self.sql_update(rs, "event.courses", cdata)
                 self.event_log(
                     rs, const.EventLogCodes.course_changed, current['event_id'],
                     additional_info=current['title'])
             if 'parts' in data:
-                query = glue("SELECT part_id FROM event.course_parts",
-                             "WHERE course_id = %s")
-                existing = {e['part_id']
-                            for e in self.query_all(rs, query, (data['id'],))}
+                current_parts = self.sql_select(
+                    rs, "event.course_parts", ("part_id",), (data['id'],),
+                    entity_key="course_id")
+                existing = {e['part_id'] for e in current_parts}
                 new = data['parts'] - existing
                 deleted = existing - data['parts']
                 if new:
                     ## check, that all new parts belong to the event of the
                     ## course
-                    query = glue("SELECT event_id FROM event.event_parts",
-                                 "WHERE id = ANY(%s)")
-                    event_ids = {e['event_id']
-                                 for e in self.query_all(rs, query, (new,))}
-                    query = glue("SELECT event_id FROM event.courses",
-                                 "WHERE id = %s")
-                    event_id = unwrap(self.query_one(rs, query, (data['id'],)))
-                    if {event_id} != event_ids:
+                    associated_events = self.sql_select(
+                        rs, "event.event_parts", ("event_id",), new)
+                    event_ids = {e['event_id'] for e in associated_events}
+                    if {current['event_id']} != event_ids:
                         raise ValueError("Non-associated parts found.")
 
-                    query = glue("INSERT INTO event.course_parts",
-                                 "(course_id, part_id) VALUES (%s, %s)")
                     for anid in new:
-                        ret *= self.query_exec(rs, query, (data['id'], anid))
+                        new_data = {
+                            'course_id': data['id'],
+                            'part_id': anid,
+                        }
+                        ret *= self.sql_insert(rs, "event.course_parts",
+                                               new_data)
                 if deleted:
                     query = glue("DELETE FROM event.course_parts",
                                  "WHERE course_id = %s AND part_id = ANY(%s)")
@@ -926,11 +869,7 @@ class EventBackend(AbstractUserBackend):
         :returns: the id of the new course
         """
         data = affirm("past_course_data", data, creation=True)
-        keys = tuple(data.keys())
-        query = "INSERT INTO past_event.courses ({}) VALUES ({}) RETURNING id"
-        query = query.format(", ".join(keys), ", ".join(("%s",) * len(keys)))
-        params = tuple(data[key] for key in keys)
-        ret = unwrap(self.query_one(rs, query, params))
+        ret = self.sql_insert(rs, "past_event.courses", data)
         self.past_event_log(rs, const.PastEventLogCodes.course_created,
                             data['event_id'], additional_info=data['title'])
         return ret
@@ -950,12 +889,8 @@ class EventBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
-            keys = tuple(key for key in data if key in COURSE_FIELDS)
-            query = "INSERT INTO event.courses ({}) VALUES ({}) RETURNING id"
-            query = query.format(", ".join(keys),
-                                 ", ".join(("%s",) * len(keys)))
-            params = tuple(data[key] for key in keys)
-            new_id = unwrap(self.query_one(rs, query, params))
+            cdata = {k: v for k, v in data.items() if k in COURSE_FIELDS}
+            new_id = self.sql_insert(rs, "event.courses", cdata)
             if 'parts' in data:
                 pdata = {
                     'id': new_id,
@@ -983,16 +918,15 @@ class EventBackend(AbstractUserBackend):
         :returns: the number of removed entries
         """
         course_id = affirm("int", course_id)
-        query = "SELECT event_id, title FROM past_event.courses WHERE id = %s"
-        current = self.query_one(rs, query, (course_id,))
+        current = self.sql_select_one(rs, "past_event.courses",
+                                      ("event_id", "title"), course_id)
         with Atomizer(rs):
             if cascade and self.list_participants(rs, course_id=course_id):
                 cdata = self.get_past_course_data_one(rs, course_id)
                 for pid in self.list_participants(rs, course_id=course_id):
                     self.delete_participant(rs, cdata['event_id'], course_id,
                                             pid)
-            query = "DELETE FROM past_event.courses WHERE id = %s"
-            ret = self.query_exec(rs, query, (course_id,))
+            ret = self.sql_delete_one(rs, "past_event.courses", course_id)
             self.past_event_log(
                 rs, const.PastEventLogCodes.course_deleted, current['event_id'],
                 additional_info=current['title'])
@@ -1015,19 +949,16 @@ class EventBackend(AbstractUserBackend):
         :type is_instructor: bool
         :type is_orga: bool
         :rtype: int
-        :returns: number of affected entries
+        :returns: A positive number if all operations succeded and zero
+          otherwise.
         """
-        persona_id = affirm("int", persona_id)
-        event_id = affirm("int", event_id)
-        course_id = affirm("int_or_None", course_id)
-        is_instructor = affirm("bool", is_instructor)
-        is_orga = affirm("bool", is_orga)
-        query = glue(
-            "INSERT INTO past_event.participants",
-            "(persona_id, event_id, course_id, is_instructor, is_orga)",
-            "VALUES (%s, %s, %s, %s, %s)")
-        ret = self.query_exec(rs, query, (persona_id, event_id, course_id,
-                                          is_instructor, is_orga))
+        data = {}
+        data['persona_id'] = affirm("int", persona_id)
+        data['event_id'] = affirm("int", event_id)
+        data['course_id'] = affirm("int_or_None", course_id)
+        data['is_instructor'] = affirm("bool", is_instructor)
+        data['is_orga'] = affirm("bool", is_orga)
+        ret = self.sql_insert(rs, "past_event.participants", data)
         self.past_event_log(
             rs, const.PastEventLogCodes.participant_added, event_id,
             persona_id=persona_id)
@@ -1077,15 +1008,15 @@ class EventBackend(AbstractUserBackend):
             raise ValueError("Too many inputs specified.")
         if event_id is not None:
             anid = affirm("int", event_id)
-            field = "event_id"
+            entity_key = "event_id"
         if course_id is not None:
             anid = affirm("int", course_id)
-            field = "course_id"
+            entity_key = "course_id"
 
-        query = glue("SELECT persona_id, course_id, is_instructor, is_orga",
-                     "FROM past_event.participants WHERE {} = %s")
-        query = query.format(field)
-        data = self.query_all(rs, query, (anid,))
+        data = self.sql_select(
+            rs, "past_event.participants",
+            ("persona_id", "course_id", "is_instructor", "is_orga"), (anid,),
+            entity_key=entity_key)
         return {e['persona_id']: e for e in data}
 
     @access("event_user")
@@ -1133,35 +1064,32 @@ class EventBackend(AbstractUserBackend):
         if not ids:
             return {}
         with Atomizer(rs):
-            query = glue("SELECT persona_id, event_id FROM event.registrations",
-                         "WHERE id = ANY(%s)")
-            tmp = self.query_all(rs, query, (ids,))
-            events = {e['event_id'] for e in tmp}
-            personas = {e['persona_id'] for e in tmp}
+            associated = self.sql_select(rs, "event.registrations",
+                                         ("persona_id", "event_id"), ids)
+            events = {e['event_id'] for e in associated}
+            personas = {e['persona_id'] for e in associated}
             if len(events) != 1:
                 raise ValueError(
                     "Only registrations from exactly one event allowed!")
-            event_id = events.pop()
+            event_id = unwrap(events)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
-                    and not ({rs.user.persona_id} >= personas)):
+                    and not {rs.user.persona_id} >= personas):
                 raise PrivilegeError("Not privileged.")
 
-            query = "SELECT {} FROM event.registrations WHERE id = ANY(%s)"
-            query = query.format(", ".join(REGISTRATION_FIELDS))
-            ret = {e['id']: e for e in self.query_all(rs, query, (ids,))}
-            query = glue("SELECT {} FROM event.registration_parts",
-                         "WHERE registration_id = ANY(%s)")
-            query = query.format(", ".join(REGISTRATION_PART_FIELDS))
-            data = self.query_all(rs, query, (ids,))
+            ret = {e['id']: e for e in self.sql_select(
+                rs, "event.registrations", REGISTRATION_FIELDS, ids)}
+            data = self.sql_select(
+                rs, "event.registration_parts", REGISTRATION_PART_FIELDS, ids,
+                entity_key="registration_id")
             for anid in ret:
                 assert('parts' not in ret[anid])
                 ret[anid]['parts'] = {e['part_id']: e for e in data
                                       if e['registration_id'] == anid}
-            query = glue("SELECT registration_id, part_id, course_id, rank",
-                         "FROM event.course_choices",
-                         "WHERE registration_id = ANY(%s)")
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(
+                rs, "event.course_choices",
+                ("registration_id", "part_id", "course_id", "rank"), ids,
+                entity_key="registration_id")
             parts = {e['part_id'] for e in data}
             for anid in ret:
                 assert('choices' not in ret[anid])
@@ -1199,11 +1127,10 @@ class EventBackend(AbstractUserBackend):
           otherwise.
         """
         data = affirm("registration_data", data)
+        current = self.sql_select_one(
+            rs, "event.registrations", ("persona_id", "event_id"), data['id'])
+        persona_id, event_id = current['persona_id'], current['event_id']
         with Atomizer(rs):
-            query = "SELECT persona_id FROM event.registrations WHERE id = %s"
-            persona_id = unwrap(self.query_one(rs, query, (data['id'],)))
-            query = "SELECT event_id FROM event.registrations WHERE id = %s"
-            event_id = unwrap(self.query_one(rs, query, (data['id'],)))
             self.assert_offline_lock(rs, event_id=event_id)
             if (persona_id != rs.user.persona_id
                     and not self.is_orga(rs, event_id=event_id)
@@ -1216,57 +1143,42 @@ class EventBackend(AbstractUserBackend):
                     fields=event_data['fields'])
 
             ## now we get to do the actual work
-            keys = tuple(key for key in data
-                         if key in REGISTRATION_FIELDS and key != "field_data")
+            rdata = {k: v for k, v in data.items()
+                     if k in REGISTRATION_FIELDS and k != "field_data"}
             ret = 1
-            if keys:
-                query = glue("UPDATE event.registrations SET ({}) = ({})",
-                             "WHERE id = %s")
-                query = query.format(", ".join(keys),
-                                     ", ".join(("%s",)*len(keys)))
-                params = tuple(data[key] for key in keys) + (data['id'],)
-                ret *= self.query_exec(rs, query, params)
+            if len(rdata) > 1:
+                ret *= self.sql_update(rs, "event.registrations", rdata)
             if 'field_data' in data:
-                query = glue("SELECT field_data FROM event.registrations",
-                             "WHERE id = %s")
-                fdata = unwrap(self.query_one(rs, query, (data['id'],)))
+                fdata = unwrap(self.sql_select_one(rs, "event.registrations",
+                                                   ("field_data",), data['id']))
                 fdata.update(data['field_data'])
-                query = glue("UPDATE event.registrations SET field_data = %s",
-                             "WHERE id = %s")
-                ret *= self.query_exec(rs, query, (psycopg2.extras.Json(fdata),
-                                                   data['id']))
+                new_data = {
+                    'id': data['id'],
+                    'field_data': psycopg2.extras.Json(fdata),
+                }
+                ret *= self.sql_update(rs, "event.registrations", new_data)
             if 'parts' in data:
                 parts = data['parts']
                 if not(set(event_data['parts'].keys()) >= {x for x in parts}):
                     raise ValueError("Non-existing parts specified.")
-                query = glue("SELECT id, part_id FROM event.registration_parts",
-                             "WHERE registration_id = %s")
-                existing = {e['part_id']: e['id'] for e in self.query_all(
-                    rs, query, (data['id'],))}
+                existing = {e['part_id']: e['id'] for e in self.sql_select(
+                    rs, "event.registration_parts", ("id", "part_id"),
+                    (data['id'],), entity_key="registration_id")}
                 new = {x for x in parts if x not in existing}
                 updated = {x for x in parts
                            if x in existing and parts[x] is not None}
                 deleted = {x for x in parts
                            if x in existing and parts[x] is None}
                 for x in new:
-                    query = glue("INSERT INTO event.registration_parts ({})",
-                                 "VALUES ({})")
-                    keys = tuple(key for key in parts[x])
-                    query = query.format(
-                        ", ".join(keys + ("registration_id", "part_id")),
-                        ", ".join(("%s",) * (len(keys)+2)))
-                    params = tuple(parts[x][key] for key in keys)
-                    params += (data['id'], x)
-                    ret *= self.query_exec(rs, query, params)
+                    new_part = copy.deepcopy(parts[x])
+                    new_part['registration_id'] = data['id']
+                    new_part['part_id'] = x
+                    ret *= self.sql_insert(rs, "event.registration_parts",
+                                           new_part)
                 for x in updated:
-                    query = glue("UPDATE event.registration_parts",
-                                 "SET ({}) = ({}) WHERE id = %s")
-                    keys = tuple(key for key in parts[x])
-                    query = query.format(", ".join(keys),
-                                         ", ".join(("%s",) * len(keys)))
-                    params = tuple(parts[x][key] for key in keys)
-                    params += (existing[x],)
-                    ret *= self.query_exec(rs, query, params)
+                    update = copy.deepcopy(parts[x])
+                    update['id'] = existing[x]
+                    ret *= self.sql_update(rs, "event.registration_parts", update)
                 if deleted:
                     raise NotImplementedError("This is not useful.")
             if 'choices' in data:
@@ -1282,19 +1194,18 @@ class EventBackend(AbstractUserBackend):
                     query = glue("DELETE FROM event.course_choices",
                                  "WHERE registration_id = %s AND part_id = %s")
                     self.query_exec(rs, query, (data['id'], part_id))
-                    query = glue(
-                        "INSERT INTO event.course_choices",
-                        "(registration_id, part_id, course_id, rank)",
-                        "VALUES (%s, %s, %s, %s)")
                     for rank, course_id in enumerate(choices[part_id]):
-                        ret *= self.query_exec(
-                            rs, query, (data['id'], part_id, course_id, rank))
-        query = glue("SELECT event_id, persona_id FROM event.registrations",
-                     "WHERE id = %s")
-        current = self.query_one(rs, query, (data['id'],))
+                        new_choice = {
+                            "registration_id": data['id'],
+                            "part_id": part_id,
+                            "course_id": course_id,
+                            "rank": rank,
+                        }
+                        ret *= self.sql_insert(rs, "event.course_choices",
+                                               new_choice)
         self.event_log(
-            rs, const.EventLogCodes.registration_changed, current['event_id'],
-            persona_id=current['persona_id'])
+            rs, const.EventLogCodes.registration_changed, event_id,
+            persona_id=persona_id)
         return ret
 
     @access("event_user")
@@ -1316,18 +1227,13 @@ class EventBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
-            query = "SELECT id FROM event.event_parts WHERE event_id = %s"
-            part_ids = {e['id']
-                        for e in self.query_all(rs, query, (data['event_id'],))}
+            part_ids = {e['id'] for e in self.sql_select(
+                rs, "event.event_parts", ("id",), (data['event_id'],),
+                entity_key="event_id")}
             if part_ids != set(data['parts'].keys()):
                 raise ValueError("Missing part dataset.")
-            keys = tuple(key for key in data if key in REGISTRATION_FIELDS)
-            query = glue("INSERT INTO event.registrations ({})",
-                         "VALUES ({}) RETURNING id")
-            query = query.format(", ".join(keys),
-                                 ", ".join(("%s",) * len(keys)))
-            params = tuple(data[key] for key in keys)
-            new_id = unwrap(self.query_one(rs, query, params))
+            rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
+            new_id = self.sql_insert(rs, "event.registrations", rdata)
             for aspect in ('parts', 'choices'):
                 if aspect in data:
                     new_data = {
@@ -1336,10 +1242,11 @@ class EventBackend(AbstractUserBackend):
                     }
                     self.set_registration(rs, new_data)
             ## fix field_data to contain registration id
-            query = glue("UPDATE event.registrations SET field_data = %s",
-                         "WHERE id = %s")
-            self.query_exec(rs, query, (
-                psycopg2.extras.Json({'registration_id': new_id}), new_id))
+            fdata = {
+                'id': new_id,
+                'field_data': psycopg2.extras.Json({'registration_id': new_id})
+            }
+            self.sql_update(rs, "event.registrations", fdata)
         self.event_log(
             rs, const.EventLogCodes.registration_created, data['event_id'],
             persona_id=data['persona_id'])
@@ -1357,8 +1264,8 @@ class EventBackend(AbstractUserBackend):
         event_id = affirm("int", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
-        query = "SELECT id, moniker FROM event.lodgements WHERE event_id = %s"
-        data = self.query_all(rs, query, (event_id,))
+        data = self.sql_select(rs, "event.lodgements", ("id", "moniker"),
+                               (event_id,), entity_key="event_id")
         return {e['id']: e['moniker'] for e in data}
 
     @access("event_user")
@@ -1376,14 +1283,13 @@ class EventBackend(AbstractUserBackend):
         if not ids:
             return {}
         with Atomizer(rs):
-            query = "SELECT {} FROM event.lodgements WHERE id = ANY(%s)"
-            query = query.format(", ".join(LODGEMENT_FIELDS))
-            data = self.query_all(rs, query, (ids,))
+            data = self.sql_select(rs, "event.lodgements", LODGEMENT_FIELDS,
+                                   ids)
             events = {e['event_id'] for e in data}
             if len(events) != 1:
                 raise ValueError(
                     "Only lodgements from exactly one event allowed!")
-            event_id = events.pop()
+            event_id = unwrap(events)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
@@ -1400,23 +1306,17 @@ class EventBackend(AbstractUserBackend):
         """
         data = affirm("lodgement_data", data)
         with Atomizer(rs):
-            query = "SELECT event_id FROM event.lodgements WHERE id = %s"
-            event_id = unwrap(self.query_one(rs, query, (data['id'],)))
+            current = self.sql_select_one(
+                rs, "event.lodgements", ("event_id", "moniker"), data['id'])
+            event_id, moniker = current['event_id'], current['moniker']
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
             self.assert_offline_lock(rs, event_id=event_id)
-            keys = tuple(data.keys())
-            query = "UPDATE event.lodgements SET ({}) = ({}) WHERE id = %s"
-            query = query.format(", ".join(keys), ", ".join(("%s",)* len(keys)))
-            params = tuple(data[key] for key in keys) + (data['id'],)
-            ret = self.query_exec(rs, query, params)
-            query = glue("SELECT event_id, moniker FROM event.lodgements",
-                         "WHERE id = %s")
-            current = self.query_one(rs, query, (data['id'],))
+            ret = self.sql_update(rs, "event.lodgements", data)
             self.event_log(
-                rs, const.EventLogCodes.lodgement_changed, current['event_id'],
-                additional_info=current['moniker'])
+                rs, const.EventLogCodes.lodgement_changed, event_id,
+                additional_info=moniker)
             return ret
 
     @access("event_user")
@@ -1433,11 +1333,7 @@ class EventBackend(AbstractUserBackend):
                 and not self.is_admin(rs)):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=data['event_id'])
-        keys = tuple(data.keys())
-        query = "INSERT INTO event.lodgements ({}) VALUES ({}) RETURNING id"
-        query = query.format(", ".join(keys), ", ".join(("%s",)* len(keys)))
-        params = tuple(data[key] for key in keys)
-        ret = unwrap(self.query_one(rs, query, params))
+        ret = self.sql_insert(rs, "event.lodgements", data)
         self.event_log(
             rs, const.EventLogCodes.lodgement_created, data['event_id'],
             additional_info=data['moniker'])
@@ -1456,21 +1352,18 @@ class EventBackend(AbstractUserBackend):
         :returns: number of affected entries
         """
         lodgement_id = affirm("int", lodgement_id)
-        query = glue("SELECT event_id, moniker FROM event.lodgements",
-                     "WHERE id = %s")
-        current = self.query_one(rs, query, (lodgement_id,))
         with Atomizer(rs):
-            query = "SELECT event_id FROM event.lodgements WHERE id = %s"
-            event_id = unwrap(self.query_one(rs, query, (lodgement_id,)))
+            current = self.sql_select_one(
+                rs, "event.lodgements", ("event_id", "moniker"), lodgement_id)
+            event_id, moniker = current['event_id'], current['moniker']
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
             self.assert_offline_lock(rs, event_id=event_id)
-            query = "DELETE FROM event.lodgements WHERE id = %s"
-            ret = self.query_exec(rs, query, (lodgement_id,))
+            ret = self.sql_delete_one(rs, "event.lodgements", lodgement_id)
             self.event_log(
-                rs, const.EventLogCodes.lodgement_deleted, current['event_id'],
-                additional_info=current['moniker'])
+                rs, const.EventLogCodes.lodgement_deleted, event_id,
+                additional_info=moniker)
             return ret
 
     @access("event_user")
@@ -1483,9 +1376,10 @@ class EventBackend(AbstractUserBackend):
         :returns: list of questionnaire row entries
         """
         event_id = affirm("int", event_id)
-        query = glue("SELECT field_id, pos, title, info, input_size, readonly",
-                     "FROM event.questionnaire_rows WHERE event_id = %s")
-        data = self.query_all(rs, query, (event_id,))
+        data = self.sql_select(
+            rs, "event.questionnaire_rows",
+            ("field_id", "pos", "title", "info", "input_size", "readonly"),
+            (event_id,), entity_key="event_id")
         return sorted(data, key=lambda x: x['pos'])
 
     @access("event_user")
@@ -1507,18 +1401,14 @@ class EventBackend(AbstractUserBackend):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
-            query = "DELETE FROM event.questionnaire_rows WHERE event_id = %s"
-            self.query_exec(rs, query, (event_id,))
-            query = glue(
-                "INSERT INTO event.questionnaire_rows",
-                "(event_id, field_id, pos, title, info, input_size, readonly)",
-                "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+            self.sql_delete(rs, "event.questionnaire_rows", (event_id,),
+                            entity_key="event_id")
             ret = 1
             for pos, row in enumerate(data):
-                ret *= self.query_exec(
-                    rs, query, (event_id, row['field_id'], pos, row['title'],
-                                row['info'], row['input_size'],
-                                row['readonly']))
+                new_row = copy.deepcopy(row)
+                new_row['pos'] = pos
+                new_row['event_id'] = event_id
+                ret *= self.sql_insert(rs, "event.questionnaire_rows", new_row)
         self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 

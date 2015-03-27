@@ -3,7 +3,7 @@
 {% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}Unterkunft {{ lodgement_data['moniker'] }} bearbeiten ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("event/show_lodgement")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("event/show_lodgement"), "Abbrechen") }}
     <form action="{{ cdedblink('event/change_lodgement')|e }}" method="POST" id="changelodgementform">
         <table>
             {{ util.tab_input_text(name="moniker", label="Bezeichnung") }}

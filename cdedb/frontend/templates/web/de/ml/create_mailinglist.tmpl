@@ -2,7 +2,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Mailingliste anlegen{% endblock %}
 {% block content %}
-    <a href="{{ cdedblink("ml/index")|e }}">Abbrechen</a>
+    {{ util.href(cdedblink("ml/index"), "Abbrechen") }}
     <form action="{{ cdedblink('ml/create_mailinglist')|e }}" method="POST" id="createlistform">
         <table>
             {{ util.tab_input_text(name="title", label="Titel") }}

@@ -318,4 +318,4 @@ class FrontendTest(unittest.TestCase):
         return ret
 
     def assertTitle(self, title):
-        self.assertEqual(title, self.response.lxml.xpath('//h1/text()')[0])
+        self.assertIn(title, self.response.lxml.xpath('//h1/text()'))

@@ -184,7 +184,7 @@ class CdEFrontend(AbstractUserFrontend):
     @persona_dataset_guard()
     def set_foto_form(self, rs, persona_id):
         """Render form."""
-        data = self.cdeproxy.get_data_one(rs, persona_id)
+        data = self.coreproxy.get_data_one(rs, persona_id)
         return self.render(rs, "set_foto", {'data': data})
 
     @access("formermember", {"POST"})
@@ -224,7 +224,7 @@ class CdEFrontend(AbstractUserFrontend):
         data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
-        return self.render(rs, "consent_decision", {'data': data})
+        return self.render(rs, "consent_decision")
 
     @access("member", {"POST"})
     @REQUESTdata(("ack", "bool"))
@@ -374,7 +374,7 @@ class CdEFrontend(AbstractUserFrontend):
     @persona_dataset_guard()
     def modify_membership_form(self, rs, persona_id):
         """Render form."""
-        data = self.cdeproxy.get_data_one(rs, persona_id)
+        data = self.coreproxy.get_data_one(rs, persona_id)
         data['is_member'] = data['status'] in const.MEMBER_STATI
         data['is_searchable'] = data['status'] in const.SEARCHMEMBER_STATI
         return self.render(rs, "modify_membership", {
@@ -447,9 +447,9 @@ class CdEFrontend(AbstractUserFrontend):
         personas = (
             {entry['submitted_by'] for entry in log}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        user_data = self.cdeproxy.get_data(rs, personas)
+        persona_data = self.coreproxy.get_data(rs, personas)
         return self.render(rs, "view_cde_log", {
-            'log': log, 'user_data': user_data})
+            'log': log, 'persona_data': persona_data})
 
     @access("cde_admin")
     @REQUESTdata(("stati", "[int]"), ("start", "int_or_None"),
@@ -465,6 +465,6 @@ class CdEFrontend(AbstractUserFrontend):
             {entry['submitted_by'] for entry in log}
             | {entry['reviewed_by'] for entry in log if entry['reviewed_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        user_data = self.cdeproxy.get_data(rs, personas)
+        persona_data = self.coreproxy.get_data(rs, personas)
         return self.render(rs, "view_changelog_meta", {
-            'log': log, 'user_data': user_data})
+            'log': log, 'persona_data': persona_data})

@@ -27,11 +27,10 @@ Kurswahlen -- {{ course_data[values['course_id']|int]['title']|e }} ({{ event_da
                 {% for registration_id in candidates[(part_id, i)] %}
                     <tr>
                         <td>
-                            <a href="{{ cdedblink("event/show_registration",
-                                                  {'registration_id': registration_id})|e }}">
-                                {{ user_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                                {{ user_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
-                            </a>
+                            {% with pd = persona_data[registration_data[registration_id]['persona_id']] %}
+                                {{ util.href(cdedblink("event/show_registration", {'registration_id': registration_id}),
+                                             "{} {}".format(pd['given_names'], pd['family_name'])) }}
+                            {% endwith %}
                          </td>
                          {% for j in range(3) %}
                              <td>

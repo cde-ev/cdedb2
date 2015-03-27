@@ -1,0 +1,260 @@
+{# This contains generic pages. Currently these are those for managing users
+   in a realm which provides no additional data. #}
+
+{% import "web/de/util.tmpl" as util with context %}
+
+{% macro admin_change_user(realm) %}
+    <form action="{{ cdedblink('{}/admin_change_user'.format(realm))|e }}" method="POST" id="changedataform">
+        <table>
+            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.tab_input_text(name="family_name", label="Nachname") }}
+            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+            {{ util.href(show_user_link(values['persona_id']), "Abbrechen") }}
+        </div>
+    </form>
+{% endmacro %}
+
+{% macro change_user(realm) %}
+    <form action="{{ cdedblink('{}/change_user'.format(realm))|e }}" method="POST" id="changedataform">
+        <table>
+            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.tab_input_text(name="family_name", label="Nachname") }}
+            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+            {{ util.href(show_user_link(user.persona_id), "Abbrechen") }}
+        </div>
+    </form>
+{% endmacro %}
+
+{% macro create_user(realm) %}
+    <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform">
+        <table>
+            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.tab_input_text(name="family_name", label="Nachname") }}
+            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+            {{ util.tab_input_text(name="username", label="Email") }}
+            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Anlegen") }}
+            {{ util.href(cdedblink('{}/index'.format(realm)), "Abbrechen") }}
+        </div>
+    </form>
+{% endmacro %}
+
+{% macro genesis(realm) %}
+    Gib unten Deine Daten ein um den Account anzulegen. Abschließend kannst
+    Du Dir ein neues Passwort zugeschicken lassen.
+
+    <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform">
+        <table>
+            <tr> <th colspan="2">Person</th> </tr>
+            <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
+            <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
+            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+            <tr> <td>Email</td> <td> {{ username|e }} </td> </tr>
+        </table>
+        <div>
+            {{ util.input_hidden(name="case_id") }}
+            {{ util.input_hidden(name="secret") }}
+            {{ util.input_submit(value="Account anlegen") }}
+            {{ util.href(cdedblink('core/index'), "Abbrechen") }}
+        </div>
+    </form>
+{% endmacro %}
+
+{% macro show_user(realm) %}
+    {% if data['id'] == user.persona_id or is_admin %}
+        <p>
+            {% if is_admin %}
+                {{ util.href(cdedblink('{}/admin_change_user_form'.format(realm)), "Bearbeiten") }}
+            {% else %}
+                {{ util.href(cdedblink('{}/change_user_form'.format(realm)), "Bearbeiten") }}
+            {% endif %}
+        </p>
+    {% endif %}
+    <table>
+        <tr>
+            <td>Name</td>
+            <td>
+                {{ data['given_names']|e }}
+                {{ data['family_name']|e }}
+            </td>
+        </tr>
+        <tr>
+            <td>Rufname</td>
+            <td>{{ data['display_name']|e }}</td>
+        </tr>
+        <tr>
+            <td>CdEDB-ID</td>
+            <td>{{ data['id']|cdedbid|e }}</td>
+        </tr>
+        <tr>
+            <td>Email</td>
+            <td>
+                {{ data['username']|e }}
+                {% if is_admin and data['id'] != user.persona_id %}
+                    {{ util.href(cdedblink('core/admin_username_change_form'), "Email ändern") }}
+                {% elif data['id'] == user.persona_id %}
+                    {{ util.href(cdedblink('core/change_username_form'), "Email ändern") }}
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td>CdE-Wolken-Zugriff</td>
+            <td>
+                {{ util.deko_checkbox(checked=data['cloud_account']) }}
+            </td>
+        </tr>
+        {% if is_admin %}
+            <tr>
+                <td>Account aktiv</td>
+                <td>
+                    {{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}
+                    {% if data['is_active'] %}
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
+                         id="activitytoggleform">
+                            <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
+                        </form>
+                    {% else %}
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
+                         id="activitytoggleform">
+                            <div>{{ util.input_submit(value="Account aktivieren") }}</div>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Privilegien-Bits</td>
+                <td>
+                    {{ data['db_privileges_ascii']|e }}
+                    {% if "admin" in user.roles %}
+                        {{ util.href(cdedblink("core/adjust_privileges_form"), "Ändern") }}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Notizen</td>
+                <td>{{ data['notes']|e|linebreaks }}</td>
+            </tr>
+        {% endif %}
+    </table>
+
+    {% if data['id'] == user.persona_id or is_admin %}
+        <p>
+            {% if is_admin %}
+                {{ util.href(cdedblink('{}/admin_change_user_form'.format(realm)), "Bearbeiten") }}
+            {% else %}
+                {{ util.href(cdedblink('{}/change_user_form'.format(realm)), "Bearbeiten") }}
+            {% endif %}
+        </p>
+    {% endif %}
+    {% if is_admin %}
+        <form action="{{ cdedblink('core/admin_password_reset')|e }}" method="POST" id="adminpasswordresetform">
+            <div>{{ util.input_submit(value="Passwort zurücksetzen") }}</div>
+        </form>
+    {% endif %}
+{% endmacro %}
+
+{% macro user_search(realm) %}
+    <h3>Standardabfragen</h3>
+    {% with TITLES = {
+        "all": "Alle Accounts",} %}
+
+        <div>
+            {{ util.place_default_queries("{}/user_search".format(realm), default_queries, TITLES) }}
+        </div>
+    {% endwith %}
+
+    <h3>Suchmaske</h3>
+    {% with TITLES = {
+        "id": "ID",
+        "username": "Email",
+        "is_active": "Aktiv",
+        "db_privileges": "DB-Rechte",
+        "cloud_account": "Cloud Zugriff",
+        "family_name": "Nachname",
+        "given_names": "Vorname",
+        "display_name": "Rufname",
+        "notes": "Notizen",} %}
+
+        <form action="{{ cdedblink('{}/user_search'.format(realm))|e }}" method="GET" id="usersearchform">
+            <div>
+                {{ util.input_submit(value="Suchen") }}
+                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+                {{ util.format_query(spec, TITLES, choices) }}
+                {{ util.input_submit(value="Suchen") }}
+                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+            </div>
+        </form>
+
+    {% endwith %}
+
+    <h3>Aktionen</h3>
+    <p>
+        <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
+        <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
+        <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
+    </p>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $("#action_select_all").click(function (){
+                 $(".outputSelector").prop('checked', true);
+                 });
+            $("#action_select_none").click(function (){
+                 $(".outputSelector").prop('checked', false);
+                 });
+            $("#action_select_invert").click(function (){
+                 $(".outputSelector").each(function (){
+                     $(this).prop('checked', !$(this).prop('checked'));
+                 })});
+        });
+    </script>
+{% endmacro %}
+
+{% macro user_search_result(realm) %}
+    {{ util.href(cdedblink("{}/user_search_form".format(realm), query|querytoparams), "Zurück") }}
+
+    {% with TITLES = {
+        "persona_id": "ID",
+        "username": "Email",
+        "is_active": "Aktiv",
+        "db_privileges": "DB-Rechte",
+        "cloud_account": "Cloud Zugriff",
+        "family_name": "Nachname",
+        "given_names": "Vorname",
+        "display_name": "Rufname",
+        "notes": "Notizen",} %}
+
+        {{ util.display_query_result(result, query, TITLES, choices) }}
+    {% endwith %}
+
+    {{ util.href(cdedblink("{}/user_search_form".format(realm), query|querytoparams), "Zurück") }}
+
+    <h3>Aktionen</h3>
+    <p>
+        <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
+        <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
+        <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
+    </p>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $("#action_select_all").click(function (){
+                 $(".rowSelector").prop('checked', true);
+                 });
+            $("#action_select_none").click(function (){
+                 $(".rowSelector").prop('checked', false);
+                 });
+            $("#action_select_invert").click(function (){
+                 $(".rowSelector").each(function (){
+                     $(this).prop('checked', !$(this).prop('checked'));
+                 })});
+        });
+    </script>
+{% endmacro %}

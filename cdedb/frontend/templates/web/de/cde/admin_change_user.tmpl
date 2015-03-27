@@ -47,7 +47,7 @@
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}
-            <a href="{{ show_user_link(values['persona_id'])|e }}">Abbrechen</a>
+            {{ util.href(show_user_link(values['persona_id']), "Abbrechen") }}
         </div>
     </form>
 {% endblock %}

@@ -133,7 +133,7 @@ _DEFAULTS = {
         "qview_ml_user": {
             "all": Query(
                 "qview_ml_user", QUERY_SPECS['qview_ml_user'],
-                ("user_data.persona_id", "given_names", "family_name"),
+                ("id", "given_names", "family_name"),
                 tuple(),
                 tuple(),)
         },

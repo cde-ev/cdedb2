@@ -28,7 +28,7 @@
     {% if age.is_minor() and not registration_data['parental_agreement'] %}
         Du musst noch die Einverständniserklärung deiner
         Erziehungsberechtigten an die Orgas schicken. Du findest die Vorlage
-        <a href="{{ cdedblink('event/get_minor_form')|e }}">hier</a>.
+        {{ util.href(cdedblink('event/get_minor_form'), "hier") }}.
     {% endif %}
     <table>
         <tr><th colspan="2">Status</th></tr>
@@ -99,7 +99,7 @@
     </table>
     {% if event_data['registration_soft_limit'] >= today %}
         <p>
-            <a href="{{ cdedblink("event/amend_registration_form")|e }}">Ändern</a>
+            {{ util.href(cdedblink("event/amend_registration_form"), "Ändern") }}
         </p>
     {% endif %}
 {% endblock %}
