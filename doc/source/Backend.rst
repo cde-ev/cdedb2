@@ -14,6 +14,8 @@ page linked below.
    Backend_Core
    Backend_CdE
    Backend_Event
+   Backend_Ml
+   Backend_Assembly
 
 cdedb.backend.rpc
 -----------------

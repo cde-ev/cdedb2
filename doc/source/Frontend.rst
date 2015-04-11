@@ -13,6 +13,7 @@ page linked below.
    Frontend_Core
    Frontend_CdE
    Frontend_Event
+   Frontend_Ml
 
 cdedb.frontend.application
 --------------------------

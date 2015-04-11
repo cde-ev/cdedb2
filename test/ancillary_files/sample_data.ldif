@@ -107,3 +107,14 @@ mail: janis@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: FALSE
 isActive: TRUE
+
+dn: uid=11,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
+objectClass: cdePersona
+sn: (klaif@example.cde)
+cn: Kalif
+displayName: Kalif
+uid: 11
+mail: kalif@example.cde
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
+cloudAccount: FALSE
+isActive: TRUE

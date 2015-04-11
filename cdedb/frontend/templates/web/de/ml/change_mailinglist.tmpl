@@ -23,10 +23,10 @@
             {{ util.tab_input_select(name="mod_policy", title="Moderation", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for policy in const.AttachementPolicy %}
+            {% for policy in const.AttachmentPolicy %}
                 {{ myentries.append((policy.value, i18n(policy|string), None))|e }}
             {% endfor %}
-            {{ util.tab_input_select(name="attachement_policy", title="Anhänge", entries=myentries) }}
+            {{ util.tab_input_select(name="attachment_policy", title="Anhänge", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for status in const.PersonaStati %}
@@ -59,8 +59,8 @@
                                          entries=myentries, info="Keine Auswahl entspricht einer Orgaliste.") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for assembly_id, title in assemblies|dictsort %}
-                {{ myentries.append((assembly_id, title, None))|e }}
+            {% for assembly_id, adata in assemblies|dictsort %}
+                {{ myentries.append((assembly_id, adata['title'], None))|e }}
             {% endfor %}
             {{ util.tab_input_select(name="assembly_id", title="Versammlung", nulloption=True, entries=myentries) }}
         </table>

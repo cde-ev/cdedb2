@@ -4,12 +4,16 @@
 
 import cdedb.database.constants as const
 import abc
+import datetime
+import pytz
 import sys
 import logging
 import logging.handlers
 import collections
 import collections.abc
 import enum
+import random
+import string
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
                      console_log_level=None):
@@ -75,6 +79,16 @@ def merge_dicts(*dicts):
         for key in adict:
             if key not in dicts[0]:
                 dicts[0][key] = adict[key]
+
+def random_ascii(length=12):
+    """Create a random string of printable ASCII characters.
+
+    :type length: int
+    :param length: number of characters in the returned string
+    :rtype: str
+    """
+    chars = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(chars) for _ in range(length))
 
 def extract_realm(status):
     """Which realm does a persona belong to?
@@ -214,6 +228,137 @@ def compute_checkdigit(value):
         tmp = tmp // 10
     dsum = sum((i+1)*d for i, d in enumerate(digits))
     return chr(65 + (dsum % 11))
+
+def _schulze_winners(d, candidates):
+    """This is the abstract part of the Schulze method doing the actual work.
+
+    The candidates are the vertices of a graph and the metric (in form
+    of ``d``) describes the strength of the links between the
+    candidates, that is edge weights.
+
+    We determine the strongest path from each vertex to each other
+    vertex. This gives a transitive relation, which enables us thus to
+    determine winners as maximal elements.
+
+    :type d: {(str, str): int}
+    :type candidates: [str]
+    :rtype: [str]
+    """
+    ## First determine the strongst paths
+    p = {(x, y): d[(x, y)] for x in candidates for y in candidates}
+    for i in candidates:
+        for j in candidates:
+            if i == j:
+                continue
+            for k in candidates:
+                if i == k or j == k:
+                    continue
+                p[(j, k)] = max(p[(j, k)], min(p[(j, i)], p[(i, k)]))
+    ## Second determine winners
+    winners = []
+    for i in candidates:
+        if all(p[(i, j)] >= p[(j, i)] for j in candidates):
+            winners.append(i)
+    return winners
+
+def schulze_evaluate(votes, candidates):
+    """Use the Schulze method to cummulate preference list into one list.
+
+    This is used by the assembly realm to tally votes -- however this is
+    pretty abstract, so we move it here.
+
+    Votes have the form ``3>0>1=2>4`` where the monikers between the
+    relation signs are exactly those passed in the ``candidates`` parameter.
+
+    The Schulze method is described in the pdf found in the ``related``
+    folder. Also the Wikipedia article is pretty nice.
+
+    One thing to mention is, that we do not do any tie breaking. Since
+    we allow equality in the votes, it seems reasonable to allow
+    equality in the result too.
+
+    For a nice set of examples see the test suite.
+
+    :type votes: [str]
+    :type candidates: [str]
+    :param candidates: We require that the candidates be explicitly
+      passed. This allows for more flexibility (like returning a useful
+      result for zero votes).
+    :rtype: str
+    :returns: The aggregated preference list.
+    """
+    if not votes:
+        return '='.join(candidates)
+    split_votes = tuple(
+        tuple(level.split('=') for level in vote.split('>')) for vote in votes)
+    def _subindex(alist, element):
+        """The element is in the list at which position in the big list.
+
+        :type alist: [[str]]
+        :type element: str
+        :rtype: int
+        :returns: ``ret`` such that ``element in alist[ret]``
+        """
+        for index, sublist in enumerate(alist):
+            if element in sublist:
+                return index
+        raise ValueError("Not in list.")
+    ## First we count the number of votes prefering x to y
+    counts = {(x, y): 0 for x in candidates for y in candidates}
+    for vote in split_votes:
+        for x in candidates:
+            for y in candidates:
+                if _subindex(vote, x) < _subindex(vote, y):
+                    counts[(x, y)] += 1
+    ## Second we calculate a numeric link strength abstracting the problem
+    ## into the realm of graphs with one vertex per candidate
+    def _strength(support, opposition, totalvotes):
+        """One thing not specified by the Schulze method is how to asses the
+        strength of a link and indeed there are several possibilities. We
+        use the strategy called 'winning votes' as advised by the paper of
+        Markus Schulze.
+
+        If two two links have more support than opposition, then the link
+        with more supporters is stronger, if supporters tie then less
+        opposition is used as secondary criterion.
+
+        Another strategy which seems to have a more intuitive appeal is
+        called 'margin' and sets the difference between support and
+        opposition as strength of a link. However the discrepancy
+        between the strategies is rather small, to wit all cases in the
+        test suite give the same result for both of them. Moreover if
+        the votes contain no ties both strategies (and several more) are
+        totally equivalent.
+
+        :type support: int
+        :type opposition: int
+        :type totalvotes: int
+        :rtype: int
+        """
+        ## the margin strategy would be given by the following line
+        ## return support - opposition
+        if support > opposition:
+            return totalvotes*support - opposition
+        elif support == opposition:
+            return 0
+        else:
+            return -1
+    d = {(x, y): _strength(counts[(x, y)], counts[(y, x)], len(votes))
+         for x in candidates for y in candidates}
+    ## Third we execute the Schulze method by iteratively determining
+    ## winners
+    result = []
+    while True:
+        done = {x for level in result for x in level}
+        ## avoid sets to preserve ordering
+        remaining = tuple(c for c in candidates if c not in done)
+        if not remaining:
+            break
+        winners = _schulze_winners(d, remaining)
+        result.append(winners)
+    ## Return the aggregate preference list in the same format as the input
+    ## votes are.
+    return ">".join("=".join(level) for level in result)
 
 def unwrap(single_element_list, keys=False):
     """Remove one nesting layer (of lists, etc.).
@@ -401,10 +546,6 @@ EVENT_USER_DATA_FIELDS = (
     "title", "name_supplement", "gender", "birthday", "telephone", "mobile",
     "address_supplement", "address", "postal_code", "location", "country")
 
-#: Names of columns associated to an ml user (in addition to those which
-#: exist for every persona).
-ML_USER_DATA_FIELDS = None
-
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
@@ -444,7 +585,26 @@ LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "description", "sub_policy", "mod_policy",
-    "notes", "attachement_policy", "audience", "subject_prefix", "maxsize",
+    "notes", "attachment_policy", "audience", "subject_prefix", "maxsize",
     "is_active", "gateway", "event_id", "registration_stati", "assembly_id")
 
+#: Fields of an assembly
+ASSEMBLY_FIELDS = ("id", "title", "description", "signup_end", "is_active",
+                   "notes")
+
+#: Fields of a ballot
+BALLOT_FIELDS = (
+    "id", "assembly_id", "title", "description", "vote_begin", "vote_end",
+    "vote_extension_end", "extended", "bar", "quorum", "votes",
+    "is_tallied", "notes")
+
+#: Fields of an attachment in the assembly realm (attached either to an
+#: assembly or a ballot)
+ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id", "title",
+                              "filename")
+
 EPSILON = 10**(-6) #:
+
+#: Timestamp which lies in the future. Make a constant so we do not have to
+#: hardcode the value otherwere
+FUTURE_TIMESTAMP = datetime.datetime(9996, 1, 1, 0, 0, 0, tzinfo=pytz.utc)

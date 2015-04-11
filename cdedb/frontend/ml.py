@@ -19,7 +19,7 @@ class MlFrontend(AbstractUserFrontend):
     logger = logging.getLogger(__name__)
     user_management = {
         "proxy": lambda obj: obj.mlproxy,
-        "validator": "ml_user_data",
+        "validator": "persona_data",
     }
 
     def __init__(self, configpath):
@@ -28,9 +28,8 @@ class MlFrontend(AbstractUserFrontend):
             self.conf.SERVER_NAME_TEMPLATE.format("cde")))
         self.eventproxy = ProxyShim(connect_proxy(
             self.conf.SERVER_NAME_TEMPLATE.format("event")))
-        # TODO enable assembly
-        # self.assemblyproxy = ProxyShim(connect_proxy(
-        #     self.conf.SERVER_NAME_TEMPLATE.format("assembly")))
+        self.assemblyproxy = ProxyShim(connect_proxy(
+            self.conf.SERVER_NAME_TEMPLATE.format("assembly")))
         self.mlproxy = ProxyShim(connect_proxy(
             self.conf.SERVER_NAME_TEMPLATE.format("ml")))
 
@@ -111,10 +110,10 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml_admin")
     def user_search_form(self, rs):
         """Render form."""
-        spec = QUERY_SPECS['qview_ml_user']
+        spec = QUERY_SPECS['qview_generic_user']
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
-        default_queries = self.conf.DEFAULT_QUERIES['qview_ml_user']
+        default_queries = self.conf.DEFAULT_QUERIES['qview_generic_user']
         return self.render(rs, "user_search", {
             'spec': spec, 'queryops': QueryOperators,
             'default_queries': default_queries, 'choices': {}})
@@ -123,12 +122,12 @@ class MlFrontend(AbstractUserFrontend):
     @REQUESTdata(("CSV", "bool"))
     def user_search(self, rs, CSV):
         """Perform search."""
-        spec = QUERY_SPECS['qview_ml_user']
+        spec = QUERY_SPECS['qview_generic_user']
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
                       spec=spec, allow_empty=False)
         if rs.errors:
             return self.user_search_form(rs)
-        query.scope = "qview_ml_user"
+        query.scope = "qview_generic_user"
         result = self.mlproxy.submit_general_query(rs, query)
         params = {'result': result, 'query': query, 'choices': {}}
         if CSV:
@@ -170,9 +169,7 @@ class MlFrontend(AbstractUserFrontend):
         """Render form."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
         events = self.eventproxy.list_events(rs, past=False)
-        # TODO enable assembly
-        # assemblies = self.assemblyproxy.list_assemblies(rs)
-        assemblies = {}
+        assemblies = self.assemblyproxy.list_assemblies(rs)
         return self.render(rs, "create_mailinglist", {
             "mailinglists": mailinglists, "events": events,
             "assemblies": assemblies})
@@ -180,7 +177,7 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml_admin", {"POST"})
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
-        "attachement_policy", "audience", "subject_prefix", "maxsize",
+        "attachment_policy", "audience", "subject_prefix", "maxsize",
         "is_active", "notes", "gateway", "event_id", "registration_stati",
         "assembly_id")
     def create_mailinglist(self, rs, data):
@@ -258,9 +255,7 @@ class MlFrontend(AbstractUserFrontend):
         mailinglist_data = self.mlproxy.get_mailinglist(rs, mailinglist_id)
         mailinglists = self.mlproxy.list_mailinglists(rs)
         events = self.eventproxy.list_events(rs, past=False)
-        # TODO enable assembly
-        # assemblies = self.assemblyproxy.list_assemblies(rs)
-        assemblies = {}
+        assemblies = self.assemblyproxy.list_assemblies(rs)
         merge_dicts(rs.values, mailinglist_data)
         return self.render(rs, "change_mailinglist", {
             'mailinglist_data': mailinglist_data, 'mailinglists': mailinglists,
@@ -271,7 +266,7 @@ class MlFrontend(AbstractUserFrontend):
                  ("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
-        "notes", "attachement_policy", "subject_prefix", "maxsize",
+        "notes", "attachment_policy", "subject_prefix", "maxsize",
         "is_active", "gateway", "event_id", "assembly_id")
     def change_mailinglist(self, rs, mailinglist_id, audience,
                            registration_stati, data):

@@ -13,7 +13,7 @@ from cdedb.common import AgeClasses
 ALL_ENUMS = (
     const.PersonaStati, const.PrivilegeBits, const.Genders,
     const.MemberChangeStati, const.RegistrationPartStati, const.GenesisStati,
-    const.SubscriptionPolicy, const.ModerationPolicy, const.AttachementPolicy,
+    const.SubscriptionPolicy, const.ModerationPolicy, const.AttachmentPolicy,
     const.CoreLogCodes, const.CdeLogCodes, const.EventLogCodes,
     const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,
     QueryOperators, AgeClasses)

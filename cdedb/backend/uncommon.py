@@ -77,7 +77,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: a positive number for success, zero otherwise
+        :returns: default return code
         """
         self.affirm_realm(rs, (data['id'],))
         if rs.user.persona_id != data['id'] and not self.is_admin(rs):
@@ -111,7 +111,7 @@ class AbstractUserBackend(AbstractBackend, metaclass=abc.ABCMeta):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: a positive number for success, zero otherwise
+        :returns: default return code
         """
         data = affirm(self.user_management['validator'], data)
         return self.set_user_data(rs, data)

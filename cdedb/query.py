@@ -224,7 +224,7 @@ QUERY_SPECS = {
         ("user_data.country", "str"),
         ## This will be augmented with additional fields on the fly.
         ]),
-    "qview_ml_user" :
+    "qview_generic_user" :
     collections.OrderedDict([
         ("id", "int"),
         ("username", "str"),
@@ -263,7 +263,7 @@ QUERY_VIEWS = {
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_registration": None, ## dummy -- value will be generated on the fly
-    "qview_ml_user": "core.personas",
+    "qview_generic_user": "core.personas",
 }
 
 def mangle_query_input(rs, spec):

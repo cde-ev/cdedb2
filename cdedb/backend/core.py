@@ -124,8 +124,9 @@ class CoreBackend(AbstractBackend):
         :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
-        :returns: number of entries written
+        :returns: default return code
          """
+        ## do not use sql_insert since it throws an error for selecting the id
         query = glue(
             "INSERT INTO core.log",
             "(code, submitted_by, persona_id, additional_info)",
@@ -339,7 +340,7 @@ class CoreBackend(AbstractBackend):
         :param reviewed: Signals wether the change was reviewed. This exists,
           so that automatically resolved changes are not marked as reviewed.
         :rtype: int
-        :returns: number of changed entries
+        :returns: default return code
         """
         if not ack:
             query = glue(
@@ -529,7 +530,7 @@ class CoreBackend(AbstractBackend):
           if not we have to delegate to the changelog which will call this
           method again with ``change_logged`` set to True.
         :rtype: int
-        :returns: number of changed entries
+        :returns: default return code
         """
         keys = tuple(key for key in data if (key in PERSONA_DATA_FIELDS
                                              and key != "id"))
@@ -656,7 +657,7 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :rtype: int
-        :returns: number of sessions invalidated
+        :returns: default return code
         """
         query = glue(
             "UPDATE core.sessions SET is_active = False, atime = now()",
@@ -886,7 +887,7 @@ class CoreBackend(AbstractBackend):
         :type data: {str: object}
         :type change_note: str
         :rtype: int
-        :returns: number of users changed
+        :returns: default return code
         """
         data = affirm("persona_data", data)
         if "username" in data:
@@ -962,7 +963,7 @@ class CoreBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type case_id: int
         :rtype: int
-        :returns: number of affected cases
+        :returns: default return code
         """
         case_id = affirm("int", case_id)
         query = glue("UPDATE core.genesis_cases SET case_status = %s",
@@ -1033,7 +1034,7 @@ class CoreBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: number of affected cases
+        :returns: default return code
         """
         data = affirm("genesis_case_data", data)
         with Atomizer(rs):

@@ -27,7 +27,7 @@ class MlBackend(AbstractUserBackend):
     user_management = {
         "data_table": None,
         "data_fields": None,
-        "validator": "ml_user_data",
+        "validator": "persona_data",
         "user_status": const.PersonaStati.ml_user,
     }
 
@@ -123,7 +123,7 @@ class MlBackend(AbstractUserBackend):
         :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
-        :returns: number of entries written
+        :returns: default return code
         """
         new_log = {
             "code": code,
@@ -163,7 +163,7 @@ class MlBackend(AbstractUserBackend):
         """Return user data sets.
 
         Since the ml realm does not define any additional attributes this
-        delegates to :py:meth:`cdedb.backend.core.CoreBackendget_data`.
+        delegates to :py:meth:`cdedb.backend.core.CoreBackend.get_data`.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type ids: [int]
@@ -182,7 +182,7 @@ class MlBackend(AbstractUserBackend):
         :rtype: [{str: object}]
         """
         query = affirm("serialized_query", query)
-        if query.scope == "qview_ml_user":
+        if query.scope == "qview_generic_user":
             query.constraints.append(("status", QueryOperators.equal,
                                       const.PersonaStati.ml_user))
             query.spec['status'] = "int"
@@ -263,8 +263,7 @@ class MlBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: A positive number if all operations succeded and zero
-          otherwise.
+        :returns: default return code
         """
         data = affirm("mailinglist_data", data)
         if not self.is_moderator(rs, data['id']) and not self.is_admin(rs):
@@ -357,7 +356,7 @@ class MlBackend(AbstractUserBackend):
           first (i.e. there have to be no subscriptions, moderators,
           ...). If True, this function first removes all refering entities.
         :rtype: int
-        :returns: the number of removed entries
+        :returns: default return code
         """
         mailinglist_id = affirm("int", mailinglist_id)
         cascade = affirm("bool", cascade)
@@ -532,7 +531,7 @@ class MlBackend(AbstractUserBackend):
         :type is_subscribed: bool
         :type address: str or None
         :rtype: int
-        :returns: number of entries written
+        :returns: default return code
         """
         with Atomizer(rs):
             query = glue("SELECT id FROM ml.subscription_states",
@@ -567,8 +566,7 @@ class MlBackend(AbstractUserBackend):
           current state.
         :type address: str or None
         :rtype: int
-        :returns: Number of entries written; negative if a subscription
-          request awaits moderation.
+        :returns: default return code
         """
         mailinglist_id = affirm("int", mailinglist_id)
         persona_id = affirm("int", persona_id)
@@ -646,7 +644,7 @@ class MlBackend(AbstractUserBackend):
         :type persona_id: int
         :type ack: bool
         :rtype: int
-        :returns: number of entries written
+        :returns: default return code
         """
         mailinglist_id = affirm("int", mailinglist_id)
         persona_id = affirm("int", persona_id)

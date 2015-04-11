@@ -130,9 +130,9 @@ _DEFAULTS = {
         "qview_registration": {
             ## none since they need additional input, will be created on the fly
         },
-        "qview_ml_user": {
+        "qview_generic_user": {
             "all": Query(
-                "qview_ml_user", QUERY_SPECS['qview_ml_user'],
+                "qview_generic_user", QUERY_SPECS['qview_generic_user'],
                 ("id", "given_names", "family_name"),
                 tuple(),
                 tuple(),)
@@ -185,6 +185,12 @@ _DEFAULTS = {
     "ML_STATE_FILE": "/run/cdedb/mlserver.pid",
     "ML_ACCESS_LOG": "/tmp/cdedb-access-ml.log",
     "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
+
+    ## assembly server configuration
+    "ASSEMBLY_SOCKET": "/run/cdedb/assemblyserver.sock",
+    "ASSEMBLY_STATE_FILE": "/run/cdedb/assemblyserver.pid",
+    "ASSEMBLY_ACCESS_LOG": "/tmp/cdedb-access-assembly.log",
+    "ASSEMBLY_BACKEND_LOG": "/tmp/cdedb-backend-assembly.log",
 }
 
 #: defaults for :py:class:`SecretsConfig`

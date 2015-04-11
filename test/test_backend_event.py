@@ -941,7 +941,7 @@ class TestEventBackend(BackendTest):
                        {'additional_info': None,
                         'code': 1,
                         'ctime': nearly_now(),
-                        'event_id': 1,
+                        'event_id': 2,
                         'persona_id': None,
                         'submitted_by': 1},
                        {'additional_info': None,

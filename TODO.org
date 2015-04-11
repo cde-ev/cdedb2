@@ -9,6 +9,7 @@
 ** write tests for uncovered code
 ** add translations
 ** adjust LDAP indices
+** add ml test cases concerning assembly interaction
 * abstract items
 ** Finalize SQL
 ** use framework for html? (maybe pure?) -- CSS is really rudimentary

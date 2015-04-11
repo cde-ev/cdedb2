@@ -1,0 +1,25 @@
+{
+    "assembly": "Internationaler Kongress",
+    "ballot": "Antwort auf die letzte aller Fragen",
+    "result": "3>2=4>0>1",
+    "candidates": {
+        "0": "None of the above",
+        "1": "Ich",
+        "2": "23",
+        "3": "42",
+        "4": "Philosophie"
+    },
+    "bar": "0",
+    "voters": [
+        "Anton Armin A. Administrator",
+        "Bert\u00e5lotta Beispiel",
+        "Inga Iota",
+        "Kalif ibn al-\u1e24asan Karabatschi"
+    ],
+    "votes": [
+        {"vote": "0>4>3>2>1", "salt": "krcqm\"xdv", "hash": "1b95f13b1819746d948e698ff38bf0ea85bc15ba9e8356e925f6a9f1c2d9810b1b851790de2ecf212b4a8906d39bff04da1817912d641afa4dd2732708aeaaeb"},
+        {"vote": "1>2=3=4>0", "salt": "klw3xjq8s", "hash": "e5f5550c78eaee20d53741b5f361803b756494f69e1a251a942e5e8afae6e58ea7c5307ec2fa8c94c5c6b1e77c6bb71f79d8a30d7e7c3d8e00d9b8697c2133eb"},
+        {"vote": "2>3>0>1=4", "salt": "rxt3x\\jnl", "hash": "eebbb299075feffbb3fe8c620a2a2e116ec1ba2daacf430bc3201180c32942d3001111d0ab14eb969126e9e616eff0fa12869a9609127cbbd65e3cf8532a9f9e"},
+        {"vote": "3>2=4>0>1", "salt": "et3[uh'kr", "hash": "97155c8534388cbb191e6b2bd706f1739a2bbc6dcef363a026afc3e50e9df226adc2acfe289a280fefba2c2207571f9c6b32f729bdfbadee80ac597099b6eee4"}
+    ]
+}

@@ -190,10 +190,13 @@ class TestValidation(unittest.TestCase):
             "id": 42,
             "username": "address@domain.tld",
             "display_name": "Blübb the First",
+            "given_names": "Blübb",
+            "family_name": "the First",
             "is_active": True,
             "status": 0,
             "db_privileges": 2,
             "cloud_account": True,
+            "notes": None,
             }
         stripped_example = { "id": 42 }
         key_example = copy.deepcopy(base_example)
@@ -209,13 +212,6 @@ class TestValidation(unittest.TestCase):
             (password_example, password_example, KeyError, False),
             (value_example, value_example, ValueError, False),
             ))
-        self.do_validator_test("_persona_data", (
-            (base_example, base_example, None, True),
-            (stripped_example, stripped_example, KeyError, False),
-            (key_example, key_example, KeyError, False),
-            (password_example, password_example, KeyError, False),
-            (value_example, value_example, ValueError, False),
-            ), extraparams={'strict': True})
 
     def test_date(self):
         now = datetime.datetime.now()
@@ -360,13 +356,6 @@ class TestValidation(unittest.TestCase):
             (key_example, key_example, KeyError, False),
             (value_example, value_example, ValueError, False),
             ))
-        self.do_validator_test("_member_data", (
-            (base_example, base_example, None, True),
-            (convert_example, base_example, None, False),
-            (stripped_example, stripped_example, KeyError, False),
-            (key_example, key_example, KeyError, False),
-            (value_example, value_example, ValueError, False),
-            ), extraparams={'strict': True})
 
     def test_event_user_data(self):
         base_example = {
@@ -406,13 +395,6 @@ class TestValidation(unittest.TestCase):
             (key_example, None, KeyError, False),
             (value_example, None, ValueError, False),
             ))
-        self.do_validator_test("_event_user_data", (
-            (base_example, base_example, None, True),
-            (convert_example, base_example, None, False),
-            (stripped_example, None, KeyError, False),
-            (key_example, None, KeyError, False),
-            (value_example, None, ValueError, False),
-            ), extraparams={'strict': True})
 
     def test_enum_validators(self):
         stati = const.PersonaStati

@@ -38,6 +38,7 @@ echo "--------------------------------------------"
 mkdir /var/lib/cdedb/
 mkdir /var/lib/cdedb/foto/
 mkdir /var/lib/cdedb/minor_form/
+mkdir /var/lib/cdedb/ballot_result/
 chown --recursive www-data:www-data /var/lib/cdedb
 
 echo ""

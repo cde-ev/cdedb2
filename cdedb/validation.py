@@ -23,7 +23,6 @@ above. They return the tuple ``(mangled_value, errors)``, where
 ``errors`` is a list containing tuples ``(argname, exception)``.
 """
 
-
 import re
 import sys
 import functools
@@ -31,7 +30,6 @@ import collections.abc
 import decimal
 import datetime
 import dateutil.parser
-import copy
 import string
 import pytz
 import werkzeug.datastructures
@@ -70,8 +68,7 @@ def _addvalidator(fun):
     return new_fun
 
 def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
-                               *, strict=False, allow_superfluous=False,
-                               _convert=True):
+                               *, allow_superfluous=False, _convert=True):
     """Check more complex dictionaries.
 
     :type adict: dict
@@ -83,8 +80,6 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
       itself.
     :type optional_fields: {str: callable}
     :param optional_fields: Like :py:obj:`mandatory_fields`, but facultative.
-    :type strict: bool
-    :param strict: If ``True`` treat the optional fields as mandatory.
     :type allow_superfluous: bool
     :param allow_superfluous: If ``False`` keys which are neither in
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
@@ -92,10 +87,6 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
     :param _convert: If ``True`` do type conversions.
     """
     optional_fields = optional_fields or {}
-    if strict:
-        mandatory_fields = copy.deepcopy(mandatory_fields)
-        mandatory_fields.update(optional_fields)
-        optional_fields = {}
     errs = []
     retval = {}
     mandatory_fields_found = []
@@ -394,7 +385,7 @@ def _restrictive_identifier(val, argname=None, *, _convert=True):
     """Restrictive identifiers are for situations, where normal identifiers
     are too lax.
 
-    One example ar sql column names.
+    One example are sql column names.
 
     :type val: object
     :type argname: str or None
@@ -498,22 +489,22 @@ def _email(val, argname=None, *, _convert=True):
 _PERSONA_COMMON_FIELDS = lambda: {
     'username': _email,
     'display_name': _str,
+    'given_names': _str,
+    'family_name': _str,
     'is_active': _bool,
     'status': _enum_personastati,
     'cloud_account': _bool,
+    'notes': _str_or_None,
 }
 _PERSONA_ADDITIONAL_FIELDS = {
     'db_privileges': _int,
 }
 @_addvalidator
-def _persona_data(val, argname=None, *, strict=False, creation=False,
-                  _convert=True):
+def _persona_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -531,7 +522,7 @@ def _persona_data(val, argname=None, *, strict=False, creation=False,
         optional_fields = dict(_PERSONA_COMMON_FIELDS(),
                                **_PERSONA_ADDITIONAL_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      strict=strict, _convert=_convert)
+                                      _convert=_convert)
 
 def _parse_date(val):
     """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
@@ -739,8 +730,6 @@ def _german_postal_code(val, argname=None, *, _convert=True):
 
 ## lambda since _or_None is not yet defined
 _MEMBER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
-    'family_name': _str,
-    'given_names': _str,
     'title': _str_or_None,
     'name_supplement': _str_or_None,
     'gender': _enum_genders,
@@ -752,7 +741,6 @@ _MEMBER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
     'postal_code': _printable_ascii_or_None,
     'location': _str_or_None,
     'country': _str_or_None,
-    'notes': _str_or_None,
     'birth_name': _str_or_None,
     'address_supplement2': _str_or_None,
     'address2': _str_or_None,
@@ -772,14 +760,11 @@ _MEMBER_OPTIONAL_FIELDS = {
     'bub_search': _bool,
 }
 @_addvalidator
-def _member_data(val, argname=None, *, strict=False, creation=False,
-                 _convert=True):
+def _member_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -798,8 +783,7 @@ def _member_data(val, argname=None, *, strict=False, creation=False,
                                balance=_decimal, **_MEMBER_OPTIONAL_FIELDS)
         optional_fields = dict(optional_fields, **_PERSONA_ADDITIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
     for suffix in ("", "2"):
@@ -827,8 +811,6 @@ def _member_data(val, argname=None, *, strict=False, creation=False,
     return val, errs
 
 _EVENT_USER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
-    'family_name': _str,
-    'given_names': _str,
     'title': _str_or_None,
     'name_supplement': _str_or_None,
     'gender': _enum_genders,
@@ -840,17 +822,13 @@ _EVENT_USER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
     'postal_code': _printable_ascii_or_None,
     'location': _str_or_None,
     'country': _str_or_None,
-    'notes': _str_or_None,
 })
 @_addvalidator
-def _event_user_data(val, argname=None, *, strict=False, creation=False,
-                     _convert=True):
+def _event_user_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -868,8 +846,7 @@ def _event_user_data(val, argname=None, *, strict=False, creation=False,
         optional_fields = dict(_EVENT_USER_COMMON_FIELDS(),
                                **_PERSONA_ADDITIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
     if any(val.get(key) for key in ('address_supplement', 'address',
@@ -889,40 +866,6 @@ def _event_user_data(val, argname=None, *, strict=False, creation=False,
                     errs.append((key, ValueError("Missing entry.")))
     return val, errs
 
-_ML_USER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
-    'family_name': _str,
-    'given_names': _str,
-    'notes': _str_or_None,
-})
-@_addvalidator
-def _ml_user_data(val, argname=None, *, strict=False, creation=False,
-                  _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
-    :type creation: bool
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
-    """
-    argname = argname or "ml_user_data"
-    val, errs = _mapping(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
-    if creation:
-        mandatory_fields = _ML_USER_COMMON_FIELDS()
-        optional_fields = {}
-    else:
-        mandatory_fields = {'id': _int}
-        optional_fields = dict(_ML_USER_COMMON_FIELDS(),
-                               **_PERSONA_ADDITIONAL_FIELDS)
-    return _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
-
 _GENESIS_CASE_COMMON_FIELDS = lambda: {
     'username': _email,
     'given_names': _str,
@@ -936,14 +879,11 @@ _GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
     'reviewer': _int,
 }
 @_addvalidator
-def _genesis_case_data(val, argname=None, *, strict=False, creation=False,
-                       _convert=True):
+def _genesis_case_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -961,7 +901,7 @@ def _genesis_case_data(val, argname=None, *, strict=False, creation=False,
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                **_GENESIS_CASE_OPTIONAL_FIELDS())
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      strict=strict, _convert=_convert)
+                                      _convert=_convert)
 
 @_addvalidator
 def _input_file(val, argname=None, *, _convert=True):
@@ -1034,14 +974,11 @@ _PAST_EVENT_COMMON_FIELDS = lambda: {
     'description': _str_or_None,
 }
 @_addvalidator
-def _past_event_data(val, argname=None, *, strict=False, creation=False,
-                     _convert=True):
+def _past_event_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1058,7 +995,7 @@ def _past_event_data(val, argname=None, *, strict=False, creation=False,
         mandatory_fields = {'id': _int,}
         optional_fields = _PAST_EVENT_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      strict=strict, _convert=_convert)
+                                      _convert=_convert)
 
 _EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -1079,14 +1016,11 @@ _EVENT_OPTIONAL_FIELDS = {
     'fields': _any,
 }
 @_addvalidator
-def _event_data(val, argname=None, *, strict=False, creation=False,
-                _convert=True):
+def _event_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1104,8 +1038,7 @@ def _event_data(val, argname=None, *, strict=False, creation=False,
         optional_fields = dict(_EVENT_COMMON_FIELDS(),
                                **_EVENT_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
     if 'orgas' in val:
@@ -1170,14 +1103,11 @@ _EVENT_PART_COMMON_FIELDS = {
     'fee': _decimal,
 }
 @_addvalidator
-def _event_part_data(val, argname=None, *, strict=False, creation=False,
-                     _convert=True):
+def _event_part_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1194,21 +1124,18 @@ def _event_part_data(val, argname=None, *, strict=False, creation=False,
         mandatory_fields = {}
         optional_fields = _EVENT_PART_COMMON_FIELDS
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      strict=strict, _convert=_convert)
+                                      _convert=_convert)
 
 _EVENT_FIELD_COMMON_FIELDS = {
     'kind': _str,
     'entries': _any,
 }
 @_addvalidator
-def _event_field_data(val, argname=None, *, strict=False, creation=False,
-                      _convert=True):
+def _event_field_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1226,8 +1153,7 @@ def _event_field_data(val, argname=None, *, strict=False, creation=False,
         mandatory_fields = {}
         optional_fields = _EVENT_FIELD_COMMON_FIELDS
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
     if not val.get('entries', True):
@@ -1267,14 +1193,11 @@ _PAST_COURSE_COMMON_FIELDS = lambda: {
     'description': _str_or_None,
 }
 @_addvalidator
-def _past_course_data(val, argname=None, *, strict=False, creation=False,
-                      _convert=True):
+def _past_course_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1292,7 +1215,7 @@ def _past_course_data(val, argname=None, *, strict=False, creation=False,
         mandatory_fields = {'id': _int}
         optional_fields = _PAST_COURSE_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      strict=strict, _convert=_convert)
+                                      _convert=_convert)
 
 _COURSE_COMMON_FIELDS = lambda: {
     'title': _str,
@@ -1306,14 +1229,11 @@ _COURSE_OPTIONAL_FIELDS = {
     'parts': _any,
 }
 @_addvalidator
-def _course_data(val, argname=None, *, strict=False, creation=False,
-                 _convert=True):
+def _course_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1332,8 +1252,7 @@ def _course_data(val, argname=None, *, strict=False, creation=False,
         optional_fields = dict(_COURSE_COMMON_FIELDS(),
                                **_COURSE_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
     if 'parts' in val:
@@ -1366,14 +1285,11 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'checkin': _datetime_or_None,
 }
 @_addvalidator
-def _registration_data(val, argname=None, *, strict=False,
-                       creation=False, _convert=True):
+def _registration_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1396,8 +1312,7 @@ def _registration_data(val, argname=None, *, strict=False,
                                field_data=_any,
                                **_REGISTRATION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
     if 'parts' in val:
@@ -1445,7 +1360,7 @@ def _registration_data(val, argname=None, *, strict=False,
     return val, errs
 
 @_addvalidator
-def _registration_part_data(val, argname=None, *, strict=False, _convert=True):
+def _registration_part_data(val, argname=None, *, _convert=True):
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
@@ -1454,8 +1369,6 @@ def _registration_part_data(val, argname=None, *, strict=False, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "registration_part_data"
@@ -1469,19 +1382,16 @@ def _registration_part_data(val, argname=None, *, strict=False, _convert=True):
         'course_instructor': _int_or_None
     }
     return _examine_dictionary_fields(val, {}, optional_fields,
-                                      strict=strict, _convert=_convert)
+                                      _convert=_convert)
 
 @_addvalidator
-def _registration_field_data(val, argname=None, fields=None, *, strict=False,
-                             _convert=True):
+def _registration_field_data(val, argname=None, fields=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type fields: {int: dict}
     :param fields: definition of the event specific fields which are available
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "field_data"
@@ -1494,7 +1404,7 @@ def _registration_field_data(val, argname=None, fields=None, *, strict=False,
         for field in fields.values()
     }
     val, errs = _examine_dictionary_fields(val, {}, optional_fields,
-                                           strict=strict, _convert=_convert)
+                                           _convert=_convert)
     if errs:
         return val, errs
     for field in val:
@@ -1512,14 +1422,11 @@ _LODGEMENT_COMMON_FIELDS = lambda: {
     'notes': _str_or_None
 }
 @_addvalidator
-def _lodgement_data(val, argname=None, *, strict=False, creation=False,
-                    _convert=True):
+def _lodgement_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1537,16 +1444,14 @@ def _lodgement_data(val, argname=None, *, strict=False, creation=False,
         mandatory_fields = {'id': _int}
         optional_fields = _LODGEMENT_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      strict=strict, _convert=_convert)
+                                      _convert=_convert)
 
 @_addvalidator
-def _questionnaire_data(val, argname=None, *, strict=False, _convert=True):
+def _questionnaire_data(val, argname=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :rtype: ([dict] or None, [(str or None, exception)])
     """
     argname = argname or "questionnaire_data"
@@ -1567,7 +1472,7 @@ def _questionnaire_data(val, argname=None, *, strict=False, _convert=True):
                 'readonly': _bool_or_None,
             }
             value, e = _examine_dictionary_fields(
-                value, mandatory_fields, {}, strict=strict, _convert=_convert)
+                value, mandatory_fields, {}, _convert=_convert)
             if e:
                 errs.extend(e)
             else:
@@ -1581,7 +1486,7 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'description': _str_or_None,
     'sub_policy': _enum_subscriptionpolicy,
     'mod_policy': _enum_moderationpolicy,
-    'attachement_policy': _enum_attachementpolicy,
+    'attachment_policy': _enum_attachmentpolicy,
     'audience': _any,
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
@@ -1597,14 +1502,11 @@ _MAILINGLIST_OPTIONAL_FIELDS = {
     'whitelist': _any,
 }
 @_addvalidator
-def _mailinglist_data(val, argname=None, *, strict=False, creation=False,
-                      _convert=True):
+def _mailinglist_data(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :type strict: bool
-    :param strict: If ``True`` allow only complete data sets.
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
@@ -1622,8 +1524,7 @@ def _mailinglist_data(val, argname=None, *, strict=False, creation=False,
         optional_fields = dict(_MAILINGLIST_COMMON_FIELDS(),
                                **_MAILINGLIST_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, strict=strict,
-        _convert=_convert)
+        val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
     for key, validator in (('audience', _enum_personastati),
@@ -1642,6 +1543,215 @@ def _mailinglist_data(val, argname=None, *, strict=False, creation=False,
                     else:
                         newarray.append(v)
                 val[key] = newarray
+    return val, errs
+
+_ASSEMBLY_COMMON_FIELDS = lambda: {
+    'title': _str,
+    'description': _str_or_None,
+    'signup_end': _datetime,
+    'notes': _str_or_None,
+}
+_ASSEMBLY_OPTIONAL_FIELDS = {
+    'is_active': _bool,
+}
+@_addvalidator
+def _assembly_data(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "assembly_data"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
+        optional_fields = _ASSEMBLY_OPTIONAL_FIELDS
+    else:
+        mandatory_fields = {'id': _int,}
+        optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
+                               **_ASSEMBLY_OPTIONAL_FIELDS)
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
+_BALLOT_COMMON_FIELDS = lambda: {
+    'title': _str,
+    'description': _str_or_None,
+    'vote_begin': _datetime,
+    'vote_end': _datetime,
+    'vote_extension_end': _datetime_or_None,
+    'bar': _int_or_None,
+    'notes': _str_or_None
+}
+_BALLOT_OPTIONAL_FIELDS = lambda: {
+    'extended': _bool_or_None,
+    'quorum': _int,
+    'votes': _int_or_None,
+    'is_tallied': _bool,
+    'candidates': _any
+}
+@_addvalidator
+def _ballot_data(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "ballot_data"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = dict(_BALLOT_COMMON_FIELDS(), assembly_id=_int)
+        optional_fields = _BALLOT_OPTIONAL_FIELDS()
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_BALLOT_COMMON_FIELDS(),
+                               **_BALLOT_OPTIONAL_FIELDS())
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    if 'candidates' in val:
+        oldcandidates, e = _mapping(val['candidates'], 'candidates',
+                                    _convert=_convert)
+        if e:
+            errs.extend(e)
+        else:
+            newcandidates = {}
+            for anid, candidate in oldcandidates.items():
+                anid, e = _int(anid, 'candidates', _convert=_convert)
+                if e:
+                    errs.extend(e)
+                else:
+                    creation = (anid < 0)
+                    candidate, ee = _ballot_candidate_data_or_None(
+                        candidate, 'candidates', creation=creation,
+                        _convert=_convert)
+                    if ee:
+                        errs.extend(ee)
+                    else:
+                        newcandidates[anid] = candidate
+            val['candidates'] = newcandidates
+    return val, errs
+
+_BALLOT_CANDIDATE_COMMON_FIELDS = {
+    'description': _str,
+    'moniker': _identifier,
+}
+@_addvalidator
+def _ballot_candidate_data(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "ballot_candidate_data"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
+        optional_fields = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
+    return _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+
+_ASSEMBLY_ATTACHMENT_COMMON_FIELDS = {
+    "title": _str,
+    "filename": _identifier,
+}
+_ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS = {
+    "assembly_id": _int,
+    "ballot_id": _int,
+}
+@_addvalidator
+def _assembly_attachment_data(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "assembly_attachment_data"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _ASSEMBLY_ATTACHMENT_COMMON_FIELDS
+    optional_fields = _ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    if "assembly_id" in val and "ballot_id" in val:
+        errs.append((argname, ValueError("Only one host allowed.")))
+    if "assembly_id" not in val and "ballot_id" not in val:
+        errs.append((argname, ValueError("No host given.")))
+    if errs:
+        return None, errs
+    return val, errs
+
+@_addvalidator
+def _vote(val, argname=None, ballot=None, *, _convert=True):
+    """Validate a single voters intent.
+
+    This is mostly made complicated by the fact that we offer to emulate
+    ordinary voting instead of full preference voting.
+
+    :type val: object
+    :type argname: str or None
+    :type ballot: {str: object}
+    :param ballot: Ballot the vote was cast for.
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    argname = argname or "vote"
+    val, errs = _str(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    entries = tuple(y for x in val.split('>') for y in x.split('='))
+    reference = set(e['moniker'] for e in ballot['candidates'].values())
+    if set(entries) - reference:
+        errs.append((argname, KeyError("Superfluous candidates.")))
+    if reference - set(entries):
+        errs.append((argname, KeyError("Missing candidates.")))
+    if errs:
+        return None, errs
+    if ballot['votes'] and '>' in val:
+        ## ordinary voting has more constraints
+        ## if no strictly greater we have a valid abstention
+        bar = ballot['candidates'][ballot['bar']]['moniker']
+        num = entries.index(bar)
+        if num > ballot['votes']:
+            errs.append((argname, ValueError("Too many votes.")))
+        groups = val.split('>')
+        if len(groups) > 3:
+            errs.append((argname, ValueError("Too many levels.")))
+        elif len(groups) == 3:
+            if groups[1] != bar:
+                errs.append((argname, ValueError("Misplaced bar.")))
+        elif len(groups) == 2:
+            if bar not in groups:
+                errs.append((argname, ValueError("Non-sharp bar.")))
+        else:
+            raise RuntimeError("Impossible.")
+        if errs:
+            return None, errs
     return val, errs
 
 @_addvalidator

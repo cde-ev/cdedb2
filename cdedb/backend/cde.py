@@ -61,7 +61,7 @@ class CdEBackend(AbstractUserBackend):
         :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
-        :returns: a positive number for success, zero otherwise
+        :returns: default return code
         """
         data = {
             "code": code,
@@ -189,7 +189,7 @@ class CdEBackend(AbstractUserBackend):
         :param reviewed: Signals wether the change was reviewed. This exists,
           so that automatically resolved changes are not marked as reviewed.
         :rtype: int
-        :returns: number of changed entries
+        :returns: default return code
         """
         persona_id = affirm("int", persona_id)
         generation = affirm("int", generation)
@@ -213,7 +213,7 @@ class CdEBackend(AbstractUserBackend):
         :type change_note: str
         :param change_note: Descriptive line for changelog
         :rtype: int
-        :returns: number of users changed
+        :returns: default return code
         """
         data = affirm("member_data", data)
         generation = affirm("int_or_None", generation)

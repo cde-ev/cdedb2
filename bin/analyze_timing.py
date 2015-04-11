@@ -110,6 +110,11 @@ print("POST: {}".format(
     make_stats(tuple(t
                      for key, item in aggregate.items() if key[1] == "POST"
                      for t in item))))
+print("/: {}".format(
+    make_stats(tuple(t
+                     for key, item in aggregate.items()
+                     if key[0] == '/'
+                     for t in item))))
 print("core: {}".format(
     make_stats(tuple(t
                      for key, item in aggregate.items()
@@ -124,4 +129,9 @@ print("event: {}".format(
     make_stats(tuple(t
                      for key, item in aggregate.items()
                      if key[0].startswith('/event')
+                     for t in item))))
+print("ml: {}".format(
+    make_stats(tuple(t
+                     for key, item in aggregate.items()
+                     if key[0].startswith('/ml')
                      for t in item))))

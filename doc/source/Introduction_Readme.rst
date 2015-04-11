@@ -103,3 +103,8 @@ it right away.
   in data which failed to validate, but should not be discarded).
 * Generally use a line length limit of 80 columns, except for templates,
   where 120 columns seems appropriate.
+* If a function is documented to return a default return code this means,
+  that it returns a positive number on success, zero if there was an error
+  and a negative number if the change is waiting for further actions
+  (i.e. review). Especially many functions return the number of affected
+  rows in the database, thus if no rows are affected an error is signalled.

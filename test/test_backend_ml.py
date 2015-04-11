@@ -45,7 +45,7 @@ class TestMlBackend(BackendTest):
             3: {'address': 'witz@example.cde',
                 'description': "Einer geht noch ...",
                 'assembly_id': None,
-                'attachement_policy': 1,
+                'attachment_policy': 1,
                 'audience': [0, 1, 2, 40],
                 'event_id': None,
                 'gateway': None,
@@ -63,7 +63,7 @@ class TestMlBackend(BackendTest):
             5: {'address': 'kongress@example.cde',
                 'description': None,
                 'assembly_id': 1,
-                'attachement_policy': 1,
+                'attachment_policy': 1,
                 'audience': [0, 1, 30],
                 'event_id': None,
                 'gateway': None,
@@ -81,7 +81,7 @@ class TestMlBackend(BackendTest):
             7: {'address': 'aktivenforum@example.cde',
                 'description': None,
                 'assembly_id': None,
-                'attachement_policy': 1,
+                'attachment_policy': 1,
                 'audience': [0, 1],
                 'event_id': None,
                 'gateway': 6,
@@ -124,7 +124,7 @@ class TestMlBackend(BackendTest):
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',
             'assembly_id': None,
-            'attachement_policy': 2,
+            'attachment_policy': 2,
             'audience': [0],
             'event_id': None,
             'gateway': None,
@@ -187,7 +187,8 @@ class TestMlBackend(BackendTest):
     def test_subscribers_two(self, user):
         expectation = {1: 'anton@example.cde',
                        2: 'berta@example.cde',
-                       9: 'inga@example.cde'}
+                       9: 'inga@example.cde',
+                       11: 'kalif@example.cde'}
         self.assertEqual(expectation, self.ml.subscribers(self.key, 5))
 
     @as_users("anton", "garcia")
@@ -264,7 +265,7 @@ class TestMlBackend(BackendTest):
             'address': 'revolution@example.cde',
             'description': 'Vereinigt Euch',
             'assembly_id': None,
-            'attachement_policy': 2,
+            'attachment_policy': 2,
             'audience': [0],
             'event_id': None,
             'gateway': None,

@@ -276,7 +276,7 @@ class EventBackend(AbstractUserBackend):
         :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
-        :returns: a positive number for success, zero otherwise
+        :returns: default return code
         """
         data = {
             "code": code,
@@ -327,7 +327,7 @@ class EventBackend(AbstractUserBackend):
         :type additional_info: str or None
         :param additional_info: Infos not conveyed by other columns.
         :rtype: int
-        :returns: number of entries written
+        :returns: default return code
         """
         data = {
             "code": code,
@@ -556,11 +556,12 @@ class EventBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: number of changed entries
+        :returns: default return code
         """
         data = affirm("past_event_data", data)
         ret = self.sql_update(rs, "past_event.events", data)
-        self.past_event_log(rs, const.PastEventLogCodes.event_changed, ret)
+        self.past_event_log(rs, const.PastEventLogCodes.event_changed,
+                            data['id'])
         return ret
 
     @access("event_user")
@@ -587,8 +588,7 @@ class EventBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: A positive number if all operations succeded and zero
-          otherwise.
+        :returns: default return code
         """
         data = affirm("event_data", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
@@ -789,14 +789,15 @@ class EventBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: number of changed entries
+        :returns: default return code
         """
         data = affirm("past_course_data", data)
         ret = self.sql_update(rs, "past_event.courses", data)
-        title = unwrap(self.sql_select_one(rs, "past_event.courses",
-                                           ("title",), data['id']))
-        self.past_event_log(rs, const.PastEventLogCodes.course_changed, ret,
-                            additional_info=title)
+        current = self.sql_select_one(rs, "past_event.courses",
+                                      ("title", "event_id"), data['id'])
+        self.past_event_log(
+            rs, const.PastEventLogCodes.course_changed, current['event_id'],
+            additional_info=current['title'])
         return ret
 
     @access("event_user")
@@ -809,8 +810,7 @@ class EventBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: A positive number if all operations succeded and zero
-          otherwise.
+        :returns: default return code
         """
         data = affirm("course_data", data)
         if not self.is_orga(rs, course_id=data['id']) and not self.is_admin(rs):
@@ -915,7 +915,7 @@ class EventBackend(AbstractUserBackend):
         :param cascade: If True participants are removed first, if False the
           operation fails if participants exist.
         :rtype: int
-        :returns: the number of removed entries
+        :returns: default return code
         """
         course_id = affirm("int", course_id)
         current = self.sql_select_one(rs, "past_event.courses",
@@ -949,8 +949,7 @@ class EventBackend(AbstractUserBackend):
         :type is_instructor: bool
         :type is_orga: bool
         :rtype: int
-        :returns: A positive number if all operations succeded and zero
-          otherwise.
+        :returns: default return code
         """
         data = {}
         data['persona_id'] = affirm("int", persona_id)
@@ -977,7 +976,7 @@ class EventBackend(AbstractUserBackend):
         :type course_id: int or None
         :type persona_id: int
         :rtype: int
-        :returns: number of affected entries
+        :returns: default return code
         """
         event_id = affirm("int", event_id)
         course_id = affirm("int_or_None", course_id)
@@ -1123,8 +1122,7 @@ class EventBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: A positive number if all operations succeded and zero
-          otherwise.
+        :returns: default return code
         """
         data = affirm("registration_data", data)
         current = self.sql_select_one(
@@ -1178,7 +1176,8 @@ class EventBackend(AbstractUserBackend):
                 for x in updated:
                     update = copy.deepcopy(parts[x])
                     update['id'] = existing[x]
-                    ret *= self.sql_update(rs, "event.registration_parts", update)
+                    ret *= self.sql_update(rs, "event.registration_parts",
+                                           update)
                 if deleted:
                     raise NotImplementedError("This is not useful.")
             if 'choices' in data:
@@ -1302,7 +1301,7 @@ class EventBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: number of affected entries.
+        :returns: default return code
         """
         data = affirm("lodgement_data", data)
         with Atomizer(rs):
@@ -1349,7 +1348,7 @@ class EventBackend(AbstractUserBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type lodgement_id: int
         :rtype: int
-        :returns: number of affected entries
+        :returns: default return code
         """
         lodgement_id = affirm("int", lodgement_id)
         with Atomizer(rs):
@@ -1392,8 +1391,7 @@ class EventBackend(AbstractUserBackend):
         :type event_id: int
         :type data: [{str: object}]
         :rtype: int
-        :returns: A positive number if all operations succeded and zero
-          otherwise.
+        :returns: default return code
         """
         event_id = affirm("int", event_id)
         data = affirm("questionnaire_data", data)

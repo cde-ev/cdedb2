@@ -609,10 +609,19 @@ GRANT USAGE ON SCHEMA assembly TO cdb_persona;
 CREATE TABLE assembly.assemblies (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
-        description             varchar
+        description             varchar,
+        -- after which time are you not allowed to sign up any more
+        signup_end              timestamp WITH TIME ZONE NOT NULL,
+        -- concluded assemblies get deactivated and all related secrets are
+        -- purged
+        is_active               boolean DEFAULT True,
+        notes                   varchar
 );
+GRANT SELECT ON assembly.assemblies TO cdb_persona;
+GRANT INSERT, UPDATE ON assembly.assemblies TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.assemblies_id_seq TO cdb_admin;
 
-CREATE TABLE assembly.proposals (
+CREATE TABLE assembly.ballots (
         id                      serial PRIMARY KEY,
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
         title                   varchar NOT NULL,
@@ -622,35 +631,52 @@ CREATE TABLE assembly.proposals (
         vote_end                timestamp WITH TIME ZONE NOT NULL,
         -- if the quorum is not met the time is extended
         vote_extension_end      timestamp WITH TIME ZONE,
+        -- keep track of wether the quorum was missed
+        -- NULL as long as normal voting has not ended
+        extended                boolean DEFAULT NULL,
         -- Special option which means "options below this are not acceptable
         -- as outcome to me". For electing a person an alternative title may
         -- be "reopen nominations".
         --
         -- This is a bit complicated since a bar references a candidate
-        -- references a proposal. But this seems to be the least ugly way to
+        -- references a ballot. But this seems to be the least ugly way to
         -- do it.
         bar                     integer, -- REFERENCES assembly.candidates(id),
         -- number of submitted ballots necessary to not trigger extension
         quorum                  integer NOT NULL DEFAULT 0,
         -- number of votes per ballot
         --
-        -- 0 means arbitrary preference list
+        -- NULL means arbitrary preference list
         -- n > 0 means, that the list must be of the form
         --       a_1=a_2=...=a_m>0>b_1=b_2=...=b_l
         --       with m non-negative and at most n, and where '0' is the
-        --       bar's moniker (which must be non-NULL)
-        votes                   integer NOT NULL DEFAULT 0
+        --       bar's moniker (which must be non-NULL) or of the form
+        --       0=a_1=a_2=...=a_m=b_1=b_2=...=b_l
+        --       to signal an abstention.
+        votes                   integer DEFAULT NULL,
+        -- True after creation of the result summary file
+        is_tallied              boolean DEFAULT False,
+        notes                   varchar
 );
+CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
+GRANT SELECT ON assembly.ballots TO cdb_persona;
+GRANT UPDATE (extended, is_tallied) ON assembly.ballots TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON assembly.ballots TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.ballots_id_seq TO cdb_admin;
 
 CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
-        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
-        text                    varchar NOT NULL,
+        ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
+        description             varchar NOT NULL,
         moniker                 varchar NOT NULL
 );
+CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, moniker);
+GRANT SELECT ON assembly.candidates TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_admin;
 
 -- create previously impossible reference
-ALTER TABLE assembly.proposals ADD FOREIGN KEY (bar) REFERENCES assembly.candidates(id);
+ALTER TABLE assembly.ballots ADD FOREIGN KEY (bar) REFERENCES assembly.candidates(id);
 
 CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,
@@ -658,29 +684,52 @@ CREATE TABLE assembly.attendees (
         assembly_id             integer NOT NULL REFERENCES assembly.assemblies(id),
         secret                  varchar
 );
-CREATE INDEX idx_attendees_assembly_id ON assembly.attendees(assembly_id);
-CREATE INDEX idx_attendees_persona_id ON assembly.attendees(persona_id);
+CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, assembly_id);
 GRANT SELECT, INSERT, UPDATE ON assembly.attendees TO cdb_persona;
-GRANT DELETE ON assembly.attendees TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_persona;
+
+-- register who did allready vote for what
+CREATE TABLE assembly.voter_register (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
+        has_voted               boolean DEFAULT False NOT NULL
+);
+CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
+GRANT SELECT, INSERT ON assembly.voter_register TO cdb_persona;
+GRANT UPDATE (has_voted) ON assembly.voter_register TO cdb_persona;
+GRANT DELETE ON assembly.voter_register TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.voter_register_id_seq TO cdb_persona;
 
 CREATE TABLE assembly.votes (
         id                      serial PRIMARY KEY,
-        proposal_id             integer NOT NULL REFERENCES assembly.proposals(id),
+        ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         -- The vote is of the form '2>3=1>0>4' where the pieces between the
         -- relation symbols are the corresponding monikers from
         -- assembly.candidates.
-        vote                    varchar,
-        -- This is the SHA512 of the concatenation of vote and voting secret.
-        hash                    varchar
+        vote                    varchar NOT NULL,
+        salt                    varchar NOT NULL,
+        -- This is the SHA512 of the concatenation of salt, voting secret and vote.
+        hash                    varchar NOT NULL
 );
+CREATE INDEX idx_votes_ballot_id ON assembly.votes(ballot_id);
+GRANT SELECT, INSERT, UPDATE ON assembly.votes TO cdb_persona;
+GRANT SELECT, UPDATE ON assembly.votes_id_seq TO cdb_persona;
 
-CREATE TABLE assembly.attachements (
+CREATE TABLE assembly.attachments (
        id                       serial PRIMARY KEY,
+       -- Each attachment may only be attached to one thing (either an
+       -- assembly or a ballot).
        assembly_id              integer REFERENCES assembly.assemblies(id),
-       proposal_id              integer REFERENCES assembly.proposals(id),
-       title                    varchar NOT NULL
+       ballot_id                integer REFERENCES assembly.ballots(id),
+       title                    varchar NOT NULL,
+       filename                 varchar NOT NULL
 );
+CREATE INDEX idx_attachments_assembly_id ON assembly.attachments(assembly_id);
+CREATE INDEX idx_attachments_ballot_id ON assembly.attachments(ballot_id);
+GRANT SELECT ON assembly.attachments TO cdb_persona;
+GRANT INSERT, DELETE ON assembly.attachments TO cdb_admin;
+GRANT SELECT, UPDATE ON assembly.attachments_id_seq TO cdb_admin;
 
 CREATE TABLE assembly.log (
         id                      bigserial PRIMARY KEY,
@@ -714,8 +763,8 @@ CREATE TABLE ml.mailinglists (
         sub_policy              integer NOT NULL,
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,
-        -- see cdedb.database.constants.AttachementPolicy
-        attachement_policy      integer NOT NULL,
+        -- see cdedb.database.constants.AttachmentPolicy
+        attachment_policy      integer NOT NULL,
         -- list of PersonaStati
         audience                integer[] NOT NULL,
         subject_prefix          varchar,
@@ -750,8 +799,7 @@ CREATE TABLE ml.subscription_states (
         address                 varchar,
         is_subscribed           boolean
 );
-CREATE INDEX idx_subscription_states_mailinglist_id ON ml.subscription_states(mailinglist_id);
-CREATE INDEX idx_subscription_states_persona_id ON ml.subscription_states(persona_id);
+CREATE UNIQUE INDEX idx_subscription_constraint ON ml.subscription_states(mailinglist_id, persona_id);
 GRANT SELECT, INSERT, UPDATE ON ml.subscription_states TO cdb_persona;
 GRANT DELETE ON ml.subscription_states TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.subscription_states_id_seq TO cdb_persona;

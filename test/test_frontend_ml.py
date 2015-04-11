@@ -219,7 +219,7 @@ class TestMlFrontend(FrontendTest):
         f['address'] = "munkelwand@example.cde"
         f['sub_policy'] = 2
         f['mod_policy'] = 0
-        f['attachement_policy'] = 1
+        f['attachment_policy'] = 1
         f['audience'] = [0, 1, 40]
         f['subject_prefix'] = "[munkel]"
         f['maxsize'] = 512

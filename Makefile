@@ -1,9 +1,9 @@
 SHELL := /bin/bash
 
 help:
-	@echo "run-core, run-cde, run-event, run-ml, run-session"
+	@echo "run-core, run-cde, run-event, run-ml, run-assembly, run-session"
 	@echo "         -- run the respective backend (CONFIGPATH specifies configuration)"
-	@echo "quit-core, quit-cde, quit-event, quit-ml, quit-session"
+	@echo "quit-core, quit-cde, quit-event, quit-ml, quit-assembly, quit-session"
 	@echo "          -- quit the respective backend"
 	@echo "quit-all -- quit all running backends"
 	@echo "quit-test-backends -- quit all running backends started by the test suite"
@@ -60,6 +60,12 @@ run-ml:
 quit-ml:
 	[ -f /run/cdedb/mlserver.pid ] && kill `cat /run/cdedb/mlserver.pid` || true
 
+run-assembly:
+	${PYTHONBIN} -m cdedb.backend.assembly -c ${CONFIGPATH}
+
+quit-assembly:
+	[ -f /run/cdedb/assemblyserver.pid ] && kill `cat /run/cdedb/assemblyserver.pid` || true
+
 run-session:
 	${PYTHONBIN} -m cdedb.backend.session -c ${CONFIGPATH}
 
@@ -71,6 +77,7 @@ quit-all:
 	make quit-cde
 	make quit-event
 	make quit-ml
+	make quit-assembly
 	make quit-session
 
 quit-test-backends:
@@ -79,6 +86,7 @@ quit-test-backends:
 	[ -f /run/cdedb/test-cdeserver.pid ] && kill `cat /run/cdedb/test-cdeserver.pid` || true
 	[ -f /run/cdedb/test-eventserver.pid ] && kill `cat /run/cdedb/test-eventserver.pid` || true
 	[ -f /run/cdedb/test-mlserver.pid ] && kill `cat /run/cdedb/test-mlserver.pid` || true
+	[ -f /run/cdedb/test-assemblyserver.pid ] && kill `cat /run/cdedb/test-assemblyserver.pid` || true
 
 doc:
 	make -C doc html
@@ -102,9 +110,9 @@ storage-test:
 	mkdir -p "/tmp/cdedb-store/foto/"
 	cp test/ancillary_files/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 /tmp/cdedb-store/foto/
 	mkdir -p "/tmp/cdedb-store/minor_form/"
+	mkdir -p "/tmp/cdedb-store/ballot_result/"
 	mkdir -p "/tmp/cdedb-store/testfiles/"
-	cp test/ancillary_files/picture.png /tmp/cdedb-store/testfiles/
-	cp test/ancillary_files/form.pdf /tmp/cdedb-store/testfiles/
+	cp test/ancillary_files/{picture.png,form.pdf,ballot_result.json} /tmp/cdedb-store/testfiles/
 
 ldap:
 	echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true

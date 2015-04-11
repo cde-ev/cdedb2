@@ -181,7 +181,7 @@ class ModerationPolicy(enum.IntEnum):
     fully_moderated = 2 #:
 
 @enum.unique
-class AttachementPolicy(enum.IntEnum):
+class AttachmentPolicy(enum.IntEnum):
     """Regulate allowed payloads for mails to lists.
 
     This is currently only a tri-state, so we implement it as an enum.
@@ -244,7 +244,20 @@ class PastEventLogCodes(enum.IntEnum):
 @enum.unique
 class AssemblyLogCodes(enum.IntEnum):
     """Available log messages core.log."""
-    pass
+    assembly_created = 0 #:
+    assembly_changed = 1 #:
+    assembly_concluded = 2 #:
+    ballot_created = 10 #:
+    ballot_changed = 11 #:
+    ballot_deleted = 12 #:
+    ballot_extended = 13 #:
+    ballot_tallied = 14 #:
+    candidate_added = 20 #:
+    candidate_updated = 21 #:
+    candidate_removed = 22 #:
+    new_attendee = 30 #:
+    attachment_added = 40 #:
+    attachment_removed = 41 #:
 
 @enum.unique
 class MlLogCodes(enum.IntEnum):
