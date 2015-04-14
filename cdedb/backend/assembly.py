@@ -150,15 +150,14 @@ class AssemblyBackend(AbstractUserBackend):
         :rtype: int
         :returns: default return code
         """
-        new_log = {
-            "code": code,
-            "assembly_id": assembly_id,
-            "submitted_by": rs.user.persona_id,
-            "persona_id": persona_id,
-            "additional_info": additional_info,
-
-        }
-        return self.sql_insert(rs, "assembly.log", new_log)
+        ## do not use sql_insert since it throws an error for selecting the id
+        query = glue(
+            "INSERT INTO assembly.log",
+            "(code, assembly_id, submitted_by, persona_id, additional_info)",
+            "VALUES (%s, %s, %s, %s, %s)")
+        return self.query_exec(
+            rs, query, (code, assembly_id, rs.user.persona_id, persona_id,
+                        additional_info))
 
     @access("assembly_admin")
     def retrieve_log(self, rs, codes=None, assembly_id=None,
@@ -454,7 +453,7 @@ class AssemblyBackend(AbstractUserBackend):
             assembly = unwrap(
                 self.get_assembly_data(rs, (data['assembly_id'],)))
             if not assembly['is_active']:
-                raise ValueError("Assembly allready concluded.")
+                raise ValueError("Assembly already concluded.")
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             ## do a little dance, so that creating a running ballot does not
             ## throw an error
@@ -576,17 +575,17 @@ class AssemblyBackend(AbstractUserBackend):
         :type assembly_id: int
         :rtype: str or None
         :returns: The secret if a new secret was generated or None if we
-          allready attend.
+          already attend.
         """
         assembly_id = affirm("int", assembly_id)
 
         with Atomizer(rs):
             if self.does_attend(rs, assembly_id=assembly_id):
-                ## allready signed up
+                ## already signed up
                 return None
             assembly = unwrap(self.get_assembly_data(rs, (assembly_id,)))
             if datetime.datetime.now(pytz.utc) > assembly['signup_end']:
-                raise ValueError("Signup allready ended.")
+                raise ValueError("Signup already ended.")
 
             new_attendee = {
                 'assembly_id': assembly_id,
@@ -634,7 +633,7 @@ class AssemblyBackend(AbstractUserBackend):
             else:
                 reference = ballot['vote_end']
             if datetime.datetime.now(pytz.utc) > reference:
-                raise ValueError("Ballot allready closed.")
+                raise ValueError("Ballot already closed.")
 
             query = glue("SELECT has_voted FROM assembly.voter_register",
                          "WHERE ballot_id = %s and persona_id = %s")
@@ -724,7 +723,7 @@ class AssemblyBackend(AbstractUserBackend):
         :type ballot_id: int
         :rtype: bool
         :returns: True if a new result file was generated and False if the
-          ballot was allready tallied.
+          ballot was already tallied.
         """
         ballot_id = affirm("int", ballot_id)
 

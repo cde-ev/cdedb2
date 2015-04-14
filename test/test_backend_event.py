@@ -953,6 +953,48 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation, self.event.retrieve_past_log(self.key))
 
     @as_users("anton")
+    def test_archive(self, user):
+        update = {
+            'id': 1,
+            'registration_soft_limit': datetime.date(2001, 10, 30),
+            'registration_hard_limit': datetime.date(2002, 10, 30),
+            'parts': {
+                1: {
+                    'part_begin': datetime.date(2003, 2, 2),
+                    'part_end': datetime.date(2003, 2, 2),
+                },
+                2: {
+                    'part_begin': datetime.date(2003, 11, 1),
+                    'part_end': datetime.date(2003, 11, 11),
+                },
+                3: {
+                    'part_begin': datetime.date(2003, 11, 11),
+                    'part_end': datetime.date(2003, 11, 30),
+                }
+            }
+        }
+        self.event.set_event_data(self.key, update)
+        new_id, _ = self.event.archive_event(self.key, 1)
+        expectation = {
+            'description': 'Everybody come!',
+            'id': 2,
+            'organizer': 'CdE',
+            'title': 'Große Testakademie 2222'}
+        self.assertEqual(expectation,
+                         self.event.get_past_event_data_one(self.key, new_id))
+        expectation = {2: 'Planetenretten für Anfänger',
+                       3: 'Lustigsein für Fortgeschrittene'}
+        self.assertEqual(expectation,
+                         self.event.list_courses(self.key, new_id, past=True))
+        expectation = {
+            7: {'course_id': 3,
+                'is_instructor': False,
+                'is_orga': True,
+                'persona_id': 7}}
+        self.assertEqual(expectation,
+                         self.event.list_participants(self.key, course_id=3))
+
+    @as_users("anton")
     def test_log(self, user):
         ## first generate some data
         data = {

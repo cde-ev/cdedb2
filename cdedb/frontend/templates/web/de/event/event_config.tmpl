@@ -1,5 +1,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
 {% block title %}{{ data['title']|e }} Details{% endblock %}
 {% block content %}
@@ -203,4 +205,12 @@
     {% endwith %}
     <h2>Offline Nutzung</h2>
     TODO
+    {% if is_admin %}
+        <h2>Archivierung</h2>
+        <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed" id="archiveeventform">
+            <div>
+                {{ util.input_submit(value="Archivieren", readonly=locked) }}
+            </div>
+        </form>
+    {% endif %}
 {% endblock %}

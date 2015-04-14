@@ -1410,6 +1410,65 @@ class EventBackend(AbstractUserBackend):
         self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 
+    @access("event_admin")
+    def archive_event(self, rs, event_id):
+        """Transfer data from a concluded event into a new past event instance.
+
+        The data of the event organization is scheduled to be deleted at
+        some point. We retain in the past_event schema only the
+        participation information. This automates the process of converting
+        data from one schema to the other.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type event_id: int
+        :rtype: (int or None, str or None)
+        :returns: The first entry is the id of the new past event or None if
+          there were complications. In the latter case the second entry is
+          an error message.
+        """
+        event_id = affirm("int", event_id)
+        self.assert_offline_lock(rs, event_id=event_id)
+        with Atomizer(rs):
+            event_data = unwrap(self.get_event_data(rs, (event_id,)))
+            if any(datetime.datetime.now(pytz.utc).date() < part['part_end']
+                   for part in event_data['parts'].values()):
+                return None, "Event not concluded."
+            pevent = {k: v for k, v in event_data.items()
+                      if k in PAST_EVENT_FIELDS}
+            del pevent['id']
+            new_id = self.create_past_event(rs, pevent)
+            courses = self.list_courses(rs, event_id, past=False)
+            course_data = self.get_course_data(rs, courses.keys())
+            course_map = {}
+            for course_id, cdata in course_data.items():
+                pcourse = {k: v for k, v in cdata.items()
+                           if k in PAST_COURSE_FIELDS}
+                del pcourse['id']
+                pcourse['event_id'] = new_id
+                pcourse_id = self.create_past_course(rs, pcourse)
+                course_map[course_id] = pcourse_id
+            registrations = self.list_registrations(rs, event_id)
+            reg_data = self.get_registrations(rs, registrations.keys())
+            courses_seen = set()
+            for reg in reg_data.values():
+                for reg_part in reg['parts'].values():
+                    if (reg_part['status']
+                            == const.RegistrationPartStati.participant):
+                        is_instructor = False
+                        if reg_part['course_id']:
+                            is_instructor = (reg_part['course_id']
+                                             == reg_part['course_instructor'])
+                            courses_seen.add(reg_part['course_id'])
+                        is_orga = reg['persona_id'] in event_data['orgas']
+                        self.add_participant(
+                            rs, new_id, course_map.get(reg_part['course_id']),
+                            reg['persona_id'], is_instructor, is_orga)
+            ## Delete empty courses because they were cancelled
+            for course_id in courses.keys():
+                if course_id not in courses_seen:
+                    self.delete_past_course(rs, course_map[course_id])
+        return new_id, None
+
     # TODO locking, unlocking
 
 if __name__ == "__main__":

@@ -95,7 +95,7 @@ INSERT INTO event.registration_parts (registration_id, part_id, course_id, statu
     (1, 3, NULL, 1, 1, NULL),
     (2, 1, NULL, 2, NULL, NULL),
     (2, 2, NULL, 3, 4, NULL),
-    (2, 3,       1, 1, 4, 1),
+    (2, 3, 1,    1, 4, 1),
     (3, 1, NULL, 1, 2, NULL),
     (3, 2, 2,    1, NULL, NULL),
     (3, 3, NULL, 1, 2, NULL),

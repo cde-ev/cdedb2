@@ -1023,6 +1023,43 @@ class TestEventFrontend(FrontendTest):
         self.assertIn("Emilia", self.response.text)
         self.assertNotIn("Inga", self.response.text)
 
+    @as_users("anton")
+    def test_archive(self, user):
+        self.traverse({'description': '^Veranstaltungen$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/config', 'index': 0})
+        self.assertTitle("Große Testakademie 2222 Details")
+        ## prepare dates
+        self.traverse({'href': '/event/event/1/change'})
+        f = self.response.forms["changeeventform"]
+        f['registration_soft_limit'] = "2001-10-30"
+        f['registration_hard_limit'] = "2001-10-30"
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222 Details")
+        self.traverse({'href': '/event/event/1/part/1/change'})
+        f = self.response.forms["changepartform"]
+        f['part_begin'] = "2003-02-02"
+        f['part_end'] = "2003-02-02"
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222 Details")
+        self.traverse({'href': '/event/event/1/part/2/change'})
+        f = self.response.forms["changepartform"]
+        f['part_begin'] = "2003-11-01"
+        f['part_end'] = "2003-11-11"
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222 Details")
+        self.traverse({'href': '/event/event/1/part/3/change'})
+        f = self.response.forms["changepartform"]
+        f['part_begin'] = "2003-11-11"
+        f['part_end'] = "2003-11-30"
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222 Details")
+        ## do it
+        f = self.response.forms["archiveeventform"]
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        self.assertIn("removeparticipantform7", self.response.forms)
+
     def test_log(self):
         ## First: generate data
         self.test_register()

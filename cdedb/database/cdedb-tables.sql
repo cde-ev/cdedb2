@@ -532,7 +532,6 @@ CREATE TABLE event.log (
 CREATE INDEX idx_event_log_code ON event.log(code);
 CREATE INDEX idx_event_log_event_id ON event.log(event_id);
 GRANT SELECT, INSERT ON event.log TO cdb_persona;
-GRANT DELETE ON event.log TO cdb_admin;
 GRANT SELECT, UPDATE ON event.log_id_seq TO cdb_persona;
 
 ---
@@ -596,7 +595,6 @@ CREATE TABLE past_event.log (
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(event_id);
 GRANT SELECT, INSERT ON past_event.log TO cdb_persona;
-GRANT DELETE ON past_event.log TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_persona;
 
 ---
@@ -688,7 +686,7 @@ CREATE UNIQUE INDEX idx_attendee_constraint ON assembly.attendees(persona_id, as
 GRANT SELECT, INSERT, UPDATE ON assembly.attendees TO cdb_persona;
 GRANT SELECT, UPDATE ON assembly.attendees_id_seq TO cdb_persona;
 
--- register who did allready vote for what
+-- register who did already vote for what
 CREATE TABLE assembly.voter_register (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
@@ -743,8 +741,8 @@ CREATE TABLE assembly.log (
 );
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
 CREATE INDEX idx_assembly_log_assembly_id ON assembly.log(assembly_id);
-GRANT SELECT, INSERT ON assembly.log TO cdb_persona;
-GRANT DELETE ON assembly.log TO cdb_admin;
+GRANT SELECT ON assembly.log TO cdb_admin;
+GRANT INSERT ON assembly.log TO cdb_persona;
 GRANT SELECT, UPDATE ON assembly.log_id_seq TO cdb_persona;
 
 ---

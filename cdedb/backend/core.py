@@ -853,7 +853,7 @@ class CoreBackend(AbstractBackend):
         password = affirm("str_or_None", password)
         with Atomizer(rs):
             if self.verify_existence(rs, new_username):
-                ## abort if there is allready an account with this address
+                ## abort if there is already an account with this address
                 return False, "Name collision."
             authorized = False
             if self.is_admin(rs):
@@ -945,7 +945,7 @@ class CoreBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
         :rtype: int
-        :returns: id of the new request or 0 if the username is allready taken
+        :returns: id of the new request or 0 if the username is already taken
         """
         data = affirm("genesis_case_data", data, creation=True)
         if self.verify_existence(rs, data['username']):

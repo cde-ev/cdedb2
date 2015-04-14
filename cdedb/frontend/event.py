@@ -614,7 +614,7 @@ class EventFrontend(AbstractUserFrontend):
     def remove_field(self, rs, event_id, field_id):
         """Delete a field.
 
-        This does not delete the associated information allready
+        This does not delete the associated information already
         submitted, but makes it inaccessible.
         """
         if rs.errors:
@@ -2575,6 +2575,22 @@ class EventFrontend(AbstractUserFrontend):
         """Unlock an event after offline usage and incorporate the offline
         changes."""
         raise NotImplementedError("TODO")
+
+    @access("event_admin", {"POST"})
+    @event_guard(check_offline=True)
+    def archive_event(self, rs, event_id):
+        """Make a past_event from an event."""
+        event_data = self.eventproxy.get_event_data_one(rs, event_id)
+        events = self.eventproxy.list_events(rs, past=True)
+        if any(event_data['title'] == title for title in events.values()):
+            rs.notify("warning", "Event already archived.")
+            return self.redirect(rs, "event/show_event")
+        new_id, message = self.eventproxy.archive_event(rs, event_id)
+        if not new_id:
+            rs.notify("warning", message)
+            return self.redirect(rs, "event/show_event")
+        rs.notify("success", "Event archived.")
+        return self.redirect(rs, "event/show_past_event", {'event_id': new_id})
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "int_or_None"),

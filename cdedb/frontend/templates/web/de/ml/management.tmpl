@@ -80,7 +80,7 @@
     </form>
     <h3>Abonenntenliste</h3>
     <ul>
-        {% for anid in subscribers %} {# allready sorted #}
+        {% for anid in subscribers %} {# already sorted #}
             <li>
                 {{ persona_data[anid]['given_names']|e }} {{ persona_data[anid]['family_name']|e }}
                 <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"

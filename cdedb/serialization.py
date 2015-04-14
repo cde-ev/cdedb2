@@ -169,7 +169,7 @@ for anenum in ALL_ENUMS:
         _enum_deserializer_generator(anenum))
 
 def deserialize(obj):
-    """Invert our custom serialization. The input has allready been
+    """Invert our custom serialization. The input has already been
     deserialized by serpent.
 
     :type obj: str
