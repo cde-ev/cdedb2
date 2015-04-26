@@ -17,11 +17,7 @@ MKISOFS ?= genisoimage
 
 QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443
 
-# we use testing for the necessary py3 support
-# once Jessie is released the changes below may be reverted
-# especially checksumming can then be enabled again
-#DEBVERSION = 8.0.0
-DEBVERSION = testing
+DEBVERSION = 8.0.0
 NETINSTISO =  debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -54,17 +50,14 @@ fetch: ${WORKDIR}/.done_fetch
 ${WORKDIR}/.done_fetch:
 	[ -d ${WORKDIR} ] || (mkdir -p ${WORKDIR} && chmod 755 ${WORKDIR})
 	[ -d ${DISTDIR} ] || (mkdir -p ${DISTDIR} && chmod 755 ${DISTDIR})
-#	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} http://cdimage.debian.org/debian-cd/${DEBVERSION}/amd64/iso-cd/${NETINSTISO})
-	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} http://cdimage.debian.org/cdimage/daily-builds/daily/current/amd64/iso-cd/${NETINSTISO})
+	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} http://cdimage.debian.org/debian-cd/${DEBVERSION}/amd64/iso-cd/${NETINSTISO})
 	touch $@
 
 checksum:${WORKDIR}/.done_checksum
 ${WORKDIR}/.done_checksum: ${WORKDIR}/.done_fetch
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \
-# no checksumming as we use daily images
-# this should change once Jessie is released
-#	for algo in md5 sha256; \
+	for algo in md5 sha256; \
 		do MKSUM=`$$algo < ${DISTDIR}/${NETINSTISO}`; \
 		CKSUM=`file=${NETINSTISO}; ${DISTINFO_DATA}`; \
 		echo ${NETINSTISO} "has real  " $$algo "sum" $$MKSUM; \
@@ -111,7 +104,7 @@ ${WORKDIR}/.done_cdimage:${WORKDIR}/.done_patch
 build-stage1:${WORKDIR}/.done_stage1
 ${WORKDIR}/.done_stage1:${WORKDIR}/.done_cdimage
 	rm -f ${WORKDIR}/stage1.qcow2
-	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 20G
+	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 10G
 	${QEMU} ${QEMUOPTIONS} -no-reboot -drive file=${WORKDIR}/stage1.qcow2,cache=writeback,if=virtio -drive file=${WORKDIR}/bootstrap.iso,media=cdrom,index=2 -boot order=d
 	touch $@
 
