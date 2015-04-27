@@ -19,6 +19,10 @@ CDE_ACCESS_LOG = "/log/cdedb-access-cde.log"
 CDE_BACKEND_LOG = "/log/cdedb-backend-cde.log"
 EVENT_ACCESS_LOG = "/log/cdedb-access-event.log"
 EVENT_BACKEND_LOG = "/log/cdedb-backend-event.log"
+ML_ACCESS_LOG = "/log/cdedb-access-ml.log"
+ML_BACKEND_LOG = "/log/cdedb-backend-ml.log"
+ASSEMBLY_ACCESS_LOG = "/log/cdedb-access-assembly.log"
+ASSEMBLY_BACKEND_LOG = "/log/cdedb-backend-assembly.log"
 
 try:
     import cdedb.testconfig
