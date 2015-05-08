@@ -89,3 +89,59 @@ General thoughts
 * Allow archiving of accounts for the purpose of data economy. Retain only
   names, date of birth, email address, visited events and delete all
   other fields. (David Lorch)
+
+Verwaltung
+----------
+
+This section is from direct correspondence with the Verwaltung.
+
+* Searches involving diacritics are somewhat spurious in v1.
+* Country values should be a drop down selection in the frontend.
+* There exist incomplete datasets (like missing birthday), we have to handle
+  them somehow.
+* Pages with questionable/unknow use in v1:
+
+  * Fehlerhafte Daten
+  * Zugriffsstatistik
+  * Login-Fehler -- might be to help answering "I couldn't log in emails",
+    but unfit for that purpose.
+  * Statistik -- the Vorstand regularly asks for statistics on new members,
+    which are not available here.
+* Page 'Aktivitätsübersicht' of v1 can be used to access most of the
+  day-to-day relevant functionality.
+* History (i.e. the changelog) should be migrated, as it is deemed useful.
+* The notes entry of a member dataset should contain roughly one line per
+  change made to the dataset. This way the history is easily understandable.
+* Implementation of trial membership with an extra bit not controversial.
+* For mailinglists the responsibilities have to be decided; only one group
+  shold be responsible for maintaining them.
+* Confirming member dataset changes should offer the possibility/link to go
+  to the next unconfirmed change.
+* The ExPuls usually has two issues per year. One in early autumn after the
+  DSA academies are finished and new members have entered. The second at the
+  beginning of the year for opening of Pfingst-/Sommerakademie registration.
+* The page 'Downloads' in v1 is superseeded by the search functionality in
+  v2.
+* The form for adding a single member is very seldomly used, because it
+  misses the three checkboxes for sending a welcoming email etc.
+* The mask for adding multiple members is pretty sophisticated. TODO add
+  more specifics after admission phase 2015.
+* Bouncing emails currently land at verwaltung@cde-ev.de -- it's somewhat
+  questionable whether this is the corret place. (And there seem to be a lot
+  of them.)
+* The field 'organizer' of an event should have a restricted range of
+  values. TODO poke the Verwaltung to decide which.
+* The page 'Veranstaltungsdownloads' in v1 is currently used solely for the
+  MultiAka. It can be replaced by the possibility to query for multiple
+  events at once in the search.
+* Adding past events needs some kind of batch interface.
+
+Vorstand
+--------
+
+TODO discuss assembly realm
+
+Finanzvorstand
+--------------
+
+TODO discuss finance stuff
