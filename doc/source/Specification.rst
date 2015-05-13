@@ -145,3 +145,17 @@ Finanzvorstand
 --------------
 
 TODO discuss finance stuff
+
+Notes from DB-KüA on PA15
+-------------------------
+
+* automatically mail Vorstand/Akademieteam a copy of minor forms
+* mailinglist component was intended to simplify lists local groups
+
+  * allow to automatically unsubscribe no-longer-members
+  * vague idea: detect new potential subscribers by city
+  * meta-list recieving all mail going to local lists
+* telephone and address syntax is a hard problem (currently done by hand;
+  maybe not feasibl to automatize)
+* wish-list: allow multiple email addresses and postal addresses
+* profile pictures should be verified by Verwaltung
