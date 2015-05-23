@@ -154,7 +154,8 @@ INSERT INTO assembly.ballots (id, assembly_id, title, description, vote_begin, v
     (1, 1, 'Antwort auf die letzte aller Fragen', 'Nach dem Leben, dem Universum und dem ganzen Rest.', timestamp with time zone '2002-02-22 22:22:22.222222+02', timestamp with time zone '2002-02-23 22:22:22.222222+02', now(), True, NULL, 2, NULL, False, NULL),
     (2, 1, 'Farbe des Logos', 'Ulitmativ letzte Entscheidung', timestamp with time zone '2222-02-02 22:22:22.222222+02', timestamp with time zone '2222-02-03 22:22:22.222222+02', NULL, NULL, NULL, 0, NULL, False, 'Nochmal alle auf diese wichtige Entscheidung hinweisen.'),
     (3, 1, 'Bester Hof', 'total objektiv', timestamp with time zone '2000-02-10 22:22:22.222222+02', timestamp with time zone '2222-02-11 22:22:22.222222+02', NULL, NULL, NULL, 0, 1, False, NULL),
-    (4, 1, 'Akademie-Nachtisch', 'denkt an die Frutaner', now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, NULL, 0, 2, False, NULL);
+    (4, 1, 'Akademie-Nachtisch', 'denkt an die Frutaner', now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, NULL, 0, 2, False, NULL),
+    (5, 1, 'Lieblingszahl', NULL, now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, NULL, 0, NULL, False, NULL);
 
 INSERT INTO assembly.candidates (id, ballot_id, description, moniker) VALUES
     (1, 1, 'None of the above', '0'),
@@ -178,7 +179,12 @@ INSERT INTO assembly.candidates (id, ballot_id, description, moniker) VALUES
     (19, 4, 'Eis', 'E'),
     (20, 4, 'Joghurt', 'J'),
     (21, 4, 'Nichts', 'N'),
-    (22, 4, 'Etwas anderes', 'bar');
+    (22, 4, 'Etwas anderes', 'bar'),
+    (23, 5, 'e', 'e'),
+    (24, 5, 'pi', 'pi'),
+    (25, 5, 'i', 'i'),
+    (26, 5, '1', '1'),
+    (27, 5, '0', '0');
 
 UPDATE assembly.ballots SET bar = 1 WHERE id = 1;
 UPDATE assembly.ballots SET bar = 16 WHERE id = 3;
@@ -195,18 +201,22 @@ INSERT INTO assembly.voter_register (persona_id, ballot_id, has_voted) VALUES
     (1, 2, False),
     (1, 3, False),
     (1, 4, False),
+    (1, 5, False),
     (2, 1, True),
     (2, 2, False),
     (2, 3, True),
     (2, 4, False),
+    (2, 5, False),
     (9, 1, True),
     (9, 2, False),
     (9, 3, False),
     (9, 4, False),
+    (9, 5, False),
     (11, 1, True),
     (11, 2, False),
     (11, 3, False),
-    (11, 4, False);
+    (11, 4, False),
+    (11, 5, False);
 
 INSERT INTO assembly.votes (ballot_id, vote, salt, hash) VALUES
     (1, '2>3>0>1=4', 'rxt3x\jnl', 'eebbb299075feffbb3fe8c620a2a2e116ec1ba2daacf430bc3201180c32942d3001111d0ab14eb969126e9e616eff0fa12869a9609127cbbd65e3cf8532a9f9e'),
@@ -283,8 +293,8 @@ SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('ml.mailinglists_id_seq', 10);
 SELECT setval('assembly.assemblies_id_seq', 1);
-SELECT setval('assembly.ballots_id_seq', 4);
-SELECT setval('assembly.candidates_id_seq', 22);
+SELECT setval('assembly.ballots_id_seq', 5);
+SELECT setval('assembly.candidates_id_seq', 27);
 --
 -- fix more serials (otherwise the test suite gets messed up)
 --

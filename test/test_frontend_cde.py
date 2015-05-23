@@ -21,7 +21,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta")
     def test_changedata(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/cde/self/change', 'index': 0})
+        self.traverse({'href': '/core/self/show'}, {'href': '/cde/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"
@@ -38,7 +38,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-C"
         self.submit(f)
-        self.traverse({'href': '/cde/user/2/adminchange', 'index': 0})
+        self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
@@ -52,7 +52,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-C"
         self.submit(f)
-        self.traverse({'href': '/cde/user/2/adminchange', 'index': 0})
+        self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "garbage"
@@ -64,7 +64,7 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog(self):
         user = USER_DICT["berta"]
         self.login(user)
-        self.traverse({'href': '/core/self/show'}, {'href': '/cde/self/change', 'index': 0})
+        self.traverse({'href': '/core/self/show'}, {'href': '/cde/self/change'})
         f = self.response.forms['changedataform']
         f['family_name'] = "Ganondorf"
         self.submit(f, check_notification=False)

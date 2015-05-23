@@ -28,6 +28,8 @@ CdE realm
 * Implement trial membership. This is granted to everybody who participated
   in an official academy for the first time and lasts for one
   semester. (David Lorch)
+* Make addresses of Vorstand in templates configurable via web
+  interface. (Jost Migenda)
 
 ML realm
 --------

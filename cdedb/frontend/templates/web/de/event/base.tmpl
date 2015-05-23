@@ -41,67 +41,41 @@
     </ul>
 {% endmacro %}
 
-{% macro event_navigation(unfold=False) %}
+{% macro event_navigation_gen(unfold=False) %}
     <ul>
+        {% if is_admin %}
+            <li>{{ util.href(cdedblink("event/create_user_form"), "Neuen Nutzer anlegen") }}</li>
+            <li>{{ util.href(cdedblink("event/user_search_form"), "Nutzersuche") }}</li>
+            <li>{{ util.href(cdedblink("event/view_log"), "Log") }}</li>
+            <li>{{ util.href(cdedblink("event/list_events"), "alle DB-Veranstaltungen") }}</li>
+            <li>{{ util.href(cdedblink("event/create_event_form"), "DB-Veranstaltung anlegen") }}</li>
+        {% endif %}
         <li>
-            {{ util.href(cdedblink("core/index"), "Start") }}
+            aktuelle Veranstaltungen
             <ul>
-                <li>{{ util.href(cdedblink("core/mydata"), "Meine Daten") }}</li>
-                <li>{{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}</li>
+                {% for anid, entry in sidebar_events|dictsort|reverse %}
+                    <li>
+                        {{ util.href(cdedblink("event/show_event", {"event_id": anid}), entry['title']) }}
+                        {% if unfold and anid == values.get('event_id') %}
+                            {{ one_event_links(anid, entry) }}
+                        {% endif %}
+                    </li>
+                {% endfor %}
             </ul>
         </li>
-        {% if "formermember" in user.roles %}
-            <li>{{ util.href(cdedblink("cde/index"), "CdE") }}</li>
-        {% endif %}
-        {% if "event_user" in user.roles %}
+        {% if is_admin %}
             <li>
-                {{ util.href(cdedblink("event/index"), "Veranstaltungen") }}
+                abgeschlossene Veranstaltungen
                 <ul>
-                    {% if is_admin %}
-                        <li>{{ util.href(cdedblink("event/create_user_form"), "Neuen Nutzer anlegen") }}</li>
-                        <li>{{ util.href(cdedblink("event/user_search_form"), "Nutzersuche") }}</li>
-                        <li>{{ util.href(cdedblink("event/view_log"), "Log") }}</li>
-                        <li>{{ util.href(cdedblink("event/list_events"), "alle DB-Veranstaltungen") }}</li>
-                        <li>{{ util.href(cdedblink("event/create_event_form"), "DB-Veranstaltung anlegen") }}</li>
-                    {% endif %}
+                    <li>{{ util.href(cdedblink("event/list_past_events"), "alle abg. Veranstaltungen") }}</li>
                     <li>
-                        aktuelle Veranstaltungen
-                        <ul>
-                            {% for anid, entry in sidebar_events|dictsort|reverse %}
-                                <li>
-                                    {{ util.href(cdedblink("event/show_event", {"event_id": anid}), entry['title']) }}
-                                    {% if unfold and anid == values.get('event_id') %}
-                                        {{ one_event_links(anid, entry) }}
-                                    {% endif %}
-                                </li>
-                            {% endfor %}
-                        </ul>
+                        {{ util.href(cdedblink("event/create_past_event_form"), "abg. Veranstaltung anlegen") }}
                     </li>
-                    {% if is_admin %}
-                        <li>
-                            abgeschlossene Veranstaltungen
-                            <ul>
-                                <li>
-                                    {{ util.href(cdedblink("event/list_past_events"), "alle abg. Veranstaltungen") }}
-                                </li>
-                                <li>
-                                    {{ util.href(cdedblink("event/create_past_event_form"),
-                                                 "abg. Veranstaltung anlegen") }}
-                                </li>
-                                <li>{{ util.href(cdedblink("event/view_past_log"), "Log") }}</li>
-                            </ul>
-                        </li>
-                    {% endif %}
+                    <li>{{ util.href(cdedblink("event/view_past_log"), "Log") }}</li>
                 </ul>
             </li>
-        {% endif %}
-        {% if "ml_user" in user.roles %}
-            <li>{{ util.href(cdedblink("ml/index"), "Mailinglisten") }}</li>
-        {% endif %}
-        {% if "assembly_user" in user.roles %}
-            <li>Versammlung</li>
         {% endif %}
     </ul>
 {% endmacro %}
 
-{% block navigation %}{{ event_navigation() }}{% endblock %}
+{% block event_navigation %}{{ event_navigation_gen() }}{% endblock %}

@@ -2,7 +2,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
+{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Anmeldungen ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     <h3>Standardabfragen</h3>

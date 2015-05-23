@@ -2,9 +2,7 @@
 
 """Services for the core realm."""
 
-import datetime
 import logging
-import pytz
 import uuid
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, ProxyShim,
@@ -54,8 +52,7 @@ class CoreFrontend(AbstractFrontend):
         """
         if kind not in {"general", "database"}:
             kind = "general"
-        return self.render(rs, "error", {
-            'kind': kind, 'now': datetime.datetime.now(pytz.utc)})
+        return self.render(rs, "error", {'kind': kind})
 
     @access("anonymous", {"POST"})
     @REQUESTdata(("username", "printable_ascii"), ("password", "str"),

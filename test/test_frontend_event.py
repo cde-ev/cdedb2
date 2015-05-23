@@ -18,7 +18,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("emilia")
     def test_changeuser(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/event/self/change', 'index': 0})
+        self.traverse({'href': '/core/self/show'}, {'href': '/event/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"
@@ -33,7 +33,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-5-F"
         self.submit(f)
-        self.traverse({'href': '/event/user/5/adminchange', 'index': 0})
+        self.traverse({'href': '/event/user/5/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
@@ -366,7 +366,7 @@ class TestEventFrontend(FrontendTest):
     def test_change_event(self, user):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config', 'index': 0},
+                      {'href': '/event/event/1/config'},
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 bearbeiten")
         ## basic event data
@@ -449,7 +449,7 @@ class TestEventFrontend(FrontendTest):
     def test_change_minor_form(self, user):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config', 'index': 0})
+                      {'href': '/event/event/1/config'})
         self.assertTitle("Große Testakademie 2222 Details")
         f = self.response.forms['changeminorformform']
         f['minor_form'] = webtest.Upload("/tmp/cdedb-store/testfiles/form.pdf")
@@ -474,7 +474,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertIn("Mit Co und Coco.", self.response.text)
-        self.traverse({'href': '/event/event/2/config', 'index': 0})
+        self.traverse({'href': '/event/event/2/config'})
         self.assertIn("Bertålotta", self.response.text)
         self.assertIn("Garcia", self.response.text)
 
@@ -506,7 +506,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Große Testakademie 2222")
         self.assertIn("Planetenretten für Anfänger", self.response.text)
         self.assertNotIn("Abstract Nonsense", self.response.text)
-        self.traverse({'href': '/event/event/1/course/create', 'index': 0})
+        self.traverse({'href': '/event/event/1/course/create'})
         self.assertTitle("DB-Kurs hinzufügen (Große Testakademie 2222)")
         self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_1').checked)
         self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_2').checked)
@@ -523,7 +523,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Abstract Nonsense (Große Testakademie 2222)")
         self.assertIn("Lots of arrows.", self.response.text)
         self.assertIn("Alexander Grothendieck", self.response.text)
-        self.traverse({'href': '/event/event/1/course/6/change', 'index': 0})
+        self.traverse({'href': '/event/event/1/course/6/change'})
         self.assertTitle("Abstract Nonsense (Große Testakademie 2222) bearbeiten")
         self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_1').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_2').checked)
@@ -533,7 +533,7 @@ class TestEventFrontend(FrontendTest):
     def test_register(self, user):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/register', 'index': 0})
+                      {'href': '/event/event/1/register'})
         self.assertTitle("Anmeldung zur Veranstaltung Große Testakademie 2222")
         f = self.response.forms['registerform']
         f['parts'] = ['1', '3']
@@ -580,7 +580,7 @@ class TestEventFrontend(FrontendTest):
     def test_questionnaire(self, user):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config', 'index': 0},
+                      {'href': '/event/event/1/config'},
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 bearbeiten")
         f = self.response.forms['changeeventform']
@@ -896,7 +896,7 @@ class TestEventFrontend(FrontendTest):
     def test_questionnaire_manipulation(self, user):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config', 'index': 0},
+                      {'href': '/event/event/1/config'},
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 bearbeiten")
         f = self.response.forms['changeeventform']
@@ -907,7 +907,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['questionnaireform']
         self.assertIn("brings_balls", f.fields)
         self.assertNotIn("may_reserve", f.fields)
-        self.traverse({'href': '/event/event/1/config', 'index': 0},
+        self.traverse({'href': '/event/event/1/config'},
                       {'href': '/event/event/1/questionnaire/change'},)
         self.assertTitle("Fragebogen bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changequestionnaireform']
@@ -963,7 +963,7 @@ class TestEventFrontend(FrontendTest):
     def test_questionnaire_reorder(self, user):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config', 'index': 0},
+                      {'href': '/event/event/1/config'},
                       {'href': '/event/event/1/questionnaire/reorder'})
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
@@ -1027,7 +1027,7 @@ class TestEventFrontend(FrontendTest):
     def test_archive(self, user):
         self.traverse({'description': '^Veranstaltungen$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config', 'index': 0})
+                      {'href': '/event/event/1/config'})
         self.assertTitle("Große Testakademie 2222 Details")
         ## prepare dates
         self.traverse({'href': '/event/event/1/change'})

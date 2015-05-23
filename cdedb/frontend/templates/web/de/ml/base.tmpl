@@ -20,41 +20,18 @@
     </li>
 {% endmacro %}
 
-{% block navigation %}
+{% block ml_navigation %}
     <ul>
-        <li>
-            {{ util.href(cdedblink("core/index"), "Start") }}
-            <ul>
-                <li>{{ util.href(cdedblink("core/mydata"), "Meine Daten") }}</li>
-                <li>{{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}</li>
-            </ul>
-        </li>
-        {% if "formermember" in user.roles %}
-            <li>{{ util.href(cdedblink("cde/index"), "CdE") }}</li>
+        <li>{{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten-Übersicht") }}</li>
+        {% if is_admin %}
+            <li>{{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}</li>
+            <li>{{ util.href(cdedblink("ml/user_search_form"), "Nutzersuche") }}</li>
+            <li>{{ util.href(cdedblink("ml/view_log"), "Log") }}</li>
+            <li>{{ util.href(cdedblink("ml/list_all_mailinglists"), "alle Mailinglisten") }}</li>
+            <li>{{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen") }}</li>
         {% endif %}
-        {% if "event_user" in user.roles %}
-            <li>{{ util.href(cdedblink("event/index"), "Veranstaltungen") }}</li>
-        {% endif %}
-        {% if "ml_user" in user.roles %}
-            <li>
-                {{ util.href(cdedblink("ml/index"), "Mailinglisten") }}
-                <ul>
-                    <li>{{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten-Übersicht") }}</li>
-                    {% if is_admin %}
-                        <li>{{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}</li>
-                        <li>{{ util.href(cdedblink("ml/user_search_form"), "Nutzersuche") }}</li>
-                        <li>{{ util.href(cdedblink("ml/view_log"), "Log") }}</li>
-                        <li>{{ util.href(cdedblink("ml/list_all_mailinglists"), "alle Mailinglisten") }}</li>
-                        <li>{{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen") }}</li>
-                    {% endif %}
-                    {% block inner_navigation %}
-                        <!-- for mailinglist specific actions -->
-                    {% endblock %}
-                </ul>
-            </li>
-        {% endif %}
-        {% if "assembly_user" in user.roles %}
-            <li>Versammlung</li>
-        {% endif %}
+        {% block inner_navigation %}
+            <!-- for mailinglist specific actions -->
+        {% endblock %}
     </ul>
 {% endblock %}

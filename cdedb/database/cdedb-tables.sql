@@ -639,8 +639,8 @@ CREATE TABLE assembly.ballots (
         -- This is a bit complicated since a bar references a candidate
         -- references a ballot. But this seems to be the least ugly way to
         -- do it.
-        bar                     integer, -- REFERENCES assembly.candidates(id),
-        -- number of submitted ballots necessary to not trigger extension
+        bar                     integer DEFAULT NULL, -- REFERENCES assembly.candidates(id),
+        -- number of submitted votes necessary to not trigger extension
         quorum                  integer NOT NULL DEFAULT 0,
         -- number of votes per ballot
         --

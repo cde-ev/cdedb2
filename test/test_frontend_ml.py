@@ -18,7 +18,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("janis")
     def test_changeuser(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/ml/self/change', 'index': 0})
+        self.traverse({'href': '/core/self/show'}, {'href': '/ml/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         self.submit(f)
@@ -31,7 +31,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-10-C"
         self.submit(f)
-        self.traverse({'href': '/ml/user/10/adminchange', 'index': 0})
+        self.traverse({'href': '/ml/user/10/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['notes'] = "Blowing in the wind."
@@ -172,7 +172,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': '^Mailinglisten$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/management', 'index': 0})
+                      {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         self.assertNotIn("Inga Iota", self.response.text)
         f = self.response.forms['addmoderatorform']
@@ -233,7 +233,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': '^Mailinglisten$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/2'},
-                      {'href': '/ml/mailinglist/2/change', 'index': 0},)
+                      {'href': '/ml/mailinglist/2/change'},)
         self.assertTitle("Werbung -- Konfiguration")
         f = self.response.forms['changelistform']
         self.assertEqual("Werbung", f['title'].value)
@@ -247,7 +247,7 @@ class TestMlFrontend(FrontendTest):
         f['is_active'].checked = False
         self.submit(f)
         self.assertTitle("Munkelwand")
-        self.traverse({'href': '/ml/mailinglist/2/change', 'index': 0},)
+        self.traverse({'href': '/ml/mailinglist/2/change'},)
         f = self.response.forms['changelistform']
         self.assertEqual("Munkelwand", f['title'].value)
         self.assertEqual("munkelwand@example.cde", f['address'].value)
@@ -270,7 +270,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': '^Mailinglisten$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/management', 'index': 0},)
+                      {'href': '/ml/mailinglist/4/management'},)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         f = self.response.forms['ackrequestform9']
         self.submit(f)
@@ -324,21 +324,21 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': '^Mailinglisten$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/3'},
-                      {'href': '/ml/mailinglist/3/management', 'index': 0},
-                      {'href': '/ml/mailinglist/3/check', 'index': 0},)
+                      {'href': '/ml/mailinglist/3/management'},
+                      {'href': '/ml/mailinglist/3/check'},)
         self.assertTitle("Witz des Tages -- Konsistenzcheck")
         self.assertNotIn("Janis Jalapeño", self.response.text)
         self.traverse({'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/3'},
-                      {'href': '/ml/mailinglist/3/change', 'index': 0},)
+                      {'href': '/ml/mailinglist/3/change'},)
         self.assertTitle("Witz des Tages -- Konfiguration")
         f = self.response.forms['changelistform']
         f['audience'] = [0]
         self.submit(f)
         self.traverse({'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/3'},
-                      {'href': '/ml/mailinglist/3/management', 'index': 0},
-                      {'href': '/ml/mailinglist/3/check', 'index': 0},)
+                      {'href': '/ml/mailinglist/3/management'},
+                      {'href': '/ml/mailinglist/3/check'},)
         self.assertTitle("Witz des Tages -- Konsistenzcheck")
         self.assertIn("Janis Jalapeño", self.response.text)
 
@@ -365,5 +365,5 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'description': '^Mailinglisten$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/log', 'index': 0})
+                      {'href': '/ml/mailinglist/4/log'})
         self.assertTitle("\nKlatsch und Tratsch -- Logs (0--6)\n")

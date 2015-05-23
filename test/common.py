@@ -305,6 +305,8 @@ class FrontendTest(unittest.TestCase):
 
     def traverse(self, *links):
         for link in links:
+            if 'index' not in link:
+                link['index'] = 0
             self.response = self.response.click(**link)
             self.follow()
             self.basic_validate()

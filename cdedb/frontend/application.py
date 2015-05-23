@@ -8,6 +8,7 @@ import sys
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import glue, make_root_logger, QuotaException, PrivilegeError
 from cdedb.frontend.common import (
@@ -43,6 +44,7 @@ class Application(BaseApp):
         self.core = CoreFrontend(configpath)
         self.cde = CdEFrontend(configpath)
         self.event = EventFrontend(configpath)
+        self.assembly = AssemblyFrontend(configpath)
         self.ml = MlFrontend(configpath)
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)

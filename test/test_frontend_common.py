@@ -57,4 +57,3 @@ class TestFrontendCommon(unittest.TestCase):
         self.assertEqual("DB-123-K", cdedbid_filter(123))
         self.assertEqual("DB-11111-E", cdedbid_filter(11111))
         self.assertEqual("DB-11118-A", cdedbid_filter(11118))
-

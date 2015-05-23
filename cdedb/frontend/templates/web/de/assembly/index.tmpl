@@ -1,0 +1,25 @@
+{% extends "web/de/assembly/base.tmpl" %}
+{% block title %}Versammlungen{% endblock %}
+{% block content %}
+    In diesem Bereich findest Du die Mitgliederversammlungen des CdE.
+    <h2>Aktive Versammlungen</h2>
+    <ul>
+        {% for assembly_id, data in assemblies|dictsort %}
+            {% if data['is_active'] %}
+                <li>
+                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    <h3>Inaktive Versammlungen</h3>
+    <ul>
+        {% for assembly_id, data in assemblies|dictsort %}
+            {% if not data['is_active'] %}
+                <li>
+                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endblock %}

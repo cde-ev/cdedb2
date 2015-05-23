@@ -1,0 +1,21 @@
+{% extends "web/de/assembly/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Datei anhängen ({{ data['title']|e }}){% endblock %}
+{% block content %}
+    Bitte beachte, dass nur PDF-Dokumente zulässig sind.
+
+    <form action="{{ cdedblink('assembly/add_attachment')|e }}" method="POST" enctype="multipart/form-data"
+     id="addattachmentform">
+        <div>
+            {% if is_assembly %}
+                {{ util.input_hidden(name="assembly_id", value=data['id']) }}
+            {% else %}
+                {{ util.input_hidden(name="ballot_id", value=data['id']) }}
+            {% endif %}
+            {{ util.input_text(name="title", label="Bezeichnung") }}
+            {{ util.input_text(name="filename", label="Dateiname", info="Leer lassen für derzeitigen Dateinamen.") }}
+            {{ util.input_file(name="attachment", accept="application/pdf") }}
+            {{ util.input_submit(value="Hochladen") }}
+        </div>
+    </form>
+{% endblock %}

@@ -1398,7 +1398,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_data = self.process_registration_input(
             rs, event_data, course_data, parts=stored_data['parts'])
         if rs.errors:
-            return self.amend_registration_form(rs, event_id, registration_id)
+            return self.amend_registration_form(rs, event_id)
 
         registration_data['id'] = registration_id
         user_data = self.eventproxy.acquire_data_one(rs, rs.user.persona_id)
@@ -1463,7 +1463,7 @@ class EventFrontend(AbstractUserFrontend):
             if entry['field_id'] and not entry['readonly'])
         data = request_data_extractor(rs, params)
         if rs.errors:
-            return self.questionnaire_form(rs, event_id, registration_id)
+            return self.questionnaire_form(rs, event_id)
 
         code = self.eventproxy.set_registration(rs, {
             'id': registration_id, 'field_data': data,})

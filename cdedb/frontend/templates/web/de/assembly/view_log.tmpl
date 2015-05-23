@@ -1,0 +1,63 @@
+{% extends "web/de/assembly/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}
+Versammlung -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+{% endblock %}
+{% block content %}
+    <table>
+        <tr>
+            <th>Zeitstempel</th>
+            <th>Code</th>
+            <th>Verantwortlich</th>
+            <th>Versammlung</th>
+            <th>Betroffen</th>
+            <th>Zusatz</th>
+        </tr>
+        {% for entry in log %}
+            <tr>
+                <td>{{ entry['ctime']|datetime|e }}</td>
+                <td>{{ i18n(const.AssemblyLogCodes(entry['code'])|string)|e }}</td>
+                <td>
+                    {{ persona_data[entry['submitted_by']]['given_names']|e }}
+                    {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                </td>
+                <td>
+                    {% if entry['assembly_id'] %}
+                        {{ assembly_data[entry['assembly_id']]['title']|e }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if entry['persona_id'] %}
+                        {{ persona_data[entry['persona_id']]['given_names']|e }}
+                        {{ persona_data[entry['persona_id']]['family_name']|e }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ entry['additional_info']|e }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <form action="{{ cdedblink('assembly/view_log')|e }}" method="GET" id="logshowform">
+        <div>
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for code in const.AssemblyLogCodes %}
+                {{ myentries.append((code.value, i18n(code|string), None))|e }}
+            {% endfor %}
+            {{ util.input_checkboxes("codes", title="Kategorien", info="Keine Auswahl entspricht allem.",
+                                     entries=myentries) }}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for assembly_id, adata in assemblies|dictsort %}
+                {{ myentries.append((assembly_id, adata['title'], None))|e }}
+            {% endfor %}
+            {{ util.input_select(name="assembly_id", title="Versammlung", nulloption=True, entries=myentries) }}
+            {{ util.input_text(name="start", label="Anfang") }}
+            {{ util.input_text(name="stop", label="Ende") }}
+            {{ util.input_submit(value="Anzeigen") }}
+        </div>
+    </form>
+{% endblock %}

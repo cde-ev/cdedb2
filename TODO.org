@@ -1,15 +1,16 @@
 * actionable items
+** FIXME what about users with NULL username (email trouble ...), what happens if we try to send them a mail, what if they are subscribed to a mailing list? So email trouble in general ...
 ** get test suite to run in the VM
 ** run validator on all html output
 ** do css layout
 ** improve ui
-** implement ml realm
-** implement assembly realm
 ** implement offline mode
 ** write tests for uncovered code
 ** add translations
 ** adjust LDAP indices
 ** add ml test cases concerning assembly interaction
+** add a nice UI for preferential voting (a la drag and drop with JS)
+** make country choices into drop down menues
 * abstract items
 ** Finalize SQL
 ** use framework for html? (maybe pure?) -- CSS is really rudimentary

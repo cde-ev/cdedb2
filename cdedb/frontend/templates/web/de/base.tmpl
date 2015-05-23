@@ -37,9 +37,77 @@
                 {% endif %}
                 <hr>
                 <h2>Navigation</h2>
-                {% block navigation %}
-                    This should not be visible.
-                {% endblock %}
+                    {% block navigation %}
+                        <ul>
+                            {% if user.persona_id %}
+                                <li>
+                                    {{ util.href(cdedblink("core/index"), "Start") }}
+                                    <ul>
+                                        <li>{{ util.href(cdedblink("core/mydata"), "Meine Daten") }}</li>
+                                        <li>
+                                            {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}
+                                        </li>
+                                    </ul>
+                                    {% block core_navigation %}
+                                        <!-- nothing here -->
+                                    {% endblock %}
+                                </li>
+                                {% if "formermember" in user.roles %}
+                                    <li>
+                                        {{ util.href(cdedblink("cde/index"), "CdE") }}
+                                        <ul>
+                                            {% if user.is_searchable %}
+                                                <li>
+                                                    {{ util.href(cdedblink("cde/member_search"), "Mitgliedersuche") }}
+                                                </li>
+                                            {% else %}
+                                                <li>
+                                                    {{ util.href(cdedblink("cde/consent_decision_form"),
+                                                                 "Datenschutzerklärung") }}
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                        {% block cde_navigation %}
+                                            <!-- nothing here -->
+                                        {% endblock %}
+                                    </li>
+                                {% endif %}
+                                {% if "event_user" in user.roles %}
+                                    <li>
+                                        {{ util.href(cdedblink("event/index"), "Veranstaltungen") }}
+                                        {% block event_navigation %}
+                                            <!-- nothing here -->
+                                        {% endblock %}
+                                    </li>
+                                {% endif %}
+                                {% if "ml_user" in user.roles %}
+                                    <li>
+                                        {{ util.href(cdedblink("ml/index"), "Mailinglisten") }}
+                                        {% block ml_navigation %}
+                                            <!-- nothing here -->
+                                        {% endblock %}
+                                    </li>
+                                {% endif %}
+                                {% if "assembly_user" in user.roles %}
+                                    <li>
+                                        {{ util.href(cdedblink("assembly/index"), "Versammlung") }}
+                                        {% block assembly_navigation %}
+                                            <!-- nothing here -->
+                                        {% endblock %}
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li>
+                                    {{ util.href(cdedblink("core/index"), "Start") }}
+                                    <ul>
+                                        <li>
+                                            {{ util.href(cdedblink("core/genesis_request_form"), "Account anfordern") }}
+                                        </li>
+                                    </ul>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    {% endblock %}
             </div>
             <div id="content">
                 {% for ntype, message in notifications %}

@@ -1,0 +1,7 @@
+{% extends "web/de/assembly/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
+{% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
+{% block content %}
+    {{ generic.show_user('assembly') }}
+{% endblock %}

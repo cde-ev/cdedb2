@@ -1,6 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
+{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Status der Anmeldung zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
 {% block content %}
     {% if event_data['registration_soft_limit'] >= today %}

@@ -21,7 +21,7 @@ help:
 	@echo "sql-test -- initialize postgres for test suite (use sample-data-test instead)"
 	@echo "sql-test-shallow -- reset postgres for test suite"
 	@echo "                    (use sample-data-test-shallow instead)"
-	@echo "lint -- run pylint"
+	@echo "lint -- run linters (mainly pylint)"
 	@echo "check -- run test suite"
 	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
 	@echo "single-check -- run a single test from the test suite"
@@ -111,6 +111,7 @@ storage-test:
 	cp test/ancillary_files/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 /tmp/cdedb-store/foto/
 	mkdir -p "/tmp/cdedb-store/minor_form/"
 	mkdir -p "/tmp/cdedb-store/ballot_result/"
+	mkdir -p "/tmp/cdedb-store/assembly_attachment/"
 	mkdir -p "/tmp/cdedb-store/testfiles/"
 	cp test/ancillary_files/{picture.png,form.pdf,ballot_result.json} /tmp/cdedb-store/testfiles/
 
@@ -145,6 +146,17 @@ sql-test-shallow:
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
 
 lint:
+	@echo ""
+	@echo "================================================================================"
+	@echo "Lines too long in templates"
+	@echo "================================================================================"
+	@echo ""
+	egrep -R '^.{121,}' cdedb/frontend/templates/ | grep 'tmpl:' | cat
+	@echo ""
+	@echo "================================================================================"
+	@echo "All of pylint"
+	@echo "================================================================================"
+	@echo ""
 	/usr/lib/python-exec/python3.4/pylint --rcfile='./lint.rc' cdedb || true
 	@echo ""
 	@echo "================================================================================"

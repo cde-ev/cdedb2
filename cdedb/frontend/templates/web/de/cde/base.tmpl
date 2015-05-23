@@ -1,38 +1,14 @@
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block navigation %}
+{% block cde_navigation %}
     <ul>
-        <li>
-            {{ util.href(cdedblink("core/index"), "Start") }}
-            <ul>
-                <li>{{ util.href(cdedblink("core/mydata"), "Meine Daten") }}</li>
-                <li>{{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}</li>
-            </ul>
-        </li>
-        {% if "formermember" in user.roles %}
-            <li>
-                {{ util.href(cdedblink("cde/index"), "CdE") }}
-                <ul>
-                    <li>{{ util.href(cdedblink("cde/member_search"), "Mitgliedersuche") }}</li>
-                    {% if is_admin %}
-                        <li>{{ util.href(cdedblink("cde/create_user_form"), "Neues Mitglied anlegen") }}</li>
-                        <li>{{ util.href(cdedblink("cde/list_pending_changes"), "Änderungen begutachten") }}</li>
-                        <li>{{ util.href(cdedblink("cde/user_search_form"), "Nutzersuche") }}</li>
-                        <li>{{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche") }}</li>
-                        <li>{{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log") }}</li>
-                        <li>{{ util.href(cdedblink("cde/view_changelog_meta"), "Nutzerdaten Log") }}</li>
-                    {% endif %}
-                </ul>
-            </li>
-        {% endif %}
-        {% if "event_user" in user.roles %}
-            <li>{{ util.href(cdedblink("event/index"), "Veranstaltungen") }}</li>
-        {% endif %}
-        {% if "ml_user" in user.roles %}
-            <li>{{ util.href(cdedblink("ml/index"), "Mailinglisten") }}</li>
-        {% endif %}
-        {% if "assembly_user" in user.roles %}
-            <li>Versammlung</li>
+        {% if is_admin %}
+            <li>{{ util.href(cdedblink("cde/create_user_form"), "Neues Mitglied anlegen") }}</li>
+            <li>{{ util.href(cdedblink("cde/list_pending_changes"), "Änderungen begutachten") }}</li>
+            <li>{{ util.href(cdedblink("cde/user_search_form"), "Nutzersuche") }}</li>
+            <li>{{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche") }}</li>
+            <li>{{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log") }}</li>
+            <li>{{ util.href(cdedblink("cde/view_changelog_meta"), "Nutzerdaten Log") }}</li>
         {% endif %}
     </ul>
 {% endblock %}

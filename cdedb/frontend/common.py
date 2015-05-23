@@ -34,6 +34,10 @@ import urllib.parse
 import smtplib
 import email
 import email.mime
+import email.mime.application
+import email.mime.audio
+import email.mime.image
+import email.mime.multipart
 import email.mime.text
 import email.encoders
 import email.header
@@ -581,22 +585,27 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
         ## here come the always accessible things promised above
-        data = {'user': rs.user,
-                'notifications': rs.notifications,
-                'errors': errorsdict,
-                'values': rs.values,
-                'cdedblink': _cdedblink,
-                'show_user_link': _show_user_link,
-                'staticurl': staticurl,
-                'encode_parameter': self.encode_parameter,
-                'is_admin': self.is_admin(rs),
-                'VALID_QUERY_OPERATORS': VALID_QUERY_OPERATORS,
-                'default_selections': default_selections,
-                'i18n': lambda string: self.i18n(string, rs.lang),
-                'const': const,
-                'glue': glue,
-                'generation_time': lambda: (datetime.datetime.now(pytz.utc)
-                                            - rs.begin),}
+        data = {
+            'cdedblink': _cdedblink,
+            'const': const,
+            'default_selections': default_selections,
+            'encode_parameter': self.encode_parameter,
+            'errors': errorsdict,
+            'generation_time': lambda: (datetime.datetime.now(pytz.utc)
+                                        - rs.begin),
+            'glue': glue,
+            'i18n': lambda string: self.i18n(string, rs.lang),
+            'is_admin': self.is_admin(rs),
+            'notifications': rs.notifications,
+            'now': lambda: datetime.datetime.now(pytz.utc), # TODO make this
+                                                            # constant after
+                                                            # the first call
+            'show_user_link': _show_user_link,
+            'staticurl': staticurl,
+            'user': rs.user,
+            'values': rs.values,
+            'VALID_QUERY_OPERATORS': VALID_QUERY_OPERATORS,
+        }
         ## check that default values are not overridden
         assert(not set(data) & set(params))
         merge_dicts(data, params)
@@ -642,6 +651,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if path and not os.path.isfile(path):
             return werkzeug.exceptions.NotFound()
         if path:
+            # TODO Can we use a with context here or maybe close explicitly?
             afile = open(path, 'rb')
         elif data is not None:
             afile = io.BytesIO()
@@ -697,7 +707,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             datetime.datetime.now(pytz.utc) - rs.begin))
         return rs.response
 
-    def do_mail(self, rs, templatename, headers, params=None):
+    def do_mail(self, rs, templatename, headers, params=None, attachments=None):
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -706,6 +716,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type headers: {str: str}
         :param headers: mandatory headers to supply are To and Subject
         :type params: {str: object}
+        :type attachments: [{str: object}] or None
+        :param attachments: Each dict describes one attachment. The possible
+          keys are path (a ``str``), file (a file like), mimetype (a ``str``),
+          filename (a ``str``).
         :rtype: str or None
         :returns: see :py:meth:`_send_mail` for details, we automatically
           store the path in ``rs``
@@ -715,18 +729,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         text = self.fill_template(rs, "mail", templatename, params)
         ## do i18n here, so _create_mail needs to know less context
         headers['Subject'] = self.i18n(headers['Subject'], rs.lang)
-        msg = self._create_mail(text, headers)
+        msg = self._create_mail(text, headers, attachments)
         ret = self._send_mail(msg)
         if ret:
             ## This is mostly intended for the test suite.
             rs.notify("info", "Stored email to hard drive at {}".format(ret))
         return ret
 
-    def _create_mail(self, text, headers):
+    def _create_mail(self, text, headers, attachments):
         """Helper for actual email instantiation from a raw message.
 
         :type text: str
         :type headers: {str: str}
+        :type attachments: [{str: object}] or None
         :rtype: :py:class:`email.message.Message`
         """
         defaults = {"From": self.conf.DEFAULT_SENDER,
@@ -745,6 +760,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         payload = payload.replace('=20', ' ')
         payload = payload.replace('=\n', '')
         msg.set_payload(payload)
+        if attachments:
+            container = email.mime.multipart.MIMEMultipart()
+            container.attach(msg)
+            for attachment in attachments:
+                container.attach(self._create_attachment(attachment))
+            ## put the container in place as message to send
+            msg = container
         for header in ("To", "Cc", "Bcc"):
             if headers[header]:
                 msg[header] = ", ".join(headers[header])
@@ -754,6 +776,38 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg["Date"] = datetime.datetime.now(pytz.utc).strftime(
             "%Y-%m-%d %H:%M:%S%z")
         return msg
+
+    def _create_attachment(self, attachment):
+        """Helper instantiating an attachment via the email module.
+
+        :type attachment: {str: object}
+        :param attachment: see :py:meth:`do_mail` for a description of keys
+        :rtype: :py:class:`email.message.Message`
+        """
+        mimetype = attachment.get('mimetype') or 'application/octet-stream'
+        maintype, subtype = mimetype.split('/', 1)
+        if attachment.get('file'):
+            afile = attachment['file']
+        else:
+            # TODO use a with context?
+            if maintype == "text":
+                afile = open(attachment['path'])
+            else:
+                afile = open(attachment['path'], 'rb')
+        ## Only support common types
+        factories = {
+            'application': email.mime.application.MIMEApplication,
+            'audio': email.mime.audio.MIMEAudio,
+            'image': email.mime.image.MIMEImage,
+            'text': email.mime.text.MIMEText,
+        }
+        ret = factories[maintype](afile.read(), _subtype=subtype)
+        if not attachment.get('file'):
+            afile.close()
+        if attachment.get('filename'):
+            ret.add_header('Content-Disposition', 'attachment',
+                           filename=attachment['filename'])
+        return ret
 
     def _send_mail(self, msg):
         """Helper for getting an email onto the wire.
@@ -1138,6 +1192,7 @@ def request_data_dict_extractor(rs, args):
     @REQUESTdatadict(*args)
     def fun(_, rs, data):
         return data
+    ## This looks wrong. but is correct.
     return fun(None, rs)
 
 def REQUESTfile(*args):

@@ -1,0 +1,35 @@
+{% extends "web/de/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+
+{% macro assembly_inner_navigation(data) %}
+    <li>
+        {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
+        <ul>
+            {% if is_admin %}
+                <li>{{ util.href(cdedblink("assembly/view_log", {'assembly_id': data['id']}), "Log") }}</li>
+                <li>
+                    {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}),
+                                 "Konfiguration") }}
+                </li>
+                <li>
+                    {{ util.href(cdedblink("assembly/create_ballot", {'assembly_id': data['id']}),
+                                 "Abstimmung anlegen") }}
+                </li>
+            {% endif %}
+        </ul>
+    </li>
+{% endmacro %}
+
+{% block assembly_navigation %}
+    <ul>
+        {% if is_admin %}
+            <li>{{ util.href(cdedblink("assembly/create_user_form"), "Neuen Nutzer anlegen") }}</li>
+            <li>{{ util.href(cdedblink("assembly/user_search_form"), "Nutzersuche") }}</li>
+            <li>{{ util.href(cdedblink("assembly/view_log"), "Log") }}</li>
+            <li>{{ util.href(cdedblink("assembly/create_assembly_form"), "Versammlung anlegen") }}</li>
+        {% endif %}
+        {% block inner_navigation %}
+            <!-- for assembly specific actions -->
+        {% endblock %}
+    </ul>
+{% endblock %}

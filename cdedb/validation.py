@@ -36,6 +36,7 @@ import werkzeug.datastructures
 import magic
 import PIL.Image
 import io
+import logging
 
 current_module = sys.modules[__name__]
 
@@ -49,6 +50,8 @@ from cdedb.query import (
 from cdedb.config import BasicConfig
 from cdedb.enums import ALL_ENUMS
 _BASICCONF = BasicConfig()
+
+_LOGGER = logging.getLogger(__name__)
 
 _ALL = []
 def _addvalidator(fun):
@@ -1585,13 +1588,13 @@ _BALLOT_COMMON_FIELDS = lambda: {
     'vote_begin': _datetime,
     'vote_end': _datetime,
     'vote_extension_end': _datetime_or_None,
-    'bar': _int_or_None,
     'notes': _str_or_None
 }
 _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
     'quorum': _int,
     'votes': _int_or_None,
+    'bar': _int_or_None,
     'is_tallied': _bool,
     'candidates': _any
 }
@@ -2057,6 +2060,8 @@ def _create_check_valid(fun):
     def new_fun(*args, **kwargs):
         val, errs = fun(*args, **kwargs)
         if errs:
+            _LOGGER.debug("VALIDATION ERROR for '{}' with input {}, {}.".format(
+                fun.__name__, args, kwargs))
             return None, errs
         return  val, errs
     return new_fun

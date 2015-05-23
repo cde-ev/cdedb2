@@ -1,6 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
+{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}
 Datenfeld {{ data['fields'][values['field_id']]['field_name']|e }} ({{ data['title']|e }}) bearbeiten
 {% endblock %}

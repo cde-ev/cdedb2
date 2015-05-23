@@ -1,0 +1,228 @@
+{% extends "web/de/assembly/base.tmpl" %}
+{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
+{% block title %}{{ ballot_data['title']|e }} ({{ assembly_data['title']|e }}){% endblock %}
+{% block content %}
+    <p>{{ ballot_data['description']|e|linebreaks }}</p>
+    <p>
+        Abstimmungszeitraum: {{ ballot_data['vote_begin']|datetime|e }} bis {{ ballot_data['vote_end']|datetime|e }}<br>
+        {% if ballot_data['extended'] is none %}
+            {% if ballot_data['quorum'] %}
+                Falls das Quorum von {{ ballot_data['quorum']|e }} Stimmen nicht erreicht wird, wird die Abstimmung bis
+                {{ ballot_data['vote_extension_end']|datetime|e }} verlängert.
+            {% endif %}
+        {% else %}
+            {% if ballot_data['extended'] %}
+                Die Abstimmung hat das Quorum von {{ ballot_data['quorum']|e }} Stimmen nicht erreicht, und wurde bis
+                {{ ballot_data['vote_extension_end']|datetime|e }} verlängert.
+            {% elif ballot_data['quorum'] %}
+                Die Abstimmung hat das Quorum von {{ ballot_data['quorum']|e }} Stimmen erreicht und wurde nicht
+                verlängert.
+            {% endif %}
+        {% endif %}
+    </p>
+    {% if is_admin %}
+        <p>Notizen: {{ ballot_data['notes']|e|linebreaks }}</p>
+    {% endif %}
+    {% if is_admin and now() < ballot_data['vote_begin']  %}
+        <p>
+            {{ util.href(cdedblink("assembly/change_ballot_form"), "Bearbeiten")}}
+            <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST"
+             class="jsConfirmed" id="deleteballotform">
+                <div>
+                    {{ util.input_submit(value="Löschen") }}
+                </div>
+            </form>
+            <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform">
+                <table>
+                    {{ util.tab_input_text(name="moniker", label="Kurzname") }}
+                    {{ util.tab_input_text(name="description", label="Beschreibung") }}
+                </table>
+                <div>
+                    {{ util.input_submit(value="Option hinzufügen") }}
+                </div>
+            </form>
+        </p>
+    {% endif %}
+    {% if ballot_data['votes'] %}
+        <p>
+            {% if not attends %}
+                Du nimmst nicht an der Versammlung teil.
+            {% elif not values['vote'] %}
+                {% if assembly_data['is_active'] %}
+                    Du hast noch nicht abgestimmt.
+                {% endif %}
+            {% else %}
+                {% if split_vote|length == 1 %}
+                    Du hast Dich enthalten.
+                {% elif split_vote|length == 2 %}
+                    Du hast Dich gegen alle Kandidaten entschieden.
+                {% else %}
+                    Du hast für folgende Kandidaten gestimmt:
+                    <ul>
+                        {% for voted in split_vote[0] %}
+                            <li>
+                                {{ candidates[voted]['description']|e }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endif %}
+        </p>
+        {% if ballot_data['is_voting'] %}
+            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform">
+                <div>
+                    {% if ballot_data['votes'] == 1 %}
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [("special: none", "keiner der Kandidaten", None)] %}
+                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                            {% if candidate_id != ballot_data['bar'] %}
+                                {{ myentries.append((cdata['moniker'], cdata['description'], None))|e }}
+                            {% endif %}
+                        {% endfor %}
+                        {{ util.input_radio("vote", title="Kandidaten", entries=myentries) }}
+                    {% else %}
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                            {% if candidate_id != ballot_data['bar'] %}
+                                {{ myentries.append((cdata[ 'moniker'], cdata['description'], None))|e }}
+                            {% endif %}
+                        {% endfor %}
+                        {{ util.input_checkboxes("vote", title="Kandidaten", entries=myentries) }}
+                    {% endif %}
+                    {{ util.input_submit(value="Abstimmen") }}
+                </div>
+            </form>
+            {% if ballot_data['votes'] > 1 %}
+                <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="rejectionform">
+                    <div>
+                        {{ util.input_hidden(name="vote", value="special: none") }}
+                        {{ util.input_submit(value="Keiner der Kandidaten") }}
+                    </div>
+                </form>
+            {% endif %}
+            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform">
+                <div>
+                    {{ util.input_hidden(name="vote", value="special: abstain") }}
+                    {{ util.input_submit(value="Enthalten") }}
+                </div>
+            </form>
+        {% elif ballot_data['is_tallied'] %}
+            <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen")}}</p>
+            {% if len(result['winners']) <= ballot_data['votes'] %}
+                <h3>Gewählte Kandidaten</h3>
+                <p>
+                    <ul>
+                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                            {% if candidate_id in result['winners'] %}
+                                <li><strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </p>
+                <h3>Nicht-gewählte Kandidaten</h3>
+                <p>
+                    <ul>
+                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                            {% if candidate_id not in result['winners'] and candidate_id != ballot_data['bar'] %}
+                                <li><strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </p>
+            {% else %}
+                <p>Das Ergebnis ist leider nicht aussagekräftig (zu viele Gewinner).</p>
+            {% endif %}
+        {% else %}
+            <h3>Kandidatenliste</h3>
+            <p>
+                <ul>
+                    {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                        {% if candidate_id != ballot_data['bar'] or is_admin %}
+                            <li>
+                                <strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}
+                                {% if is_admin and now() < ballot_data['vote_begin'] %}
+                                    <form action="{{ cdedblink('assembly/remove_candidate',
+                                                               {'candidate_id': candidate_id})|e }}"
+                                     method="POST" id="removecandidateform{{ candidate_id|e }}">
+                                        <div>
+                                            {{ util.input_submit(value="Löschen") }}
+                                        </div>
+                                    </form>
+                                {% endif %}
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </p>
+        {% endif %}
+    {% else %}
+        <h3>Kandidatenliste</h3>
+        <p>
+            <ul>
+                {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                    <li>
+                        <strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}
+                        {% if is_admin and now() < ballot_data['vote_begin'] %}
+                            <form action="{{ cdedblink('assembly/remove_candidate',
+                                                       {'candidate_id': candidate_id})|e }}"
+                             method="POST" id="removecandidateform{{ candidate_id|e }}">
+                                <div>
+                                    {{ util.input_submit(value="Löschen") }}
+                                </div>
+                            </form>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if ballot_data['bar'] %}
+                Die Option {{ ballot_data['candidates'][ballot_data['bar']]['moniker']|e }} ist hierbei die
+                Schwellwertoption.
+            {% endif %}
+        </p>
+        {% if ballot_data['is_voting'] %}
+            <p>
+                {% if not attends %}
+                    Du nimmst nicht an der Versammlung teil.
+                {% elif values['vote'] %}
+                    Du hast mit {{ values['vote']|e }} gestimmt.
+                {% elif assembly_data['is_active'] %}
+                    Du hast noch nicht abgestimmt.
+                {% endif %}
+            </p>
+            {# TODO do something nice and interactive here (with drag and drop ...) #}
+            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform">
+                <div>
+                    {{ util.input_text(name="vote", label="Präferenzliste") }}
+                    {{ util.input_submit(value="Abstimmen") }}
+                </div>
+            </form>
+        {% elif ballot_data['is_tallied'] %}
+            <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen")}}</p>
+        {% endif %}
+    {% endif %}
+    {% if attachment_data %}
+        <h2>Verfügbare Dateien</h2>
+        <ul>
+            {% for attachment_id, adata in attachment_data|dictsort %}
+                <li>
+                    {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
+                                           adata['title'])}}
+                    {% if is_admin and now() < ballot_data['vote_begin'] %}
+                        <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id})|e }}"
+                         method="POST" id="removeattachmentform{{ attachment_id|e }}">
+                            <div>
+                                {{ util.input_submit(value="Löschen") }}
+                            </div>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if is_admin and now() < ballot_data['vote_begin'] %}
+        {{ util.href(cdedblink("assembly/add_attachment_form", {'ballot_id': ballot_data['id']}), "Datei anhängen")}}
+    {% endif %}
+{% endblock %}

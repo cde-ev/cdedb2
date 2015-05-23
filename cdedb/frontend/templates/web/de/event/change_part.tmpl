@@ -1,6 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
+{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}{{ data['parts'][values['part_id']]['title']|e }} ({{ data['title']|e }}) bearbeiten{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/change_event"), "Abbrechen") }}

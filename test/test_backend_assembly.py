@@ -77,7 +77,8 @@ class TestAssemblyBackend(BackendTest):
         expectation = {1: 'Antwort auf die letzte aller Fragen',
                        2: 'Farbe des Logos',
                        3: 'Bester Hof',
-                       4: 'Akademie-Nachtisch'}
+                       4: 'Akademie-Nachtisch',
+                       5: 'Lieblingszahl'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key,
                                                                  assembly_id))
         expectation = {
@@ -208,8 +209,8 @@ class TestAssemblyBackend(BackendTest):
         expectation['candidates'][6]['description'] = data['candidates'][6]['description']
         expectation['candidates'][6]['moniker'] = data['candidates'][6]['moniker']
         del expectation['candidates'][7]
-        expectation['candidates'][23] = {
-            'id': 23,
+        expectation['candidates'][28] = {
+            'id': 28,
             'ballot_id': 2,
             'description': 'Aquamarin',
             'moniker': 'aqua'}
@@ -234,13 +235,13 @@ class TestAssemblyBackend(BackendTest):
             'extended': None,
             'id': new_id,
             'is_tallied': False,
-            'candidates': {24: {'ballot_id': new_id,
+            'candidates': {29: {'ballot_id': new_id,
                                 'description': 'Nein',
-                                'id': 24,
+                                'id': 29,
                                 'moniker': 'n'},
-                           25: {'ballot_id': new_id,
+                           30: {'ballot_id': new_id,
                                 'description': 'Ja',
-                                'id': 25,
+                                'id': 30,
                                 'moniker': 'j'}},
         })
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
@@ -250,7 +251,8 @@ class TestAssemblyBackend(BackendTest):
             1: 'Antwort auf die letzte aller Fragen',
             3: 'Bester Hof',
             4: 'Akademie-Nachtisch',
-            5: 'Verstehen wir Spaß'}
+            5: 'Lieblingszahl',
+            6: 'Verstehen wir Spaß'}
         self.assertEqual(expectation, self.assembly.list_ballots(self.key, assembly_id))
 
     def test_extension(self):
@@ -375,7 +377,7 @@ class TestAssemblyBackend(BackendTest):
         }
         self.assertLess(0, self.assembly.add_attachment(self.key, data))
         data = {
-            "ballot_id": 1,
+            "ballot_id": 2,
             "title": "Beschlussvorlage",
             "filename": "beschluss.pdf",
         }
@@ -383,7 +385,7 @@ class TestAssemblyBackend(BackendTest):
         expectation = {2: 'Rechenschaftsbericht', 3: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
         expectation = {4: 'Beschlussvorlage'}
-        self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=1))
+        self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
         expectation = {
             2: {'assembly_id': 1,
                 'ballot_id': None,
@@ -396,7 +398,7 @@ class TestAssemblyBackend(BackendTest):
                 'id': 3,
                 'title': 'Verfassung des Staates der CdEler'},
             4: {'assembly_id': None,
-                'ballot_id': 1,
+                'ballot_id': 2,
                 'filename': 'beschluss.pdf',
                 'id': 4,
                 'title': 'Beschlussvorlage'}}

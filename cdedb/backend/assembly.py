@@ -300,6 +300,9 @@ class AssemblyBackend(AbstractUserBackend):
         :returns: default return code
         """
         data = affirm("assembly_data", data)
+        assembly = unwrap(self.get_assembly_data(rs, (data['id'],)))
+        if not assembly['is_active']:
+            raise ValueError("Assembly already concluded.")
         ret = self.sql_update(rs, "assembly.assemblies", data)
         self.assembly_log(rs, const.AssemblyLogCodes.assembly_changed,
                           data['id'])
@@ -390,7 +393,7 @@ class AssemblyBackend(AbstractUserBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (data['id'],)))
-            if datetime.datetime.now(pytz.utc) >= current['vote_begin']:
+            if datetime.datetime.now(pytz.utc) > current['vote_begin']:
                 raise ValueError("Unable to modify active ballot.")
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             if len(bdata) > 1:
@@ -502,7 +505,7 @@ class AssemblyBackend(AbstractUserBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (ballot_id,)))
-            if datetime.datetime.now(pytz.utc) >= current['vote_begin']:
+            if datetime.datetime.now(pytz.utc) > current['vote_begin']:
                 raise ValueError("Unable to remove active ballot.")
             if current['bar']:
                 deletor = {
@@ -561,7 +564,6 @@ class AssemblyBackend(AbstractUserBackend):
                     rs, const.AssemblyLogCodes.ballot_extended,
                     ballot['assembly_id'], additional_info=ballot['title'])
         return update['extended']
-
 
     @access("assembly_user")
     def signup(self, rs, assembly_id):
@@ -634,6 +636,8 @@ class AssemblyBackend(AbstractUserBackend):
                 reference = ballot['vote_end']
             if datetime.datetime.now(pytz.utc) > reference:
                 raise ValueError("Ballot already closed.")
+            if datetime.datetime.now(pytz.utc) < ballot['vote_begin']:
+                raise ValueError("Ballot not yet open.")
 
             query = glue("SELECT has_voted FROM assembly.voter_register",
                          "WHERE ballot_id = %s and persona_id = %s")
@@ -838,6 +842,8 @@ class AssemblyBackend(AbstractUserBackend):
                         and now < ballot['vote_extension_end']))
                    for ballot in ballots.values()):
                 raise ValueError("Open ballots remain.")
+            if now < assembly['signup_end']:
+                raise ValueError("Signup still possible.")
 
             update = {
                 'id': assembly_id,
@@ -908,6 +914,10 @@ class AssemblyBackend(AbstractUserBackend):
         :returns: id of the new attachment
         """
         data = affirm("assembly_attachment_data", data)
+        if data.get('ballot_id'):
+            ballot_data = unwrap(self.get_ballots(rs, (data['ballot_id'],)))
+            if datetime.datetime.now(pytz.utc) > ballot_data['vote_begin']:
+                raise ValueError("Unable to modify active ballot.")
         ret = self.sql_insert(rs, "assembly.attachments", data)
         assembly_id = data.get('assembly_id')
         if not assembly_id:
@@ -931,6 +941,10 @@ class AssemblyBackend(AbstractUserBackend):
         """
         attachment_id = affirm("int", attachment_id)
         current = unwrap(self.get_attachments(rs, (attachment_id,)))
+        if current['ballot_id']:
+            ballot_data = unwrap(self.get_ballots(rs, (current['ballot_id'],)))
+            if datetime.datetime.now(pytz.utc) > ballot_data['vote_begin']:
+                raise ValueError("Unable to modify active ballot.")
         ret = self.sql_delete_one(rs, "assembly.attachments", attachment_id)
         assembly_id = current['assembly_id']
         if not assembly_id:

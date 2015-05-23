@@ -1,0 +1,18 @@
+Hallo {{ user_data['given_names'] }},
+
+Du hast Dich erfolgreich zur Versammlung {{ assembly_data['title'] }}
+angemeldet. Dein persönliches Geheimnis für diese Versammlung lautet
+
+    {{ secret }}
+
+ohne Leerzeichen. Dieses benötigst Du, wenn Du nach den Abstimmungen
+überprüfen willst, ob Deine Stimme korrekt gezählt wurde. Dazu kannst Du das
+im Anhang befindliche Skript nutzen -- einfach die Ergebnisdatei nach der
+Wahl herunterladen und dann auf der Kommandozeile mit folgendem Befehl das
+Skript aufrufen.
+
+    /pfad/zu/skript/verify_votes.py Geheimnis /pfad/zu/ergebnis.json
+
+Voraussetzung für das Skript ist, dass Python3 installiert ist.
+
+Die Datenbank

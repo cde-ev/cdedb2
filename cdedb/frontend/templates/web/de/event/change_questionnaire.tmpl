@@ -1,6 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block navigation %}{{ event_navigation(unfold=True) }}{% endblock %}
+{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Fragebogen bearbeiten ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/change_questionnaire')|e }}" method="POST" id="changequestionnaireform">

@@ -413,3 +413,43 @@ class TestValidation(unittest.TestCase):
             (-2, None, ValueError, False),
             ("alorecuh", None, ValueError, False),
             ))
+
+    def test_vote(self):
+        ballot = {
+            'votes': None,
+            'bar': 99,
+            'candidates': {
+                1: {'moniker': 'A'},
+                2: {'moniker': 'B'},
+                3: {'moniker': 'C'},
+                4: {'moniker': 'D'},
+                5: {'moniker': 'E'},
+                99: {'moniker': '0'},
+            }
+        }
+        classical_ballot = copy.deepcopy(ballot)
+        classical_ballot['votes'] = 2
+        self.do_validator_test("_vote", (
+            ("A>B>C=D>E>0", "A>B>C=D>E>0", None, True),
+            ("0=B>E=C=D>A", "0=B>E=C=D>A", None, True),
+            ("0=B>F=C=D>A", None, KeyError, False),
+            ("", None, ValueError, False),
+            ("0=B<E=C=D<A", None, KeyError, False),
+            ("0=B>E=C>A", None, KeyError, False),
+            ("0=B>E=C>A>F=D", None, KeyError, False),
+            ("=>=>>=", None, KeyError, False),
+            ), extraparams={'ballot': ballot})
+        self.do_validator_test("_vote", (
+            ("A=B>0>C=D=E", "A=B>0>C=D=E", None, True),
+            ("A>0>B=C=D=E", "A>0>B=C=D=E", None, True),
+            ("0>A=B=C=D=E", "0>A=B=C=D=E", None, True),
+            ("0=A=B=C=D=E", "0=A=B=C=D=E", None, True),
+            ("E=C>0>A=D=B", "E=C>0>A=D=B", None, True),
+            ("A=B=C>0>D=E", None, ValueError, False),
+            ("A>B>0=C=D=E", None, ValueError, False),
+            ("A=0>B=C=D=E", None, ValueError, False),
+            ("A>0>B=C=D>E", None, ValueError, False),
+            ("0>A=B=C=D>E", None, ValueError, False),
+            ("A>B=C=D=E>0", None, ValueError, False),
+            ("E=C>A>0=D=B",  None, ValueError, False),
+            ), extraparams={'ballot': classical_ballot})

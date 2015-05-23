@@ -1,0 +1,56 @@
+{% extends "web/de/assembly/base.tmpl" %}
+{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
+{% block title %}{{ assembly_data['title']|e }}{% endblock %}
+{% block content %}
+    <p>{{ assembly_data['description']|e|linebreaks }}</p>
+    <p>Anmeldeschluss: {{ assembly_data['signup_end']|datetime|e }}</p>
+    <p>{{ util.href(cdedblink("assembly/list_attendees"), "Teilnehmerliste")}}</p>
+    {% if is_admin %}
+        <p>Notizen: {{ assembly_data['notes']|e|linebreaks }}</p>
+    {% endif %}
+    <p>
+        Partizipationsstatus:
+        {% if attends %}
+            anwesend
+        {% else %}
+            nicht anwesend
+            {% if now() < assembly_data['signup_end'] %}
+                <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
+                    <div>
+                        {{ util.input_submit(value="Teilnehmen") }}
+                    </div>
+                </form>
+            {% endif %}
+        {% endif %}
+    </p>
+    {% if is_admin and assembly_data['is_active'] %}
+        <p>
+            {{ util.href(cdedblink("assembly/change_assembly"), "Bearbeiten")}}
+            <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST" id="concludeassemblyform">
+                <div>
+                    {{ util.input_submit(value="Archivieren", readonly=(not has_activity)) }}
+                </div>
+            </form>
+        </p>
+    {% endif %}
+    <p>{{ util.href(cdedblink("assembly/list_ballots"), "Abstimmungen")}}</p>
+    {% if attachments %}
+        <h2>Verfügbare Dateien</h2>
+        <ul>
+            {% for attachment_id, title in attachments|dictsort %}
+                <li>
+                    {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}), title)}}
+                    {% if is_admin %}
+                        <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id})|e }}"
+                         method="POST" id="removeattachmentform{{ attachment_id|e }}">
+                            <div>
+                                {{ util.input_submit(value="Löschen") }}
+                            </div>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': assembly_data['id']}), "Datei anhängen")}}
+{% endblock %}
