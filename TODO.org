@@ -11,6 +11,7 @@
 ** add ml test cases concerning assembly interaction
 ** add a nice UI for preferential voting (a la drag and drop with JS)
 ** make country choices into drop down menues
+** implement support for ReST or Markdown for large text fields (like descriptions of events, ...)
 * abstract items
 ** Finalize SQL
 ** use framework for html? (maybe pure?) -- CSS is really rudimentary
