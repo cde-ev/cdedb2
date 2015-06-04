@@ -15,9 +15,8 @@ GRANT USAGE ON SCHEMA core TO cdb_anonymous;
 
 CREATE TABLE core.personas (
         id                      serial PRIMARY KEY,
-        -- an email address
-        -- should be lower-cased
-        -- may be NULL for archived members
+        -- an email address (should be lower-cased)
+        -- may be NULL (which is not nice, but dictated by reality, like expired addresses)
         username                varchar UNIQUE,
         -- password hash as specified by passlib.hash.sha512_crypt
         -- not logged in changelog
@@ -213,7 +212,8 @@ CREATE TABLE cde.member_data (
         name_supplement         varchar DEFAULT NULL,
         -- see cdedb.database.constants.Genders
         gender                  integer NOT NULL,
-        birthday                date NOT NULL,
+        birthday                date, -- may be NULL in historical cases;
+                                      -- we try to minimize these occurences
         telephone               varchar,
         mobile                  varchar,
         address_supplement      varchar,

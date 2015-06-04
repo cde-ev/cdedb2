@@ -182,7 +182,7 @@ class TestCdEBackend(BackendTest):
             "order": (("family_name", True),),
         }
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({1, 2, 6, 9}, {e['persona_id'] for e in result})
+        self.assertEqual({1, 2, 6, 9, 12}, {e['persona_id'] for e in result})
 
     @as_users("anton")
     def test_user_search(self, user):

@@ -89,6 +89,8 @@ _DEFAULTS = {
     "MANAGEMENT_ADDRESS": "verwaltung@cde-ev.de",
     ## default return address for mails
     "DEFAULT_REPLY_TO": "verwaltung@cde-ev.de",
+    ## default return path for bounced mail
+    "DEFAULT_RETURN_PATH": "bounces@cde-ev.de",
     ## default sender address for mails
     "DEFAULT_SENDER": '"CdE-Mitgliederverwaltung" <verwaltung@cde-ev.de>',
     ## domain for emails (determines message id)

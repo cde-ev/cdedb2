@@ -711,6 +711,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
+        Some words about email trouble. Bounced mails go by default to a
+        special address ``bounces@cde-ev.de``, which will be a list not
+        managed via the DB. For mailinglists the return path will be a
+        list specific bounce address which delivers the bounces to the
+        moderators.
+
         :type rs: :py:class:`FrontendRequestState`
         :type templatename: str
         :type headers: {str: str}
@@ -746,6 +752,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         defaults = {"From": self.conf.DEFAULT_SENDER,
                     "Reply-To": self.conf.DEFAULT_REPLY_TO,
+                    "Return-Path": self.conf.DEFAULT_RETURN_PATH,
                     "Cc": tuple(),
                     "Bcc": tuple(),
                     "domain": self.conf.MAIL_DOMAIN,}
@@ -768,9 +775,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             ## put the container in place as message to send
             msg = container
         for header in ("To", "Cc", "Bcc"):
+            nonempty = {x for x in headers[header] if x}
+            if nonempty != set(headers[header]):
+                self.logger.warn("Empty values zapped in email recipients.")
             if headers[header]:
-                msg[header] = ", ".join(headers[header])
-        for header in ("From", "Reply-To", "Subject"):
+                msg[header] = ", ".join(nonempty)
+        for header in ("From", "Reply-To", "Subject", "Return-Path"):
             msg[header] = headers[header]
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
         msg["Date"] = datetime.datetime.now(pytz.utc).strftime(
@@ -819,6 +829,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           by the test suite.
         """
         ret = None
+        if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
+            self.logger.warn("No recipients for mail. Dropping it.")
+            return None
         if not self.conf.CDEDB_DEV:
             s = smtplib.SMTP(self.conf.MAIL_HOST)
             s.send_message(msg)

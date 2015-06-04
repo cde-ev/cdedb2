@@ -849,10 +849,12 @@ class CoreBackend(AbstractBackend):
         :rtype: (bool, str)
         """
         persona_id = affirm("int", persona_id)
-        new_username = affirm("email", new_username)
+        new_username = affirm("email_or_None", new_username)
         password = affirm("str_or_None", password)
+        if new_username is None and not self.is_admin(rs):
+            return False, "Only admins may unset a username."
         with Atomizer(rs):
-            if self.verify_existence(rs, new_username):
+            if new_username and self.verify_existence(rs, new_username):
                 ## abort if there is already an account with this address
                 return False, "Name collision."
             authorized = False

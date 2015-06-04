@@ -253,6 +253,6 @@ class TestCoreBackend(BackendTest):
             {'additional_info': None,
              'code': 0,
              'ctime': nearly_now(),
-             'persona_id': 12,
+             'persona_id': 13,
              'submitted_by': 1})
         self.assertEqual(expectation, self.core.retrieve_log(self.key))

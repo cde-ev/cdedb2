@@ -176,7 +176,8 @@ class TestMlBackend(BackendTest):
                        3: 'charly@example.cde',
                        7: 'garcia@example.cde',
                        9: 'inga@example.cde',
-                       10: 'janis@example.cde'}
+                       10: 'janis@example.cde',
+                       12: None}
         self.assertEqual(expectation, self.ml.subscribers(self.key, 2))
         expectation = {1: 'anton@example.cde', 10: 'janis-spam@example.cde'}
         self.assertEqual(expectation, self.ml.subscribers(self.key, 3))

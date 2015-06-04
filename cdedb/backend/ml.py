@@ -703,6 +703,8 @@ class MlBackend(AbstractUserBackend):
     @access("ml_script")
     def export(self, rs, mailinglist_id):
         """TODO"""
+        # omit subscriptions with empty email addresses (may happen in
+        # reality, because username was deleted because of bouncing mail)
         raise NotImplementedError("TODO")
 
 if __name__ == "__main__":

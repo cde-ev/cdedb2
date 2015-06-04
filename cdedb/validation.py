@@ -490,7 +490,7 @@ def _email(val, argname=None, *, _convert=True):
     return val, errs
 
 _PERSONA_COMMON_FIELDS = lambda: {
-    'username': _email,
+    'username': _email_or_None,
     'display_name': _str,
     'given_names': _str,
     'family_name': _str,

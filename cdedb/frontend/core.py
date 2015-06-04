@@ -280,7 +280,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "admin_username_change", {'data': data})
 
     @access("core_admin", {'POST'})
-    @REQUESTdata(('new_username', 'email'))
+    @REQUESTdata(('new_username', 'email_or_None'))
     def admin_username_change(self, rs, persona_id, new_username):
         """Change username without verification."""
         if rs.errors:

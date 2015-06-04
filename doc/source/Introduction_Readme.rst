@@ -56,8 +56,10 @@ There is a default data set for the development it contains some users
    emilia@example.cde      secret     event user
    ferdinand@example.cde   secret     admin in all realms, but not globally
    garcia@example.cde      secret     orga of an event
-   hades@example.cde       secret     archived member
+   hades                   secret     archived member
    inga@example.cde        secret     minor member
+   kalif@example.cde       secret     assembly user
+   lisa                    secret     member with whacked data
   ======================= ========== =======================================
 
 Random Thoughts
