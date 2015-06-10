@@ -208,6 +208,20 @@ class CdeLogCodes(enum.IntEnum):
     foto_update = 0 #:
 
 @enum.unique
+class FinanceLogCodes(enum.IntEnum):
+    """Available log messages cde.finance_log."""
+    gain_membership = 0 #:
+    lose_membership = 1 #:
+    increase_balance = 10 #:
+    deduct_membership_fee = 11 #:
+    end_trial_membership = 12 #:
+    grant_lastschrift = 20 #:
+    revoke_lastschrift = 21 #:
+    lastschrift_transaction_issue = 30 #:
+    lastschrift_transaction_success = 31 #:
+    lastschrift_transaction_failure = 32 #:
+
+@enum.unique
 class EventLogCodes(enum.IntEnum):
     """Available log messages event.log."""
     event_created = 0 #:

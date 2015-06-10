@@ -114,7 +114,7 @@ class TestCoreBackend(BackendTest):
         if user['id'] == 1:
             cloud_expectation = b'FALSE'
         expectation = [(
-            dn, {'cn': [new_name.encode('utf-8')],
+            dn, {'cn': [user['given_names'].encode('utf-8')],
                  'displayName': [new_name.encode('utf-8')],
                  'mail': [new_address.encode('utf-8')],
                  'cloudAccount': [cloud_expectation],})]

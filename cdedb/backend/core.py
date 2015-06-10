@@ -576,11 +576,12 @@ class CoreBackend(AbstractBackend):
             ", ".join(keys), ", ".join(("%s",) * len(keys)))
         ldap_ops = []
         if 'username' in data:
-            ldap_ops.append((ldap.MOD_REPLACE, 'sn', "({})".format(
-                data['username'])))
             ldap_ops.append((ldap.MOD_REPLACE, 'mail', data['username']))
+        if 'given_names' in data:
+            ldap_ops.append((ldap.MOD_REPLACE, 'cn', data['given_names']))
+        if 'family_name' in data:
+            ldap_ops.append((ldap.MOD_REPLACE, 'sn', data['family_name']))
         if 'display_name' in data:
-            ldap_ops.append((ldap.MOD_REPLACE, 'cn', data['display_name']))
             ldap_ops.append((ldap.MOD_REPLACE, 'displayName',
                              data['display_name']))
         if 'cloud_account' in data:

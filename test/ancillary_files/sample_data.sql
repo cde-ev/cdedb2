@@ -36,6 +36,22 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (1, NULL, now(), 1, 'Init.', 1, 9, 'inga@example.cde', 'Inga', True, 1, 0, True, 'Iota', 'Inga', NULL, NULL, 0, date '2222-01-01', NULL, NULL, NULL, 'Zwergstraße 1', '1111', 'Liliput', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5, True, True, True);
 
 --
+-- cde
+--
+INSERT INTO cde.org_period (id, billing_state, billing_done, ejection_state, ejection_done, balance_state, balance_done) VALUES
+    (42, NULL, now(), NULL, now(), NULL, now()),
+    (43, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO cde.expuls_period (id, addresscheck_state, addresscheck_done) VALUES
+    (42, NULL, now()),
+    (43, NULL, NULL);
+INSERT INTO cde.lastschrift (id, submitted_by, persona_id, amount, max_dsa, iban, account_owner, account_address, granted_at, revoked_at, notes) VALUES
+    (1, 1, 2, 42.23, 0.4, 'DE12500105170648489890', 'Dagobert Anatidae', 'Im Geldspeicher 1', timestamp with time zone '2002-02-22 22:22:22.222222+02', NULL, 'reicher Onkel');
+INSERT INTO cde.lastschrift_transaction (submitted_by, lastschrift_id, period_id, issued_at, processed_at, tally) VALUES
+    (1, 1, 42, timestamp with time zone '2012-02-22 00:00:00+02', timestamp with time zone '2002-02-22 22:22:22.222222+02', 42.23);
+INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance, additional_info, members, total) VALUES
+    (31, 1, 2, 5.0, 12.5, '42.23€', 7, 111.5);
+
+--
 -- past_events
 --
 INSERT INTO past_event.events (id, title, organizer, description) VALUES
@@ -285,6 +301,7 @@ INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
 -- the correct things)
 --
 SELECT setval('core.personas_id_seq', 12);
+SELECT setval('cde.lastschrift_id_seq', 1);
 SELECT setval('past_event.events_id_seq', 1);
 SELECT setval('past_event.courses_id_seq', 1);
 SELECT setval('event.events_id_seq', 1);

@@ -20,7 +20,7 @@
 ** make test-suite faster
 ** investigate python3 ldap library (there are actually two of them!)
 ** develop a migration strategy
-** FIXME handling of invalid datasets needs to be taken care of
+** handling of invalid datasets needs to be taken care of
 *** the real data probably contains some surprises (like NULL usernames due to email trouble)
 * missing functionality compared to v1 which should be implemented
 ** batch admisssion of members

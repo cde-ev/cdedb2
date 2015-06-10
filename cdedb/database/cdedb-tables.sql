@@ -1,10 +1,6 @@
 -- This file specifies the tables in the database and has the users in
 -- cdedb-users.sql as prerequisite, as well as cdedb-db.sql .
 
--- TODO: grant priveleges
--- TODO: create indices
--- TODO: tables: quota, lastschrift_*, finance_log, mailinglist_*, assembly_*, cdefiles_*
-
 ---
 --- SCHEMA core
 ---
@@ -118,7 +114,8 @@ CREATE TABLE core.log (
         -- see cdedb.database.constants.CoreLogCodes
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
-        persona_id              integer REFERENCES core.personas(id), -- affected user
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
         additional_info         varchar
 );
 CREATE INDEX idx_core_log_code ON core.log(code);
@@ -161,7 +158,7 @@ CREATE TABLE core.changelog (
         title                   varchar,
         name_supplement         varchar,
         gender                  integer NOT NULL,
-        birthday                date NOT NULL,
+        birthday                date,
         telephone               varchar,
         mobile                  varchar,
         address_supplement      varchar,
@@ -212,8 +209,8 @@ CREATE TABLE cde.member_data (
         name_supplement         varchar DEFAULT NULL,
         -- see cdedb.database.constants.Genders
         gender                  integer NOT NULL,
-        birthday                date, -- may be NULL in historical cases;
-                                      -- we try to minimize these occurences
+        -- may be NULL in historical cases; we try to minimize these occurences
+        birthday                date,
         telephone               varchar,
         mobile                  varchar,
         address_supplement      varchar,
@@ -266,7 +263,7 @@ GRANT SELECT ON cde.member_data TO cdb_member;
 GRANT UPDATE ON cde.member_data TO cdb_member;
 GRANT INSERT, UPDATE ON cde.member_data TO cdb_admin;
 
-CREATE TABLE cde.semester (
+CREATE TABLE cde.org_period (
         -- historically this was determined by the exPuls number
         -- the formula is id = 2*(year - 1993) + ((month - 1) // 6)
         id                      integer PRIMARY KEY,
@@ -278,19 +275,82 @@ CREATE TABLE cde.semester (
         -- (it is done incrementally)
         ejection_state          integer REFERENCES core.personas(id),
         ejection_done           timestamp WITH TIME ZONE DEFAULT NULL,
-        -- has the balance already been adjusted? If so, up to which ID?
+        -- has the balance already been adjusted? If so, up to which ID
         -- (it is done incrementally)
         balance_state           integer REFERENCES core.personas(id),
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL
 );
+GRANT SELECT, INSERT, UPDATE ON cde.org_period TO cdb_admin;
 
-CREATE TABLE cde.expuls (
+CREATE TABLE cde.expuls_period (
+        -- historically this was the same as cde.org_period(id)
         id                      integer PRIMARY KEY,
         -- has the address check mail already been sent? If so, up to which
         -- ID (it is done incrementally)
         addresscheck_state      integer REFERENCES core.personas(id),
         addresscheck_done       timestamp WITH TIME ZONE DEFAULT NULL
 );
+GRANT SELECT, INSERT, UPDATE ON cde.expuls_period TO cdb_admin;
+
+CREATE TABLE cde.lastschrift (
+        -- meta data
+        id                      serial PRIMARY KEY,
+        submitted_by            integer REFERENCES core.personas(id) NOT NULL,
+        -- actual data
+        persona_id              integer REFERENCES core.personas(id) NOT NULL,
+        amount                  numeric(7,2),
+        -- upper limit for donations to DSA
+        max_dsa                 numeric(2,2) DEFAULT 0.4,
+        iban                    varchar,
+        -- if different from the paying member
+        account_owner           varchar,
+        account_address         varchar,
+        -- validity
+        granted_at              timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        revoked_at              timestamp WITH TIME ZONE DEFAULT NULL,
+        notes                   varchar
+);
+CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
+GRANT SELECT, UPDATE ON cde.lastschrift TO cdb_member;
+GRANT INSERT ON cde.lastschrift TO cdb_admin;
+GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
+
+CREATE TABLE cde.lastschrift_transaction
+(
+        id                      serial PRIMARY KEY,
+        submitted_by            integer REFERENCES core.personas(id) NOT NULL,
+        lastschrift_id          integer REFERENCES cde.lastschrift(id) NOT NULL,
+        period_id               integer REFERENCES cde.org_period(id) NOT NULL,
+        issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
+        -- positive for money we got and negative if bounced with fee
+        tally                   numeric(7,2) DEFAULT NULL
+);
+CREATE INDEX idx_cde_lastschrift_transaction_lastschrift_id ON cde.lastschrift_transaction(lastschrift_id);
+GRANT SELECT, UPDATE, INSERT ON cde.lastschrift_transaction TO cdb_admin;
+GRANT SELECT, UPDATE ON cde.lastschrift_transaction_id_seq TO cdb_admin;
+
+CREATE TABLE cde.finance_log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.CdeFinanceLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
+        delta                   numeric(7,2),
+        new_balance             numeric(7,2),
+        additional_info         varchar,
+        -- checksums
+        -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
+        members                 integer NOT NULL,
+        -- sum of all balances (SELECT SUM(balance) FROM cde.member_data)
+        total                   numeric(10,2) NOT NULL
+);
+CREATE INDEX idx_cde_finance_log_code ON cde.finance_log(code);
+CREATE INDEX idx_cde_finance_log_persona_id ON cde.finance_log(persona_id);
+GRANT SELECT, INSERT ON cde.finance_log TO cdb_member;
+GRANT SELECT, UPDATE ON cde.finance_log_id_seq TO cdb_member;
 
 CREATE TABLE cde.log (
         id                      bigserial PRIMARY KEY,
@@ -298,7 +358,8 @@ CREATE TABLE cde.log (
         -- see cdedb.database.constants.CdeLogCodes
         code                    integer NOT NULL,
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
-        persona_id              integer REFERENCES core.personas(id), -- affected user
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
         additional_info         varchar
 );
 CREATE INDEX idx_cde_log_code ON cde.log(code);
@@ -526,7 +587,8 @@ CREATE TABLE event.log (
         code                    integer NOT NULL,
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
         event_id                integer REFERENCES event.events(id),
-        persona_id              integer REFERENCES core.personas(id), -- affected user
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
         additional_info         varchar
 );
 CREATE INDEX idx_event_log_code ON event.log(code);
@@ -561,7 +623,8 @@ CREATE TABLE past_event.courses (
         title                   varchar NOT NULL,
         description             varchar
 );
-CREATE INDEX idx_past_courses_event_id ON past_event.courses(event_id); -- change name to avoid collision
+-- name not according to pattern to avoid collision
+CREATE INDEX idx_past_courses_event_id ON past_event.courses(event_id);
 GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
 GRANT DELETE ON past_event.courses TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
@@ -589,7 +652,8 @@ CREATE TABLE past_event.log (
         code                    integer NOT NULL,
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
         event_id                integer REFERENCES past_event.events(id),
-        persona_id              integer REFERENCES core.personas(id), -- affected user
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
         additional_info         varchar
 );
 CREATE INDEX idx_past_event_log_code ON past_event.log(code);
@@ -736,7 +800,8 @@ CREATE TABLE assembly.log (
         code                    integer NOT NULL,
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
-        persona_id              integer REFERENCES core.personas(id), -- affected user
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
         additional_info         varchar
 );
 CREATE INDEX idx_assembly_log_code ON assembly.log(code);
@@ -766,7 +831,8 @@ CREATE TABLE ml.mailinglists (
         -- list of PersonaStati
         audience                integer[] NOT NULL,
         subject_prefix          varchar,
-        maxsize                 integer, -- in kB
+        -- in kB
+        maxsize                 integer,
         is_active               boolean NOT NULL,
         notes                   varchar,
         -- Define a list X as gateway for this list, that is everybody
@@ -836,7 +902,8 @@ CREATE TABLE ml.log (
         code                    integer NOT NULL,
         submitted_by            integer NOT NULL REFERENCES core.personas(id),
         mailinglist_id          integer REFERENCES ml.mailinglists(id),
-        persona_id              integer REFERENCES core.personas(id), -- affected user
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
         additional_info         varchar
 );
 CREATE INDEX idx_ml_log_code ON ml.log(code);

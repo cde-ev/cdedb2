@@ -1,7 +1,7 @@
 dn: uid=1,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (anton@example.cde)
-cn: Anton
+sn: Administrator
+cn: Anton Armin A.
 displayName: Anton
 uid: 1
 mail: anton@example.cde
@@ -11,8 +11,8 @@ isActive: TRUE
 
 dn: uid=2,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (berta@example.cde)
-cn: Bertå
+sn: Beispiel
+cn: Bertålotta
 displayName: Bertå
 uid: 2
 mail: berta@example.cde
@@ -22,8 +22,8 @@ isActive: TRUE
 
 dn: uid=3,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (charly@example.cde)
-cn: Charly
+sn: Clown
+cn: Charly C.
 displayName: Charly
 uid: 3
 mail: charly@example.cde
@@ -33,8 +33,8 @@ isActive: TRUE
 
 dn: uid=4,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (daniel@example.cde)
-cn: Daniel
+sn: Dino
+cn: Daniel D.
 displayName: Daniel
 uid: 4
 mail: daniel@example.cde
@@ -44,8 +44,8 @@ isActive: TRUE
 
 dn: uid=5,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (emilia@example.cde)
-cn: Emilia
+sn: Eventis
+cn: Emilia E.
 displayName: Emilia
 uid: 5
 mail: emilia@example.cde
@@ -55,8 +55,8 @@ isActive: TRUE
 
 dn: uid=6,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (ferdinand@example.cde)
-cn: Ferdinand
+sn: Findus
+cn: Ferdinand F.
 displayName: Ferdinand
 uid: 6
 mail: ferdinand@example.cde
@@ -66,8 +66,8 @@ isActive: TRUE
 
 dn: uid=7,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (garcia@example.cde)
-cn: Garcia
+sn: Generalis
+cn: Garcia G.
 displayName: Garcia
 uid: 7
 mail: garcia@example.cde
@@ -77,7 +77,7 @@ isActive: TRUE
 
 dn: uid=8,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (hades@example.cde)
+sn: Hell
 cn: Hades
 displayName: Hades
 uid: 8
@@ -88,7 +88,7 @@ isActive: FALSE
 
 dn: uid=9,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (inga@example.cde)
+sn: Iota
 cn: Inga
 displayName: Inga
 uid: 9
@@ -99,7 +99,7 @@ isActive: TRUE
 
 dn: uid=10,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (janis@example.cde)
+sn: Jalapeño
 cn: Janis
 displayName: Janis
 uid: 10
@@ -110,11 +110,22 @@ isActive: TRUE
 
 dn: uid=11,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
 objectClass: cdePersona
-sn: (klaif@example.cde)
-cn: Kalif
+sn: Karabatschi
+cn: Kalif ibn al-Ḥasan
 displayName: Kalif
 uid: 11
 mail: kalif@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
 cloudAccount: FALSE
+isActive: TRUE
+
+dn: uid=12,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
+objectClass: cdePersona
+sn: Lost
+cn: Lisa
+displayName: Lisa
+uid: 12
+mail: 
+userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
+cloudAccount: TRUE
 isActive: TRUE
