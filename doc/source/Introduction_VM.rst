@@ -29,7 +29,8 @@ Running
 
 If ``cdedb.qcow2`` is the downloaded image, then the VM can be started with
 QEMU via the following command (note that the name of the binary may differ
-from ``kvm``)::
+from ``kvm``, also note that ``cache=writethrough`` may be replaced by
+``cache=writeback`` for increased performance at the risk of data loss)::
 
   kvm -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
 
