@@ -552,13 +552,13 @@ GENESIS_CASE_FIELDS = (
     "persona_status", "notes", "case_status", "secret", "reviewer")
 
 #: Fields of a concluded event
-PAST_EVENT_FIELDS = ("id", "title", "organizer", "description")
+PAST_EVENT_FIELDS = ("id", "title", "organizer", "description", "tempus")
 
 #: Fields of an event organized via the CdEDB
-EVENT_FIELDS = PAST_EVENT_FIELDS + (
-    "shortname", "registration_start", "registration_soft_limit",
-    "registration_hard_limit", "iban", "use_questionnaire", "notes",
-    "offline_lock")
+EVENT_FIELDS = (
+    "id", "title", "organizer", "description", "shortname",
+    "registration_start", "registration_soft_limit", "registration_hard_limit",
+    "iban", "use_questionnaire", "notes", "offline_lock")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")

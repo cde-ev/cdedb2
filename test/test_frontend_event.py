@@ -278,6 +278,7 @@ class TestEventFrontend(FrontendTest):
         f['title'] = "Link Academy II"
         f['organizer'] = "Privatvergnügen"
         f['description'] = "Ganz ohne Minderjährige."
+        f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")
         self.assertIn("Privatvergnügen", self.response.text)

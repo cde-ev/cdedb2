@@ -80,14 +80,17 @@ Functionality
   in the questionnaire.
 * Housegroups are gone. As are statistics about vegetarians. Use custom
   queries instead.
-* The mtime triggers are gone. No replacement.
+* The mtime triggers are gone. Replaced by the logging facility.
 * Bus stuff is gone. Use fields.
 * TODO: UEberweisungen
 
 Data
 """"
 
-No migration.
+No migration for events organized via DB. Past events are migrated in a
+semi-automatic way via SQL script -- the catch being, that they gained a
+``tempus`` column for ordering; however since this needs only to be acurate
+within a month or so it should be easy to fill in.
 
 Mailinglists
 ^^^^^^^^^^^^

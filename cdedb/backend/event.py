@@ -187,7 +187,7 @@ class EventBackend(AbstractUserBackend):
         """
         ids = affirm_array("int", ids)
         query = glue(
-            "SELECT p.persona_id, p.event_id, e.title AS event_name,",
+            "SELECT p.persona_id, p.event_id, e.title AS event_name, e.tempus,",
             "p.course_id, c.title AS course_name, p.is_instructor, p.is_orga",
             "FROM past_event.participants AS p",
             "INNER JOIN past_event.events AS e ON (p.event_id = e.id)",
@@ -1435,6 +1435,9 @@ class EventBackend(AbstractUserBackend):
                 return None, "Event not concluded."
             pevent = {k: v for k, v in event_data.items()
                       if k in PAST_EVENT_FIELDS}
+            ## Use random day of the event as tempus
+            pevent['tempus'] = next(iter(
+                event_data['parts'].values()))['part_begin']
             del pevent['id']
             new_id = self.create_past_event(rs, pevent)
             courses = self.list_courses(rs, event_id, past=False)

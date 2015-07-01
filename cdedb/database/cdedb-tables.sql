@@ -408,7 +408,7 @@ CREATE TABLE event.events (
         organizer               varchar NOT NULL,
         description             varchar,
         --
-        -- cut for past_event.events
+        -- cut for past_event.events (modulo column tempus)
         --
         shortname               varchar NOT NULL,
         registration_start      date,
@@ -611,7 +611,12 @@ CREATE TABLE past_event.events (
         title                   varchar NOT NULL UNIQUE,
         -- BuB,  JGW, CdE, ...
         organizer               varchar NOT NULL,
-        description             varchar
+        description             varchar,
+        -- any day of the event, used for ordering and determining the first
+        -- event a persona participated in
+        --
+        -- Note, that this is not present in event.events.
+        tempus                  date NOT NULL
 );
 GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
 GRANT INSERT ON past_event.events TO cdb_admin;

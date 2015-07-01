@@ -275,7 +275,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_past_event", {'data': data})
 
     @access("event_admin", {"POST"})
-    @REQUESTdatadict("title", "organizer", "description")
+    @REQUESTdatadict("title", "organizer", "description", "tempus")
     def change_past_event(self, rs, event_id, data):
         """Modify a concluded event."""
         data['id'] = event_id
@@ -292,7 +292,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_past_event")
 
     @access("event_admin", {"POST"})
-    @REQUESTdatadict("title", "organizer", "description")
+    @REQUESTdatadict("title", "organizer", "description", "tempus")
     def create_past_event(self, rs, data):
         """Add new concluded event."""
         data = check(rs, "past_event_data", data, creation=True)

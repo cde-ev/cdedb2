@@ -31,6 +31,7 @@ class TestEventBackend(BackendTest):
                             'course_name': 'Swish -- und alles ist gut',
                             'event_id': 1,
                             'event_name': 'PfingstAkademie 2014',
+                            'tempus': datetime.date(2014, 5, 25),
                             'course_id': 1},)}
         self.assertEqual(expectation, participation_infos)
         participation_info = self.event.participation_info(self.key, 1)
@@ -98,6 +99,7 @@ class TestEventBackend(BackendTest):
             'description': """Some more text
 
             on more lines.""",
+            'tempus': datetime.date(2000, 1, 1),
         }
         new_id = self.event.create_past_event(self.key, data)
         data['id'] = new_id
@@ -889,6 +891,7 @@ class TestEventBackend(BackendTest):
             'description': """Some more text
 
             on more lines.""",
+            'tempus': datetime.date(2000, 1, 1),
         }
         new_id = self.event.create_past_event(self.key, data)
         self.event.set_past_event_data(self.key, {
@@ -980,8 +983,12 @@ class TestEventBackend(BackendTest):
             'id': 2,
             'organizer': 'CdE',
             'title': 'Große Testakademie 2222'}
-        self.assertEqual(expectation,
-                         self.event.get_past_event_data_one(self.key, new_id))
+        data = self.event.get_past_event_data_one(self.key, new_id)
+        self.assertIn(data['tempus'], {datetime.date(2003, 2, 2),
+                                       datetime.date(2003, 11, 1),
+                                       datetime.date(2003, 11, 11),})
+        del data['tempus']
+        self.assertEqual(expectation, data)
         expectation = {2: 'Planetenretten für Anfänger',
                        3: 'Lustigsein für Fortgeschrittene'}
         self.assertEqual(expectation,
