@@ -238,20 +238,13 @@ class BaseApp(metaclass=abc.ABCMeta):
         params = params or {}
         if rs.errors and not rs.notifications:
             rs.notify("error", "Failed validation.")
-        if rs.notifications:
-            if 'displaynote' in params or len(rs.notifications) > 1:
-                if not isinstance(params, werkzeug.datastructures.MultiDict):
-                    params = werkzeug.datastructures.MultiDict(params)
-                l = params.getlist('displaynote')
-                for ntype, nmessage in rs.notifications:
-                    l.append(self.encode_notification(ntype, nmessage))
-                params.setlist('displaynote', l)
-            else:
-                ntype, nmessage = rs.notifications[0]
-                params['displaynote'] = self.encode_notification(ntype,
-                                                                 nmessage)
         url = cdedburl(rs, target, params)
-        return basic_redirect(rs, url)
+        ret = basic_redirect(rs, url)
+        if rs.notifications:
+            notifications = [self.encode_notification(ntype, nmessage)
+                             for ntype, nmessage in rs.notifications]
+            ret.set_cookie("displaynote", json.dumps(notifications))
+        return ret
 
 def sanitize_None(data):
     """Helper to let jinja convert all ``None`` into empty strings for display
@@ -705,6 +698,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         rs.response = werkzeug.wrappers.Response(html, mimetype='text/html')
         rs.response.headers.add('X-Generation-Time', str(
             datetime.datetime.now(pytz.utc) - rs.begin))
+        rs.response.delete_cookie("displaynote")
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None, attachments=None):
@@ -1044,11 +1038,13 @@ def access(role, modi=None):
                     params = {
                         'wants': rs._coders['encode_parameter'](
                             "core/index", "wants", rs.request.url),
-                        'displaynote': rs._coders['encode_notification'](
-                            "error", "You must login.")
                         }
-                    return basic_redirect(rs, cdedburl(rs, "core/index",
-                                                       params))
+                    ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
+                    notifications = json.dumps([
+                        rs._coders['encode_notification']("error",
+                                                          "You must login.")])
+                    ret.set_cookie("displaynote", notifications)
+                    return ret
                 raise werkzeug.exceptions.Forbidden(
                     "Access denied to {}/{}.".format(obj, fun.__name__))
         new_fun.access_list = access_list
@@ -1408,8 +1404,9 @@ def check_validation(rs, assertion, value, name=None, **kwargs):
     return ret
 
 def basic_redirect(rs, url):
-    """Convenience wrapper around :py:func:`construct_redirect`. This should be
-    the main thing to use.
+    """Convenience wrapper around :py:func:`construct_redirect`. This should
+    be the main thing to use, however it is even more preferable to use
+    :py:meth:`AbstractFrontend.redirect`.
 
     :type rs: :py:class:`FrontendRequestState`
     :type url: str

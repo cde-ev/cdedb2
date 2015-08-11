@@ -22,6 +22,7 @@ import werkzeug.exceptions
 import werkzeug.wrappers
 import psycopg2.extensions
 import datetime
+import json
 import pytz
 
 class Application(BaseApp):
@@ -73,12 +74,13 @@ class Application(BaseApp):
                 if sessionkey and not data["persona_id"]:
                     params = {
                         'wants': self.encode_parameter(
-                            "core/index", "wants", request.url),
-                        'displaynote': self.encode_notification(
-                            "error", "Session expired.")}
+                            "core/index", "wants", request.url),}
                     ret = construct_redirect(request,
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
+                    notificationss = json.dumps([self.encode_notification(
+                        "error", "Session expired.")])
+                    ret.set_cookie("displaynote", notificationss)
                     return ret
                 coders = {
                     "encode_parameter": self.encode_parameter,
@@ -91,14 +93,22 @@ class Application(BaseApp):
                                           [], {}, "de", coders, begin)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
-                notes = rs.request.values.getlist("displaynote")
-                for note in notes:
-                    ntype, nmessage = self.decode_notification(note)
-                    if ntype:
-                        rs.notify(ntype, nmessage)
-                    else:
-                        self.logger.info(
-                            "Got invalid notification '{}'".format(note))
+                raw_notifications = rs.request.cookies.get("displaynote")
+                if raw_notifications:
+                     try:
+                         notifications = json.loads(raw_notifications)
+                         for note in notifications:
+                             ntype, nmessage = self.decode_notification(note)
+                             if ntype:
+                                 rs.notify(ntype, nmessage)
+                             else:
+                                 self.logger.info(
+                                     "Invalid notification '{}'".format(note))
+                     except:
+                         ## Do nothing if we fail to handle a notification,
+                         ## they can be manipulated by the client side, so
+                         ## we can not assume anything.
+                         pass
                 handler = getattr(getattr(self, component), action)
                 if request.method not in handler.modi:
                     raise werkzeug.exceptions.MethodNotAllowed(
