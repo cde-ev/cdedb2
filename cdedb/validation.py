@@ -40,7 +40,7 @@ import logging
 
 current_module = sys.modules[__name__]
 
-from cdedb.common import EPSILON, compute_checkdigit
+from cdedb.common import EPSILON, compute_checkdigit, now
 from cdedb.serialization import deserialize
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
@@ -598,7 +598,7 @@ def _parse_datetime(val, default_date=None):
     if default_date:
         dd = default_date
     else:
-        dd = datetime.datetime.now(pytz.utc)
+        dd = now()
     default = datetime.datetime(dd.year, dd.month, dd.day)
     ret = dateutil.parser.parse(val, dayfirst=True, default=default)
     if ret.tzinfo is None:
@@ -779,7 +779,8 @@ def _member_data(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _MEMBER_COMMON_FIELDS()
-        optional_fields = _MEMBER_OPTIONAL_FIELDS
+        optional_fields = dict(_MEMBER_OPTIONAL_FIELDS,
+                               **_PERSONA_ADDITIONAL_FIELDS)
     else:
         mandatory_fields = {'id': _int}
         optional_fields = dict(_MEMBER_COMMON_FIELDS(),
@@ -969,6 +970,81 @@ def _pdffile(val, argname=None, *, _convert=True):
     mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime != "application/pdf":
         errs.append((argname, ValueError("Only pdf allowed.")))
+    return val, errs
+
+
+_LASTSCHRIFT_COMMON_FIELDS = lambda: {
+    'amount': _decimal,
+    'iban': _str,
+    'account_owner': _str_or_None,
+    'account_address': _str_or_None,
+    'notes': _str_or_None,
+}
+_LASTSCHRIFT_OPTIONAL_FIELDS = lambda: {
+    'max_dsa': _decimal,
+    'granted_at': _datetime,
+    'revoked_at': _datetime_or_None,
+}
+@_addvalidator
+def _lastschrift_data(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lastschrift_data"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(), persona_id=_int)
+        optional_fields = _LASTSCHRIFT_OPTIONAL_FIELDS()
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(),
+                               **_LASTSCHRIFT_OPTIONAL_FIELDS())
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    return val, errs
+
+_LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
+    'amount': _decimal,
+    'status': _int,
+    'issued_at': _datetime,
+    'processed_at': _datetime_or_None,
+    'tally': _decimal_or_None,
+}
+@_addvalidator
+def _lastschrift_transaction(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "lastschrift_transaction"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = {
+            'lastschrift_id': _int,
+            'period_id': _int,
+        }
+        optional_fields = _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS()
+    else:
+        mandatory_fields = {'id': _int}
+        optional_fields = dict(_LASTSCHRIFT_TRANSACTION_COMMON_FIELDS,
+                               **_LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS())
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs
 
 _PAST_EVENT_COMMON_FIELDS = lambda: {

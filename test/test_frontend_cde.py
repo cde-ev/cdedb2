@@ -36,7 +36,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangedata(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-C"
+        f['id_to_show'] = "DB-2-H"
         self.submit(f)
         self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
@@ -50,7 +50,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_validation(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-C"
+        f['id_to_show'] = "DB-2-H"
         self.submit(f)
         self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
@@ -211,14 +211,14 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_show_archived_user(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-8-I"
+        f['id_to_show'] = "DB-8-G"
         self.submit(f)
         self.assertTitle("Archivzugriff -- Hades Hell")
 
     @as_users("anton")
     def test_toggle_activity(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-C"
+        f['id_to_show'] = "DB-2-H"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertTrue(self.response.lxml.get_element_by_id('activity_checkbox').checked)
@@ -229,7 +229,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_modify_membership(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-C"
+        f['id_to_show'] = "DB-2-H"
         self.submit(f)
         self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
         self.assertIn("Daten sind für andere Mitglieder sichtbar.", self.response.text)

@@ -8,14 +8,12 @@ from cdedb.frontend.common import (
     request_data_extractor)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
-from cdedb.common import merge_dicts, unwrap
+from cdedb.common import merge_dicts, unwrap, now
 import cdedb.database.constants as const
 
-import datetime
 import json
 import logging
 import os
-import pytz
 import werkzeug
 
 #: Magic value to signal abstention during voting. Used during the emulation
@@ -175,14 +173,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballot_data = self.assemblyproxy.get_ballots(rs, ballots)
-        now = datetime.datetime.now(pytz.utc)
+        timestamp = now()
         has_activity = False
-        if now < assembly_data['signup_end']:
+        if timestamp < assembly_data['signup_end']:
             has_activity = True
         if any((ballot['extended'] is None
-                or now < ballot['vote_end']
+                or timestamp < ballot['vote_end']
                 or (ballot['extended']
-                    and now < ballot['vote_extension_end']))
+                    and timestamp < ballot['vote_extension_end']))
                for ballot in ballot_data.values()):
             has_activity = True
         return self.render(rs, "show_assembly", {
@@ -230,7 +228,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Join an assembly."""
         assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
                                                                  assembly_id)
-        if datetime.datetime.now(pytz.utc) > assembly_data['signup_end']:
+        if now() > assembly_data['signup_end']:
             rs.notify("warning", "Signup already ended.")
             return self.redirect(rs, "assembly/show_assembly")
         user_data = self.assemblyproxy.acquire_data_one(rs, rs.user.persona_id)
@@ -327,7 +325,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             data = self.assemblyproxy.get_assembly_data_one(rs, assembly_id)
         else:
             data = self.assemblyproxy.get_ballot(rs, ballot_id)
-            if datetime.datetime.now(pytz.utc) > data['vote_begin']:
+            if now() > data['vote_begin']:
                 rs.notify("warning", "Voting has begun.")
                 return self.redirect(rs, "assembly/show_ballot", {
                     'assembly_id': data['assembly_id'], 'ballot_id': ballot_id})
@@ -415,14 +413,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         attachments = self.assemblyproxy.list_attachments(rs,
                                                           ballot_id=ballot_id)
         attachment_data = self.assemblyproxy.get_attachments(rs, attachments)
-        now = datetime.datetime.now(pytz.utc)
-        if ballot_data['extended'] is None and now > ballot_data['vote_end']:
+        timestamp = now()
+        if (ballot_data['extended'] is None
+                and timestamp > ballot_data['vote_end']):
             self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
             return self.redirect(rs, "assembly/show_ballot")
         finished = (
-            now > ballot_data['vote_end']
+            timestamp > ballot_data['vote_end']
             and (not ballot_data['extended']
-                 or now > ballot_data['vote_extension_end']))
+                 or timestamp > ballot_data['vote_extension_end']))
         if finished and not ballot_data['is_tallied']:
             did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
             if did_tally:
@@ -450,10 +449,10 @@ class AssemblyFrontend(AbstractUserFrontend):
                     attachments=(attachment_script, attachment_result,))
             return self.redirect(rs, "assembly/show_ballot")
         ballot_data['is_voting'] = (
-            now > ballot_data['vote_begin']
-            and (now < ballot_data['vote_end']
+            timestamp > ballot_data['vote_begin']
+            and (timestamp < ballot_data['vote_end']
                  or (ballot_data['extended']
-                     and now < ballot_data['vote_extension_end'])))
+                     and timestamp < ballot_data['vote_extension_end'])))
         result = None
         if ballot_data['is_tallied']:
             path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
@@ -505,7 +504,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
         if ballot_data['assembly_id'] != assembly_id:
             return werkzeug.exceptions.NotFound("Wrong associated assembly.")
-        if datetime.datetime.now(pytz.utc) > ballot_data['vote_begin']:
+        if now() > ballot_data['vote_begin']:
             rs.notify("warning", "Unable to modify active ballot.")
             return self.redirect(rs, "assembly/show_ballot")
         merge_dicts(rs.values, ballot_data)

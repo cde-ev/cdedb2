@@ -30,7 +30,7 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangeuser(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-11-D"
+        f['id_to_show'] = "DB-11-G"
         self.submit(f)
         self.traverse({'href': '/assembly/user/11/adminchange'})
         f = self.response.forms['changedataform']
@@ -44,7 +44,7 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("anton")
     def test_toggleactivity(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-11-D"
+        f['id_to_show'] = "DB-11-G"
         self.submit(f)
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
         self.assertEqual(
@@ -250,7 +250,7 @@ class TestAssemblyFrontend(FrontendTest):
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
         self.response = saved_response
-        f = self.response.forms['removeattachmentform3']
+        f = self.response.forms['removeattachmentform2']
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         self.assertNotIn("Magenta wie die Telekom", self.response.text)

@@ -70,8 +70,6 @@ class PrivilegeBits(enum.IntEnum):
     event_admin = 2**3 #:
     ml_admin = 2**4 #:
     assembly_admin = 2**5 #:
-    # files_admin = 2**6 #:
-    # i25p_admin = 2**7 #:
 
 @enum.unique
 class Genders(enum.IntEnum):
@@ -192,6 +190,23 @@ class AttachmentPolicy(enum.IntEnum):
     forbid = 2 #:
 
 @enum.unique
+class LastschriftTransactionStati(enum.IntEnum):
+    """Basically store the outcome (if it exists) of a transaction."""
+    issued = 0 #:
+    skipped = 1 #:
+    success = 10 #:
+    failure = 11 #:
+    cancelled = 12 #:
+
+    def is_finalized(self):
+        """Whether the transaction was already tallied.
+
+        :rtype: bool
+        """
+        return self in (LastschriftTransactionStati.success,
+                        LastschriftTransactionStati.failure,
+                        LastschriftTransactionStati.cancelled)
+@enum.unique
 class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""
     persona_creation = 0 #:
@@ -210,16 +225,20 @@ class CdeLogCodes(enum.IntEnum):
 @enum.unique
 class FinanceLogCodes(enum.IntEnum):
     """Available log messages cde.finance_log."""
-    gain_membership = 0 #:
-    lose_membership = 1 #:
+    new_member = 0 #:
+    gain_membership = 1 #:
+    lose_membership = 2 #:
     increase_balance = 10 #:
     deduct_membership_fee = 11 #:
     end_trial_membership = 12 #:
     grant_lastschrift = 20 #:
     revoke_lastschrift = 21 #:
+    modify_lastschrift = 22 #:
     lastschrift_transaction_issue = 30 #:
     lastschrift_transaction_success = 31 #:
     lastschrift_transaction_failure = 32 #:
+    lastschrift_transaction_skip = 33 #:
+    lastschrift_transaction_cancelled = 34 #:
 
 @enum.unique
 class EventLogCodes(enum.IntEnum):

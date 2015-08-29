@@ -10,10 +10,11 @@ from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
-from cdedb.common import glue, make_root_logger, QuotaException, PrivilegeError
+from cdedb.common import (
+    glue, make_root_logger, QuotaException, PrivilegeError, now)
 from cdedb.frontend.common import (
     FrontendRequestState, BaseApp, construct_redirect, connect_proxy,
-    FakeFrontendRequestState)
+    FakeFrontendRequestState, Response)
 from cdedb.config import SecretsConfig
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.serialization import deserialize
@@ -21,9 +22,7 @@ import werkzeug.routing
 import werkzeug.exceptions
 import werkzeug.wrappers
 import psycopg2.extensions
-import datetime
 import json
-import pytz
 
 class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
@@ -62,7 +61,7 @@ class Application(BaseApp):
             #second try for logging exceptions
             try:
                 ## note time for performance measurement
-                begin = datetime.datetime.now(pytz.utc)
+                begin = now()
                 sessionkey = request.cookies.get("sessionkey")
                 ## we have to do the work the ProxyShim normally does
                 with self.sessionproxy:
@@ -78,9 +77,9 @@ class Application(BaseApp):
                     ret = construct_redirect(request,
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
-                    notificationss = json.dumps([self.encode_notification(
+                    notifications = json.dumps([self.encode_notification(
                         "error", "Session expired.")])
-                    ret.set_cookie("displaynote", notificationss)
+                    ret.set_cookie("displaynote", notifications)
                     return ret
                 coders = {
                     "encode_parameter": self.encode_parameter,
@@ -95,20 +94,20 @@ class Application(BaseApp):
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")
                 if raw_notifications:
-                     try:
-                         notifications = json.loads(raw_notifications)
-                         for note in notifications:
-                             ntype, nmessage = self.decode_notification(note)
-                             if ntype:
-                                 rs.notify(ntype, nmessage)
-                             else:
-                                 self.logger.info(
-                                     "Invalid notification '{}'".format(note))
-                     except:
-                         ## Do nothing if we fail to handle a notification,
-                         ## they can be manipulated by the client side, so
-                         ## we can not assume anything.
-                         pass
+                    try:
+                        notifications = json.loads(raw_notifications)
+                        for note in notifications:
+                            ntype, nmessage = self.decode_notification(note)
+                            if ntype:
+                                rs.notify(ntype, nmessage)
+                            else:
+                                self.logger.info(
+                                    "Invalid notification '{}'".format(note))
+                    except:
+                        ## Do nothing if we fail to handle a notification,
+                        ## they can be manipulated by the client side, so
+                        ## we can not assume anything.
+                        pass
                 handler = getattr(getattr(self, component), action)
                 if request.method not in handler.modi:
                     raise werkzeug.exceptions.MethodNotAllowed(
@@ -149,8 +148,8 @@ class Application(BaseApp):
             if self.conf.CDEDB_DEV or ('data' in locals()
                                        and data.get('db_privileges')
                                        and (data.get('db_privileges') % 2)):
-                return werkzeug.wrappers.Response(
-                    cgitb.html(sys.exc_info(), context=7), mimetype="text/html")
+                return Response(cgitb.html(sys.exc_info(), context=7),
+                                mimetype="text/html")
             ## prevent infinite loop if the error pages are buggy
             if request.base_url.endswith("error"):
                 raise

@@ -1,4 +1,10 @@
 --
+-- fix some serials (otherwise the test suite gets messed up)
+--
+ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
+ALTER SEQUENCE cde.lastschrift_transactions_id_seq RESTART WITH 1;
+
+--
 -- personas
 --
 INSERT INTO core.personas (id, username, display_name, given_names, family_name, is_active, status, db_privileges, cloud_account, notes, password_hash) VALUES
@@ -46,8 +52,8 @@ INSERT INTO cde.expuls_period (id, addresscheck_state, addresscheck_done) VALUES
     (43, NULL, NULL);
 INSERT INTO cde.lastschrift (id, submitted_by, persona_id, amount, max_dsa, iban, account_owner, account_address, granted_at, revoked_at, notes) VALUES
     (1, 1, 2, 42.23, 0.4, 'DE12500105170648489890', 'Dagobert Anatidae', 'Im Geldspeicher 1', timestamp with time zone '2002-02-22 22:22:22.222222+02', NULL, 'reicher Onkel');
-INSERT INTO cde.lastschrift_transaction (submitted_by, lastschrift_id, period_id, issued_at, processed_at, tally) VALUES
-    (1, 1, 42, timestamp with time zone '2012-02-22 00:00:00+02', timestamp with time zone '2002-02-22 22:22:22.222222+02', 42.23);
+INSERT INTO cde.lastschrift_transactions (submitted_by, lastschrift_id, period_id, status, amount, issued_at, processed_at, tally) VALUES
+    (1, 1, 42, 10, 42.23, timestamp with time zone '2012-02-22 00:00:00+02', timestamp with time zone '2012-02-22 22:22:22.222222+02', 42.23);
 INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance, additional_info, members, total) VALUES
     (31, 1, 2, 5.0, 12.5, '42.23€', 7, 111.5);
 
@@ -297,8 +303,8 @@ INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
     (10, 7);
 
 --
--- fix serials (we want to have total control over some ids so we reference
--- the correct things)
+-- fix serials (we gave explicit ids since want to have total control over
+-- them so we reference the correct things in the test suite)
 --
 SELECT setval('core.personas_id_seq', 12);
 SELECT setval('cde.lastschrift_id_seq', 1);
@@ -314,7 +320,3 @@ SELECT setval('ml.mailinglists_id_seq', 10);
 SELECT setval('assembly.assemblies_id_seq', 1);
 SELECT setval('assembly.ballots_id_seq', 5);
 SELECT setval('assembly.candidates_id_seq', 27);
---
--- fix more serials (otherwise the test suite gets messed up)
---
-SELECT setval('assembly.attachments_id_seq', 1);

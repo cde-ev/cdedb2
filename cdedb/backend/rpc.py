@@ -20,7 +20,7 @@ import stat
 import serpent
 import logging
 from cdedb.common import glue, PrivilegeError
-from cdedb.backend.common import do_singularization
+from cdedb.backend.common import do_singularization, do_batchification
 from cdedb.serialization import deserialize, SERIALIZERS
 
 _LOGGER = logging.getLogger(__name__)
@@ -79,6 +79,12 @@ class _BackendServer:
                             _process_function(backend, do_singularization(fun)))
                     setattr(backend, hint['singular_function_name'],
                             do_singularization(fun))
+                if hasattr(fun, "batchification_hint"):
+                    hint = fun.batchification_hint
+                    setattr(self, hint['batch_function_name'],
+                            _process_function(backend, do_batchification(fun)))
+                    setattr(backend, hint['batch_function_name'],
+                            do_batchification(fun))
 
 def create_RPCDaemon(backend, socket_address, access_logging=True):
     """Take care of the details for publishing a backend via :py:mod:`Pyro4`.

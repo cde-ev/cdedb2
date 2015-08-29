@@ -9,7 +9,7 @@ template for all services.
 import os
 import signal
 import logging
-from cdedb.database.connection import connection_pool_factory
+from cdedb.database.connection import connection_pool_factory, Atomizer
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import (
     glue, extract_realm, make_root_logger, extract_roles, ALL_ROLES,
@@ -22,6 +22,7 @@ import functools
 import inspect
 import collections.abc
 import enum
+import copy
 
 def singularize(singular_function_name, array_param_name="ids",
                 singular_param_name="anid"):
@@ -55,6 +56,38 @@ def singularize(singular_function_name, array_param_name="ids",
         return fun
     return wrap
 
+def batchify(batch_function_name, array_param_name="data",
+             singular_param_name="data"):
+    """This decorator marks a function for batchification.
+
+    The function has to accept an a singular parameter. The singular
+    parameter has either to be a keyword only parameter or the first
+    positional parameter after the request state. Batchification creates a
+    function which accepts an array instead and loops over this array
+    wrapping everything in a database transaction. It returns an array of
+    all return values.
+
+    Batchification is performed at the same spot as publishing of the
+    functions with @access decorator, that is in
+    :py:class:`cdedb.backend.rpc.BackendServer` and
+    :py:class:`AuthShim`.
+
+    :type batch_function_name: str
+    :param batch_function_name: name for the new batchified function
+    :type array_param_name: str
+    :type array_param_name: new name of the batchified parameter
+    :type singular_param_name: str
+    :type singular_param_name: name of the parameter to batchify
+    """
+    def wrap(fun):
+        fun.batchification_hint = {
+            'batch_function_name': batch_function_name,
+            'array_param_name': array_param_name,
+            'singular_param_name': singular_param_name,
+        }
+        return fun
+    return wrap
+
 def do_singularization(fun):
     """Perform singularization on a function.
 
@@ -76,6 +109,35 @@ def do_singularization(fun):
         data = fun(rs, *args, **kwargs)
         return data[param]
     new_fun.__name__ = hint['singular_function_name']
+    return new_fun
+
+def do_batchification(fun):
+    """Perform batchification on a function.
+
+    This is the companion to the @batchify decorator.
+    :type fun: callable
+    :param fun: function with ``fun.batchification_hint`` attribute
+    :rtype: callable
+    :returns: batchified function
+    """
+    hint = fun.batchification_hint
+    @functools.wraps(fun)
+    def new_fun(rs, *args, **kwargs):
+        ret = []
+        with Atomizer(rs):
+            if hint['array_param_name'] in kwargs:
+                param = kwargs.pop(hint['array_param_name'])
+                for datum in param:
+                    new_kwargs = copy.deepcopy(kwargs)
+                    new_kwargs[hint['singular_param_name']] = datum
+                    ret.append(fun(rs, *args, **new_kwargs))
+            else:
+                param = args[0]
+                for datum in param:
+                    new_args = (datum,) + args[1:]
+                    ret.append(fun(rs, *new_args, **kwargs))
+        return ret
+    new_fun.__name__ = hint['batch_function_name']
     return new_fun
 
 def access(role):
@@ -575,7 +637,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         return self.query_all(rs, q, params)
 
     def generic_retrieve_log(self, rs, code_validator, entity_name, table,
-                             codes=None, entity_id=None, start=None, stop=None):
+                             codes=None, entity_id=None, start=None, stop=None,
+                             additional_columns=None):
         """Get recorded activity.
 
         Each realm has it's own log as well as potentially additional
@@ -590,6 +653,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         This is separate from the changelog for member data (which keeps
         a lot more information to be able to reconstruct the entire
         history).
+
+        However this handles the finance_log for financial transactions.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type code_validator: str
@@ -607,22 +672,31 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :type stop: int or None
         :param stop: At which entry to halt, in sum you get ``stop-start``
           entries (works like python sequence slices).
+        :type additional_columns: [str] or None
+        :param additional_columns: Extra values to retrieve.
         :rtype: [{str: object}]
         """
         codes = affirm_array_validation(code_validator, codes, allow_None=True)
         entity_id = affirm_validation("int_or_None", entity_id)
         start = affirm_validation("int_or_None", start)
         stop = affirm_validation("int_or_None", stop)
+        additional_columns = affirm_array_validation(
+            "restrictive_identifier", additional_columns, allow_None=True)
         start = start or 0
+        additional_columns = additional_columns or tuple()
         if stop:
             stop = max(start, stop)
         query = glue(
             "SELECT ctime, code, submitted_by, {entity}_id, persona_id,",
-            "additional_info FROM {table} {condition} ORDER BY id DESC")
+            "additional_info {extra_columns} FROM {table} {condition}",
+            "ORDER BY id DESC")
         if stop:
             query = glue(query, "LIMIT {}".format(stop-start))
         if start:
             query = glue(query, "OFFSET {}".format(start))
+        extra_columns = ", ".join(additional_columns)
+        if extra_columns:
+            extra_columns = ", " + extra_columns
         connector = "WHERE"
         condition = ""
         params = []
@@ -634,8 +708,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             condition = glue(
                 condition, "{} {}_id = %s").format(connector, entity_name)
             params.append(entity_id)
-        query = query.format(entity=entity_name, table=table,
-                             condition=condition)
+        query = query.format(entity=entity_name, extra_columns=extra_columns,
+                             table=table, condition=condition)
         return self.query_all(rs, query, params)
 
 class BackendUser(CommonUser):
@@ -732,6 +806,12 @@ class AuthShim:
                         do_singularization(fun))
                     setattr(backend, hint['singular_function_name'],
                             do_singularization(fun))
+                if hasattr(fun, "batchification_hint"):
+                    hint = fun.batchification_hint
+                    self._funs[hint['batch_function_name']] = self._wrapit(
+                        do_batchification(fun))
+                    setattr(backend, hint['batch_function_name'],
+                            do_batchification(fun))
 
     @staticmethod
     def _wrapit(fun):

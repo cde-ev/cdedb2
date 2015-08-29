@@ -34,7 +34,7 @@ from cdedb.backend.common import (
 from cdedb.common import (
     glue, PrivilegeError, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS,
     ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
-    FUTURE_TIMESTAMP)
+    FUTURE_TIMESTAMP, now)
 from cdedb.config import Config
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -45,7 +45,6 @@ import datetime
 import hashlib
 import json
 import os.path
-import pytz
 import string
 
 class AssemblyBackend(AbstractUserBackend):
@@ -393,7 +392,7 @@ class AssemblyBackend(AbstractUserBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (data['id'],)))
-            if datetime.datetime.now(pytz.utc) > current['vote_begin']:
+            if now() > current['vote_begin']:
                 raise ValueError("Unable to modify active ballot.")
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             if len(bdata) > 1:
@@ -505,7 +504,7 @@ class AssemblyBackend(AbstractUserBackend):
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (ballot_id,)))
-            if datetime.datetime.now(pytz.utc) > current['vote_begin']:
+            if now() > current['vote_begin']:
                 raise ValueError("Unable to remove active ballot.")
             if current['bar']:
                 deletor = {
@@ -549,7 +548,7 @@ class AssemblyBackend(AbstractUserBackend):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             if ballot['extended'] is not None:
                 return ballot['extended']
-            if datetime.datetime.now(pytz.utc) < ballot['vote_end']:
+            if now() < ballot['vote_end']:
                 raise ValueError("Normal voting still going on.")
             votes = self.sql_select(rs, "assembly.votes", ("id",),
                                     (ballot_id,), entity_key="ballot_id")
@@ -586,7 +585,7 @@ class AssemblyBackend(AbstractUserBackend):
                 ## already signed up
                 return None
             assembly = unwrap(self.get_assembly_data(rs, (assembly_id,)))
-            if datetime.datetime.now(pytz.utc) > assembly['signup_end']:
+            if now() > assembly['signup_end']:
                 raise ValueError("Signup already ended.")
 
             new_attendee = {
@@ -634,9 +633,9 @@ class AssemblyBackend(AbstractUserBackend):
                 reference = ballot['vote_extension_end']
             else:
                 reference = ballot['vote_end']
-            if datetime.datetime.now(pytz.utc) > reference:
+            if now() > reference:
                 raise ValueError("Ballot already closed.")
-            if datetime.datetime.now(pytz.utc) < ballot['vote_begin']:
+            if now() < ballot['vote_begin']:
                 raise ValueError("Ballot not yet open.")
 
             query = glue("SELECT has_voted FROM assembly.voter_register",
@@ -760,7 +759,7 @@ class AssemblyBackend(AbstractUserBackend):
                 reference = ballot['vote_extension_end']
             else:
                 reference = ballot['vote_end']
-            if datetime.datetime.now(pytz.utc) < reference:
+            if now() < reference:
                 raise ValueError("Voting still going on.")
 
             votes = self.sql_select(
@@ -835,14 +834,14 @@ class AssemblyBackend(AbstractUserBackend):
             if not assembly['is_active']:
                 raise ValueError("Assembly not active.")
             ballots = self.get_ballots(rs, self.list_ballots(rs, assembly_id))
-            now = datetime.datetime.now(pytz.utc)
+            timestamp = now()
             if any((ballot['extended'] is None
-                    or now < ballot['vote_end']
+                    or timestamp < ballot['vote_end']
                     or (ballot['extended']
-                        and now < ballot['vote_extension_end']))
+                        and timestamp < ballot['vote_extension_end']))
                    for ballot in ballots.values()):
                 raise ValueError("Open ballots remain.")
-            if now < assembly['signup_end']:
+            if timestamp < assembly['signup_end']:
                 raise ValueError("Signup still possible.")
 
             update = {
@@ -916,7 +915,7 @@ class AssemblyBackend(AbstractUserBackend):
         data = affirm("assembly_attachment_data", data)
         if data.get('ballot_id'):
             ballot_data = unwrap(self.get_ballots(rs, (data['ballot_id'],)))
-            if datetime.datetime.now(pytz.utc) > ballot_data['vote_begin']:
+            if now() > ballot_data['vote_begin']:
                 raise ValueError("Unable to modify active ballot.")
         ret = self.sql_insert(rs, "assembly.attachments", data)
         assembly_id = data.get('assembly_id')
@@ -943,7 +942,7 @@ class AssemblyBackend(AbstractUserBackend):
         current = unwrap(self.get_attachments(rs, (attachment_id,)))
         if current['ballot_id']:
             ballot_data = unwrap(self.get_ballots(rs, (current['ballot_id'],)))
-            if datetime.datetime.now(pytz.utc) > ballot_data['vote_begin']:
+            if now() > ballot_data['vote_begin']:
                 raise ValueError("Unable to modify active ballot.")
         ret = self.sql_delete_one(rs, "assembly.attachments", attachment_id)
         assembly_id = current['assembly_id']

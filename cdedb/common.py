@@ -90,6 +90,16 @@ def random_ascii(length=12):
     chars = string.ascii_letters + string.digits + string.punctuation
     return ''.join(random.choice(chars) for _ in range(length))
 
+def now():
+    """Return an up to date timestamp.
+
+    This is a separate function so we do not forget to make it time zone
+    aware.
+
+    :rtype: datetime.datetime
+    """
+    return datetime.datetime.now(pytz.utc)
+
 def extract_realm(status):
     """Which realm does a persona belong to?
 
@@ -212,13 +222,18 @@ def name_key(entry):
     """
     return (entry['family_name'] + " " + entry['given_names']).lower()
 
-def compute_checkdigit(value):
-    """Map a persona id (integer) to the checksum used for UI purposes.
+def compute_checkdigit(value, isbn=False):
+    """Map an integer to the checksum used for UI purposes.
 
     This checkdigit allows for error detection if somebody messes up a
     handwritten ID or such.
 
+    Most of the time, the integer will be a persona id.
+
     :type value: int
+    :type isbn: bool
+    :param isbn: If True return a check digit according to the ISBN standard,
+      otherwise we map the interval from 0 to 10 to the letters A to K.
     :rtype: str
     """
     digits = []
@@ -226,8 +241,24 @@ def compute_checkdigit(value):
     while tmp > 0:
         digits.append(tmp % 10)
         tmp = tmp // 10
-    dsum = sum((i+1)*d for i, d in enumerate(digits))
-    return chr(65 + (dsum % 11))
+    dsum = sum((i+2)*d for i, d in enumerate(digits))
+    if isbn:
+        return "0123456789X"[-dsum % 11]
+    else:
+        return "ABCDEFGHIJK"[-dsum % 11]
+
+def lastschrift_reference(persona_id, lastschrift_id):
+    """Return an identifier for usage with the bank.
+
+    This is the so called 'Mandatsreferenz'.
+
+    :type persona_id: int
+    :type lastschrift_id: int
+    :rtype: str
+    """
+    return "CDE-I25-{}-{}-{}-{}".format(
+        persona_id, compute_checkdigit(persona_id, isbn=True), lastschrift_id,
+        compute_checkdigit(lastschrift_id, isbn=True))
 
 def _schulze_winners(d, candidates):
     """This is the abstract part of the Schulze method doing the actual work.
@@ -602,6 +633,16 @@ BALLOT_FIELDS = (
 #: assembly or a ballot)
 ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id", "title",
                               "filename")
+
+#: Fields of one direct debit permit
+LASTSCHRIFT_FIELDS = (
+    "id", "submitted_by", "persona_id", "amount", "max_dsa", "iban",
+    "account_owner", "account_address", "granted_at", "revoked_at", "notes")
+
+#: Fields of one interaction on behalf of a direct debit permit
+LASTSCHRIFT_TRANSACTION_FIELDS = (
+    "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
+    "issued_at", "processed_at", "tally")
 
 EPSILON = 10**(-6) #:
 

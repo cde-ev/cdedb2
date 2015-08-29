@@ -12,6 +12,7 @@
 ** make country choices into drop down menues
 ** implement support for reStructuredText for large text fields (like descriptions of events, ...)
 ** Add JS or python code to convert raw numbers to DB-IDs for the admin show-ID form in the sidebar
+** past_event.events.organizer could be deduplicated (i.e. a reference to a table past_event.organizers)
 * abstract items
 ** Finalize SQL
 ** use framework for html? (maybe pure?) -- CSS is really rudimentary

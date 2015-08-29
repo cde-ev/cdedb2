@@ -6,6 +6,7 @@ import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 import decimal
 import datetime
+import pytz
 import copy
 
 class TestCdEBackend(BackendTest):
@@ -277,6 +278,165 @@ class TestCdEBackend(BackendTest):
             "status": 0,
         })
         self.assertEqual(user_data, value)
+
+
+    @as_users("anton")
+    def test_demotion(self, user):
+        self.assertLess(
+            0, self.cde.change_user(
+                self.key, {'id': 2, 'status': const.PersonaStati.formermember},
+                None))
+
+    @as_users("anton")
+    def test_lastschrift(self, user):
+        expectation = {1: 2}
+        self.assertEqual(expectation, self.cde.list_lastschrift(self.key))
+        self.assertEqual(expectation, self.cde.list_lastschrift(self.key,
+                                                                active=None))
+        self.assertEqual({}, self.cde.list_lastschrift(self.key, active=False))
+        expectation = {
+            1: {'account_address': 'Im Geldspeicher 1',
+            'account_owner': 'Dagobert Anatidae',
+            'amount': decimal.Decimal('42.23'),
+            'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
+                                            tzinfo=pytz.utc),
+            'iban': 'DE12500105170648489890',
+            'id': 1,
+            'max_dsa': decimal.Decimal('0.40'),
+            'notes': 'reicher Onkel',
+            'persona_id': 2,
+            'revoked_at': None,
+            'submitted_by': 1}}
+        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (1,)))
+        update = {
+            'id': 1,
+            'notes': 'ehem. reicher Onkel',
+            'revoked_at': datetime.datetime.now(pytz.utc),
+        }
+        self.assertLess(0, self.cde.set_lastschrift(self.key, update))
+        expectation[1].update(update)
+        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (1,)))
+        self.assertEqual({}, self.cde.list_lastschrift(self.key))
+        self.assertEqual({1: 2}, self.cde.list_lastschrift(self.key, active=False))
+        newdata = {
+            'account_address': None,
+            'account_owner': None,
+            'amount': decimal.Decimal('25.00'),
+            'granted_at': datetime.datetime.now(pytz.utc),
+            'iban': 'DE69370205000008068902',
+            'max_dsa': decimal.Decimal('0.33'),
+            'notes': None,
+            'persona_id': 3,
+        }
+        new_id = self.cde.create_lastschrift(self.key, newdata)
+        self.assertLess(0, new_id)
+        self.assertEqual({2: 3}, self.cde.list_lastschrift(self.key))
+        newdata.update({
+            'id': new_id,
+            'revoked_at': None,
+            'submitted_by': 1,
+        })
+        self.assertEqual({new_id: newdata},
+                         self.cde.get_lastschrift(self.key, (new_id,)))
+
+    @as_users("anton")
+    def test_lastschrift_transaction(self, user):
+        expectation = {1: 1}
+        self.assertEqual(expectation,
+                         self.cde.list_lastschrift_transactions(self.key))
+        self.assertEqual(
+            expectation, self.cde.list_lastschrift_transactions(
+                self.key, lastschrift_ids=(1,), periods=(42,),
+                stati=(const.LastschriftTransactionStati.success,)))
+        expectation = {
+            1: {'amount': decimal.Decimal('42.23'),
+            'id': 1,
+            'issued_at': datetime.datetime(2012, 2, 21, 22, 0, tzinfo=pytz.utc),
+            'lastschrift_id': 1,
+            'period_id': 42,
+            'processed_at': datetime.datetime(2012, 2, 22, 20, 22, 22, 222222,
+                                              tzinfo=pytz.utc),
+            'status': 10,
+            'submitted_by': 1,
+            'tally': decimal.Decimal('42.23')}}
+        self.assertEqual(expectation,
+                         self.cde.get_lastschrift_transactions(self.key, (1,)))
+        newdata = {
+            'issued_at': datetime.datetime.now(pytz.utc),
+            'lastschrift_id': 1,
+            'period_id': 43,
+        }
+        new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+        self.assertLess(0, new_id)
+        update = {
+            'id': new_id,
+            'amount': decimal.Decimal('42.23'),
+            'processed_at': None,
+            'status': 0,
+            'submitted_by': 1,
+            'tally': None,
+        }
+        newdata.update(update)
+        self.assertEqual({new_id: newdata},
+                         self.cde.get_lastschrift_transactions(self.key, (new_id,)))
+
+    @as_users("anton")
+    def test_lastschrift_transaction_finalization(self, user):
+        ltstati = const.LastschriftTransactionStati
+        for status, tally in ((ltstati.success, None),
+                              (ltstati.cancelled, None),
+                              (ltstati.failure, decimal.Decimal("-4.50"))):
+            with self.subTest(status=status):
+                newdata = {
+                    'issued_at': datetime.datetime.now(pytz.utc),
+                    'lastschrift_id': 1,
+                    'period_id': 43,
+                }
+                new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+                self.assertLess(0, new_id)
+                update = {
+                    'id': new_id,
+                    'amount': decimal.Decimal('42.23'),
+                    'processed_at': None,
+                    'status': 0,
+                    'submitted_by': 1,
+                    'tally': None,
+                }
+                newdata.update(update)
+                self.assertEqual(
+                    {new_id: newdata}, self.cde.get_lastschrift_transactions(
+                        self.key, (new_id,)))
+                self.assertLess(
+                    0, self.cde.finalize_lastschrift_transaction(
+                        self.key, new_id, status, tally=tally))
+                data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
+                data = data[new_id]
+                self.assertEqual(status, data['status'])
+                if status == ltstati.success:
+                    self.assertEqual(decimal.Decimal('42.23'), data['tally'])
+                elif status == ltstati.cancelled:
+                    self.assertEqual(decimal.Decimal('0'), data['tally'])
+                elif status == ltstati.failure:
+                    self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
+
+    @as_users("anton")
+    def test_skip_lastschrift_transaction(self, user):
+        ## Skip testing for successful transaction
+        self.assertLess(0, self.cde.lastschrift_skip(self.key, 1))
+        ## Skip testing for young permit
+        newdata = {
+            'account_address': None,
+            'account_owner': None,
+            'amount': decimal.Decimal('25.00'),
+            'granted_at': datetime.datetime.now(pytz.utc),
+            'iban': 'DE69370205000008068902',
+            'max_dsa': decimal.Decimal('0.33'),
+            'notes': None,
+            'persona_id': 3,
+        }
+        new_id = self.cde.create_lastschrift(self.key, newdata)
+        self.assertLess(0, new_id)
+        self.assertLess(0, self.cde.lastschrift_skip(self.key, new_id))
 
     @as_users("anton")
     def test_cde_log(self, user):

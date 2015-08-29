@@ -31,7 +31,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangeuser(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-5-F"
+        f['id_to_show'] = "DB-5-B"
         self.submit(f)
         self.traverse({'href': '/event/user/5/adminchange'})
         f = self.response.forms['changedataform']
@@ -45,7 +45,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_toggleactivity(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-5-F"
+        f['id_to_show'] = "DB-5-B"
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertEqual(
@@ -338,7 +338,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNotIn("Emilia", self.response.text)
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-5-F"
+        f['persona_id'] = "DB-5-B"
         f['is_orga'].checked = True
         f['is_instructor'].checked = True
         self.submit(f)
@@ -353,7 +353,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/pastevent/list'},
                       {'href': '/event/pastevent/1/show'})
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-5-F"
+        f['persona_id'] = "DB-5-B"
         f['is_orga'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
@@ -389,7 +389,7 @@ class TestEventFrontend(FrontendTest):
         ## orgas
         self.assertNotIn("Bertålotta", self.response.text)
         f = self.response.forms['addorgaform']
-        f['orga_id'] = "DB-2-C"
+        f['orga_id'] = "DB-2-H"
         self.submit(f)
         self.assertTitle("Universale Akademie Details")
         self.assertIn("Bertålotta", self.response.text)
@@ -471,7 +471,7 @@ class TestEventFrontend(FrontendTest):
         f['shortname'] = "UnAka"
         f['registration_start'] = "2000-01-01"
         f['notes'] = "Die spinnen die Orgas."
-        f['orga_ids'] = "DB-2-C, DB-7-H"
+        f['orga_ids'] = "DB-2-H, DB-7-I"
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertIn("Mit Co und Coco.", self.response.text)
@@ -699,7 +699,7 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/registration/add'})
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms['addregistrationform']
-        f['user_data.persona_id'] = "DB-2-C"
+        f['user_data.persona_id'] = "DB-2-H"
         f['reg.orga_notes'] = "Du entkommst uns nicht."
         f['reg.mixed_lodging'].checked = True
         f['part1.status'] = 1

@@ -14,7 +14,7 @@ import functools
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
     extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts,
-    compute_checkdigit)
+    compute_checkdigit, now)
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
@@ -22,7 +22,6 @@ import jinja2
 import json
 import werkzeug.wrappers
 import datetime
-import pytz
 import hashlib
 import Pyro4
 import logging
@@ -91,6 +90,16 @@ class ProxyShim:
             return self._attrs[name]
         else:
             return getattr(self._proxy, name)
+
+class Response(werkzeug.wrappers.Response):
+    """Wrapper around werkzeugs Response to handle displaynote cookie.
+
+    This is a pretty thin wrapper, but essential so our magic cookie
+    gets cleared and no stale notifications remain.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.delete_cookie("displaynote")
 
 def connect_proxy(name):
     """
@@ -584,15 +593,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'default_selections': default_selections,
             'encode_parameter': self.encode_parameter,
             'errors': errorsdict,
-            'generation_time': lambda: (datetime.datetime.now(pytz.utc)
-                                        - rs.begin),
+            'generation_time': lambda: (now() - rs.begin),
             'glue': glue,
             'i18n': lambda string: self.i18n(string, rs.lang),
             'is_admin': self.is_admin(rs),
             'notifications': rs.notifications,
-            'now': lambda: datetime.datetime.now(pytz.utc), # TODO make this
-                                                            # constant after
-                                                            # the first call
+            'now': now,
             'show_user_link': _show_user_link,
             'staticurl': staticurl,
             'user': rs.user,
@@ -663,10 +669,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             ## a download box -- we don't want that.
             headers.append(('Content-Disposition',
                             'inline; filename="{}"'.format(filename)))
-        headers.append(('X-Generation-Time', str(
-            datetime.datetime.now(pytz.utc) - rs.begin)))
-        return werkzeug.wrappers.Response(
-            f, direct_passthrough=True, headers=headers, **extra_args)
+        headers.append(('X-Generation-Time', str(now() - rs.begin)))
+        return Response(f, direct_passthrough=True, headers=headers,
+                        **extra_args)
 
     def render(self, rs, templatename, params=None):
         """Wrapper around :py:meth:`fill_template` specialised to generating
@@ -695,10 +700,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if "<pre>" not in html:
             ## eliminate empty lines, since they don't matter
             html = "\n".join(line for line in html.split('\n') if line.strip())
-        rs.response = werkzeug.wrappers.Response(html, mimetype='text/html')
-        rs.response.headers.add('X-Generation-Time', str(
-            datetime.datetime.now(pytz.utc) - rs.begin))
-        rs.response.delete_cookie("displaynote")
+        rs.response = Response(html, mimetype='text/html')
+        rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None, attachments=None):
@@ -777,8 +780,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("From", "Reply-To", "Subject", "Return-Path"):
             msg[header] = headers[header]
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
-        msg["Date"] = datetime.datetime.now(pytz.utc).strftime(
-            "%Y-%m-%d %H:%M:%S%z")
+        msg["Date"] = now().strftime("%Y-%m-%d %H:%M:%S%z")
         return msg
 
     def _create_attachment(self, attachment):
@@ -1350,8 +1352,8 @@ def encode_parameter(salt, target, name, param):
     :rtype: str
     """
     myhash = hashlib.sha512()
-    now = datetime.datetime.now(pytz.utc)
-    message = "{}--{}".format(now.strftime("%Y-%m-%d %H:%M:%S%z"), param)
+    timestamp = now()
+    message = "{}--{}".format(timestamp.strftime("%Y-%m-%d %H:%M:%S%z"), param)
     tohash = "{}--{}--{}--{}".format(salt, target, name, message)
     myhash.update(tohash.encode("utf-8"))
     return "{}--{}".format(myhash.hexdigest(), message)
@@ -1377,7 +1379,7 @@ def decode_parameter(salt, target, name, param, timeout):
             myhash.hexdigest(), mac, tohash))
         return None
     timestamp = datetime.datetime.strptime(message[:24], "%Y-%m-%d %H:%M:%S%z")
-    if timestamp + timeout <= datetime.datetime.now(pytz.utc):
+    if timestamp + timeout <= now():
         _LOGGER.debug("Expired protected parameter {}".format(tohash))
         return None
     return message[26:]
@@ -1413,8 +1415,7 @@ def basic_redirect(rs, url):
     :rtype: :py:class:`werkzeug.wrappers.Response`
     """
     rs.response = construct_redirect(rs.request, url)
-    rs.response.headers.add('X-Generation-Time', str(
-        datetime.datetime.now(pytz.utc) - rs.begin))
+    rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
     return rs.response
 
 def construct_redirect(request, url):
@@ -1440,7 +1441,9 @@ def construct_redirect(request, url):
         You can also access the target via <a href="{url}">this link</a>.
     </body>
 </html>"""
-        return werkzeug.wrappers.Response(
-            template.format(url=urllib.parse.quote(url)), mimetype="text/html")
+        return Response(template.format(url=urllib.parse.quote(url)),
+                        mimetype="text/html")
     else:
-        return werkzeug.utils.redirect(url, 303)
+        ret = werkzeug.utils.redirect(url, 303)
+        ret.delete_cookie("displaynote")
+        return ret

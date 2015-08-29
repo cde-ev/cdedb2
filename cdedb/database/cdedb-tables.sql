@@ -298,10 +298,10 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(7,2),
+        amount                  numeric(7,2) NOT NULL,
         -- upper limit for donations to DSA
-        max_dsa                 numeric(2,2) DEFAULT 0.4,
-        iban                    varchar,
+        max_dsa                 numeric(2,2) DEFAULT 0.4 NOT NULL,
+        iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
         account_address         varchar,
@@ -315,20 +315,22 @@ GRANT SELECT, UPDATE ON cde.lastschrift TO cdb_member;
 GRANT INSERT ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
 
-CREATE TABLE cde.lastschrift_transaction
+CREATE TABLE cde.lastschrift_transactions
 (
         id                      serial PRIMARY KEY,
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         lastschrift_id          integer REFERENCES cde.lastschrift(id) NOT NULL,
         period_id               integer REFERENCES cde.org_period(id) NOT NULL,
+        status                  integer NOT NULL,
+        amount                  numeric(7,2) NOT NULL,
         issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
         -- positive for money we got and negative if bounced with fee
         tally                   numeric(7,2) DEFAULT NULL
 );
-CREATE INDEX idx_cde_lastschrift_transaction_lastschrift_id ON cde.lastschrift_transaction(lastschrift_id);
-GRANT SELECT, UPDATE, INSERT ON cde.lastschrift_transaction TO cdb_admin;
-GRANT SELECT, UPDATE ON cde.lastschrift_transaction_id_seq TO cdb_admin;
+CREATE INDEX idx_cde_lastschrift_transactions_lastschrift_id ON cde.lastschrift_transactions(lastschrift_id);
+GRANT SELECT, UPDATE, INSERT ON cde.lastschrift_transactions TO cdb_admin;
+GRANT SELECT, UPDATE ON cde.lastschrift_transactions_id_seq TO cdb_admin;
 
 CREATE TABLE cde.finance_log (
         id                      bigserial PRIMARY KEY,

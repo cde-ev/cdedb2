@@ -9,14 +9,15 @@ here, the site specific global overrides in
 """
 
 import datetime
-import logging
+import decimal
 import importlib.machinery
+import logging
 import os.path
-import uuid
 import pytz
+import uuid
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import deduct_years
+from cdedb.common import deduct_years, now
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ _DEFAULTS = {
                 ("user_data.persona_id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
-                  deduct_years(datetime.datetime.now(pytz.utc).date(), 18)),),
+                  deduct_years(now().date(), 18)),),
                 (("birthday", True), ("family_name", True),
                  ("given_names", True)),),
         },
@@ -173,6 +174,10 @@ _DEFAULTS = {
     "MAX_QUERIES_PER_DAY": 50,
     ## maximal number of results for a member search
     "MAX_QUERY_RESULTS": 50,
+    ## amount deducted from balance each period (semester)
+    "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
+    ## probably always 1 or 2
+    "PERIODS_PER_YEAR": 2,
 
     ### event stuff
 
