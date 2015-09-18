@@ -295,6 +295,210 @@ class TestCdEFrontend(FrontendTest):
         self.assertIn("Probemitgliedschaft", self.response.text)
         self.assertIn("Daten sind für andere Mitglieder sichtbar.", self.response.text)
 
+    @as_users("anton")
+    def test_lastschrift_index(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/lastschrift$'})
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        self.assertIn("generatetransactionform2", self.response.text)
+
+    @as_users("anton", "berta")
+    def test_lastschrift_show(self, user):
+        self.traverse({'href': '/cde/search/member'})
+        f = self.response.forms['membersearchform']
+        f['qval_family_name,birth_name'] = "Beispiel"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.traverse({'href': '/cde/user/2/lastschrift'})
+        self.assertTitle("Einzugsermächtigungen (Bertålotta Beispiel)")
+        if user['id'] == 1:
+            self.assertIn("revokeform", self.response.text)
+            self.assertIn("receiptform3", self.response.text)
+        else:
+            self.assertNotIn("revokeform", self.response.text)
+            self.assertNotIn("receiptform3", self.response.text)
+
+    @as_users("anton")
+    def test_lastschrift_generate_transactions(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/lastschrift$'})
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        f = self.response.forms['generatetransactionsform']
+        self.submit(f, check_notification=False)
+        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+            expectation = f.read().split(b'\n')
+        exceptions = (5, 6, 14, 28, 66,)
+        for index, line in enumerate(self.response.body.split(b'\n')):
+            if index not in exceptions:
+                self.assertEqual(expectation[index], line)
+
+    @as_users("anton")
+    def test_lastschrift_generate_single_transaction(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/lastschrift$'})
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        f = self.response.forms['generatetransactionform2']
+        self.submit(f, check_notification=False)
+        with open("/tmp/cdedb-store/testfiles/sepapain.xml", 'rb') as f:
+            expectation = f.read().split(b'\n')
+        exceptions = (5, 6, 14, 28, 66,)
+        for index, line in enumerate(self.response.body.split(b'\n')):
+            if index not in exceptions:
+                self.assertEqual(expectation[index], line)
+
+    @as_users("anton")
+    def test_lastschrift_transaction_rollback(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/lastschrift$'})
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        f = self.response.forms['generatetransactionform2']
+        saved = self.response
+        self.submit(f, check_notification=False)
+        self.response = saved
+        self.traverse({'href': '/cde/lastschrift$'})
+        f = self.response.forms['transactionsuccessform4']
+        self.submit(f)
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        self.traverse({'href': '^/$'})
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-2-H"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertIn("17.50€", self.response.text)
+        self.traverse({'href': '/cde/user/2/lastschrift'})
+        f = self.response.forms['transactionrollbackform4']
+        self.submit(f)
+        self.assertIn("Keine aktive Einzugsermächtigung", self.response.text)
+        self.traverse({'href': '^/$'})
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-2-H"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertIn("12.50€", self.response.text)
+
+    @as_users("anton")
+    def test_lastschrift_transaction_cancel(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/lastschrift$'})
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        f = self.response.forms['generatetransactionform2']
+        saved = self.response
+        self.submit(f, check_notification=False)
+        self.response = saved
+        self.traverse({'href': '/cde/lastschrift$'})
+        f = self.response.forms['transactioncancelform4']
+        self.submit(f)
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        self.assertIn('generatetransactionform2', self.response.text)
+        self.assertNotIn('transactionsuccessform4', self.response.text)
+
+    @as_users("anton")
+    def test_lastschrift_transaction_failure(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/lastschrift$'})
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        f = self.response.forms['generatetransactionform2']
+        saved = self.response
+        self.submit(f, check_notification=False)
+        self.response = saved
+        self.traverse({'href': '/cde/lastschrift$'})
+        f = self.response.forms['transactionfailureform4']
+        self.submit(f)
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        self.assertNotIn('generatetransactionform2', self.response.text)
+        self.assertNotIn('transactionsuccessform4', self.response.text)
+
+    @as_users("anton")
+    def test_lastschrift_skip(self, user):
+        self.traverse({'description': '^CdE$'},
+                      {'href': '/cde/lastschrift$'})
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        f = self.response.forms['skiptransactionform2']
+        self.submit(f)
+        self.assertTitle("Übersicht Einzugsermächtigungen")
+        self.assertNotIn('generatetransactionform2', self.response.text)
+        self.assertNotIn('transactionsuccessform', self.response.text)
+
+    @as_users("anton")
+    def test_lastschrift_create(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-3-F"
+        self.submit(f)
+        self.assertTitle("Charly C. Clown")
+        self.traverse({'href': '/cde/user/3/lastschrift'})
+        self.assertIn("Keine aktive Einzugsermächtigung", self.response.text)
+        self.traverse({'href': '/cde/user/3/lastschrift/create'})
+        self.assertTitle("Neue Einzugsermächtigung anlegen (Charly C. Clown)")
+        f = self.response.forms['createlastschriftform']
+        f['amount'] = "123.45"
+        f['iban'] = "DE26370205000008068900"
+        f['max_dsa'] = "0.1"
+        f['notes'] = "grosze Siebte: Take on me"
+        self.submit(f)
+        self.assertTitle("Einzugsermächtigungen (Charly C. Clown)")
+        self.assertIn("revokeform", self.response.text)
+        self.traverse({'href': '/cde/lastschrift/3/change'})
+        f = self.response.forms['changelastschriftform']
+        self.assertEqual("123.45", f['amount'].value)
+        self.assertEqual("grosze Siebte: Take on me", f['notes'].value)
+
+    @as_users("anton")
+    def test_lastschrift_change(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-2-H"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.traverse({'href': '/cde/user/2/lastschrift'},
+                      {'href': '/cde/lastschrift/2/change'})
+        f = self.response.forms['changelastschriftform']
+        self.assertEqual("42.23", f['amount'].value)
+        self.assertEqual('Dagobert Anatidae', f['account_owner'].value)
+        self.assertEqual('reicher Onkel', f['notes'].value)
+        f['amount'] = "27.16"
+        f['account_owner'] = "Dagobert Beetlejuice"
+        f['notes'] = "reicher Onkel (neu verheiratet)"
+        self.submit(f)
+        self.traverse({'href': '/cde/lastschrift/2/change'})
+        f = self.response.forms['changelastschriftform']
+        self.assertEqual("27.16", f['amount'].value)
+        self.assertEqual('Dagobert Beetlejuice', f['account_owner'].value)
+        self.assertEqual('reicher Onkel (neu verheiratet)', f['notes'].value)
+
+    @as_users("anton")
+    def test_lastschrift_receipt(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-2-H"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.traverse({'href': '/cde/user/2/lastschrift'})
+        self.assertTitle("Einzugsermächtigungen (Bertålotta Beispiel)")
+        f = self.response.forms['receiptform3']
+        self.submit(f)
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+
+    @as_users("anton")
+    def test_lastschrift_subscription_form(self, user):
+        self.traverse({'href': '/cde'},
+                      {'href': '/cde/lastschrift/subscription'})
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+
+    def test_lastschrift_subscription_form_anonymous(self):
+        self.get("/cde/lastschrift/subscription")
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+
+    @as_users("anton")
+    def test_cde_meta_info(self, user):
+        self.traverse({'href': '/cde'},
+                      {'href': '/cde/meta'})
+        self.assertTitle("Allgemeine Vereinsmetainformationen")
+        f = self.response.forms['changeinfoform']
+        self.assertEqual("Bertålotta Beispiel", f["Finanzvorstand_Name"].value)
+        f["Finanzvorstand_Name"] = "Zelda"
+        self.submit(f)
+        self.assertTitle("Allgemeine Vereinsmetainformationen")
+        f = self.response.forms['changeinfoform']
+        self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
+
     def test_cde_log(self):
         ## First: generate data
         self.test_set_foto()

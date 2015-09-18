@@ -260,6 +260,74 @@ def lastschrift_reference(persona_id, lastschrift_id):
         persona_id, compute_checkdigit(persona_id, isbn=True), lastschrift_id,
         compute_checkdigit(lastschrift_id, isbn=True))
 
+def _small_int_to_words(num, lang):
+    """Convert a small integer into a written representation.
+
+    Helper for the general function.
+
+    :type num: int
+    :param num: Must be between 0 and 999
+    :type lang: str
+    :param lang: Currently we only suppert 'de'.
+    :rtype: str
+    """
+    if num < 0 or num > 999:
+        raise ValueError("Out of scope.")
+    digits = tuple((num // 10**i) % 10 for i in range(3))
+    if lang == "de":
+        atoms = ("null", "ein", "zwei", "drei", "vier", "fünf", "sechs",
+                 "sieben", "acht", "neun", "zehn", "elf", "zwölf", "dreizehn",
+                 "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn",
+                 "neunzehn")
+        tens = ("", "", "zwanzig", "dreißig", "vierzig", "fünfzig", "sechzig",
+                "siebzig", "achtzig", "neunzig")
+        ret = ""
+        if digits[2]:
+            ret += atoms[digits[2]] + "hundert"
+        if num % 100 < 20:
+            if num % 100:
+                ret += atoms[num %100]
+            return ret
+        if digits[0]:
+            ret += atoms[digits[0]]
+        if digits[0] and digits[1]:
+            ret += "und"
+        if digits[1]:
+            ret += tens[digits[1]]
+        return ret
+    else:
+        raise NotImplementedError("Not supported.")
+
+def int_to_words(num, lang):
+    """Convert an integer into a written representation.
+
+    This is for the usage such as '2 apples' -> 'two apples'.
+
+    :type num: int
+    :type lang: str
+    :param lang: Currently we only suppert 'de'.
+    :rtype: str
+    """
+    if num < 0 or num > 999999:
+        raise ValueError("Out of scope.")
+    if lang == "de":
+        if num == 0:
+            return "null"
+        multipliers = ("", "tausend")
+        number_words = []
+        tmp = num
+        while tmp > 0:
+            number_words.append(_small_int_to_words(tmp % 1000, lang))
+            tmp = tmp // 1000
+        ret = ""
+        for number_word, multiplier in reversed(tuple(zip(number_words,
+                                                          multipliers))):
+            if number_word != "null":
+                ret += number_word + multiplier
+        return ret
+    else:
+        raise NotImplementedError("Not supported.")
+
 def _schulze_winners(d, candidates):
     """This is the abstract part of the Schulze method doing the actual work.
 

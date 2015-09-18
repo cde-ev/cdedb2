@@ -197,6 +197,7 @@ class LastschriftTransactionStati(enum.IntEnum):
     success = 10 #:
     failure = 11 #:
     cancelled = 12 #:
+    rollback = 20 #:
 
     def is_finalized(self):
         """Whether the transaction was already tallied.
@@ -205,7 +206,8 @@ class LastschriftTransactionStati(enum.IntEnum):
         """
         return self in (LastschriftTransactionStati.success,
                         LastschriftTransactionStati.failure,
-                        LastschriftTransactionStati.cancelled)
+                        LastschriftTransactionStati.cancelled,
+                        LastschriftTransactionStati.rollback)
 @enum.unique
 class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""
@@ -239,6 +241,7 @@ class FinanceLogCodes(enum.IntEnum):
     lastschrift_transaction_failure = 32 #:
     lastschrift_transaction_skip = 33 #:
     lastschrift_transaction_cancelled = 34 #:
+    lastschrift_transaction_revoked = 35 #:
 
 @enum.unique
 class EventLogCodes(enum.IntEnum):

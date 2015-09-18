@@ -289,35 +289,36 @@ class TestCdEBackend(BackendTest):
 
     @as_users("anton")
     def test_lastschrift(self, user):
-        expectation = {1: 2}
+        expectation = {2: 2}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key))
+        expectation = {1: 2, 2: 2}
         self.assertEqual(expectation, self.cde.list_lastschrift(self.key,
                                                                 active=None))
-        self.assertEqual({}, self.cde.list_lastschrift(self.key, active=False))
+        self.assertEqual({1: 2}, self.cde.list_lastschrift(self.key, active=False))
         expectation = {
-            1: {'account_address': 'Im Geldspeicher 1',
+            2: {'account_address': 'Im Geldspeicher 1',
             'account_owner': 'Dagobert Anatidae',
             'amount': decimal.Decimal('42.23'),
             'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
                                             tzinfo=pytz.utc),
             'iban': 'DE12500105170648489890',
-            'id': 1,
+            'id': 2,
             'max_dsa': decimal.Decimal('0.40'),
             'notes': 'reicher Onkel',
             'persona_id': 2,
             'revoked_at': None,
             'submitted_by': 1}}
-        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (1,)))
+        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (2,)))
         update = {
-            'id': 1,
+            'id': 2,
             'notes': 'ehem. reicher Onkel',
             'revoked_at': datetime.datetime.now(pytz.utc),
         }
         self.assertLess(0, self.cde.set_lastschrift(self.key, update))
-        expectation[1].update(update)
-        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (1,)))
+        expectation[2].update(update)
+        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (2,)))
         self.assertEqual({}, self.cde.list_lastschrift(self.key))
-        self.assertEqual({1: 2}, self.cde.list_lastschrift(self.key, active=False))
+        self.assertEqual({1: 2, 2: 2}, self.cde.list_lastschrift(self.key, active=False))
         newdata = {
             'account_address': None,
             'account_owner': None,
@@ -330,7 +331,7 @@ class TestCdEBackend(BackendTest):
         }
         new_id = self.cde.create_lastschrift(self.key, newdata)
         self.assertLess(0, new_id)
-        self.assertEqual({2: 3}, self.cde.list_lastschrift(self.key))
+        self.assertEqual({new_id: 3}, self.cde.list_lastschrift(self.key))
         newdata.update({
             'id': new_id,
             'revoked_at': None,
@@ -341,29 +342,31 @@ class TestCdEBackend(BackendTest):
 
     @as_users("anton")
     def test_lastschrift_transaction(self, user):
-        expectation = {1: 1}
+        expectation = {1: 1, 2: 1, 3: 2}
         self.assertEqual(expectation,
                          self.cde.list_lastschrift_transactions(self.key))
+        expectation = {1: 1, 3: 2}
         self.assertEqual(
             expectation, self.cde.list_lastschrift_transactions(
-                self.key, lastschrift_ids=(1,), periods=(42,),
-                stati=(const.LastschriftTransactionStati.success,)))
+                self.key, lastschrift_ids=(1, 2), periods=(41,),
+                stati=(const.LastschriftTransactionStati.success,
+                       const.LastschriftTransactionStati.cancelled,)))
         expectation = {
-            1: {'amount': decimal.Decimal('42.23'),
+            1: {'amount': decimal.Decimal('32.00'),
             'id': 1,
-            'issued_at': datetime.datetime(2012, 2, 21, 22, 0, tzinfo=pytz.utc),
+            'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=pytz.utc),
             'lastschrift_id': 1,
-            'period_id': 42,
-            'processed_at': datetime.datetime(2012, 2, 22, 20, 22, 22, 222222,
+            'period_id': 41,
+            'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
                                               tzinfo=pytz.utc),
-            'status': 10,
+            'status': 12,
             'submitted_by': 1,
-            'tally': decimal.Decimal('42.23')}}
+            'tally': decimal.Decimal('0.00')}}
         self.assertEqual(expectation,
                          self.cde.get_lastschrift_transactions(self.key, (1,)))
         newdata = {
             'issued_at': datetime.datetime.now(pytz.utc),
-            'lastschrift_id': 1,
+            'lastschrift_id': 2,
             'period_id': 43,
         }
         new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
@@ -389,7 +392,7 @@ class TestCdEBackend(BackendTest):
             with self.subTest(status=status):
                 newdata = {
                     'issued_at': datetime.datetime.now(pytz.utc),
-                    'lastschrift_id': 1,
+                    'lastschrift_id': 2,
                     'period_id': 43,
                 }
                 new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
@@ -420,9 +423,42 @@ class TestCdEBackend(BackendTest):
                     self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
 
     @as_users("anton")
+    def test_lastschrift_transaction_rollback(self, user):
+        ltstati = const.LastschriftTransactionStati
+        newdata = {
+            'issued_at': datetime.datetime.now(pytz.utc),
+            'lastschrift_id': 2,
+            'period_id': 43,
+        }
+        new_id = self.cde.issue_lastschrift_transaction(self.key, newdata)
+        self.assertLess(0, new_id)
+        update = {
+            'id': new_id,
+            'amount': decimal.Decimal('42.23'),
+            'processed_at': None,
+            'status': 0,
+            'submitted_by': 1,
+            'tally': None,
+        }
+        newdata.update(update)
+        self.assertEqual(
+            {new_id: newdata}, self.cde.get_lastschrift_transactions(
+                self.key, (new_id,)))
+        self.assertLess(
+            0, self.cde.finalize_lastschrift_transaction(
+                self.key, new_id, ltstati.success))
+        self.assertLess(
+            0, self.cde.rollback_lastschrift_transaction(
+                self.key, new_id, decimal.Decimal('-4.50')))
+        data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
+        data = data[new_id]
+        self.assertEqual(ltstati.rollback, data['status'])
+        self.assertEqual(decimal.Decimal('-4.50'), data['tally'])
+
+    @as_users("anton")
     def test_skip_lastschrift_transaction(self, user):
         ## Skip testing for successful transaction
-        self.assertLess(0, self.cde.lastschrift_skip(self.key, 1))
+        self.assertLess(0, self.cde.lastschrift_skip(self.key, 2))
         ## Skip testing for young permit
         newdata = {
             'account_address': None,
@@ -437,6 +473,25 @@ class TestCdEBackend(BackendTest):
         new_id = self.cde.create_lastschrift(self.key, newdata)
         self.assertLess(0, new_id)
         self.assertLess(0, self.cde.lastschrift_skip(self.key, new_id))
+
+    @as_users("anton")
+    def test_cde_meta_info(self, user):
+        expectation = {
+            'Finanzvorstand_Adresse_Einzeiler':
+                'Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia',
+            'Finanzvorstand_Adresse_Zeile2': 'bei Spielmanns',
+            'Finanzvorstand_Adresse_Zeile3': 'Im Garten 77',
+            'Finanzvorstand_Adresse_Zeile4': '34576 Utopia',
+            'Finanzvorstand_Name': 'Bertålotta Beispiel',
+            'Finanzvorstand_Ort': 'Utopia',
+            'Finanzvorstand_Vorname': 'Bertålotta'}
+        self.assertEqual(expectation, self.cde.get_meta_info(self.key))
+        update = {
+            'Finanzvorstand_Name': 'Zelda'
+        }
+        self.assertLess(0, self.cde.set_meta_info(self.key, update))
+        expectation.update(update)
+        self.assertEqual(expectation, self.cde.get_meta_info(self.key))
 
     @as_users("anton")
     def test_cde_log(self, user):

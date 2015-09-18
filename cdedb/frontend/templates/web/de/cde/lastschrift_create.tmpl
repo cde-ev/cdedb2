@@ -1,0 +1,21 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title -%}
+   Neue Einzugsermächtigung anlegen ({{ "{} {}".format(persona_data['given_names'], persona_data['family_name'])|e }})
+{%- endblock %}
+{% block content %}
+    {{ util.href(cdedblink("cde/lastschrift_index"), "Abbrechen") }}
+    <form action="{{ cdedblink('cde/lastschrift_create')|e }}" method="POST" id="createlastschriftform">
+        <table>
+            {{ util.tab_input_text(name="amount", label="Betrag") }}
+            {{ util.tab_input_text(name="iban", label="IBAN") }}
+            {{ util.tab_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
+            {{ util.tab_input_textarea(name="account_address", label="Adresse (falls abweichend)", aclass="bigg") }}
+            {{ util.tab_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
+            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Anlegen") }}
+        </div>
+    </form>
+{% endblock %}

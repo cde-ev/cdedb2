@@ -60,10 +60,11 @@ def _process_function(backend, fun):
             raise
     return new_fun
 
-class _BackendServer:
-    """Helper for insulating a backend for RPC. Since :py:mod:`Pyro4` exports
-    whole objects we create this which only has the actual RPC-methods
-    as attributes and no auxillary stuff which could otherwise leak.
+class InsulationBackendServer:
+    """Helper for insulating a backend for RPC. Since :py:mod:`Pyro4`
+    exports whole objects (this changed in newer versions, but we ignore
+    this) we create this which only has the actual RPC-methods as
+    attributes and no auxillary stuff which could otherwise leak.
     """
     def __init__(self, backend):
         """
@@ -86,6 +87,7 @@ class _BackendServer:
                     setattr(backend, hint['batch_function_name'],
                             do_batchification(fun))
 
+
 def create_RPCDaemon(backend, socket_address, access_logging=True):
     """Take care of the details for publishing a backend via :py:mod:`Pyro4`.
 
@@ -95,7 +97,9 @@ def create_RPCDaemon(backend, socket_address, access_logging=True):
     """
     Pyro4.config.LOGWIRE = access_logging
     Pyro4.config.DETAILED_TRACEBACK = True
-    server = _BackendServer(backend)
+    ## Use old behaviour of exposing everything
+    Pyro4.config.REQUIRE_EXPOSE = False
+    server = InsulationBackendServer(backend)
     daemon = Pyro4.Daemon(unixsocket=socket_address)
     ## if this is not an abstract socket
     if not socket_address.startswith("\x00"):

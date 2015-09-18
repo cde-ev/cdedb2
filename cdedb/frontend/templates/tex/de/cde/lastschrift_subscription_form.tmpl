@@ -1,0 +1,112 @@
+<<% extends "tex/de/cde/base_letter.tmpl" %>>
+<<% block extra_preamble %>>
+    \usepackage{url}
+
+    \makeatletter
+    \def\@mysignature{%
+        \begin{tabular}{lll}
+        \makebox[3cm]{\dotfill} & \makebox[6cm]{\dotfill} & <<% if minor %>>\makebox[6cm]{\dotfill} <<% endif %>> \\
+        Ort, Datum & Unterschrift & <<% if minor %>>\emph{bei Minderjährigen:}<<% endif %>>\\
+         & & <<% if minor %>>Unterschrift Erziehungsberechtigte/-r<<% endif %>>\\
+        \end{tabular}}
+    \setkomavar{signature}{\@mysignature}
+    \makeatother
+    \setkomavar{subject}{SEPA-Lastschriftmandat}
+    \setkomavar{firstfoot}{}
+    \setkomavar{firsthead}{}
+
+    \def\subsection#1{\bigskip\noindent\textbf{\large #1}\smallskip}
+<<% endblock %>>
+<<% block content %>>
+    \begin{letter}{Club der Ehemaligen e.\,V.\\
+                   c/o <<< cde_info['Finanzvorstand_Name']|te  >>>
+                   <<% for i in ("2", "3", "4") -%>>
+                       <<% if cde_info['Finanzvorstand_Adresse_Zeile{}'.format(i)] -%>>
+                           \\ <<< cde_info['Finanzvorstand_Adresse_Zeile{}'.format(i)]|te >>>
+                       <<% endif -%>>
+                   <<% endfor %>>}
+
+        \opening{}
+
+        \begin{tabular}{ll}
+            <<% if persona_data %>>
+                Name & <<< "{} {}".format(persona_data['given_names'], persona_data['family_name'])|te >>>\\
+                Adresszusatz & <<< persona_data['address_supplement']|te >>>\\
+                Straße & <<< persona_data['address']|te >>>\\
+                PLZ, Ort & <<< "{} {}".format(persona_data['postal_code'], persona_data['location'])|te >>>\\
+                Land & <<< persona_data['country']|te >>>\\
+                E-Mail & <<< persona_data['username']|te >>>\\
+                Datenbank-ID & <<< persona_data['id']|cdedbid|te >>>\\
+            <<% else %>>
+                Name & \makebox[10cm]{\dotfill}\\
+                Adresszusatz & \makebox[10cm]{\dotfill}\\
+                Straße & \makebox[10cm]{\dotfill}\\
+                PLZ, Ort & \makebox[10cm]{\dotfill}\\
+                Land & \makebox[10cm]{\dotfill}\\
+                E-Mail & \makebox[10cm]{\dotfill}\\
+                Datenbank-ID & \makebox[10cm]{\dotfill}\\
+            <<% endif %>>
+            Kontoinhaber (falls abweichend) & \makebox[10cm]{\dotfill}\\
+            IBAN & \makebox[10cm]{\dotfill}\\
+        \end{tabular}
+
+        \emph{SEPA-Lastschriftmandat:} Hiermit ermächtige ich den Club der Ehemaligen der Deutschen SchülerAkademien
+        e.\,V., von meinem oben angegebenem Konto mittels Lastschrift jährlich
+        \begin{center}
+            \makebox[4cm]{\dotfill}€ (mindestens 25\,€)
+        \end{center}
+        einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von dem Club der Ehemaligen der Deutschen
+        SchülerAkademien e.\,V.  gezogenen Lastschriften einzulösen.
+
+        \emph{Hinweis:} Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des
+        belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen. Die
+        Mandatsreferenz wird separat mitgeteilt.
+
+        \enlargethispage*{5cm}
+
+        Von dem eingezogenen Betrag wird der jeweils geltende jährliche Mitgliedsbeitrag (derzeit 5\,€) beglichen. Der
+        verbleibende Betrag ist eine Spende an den CdE e.\,V.  Der CdE e.\,V. beabsichtigt, mit einem Teil der so
+        eingehenden Mittel die Organisation, Betreuung und Durchführung von Deutschen SchülerAkademien durch Bildung
+        \& Begabung gem. GmbH, Bonn, zu unterstützen.
+
+        \closing{}
+
+        \ps\newpage
+
+        \subsection{Initiative 25+}
+
+        Sofern Du die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich 25\,€ oder einen beliebigen höheren
+        Betrag als Lastschrift von Deinem Konto ein: 25+ eben.
+
+        Mit diesen mindestens 25\,€ wird zunächst der -- jeweils aktuelle -- Mitgliedsbeitrag für ein Jahr verrechnet,
+        derzeit also 5\,€. Der Restbetrag kommt dem CdE e.\,V. als Spende zugute. Im Rahmen der Vereinsarbeit soll
+        darauf geachtet werden, dass in etwa 40 Prozent davon der Deutschen SchülerAkademie gespendet oder für eine
+        sonstige Unterstützung der "`Idee SchülerAkademie"' verwendet werden.
+
+        \subsection{Wofür benötigt der CdE Spenden?}
+
+        Die Pfingst-, Sommer-, Winter- und Multinationale Akademie werden durch Spenden bezuschusst. Dadurch sinken ihre
+        Teilnahmebeiträge, was allen Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch einige kleinere
+        Veranstaltungen mit einem Teil der eingegangen Spenden, darunter das CdE-Seminar, die Familien\-Akademie und das
+        Studieninformationswochenende.
+
+        \subsection{Die SchülerAkademie fördern}
+
+        Mit der \emph{Initiative 25+} soll außerdem ein Beschluss der Mitgliederversammlung 2008 umgesetzt und von nun
+        an die "`Idee SchülerAkademie"' auch finanziell unterstützt werden.  Dazu darf der CdE einen Teil der auf diesem
+        Weg erhaltenen Spenden an Bildung \& Begabung gem. GmbH weiterreichen oder aber auf anderem Wege die
+        SchülerAkademien fördern.
+
+        \subsection{Spendenbescheinigung}
+
+        Über die abgebuchten Spenden stellt dir der CdE e.\,V. eine Spendenbescheinigung zur Vorlage beim Finanzamt
+        aus. Die Bescheinigung wird dir ca. 8 Wochen nach Einlösung der Lastschrift zugesandt.
+
+        \subsection{Fragen?}
+
+        Bei Fragen wende Dich bitte an \url{verwaltung@cde-ev.de}.  Herzlichen Dank für Deine Unterstützung des CdE
+        e.\,V.!
+
+        \thispagestyle{empty}
+    \end{letter}
+<<% endblock %>>

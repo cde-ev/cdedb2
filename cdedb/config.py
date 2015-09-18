@@ -179,6 +179,32 @@ _DEFAULTS = {
     ## probably always 1 or 2
     "PERIODS_PER_YEAR": 2,
 
+    ## Name of the organization where the SEPA transaction originated
+    "SEPA_SENDER_NAME": "CdE e.V.",
+    ## Address of the originating organization
+    ## The actual address consists of multiple lines
+    "SEPA_SENDER_ADDRESS": ("Musterstrasse 123", "00000 Teststadt"),
+    "SEPA_SENDER_COUNTRY": "DE",
+    ## Bank details of the originator
+    "SEPA_SENDER_IBAN": "DE87200500001234567890",
+    ## "Gläubiger-ID" for direct debit transfers
+    "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
+    ## Date at which SEPA was introduced
+    "SEPA_INITIALISATION_DATE": datetime.date(2013, 7, 30),
+    ## Date after which SEPA was used exclusively
+    "SEPA_CUTOFF_DATE": datetime.date(2013, 10, 14),
+    ## Timespan to wait between issuing of SEPA order and fulfillment
+    "SEPA_PAYMENT_OFFSET": datetime.timedelta(days=17),
+    ## processing fee we incur if a transaction is rolled back
+    "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
+
+    ## Keys of the dict in the cde.meta_info.info column
+    "META_INFO_KEYS": (
+        "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
+        "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
+        "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4"),
+
+
     ### event stuff
 
     ## event server configuration

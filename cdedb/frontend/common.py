@@ -4,13 +4,41 @@
 overall topic.
 """
 
+import abc
+import datetime
+import email
+import email.charset
+import email.encoders
+import email.header
+import email.mime
+import email.mime.application
+import email.mime.audio
+import email.mime.image
+import email.mime.multipart
+import email.mime.text
+import functools
+import hashlib
+import io
+import jinja2
+import json
+import logging
 import os
 import os.path
+import Pyro4
+import re
+import smtplib
+import subprocess
+import tempfile
+import urllib.parse
 import werkzeug
-import werkzeug.exceptions
 import werkzeug.datastructures
+import werkzeug.exceptions
 import werkzeug.utils
-import functools
+import werkzeug.wrappers
+
+from cdedb.internationalization import i18n_factory
+from cdedb.serialization import deserialize
+from cdedb.config import BasicConfig
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
     extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts,
@@ -18,34 +46,6 @@ from cdedb.common import (
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
-import jinja2
-import json
-import werkzeug.wrappers
-import datetime
-import hashlib
-import Pyro4
-import logging
-import io
-import re
-import subprocess
-
-import urllib.parse
-import smtplib
-import email
-import email.mime
-import email.mime.application
-import email.mime.audio
-import email.mime.image
-import email.mime.multipart
-import email.mime.text
-import email.encoders
-import email.header
-import email.charset
-import tempfile
-import abc
-from cdedb.internationalization import i18n_factory
-from cdedb.serialization import deserialize
-from cdedb.config import BasicConfig
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -464,6 +464,19 @@ def linebreaks_filter(val, replacement="<br>"):
     val = str(val)
     return val.replace('\n', replacement)
 
+def xdictsort_filter(value, attribute):
+    """Allow sorting by an arbitrary attribute of the value.
+
+    Jinja only provides sorting by key or entire value. Also Jinja does
+    not allow comprehensions or lambdas, hence we have to use this.
+
+    This obviously only works if the values allow access by key.
+
+    :type value: {object: dict}
+    :rtype: [(object, dict)]
+    """
+    return sorted(value.items(), key=lambda item: item[1].get(attribute))
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -496,6 +509,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'genus': genus_filter,
             'linebreaks': linebreaks_filter,
             'enum': enum_filter,
+            'xdictsort': xdictsort_filter,
             'tex_escape': tex_escape_filter,
             'te': tex_escape_filter,
         }
@@ -1447,3 +1461,30 @@ def construct_redirect(request, url):
         ret = werkzeug.utils.redirect(url, 303)
         ret.delete_cookie("displaynote")
         return ret
+
+def make_postal_address(persona_data):
+    """Prepare address info for formatting.
+
+    Addresses have some specific formatting wishes, so we are flexible
+    in that we represent an address to be printed as a list of strings
+    each containing one line. The final formatting is now basically an
+    ``'\n'.join()``.
+
+    :type persona_data: {str: object}
+    :rtype: [str]
+    """
+    pd = persona_data
+    name = "{} {}".format(pd['given_names'], pd['family_name'])
+    if pd['title']:
+        name = glue(pd['title'], name)
+    if pd['name_supplement']:
+        name = glue(name, pd['name_supplement'])
+    ret = [name]
+    if pd['address_supplement']:
+        ret.append(pd['address_supplement'])
+    ret.append(pd['address'])
+    ret.append("{} {}".format(pd['postal_code'], pd['location']))
+    if pd['country']:
+        ret.append(pd['country'])
+    return ret
+

@@ -108,6 +108,20 @@ GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
 GRANT UPDATE (queries) ON core.quota TO cdb_member;
 
+-- This table is designed to hold just a single row. Additionally the
+-- keys of the dict stored here, will be runtime configurable.
+--
+-- This is in the core schema to allow anonymous access.
+CREATE TABLE core.cde_meta_info
+(
+        id                      serial PRIMARY KEY,
+	-- variable store for things like names of persons on
+	-- regularily changing posts
+        info			jsonb NOT NULL
+);
+GRANT SELECT ON core.cde_meta_info TO cdb_anonymous;
+GRANT UPDATE ON core.cde_meta_info TO cdb_admin;
+
 CREATE TABLE core.log (
         id                      bigserial PRIMARY KEY,
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
@@ -280,7 +294,8 @@ CREATE TABLE cde.org_period (
         balance_state           integer REFERENCES core.personas(id),
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL
 );
-GRANT SELECT, INSERT, UPDATE ON cde.org_period TO cdb_admin;
+GRANT SELECT ON cde.org_period TO cdb_persona;
+GRANT INSERT, UPDATE ON cde.org_period TO cdb_admin;
 
 CREATE TABLE cde.expuls_period (
         -- historically this was the same as cde.org_period(id)
@@ -311,8 +326,8 @@ CREATE TABLE cde.lastschrift (
         notes                   varchar
 );
 CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
-GRANT SELECT, UPDATE ON cde.lastschrift TO cdb_member;
-GRANT INSERT ON cde.lastschrift TO cdb_admin;
+GRANT SELECT ON cde.lastschrift TO cdb_member;
+GRANT UPDATE, INSERT ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
 
 CREATE TABLE cde.lastschrift_transactions
@@ -329,7 +344,8 @@ CREATE TABLE cde.lastschrift_transactions
         tally                   numeric(7,2) DEFAULT NULL
 );
 CREATE INDEX idx_cde_lastschrift_transactions_lastschrift_id ON cde.lastschrift_transactions(lastschrift_id);
-GRANT SELECT, UPDATE, INSERT ON cde.lastschrift_transactions TO cdb_admin;
+GRANT SELECT ON cde.lastschrift_transactions TO cdb_member;
+GRANT UPDATE, INSERT ON cde.lastschrift_transactions TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_transactions_id_seq TO cdb_admin;
 
 CREATE TABLE cde.finance_log (

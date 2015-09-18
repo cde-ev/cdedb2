@@ -10,6 +10,7 @@
                 {{ util.href(cdedblink('cde/change_user_form'), "Bearbeiten") }}
             {% endif %}
             {{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern") }}
+            {{ util.href(cdedblink('cde/lastschrift_show'), "Einzugsermächtigung") }}
         </p>
     {% endif %}
     {% if foto %}
@@ -185,7 +186,7 @@
             </tr>
             <tr>
                 <td>Guthaben</td>
-                <td>{{ data['balance']|e }}</td>
+                <td>{{ data['balance']|e }}€</td>
             </tr>
             {% if is_admin %}
                 <tr>

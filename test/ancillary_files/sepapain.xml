@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.003.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.003.02 pain.008.003.02.xsd">
+	<CstmrDrctDbtInitn>
+		<GrpHdr>
+			<MsgId>1442438515.600722-OukDdlmT74</MsgId>
+			<CreDtTm>2015-09-16T21:21:55.618487+00:00</CreDtTm>
+			<NbOfTxs>1</NbOfTxs>
+			<CtrlSum>42.23</CtrlSum>
+			<InitgPty>
+				<Nm>CdE e.V.</Nm>
+			</InitgPty>
+		</GrpHdr>
+                <PmtInf>
+                                <PmtInfId>1442438515.600722-OukDdlmT74-RCUR</PmtInfId>
+                                <PmtMtd>DD</PmtMtd>
+                                <BtchBookg>false</BtchBookg>
+                                <NbOfTxs>1</NbOfTxs>
+                                <CtrlSum>42.23</CtrlSum>
+                                <PmtTpInf>
+                                        <SvcLvl>
+                                                <Cd>SEPA</Cd>
+                                        </SvcLvl>
+                                        <LclInstrm>
+                                                <Cd>CORE</Cd>
+                                        </LclInstrm>
+                                        <SeqTp>RCUR</SeqTp>
+                                </PmtTpInf>
+                                <ReqdColltnDt>2015-10-03</ReqdColltnDt>
+                                <Cdtr>
+                                        <Nm>CdE e.V.</Nm>
+                                        <PstlAdr>
+                                                <Ctry>DE</Ctry>
+                                                <AdrLine>Musterstrasse 123</AdrLine>
+                                                <AdrLine>00000 Teststadt</AdrLine>
+                                                
+                                        </PstlAdr>
+                                </Cdtr>
+                                <CdtrAcct>
+                                        <Id>
+                                                <IBAN>DE87200500001234567890</IBAN>
+                                        </Id>
+                                </CdtrAcct>
+                                <CdtrAgt>
+                                        <FinInstnId>
+                                                <Othr>
+                                                        <Id>NOTPROVIDED</Id>
+
+                                                </Othr>
+                                        </FinInstnId>
+                                </CdtrAgt>
+                                <ChrgBr>SLEV</ChrgBr>
+                                <CdtrSchmeId>
+                                        <Id>
+                                                <PrvtId>
+                                                        <Othr>
+                                                                <Id>DE00ZZZ00099999999</Id>
+                                                                <SchmeNm>
+                                                                        <Prtry>SEPA</Prtry>
+                                                                </SchmeNm>
+                                                        </Othr>
+                                                </PrvtId>
+                                        </Id>
+                                </CdtrSchmeId>
+                                <DrctDbtTxInf>
+                                                <PmtId>
+                                                        <EndToEndId>CDE-I25-2-7-2-7-15.594588</EndToEndId>
+                                                </PmtId>
+                                                <InstdAmt Ccy="EUR">42.23</InstdAmt>
+                                                <DrctDbtTx>
+                                                        <MndtRltdInf>
+                                                                <MndtId>CDE-I25-2-7-2-7</MndtId>
+                                                                <DtOfSgntr>2013-10-14</DtOfSgntr>
+                                                                <AmdmntInd>false</AmdmntInd>
+                                                        </MndtRltdInf>
+                                                </DrctDbtTx>
+                                                <DbtrAgt>
+                                                        <FinInstnId>
+                                                                <Othr>
+                                                                        <Id>NOTPROVIDED</Id>
+
+                                                                </Othr>
+                                                        </FinInstnId>
+                                                </DbtrAgt>
+                                                <Dbtr>
+                                                        <Nm>Dagobert Anatidae</Nm>
+                                                </Dbtr>
+                                                <DbtrAcct>
+                                                        <Id>
+                                                                <IBAN>DE12500105170648489890</IBAN>
+                                                        </Id>
+                                                </DbtrAcct>
+                                                <RmtInf>
+                                                        <Ustrd>DB-2-H, Beispiel, Bertalotta I25+ Mitgliedsbeitrag u. Spende CdE e.V. z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe</Ustrd>
+                                                </RmtInf>
+                                        </DrctDbtTxInf>
+                                
+		        </PmtInf>
+		
+	</CstmrDrctDbtInitn>
+</Document>

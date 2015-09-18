@@ -1019,7 +1019,8 @@ _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
     'tally': _decimal_or_None,
 }
 @_addvalidator
-def _lastschrift_transaction(val, argname=None, *, creation=False, _convert=True):
+def _lastschrift_transaction(val, argname=None, *, creation=False,
+                             _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1043,6 +1044,207 @@ def _lastschrift_transaction(val, argname=None, *, creation=False, _convert=True
         mandatory_fields = {'id': _int}
         optional_fields = dict(_LASTSCHRIFT_TRANSACTION_COMMON_FIELDS,
                                **_LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS())
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    return val, errs
+
+def asciificator(s):
+    """Pacify a string.
+
+    Replace or omit all characters outside a known good set. This is to
+    be used if your use case does not tolerate any fancy characters
+    (like SEPA files).
+
+    :type s: str
+    :rtype: str
+    """
+    umlaut_map = {
+        "ä": "ae", "æ": "ae",
+        "ö": "oe", "ø": "oe", "œ": "oe",
+        "ü": "ue",
+        "ß": "ss",
+        "à": "a", "á": "a", "â": "a", "ã": "a", "ä": "a", "å": "a", "ą": "a",
+        "ç": "c", "č": "c", "ć": "c",
+        "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
+        "ì": "i", "í": "i", "î": "i", "ï": "i",
+        "ł": "l",
+        "ñ": "n", "ń": "n",
+        "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ö": "o", "ø": "o", "ő": "o",
+        "ù": "u", "ú": "u", "û": "u", "ü": "u", "ű": "u",
+        "ý": "y", "ÿ": "y",
+        "ź": "z", "z": "z",
+    }
+    ret = ""
+    for char in s:
+        if char in umlaut_map:
+            ret += umlaut_map[char]
+        elif char in (string.ascii_letters + string.digits + " /-?:().,+"):
+            ret += char
+        else:
+            ret += ' '
+    return ret
+
+_SEPA_DATA_FIELDS = {
+    'issued_at': _datetime,
+    'lastschrift_id': _int,
+    'period_id': _int,
+    'mandate_reference': _str,
+    'amount': _decimal,
+    'iban': _str,
+    'mandate_date': _date,
+    'account_owner': _str,
+    'unique_id': _str,
+    'subject': _str,
+    'type': _str,
+}
+_SEPA_DATA_LIMITS = {
+    'account_owner': 70,
+    'subject': 140,
+    'mandate_reference': 35,
+    'unique_id': 35,
+}
+@_addvalidator
+def _sepa_data(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (tuple or None, [(str or None, exception)])
+    """
+    argname = argname or "sepa_data"
+    val, errs = _iterable(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _SEPA_DATA_FIELDS
+    optional_fields = {}
+    ret = []
+    for entry in val:
+        entry, e = _mapping(entry, argname, _convert=_convert)
+        if e:
+            errs.extend(e)
+            continue
+        entry, e = _examine_dictionary_fields(
+            entry, mandatory_fields, optional_fields, _convert=_convert)
+        if e:
+            errs.extend(e)
+            continue
+        for attribute, validator in _SEPA_DATA_FIELDS.items():
+            if validator == _str:
+                entry[attribute] = asciificator(entry[attribute])
+            if attribute in _SEPA_DATA_LIMITS:
+                if len(entry[attribute]) > _SEPA_DATA_LIMITS[attribute]:
+                    errs.append((attribute, ValueError("Too long.")))
+        if entry['type'] not in ("OOFF", "FRST", "RCUR"):
+            errs.append(('type', ValueError("Invalid constant.")))
+        if errs:
+            continue
+        ret.append(entry)
+    return ret, errs
+
+_SEPA_META_FIELDS = {
+    'message_id': _str,
+    'total_sum': _decimal,
+    'partial_sums': _mapping,
+    'count': _int,
+    'sender': _mapping,
+    'payment_date': _date,
+}
+_SEPA_SENDER_FIELDS = {
+    'name': _str,
+    'address': _iterable,
+    'country': _str,
+    'iban': _str,
+    'glaeubigerid': _str,
+}
+_SEPA_META_LIMITS = {
+    'message_id': 35,
+    ## 'name': 70, easier to check by hand
+    ## 'address': 70, has to be checked by hand
+    'glaeubigerid': 35,
+}
+@_addvalidator
+def _sepa_meta(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "sepa_meta"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _SEPA_META_FIELDS
+    optional_fields = {}
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = _SEPA_SENDER_FIELDS
+    val['sender'], errs = _examine_dictionary_fields(
+        val['sender'], mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    for attribute, validator in _SEPA_META_FIELDS.items():
+        if validator == _str:
+            val[attribute] = asciificator(val[attribute])
+        if attribute in _SEPA_META_LIMITS:
+            if len(val[attribute]) > _SEPA_META_LIMITS[attribute]:
+                errs.append((attribute, ValueError("Too long.")))
+    if val['sender']['country'] != "DE":
+        errs.append(('country', ValueError("Unsupported constant.")))
+    if len(val['sender']['address']) != 2:
+        errs.append(('address', ValueError("Exactly two lines required.")))
+    val['sender']['address'] = tuple(asciificator(x)
+                                     for x in val['sender']['address'])
+    for line in val['sender']['address']:
+        if len(line) > 70:
+            errs.append(('address', ValueError("Too long.")))
+    for attribute, validator in _SEPA_SENDER_FIELDS.items():
+        if validator == _str:
+            val['sender'][attribute] = asciificator(val['sender'][attribute])
+    if len(val['sender']['name']) > 70:
+        errs.append(('name', ValueError("Too long.")))
+    if errs:
+        return None, errs
+    return val, errs
+
+@_addvalidator
+def _safe_str(val, argname=None, *, _convert=True):
+    """This allows alpha-numeric, whitespace and known good others.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    ALLOWED = ".,-+()/"
+    val, errs = _str(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    for char in val:
+        if not (char.isalnum() or char.isspace() or char in ALLOWED):
+            errs.append((argname,
+                         ValueError("Forbidden character ({}).".format(char))))
+    if errs:
+        return None, errs
+    return val, errs
+
+@_addvalidator
+def _cde_meta_info(val, keys, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type keys: [str]
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "cde_meta_info"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = {}
+    optional_fields = {key: _safe_str for key in keys}
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs

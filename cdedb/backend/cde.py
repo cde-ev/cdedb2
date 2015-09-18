@@ -19,9 +19,11 @@ from cdedb.query import QueryOperators
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+
 import argparse
 import datetime
 import decimal
+import psycopg2.extras
 
 class CdEBackend(AbstractUserBackend):
     """This is the backend with the most additional role logic.
@@ -545,22 +547,33 @@ class CdEBackend(AbstractUserBackend):
         return unwrap(self.query_one(rs, query, (foto,)))
 
     @access("member")
-    def list_lastschrift(self, rs, active=True):
+    def list_lastschrift(self, rs, persona_ids=None, active=True):
         """List all direct debit permits.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type persona_ids: [int] or None
+        :param persona_ids: If this is not None show only those
+          permits belonging to ids in the list.
         :type active: bool or None
         :param active: If this is not None show only those permits which
           are (not) active.
         :rtype: {int: int}
         :returns: Mapping of lastschrift ids to granting persona.
         """
+        persona_ids = affirm_array("int", persona_ids, allow_None=True)
         active = affirm("bool_or_None", active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
+        params = []
+        connector = "WHERE"
+        if persona_ids:
+            query = glue(query, "{} persona_id = ANY(%s)".format(connector))
+            params.append(persona_ids)
+            connector = "AND"
         if active is not None:
             operator = "IS" if active else "IS NOT"
-            query = glue(query, "WHERE revoked_at {} NULL".format(operator))
-        data = self.query_all(rs, query, tuple())
+            query = glue(query, "{} revoked_at {} NULL".format(connector,
+                                                               operator))
+        data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
     @access("member")
@@ -650,7 +663,7 @@ class CdEBackend(AbstractUserBackend):
             query = glue(query, "{} lastschrift_id = ANY(%s)".format(connector))
             params.append(lastschrift_ids)
             connector = "AND"
-        if stati is not None:
+        if stati:
             query = glue(query, "{} status = ANY(%s)".format(connector))
             params.append(stati)
             connector = "AND"
@@ -677,7 +690,7 @@ class CdEBackend(AbstractUserBackend):
 
     @access("cde_admin")
     @batchify("issue_lastschrift_transaction_batch")
-    def issue_lastschrift_transaction(self, rs, data):
+    def issue_lastschrift_transaction(self, rs, data, check_unique=False):
         """Make a new direct debit transaction.
 
         This only creates the database entry. The SEPA file will be
@@ -685,21 +698,30 @@ class CdEBackend(AbstractUserBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}
+        :type check_unique: bool
+        :param check_unique: If True: raise an error if there already is an
+          issued transaction.
         :rtype: int
         :returns: The id of the new transaction.
         """
+        stati = const.LastschriftTransactionStati
         data = affirm("lastschrift_transaction", data, creation=True)
         with Atomizer(rs):
             lastschrift = unwrap(self.get_lastschrift(
                 rs, (data['lastschrift_id'],)))
             if lastschrift['revoked_at']:
                 raise RuntimeError("Lastschrift already revoked.")
-            query = "SELECT MAX(id) FROM cde.org_period"
-            period = unwrap(self.query_one(rs, query, tuple()))
+            period = self.current_period(rs)
+            if check_unique:
+                transaction_ids = self.list_lastschrift_transactions(
+                    rs, lastschrift_ids=(data['lastschrift_id'],),
+                    periods=(period,), stati=(stati.issued,))
+                if transaction_ids:
+                    raise RuntimeError("Existing pending transaction.")
             update = {
                 'submitted_by': rs.user.persona_id,
                 'period_id': period,
-                'status': const.LastschriftTransactionStati.issued,
+                'status': stati.issued,
             }
             merge_dicts(data, update)
             if 'amount' not in data:
@@ -791,6 +813,60 @@ class CdEBackend(AbstractUserBackend):
                              additional_info=update['tally'])
             return ret
 
+    @access("cde_admin")
+    def rollback_lastschrift_transaction(self, rs, transaction_id, tally):
+        """Revert a successful direct debit transaction.
+
+        This happens if the creditor revokes a successful transaction,
+        which is possible for some weeks. We deduct the now non-existing
+        money from the balance and invalidate the permit.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type transaction_id: int
+        :param tally: The fee incurred by the revokation.
+        :rtype: int
+        :returns: Standard return code.
+        """
+        transaction_id = affirm("int", transaction_id)
+        tally = affirm("decimal", tally)
+        stati = const.LastschriftTransactionStati
+        with Atomizer(rs):
+            transaction = unwrap(self.get_lastschrift_transactions(
+                rs, (transaction_id,)))
+            lastschrift = unwrap(self.get_lastschrift(
+                rs, (transaction['lastschrift_id'],)))
+            if transaction['status'] != stati.success:
+                raise RuntimeError("Transaction was not successful.")
+            update = {
+                'id': transaction_id,
+                'processed_at': now(),
+                'tally': tally,
+                'status': stati.rollback,
+            }
+            ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
+            persona_id = lastschrift['persona_id']
+            fee = self.conf.PERIODS_PER_YEAR * self.conf.MEMBERSHIP_FEE
+            delta = min(transaction['tally'], fee)
+            current = unwrap(self.get_data(rs, (persona_id,)))
+            new_balance = current['balance'] - delta
+            persona_update = {
+                'id': persona_id,
+                'balance': new_balance,
+            }
+            self.set_user_data(
+                rs, persona_update, generation=None, may_wait=False,
+                allow_finance_change=True,
+                change_note="Revoked direct debit transaction")
+            lastschrift_update = {
+                'id': lastschrift['id'],
+                'revoked_at': now(),
+            }
+            self.set_lastschrift(rs, lastschrift_update)
+            self.finance_log(
+                rs, const.FinanceLogCodes.lastschrift_transaction_revoked,
+                persona_id, delta, new_balance, additional_info=update['tally'])
+            return ret
+
     def lastschrift_may_skip(self, rs, lastschrift):
         """Check whether a direct debit permit may stay dormant for now.
 
@@ -806,8 +882,7 @@ class CdEBackend(AbstractUserBackend):
             ## If the permit is new enough we are clear.
             return True
         with Atomizer(rs):
-            query = "SELECT MAX(id) FROM cde.org_period"
-            period = unwrap(self.query_one(rs, query, tuple()))
+            period = self.current_period(rs)
             cutoff = period - 3*self.conf.PERIODS_PER_YEAR + 1
             relevant_periods = tuple(range(cutoff, period + 1))
             ids = self.list_lastschrift_transactions(
@@ -840,8 +915,7 @@ class CdEBackend(AbstractUserBackend):
                 return 0
             if lastschrift['revoked_at']:
                 raise RuntimeError("Lastschrift already revoked.")
-            query = "SELECT MAX(id) FROM cde.org_period"
-            period = unwrap(self.query_one(rs, query, tuple()))
+            period = self.current_period(rs)
             insert = {
                 'submitted_by': rs.user.persona_id,
                 'lastschrift_id': lastschrift_id,
@@ -857,6 +931,48 @@ class CdEBackend(AbstractUserBackend):
                 rs, const.FinanceLogCodes.lastschrift_transaction_skip,
                 lastschrift['persona_id'], None, None)
             return ret
+
+    @access("formermember")
+    def current_period(self, rs):
+        """Check for the current semester
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :rtype: int
+        :returns: Id of the current org period.
+        """
+        query = "SELECT MAX(id) FROM cde.org_period"
+        return unwrap(self.query_one(rs, query, tuple()))
+
+    @access("anonymous")
+    def get_meta_info(self, rs):
+        """Retrieve changing info about the CdE e.\,V.
+
+        This is a relatively painless way to specify lots of constants
+        like who is responsible for donation certificates.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :rtype: {str: str}
+        """
+        query = "SELECT info FROM core.cde_meta_info LIMIT 1"
+        return unwrap(self.query_one(rs, query, tuple()))
+
+    @access("cde_admin")
+    def set_meta_info(self, rs, data):
+        """Change infos about the CdE e.\,V.
+
+        This is expected to occur regularly.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type data: {str: str}
+        :rtype: int
+        :returns: Standard return code.
+        """
+        data = affirm("cde_meta_info", data, keys=self.conf.META_INFO_KEYS)
+        query = "SELECT info FROM core.cde_meta_info LIMIT 1"
+        the_data = unwrap(self.query_one(rs, query, tuple()))
+        the_data.update(data)
+        query = "UPDATE core.cde_meta_info SET info = %s"
+        return self.query_exec(rs, query, (psycopg2.extras.Json(the_data),))
 
     @access("searchmember")
     def submit_general_query(self, rs, query):

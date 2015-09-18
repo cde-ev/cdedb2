@@ -5,8 +5,11 @@
         {% if is_admin %}
             <li>{{ util.href(cdedblink("cde/create_user_form"), "Neues Mitglied anlegen") }}</li>
             <li>{{ util.href(cdedblink("cde/list_pending_changes"), "Änderungen begutachten") }}</li>
+            <li>{{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche") }}</li>
+            <li>{{ util.href(cdedblink("cde/lastschrift_index"), "Einzugserächtigungen") }}</li>
             <li>{{ util.href(cdedblink("cde/user_search_form"), "Nutzersuche") }}</li>
             <li>{{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche") }}</li>
+            <li>{{ util.href(cdedblink("cde/meta_info_form"), "Vereins-Metadaten") }}</li>
             <li>{{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log") }}</li>
             <li>{{ util.href(cdedblink("cde/view_changelog_meta"), "Nutzerdaten Log") }}</li>
         {% endif %}

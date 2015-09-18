@@ -1,4 +1,7 @@
 * actionable items
+** Kill third datum in parameter entries of util.input_checkboxes and similar
+** rename persona_data_outline to persona_outline
+** use util.persona_anchor in templates
 ** get test suite to run in the VM
 ** run validator on all html output
 ** do css layout

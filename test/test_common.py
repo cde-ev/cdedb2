@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import unittest
-from cdedb.common import extract_realm, extract_roles, schulze_evaluate
+from cdedb.common import (
+    extract_realm, extract_roles, schulze_evaluate, int_to_words)
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -123,3 +124,54 @@ class TestCommon(unittest.TestCase):
         reference = datetime.timedelta(milliseconds=5)
         for num, delta in times.items():
             self.assertGreater(num*reference, delta)
+
+    def test_number_to_words(self):
+        cases = {
+            0: "null",
+            1: "ein",
+            10: "zehn",
+            11: "elf",
+            12: "zwölf",
+            16: "sechzehn",
+            28: "achtundzwanzig",
+            33: "dreiunddreißig",
+            65: "fünfundsechzig",
+            77: "siebenundsiebzig",
+            99: "neunundneunzig",
+            100: "einhundert",
+            201: "zweihundertein",
+            310: "dreihundertzehn",
+            411: "vierhundertelf",
+            512: "fünfhundertzwölf",
+            616: "sechshundertsechzehn",
+            728: "siebenhundertachtundzwanzig",
+            833: "achthundertdreiunddreißig",
+            965: "neunhundertfünfundsechzig",
+            577: "fünfhundertsiebenundsiebzig",
+            199: "einhundertneunundneunzig",
+            1000: "eintausend",
+            2001: "zweitausendein",
+            3010: "dreitausendzehn",
+            4011: "viertausendelf",
+            5012: "fünftausendzwölf",
+            6016: "sechstausendsechzehn",
+            7028: "siebentausendachtundzwanzig",
+            8033: "achttausenddreiunddreißig",
+            9065: "neuntausendfünfundsechzig",
+            1077: "eintausendsiebenundsiebzig",
+            2099: "zweitausendneunundneunzig",
+            3100: "dreitausendeinhundert",
+            4201: "viertausendzweihundertein",
+            5310: "fünftausenddreihundertzehn",
+            6411: "sechstausendvierhundertelf",
+            7512: "siebentausendfünfhundertzwölf",
+            8616: "achttausendsechshundertsechzehn",
+            9728: "neuntausendsiebenhundertachtundzwanzig",
+            10833: "zehntausendachthundertdreiunddreißig",
+            42965: "zweiundvierzigtausendneunhundertfünfundsechzig",
+            76577: "sechsundsiebzigtausendfünfhundertsiebenundsiebzig",
+            835199: "achthundertfünfunddreißigtausendeinhundertneunundneunzig",
+        }
+        for case in cases:
+            with self.subTest(case=case):
+                self.assertEqual(cases[case], int_to_words(case, "de"))
