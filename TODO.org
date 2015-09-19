@@ -35,6 +35,7 @@
 ** return http code 500 for error pages
 ** move member search to cde index page (maybe add statistics)
 ** allow to set custom password on reset (after email validation)
+** add page detailing where to send membership fees
 ** add dash-board to index pages
 *** link to relevant events (orga, open to registration) [if event user]
 *** link to open assemblies

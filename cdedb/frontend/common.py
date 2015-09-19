@@ -5,6 +5,7 @@ overall topic.
 """
 
 import abc
+import collections
 import datetime
 import email
 import email.charset
@@ -602,6 +603,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             errorsdict.setdefault(key, []).append(value)
         ## here come the always accessible things promised above
         data = {
+            'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'const': const,
             'default_selections': default_selections,
@@ -702,11 +704,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             debugstring = glue(
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
-                "method={} ; remote_addr={} ; values={}").format(
+                "method={} ; remote_addr={} ; values={}, ambience={}").format(
                     rs.request.is_multithread, rs.request.is_multiprocess,
                     rs.request.base_url, rs.request.cookies, rs.request.url,
                     rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.request.values)
+                    rs.request.remote_addr, rs.request.values, rs.ambience)
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
             rs.notify("error", "Failed validation.")
@@ -1033,6 +1035,93 @@ class FrontendUser(CommonUser):
         self.given_names = given_names
         self.family_name = family_name
 
+def reconnoitre_ambience(obj, rs):
+    """Provide automatic lookup of objects in a standard way.
+
+    This creates an ambience dict providing objects for all ids passed
+    as part of the URL path. The naming is not predetermined, but as a
+    convention the object name should be the parameter named minus the
+    '_id' suffix.
+
+    FIXME currently this is broken for past events, where some renaming
+    from event_id to past_event_id should happen before this can be used
+    there.
+
+    :type obj: :py:class:`AbstractFrontend`
+    :type rs: :py:class:`FrontendRequestState`
+    :rtype: {str: object}
+    """
+    Scout = collections.namedtuple('Scout', ('getter', 'param_name',
+                                             'object_name', 'dependencies'))
+    t = tuple()
+    def myAssert(x):
+        if not x:
+            raise werkzeug.exceptions.BadRequest("Inconsistent request.")
+    def attachment_check(a):
+        # FIXME change routing before implementing this, attachments should
+        # live below the assembly/ballot they are associated to
+        pass
+    scouts = (
+        Scout(lambda anid: obj.coreproxy.get_data_one(rs, anid), 'persona_id',
+              'persona', t),
+        # no case_id for genesis cases since they are special and cause
+        # PrivilegeErrors
+        Scout(lambda anid: obj.cdeproxy.get_lastschrift_one(rs, anid),
+              'lastschrift_id', 'lastschrift', t),
+        Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
+              'transaction_id', 'transaction',
+              ((lambda a: myAssert(a['transaction']['lastschrift_id']
+                                   == a['lastschrift']['id'])),)),
+        Scout(lambda anid: obj.eventproxy.get_event_data_one(rs, anid),
+              'event_id', 'event', t),
+        Scout(lambda anid: obj.eventproxy.get_course_data_one(rs, anid),
+              'course_id', 'course',
+              ((lambda a: myAssert(a['course']['event_id']
+                                   == a['event']['id'])),)),
+        Scout(None, 'part_id', None,
+              ((lambda a: myAssert(rs.requestargs['part_id']
+                                   in a['event']['parts'])),)),
+        Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
+              'registration_id', 'registration',
+              ((lambda a: myAssert(a['registration']['event_id']
+                                   == a['event']['id'])),)),
+        Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
+              'lodgement_id', 'lodgement',
+              ((lambda a: myAssert(a['lodgement']['event_id']
+                                   == a['event']['id'])),)),
+        Scout(None, 'field_id', None,
+              ((lambda a: myAssert(rs.requestargs['field_id']
+                                   in a['event']['fields'])),)),
+        Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
+              'attachment_id', 'attachment', (attachment_check,)),
+        Scout(lambda anid: obj.assemblyproxy.get_assembly_data_one(rs, anid),
+              'assembly_id', 'assembly', t),
+        Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
+              'ballot_id', 'ballot',
+              ((lambda a: myAssert(a['ballot']['assembly_id']
+                                   == a['assembly']['id'])),)),
+        Scout(None, 'candidate_id', None,
+              ((lambda a: myAssert(rs.requestargs['candidate_id']
+                                   in a['ballot']['candidates'])),)),
+        Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
+              'mailinglist_id', 'mailinglist', t),
+    )
+    scouts_dict = {s.param_name: s for s in scouts}
+    ambience = {}
+    for param, value in rs.requestargs.items():
+        s = scouts_dict.get(param)
+        if s and s.getter:
+            try:
+                ambience[s.object_name] = s.getter(value)
+            except KeyError:
+                raise werkzeug.exceptions.NotFound(
+                    "Object {}={} not found".format(param, value))
+    for param, value in rs.requestargs.items():
+        if param in scouts_dict:
+            for consistency_checker in scouts_dict[param].dependencies:
+                consistency_checker(ambience)
+    return ambience
+
 def access(role, modi=None):
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1048,6 +1137,7 @@ def access(role, modi=None):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
             if rs.user.roles & access_list:
+                rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
                 if rs.user.roles == {"anonymous"}:
