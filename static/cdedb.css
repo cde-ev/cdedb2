@@ -8,3 +8,9 @@ body{
     color: #777;
     text-align: center;
 }
+
+/* Bootstrap enhancements */
+.input-error-block {
+    display: block;
+    color: #a94442;
+}

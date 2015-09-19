@@ -12,9 +12,12 @@
         <script type="text/javascript" src="{{ staticurl("jquery-2.min.js")|e }}"></script>
         
         <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
+        <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js")|e }}"></script>
         
         <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css")|e }}" media="all" />
         <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css")|e }}" media="print" />
+        
+        <script type="text/javascript" src="{{ staticurl("cdedb-general.js")|e }}"></script>
         
         {% block scripts %}{% endblock %}
     </head>
@@ -101,13 +104,17 @@
                 </div>
                 <div class="col-md-8">
                     <h1>{{ self.title() }}</h1>
+                    {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign", "warning" : "exclamation-sign", "error" : "remove-sign"},
+                            alerttypes = {"success" : "success", "info" : "info", "question" : "info", "warning" : "warning", "error" : "danger"},
+                            messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:", "warning" : "Warnung!", "error" : "Fehler!"} %}
                     {% for ntype, message in notifications %}
-                        <div class="notification {{ ntype|e }}Notification">
-                            <img src="{{ staticurl("icons/{}.png".format(ntype))|e }}"
-                              alt="{{ ntype|e }}" class="notificationIcon">
+                        <div class="alert alert-{{ alerttypes[ntype] }}">
+                            <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
+                            <strong>{{ messagetypes[ntype] }}</strong>
                             <span class="notificationMessage">{{ i18n(message)|e }}</span>
                         </div>
                     {% endfor %}
+                    {% endwith %}
                     {% block content %}
                         This should not be visible.
                     {% endblock %}
