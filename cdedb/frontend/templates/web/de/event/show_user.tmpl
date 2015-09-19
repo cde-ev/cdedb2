@@ -7,7 +7,7 @@
             {% if is_admin %}
                 {{ util.href(cdedblink('event/admin_change_user_form'), "Bearbeiten") }}
             {% else %}
-                {{ util.href(cdedblink('event/change_user_form'), "Bearbeiten") }}
+                {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten") }}
             {% endif %}
             {% if data['id'] == user.persona_id %}
                 {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}
@@ -105,10 +105,7 @@
             <tr>
                 <td>Privilegien-Bits</td>
                 <td>
-                    {{ data['db_privileges_ascii']|e }}
-                    {% if "admin" in user.roles %}
-                        {{ util.href(cdedblink("core/adjust_privileges_form"), "Ändern") }}
-                    {% endif %}
+                    FIXME
                 </td>
             </tr>
             <tr>
@@ -123,7 +120,7 @@
             {% if is_admin %}
                 {{ util.href(cdedblink('event/admin_change_user_form'), "Bearbeiten") }}
             {% else %}
-                {{ util.href(cdedblink('event/change_user_form'), "Bearbeiten") }}
+                {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten") }}
             {% endif %}
         </p>
     {% endif %}

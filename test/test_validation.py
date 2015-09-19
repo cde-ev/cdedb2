@@ -193,8 +193,7 @@ class TestValidation(unittest.TestCase):
             "given_names": "Blübb",
             "family_name": "the First",
             "is_active": True,
-            "status": 0,
-            "db_privileges": 2,
+            "is_ml_realm": False,
             "cloud_account": True,
             "notes": None,
             }
@@ -205,7 +204,7 @@ class TestValidation(unittest.TestCase):
         password_example["password_hash"] = "something"
         value_example = copy.deepcopy(base_example)
         value_example["username"] = "garbage"
-        self.do_validator_test("_persona_data", (
+        self.do_validator_test("_persona", (
             (base_example, base_example, None, True),
             (stripped_example, stripped_example, None, True),
             (key_example, key_example, KeyError, False),
@@ -308,8 +307,7 @@ class TestValidation(unittest.TestCase):
             "username": "address@domain.tld",
             "display_name": "Blübb the First",
             "is_active": True,
-            "status": 0,
-            "db_privileges": 2,
+            "is_cde_realm": True,
             "cloud_account": True,
             "family_name": "Thør",
             "given_names": "Blubberwing",
@@ -349,7 +347,7 @@ class TestValidation(unittest.TestCase):
         value_example["postal_code"] = "07742"
         convert_example = copy.deepcopy(base_example)
         convert_example["birthday"] = base_example["birthday"].isoformat()
-        self.do_validator_test("_member_data", (
+        self.do_validator_test("_persona", (
             (base_example, base_example, None, True),
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
@@ -363,8 +361,8 @@ class TestValidation(unittest.TestCase):
             "username": "address@domain.tld",
             "display_name": "Blübb the First",
             "is_active": True,
-            "status": 0,
-            "db_privileges": 2,
+            "is_event_realm": True,
+            "is_cde_realm": False,
             "cloud_account": False,
             "family_name": "Thør",
             "given_names": "Blubberwing",
@@ -388,7 +386,7 @@ class TestValidation(unittest.TestCase):
         value_example["postal_code"] = "07742"
         convert_example = copy.deepcopy(base_example)
         convert_example["birthday"] = base_example["birthday"].isoformat()
-        self.do_validator_test("_event_user_data", (
+        self.do_validator_test("_persona", (
             (base_example, base_example, None, True),
             (convert_example, base_example, None, False),
             (stripped_example, stripped_example, None, True),
@@ -397,11 +395,11 @@ class TestValidation(unittest.TestCase):
             ))
 
     def test_enum_validators(self):
-        stati = const.PersonaStati
-        self.do_validator_test("_enum_personastati", (
-            (stati.member, stati.member, None, True),
-            (1, stati.member, None, True),
-            ("1", stati.member, None, False),
+        stati = const.AudiencePolicy
+        self.do_validator_test("_enum_audiencepolicy", (
+            (stati.require_cde, stati.require_cde, None, True),
+            (3, stati.require_cde, None, True),
+            ("3", stati.require_cde, None, False),
             (-1, None, ValueError, False),
             ("alorecuh", None, ValueError, False),
             ))

@@ -40,7 +40,7 @@
                 </div>
 
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                    {% if user.is_persona %}
+                    {% if "persona" in user.roles %}
                         <ul class="nav navbar-nav navbar-right">
                             <li>
                                 <span id="displayname">{{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}</span>
@@ -59,22 +59,22 @@
                         <li {% if mainnav_active == 'core' %}class="active"{% endif %}>
                             {{ util.href(cdedblink("core/index"), "Start", icon="dashboard") }}
                             </li>
-                        {% if "formermember" in user.roles %}
+                        {% if "cde" in user.roles %}
                             <li {% if mainnav_active == 'cde' %}class="active"{% endif %}>
                                 {{ util.href(cdedblink("cde/index"), "CdE", icon="education") }}
                                 </li>
                         {% endif %}
-                        {% if "event_user" in user.roles %}
+                        {% if "event" in user.roles %}
                             <li {% if mainnav_active == 'event' %}class="active"{% endif %}>
                                 {{ util.href(cdedblink("event/index"), "Veranstaltungen", icon="blackboard") }}
                             </li>
                         {% endif %}
-                        {% if "ml_user" in user.roles %}
+                        {% if "ml" in user.roles %}
                             <li {% if mainnav_active == 'ml' %}class="active"{% endif %}>
                                 {{ util.href(cdedblink("ml/index"), "Mailinglisten", icon="envelope") }}
                             </li>
                         {% endif %}
-                        {% if "assembly_user" in user.roles %}
+                        {% if "assembly" in user.roles %}
                             <li {% if mainnav_active == 'assembly' %}class="active"{% endif %}>
                                 {{ util.href(cdedblink("assembly/index"), "Versammlung", icon="stats") }}
                             </li>

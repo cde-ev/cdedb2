@@ -14,7 +14,7 @@ port = 5432
 conn = psycopg2.connect("dbname={} user={} password={} port={}".format(dbname, dbuser, password, port), cursor_factory=psycopg2.extras.RealDictCursor)
 conn.set_client_encoding("UTF8")
 
-query = "SELECT p.display_name, m.given_names FROM core.personas AS p JOIN cde.member_data AS m ON p.id = m.persona_id WHERE p.id = %s"
+query = "SELECT display_name, given_names FROM core.personas WHERE id = %s"
 params = (1,)
 
 with conn as con:

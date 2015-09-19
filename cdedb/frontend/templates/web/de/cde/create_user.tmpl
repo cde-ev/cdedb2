@@ -36,10 +36,10 @@
             {{ util.input_text(name="location2", label="Stadt") }}
             {{ util.input_text(name="country2", label="Land") }}
             <tr> <th colspan="2">Account</th> </tr>
-            {{ util.input_select(name="status", label="Sichtbarkeit", entries=(
-                (const.PersonaStati.member.value, "keine Einwilligung", None),
-                (const.PersonaStati.searchmember.value, "Einwilligung vorhanden", None),),
-                anid="input_select_status") }}
+            {{ util.input_checkbox(name="is_member", label="Mitgliedschaft",
+                                   anid="input_checkbox_is_member") }}
+            {{ util.input_checkbox(name="is_searchable", label="Sichtbarkeit (falls Einwilligung vorhanden)",
+                                   anid="input_checkbox_is_searchable") }}
             {{ util.input_checkbox(name="trial_member", label="Probemitgliedschaft",
                                        anid="input_checkbox_trial_member") }}
             {{ util.input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}

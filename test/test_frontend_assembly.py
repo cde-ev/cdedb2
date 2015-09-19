@@ -19,7 +19,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("kalif")
     def test_changeuser(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/assembly/self/change'})
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         self.submit(f)
@@ -31,6 +31,7 @@ class TestAssemblyFrontend(FrontendTest):
     def test_adminchangeuser(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-11-G"
+        f['realm'] = "assembly"
         self.submit(f)
         self.traverse({'href': '/assembly/user/11/adminchange'})
         f = self.response.forms['changedataform']
@@ -45,6 +46,7 @@ class TestAssemblyFrontend(FrontendTest):
     def test_toggleactivity(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-11-G"
+        f['realm'] = "assembly"
         self.submit(f)
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
         self.assertEqual(

@@ -8,11 +8,10 @@ filled by a mailing list software and not a usual persona. This acts as
 if it has moderator privileges for all lists.
 """
 
-from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
     access, internal_access, make_RPCDaemon, run_RPCDaemon,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, BackendUser, BackendRequestState)
+    singularize, BackendUser, BackendRequestState, AbstractBackend)
 from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
 from cdedb.config import Config, SecretsConfig
 from cdedb.query import QueryOperators
@@ -20,16 +19,10 @@ from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 import argparse
 
-class MlBackend(AbstractUserBackend):
+class MlBackend(AbstractBackend):
     """Take note of the fact that some personas are moderators and thus have
     additional actions available."""
     realm = "ml"
-    user_management = {
-        "data_table": None,
-        "data_fields": None,
-        "validator": "persona_data",
-        "user_status": const.PersonaStati.ml_user,
-    }
 
     def __init__(self, configpath):
         super().__init__(configpath)
@@ -41,13 +34,13 @@ class MlBackend(AbstractUserBackend):
             ## Special case the access of the mailing list software since
             ## it's not tied to an actual persona.
             user = BackendUser(
-                persona_id=None, roles={"anonymous", "ml_script"}, realm="ml")
+                persona_id=None, roles={"anonymous", "ml_script"})
             return BackendRequestState(
                 sessionkey, user, self.connpool[self.db_role("cdb_persona")])
         else:
             ret = super().establish(sessionkey, method,
                                     allow_internal=allow_internal)
-            if ret and ret.user.is_persona:
+            if ret and "persona" in ret.user.roles:
                 ret.user.moderator = unwrap(self.moderator_infos(
                     ret, (ret.user.persona_id,)))
             return ret
@@ -86,27 +79,6 @@ class MlBackend(AbstractUserBackend):
                          for x in data if x['persona_id'] == anid}
         return ret
 
-    @access("ml_user")
-    def change_user(self, rs, data):
-        return super().change_user(rs, data)
-
-    @access("ml_user")
-    @singularize("get_data_one")
-    def get_data(self, rs, ids):
-        return super().get_data(rs, ids)
-
-    @access("ml_admin")
-    def create_user(self, rs, data):
-        return super().create_user(rs, data)
-
-    @access("anonymous")
-    def genesis_check(self, rs, case_id, secret):
-        return super().genesis_check(rs, case_id, secret)
-
-    @access("anonymous")
-    def genesis(self, rs, case_id, secret, data):
-        return super().genesis(rs, case_id, secret, data)
-
     def ml_log(self, rs, code, mailinglist_id, persona_id=None,
                additional_info=None):
         """Make an entry in the log.
@@ -135,7 +107,7 @@ class MlBackend(AbstractUserBackend):
         }
         return self.sql_insert(rs, "ml.log", new_log)
 
-    @access("ml_user")
+    @access("ml")
     def retrieve_log(self, rs, codes=None, mailinglist_id=None,
                      start=None, stop=None):
         """Get recorded activity.
@@ -157,21 +129,6 @@ class MlBackend(AbstractUserBackend):
             rs, "enum_mllogcodes", "mailinglist", "ml.log", codes,
             mailinglist_id, start, stop)
 
-    @access("ml_user")
-    @singularize("acquire_data_one")
-    def acquire_data(self, rs, ids):
-        """Return user data sets.
-
-        Since the ml realm does not define any additional attributes this
-        delegates to :py:meth:`cdedb.backend.core.CoreBackend.get_data`.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        """
-        ids = affirm_array("int", ids)
-        return self.core.get_data(rs, ids)
-
     @access("ml_admin")
     def submit_general_query(self, rs, query):
         """Realm specific wrapper around
@@ -183,39 +140,41 @@ class MlBackend(AbstractUserBackend):
         """
         query = affirm("serialized_query", query)
         if query.scope == "qview_generic_user":
-            query.constraints.append(("status", QueryOperators.equal,
-                                      const.PersonaStati.ml_user))
-            query.spec['status'] = "int"
+            query.constraints.append(("is_ml_realm", QueryOperators.equal,
+                                      True))
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)
 
-    @access("ml_user")
-    def list_mailinglists(self, rs, status=None, active_only=True):
+    @access("ml")
+    def list_mailinglists(self, rs, audience_policies=None, active_only=True):
         """List all mailinglists
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type status: int or None
-        :param status: If given, display only mailinglists with audience
-          including this status.
+        :type audience_policies: [AudiencePolicy] or None
+        :param audience_policies: If given, display only mailinglists with these
+          audience policies.
         :type active_only: bool
         :param active_only: Toggle wether inactive lists should be included.
         :rtype: {int: str}
         :returns: Mapping of mailinglist ids to titles.
         """
         active_only = affirm("bool", active_only)
+        audience_policies = affirm_array(
+            "enum_audiencepolicy", audience_policies, allow_None=True)
         query = "SELECT id, title FROM ml.mailinglists"
         params = []
         if active_only:
             query = glue(query, "WHERE is_active = True")
-        if status is not None:
+        if audience_policies is not None:
             connector = "AND" if active_only else "WHERE"
-            query = glue(query, "{} %s = ANY(audience)".format(connector))
-            params.append(status)
+            query = glue(query,
+                         "{} audience_policy = ANY(%s)".format(connector))
+            params.append(audience_policies)
         data = self.query_all(rs, query, params)
         return {e['id']: e['title'] for e in data}
 
-    @access("ml_user")
+    @access("ml")
     @singularize("get_mailinglist")
     def get_mailinglists(self, rs, ids):
         """Retrieve data for some mailinglists.
@@ -252,7 +211,7 @@ class MlBackend(AbstractUserBackend):
                 ret[anid]['whitelist'] = whitelist
         return ret
 
-    @access("ml_user")
+    @access("ml")
     def set_mailinglist(self, rs, data):
         """Update some keys of a mailinglist.
 
@@ -374,7 +333,7 @@ class MlBackend(AbstractUserBackend):
                             data['title'], data['address']))
             return ret
 
-    @access("ml_user")
+    @access("ml")
     def subscribers(self, rs, mailinglist_id):
         """Compile a list of subscribers.
 
@@ -422,9 +381,13 @@ class MlBackend(AbstractUserBackend):
                 ## explicits take care of everything
                 pass
             else:
-                query = glue("SELECT id FROM core.personas",
-                             "WHERE status = ANY(%s) AND is_active = True")
-                pdata = self.query_all(rs, query, (ml_data['audience'],))
+                ## opt-out lists
+                query = glue(
+                    "SELECT id FROM core.personas",
+                    "WHERE {} AND is_active = True".format(
+                        const.AudiencePolicy(
+                            ml_data['audience_policy']).sql_test()))
+                pdata = self.query_all(rs, query, tuple())
                 ret = {e['id']: None for e in pdata}
             ret = {k: v for k, v in ret.items() if k not in excludes}
             ret.update(explicits)
@@ -434,7 +397,7 @@ class MlBackend(AbstractUserBackend):
             ret.update({e['id']: e['username'] for e in udata})
             return ret
 
-    @access("ml_user")
+    @access("ml")
     def is_subscribed(self, rs, persona_id, mailinglist_id):
         """Sugar coating around :py:meth:`subscriptions`.
 
@@ -446,7 +409,7 @@ class MlBackend(AbstractUserBackend):
         ## validation is done inside
         return bool(self.subscriptions(rs, persona_id, lists=(mailinglist_id,)))
 
-    @access("ml_user")
+    @access("ml")
     def subscriptions(self, rs, persona_id, lists=None):
         """Which lists is a persona subscribed to.
 
@@ -549,7 +512,7 @@ class MlBackend(AbstractUserBackend):
                 new_data['id'] = unwrap(data)
                 return self.sql_update(rs, "ml.subscription_states", new_data)
 
-    @access("ml_user")
+    @access("ml")
     def change_subscription_state(self, rs, mailinglist_id, persona_id,
                                   subscribe, address=None):
         """Alter any piece of a subscription.
@@ -617,7 +580,7 @@ class MlBackend(AbstractUserBackend):
             return self.write_subscription_state(rs, mailinglist_id, persona_id,
                                                  subscribe, address)
 
-    @access("ml_user")
+    @access("ml")
     def list_requests(self, rs, mailinglist_id):
         """Retrieve open subscription requests.
 
@@ -635,7 +598,7 @@ class MlBackend(AbstractUserBackend):
             (mailinglist_id,), entity_key="mailinglist_id")
         return tuple(e['persona_id'] for e in data)
 
-    @access("ml_user")
+    @access("ml")
     def decide_request(self, rs, mailinglist_id, persona_id, ack):
         """Moderate subscription to an opt-in list.
 
@@ -687,18 +650,24 @@ class MlBackend(AbstractUserBackend):
         """
         mailinglist_ids = affirm_array("int", mailinglist_ids)
 
+        mailinglists = self.get_mailinglists(rs, mailinglist_ids)
+        sql_tests = {
+            e['id']: const.AudiencePolicy(e['audience_policy']).sql_test()
+            for e in mailinglists.values()}
         query = glue(
             "SELECT subs.mailinglist_id, subs.persona_id",
             "FROM ml.subscription_states AS subs",
             "JOIN core.personas AS p ON subs.persona_id = p.id",
             "JOIN ml.mailinglists AS lists ON subs.mailinglist_id = lists.id",
-            "WHERE subs.is_subscribed = True",
-            "AND lists.id = ANY(%s)",
-            "AND (NOT (p.status = ANY(lists.audience)) OR p.is_active = False)")
-        data = self.query_all(rs, query, (mailinglist_ids,))
-        return {mailinglist_id: tuple(e['persona_id'] for e in data
-                                      if e['mailinglist_id'] == mailinglist_id)
-                for mailinglist_id in mailinglist_ids}
+            "WHERE subs.is_subscribed = True AND lists.id = %s",
+            "AND (NOT ({test}) OR p.is_active = False)")
+        ret = {}
+        for mailinglist_id in mailinglist_ids:
+            data = self.query_all(
+                rs, query.format(test=sql_tests[mailinglist_id]),
+                (mailinglist_id,))
+            ret[mailinglist_id] = tuple(e['persona_id'] for e in data)
+        return ret
 
     @access("ml_script")
     def export(self, rs, mailinglist_id):

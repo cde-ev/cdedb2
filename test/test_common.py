@@ -2,7 +2,7 @@
 
 import unittest
 from cdedb.common import (
-    extract_realm, extract_roles, schulze_evaluate, int_to_words)
+    extract_roles, schulze_evaluate, int_to_words)
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -10,19 +10,19 @@ import random
 import timeit
 
 class TestCommon(unittest.TestCase):
-    def test_realm_extraction(self):
-        with self.assertRaises(ValueError):
-            extract_realm(-328)
-
     def test_extract_roles(self):
         self.assertEqual({
-            "anonymous", "persona", "formermember", "member", "searchmember",
-            "ml_user", "assembly_user", "event_user",},
-            extract_roles(0, const.PersonaStati.searchmember))
-        self.assertLess(5, len(extract_roles(
-            2**32-1, const.PersonaStati.searchmember)))
-        with self.assertRaises(TypeError):
-            extract_roles("garbage", 0)
+            "anonymous", "persona", "cde", "member", "searchable",
+            "ml", "assembly", "event",},
+            extract_roles({
+                'is_active': True,
+                'is_cde_realm': True,
+                'is_event_realm': True,
+                'is_ml_realm': True,
+                'is_assembly_realm': True,
+                'is_member': True,
+                'is_searchable': True,
+                }))
 
     def test_schulze_ordinary(self):
         bar = '0'

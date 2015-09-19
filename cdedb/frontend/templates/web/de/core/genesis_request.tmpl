@@ -20,6 +20,10 @@
             {{ util.input_text(name="given_names", label="Vorname(n)", small=True) }}
             {{ util.input_text(name="family_name", label="Nachname", small=True) }}
             {{ util.input_text(name="username", label="Emailadresse", small=True) }}
+            {{ util.input_select(name="realm", entries=(
+                ("event", "Veranstaltungsnutzer", None),
+                ("ml", "Mailinglistennutzer", None)),
+                label="Accountart") }}
             {{ util.input_textarea(name="notes", label="Begründung (max. 200 Zeichen)", small=True) }}
             {{ util.input_submit(value="Antrag abschicken", small=True) }}
         </div>

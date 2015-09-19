@@ -26,11 +26,10 @@ change it, which has serious usability issues -- thus we currently don't
 do it.
 """
 
-from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
     access, internal_access, make_RPCDaemon, run_RPCDaemon,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize)
+    singularize, AbstractBackend)
 from cdedb.common import (
     glue, PrivilegeError, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS,
     ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
@@ -47,15 +46,9 @@ import json
 import os.path
 import string
 
-class AssemblyBackend(AbstractUserBackend):
+class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
-    user_management = {
-        "data_table": None,
-        "data_fields": None,
-        "validator": "persona_data",
-        "user_status": const.PersonaStati.assembly_user,
-    }
 
     def establish(self, sessionkey, method, allow_internal=False):
         return super().establish(sessionkey, method,
@@ -107,29 +100,6 @@ class AssemblyBackend(AbstractUserBackend):
                 return v
         raise ValueError("No vote found.")
 
-    @access("assembly_user")
-    def change_user(self, rs, data):
-        return super().change_user(rs, data)
-
-    @access("assembly_user")
-    @singularize("get_data_one")
-    def get_data(self, rs, ids):
-        return super().get_data(rs, ids)
-
-    @access("assembly_admin")
-    def create_user(self, rs, data):
-        return super().create_user(rs, data)
-
-    @access("anonymous")
-    def genesis_check(self, rs, case_id, secret):
-        """Assembly accounts can only be created by admins."""
-        raise NotImplementedError("Not available for assembly realm.")
-
-    @access("anonymous")
-    def genesis(self, rs, case_id, secret, data):
-        """Assembly accounts can only be created by admins."""
-        raise NotImplementedError("Not available for assembly realm.")
-
     def assembly_log(self, rs, code, assembly_id, persona_id=None,
                      additional_info=None):
         """Make an entry in the log.
@@ -178,21 +148,6 @@ class AssemblyBackend(AbstractUserBackend):
             rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
             assembly_id, start, stop)
 
-    @access("assembly_user")
-    @singularize("acquire_data_one")
-    def acquire_data(self, rs, ids):
-        """Return user data sets.
-
-        Since the assembly realm does not define any additional attributes
-        this delegates to :py:meth:`cdedb.backend.core.CoreBackend.get_data`.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        """
-        ids = affirm_array("int", ids)
-        return self.core.get_data(rs, ids)
-
     @access("assembly_admin")
     def submit_general_query(self, rs, query):
         """Realm specific wrapper around
@@ -204,14 +159,13 @@ class AssemblyBackend(AbstractUserBackend):
         """
         query = affirm("serialized_query", query)
         if query.scope == "qview_generic_user":
-            query.constraints.append(("status", QueryOperators.equal,
-                                      const.PersonaStati.assembly_user))
-            query.spec['status'] = "int"
+            query.constraints.append(("is_assembly_realm", QueryOperators.equal,
+                                      True))
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)
 
-    @access("assembly_user")
+    @access("assembly")
     def does_attend(self, rs, *, assembly_id=None, ballot_id=None):
         """Check wether this persona attends a specific assembly/ballot.
 
@@ -237,7 +191,7 @@ class AssemblyBackend(AbstractUserBackend):
             return bool(self.query_one(
                 rs, query, (assembly_id, rs.user.persona_id)))
 
-    @access("assembly_user")
+    @access("assembly")
     def list_attendees(self, rs, assembly_id):
         """Everybody who has subscribed for a specific assembly.
 
@@ -256,7 +210,7 @@ class AssemblyBackend(AbstractUserBackend):
             entity_key="assembly_id")
         return {e['persona_id'] for e in attendees}
 
-    @access("assembly_user")
+    @access("assembly")
     def list_assemblies(self, rs, is_active=None):
         """List all assemblies.
 
@@ -276,7 +230,7 @@ class AssemblyBackend(AbstractUserBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("assembly_user")
+    @access("assembly")
     @singularize("get_assembly_data_one")
     def get_assembly_data(self, rs, ids):
         """Retrieve data for some assemblies.
@@ -321,7 +275,7 @@ class AssemblyBackend(AbstractUserBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.assembly_created, new_id)
         return new_id
 
-    @access("assembly_user")
+    @access("assembly")
     def list_ballots(self, rs, assembly_id):
         """List all ballots of an assembly.
 
@@ -335,7 +289,7 @@ class AssemblyBackend(AbstractUserBackend):
                                (assembly_id,), entity_key="assembly_id")
         return {e['id']: e['title'] for e in data}
 
-    @access("assembly_user")
+    @access("assembly")
     @singularize("get_ballot")
     def get_ballots(self, rs, ids):
         """Retrieve data for some ballots,
@@ -525,7 +479,7 @@ class AssemblyBackend(AbstractUserBackend):
                 current['assembly_id'], additional_info=current['title'])
         return ret
 
-    @access("assembly_user")
+    @access("assembly")
     def check_voting_priod_extension(self, rs, ballot_id):
         """Update extension status w.r.t. quorum.
 
@@ -564,7 +518,7 @@ class AssemblyBackend(AbstractUserBackend):
                     ballot['assembly_id'], additional_info=ballot['title'])
         return update['extended']
 
-    @access("assembly_user")
+    @access("assembly")
     def signup(self, rs, assembly_id):
         """Attend the assembly.
 
@@ -606,7 +560,7 @@ class AssemblyBackend(AbstractUserBackend):
                 self.sql_insert(rs, "assembly.voter_register", entry)
             return new_attendee['secret']
 
-    @access("assembly_user")
+    @access("assembly")
     def vote(self, rs, ballot_id, vote, secret):
         """Submit a vote.
 
@@ -671,7 +625,7 @@ class AssemblyBackend(AbstractUserBackend):
                 ret = self.sql_update(rs, "assembly.votes", update)
         return ret
 
-    @access("assembly_user")
+    @access("assembly")
     def get_vote(self, rs, ballot_id, secret):
         """Look up a vote.
 
@@ -706,7 +660,7 @@ class AssemblyBackend(AbstractUserBackend):
             vote = self.retrieve_vote(rs, ballot_id, secret)
         return vote['vote']
 
-    @access("assembly_user")
+    @access("assembly")
     def tally_ballot(self, rs, ballot_id):
         """Evaluate the result of a ballot.
 
@@ -789,7 +743,7 @@ class AssemblyBackend(AbstractUserBackend):
             query = glue("SELECT persona_id FROM assembly.voter_register",
                          "WHERE ballot_id = %s and has_voted = True")
             voter_ids = self.query_all(rs, query, (ballot_id,))
-            voters = self.core.retrieve_persona_data(
+            voters = self.core.get_personas(
                 rs, tuple(unwrap(e) for e in voter_ids))
             voters = ("{} {}".format(e['given_names'], e['family_name'])
                       for e in sorted(voters.values(), key=name_key))
@@ -859,7 +813,7 @@ class AssemblyBackend(AbstractUserBackend):
                               assembly_id)
         return ret
 
-    @access("assembly_user")
+    @access("assembly")
     def list_attachments(self, rs, *, assembly_id=None, ballot_id=None):
         """List all files attached to an assembly/ballot.
 
@@ -889,7 +843,7 @@ class AssemblyBackend(AbstractUserBackend):
                                (key,), entity_key=column)
         return {e['id']: e['title'] for e in data}
 
-    @access("assembly_user")
+    @access("assembly")
     @singularize("get_attachment")
     def get_attachments(self, rs, ids):
         """Retrieve data on attachments

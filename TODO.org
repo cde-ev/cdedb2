@@ -1,4 +1,13 @@
+* FIXMEs
+** update documentation (maybe after RPC removal)
+** past_event_id
+** move archived_user stuff to core realm
+** Reintroduce fulltext attribute
+** Fix privilege bits in show user pages
 * actionable items
+** rip out RPC system between frontend and backend (thus allowing atomicity in the frontend)
+** maybe replace is_admin with is_priveleged (move checks for orga and moderator there)
+** rename CDEDB_OFFLINE_DEPLOYMENT
 ** Kill third datum in parameter entries of util.input_checkboxes and similar
 ** rename persona_data_outline to persona_outline
 ** use util.persona_anchor in templates

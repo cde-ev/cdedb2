@@ -28,10 +28,10 @@
             {{ util.input_select(name="attachment_policy", label="Anhänge", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for status in const.PersonaStati %}
-                {{ myentries.append((status.value, i18n(status|string), None))|e }}
+            {% for policy in const.AudiencePolicy %}
+                {{ myentries.append((policy.value, i18n(policy|string), None))|e }}
             {% endfor %}
-            {{ util.input_checkboxes(name="audience", title="Empfängerkreis", entries=myentries) }}
+            {{ util.input_select(name="audience_policy", label="Empfängerkreis", entries=myentries) }}
             {{ util.input_text(name="subject_prefix", label="Präfix (Betreffzeile)") }}
             {{ util.input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}
             {{ util.input_checkbox(name="is_active", label="Aktiv") }}

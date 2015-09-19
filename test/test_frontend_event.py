@@ -18,7 +18,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("emilia")
     def test_changeuser(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/event/self/change'})
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"
@@ -32,6 +32,7 @@ class TestEventFrontend(FrontendTest):
     def test_adminchangeuser(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-5-B"
+        f['realm'] = "event"
         self.submit(f)
         self.traverse({'href': '/event/user/5/adminchange'})
         f = self.response.forms['changedataform']
@@ -46,6 +47,7 @@ class TestEventFrontend(FrontendTest):
     def test_toggleactivity(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-5-B"
+        f['realm'] = "event"
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
         self.assertEqual(
@@ -67,7 +69,7 @@ class TestEventFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("\nVeranstaltungsnutzersuche -- 1 Ergebnis gefunden\n")
+        self.assertTitle("\nVeranstaltungsnutzersuche -- 4 Ergebnisse gefunden\n")
         self.assertIn("Hohle Gasse 13", self.response.text)
 
     @as_users("anton")
@@ -109,6 +111,7 @@ class TestEventFrontend(FrontendTest):
         f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
         f['notes'] = "Gimme!"
+        f['realm'] = "event"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None
@@ -122,7 +125,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen (zurzeit 1 zu begutachten)")
         f = self.response.forms['genesisapprovalform1']
-        f['persona_status'] = 20
+        f['realm'] = "event"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None
@@ -155,15 +158,10 @@ class TestEventFrontend(FrontendTest):
         data["given_names"] = "Zelda",
         data["family_name"] = "Zeruda-Hime",
         self.assertTitle("Passwort zurücksetzen -- Bestätigung")
+        new_password = "saFe_37pass"
         f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        for line in mail.split('\n'):
-            if line.startswith('zur'):
-                words = line.split(' ')
-                break
-        index = words.index('nun')
-        new_password = quopri.decodestring(words[index + 1])
         new_user = {
             'id': 9,
             'username': "zelda@example.cde",
@@ -186,6 +184,7 @@ class TestEventFrontend(FrontendTest):
         f['given_names'] = "Zelda"
         f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
+        f['realm'] = "event"
         f['notes'] = "Gimme!"
         self.submit(f)
         mail = self.fetch_mail()[0]
@@ -200,7 +199,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen (zurzeit 1 zu begutachten)")
         f = self.response.forms['genesisapprovalform1']
-        f['persona_status'] = 20
+        f['realm'] = "event"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None

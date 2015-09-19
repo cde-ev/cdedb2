@@ -10,70 +10,8 @@ their symbolic names provided by this module should be used.
 import enum
 
 @enum.unique
-class PersonaStati(enum.IntEnum):
-    """Spec for field status of core.personas.
-
-    The different statuses have different additional data attached.
-
-    * 0/1/2 ... a matching entry cde.member_data
-    * 10 ...  a matching entry cde.member_data which is mostly NULL or
-      default values (most queries will need to filter for status in (0, 1))
-      archived members may not login, thus is_active must be False
-    * 20 ... a matching entry event.user_data
-    * 30 ... no additional data
-    * 40 ... no additional data
-
-    Searchability (see statusses 0 and 1) means the user has given
-    (at any point in time) permission for his data to be accessible
-    to other users. This permission is revoked upon leaving the CdE
-    and has to be granted again in case of reentry.
-    """
-    searchmember = 0 #:
-    member = 1 #:
-    formermember = 2 #:
-    archived_member = 10 #:
-    event_user = 20 #:
-    assembly_user = 30 #:
-    ml_user = 40 #:
-
-#: These personas are eligible for using the member search.
-SEARCHMEMBER_STATI = {PersonaStati.searchmember}
-#: These personas are currently members.
-MEMBER_STATI = SEARCHMEMBER_STATI | {PersonaStati.member}
-#: These personas where at some point members.
-CDE_STATI = MEMBER_STATI | {PersonaStati.formermember}
-#: These personas where at some point members (and may be archived).
-#: This is somewhat special and should not be used often, since archived
-#: members have only a restricted data set available.
-ALL_CDE_STATI = CDE_STATI | {PersonaStati.archived_member}
-#: These personas may register for an event.
-EVENT_STATI = {PersonaStati.searchmember, PersonaStati.member,
-               PersonaStati.formermember, PersonaStati.event_user}
-#: These personas may participate in an assembly.
-ASSEMBLY_STATI = {PersonaStati.searchmember, PersonaStati.member,
-                  PersonaStati.assembly_user}
-#: These personas may use the mailing lists
-ML_STATI = {PersonaStati.searchmember, PersonaStati.member,
-            PersonaStati.formermember, PersonaStati.assembly_user,
-            PersonaStati.event_user, PersonaStati.ml_user}
-
-@enum.unique
-class PrivilegeBits(enum.IntEnum):
-    """Spec for field db_privileges of core.personas.
-
-    If db_privileges is 0 no privileges are granted.
-    """
-    #: global admin privileges (implies all other privileges granted here)
-    admin = 2**0
-    core_admin = 2**1 #:
-    cde_admin = 2**2 #:
-    event_admin = 2**3 #:
-    ml_admin = 2**4 #:
-    assembly_admin = 2**5 #:
-
-@enum.unique
 class Genders(enum.IntEnum):
-    """Spec for field gender of cde.member_data and event.user_data."""
+    """Spec for field gender of core.personas."""
     female = 0 #:
     male = 1 #:
     #: this is a catch-all for complicated reality
@@ -190,6 +128,72 @@ class AttachmentPolicy(enum.IntEnum):
     forbid = 2 #:
 
 @enum.unique
+class AudiencePolicy(enum.IntEnum):
+    """Regulate who may subscribe to a mailing list by status."""
+    everybody = 0 #:
+    require_assembly = 1 #:
+    require_event = 2 #:
+    require_cde = 3 #:
+    require_member = 4 #:
+
+    @staticmethod
+    def applicable(roles):
+        """Which audience policies apply to a user with the passed roles?
+
+        :type roles: [str]
+        :rtype: [AudiencePolicy]
+        """
+        ret = []
+        if "ml" in roles:
+            ret.append(AudiencePolicy.everybody)
+        if "assembly" in roles:
+            ret.append(AudiencePolicy.require_assembly)
+        if "event" in roles:
+            ret.append(AudiencePolicy.require_event)
+        if "cde" in roles:
+            ret.append(AudiencePolicy.require_cde)
+        if "member" in roles:
+            ret.append(AudiencePolicy.require_member)
+        return ret
+
+    def check(self, roles):
+        """Test if the status is enough to satisfy this policy.
+
+        :type roles: [str]
+        :rtype: bool
+        """
+        if self == AudiencePolicy.everybody:
+            return "ml" in roles
+        elif self == AudiencePolicy.require_assembly:
+            return "assembly" in roles
+        elif self == AudiencePolicy.require_event:
+            return "event" in roles
+        elif self == AudiencePolicy.require_cde:
+            return "cde" in roles
+        elif self == AudiencePolicy.require_member:
+            return "member" in roles
+        else:
+            raise RuntimeError("Impossible.")
+
+    def sql_test(self):
+        """Provide SQL query to check this policy.
+
+        :rtype: str
+        """
+        if self == AudiencePolicy.everybody:
+            return "is_ml_realm = True"
+        elif self == AudiencePolicy.require_assembly:
+            return "is_assembly_realm = True"
+        elif self == AudiencePolicy.require_event:
+            return "is_event_realm = True"
+        elif self == AudiencePolicy.require_cde:
+            return "is_cde_realm = True"
+        elif self == AudiencePolicy.require_member:
+            return "is_member = True"
+        else:
+            raise RuntimeError("Impossible.")
+
+@enum.unique
 class LastschriftTransactionStati(enum.IntEnum):
     """Basically store the outcome (if it exists) of a transaction."""
     issued = 0 #:
@@ -214,7 +218,9 @@ class CoreLogCodes(enum.IntEnum):
     persona_creation = 0 #:
     persona_change = 1 #:
     password_change = 10 #:
-    password_reset = 11 #:
+    password_reset_cookie = 11 #:
+    password_reset = 12 #:
+    password_generated = 13 #:
     genesis_request = 20 #:
     genesis_approved = 21 #:
     genesis_rejected = 22 #:

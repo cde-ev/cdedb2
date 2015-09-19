@@ -12,8 +12,8 @@ import logging
 from cdedb.database.connection import connection_pool_factory, Atomizer
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import (
-    glue, extract_realm, make_root_logger, extract_roles, ALL_ROLES,
-    DB_ROLE_MAPPING, CommonUser, PrivilegeError, unwrap)
+    glue, make_root_logger, extract_roles,
+    DB_ROLE_MAPPING, CommonUser, PrivilegeError, unwrap, PERSONA_STATUS_FIELDS)
 from cdedb.query import QueryOperators, QUERY_VIEWS
 from cdedb.config import Config, SecretsConfig
 import abc
@@ -141,27 +141,27 @@ def do_batchification(fun):
     new_fun.__name__ = hint['batch_function_name']
     return new_fun
 
-def access(role):
+def access(*roles):
     """The @access decorator marks a function of a backend for publication via
     RPC.
 
-    :type role: str
-    :param role: required privilege level
+    :type roles: [str]
+    :param roles: required privilege level (any of)
     """
     def decorator(fun):
-        fun.access_list = ALL_ROLES[role]
+        fun.access_list = set(roles)
         return fun
     return decorator
 
-def internal_access(role):
+def internal_access(*roles):
     """The @internal_access decorator marks a function of a backend for
     internal publication. It will be accessible via the :py:class:`AuthShim`.
 
-    :type role: str
-    :param role: required privilege level
+    :type roles: [str]
+    :param roles: required privilege level (any of)
     """
     def decorator(fun):
-        fun.internal_access_list = ALL_ROLES[role]
+        fun.internal_access_list = set(roles)
         return fun
     return decorator
 
@@ -192,8 +192,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     #: abstract str to be specified by children
     realm = None
 
-    def __init__(self, configpath):
+    def __init__(self, configpath, is_core=False):
         """
+        FIXME
         :type configpath: str
         """
         self.conf = Config(configpath)
@@ -210,6 +211,13 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
         self.logger.info("Instantiated {} with configpath {}.".format(
             self, configpath))
+        ## Everybody needs access to the core backend
+        if is_core:
+            self.core = self
+        else:
+            # FIXME cyclic import
+            from cdedb.backend.core import CoreBackend
+            self.core = AuthShim(CoreBackend(configpath))
 
     @abc.abstractmethod
     def establish(self, sessionkey, method, allow_internal=False):
@@ -242,17 +250,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             ## no update to core.sessions(atime) here
             ## these happen only in the frontend and on logout
             ## the backend can generally be less paranoid about sessions
-            query = glue("SELECT status, db_privileges, is_active",
-                         "FROM core.personas WHERE id = %s")
+            query = "SELECT {} FROM core.personas WHERE id = %s".format(
+                ', '.join(PERSONA_STATUS_FIELDS))
             with self.connpool["cdb_anonymous"] as conn:
                 with conn.cursor() as cur:
                     self.execute_db_query(cur, query, (persona_id,))
                     data = self._sanitize_db_output(cur.fetchone())
             if data["is_active"]:
-                realm = extract_realm(data["status"])
-                roles = extract_roles(data["db_privileges"], data["status"])
-                user = BackendUser(persona_id=persona_id, roles=roles,
-                                   realm=realm, status=data["status"])
+                roles = extract_roles(data)
+                user = BackendUser(persona_id=persona_id, roles=roles)
             else:
                 self.logger.warning("Found inactive user {}".format(persona_id))
         try:
@@ -267,7 +273,27 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                                       self.connpool[self.db_role(user.roles)])
             return ret
         else:
+            message = glue("Missing access privileges to method {}",
+                           "(roles are {} and we require {})").format(
+                               method, user.roles, access_list)
+            self.logger.warn(message)
             return None
+
+    def affirm_realm(self, rs, ids, realms=None):
+        """Check that all personas corresponding to the ids are in the
+        appropriate realm.
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type ids: [int]
+        :type realms: {str}
+        :param realms: Set of realms to check for. By default this is
+          the set containing only the realm of this class.
+        """
+        realms = realms or {self.realm}
+        actual_realms = self.core.get_realms_multi(rs, ids)
+        if any(not x >= realms for x in actual_realms.values()):
+            raise ValueError("Wrong realm for personas.")
+        return
 
     @staticmethod
     def db_role(roles):
@@ -285,6 +311,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     def is_admin(cls, rs):
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
+
+        FIXME
 
         :type rs: :py:class:`BackendRequestState`
         :rtype: bool
@@ -583,6 +611,21 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 sql_param_str = "{}"
                 caser = lambda x: x
             columns = field.split(',')
+            ## Treat containsall special since it wants to find each value in
+            ## any column, without caring that the columns are the same. All
+            ## other operators want to find one column fulfilling their
+            ## constraint.
+            if operator == QueryOperators.containsall:
+                values = tuple("%{}%".format(self.diacritic_patterns(x.lower()))
+                               for x in value)
+                subphrase = "lower({0}) SIMILAR TO %s"
+                phrase = "( ( {} ) )".format(" ) OR ( ".join(
+                    subphrase.format(c) for c in columns))
+                for v in values:
+                    params.extend([v]*len(columns))
+                constraints.append(" AND ".join(phrase
+                                                for _ in range(len(values))))
+                continue ## skip constraints.append below
             if operator == QueryOperators.empty:
                 phrase = "( {0} IS NULL OR {0} = '' )"
             elif operator == QueryOperators.nonempty:
@@ -736,7 +779,7 @@ def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
     :param allow_None: Since we don't have the luxury of an automatic
       '_or_None' variant like with other validators we have this parameter.
     :type values: [object] (or None)
-    :rtype: [object] (or None)
+    :rtype: [object]
     """
     if allow_None and values is None:
         return None
@@ -839,29 +882,6 @@ class AuthShim:
         except KeyError as e:
             raise AttributeError from e
 
-def create_fulltext(data):
-    """Helper to mangle data all data into a single string.
-
-    :type data: {str: object}
-    :param data: one member data set to convert into a string for fulltext
-      search
-    :rtype: str
-    """
-    attrs = (
-        "username", "title", "given_names", "display_name",
-        "family_name", "birth_name", "name_supplement", "birthday",
-        "telephone", "mobile", "address", "address_supplement",
-        "postal_code", "location", "country", "address2",
-        "address_supplement2", "postal_code2", "location2", "country2",
-        "weblink", "specialisation", "affiliation", "timeline",
-        "interests", "free_form")
-    def _sanitize(val):
-        if val is None:
-            return ""
-        else:
-            return str(val)
-    vals = (_sanitize(data[x]) for x in attrs)
-    return " ".join(vals)
 
 #: Translate between validator names and sql data types.
 #:

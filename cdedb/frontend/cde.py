@@ -14,10 +14,10 @@ import werkzeug
 import cdedb.database.constants as const
 from cdedb.common import (
     merge_dicts, name_key, lastschrift_reference, now, glue,
-    int_to_words, determine_age_class)
+    int_to_words, determine_age_class, PERSONA_STATUS_FIELDS)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
-    connect_proxy, persona_dataset_guard, check_validation as check,
+    connect_proxy, check_validation as check,
     cdedbid_filter, request_data_extractor, make_postal_address)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
@@ -28,8 +28,7 @@ class CdEFrontend(AbstractUserFrontend):
     realm = "cde"
     logger = logging.getLogger(__name__)
     user_management = {
-        "proxy": lambda obj: obj.cdeproxy,
-        "validator": "member_data",
+        "persona_getter": lambda obj: obj.coreproxy.get_cde_user,
     }
 
     def __init__(self, configpath):
@@ -51,28 +50,19 @@ class CdEFrontend(AbstractUserFrontend):
         """Render start page."""
         return self.render(rs, "index")
 
-    @access("formermember")
+    @access("cde")
     @REQUESTdata(("confirm_id", "#int"))
     def show_user(self, rs, persona_id, confirm_id):
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
-        if self.coreproxy.get_realm(rs, persona_id) != self.realm:
-            return werkzeug.exceptions.NotFound("No such user in this realm.")
-        data = self.cdeproxy.get_data_one(rs, persona_id)
+        data = self.coreproxy.get_cde_user(rs, persona_id)
         participation_info = self.eventproxy.participation_info(rs, persona_id)
-        foto = self.cdeproxy.get_foto(rs, persona_id)
-        data['is_member'] = data['status'] in const.MEMBER_STATI
-        data['is_searchable'] = data['status'] in const.SEARCHMEMBER_STATI
-        data['db_privileges_ascii'] = ", ".join(
-            bit.name for bit in const.PrivilegeBits
-            if data['db_privileges'] & bit.value)
         params = {
             'data': data,
             'participation_info': participation_info,
-            'foto': foto,
         }
-        if data['status'] == const.PersonaStati.archived_member:
+        if data['is_archived']:
             if self.is_admin(rs):
                 return self.render(rs, "show_archived_user", params)
             else:
@@ -81,128 +71,61 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.render(rs, "show_user", params)
 
-    @access("formermember")
-    def change_user_form(self, rs):
-        data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
-        data['generation'] = self.cdeproxy.get_generation(rs,
-                                                          rs.user.persona_id)
-        merge_dicts(rs.values, data)
-        return self.render(rs, "change_user", {'username': data['username']})
-
-    @access("formermember", {"POST"})
-    @REQUESTdata(("generation", "int"))
-    @REQUESTdatadict(
-        "display_name", "family_name", "given_names", "title",
-        "name_supplement", "telephone", "mobile", "address_supplement",
-        "address", "postal_code", "location", "country",
-        "address_supplement2", "address2", "postal_code2", "location2",
-        "country2", "weblink", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "bub_search")
-    def change_user(self, rs, generation, data):
-        data['id'] = rs.user.persona_id
-        data = check(rs, "member_data", data)
-        if rs.errors:
-            return self.change_user_form(rs)
-        change_note = "Normal dataset change."
-        code = self.cdeproxy.change_user(rs, data, generation,
-                                         change_note=change_note)
-        self.notify_return_code(rs, code)
-        if code < 0:
-            ## send a mail since changes needing review should be seldom enough
-            self.do_mail(
-                rs, "pending_changes",
-                {'To': (self.conf.MANAGEMENT_ADDRESS,),
-                 'Subject': 'CdEDB pending changes',})
-        return self.redirect_show_user(rs, rs.user.persona_id)
-
     @access("cde_admin")
-    @persona_dataset_guard()
     def admin_change_user_form(self, rs, persona_id):
-        data = self.cdeproxy.get_data_one(rs, persona_id)
-        data['generation'] = self.cdeproxy.get_generation(rs, persona_id)
+        """Common entry point redirecting to user's realm."""
+        data = self.coreproxy.get_cde_user(rs, persona_id)
+        data['generation'] = self.coreproxy.changelog_get_generation(
+            rs, persona_id)
         merge_dicts(rs.values, data)
-        return self.render(rs, "admin_change_user",
-                           {'username': data['username']})
+        return self.render(rs, "admin_change_user")
 
-    @access("cde_admin", {"POST"})
+
+    @access("cde_admin", modi={"POST"})
     @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
     @REQUESTdatadict(
-        "title", "given_names", "family_name", "birth_name", "name_supplement",
-        "display_name", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "gender", "birthday", "telephone",
-        "mobile", "weblink", "address", "address_supplement", "postal_code",
-        "location", "country", "address2", "address_supplement2",
-        "postal_code2", "location2", "country2", "bub_search",
-        "cloud_account", "notes")
-    @persona_dataset_guard()
+        "display_name", "family_name", "given_names", "title",
+        "name_supplement", "birth_name", "gender", "birthday", "telephone",
+        "mobile", "address_supplement", "address", "postal_code",
+        "location", "country", "address_supplement2", "address2",
+        "postal_code2", "location2", "country2", "weblink",
+        "specialisation", "affiliation", "timeline", "interests",
+        "free_form", "bub_search", "cloud_account", "notes")
     def admin_change_user(self, rs, persona_id, generation, change_note, data):
+        """FIXME"""
         data['id'] = persona_id
-        data = check(rs, "member_data", data)
-        if change_note is None:
-            change_note = "Admin dataset change."
+        data = check(rs, "persona", data)
         if rs.errors:
             return self.admin_change_user_form(rs, persona_id)
-        code = self.cdeproxy.change_user(rs, data, generation,
-                                         change_note=change_note)
+        code = self.coreproxy.change_persona(rs, data, generation=generation,
+                                             change_note=change_note)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("cde_admin")
-    def list_pending_changes(self, rs):
-        """List non-committed changelog entries."""
-        pending = self.cdeproxy.get_changes(
-            rs, stati=(const.MemberChangeStati.pending,))
-        return self.render(rs, "list_pending_changes", {'pending': pending})
-
-    @access("cde_admin")
-    def inspect_change(self, rs, persona_id):
-        """Look at a pending change."""
-        history = self.cdeproxy.get_history(rs, persona_id, generations=None)
-        pending = history[max(history)]
-        if pending['change_status'] != const.MemberChangeStati.pending:
-            rs.notify("warning", "Persona has no pending change.")
-            return self.list_pending_changes(rs)
-        current = history[max(
-            key for key in history
-            if (history[key]['change_status']
-                == const.MemberChangeStati.committed))]
-        diff = {key for key in pending if current[key] != pending[key]}
-        return self.render(rs, "inspect_change", {
-            'pending': pending, 'current': current, 'diff': diff})
-
-    @access("cde_admin", {"POST"})
-    @REQUESTdata(("generation", "int"), ("ack", "bool"))
-    def resolve_change(self, rs, persona_id, generation, ack):
-        """Make decision."""
-        if rs.errors:
-            return self.list_pending_changes(rs)
-        code = self.cdeproxy.resolve_change(rs, persona_id, generation, ack)
-        message = "Change comitted." if ack else "Change dropped."
-        self.notify_return_code(rs, code, success=message)
-        return self.redirect(rs, "cde/list_pending_changes")
-
-    @access("formermember")
+    @access("cde")
     def get_foto(self, rs, foto):
         """Retrieve profile picture."""
         path = os.path.join(self.conf.STORAGE_DIR, "foto", foto)
         return self.send_file(rs, path=path)
 
-    @access("formermember")
-    @persona_dataset_guard()
+    @access("cde")
     def set_foto_form(self, rs, persona_id):
         """Render form."""
-        data = self.coreproxy.get_data_one(rs, persona_id)
+        if rs.user.persona_id != persona_id and not self.is_admin(rs):
+            raise werkzeug.exceptions.Forbidden("Not privileged.")
+        data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "set_foto", {'data': data})
 
-    @access("formermember", {"POST"})
+    @access("cde", modi={"POST"})
     @REQUESTfile("foto")
-    @persona_dataset_guard()
     def set_foto(self, rs, persona_id, foto):
         """Set profile picture."""
+        if rs.user.persona_id != persona_id and not self.is_admin(rs):
+            raise werkzeug.exceptions.Forbidden("Not privileged.")
         foto = check(rs, 'profilepic', foto, "foto")
         if rs.errors:
             return self.set_foto_form(rs, persona_id)
-        previous = self.cdeproxy.get_foto(rs, persona_id)
+        previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
         blob = foto.read()
         myhash = hashlib.sha512()
         myhash.update(blob)
@@ -210,9 +133,10 @@ class CdEFrontend(AbstractUserFrontend):
         if not os.path.isfile(path):
             with open(path, 'wb') as f:
                 f.write(blob)
-        code = self.cdeproxy.set_foto(rs, persona_id, myhash.hexdigest())
+        code = self.coreproxy.change_foto(rs, persona_id,
+                                         foto=myhash.hexdigest())
         if previous:
-            if not self.cdeproxy.foto_usage(rs, myhash.hexdigest()):
+            if not self.coreproxy.foto_usage(rs, previous):
                 path = os.path.join(self.conf.STORAGE_DIR, 'foto', previous)
                 os.remove(path)
         self.notify_return_code(rs, code, success="Foto updated.")
@@ -226,41 +150,38 @@ class CdEFrontend(AbstractUserFrontend):
         This is the default page after login, but most users will instantly
         be redirected.
         """
-        if rs.user.realm != "cde" or rs.user.is_searchable:
+        if "member" not in rs.user.roles or "searchable" in rs.user.roles:
             return self.redirect(rs, "core/index")
-        data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
+        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
         return self.render(rs, "consent_decision")
 
-    @access("member", {"POST"})
+    @access("member", modi={"POST"})
     @REQUESTdata(("ack", "bool"))
     def consent_decision(self, rs, ack):
         """Record decision."""
         if rs.errors:
             return self.consent_decision_form(rs)
-        data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
+        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
-        if ack:
-            status = const.PersonaStati.searchmember.value
-        else:
-            status = const.PersonaStati.member.value
         new_data = {
             'id': rs.user.persona_id,
             'decided_search': True,
-            'status': status
+            'is_searchable': ack,
         }
         change_note = "Consent decision (is {}).".format(ack)
-        code = self.cdeproxy.change_user(rs, new_data, None, may_wait=False,
-                                         change_note=change_note)
+        code = self.coreproxy.change_persona(
+            rs, new_data, generation=None, may_wait=False,
+            change_note=change_note)
         message = "Consent noted." if ack else "Decision noted."
         self.notify_return_code(rs, code, success=message)
         if not code:
             return self.consent_decision_form(rs)
         return self.redirect(rs, "core/index")
 
-    @access("searchmember")
+    @access("searchable")
     @REQUESTdata(("submitform", "bool"))
     def member_search(self, rs, submitform):
         """Render form and do search queries. This has a double meaning so
@@ -290,11 +211,11 @@ class CdEFrontend(AbstractUserFrontend):
                                 'queryops': QueryOperators,})
         else:
             query.scope = "qview_cde_member"
-            query.fields_of_interest.append('member_data.persona_id')
+            query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
             result = sorted(result, key=name_key)
             if len(result) == 1:
-                return self.redirect_show_user(rs, result[0]['persona_id'])
+                return self.redirect_show_user(rs, result[0]['id'])
             if (len(result) > self.conf.MAX_QUERY_RESULTS
                     and not self.is_admin(rs)):
                 result = result[:self.conf.MAX_QUERY_RESULTS]
@@ -309,7 +230,6 @@ class CdEFrontend(AbstractUserFrontend):
         mangle_query_input(rs, spec)
         events = self.eventproxy.list_events(rs, past=True)
         choices = {'event_id': events,
-                   'status': self.enum_choice(rs, const.PersonaStati),
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
         return self.render(rs, "user_search", {
@@ -327,8 +247,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.user_search_form(rs)
         query.scope = "qview_cde_user"
         result = self.cdeproxy.submit_general_query(rs, query)
-        choices = {'status': self.enum_choice(rs, const.PersonaStati),
-                   'gender': self.enum_choice(rs, const.Genders)}
+        choices = {'gender': self.enum_choice(rs, const.Genders)}
         params = {'result': result, 'query': query, 'choices': choices}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
@@ -378,49 +297,32 @@ class CdEFrontend(AbstractUserFrontend):
             return self.render(rs, "archived_user_search_result", params)
 
     @access("cde_admin")
-    @persona_dataset_guard()
     def modify_membership_form(self, rs, persona_id):
         """Render form."""
-        data = self.coreproxy.get_data_one(rs, persona_id)
-        data['is_member'] = data['status'] in const.MEMBER_STATI
-        data['is_searchable'] = data['status'] in const.SEARCHMEMBER_STATI
-        return self.render(rs, "modify_membership", {
-            'data': data, 'stati': const.PersonaStati})
+        data = self.coreproxy.get_persona(rs, persona_id)
+        return self.render(rs, "modify_membership", {'data': data})
 
-    @access("cde_admin", {"POST"})
-    @persona_dataset_guard()
-    @REQUESTdata(("newstatus", "enum_personastati"))
-    def modify_membership(self, rs, persona_id, newstatus):
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("is_member", "bool"))
+    def modify_membership(self, rs, persona_id, is_member):
         """Change association status."""
-        if newstatus not in const.ALL_CDE_STATI:
-            rs.errors.append(("newstatus", ValueError("Wrong realm.")))
         if rs.errors:
             return self.modify_membership_form(rs, persona_id)
-        data = {
-            'id': persona_id,
-            'status': newstatus,
-        }
-        if newstatus == const.PersonaStati.formermember:
-            data['decided_search'] = False
-        elif newstatus == const.PersonaStati.archived_member:
-            raise NotImplementedError("TODO")
-        change_note = "Membership change to {}".format(newstatus.name)
-        code = self.cdeproxy.change_user(rs, data, None, may_wait=False,
-                                         change_note=change_note)
+        code = self.coreproxy.change_membership(rs, persona_id, is_member)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")
     def create_user_form(self, rs):
         defaults = {
-            'status': const.PersonaStati.member.value,
+            'is_member': True,
             'bub_search': False,
             'cloud_account': True,
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     @REQUESTdatadict(
         "title", "given_names", "family_name", "birth_name", "name_supplement",
         "display_name", "specialisation", "affiliation", "timeline",
@@ -428,9 +330,18 @@ class CdEFrontend(AbstractUserFrontend):
         "telephone", "mobile", "weblink", "address", "address_supplement",
         "postal_code", "location", "country", "address2",
         "address_supplement2", "postal_code2", "location2", "country2",
-        "status", "trial_member", "bub_search", "cloud_account", "notes")
+        "is_member", "is_searchable", "trial_member", "bub_search",
+        "cloud_account", "notes")
     def create_user(self, rs, data):
-        data['is_active'] = True
+        defaults = {
+            'is_cde_realm': True,
+            'is_event_realm': True,
+            'is_ml_realm': True,
+            'is_assembly_realm': True,
+            'is_active': True,
+            'decided_search': False,
+        }
+        data.update(defaults)
         return super().create_user(rs, data)
 
     def genesis_form(self, rs, case_id, secret):
@@ -454,26 +365,8 @@ class CdEFrontend(AbstractUserFrontend):
         personas = (
             {entry['submitted_by'] for entry in log}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_data(rs, personas)
+        persona_data = self.coreproxy.get_personas(rs, personas)
         return self.render(rs, "view_cde_log", {
-            'log': log, 'persona_data': persona_data})
-
-    @access("cde_admin")
-    @REQUESTdata(("stati", "[int]"), ("start", "int_or_None"),
-                 ("stop", "int_or_None"))
-    def view_changelog_meta(self, rs, stati, start, stop):
-        """View changelog activity."""
-        start = start or 0
-        stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
-        log = self.cdeproxy.retrieve_changelog_meta(rs, stati, start, stop)
-        personas = (
-            {entry['submitted_by'] for entry in log}
-            | {entry['reviewed_by'] for entry in log if entry['reviewed_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_data(rs, personas)
-        return self.render(rs, "view_changelog_meta", {
             'log': log, 'persona_data': persona_data})
 
     def determine_open_permits(self, rs, lastschrift_ids=None):
@@ -516,7 +409,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, transaction_ids.keys())
         persona_ids = set(lastschrift_ids.values()).union({
             x['submitted_by'] for x in lastschrift_data.values()})
-        persona_data = self.cdeproxy.get_data_outline(rs, persona_ids)
+        persona_data = self.coreproxy.get_personas(rs, persona_ids)
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
         for lastschrift in lastschrift_data.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
@@ -543,7 +436,7 @@ class CdEFrontend(AbstractUserFrontend):
         persona_ids = {persona_id}.union({
             x['submitted_by'] for x in lastschrift_data.values()}).union({
                 x['submitted_by'] for x in transaction_data.values()})
-        persona_data = self.cdeproxy.get_data_outline(rs, persona_ids)
+        persona_data = self.coreproxy.get_personas(rs, persona_ids)
         active_permit = None
         for lastschrift in lastschrift_data.values():
             if not lastschrift['revoked_at']:
@@ -561,12 +454,12 @@ class CdEFrontend(AbstractUserFrontend):
         """Render form."""
         lastschrift_data = self.cdeproxy.get_lastschrift_one(rs, lastschrift_id)
         merge_dicts(rs.values, lastschrift_data)
-        persona_data = self.cdeproxy.get_data_outline_one(
+        persona_data = self.coreproxy.get_persona(
             rs, lastschrift_data['persona_id'])
         return self.render(rs, "lastschrift_change", {
             'lastschrift_data': lastschrift_data, 'persona_data': persona_data})
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes', 'max_dsa',)
     def lastschrift_change(self, rs, lastschrift_id, data):
@@ -584,11 +477,11 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def lastschrift_create_form(self, rs, persona_id):
         """Render form."""
-        persona_data = self.cdeproxy.get_data_outline_one(rs, persona_id)
+        persona_data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "lastschrift_create", {
             'persona_data': persona_data})
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
                      'notes', 'max_dsa')
     def lastschrift_create(self, rs, persona_id, data):
@@ -601,7 +494,7 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "cde/lastschrift_show")
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     def lastschrift_revoke(self, rs, lastschrift_id):
         """Disable a permit."""
         data = {
@@ -663,7 +556,7 @@ class CdEFrontend(AbstractUserFrontend):
             'transactions': sorted_transactions, 'meta': meta})
         return sepapain_file
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     @REQUESTdata(("lastschrift_id", "int_or_None"))
     def lastschrift_generate_transactions(self, rs, lastschrift_id):
         """Issue direct debit transactions.
@@ -688,7 +581,7 @@ class CdEFrontend(AbstractUserFrontend):
             lastschrift_ids = (lastschrift_id,)
         lastschrift_data = self.cdeproxy.get_lastschrift(
             rs, lastschrift_ids)
-        persona_data = self.cdeproxy.get_data_outline(
+        persona_data = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrift_data.values()))
         new_transactions = tuple(
             {
@@ -742,7 +635,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.send_file(rs, data=sepapain_file,
                               filename=self.i18n("sepa.cdd", rs.lang))
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "int_or_None"))
     def lastschrift_skip(self, rs, lastschrift_id, persona_id):
         """Do not do a direct debit transaction for this year.
@@ -764,7 +657,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     @REQUESTdata(("status", "enum_lastschrifttransactionstati"),
                  ("persona_id", "int_or_None"))
     def lastschrift_finalize_transaction(self, rs, lastschrift_id,
@@ -789,7 +682,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "int_or_None"))
     def lastschrift_rollback_transaction(self, rs, lastschrift_id,
                                          transaction_id, persona_id):
@@ -820,7 +713,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, lastschrift_id)
         transaction_data = self.cdeproxy.get_lastschrift_transaction(
             rs, transaction_id)
-        persona_data = self.cdeproxy.get_data_one(
+        persona_data = self.coreproxy.get_cde_user(
             rs, lastschrift_data['persona_id'])
         addressee = make_postal_address(persona_data)
         if lastschrift_data['account_owner']:
@@ -857,7 +750,7 @@ class CdEFrontend(AbstractUserFrontend):
         persona_data = None
         minor = True
         if rs.user.persona_id:
-            persona_data = self.cdeproxy.get_data_one(rs, rs.user.persona_id)
+            persona_data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             minor = determine_age_class(
                 persona_data['birthday'], now().date()).is_minor()
         cde_info = self.cdeproxy.get_meta_info(rs)
@@ -873,7 +766,7 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, info)
         return self.render(rs, "meta_info", {'keys': self.conf.META_INFO_KEYS})
 
-    @access("cde_admin", {"POST"})
+    @access("cde_admin", modi={"POST"})
     def change_meta_info(self, rs):
         """Change the meta info constants."""
         data_params = tuple((key, "any") for key in self.conf.META_INFO_KEYS)

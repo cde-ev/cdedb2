@@ -12,13 +12,13 @@ class TestMlBackend(BackendTest):
 
     @as_users("janis")
     def test_basics(self, user):
-        data = self.ml.get_data_one(self.key, user['id'])
+        data = self.core.get_ml_user(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'display_name', 'given_names', 'family_name'}}
-        self.ml.change_user(self.key, setter)
-        new_data = self.ml.get_data_one(self.key, user['id'])
+        self.core.change_persona(self.key, setter)
+        new_data = self.core.get_ml_user(self.key, user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("janis")
@@ -40,13 +40,13 @@ class TestMlBackend(BackendTest):
                        3: 'Witz des Tages',
                        4: 'Klatsch und Tratsch'}
         self.assertEqual(expectation, self.ml.list_mailinglists(
-            self.key, status=40, active_only=False))
+            self.key, audience_policies=(0,), active_only=False))
         expectation = {
             3: {'address': 'witz@example.cde',
                 'description': "Einer geht noch ...",
                 'assembly_id': None,
                 'attachment_policy': 1,
-                'audience': [0, 1, 2, 40],
+                'audience_policy': 0,
                 'event_id': None,
                 'gateway': None,
                 'id': 3,
@@ -64,7 +64,7 @@ class TestMlBackend(BackendTest):
                 'description': None,
                 'assembly_id': 1,
                 'attachment_policy': 1,
-                'audience': [0, 1, 30],
+                'audience_policy': 1,
                 'event_id': None,
                 'gateway': None,
                 'id': 5,
@@ -82,7 +82,7 @@ class TestMlBackend(BackendTest):
                 'description': None,
                 'assembly_id': None,
                 'attachment_policy': 1,
-                'audience': [0, 1],
+                'audience_policy': 4,
                 'event_id': None,
                 'gateway': 6,
                 'id': 7,
@@ -125,7 +125,7 @@ class TestMlBackend(BackendTest):
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': 2,
-            'audience': [0],
+            'audience_policy': 4,
             'event_id': None,
             'gateway': None,
             'is_active': True,
@@ -174,9 +174,11 @@ class TestMlBackend(BackendTest):
         expectation = {1: 'anton@example.cde',
                        2: 'berta@example.cde',
                        3: 'charly@example.cde',
+                       5: 'emilia@example.cde',
                        7: 'garcia@example.cde',
                        9: 'inga@example.cde',
                        10: 'janis@example.cde',
+                       11: 'kalif@example.cde',
                        12: None}
         self.assertEqual(expectation, self.ml.subscribers(self.key, 2))
         expectation = {1: 'anton@example.cde', 10: 'janis-spam@example.cde'}
@@ -267,7 +269,7 @@ class TestMlBackend(BackendTest):
             'description': 'Vereinigt Euch',
             'assembly_id': None,
             'attachment_policy': 2,
-            'audience': [0],
+            'audience_policy': 4,
             'event_id': None,
             'gateway': None,
             'is_active': True,

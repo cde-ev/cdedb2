@@ -4,7 +4,7 @@
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, ProxyShim, connect_proxy,
-    check_validation as check, persona_dataset_guard, mailinglist_guard)
+    check_validation as check, mailinglist_guard)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
 from cdedb.common import name_key, merge_dicts, unwrap
@@ -18,8 +18,7 @@ class MlFrontend(AbstractUserFrontend):
     realm = "ml"
     logger = logging.getLogger(__name__)
     user_management = {
-        "proxy": lambda obj: obj.mlproxy,
-        "validator": "persona_data",
+        "persona_getter": lambda obj: obj.coreproxy.get_ml_user,
     }
 
     def __init__(self, configpath):
@@ -35,7 +34,7 @@ class MlFrontend(AbstractUserFrontend):
 
     def finalize_session(self, rs, sessiondata):
         ret = super().finalize_session(rs, sessiondata)
-        if ret.is_persona:
+        if "persona" in ret.roles:
             ret.moderator = self.mlproxy.moderator_info(rs, ret.persona_id)
         return ret
 
@@ -48,46 +47,53 @@ class MlFrontend(AbstractUserFrontend):
         """Render start page."""
         return self.render(rs, "index")
 
-    @access("ml_user")
+    @access("ml")
     @REQUESTdata(("confirm_id", "#int"))
     def show_user(self, rs, persona_id, confirm_id):
         return super().show_user(rs, persona_id, confirm_id)
 
-    @access("ml_user")
+    @access("ml")
     def change_user_form(self, rs):
         return super().change_user_form(rs)
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdatadict(
         "display_name", "family_name", "given_names")
     def change_user(self, rs, data):
         return super().change_user(rs, data)
 
     @access("ml_admin")
-    @persona_dataset_guard()
     def admin_change_user_form(self, rs, persona_id):
         return super().admin_change_user_form(rs, persona_id)
 
-    @access("ml_admin", {"POST"})
+    @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes")
-    @persona_dataset_guard()
     def admin_change_user(self, rs, persona_id, data):
         return super().admin_change_user(rs, persona_id, data)
 
     @access("ml_admin")
     def create_user_form(self, rs):
+        defaults = {
+            'is_member': False,
+            'bub_search': False,
+            'cloud_account': False,
+        }
+        merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("ml_admin", {"POST"})
+    @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
     def create_user(self, rs, data):
-        data.update({
-            'status': const.PersonaStati.ml_user,
+        defaults = {
+            'is_cde_realm': False,
+            'is_event_realm': False,
+            'is_ml_realm': True,
+            'is_assembly_realm': False,
             'is_active': True,
-            'cloud_account': False,
-        })
+        }
+        data.update(defaults)
         return super().create_user(rs, data)
 
     @access("anonymous")
@@ -95,17 +101,16 @@ class MlFrontend(AbstractUserFrontend):
     def genesis_form(self, rs, case_id, secret):
         return super().genesis_form(rs, case_id, secret)
 
-    @access("anonymous", {"POST"})
+    @access("anonymous", modi={"POST"})
     @REQUESTdata(("secret", "str"))
     @REQUESTdatadict("display_name",)
     def genesis(self, rs, case_id, secret, data):
         data.update({
-            'status': const.PersonaStati.ml_user,
             'is_active': True,
             'cloud_account': False,
             'notes': '',
         })
-        return super().genesis(rs, case_id, secret, data)
+        return super().genesis(rs, case_id, secret=secret, data=data)
 
     @access("ml_admin")
     def user_search_form(self, rs):
@@ -152,10 +157,12 @@ class MlFrontend(AbstractUserFrontend):
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
             'mailinglist_data': mailinglist_data, 'complete': complete})
 
-    @access("ml_user")
+    @access("ml")
     def list_mailinglists(self, rs):
         """Show all mailinglists of interest for the user."""
-        mailinglists = self.mlproxy.list_mailinglists(rs, status=rs.user.status)
+        policies = const.AudiencePolicy.applicable(rs.user.roles)
+        mailinglists = self.mlproxy.list_mailinglists(
+            rs, audience_policies=policies)
         return self.list_some_mailinglists(rs, mailinglists, complete=False)
 
     @access("ml_admin")
@@ -174,10 +181,10 @@ class MlFrontend(AbstractUserFrontend):
             "mailinglists": mailinglists, "events": events,
             "assemblies": assemblies})
 
-    @access("ml_admin", {"POST"})
+    @access("ml_admin", modi={"POST"})
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
-        "attachment_policy", "audience", "subject_prefix", "maxsize",
+        "attachment_policy", "audience_policy", "subject_prefix", "maxsize",
         "is_active", "notes", "gateway", "event_id", "registration_stati",
         "assembly_id")
     def create_mailinglist(self, rs, data):
@@ -204,7 +211,7 @@ class MlFrontend(AbstractUserFrontend):
         personas = (
             {entry['submitted_by'] for entry in log}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_data(rs, personas)
+        persona_data = self.coreproxy.get_personas(rs, personas)
         mailinglists = {entry['mailinglist_id']
                         for entry in log if entry['mailinglist_id']}
         mailinglist_data = self.mlproxy.get_mailinglists(rs, mailinglists)
@@ -213,7 +220,7 @@ class MlFrontend(AbstractUserFrontend):
             'log': log, 'persona_data': persona_data,
             'mailinglist_data': mailinglist_data, 'mailinglists': mailinglists})
 
-    @access("ml_user")
+    @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
         mailinglist_data = self.mlproxy.get_mailinglist(rs, mailinglist_id)
@@ -223,7 +230,9 @@ class MlFrontend(AbstractUserFrontend):
         if is_subscribed:
             sub_address = unwrap(self.mlproxy.subscriptions(
                 rs, rs.user.persona_id, (mailinglist_id,)))
-        if not (rs.user.status in mailinglist_data['audience'] or is_subscribed
+        audience_check = const.AudiencePolicy(
+            mailinglist_data['audience_policy']).check(rs.user.roles)
+        if not (audience_check or is_subscribed
                 or self.is_moderator(rs, mailinglist_id) or self.is_admin(rs)):
             return werkzeug.exceptions.Forbidden()
         gateway_data = {}
@@ -261,18 +270,18 @@ class MlFrontend(AbstractUserFrontend):
             'mailinglist_data': mailinglist_data, 'mailinglists': mailinglists,
             'events': events, 'assemblies': assemblies})
 
-    @access("ml_admin", {"POST"})
-    @REQUESTdata(("audience", "[enum_personastati]"),
+    @access("ml_admin", modi={"POST"})
+    @REQUESTdata(("audience_policy", "enum_audiencepolicy"),
                  ("registration_stati", "[enum_registrationpartstati]"))
     @REQUESTdatadict(
         "title", "address", "description", "sub_policy", "mod_policy",
         "notes", "attachment_policy", "subject_prefix", "maxsize",
         "is_active", "gateway", "event_id", "assembly_id")
-    def change_mailinglist(self, rs, mailinglist_id, audience,
+    def change_mailinglist(self, rs, mailinglist_id, audience_policy,
                            registration_stati, data):
         """Modify simple attributes of mailinglists."""
         data['id'] = mailinglist_id
-        data['audience'] = audience
+        data['audience_policy'] = audience_policy
         data['registration_stati'] = registration_stati
         data = check(rs, "mailinglist_data", data)
         if rs.errors:
@@ -281,7 +290,7 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
-    @access("ml_user")
+    @access("ml")
     @REQUESTdata(("codes", "[int]"), ("start", "int_or_None"),
                  ("stop", "int_or_None"))
     @mailinglist_guard()
@@ -295,13 +304,13 @@ class MlFrontend(AbstractUserFrontend):
         personas = (
             {entry['submitted_by'] for entry in log}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_data(rs, personas)
+        persona_data = self.coreproxy.get_personas(rs, personas)
         mailinglist_data = self.mlproxy.get_mailinglist(rs, mailinglist_id)
         return self.render(rs, "view_ml_log", {
             'log': log, 'persona_data': persona_data,
             'mailinglist_data': mailinglist_data})
 
-    @access("ml_user")
+    @access("ml")
     @mailinglist_guard()
     def management(self, rs, mailinglist_id):
         """Render form."""
@@ -310,14 +319,14 @@ class MlFrontend(AbstractUserFrontend):
         requests = self.mlproxy.list_requests(rs, mailinglist_id)
         personas = (set(mailinglist_data['moderators'])
                     | set(subscribers.keys()) | set(requests))
-        persona_data = self.coreproxy.get_data(rs, personas)
+        persona_data = self.coreproxy.get_personas(rs, personas)
         subscribers = sorted(subscribers,
                              key=lambda anid: name_key(persona_data[anid]))
         return self.render(rs, "management", {
             'mailinglist_data': mailinglist_data, 'subscribers': subscribers,
             'requests': requests, 'persona_data': persona_data})
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("moderator_id", "cdedbid"))
     @mailinglist_guard()
     def add_moderator(self, rs, mailinglist_id, moderator_id):
@@ -333,7 +342,7 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("moderator_id", "int"))
     @mailinglist_guard()
     def remove_moderator(self, rs, mailinglist_id, moderator_id):
@@ -349,7 +358,7 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("email", "email"))
     @mailinglist_guard()
     def add_whitelist(self, rs, mailinglist_id, email):
@@ -366,7 +375,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("email", "email"))
     @mailinglist_guard()
     def remove_whitelist(self, rs, mailinglist_id, email):
@@ -382,7 +391,7 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("persona_id", "int"), ("ack", "bool"))
     @mailinglist_guard()
     def decide_request(self, rs, mailinglist_id, persona_id, ack):
@@ -393,7 +402,7 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("subscriber_id", "cdedbid"))
     @mailinglist_guard()
     def add_subscriber(self, rs, mailinglist_id, subscriber_id):
@@ -405,7 +414,7 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("subscriber_id", "int"))
     @mailinglist_guard()
     def remove_subscriber(self, rs, mailinglist_id, subscriber_id):
@@ -417,7 +426,7 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("subscribe", "bool"))
     def subscribe_or_unsubscribe(self, rs, mailinglist_id, subscribe):
         """Change own subscription state."""
@@ -427,7 +436,7 @@ class MlFrontend(AbstractUserFrontend):
             rs, code, pending="Subscription request awaits moderation.")
         return self.redirect(rs, "ml/show_mailinglist")
 
-    @access("ml_user", {"POST"})
+    @access("ml", modi={"POST"})
     @REQUESTdata(("email", "email"))
     def change_address(self, rs, mailinglist_id, email):
         """Modify address to which emails are delivered for this list.
@@ -455,7 +464,7 @@ class MlFrontend(AbstractUserFrontend):
                 address=email)
             self.notify_return_code(rs, code)
         else:
-            user_data = self.mlproxy.acquire_data_one(rs, rs.user.persona_id)
+            user_data = self.coreproxy.get_ml_user(rs, rs.user.persona_id)
             self.do_mail(
                 rs, "confirm_address",
                 {'To': (email,),
@@ -466,7 +475,7 @@ class MlFrontend(AbstractUserFrontend):
             rs.notify("info", "Confirmation email sent.")
         return self.redirect(rs, "ml/show_mailinglist")
 
-    @access("ml_user")
+    @access("ml")
     @REQUESTdata(("email", "#email"))
     def do_address_change(self, rs, mailinglist_id, email):
         """Successful verification for new address in :py:meth:`change_address`.
@@ -494,13 +503,13 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
-    @access("ml_user")
+    @access("ml")
     @mailinglist_guard()
     def check_states(self, rs, mailinglist_id):
         """Test all explicit subscriptions for consistency with audience."""
         mailinglist_data = self.mlproxy.get_mailinglist(rs, mailinglist_id)
         problems = self.mlproxy.check_states_one(rs, mailinglist_id)
-        persona_data = self.coreproxy.get_data(rs, problems)
+        persona_data = self.coreproxy.get_personas(rs, problems)
         return self.render(rs, "check_states", {
             'mailinglist_data': mailinglist_data, 'problems': problems,
             'persona_data': persona_data})

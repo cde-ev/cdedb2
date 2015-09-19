@@ -1,4 +1,4 @@
-{% extends "web/de/cde/base.tmpl" %}
+{% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% macro mangle_string(name) %}
    {% if name in diff %}
@@ -147,14 +147,14 @@
             <td>{{ mangle_string('balance') }}</td>
         </tr>
     </table>
-    <form action="{{ cdedblink('cde/resolve_change')|e }}" method="POST" id="ackchangeform">
+    <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="ackchangeform">
         <div>
             {{ util.input_hidden(name="ack", value="True") }}<br>
             {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
             {{ util.input_submit(value="Änderung bestätigen") }}
         </div>
     </form>
-    <form action="{{ cdedblink('cde/resolve_change')|e }}" method="POST" id="nackchangeform">
+    <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="nackchangeform">
         <div>
             {{ util.input_hidden(name="ack", value="False") }}<br>
             {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>

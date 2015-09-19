@@ -11,9 +11,9 @@ from cdedb.common import AgeClasses
 
 #: The list.
 ALL_ENUMS = (
-    const.PersonaStati, const.PrivilegeBits, const.Genders,
-    const.MemberChangeStati, const.RegistrationPartStati, const.GenesisStati,
-    const.SubscriptionPolicy, const.ModerationPolicy, const.AttachmentPolicy,
+    const.Genders, const.MemberChangeStati, const.RegistrationPartStati,
+    const.GenesisStati, const.SubscriptionPolicy, const.ModerationPolicy,
+    const.AttachmentPolicy, const.AudiencePolicy,
     const.LastschriftTransactionStati, const.CoreLogCodes,
     const.CdeLogCodes, const.FinanceLogCodes, const.EventLogCodes,
     const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,

@@ -6,7 +6,8 @@ import logging
 import uuid
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, ProxyShim,
-    basic_redirect, connect_proxy, check_validation as check)
+    basic_redirect, connect_proxy, check_validation as check, merge_dicts)
+from cdedb.common import PERSONA_STATUS_FIELDS
 import cdedb.database.constants as const
 
 class CoreFrontend(AbstractFrontend):
@@ -54,7 +55,7 @@ class CoreFrontend(AbstractFrontend):
             kind = "general"
         return self.render(rs, "error", {'kind': kind})
 
-    @access("anonymous", {"POST"})
+    @access("anonymous", modi={"POST"})
     @REQUESTdata(("username", "printable_ascii"), ("password", "str"),
                  ("wants", "#str_or_None"))
     def login(self, rs, username, password, wants):
@@ -78,7 +79,7 @@ class CoreFrontend(AbstractFrontend):
         rs.response.set_cookie("sessionkey", sessionkey)
         return rs.response
 
-    @access("persona", {"POST"})
+    @access("persona", modi={"POST"})
     def logout(self, rs):
         """Invalidate session."""
         self.coreproxy.logout(rs)
@@ -94,36 +95,96 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata(("confirm_id", "#int"))
     def show_user(self, rs, persona_id, confirm_id):
-        """Common entry point redirecting to user's realm."""
+        """FIXME"""
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
-        realm = self.coreproxy.get_realm(rs, persona_id)
-        params = {'confirm_id': self.encode_parameter(
-            "{}/show_user".format(realm), "confirm_id", confirm_id)}
-        return self.redirect(
-            rs, "{}/show_user".format(realm), params=params)
+        data = self.coreproxy.get_total_persona(rs, persona_id)
+        return self.render(rs, "show_user", {'data': data})
 
     @access("core_admin")
-    @REQUESTdata(("id_to_show", "cdedbid"))
-    def admin_show_user(self, rs, id_to_show):
+    @REQUESTdata(("id_to_show", "cdedbid"), ("realm", "str"))
+    def admin_show_user(self, rs, id_to_show, realm):
         """Allow admins to view any user data set."""
-        if rs.errors:
+        if rs.errors or not "{}_admin".format(realm) in rs.user.roles:
             return self.redirect(rs, "core/index")
-        return self.redirect_show_user(rs, id_to_show)
+        return self.redirect_show_user(rs, id_to_show, realm)
 
     @access("persona")
-    def change_user_form(self, rs, persona_id):
+    def change_user_form(self, rs):
+        """FIXME Common entry point redirecting to user's realm."""
+        data = self.coreproxy.get_total_persona(rs, rs.user.persona_id)
+        data['generation'] = self.coreproxy.changelog_get_generation(
+            rs, rs.user.persona_id)
+        merge_dicts(rs.values, data)
+        return self.render(rs, "change_user", {'username': data['username']})
+
+    @access("persona", modi={"POST"})
+    @REQUESTdata(("generation", "int"))
+    @REQUESTdatadict(
+        "display_name", "family_name", "given_names", "title",
+        "name_supplement", "telephone", "mobile", "address_supplement",
+        "address", "postal_code", "location", "country",
+        "address_supplement2", "address2", "postal_code2", "location2",
+        "country2", "weblink", "specialisation", "affiliation", "timeline",
+        "interests", "free_form", "bub_search")
+    def change_user(self, rs, generation, data):
+        """FIXME"""
+        data['id'] = rs.user.persona_id
+        data = check(rs, "persona", data)
+        if rs.errors:
+            return self.change_user_form(rs)
+        change_note = "Normal dataset change."
+        code = self.coreproxy.change_persona(rs, data, generation=generation,
+                                             change_note=change_note)
+        self.notify_return_code(rs, code)
+        if code < 0:
+            ## send a mail since changes needing review should be seldom enough
+            self.do_mail(
+                rs, "pending_changes",
+                {'To': (self.conf.MANAGEMENT_ADDRESS,),
+                 'Subject': 'CdEDB pending changes',})
+        return self.redirect_show_user(rs, rs.user.persona_id)
+
+    @access("core_admin")
+    def admin_change_user_form(self, rs, persona_id):
         """Common entry point redirecting to user's realm."""
-        realm = self.coreproxy.get_realm(rs, persona_id)
-        return self.redirect(rs, "{}/change_user_form".format(realm))
+        data = self.coreproxy.get_total_persona(rs, persona_id)
+        data['generation'] = self.coreproxy.changelog_get_generation(
+            rs, persona_id)
+        merge_dicts(rs.values, data)
+        return self.render(rs, "admin_change_user")
+
+
+    @access("core_admin", modi={"POST"})
+    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
+    @REQUESTdatadict(
+        "display_name", "family_name", "given_names", "title",
+        "name_supplement", "telephone", "mobile", "address_supplement",
+        "address", "postal_code", "location", "country",
+        "address_supplement2", "address2", "postal_code2", "location2",
+        "country2", "weblink", "specialisation", "affiliation", "timeline",
+        "interests", "free_form", "bub_search")
+    def admin_change_user(self, rs, persona_id, generation, change_note, data):
+        """FIXME"""
+        data['id'] = rs.user.persona_id
+        current = self.coreproxy.get_persona(rs, persona_id)
+        for item in PERSONA_STATUS_FIELDS:
+            data[item] = current[item]
+        data = check(rs, "persona", data)
+        if rs.errors:
+            return self.admin_change_user_form(rs, persona_id)
+        code = self.coreproxy.change_persona(rs, data, generation=generation,
+                                             change_note=change_note)
+        self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
 
     @access("persona")
     def change_password_form(self, rs):
         """Render form."""
         return self.render(rs, "change_password")
 
-    @access("persona", {"POST"})
+    @access("persona", modi={"POST"})
     @REQUESTdata(("old_password", "str"), ("new_password", "str"),
                  ("new_password2", "str"))
     def change_password(self, rs, old_password, new_password, new_password2):
@@ -167,19 +228,23 @@ class CoreFrontend(AbstractFrontend):
         if not exists:
             rs.errors.append(("email", ValueError("Nonexistant user.")))
             return self.reset_password_form(rs)
+        success, message = self.coreproxy.make_reset_cookie(rs, email)
+        if not success:
+            rs.notify("error", message)
         self.do_mail(
             rs, "reset_password",
             {'To': (email,), 'Subject': 'CdEDB password reset'},
             {'email': self.encode_parameter(
-                "core/do_password_reset_form", "email", email)})
+                "core/do_password_reset_form", "email", email),
+             'cookie': message})
         self.logger.info("Sent password reset mail to {} for IP {}.".format(
             email, rs.request.remote_addr))
         rs.notify("success", "Email sent.")
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
-    @REQUESTdata(("email", "#email"))
-    def do_password_reset_form(self, rs, email):
+    @REQUESTdata(("email", "#email"), ("cookie", "str"))
+    def do_password_reset_form(self, rs, email, cookie):
         """Second form. Pretty similar to first form, but now we know, that
         the account owner actually wants the reset."""
         if rs.errors:
@@ -189,30 +254,34 @@ class CoreFrontend(AbstractFrontend):
             "core/do_password_reset", "email", email)
         return self.render(rs, "do_password_reset")
 
-    @access("anonymous", {"POST"})
-    @REQUESTdata(("email", "#email"))
-    def do_password_reset(self, rs, email):
-        """Now we can send an email with a new password."""
+    @access("anonymous", modi={"POST"})
+    @REQUESTdata(("email", "#email"), ("new_password", "str"),
+                 ("cookie", "str"))
+    def do_password_reset(self, rs, email, new_password, cookie):
+        """Now we can reset to a new password."""
+        new_password = check(rs, "password_strength", new_password,
+                             "new_password")
         if rs.errors:
+            # FIXME if strength fails let user retry
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/reset_password_form")
-        code, message = self.coreproxy.reset_password(rs, email)
+        code, message = self.coreproxy.reset_password(rs, email, new_password,
+                                                      cookie=cookie)
         self.notify_return_code(rs, code, success="Password reset.",
                                 error=message)
         if not code:
             return self.redirect(rs, "core/reset_password_form")
         else:
-            self.do_mail(rs, "password_reset_done",
-                         {'To': (email,),
-                          'Subject': 'CdEDB password reset successful'},
-                         {'password': message})
             return self.redirect(rs, "core/index")
 
-    @access("core_admin", {"POST"})
+    @access("core_admin", modi={"POST"})
     def admin_password_reset(self, rs, persona_id):
         """Administrative password reset."""
-        data = self.coreproxy.get_data_one(rs, persona_id)
-        code, message = self.coreproxy.reset_password(rs, data['username'])
+        data = self.coreproxy.get_persona(rs, persona_id)
+        code, message = self.coreproxy.make_reset_cookie(rs, data['username'])
+        if code:
+            code, message = self.coreproxy.new_password(
+                rs, data['username'], cookie=message)
         self.notify_return_code(rs, code, success="Password reset.",
                                 error=message)
         if not code:
@@ -257,7 +326,7 @@ class CoreFrontend(AbstractFrontend):
             "core/do_username_change", "new_username", new_username)
         return self.render(rs, "do_username_change")
 
-    @access("persona", {'POST'})
+    @access("persona", modi={"POST"})
     @REQUESTdata(('new_username', '#email'), ('password', 'str'))
     def do_username_change(self, rs, new_username, password):
         """Now we can do the actual change."""
@@ -276,10 +345,10 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     def admin_username_change_form(self, rs, persona_id):
         """Render form."""
-        data = self.coreproxy.get_data_one(rs, persona_id)
+        data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data': data})
 
-    @access("core_admin", {'POST'})
+    @access("core_admin", modi={"POST"})
     @REQUESTdata(('new_username', 'email_or_None'))
     def admin_username_change(self, rs, persona_id, new_username):
         """Change username without verification."""
@@ -294,7 +363,7 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", {"POST"})
+    @access("core_admin", modi={"POST"})
     @REQUESTdata(("activity", "bool"))
     def toggle_activity(self, rs, persona_id, activity):
         """Enable/disable an account."""
@@ -305,33 +374,7 @@ class CoreFrontend(AbstractFrontend):
             'is_active': activity,
         }
         change_note = "Toggling activity to {}.".format(activity)
-        code = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
-        self.notify_return_code(rs, code)
-        return self.redirect_show_user(rs, persona_id)
-
-    @access("admin")
-    def adjust_privileges_form(self, rs, persona_id):
-        """Render form."""
-        data = self.coreproxy.get_data_one(rs, persona_id)
-        if 'newprivileges' not in rs.values:
-            for bit in const.PrivilegeBits:
-                if data['db_privileges'] & bit:
-                    rs.values.add('newprivileges', bit.value)
-        return self.render(rs, "adjust_privileges", {
-            'data': data, 'bits': const.PrivilegeBits})
-
-    @access("admin", {"POST"})
-    @REQUESTdata(("newprivileges", "[enum_privilegebits]"))
-    def adjust_privileges(self, rs, persona_id, newprivileges):
-        """Allocate permissions. This is for global admins only."""
-        if rs.errors:
-            return self.redirect_show_user(rs, persona_id)
-        data = {
-            'id': persona_id,
-            'db_privileges': sum(newprivileges),
-        }
-        change_note = "Setting privileges to {}.".format(sum(newprivileges))
-        code = self.coreproxy.adjust_persona(rs, data, change_note=change_note)
+        code = self.coreproxy.change_persona(rs, data, change_note=change_note)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -340,14 +383,14 @@ class CoreFrontend(AbstractFrontend):
         """Render form."""
         return self.render(rs, "genesis_request")
 
-    @access("anonymous", {"POST"})
-    @REQUESTdatadict("username", "notes", "given_names", "family_name")
+    @access("anonymous", modi={"POST"})
+    @REQUESTdatadict("username", "notes", "given_names", "family_name", "realm")
     def genesis_request(self, rs, data):
         """Voice the desire to become a persona.
 
         This initiates the genesis process.
         """
-        data = check(rs, "genesis_case_data", data, creation=True)
+        data = check(rs, "genesis_case", data, creation=True)
         if not rs.errors and len(data['notes']) > self.conf.MAX_RATIONALE:
             rs.errors.append(("notes", ValueError("Too long.")))
         if rs.errors:
@@ -397,19 +440,15 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "genesis_list_cases", {
             'to_review': to_review, 'approved': approved,})
 
-    @access("core_admin", {"POST"})
+    @access("core_admin", modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"),
-                 ("persona_status", "enum_personastati_or_None"))
-    def genesis_decide(self, rs, case_id, case_status, persona_status):
+                 ("realm", "str")) # FIXME maybe validate realm more?
+    def genesis_decide(self, rs, case_id, case_status, realm):
         """Approve or decline a genensis case.
 
         This sends an email with the link of the final creation page or a
         rejection note to the applicant.
         """
-        if (case_status == const.GenesisStati.approved
-                and persona_status is None):
-            rs.errors.append(("persona_status",
-                              ValueError("Must not be None.")))
         if rs.errors:
             return self.genesis_list_cases(rs)
         case = self.coreproxy.genesis_get_case(rs, case_id)
@@ -418,7 +457,7 @@ class CoreFrontend(AbstractFrontend):
             return self.genesis_list_cases(rs)
         data = {
             'id': case_id,
-            'persona_status': persona_status,
+            'realm': realm,
             'case_status': case_status,
             'reviewer': rs.user.persona_id,
         }
@@ -430,12 +469,6 @@ class CoreFrontend(AbstractFrontend):
             return rs.genesis_list_cases(rs)
         case = self.coreproxy.genesis_get_case(rs, case_id)
         if case_status == const.GenesisStati.approved:
-            if case['persona_status'] == const.PersonaStati.event_user:
-                realm = "event"
-            elif case['persona_status'] == const.PersonaStati.ml_user:
-                realm = "ml"
-            else:
-                raise RuntimeError("Impossible status.")
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
@@ -451,7 +484,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("info", "Case rejected.")
         return self.redirect(rs, "core/genesis_list_cases")
 
-    @access("core_admin", {"POST"})
+    @access("core_admin", modi={"POST"})
     def genesis_timeout(self, rs, case_id):
         """Abandon a genesis case.
 
@@ -472,6 +505,60 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect(rs, "core/genesis_list_cases")
 
     @access("core_admin")
+    def list_pending_changes(self, rs):
+        """List non-committed changelog entries."""
+        pending = self.coreproxy.changelog_get_changes(
+            rs, stati=(const.MemberChangeStati.pending,))
+        return self.render(rs, "list_pending_changes", {'pending': pending})
+
+    @access("core_admin")
+    def inspect_change(self, rs, persona_id):
+        """Look at a pending change."""
+        history = self.coreproxy.changelog_get_history(rs, persona_id,
+                                                       generations=None)
+        pending = history[max(history)]
+        if pending['change_status'] != const.MemberChangeStati.pending:
+            rs.notify("warning", "Persona has no pending change.")
+            return self.list_pending_changes(rs)
+        current = history[max(
+            key for key in history
+            if (history[key]['change_status']
+                == const.MemberChangeStati.committed))]
+        diff = {key for key in pending if current[key] != pending[key]}
+        return self.render(rs, "inspect_change", {
+            'pending': pending, 'current': current, 'diff': diff})
+
+    @access("core_admin", modi={"POST"})
+    @REQUESTdata(("generation", "int"), ("ack", "bool"))
+    def resolve_change(self, rs, persona_id, generation, ack):
+        """Make decision."""
+        if rs.errors:
+            return self.list_pending_changes(rs)
+        code = self.coreproxy.changelog_resolve_change(rs, persona_id,
+                                                       generation, ack)
+        message = "Change comitted." if ack else "Change dropped."
+        self.notify_return_code(rs, code, success=message)
+        return self.redirect(rs, "core/list_pending_changes")
+
+    @access("core_admin")
+    @REQUESTdata(("stati", "[int]"), ("start", "int_or_None"),
+                 ("stop", "int_or_None"))
+    def view_changelog_meta(self, rs, stati, start, stop):
+        """View changelog activity."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.coreproxy.retrieve_changelog_meta(rs, stati, start, stop)
+        personas = (
+            {entry['submitted_by'] for entry in log}
+            | {entry['reviewed_by'] for entry in log if entry['reviewed_by']}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        persona_data = self.coreproxy.get_personas(rs, personas)
+        return self.render(rs, "view_changelog_meta", {
+            'log': log, 'persona_data': persona_data})
+
+    @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
                  ("start", "int_or_None"), ("stop", "int_or_None"))
     def view_log(self, rs, codes, persona_id, start, stop):
@@ -484,6 +571,6 @@ class CoreFrontend(AbstractFrontend):
         personas = (
             {entry['submitted_by'] for entry in log}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        user_data = self.coreproxy.get_data(rs, personas)
+        user_data = self.coreproxy.get_personas(rs, personas)
         return self.render(rs, "view_log", {'log': log, 'user_data': user_data})
 

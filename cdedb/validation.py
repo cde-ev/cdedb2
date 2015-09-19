@@ -23,24 +23,23 @@ above. They return the tuple ``(mangled_value, errors)``, where
 ``errors`` is a list containing tuples ``(argname, exception)``.
 """
 
-import re
-import sys
-import functools
 import collections.abc
-import decimal
+import copy
 import datetime
 import dateutil.parser
-import string
-import pytz
-import werkzeug.datastructures
-import magic
-import PIL.Image
+import decimal
+import functools
 import io
 import logging
+import magic
+import PIL.Image
+import pytz
+import re
+import string
+import sys
+import werkzeug.datastructures
 
-current_module = sys.modules[__name__]
-
-from cdedb.common import EPSILON, compute_checkdigit, now
+from cdedb.common import EPSILON, compute_checkdigit, now, extract_roles
 from cdedb.serialization import deserialize
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
@@ -50,6 +49,8 @@ from cdedb.query import (
 from cdedb.config import BasicConfig
 from cdedb.enums import ALL_ENUMS
 _BASICCONF = BasicConfig()
+
+current_module = sys.modules[__name__]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -119,6 +120,21 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
 ##
 ## Below is the real stuff
 ##
+
+@_addvalidator
+def _None(val, argname=None, *, _convert=True):
+    """Force a None.
+
+    This is mostly for ensuring proper population of dicts.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (object or None, [(str or None, exception)])
+    """
+    if val is None:
+        return val, []
+    return None, [(argname, ValueError("Must be None."))]
 
 @_addvalidator
 def _any(val, argname=None, *, _convert=True):
@@ -489,43 +505,229 @@ def _email(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError("Must be a valid email address.")))
     return val, errs
 
-_PERSONA_COMMON_FIELDS = lambda: {
-    'username': _email_or_None,
+_PERSONA_TYPE_FIELDS = {
+    'is_cde_realm': _bool,
+    'is_event_realm': _bool,
+    'is_ml_realm': _bool,
+    'is_assembly_realm': _bool,
+    'is_member': _bool,
+    'is_searchable': _bool,
+    'is_active': _bool,
+}
+_PERSONA_BASE_CREATION = lambda: {
+    'username': _email,
+    'notes': _str_or_None,
+    'is_cde_realm': _bool,
+    'is_event_realm': _bool,
+    'is_ml_realm': _bool,
+    'is_assembly_realm': _bool,
+    'is_member': _bool,
+    'is_searchable': _bool,
+    'is_active': _bool,
+    'cloud_account': _bool,
     'display_name': _str,
     'given_names': _str,
     'family_name': _str,
-    'is_active': _bool,
-    'status': _enum_personastati,
-    'cloud_account': _bool,
-    'notes': _str_or_None,
+    'title': _None,
+    'name_supplement': _None,
+    'gender': _None,
+    'birthday': _None,
+    'telephone': _None,
+    'mobile': _None,
+    'address_supplement': _None,
+    'address': _None,
+    'postal_code': _None,
+    'location': _None,
+    'country': _None,
+    'birth_name': _None,
+    'address_supplement2': _None,
+    'address2': _None,
+    'postal_code2': _None,
+    'location2': _None,
+    'country2': _None,
+    'weblink': _None,
+    'specialisation': _None,
+    'affiliation': _None,
+    'timeline': _None,
+    'interests': _None,
+    'free_form': _None,
+    'trial_member': _None,
+    'decided_search': _None,
+    'bub_search': _None,
+    'foto': _None,
 }
-_PERSONA_ADDITIONAL_FIELDS = {
-    'db_privileges': _int,
+_PERSONA_CDE_CREATION = lambda: {
+    'title': _str_or_None,
+    'name_supplement': _str_or_None,
+    'gender': _enum_genders,
+    'birthday': _date,
+    'telephone': _phone_or_None,
+    'mobile': _phone_or_None,
+    'address_supplement': _str_or_None,
+    'address': _str_or_None,
+    'postal_code': _printable_ascii_or_None,
+    'location': _str_or_None,
+    'country': _str_or_None,
+    'birth_name': _str_or_None,
+    'address_supplement2': _str_or_None,
+    'address2': _str_or_None,
+    'postal_code2': _printable_ascii_or_None,
+    'location2': _str_or_None,
+    'country2': _str_or_None,
+    'weblink': _str_or_None,
+    'specialisation': _str_or_None,
+    'affiliation': _str_or_None,
+    'timeline': _str_or_None,
+    'interests': _str_or_None,
+    'free_form': _str_or_None,
+    'trial_member': _bool,
+    'decided_search': _bool,
+    'bub_search': _bool,
+    'foto': _str_or_None,
+}
+_PERSONA_EVENT_CREATION = lambda: {
+    'title': _str_or_None,
+    'name_supplement': _str_or_None,
+    'gender': _enum_genders,
+    'birthday': _date,
+    'telephone': _phone_or_None,
+    'mobile': _phone_or_None,
+    'address_supplement': _str_or_None,
+    'address': _str_or_None,
+    'postal_code': _printable_ascii_or_None,
+    'location': _str_or_None,
+    'country': _str_or_None,
+}
+_PERSONA_COMMON_FIELDS = lambda: {
+    'username': _email,
+    'notes': _str_or_None,
+    'is_admin': _bool,
+    'is_core_admin': _bool,
+    'is_cde_admin': _bool,
+    'is_event_admin': _bool,
+    'is_ml_admin': _bool,
+    'is_assembly_admin': _bool,
+    'is_cde_realm': _bool,
+    'is_event_realm': _bool,
+    'is_ml_realm': _bool,
+    'is_assembly_realm': _bool,
+    'is_member': _bool,
+    'is_searchable': _bool,
+    'cloud_account': _bool,
+    'is_archived': _bool,
+    'is_active': _bool,
+    'display_name': _str,
+    'given_names': _str,
+    'family_name': _str,
+    'title': _str_or_None,
+    'name_supplement': _str_or_None,
+    'gender': _enum_genders,
+    'birthday': _date,
+    'telephone': _phone_or_None,
+    'mobile': _phone_or_None,
+    'address_supplement': _str_or_None,
+    'address': _str_or_None,
+    'postal_code': _printable_ascii_or_None,
+    'location': _str_or_None,
+    'country': _str_or_None,
+    'birth_name': _str_or_None,
+    'address_supplement2': _str_or_None,
+    'address2': _str_or_None,
+    'postal_code2': _printable_ascii_or_None,
+    'location2': _str_or_None,
+    'country2': _str_or_None,
+    'weblink': _str_or_None,
+    'specialisation': _str_or_None,
+    'affiliation': _str_or_None,
+    'timeline': _str_or_None,
+    'interests': _str_or_None,
+    'free_form': _str_or_None,
+    'balance': _decimal,
+    'trial_member': _bool,
+    'decided_search': _bool,
+    'bub_search': _bool,
+    'foto': _str_or_None,
 }
 @_addvalidator
-def _persona_data(val, argname=None, *, creation=False, _convert=True):
-    """
+def _persona(val, argname=None, *, creation=False, transition=False,
+             _convert=True):
+    """Check a persona data set.
+
+    This is a bit tricky since attributes have different constraints
+    according to which status a persona has. Since an all-encompassing
+    solution would be quite tedious we expect status-bits only in case
+    of creation and transition and apply restrictive tests in all other
+    cases.
+
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
+    :type transition: bool
+    :param transition: If ``True`` test the data set on fitness for changing
+      the realms of a persona.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "persona_data"
+    argname = argname or "persona"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    if creation and transition:
+        raise RuntimeError("Only one of creation, transition may be specified.")
     if creation:
-        mandatory_fields = _PERSONA_COMMON_FIELDS()
+        temp, errs = _examine_dictionary_fields(
+            val, _PERSONA_TYPE_FIELDS, {}, allow_superfluous=True,
+            _convert=_convert)
+        if errs:
+            return temp, errs
+        temp.update({
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_ml_admin': False,
+        })
+        roles = extract_roles(temp)
         optional_fields = {}
+        mandatory_fields = copy.deepcopy(_PERSONA_BASE_CREATION())
+        if "cde" in roles:
+            mandatory_fields.update(_PERSONA_CDE_CREATION())
+        if "event" in roles:
+            mandatory_fields.update(_PERSONA_EVENT_CREATION())
+        ## ml and assembly define no custom fields
+    elif transition:
+        realm_checks = {
+            'is_cde_realm': _PERSONA_CDE_CREATION,
+            'is_event_realm': _PERSONA_EVENT_CREATION,
+            'is_ml_realm': {},
+            'is_assembly_realm': {},
+        }
+        mandatory_fields = {}
+        for key, checkers in realm_checks.items():
+            if val.get(key):
+                mandatory_fields.update(checkers)
+        optional_fields = {key: _bool for key in realm_checks}
     else:
         mandatory_fields = {'id': _int}
-        optional_fields = dict(_PERSONA_COMMON_FIELDS(),
-                               **_PERSONA_ADDITIONAL_FIELDS)
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+        optional_fields = _PERSONA_COMMON_FIELDS()
+    val, errs =  _examine_dictionary_fields(val, mandatory_fields,
+                                            optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    for suffix in ("", "2"):
+        if ((not val.get('country' + suffix)
+             or val.get('country' + suffix) == "Deutschland")
+             and val.get('postal_code' + suffix)):
+            postal_code, e = _german_postal_code(
+                val['postal_code' + suffix], 'postal_code' + suffix,
+                _convert=_convert)
+            val['postal_code' + suffix] = postal_code
+            errs.extend(e)
+    return val, errs
 
 def _parse_date(val):
     """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
@@ -731,159 +933,21 @@ def _german_postal_code(val, argname=None, *, _convert=True):
         errs.append((argname, ValueError("Invalid german postal code.")))
     return val, errs
 
-## lambda since _or_None is not yet defined
-_MEMBER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
-    'title': _str_or_None,
-    'name_supplement': _str_or_None,
-    'gender': _enum_genders,
-    'birthday': _date,
-    'telephone': _phone_or_None,
-    'mobile': _phone_or_None,
-    'address_supplement': _str_or_None,
-    'address': _str_or_None,
-    'postal_code': _printable_ascii_or_None,
-    'location': _str_or_None,
-    'country': _str_or_None,
-    'birth_name': _str_or_None,
-    'address_supplement2': _str_or_None,
-    'address2': _str_or_None,
-    'postal_code2': _printable_ascii_or_None,
-    'location2': _str_or_None,
-    'country2': _str_or_None,
-    'weblink': _str_or_None,
-    'specialisation': _str_or_None,
-    'affiliation': _str_or_None,
-    'timeline': _str_or_None,
-    'interests': _str_or_None,
-    'free_form': _str_or_None,
-    'trial_member': _bool,
-})
-_MEMBER_OPTIONAL_FIELDS = {
-    'decided_search': _bool,
-    'bub_search': _bool,
-}
-@_addvalidator
-def _member_data(val, argname=None, *, creation=False, _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type creation: bool
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
-    """
-    argname = argname or "member_data"
-    val, errs = _mapping(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
-    if creation:
-        mandatory_fields = _MEMBER_COMMON_FIELDS()
-        optional_fields = dict(_MEMBER_OPTIONAL_FIELDS,
-                               **_PERSONA_ADDITIONAL_FIELDS)
-    else:
-        mandatory_fields = {'id': _int}
-        optional_fields = dict(_MEMBER_COMMON_FIELDS(),
-                               balance=_decimal, **_MEMBER_OPTIONAL_FIELDS)
-        optional_fields = dict(optional_fields, **_PERSONA_ADDITIONAL_FIELDS)
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
-    if errs:
-        return val, errs
-    for suffix in ("", "2"):
-        ## Only validate if keys are present to allow partial data. However
-        ## we require a complete address to be submitted, otherwise the
-        ## validation may be tricked.
-        if any(val.get(key + suffix)
-               for key in ('address_supplement', 'address', 'postal_code',
-                           'location', 'country')):
-            if (not val.get('country' + suffix)
-                    or val.get('country' + suffix) == "Deutschland"):
-                for key in ('address', 'postal_code', 'location'):
-                    if not val.get(key + suffix):
-                        errs.append((key+suffix, ValueError("Missing entry.")))
-                if val.get('postal_code' + suffix):
-                    postal_code, e = _german_postal_code(
-                        val['postal_code' + suffix], 'postal_code' + suffix,
-                        _convert=_convert)
-                    val['postal_code' + suffix] = postal_code
-                    errs.extend(e)
-            else:
-                for key in ('address', 'location'):
-                    if not val.get(key + suffix):
-                        errs.append((key+suffix, ValueError("Missing entry.")))
-    return val, errs
-
-_EVENT_USER_COMMON_FIELDS = lambda: dict(_PERSONA_COMMON_FIELDS(), **{
-    'title': _str_or_None,
-    'name_supplement': _str_or_None,
-    'gender': _enum_genders,
-    'birthday': _date,
-    'telephone': _phone_or_None,
-    'mobile': _phone_or_None,
-    'address_supplement': _str_or_None,
-    'address': _str_or_None,
-    'postal_code': _printable_ascii_or_None,
-    'location': _str_or_None,
-    'country': _str_or_None,
-})
-@_addvalidator
-def _event_user_data(val, argname=None, *, creation=False, _convert=True):
-    """
-    :type val: object
-    :type argname: str or None
-    :type _convert: bool
-    :type creation: bool
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    :rtype: (dict or None, [(str or None, exception)])
-    """
-    argname = argname or "event_user_data"
-    val, errs = _mapping(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
-    if creation:
-        mandatory_fields = _EVENT_USER_COMMON_FIELDS()
-        optional_fields = {}
-    else:
-        mandatory_fields = {'id': _int}
-        optional_fields = dict(_EVENT_USER_COMMON_FIELDS(),
-                               **_PERSONA_ADDITIONAL_FIELDS)
-    val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, optional_fields, _convert=_convert)
-    if errs:
-        return val, errs
-    if any(val.get(key) for key in ('address_supplement', 'address',
-                                    'postal_code', 'location', 'country')):
-        if not val.get('country') or val.get('country') == "Deutschland":
-            for key in ('address', 'postal_code', 'location'):
-                if not val.get(key):
-                    errs.append((key, ValueError("Missing entry.")))
-            if val.get('postal_code'):
-                postal_code, e = _german_postal_code(
-                    val['postal_code'], 'postal_code', _convert=_convert)
-                val['postal_code'] = postal_code
-                errs.extend(e)
-        else:
-            for key in ('address', 'location'):
-                if not val.get(key):
-                    errs.append((key, ValueError("Missing entry.")))
-    return val, errs
-
 _GENESIS_CASE_COMMON_FIELDS = lambda: {
     'username': _email,
     'given_names': _str,
     'family_name': _str,
+    'realm': _str,
     'notes': _str,
 }
 _GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
-    'persona_status': _enum_personastati,
+    'realm': _str,
     'case_status': _enum_genesisstati,
     'secret': _str,
     'reviewer': _int,
 }
 @_addvalidator
-def _genesis_case_data(val, argname=None, *, creation=False, _convert=True):
+def _genesis_case(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -893,7 +957,7 @@ def _genesis_case_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "genesis_case_data"
+    argname = argname or "genesis_case"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -904,8 +968,14 @@ def _genesis_case_data(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = {'id': _int,}
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                **_GENESIS_CASE_OPTIONAL_FIELDS())
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
-                                      _convert=_convert)
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    if ('realm' in val
+            and val['realm'] not in ("cde", "event", "ml", "assembly")):
+        errs.append(('realm', ValueError("Invalid target realm.")))
+    return val, errs
 
 @_addvalidator
 def _input_file(val, argname=None, *, _convert=True):
@@ -1769,7 +1839,7 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'sub_policy': _enum_subscriptionpolicy,
     'mod_policy': _enum_moderationpolicy,
     'attachment_policy': _enum_attachmentpolicy,
-    'audience': _any,
+    'audience_policy': _enum_audiencepolicy,
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
     'is_active': _bool,
@@ -1809,8 +1879,7 @@ def _mailinglist_data(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    for key, validator in (('audience', _enum_personastati),
-                           ('registration_stati', _enum_registrationpartstati),
+    for key, validator in (('registration_stati', _enum_registrationpartstati),
                            ('moderators', _int), ('whitelist', _email)):
         if key in val:
             oldarray, e = _iterable(val[key], key, _convert=_convert)

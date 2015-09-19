@@ -3,8 +3,53 @@
 import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 import copy
-import subprocess
+import datetime
+import decimal
 import ldap
+import subprocess
+
+PERSONA_TEMPLATE = {
+    'username': "zelda@example.cde",
+    'notes': "Not Link.",
+    'is_cde_realm': False,
+    'is_event_realm': False,
+    'is_ml_realm': False,
+    'is_assembly_realm': False,
+    'is_member': False,
+    'is_searchable': False,
+    'is_active': True,
+    'cloud_account': False,
+    'display_name': "Zelda",
+    'family_name': "Zeruda-Hime",
+    'given_names': "Zelda",
+    'title': None,
+    'name_supplement': None,
+    'gender': None,
+    'birthday': None,
+    'telephone': None,
+    'mobile': None,
+    'address_supplement': None,
+    'address': None,
+    'postal_code': None,
+    'location': None,
+    'country': None,
+    'birth_name': None,
+    'address_supplement2': None,
+    'address2': None,
+    'postal_code2': None,
+    'location2': None,
+    'country2': None,
+    'weblink': None,
+    'specialisation': None,
+    'affiliation': None,
+    'timeline': None,
+    'interests': None,
+    'free_form': None,
+    'trial_member': None,
+    'decided_search': None,
+    'bub_search': None,
+    'foto': None,
+}
 
 class TestCoreBackend(BackendTest):
     used_backends = ("core",)
@@ -32,11 +77,11 @@ class TestCoreBackend(BackendTest):
             self.core.logout(self.key)
 
     @as_users("anton", "berta", "emilia")
-    def test_set_persona_data(self, user):
+    def test_set_persona(self, user):
         new_name = "Zelda"
-        self.core.set_persona_data(self.key, {'id': user['id'],
-                                              'display_name': new_name})
-        self.assertEqual(new_name, self.core.retrieve_persona_data_one(
+        self.core.set_persona(self.key, {'id': user['id'],
+                                         'display_name': new_name})
+        self.assertEqual(new_name, self.core.retrieve_persona(
             self.key, user['id'])['display_name'])
 
     @as_users("anton", "berta")
@@ -70,16 +115,27 @@ class TestCoreBackend(BackendTest):
         self.login(newuser)
         self.assertTrue(self.key)
 
+    @as_users("anton", "berta")
+    def test_set_foto(self, user):
+        new_foto = "rkorechkorekchoreckhoreckhorechkrocehkrocehk"
+        self.assertLess(0, self.core.change_foto(self.key, 2, new_foto))
+        result = self.core.get_cde_users(self.key, (1, 2))
+        self.assertEqual({1: None, 2: new_foto}, {k: result[k]['foto'] for k in result})
+
     def test_verify_existence(self):
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))
         self.assertFalse(self.core.verify_existence(self.key, "nonexistent@example.cde"))
 
     def test_password_reset(self):
-        ret, _ = self.core.reset_password(self.key, "berta@example.cde")
+        new_pass = "rK;7e$ekgReW2t"
+        ret, cookie = self.core.make_reset_cookie(self.key, "berta@example.cde")
         self.assertTrue(ret)
-        ret, _ = self.core.reset_password(self.key, "anton@example.cde")
+        ret, effective = self.core.reset_password(self.key, "berta@example.cde", new_pass, cookie)
+        self.assertTrue(ret)
+        self.assertEqual(new_pass, effective)
+        ret, _ = self.core.make_reset_cookie(self.key, "anton@example.cde")
         self.assertFalse(ret)
-        ret, _ = self.core.reset_password(self.key, "nonexistant@example.cde")
+        ret, _ = self.core.make_reset_cookie(self.key, "nonexistant@example.cde")
         self.assertFalse(ret)
 
     @as_users("anton", "berta")
@@ -101,7 +157,7 @@ class TestCoreBackend(BackendTest):
         }
         if user['id'] == 1:
             update['cloud_account'] = False
-        self.core.set_persona_data(self.key, update, allow_username_change=True)
+        self.core.set_persona(self.key, update, allow_specials=("username",))
         ldap_con = ldap.initialize("ldap://localhost")
         ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",
                                "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")
@@ -123,22 +179,81 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton")
     def test_create_persona(self, user):
-        data = {
-            "username": 'zelda@example.cde',
-            "display_name": 'Zelda',
-            "family_name": "Zeruda-Hime",
-            "given_names": "Zelda",
-            "is_active": True,
-            "status": 1,
-            "cloud_account": True,
-            "db_privileges": 0,
-            "notes": "foo bar",
-        }
+        data = copy.deepcopy(PERSONA_TEMPLATE)
         new_id = self.core.create_persona(self.key, data)
         data["id"] = new_id
         self.assertGreater(new_id, 0)
-        new_data = self.core.get_data_one(self.key, new_id)
+        new_data = self.core.get_total_persona(self.key, new_id)
+        data.update({
+            'balance': decimal.Decimal('0.00'),
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_ml_admin': False,
+        })
         self.assertEqual(data, new_data)
+        expectation = {
+            1: {
+                'address': None,
+                'address2': None,
+                'address_supplement': None,
+                'address_supplement2': None,
+                'affiliation': None,
+                'balance': None,
+                'birth_name': None,
+                'birthday': None,
+                'bub_search': None,
+                'change_note': 'Persona creation.',
+                'change_status': 1,
+                'cloud_account': False,
+                'country': None,
+                'country2': None,
+                'ctime': nearly_now(),
+                'decided_search': None,
+                'display_name': 'Zelda',
+                'family_name': 'Zeruda-Hime',
+                'foto': None,
+                'free_form': None,
+                'gender': None,
+                'generation': 1,
+                'given_names': 'Zelda',
+                'id': 13,
+                'interests': None,
+                'is_active': True,
+                'is_admin': False,
+                'is_archived': False,
+                'is_assembly_admin': False,
+                'is_assembly_realm': False,
+                'is_cde_admin': False,
+                'is_cde_realm': False,
+                'is_core_admin': False,
+                'is_event_admin': False,
+                'is_event_realm': False,
+                'is_member': False,
+                'is_ml_admin': False,
+                'is_ml_realm': False,
+                'is_searchable': False,
+                'location': None,
+                'location2': None,
+                'mobile': None,
+                'name_supplement': None,
+                'notes': 'Not Link.',
+                'postal_code': None,
+                'postal_code2': None,
+                'reviewed_by': None,
+                'specialisation': None,
+                'submitted_by': 1,
+                'telephone': None,
+                'timeline': None,
+                'title': None,
+                'trial_member': None,
+                'username': 'zelda@example.cde',
+                'weblink': None}}
+        history = self.core.changelog_get_history(self.key, new_id, None)
+        self.assertEqual(expectation, history)
         ldap_con = ldap.initialize("ldap://localhost")
         ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",
                                "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")
@@ -152,10 +267,154 @@ class TestCoreBackend(BackendTest):
             dn, {'cn': [data['display_name'].encode('utf-8')],
                  'displayName': [data['display_name'].encode('utf-8')],
                  'mail': [data['username'].encode('utf-8')],
-                 'cloudAccount': [b"TRUE"],
+                 'cloudAccount': [b"FALSE"],
                  'isActive': [b"TRUE"]})]
         self.assertEqual(expectation, val)
         ldap_con.unbind()
+
+    @as_users("anton")
+    def test_create_member(self, user):
+        data = copy.deepcopy(PERSONA_TEMPLATE)
+        data.update({
+            'is_ml_realm': True,
+            'is_event_realm': True,
+            'is_assembly_realm': True,
+            'is_cde_realm': True,
+            'is_member': True,
+            'title': "Dr.",
+            'name_supplement': None,
+            'gender': const.Genders.female,
+            'birthday': datetime.date(1987, 6, 5),
+            'telephone': None,
+            'mobile': None,
+            'address_supplement': None,
+            'address': "An der Eiche",
+            'postal_code': "12345",
+            'location': "Marcuria",
+            'country': "Arkadien",
+            'birth_name': None,
+            'address_supplement2': None,
+            'address2': None,
+            'postal_code2': None,
+            'location2': None,
+            'country2': None,
+            'weblink': None,
+            'specialisation': "Being rescued",
+            'affiliation': "Link",
+            'timeline': None,
+            'interests': "Ocarinas",
+            'free_form': None,
+            'trial_member': True,
+            'decided_search': False,
+            'bub_search': False,
+            'foto': None,
+        })
+        new_id = self.core.create_persona(self.key, data)
+        data["id"] = new_id
+        self.assertGreater(new_id, 0)
+        new_data = self.core.get_total_persona(self.key, new_id)
+        data.update({
+            'balance': decimal.Decimal('0.00'),
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_ml_admin': False,
+        })
+        self.assertEqual(data, new_data)
+
+    @as_users("anton")
+    def test_create_event_user(self, user):
+        data = copy.deepcopy(PERSONA_TEMPLATE)
+        data.update({
+            'is_ml_realm': True,
+            'is_event_realm': True,
+            'title': "Dr.",
+            'name_supplement': None,
+            'gender': const.Genders.female,
+            'birthday': datetime.date(1987, 6, 5),
+            'telephone': None,
+            'mobile': None,
+            'address_supplement': None,
+            'address': "An der Eiche",
+            'postal_code': "12345",
+            'location': "Marcuria",
+            'country': "Arkadien",
+        })
+        new_id = self.core.create_persona(self.key, data)
+        data["id"] = new_id
+        self.assertGreater(new_id, 0)
+        new_data = self.core.get_total_persona(self.key, new_id)
+        data.update({
+            'balance': decimal.Decimal('0.00'),
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_ml_admin': False,
+        })
+        self.assertEqual(data, new_data)
+
+
+    @as_users("anton")
+    def test_create_assembly_user(self, user):
+        data = copy.deepcopy(PERSONA_TEMPLATE)
+        data['is_ml_realm'] = True
+        data['is_assembly_realm'] = True
+        new_id = self.core.create_persona(self.key, data)
+        data["id"] = new_id
+        self.assertGreater(new_id, 0)
+        new_data = self.core.get_total_persona(self.key, new_id)
+        data.update({
+            'balance': decimal.Decimal('0.00'),
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_ml_admin': False,
+        })
+        self.assertEqual(data, new_data)
+
+    @as_users("anton")
+    def test_create_mixed_user(self, user):
+        data = copy.deepcopy(PERSONA_TEMPLATE)
+        data.update({
+            'is_ml_realm': True,
+            'is_assembly_realm': True,
+            'is_event_realm': True,
+            'title': "Dr.",
+            'name_supplement': None,
+            'gender': const.Genders.female,
+            'birthday': datetime.date(1987, 6, 5),
+            'telephone': None,
+            'mobile': None,
+            'address_supplement': None,
+            'address': "An der Eiche",
+            'postal_code': "12345",
+            'location': "Marcuria",
+            'country': "Arkadien",
+        })
+        new_id = self.core.create_persona(self.key, data)
+        data["id"] = new_id
+        self.assertGreater(new_id, 0)
+        new_data = self.core.get_total_persona(self.key, new_id)
+        data.update({
+            'balance': decimal.Decimal('0.00'),
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_ml_admin': False,
+        })
+        self.assertEqual(data, new_data)
 
     @as_users("anton")
     def test_genesis(self, user):
@@ -163,6 +422,7 @@ class TestCoreBackend(BackendTest):
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
+            "realm": "event",
             "notes": "Some blah",
         }
         case_id = self.core.genesis_request(None, data)
@@ -173,7 +433,6 @@ class TestCoreBackend(BackendTest):
         expectation = data
         expectation.update({
             'id': case_id,
-            'persona_status': None,
             'case_status': const.GenesisStati.to_review,
             'secret': None,
             'reviewer': None,
@@ -183,7 +442,6 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, value)
         update = {
             'id': case_id,
-            'persona_status': const.PersonaStati.event_user,
             'case_status': const.GenesisStati.approved,
             'secret': "foobar",
             'reviewer': 1,
@@ -197,34 +455,89 @@ class TestCoreBackend(BackendTest):
     @as_users("anton")
     def test_verify_personas(self, user):
         self.assertEqual(
-            {1, 2, 4, 5, 6},
-            set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 1000), (0, 2, 20))))
+            {1, 2, 3, 5, 6, 7, 9, 12},
+            set(self.core.verify_personas(self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), ("event",))))
+
+    @as_users("anton")
+    def test_user_getters(self, user):
+        expectation = {
+            'cloud_account': True,
+            'display_name': 'Bertå',
+            'family_name': 'Beispiel',
+            'given_names': 'Bertålotta',
+            'id': 2,
+            'is_active': True,
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_assembly_realm': True,
+            'is_cde_admin': False,
+            'is_cde_realm': True,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_event_realm': True,
+            'is_member': True,
+            'is_ml_admin': False,
+            'is_ml_realm': True,
+            'is_searchable': True,
+            'notes': None,
+            'username': 'berta@example.cde'}
+        self.assertEqual(expectation, self.core.get_persona(self.key, 2))
+        self.assertEqual(expectation, self.core.get_ml_user(self.key, 2))
+        self.assertEqual(expectation, self.core.get_assembly_user(self.key, 2))
+        expectation.update({
+            'address': 'Im Garten 77',
+            'address_supplement': 'bei Spielmanns',
+            'birthday': datetime.date(1981, 2, 11),
+            'cloud_account': True,
+            'country': None,
+            'gender': 0,
+            'location': 'Utopia',
+            'mobile': '0163/123456789',
+            'name_supplement': 'MdB',
+            'postal_code': '34576',
+            'telephone': '+49 (5432) 987654321',
+            'title': 'Dr.',
+            })
+        self.assertEqual(expectation, self.core.get_event_user(self.key, 2))
+        expectation.update({
+            'address2': 'Strange Road 9 3/4',
+            'address_supplement2': None,
+            'affiliation': 'Jedermann',
+            'balance': decimal.Decimal('12.50'),
+            'birth_name': 'Gemeinser',
+            'bub_search': True,
+            'country2': 'Far Away',
+            'decided_search': True,
+            'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
+            'free_form': 'Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen',
+            'interests': 'Immer',
+            'location2': 'Foreign City',
+            'postal_code2': '8XA 45-$',
+            'specialisation': 'Alles\nUnd noch mehr',
+            'telephone': '+49 (5432) 987654321',
+            'timeline': 'Überall',
+            'trial_member': False,
+            'username': 'berta@example.cde',
+            'weblink': 'https://www.bundestag.cde'})
+        self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
+        self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("anton")
     def test_log(self, user):
         ## first generate some data
-        data = {
-            "username": 'zelda@example.cde',
-            "family_name": "Zeruda-Hime",
-            "given_names": "Zelda",
-            "display_name": 'Zelda',
-            "is_active": True,
-            "status": 1,
-            "cloud_account": True,
-            "db_privileges": 0,
-            "notes": "foo bar",
-        }
+        data = copy.deepcopy(PERSONA_TEMPLATE)
         self.core.create_persona(self.key, data)
         data = {
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zeldax@example.cde',
+            'realm': "event",
             "notes": "Some blah",
         }
         case_id = self.core.genesis_request(None, data)
         update = {
             'id': case_id,
-            'persona_status': const.PersonaStati.event_user,
             'case_status': const.GenesisStati.approved,
             'secret': "foobar",
             'reviewer': 1,
@@ -256,3 +569,87 @@ class TestCoreBackend(BackendTest):
              'persona_id': 13,
              'submitted_by': 1})
         self.assertEqual(expectation, self.core.retrieve_log(self.key))
+
+    @as_users("anton")
+    def test_changelog_meta(self, user):
+        expectation = (
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 12,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 11,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 10,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 9,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 7,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 6,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 5,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 4,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 3,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 2,
+             'reviewed_by': None,
+             'submitted_by': 2},
+            {'change_note': 'Init.',
+             'change_status': 1,
+             'ctime': nearly_now(),
+             'generation': 1,
+             'persona_id': 1,
+             'reviewed_by': None,
+             'submitted_by': 1})
+        self.assertEqual(expectation,
+                         self.core.retrieve_changelog_meta(self.key))
+

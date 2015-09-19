@@ -20,7 +20,7 @@
 <<% endblock %>>
 <<% block content %>>
     \taburowcolors[2] 2{white .. black!5}
-    \begin{longtabu}{ll>{\raggedright}p{.3\linewidth}<<< ('l'*(event_data['parts']|length))|te >>>l}
+    \begin{longtabu}{ll>{\raggedright}p{.3\linewidth}l<<< ('l'*(event_data['parts']|length))|te >>>l}
     \toprule
     Vorname & Nachname & Ort &
     <<% for part_id, pdata in event_data['parts']|dictsort -%>>
@@ -30,7 +30,7 @@
     \midrule
     \endfirsthead
     \midrule
-    Vorname & Nachname & Ort &
+    Vorname & Nachname & Ort & Handy &
     <<% for part_id, pdata in event_data['parts']|dictsort -%>>
         <<< pdata['title']|te >>> &
     <<% endfor -%>>
@@ -51,6 +51,7 @@
                 <<< user_data[rdata['persona_id']]['country']|te >>>
             <<%- endif -%>>
             &
+            <<< user_data[rdata['persona_id']]['mobile']|te >>> &
             <<% for part_id in event_data['parts']|sort -%>>
                 <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.participant -%>>
                     <<% if rdata['parts'][part_id]['course_id'] -%>>

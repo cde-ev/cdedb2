@@ -4,15 +4,14 @@
 variant for external participants.
 """
 
-from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
     access, internal_access, make_RPCDaemon, run_RPCDaemon,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, AuthShim, PYTHON_TO_SQL_MAP)
+    singularize, AuthShim, PYTHON_TO_SQL_MAP, AbstractBackend)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
-    glue, EVENT_USER_DATA_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS,
-    PERSONA_DATA_FIELDS, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS,
+    glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS,
+    PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS,
     COURSE_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
     LODGEMENT_FIELDS, unwrap, now)
 from cdedb.config import Config
@@ -31,15 +30,6 @@ import psycopg2.extras
 #:
 #:     event.registrations AS reg
 #:     JOIN core.personas AS persona ON reg.persona_id = persona.id
-#:     JOIN (SELECT id, status = ANY('{0, 1}'::int[]) AS is_member FROM core.personas)
-#:          AS membership ON membership.id = persona.id
-#:     JOIN (
-#:           (SELECT persona_id, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address,
-#:                   postal_code, location, country FROM cde.member_data)
-#:           UNION
-#:           (SELECT persona_id, title, name_supplement, gender, birthday, telephone, mobile, address_supplement, address,
-#:                   postal_code, location, country FROM event.user_data)
-#:          ) AS user_data ON reg.persona_id = user_data.persona_id
 #:     LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1, status AS status1, lodgement_id AS lodgement_id1,
 #:                             course_instructor AS course_instructor1 FROM event.registration_parts WHERE part_id = 1)
 #:          AS part1 ON reg.id = part1.registration_id
@@ -54,28 +44,16 @@ import psycopg2.extras
 _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations AS reg",
     "JOIN core.personas AS persona ON reg.persona_id = persona.id",
-    "JOIN (SELECT id, status = ANY('{{{member_stati}}}'::int[])",
-        "AS is_member FROM core.personas) AS membership",
-        "ON membership.id = persona.id",
-    "JOIN ((SELECT {user_data} FROM cde.member_data)",
-        "UNION (SELECT {user_data} FROM event.user_data))",
-        "AS user_data ON reg.persona_id = user_data.persona_id",
     "{part_tables}", ## registration part details will be filled in here
     "LEFT OUTER JOIN (SELECT * FROM",
         "json_to_recordset(to_json(array(",
             "SELECT field_data FROM event.registrations)))",
         "AS X({json_fields})) AS fields ON reg.id = fields.registration_id")
 
-class EventBackend(AbstractUserBackend):
+class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
     additional actions available."""
     realm = "event"
-    user_management = {
-        "data_table": "event.user_data",
-        "data_fields": EVENT_USER_DATA_FIELDS,
-        "validator": "event_user_data",
-        "user_status": const.PersonaStati.event_user,
-    }
 
     def __init__(self, configpath):
         super().__init__(configpath)
@@ -84,7 +62,7 @@ class EventBackend(AbstractUserBackend):
     def establish(self, sessionkey, method, allow_internal=False):
         ret = super().establish(sessionkey, method,
                                 allow_internal=allow_internal)
-        if ret and ret.user.is_persona:
+        if ret and "persona" in ret.user.roles:
             ret.user.orga = unwrap(self.orga_infos(
                 ret, (ret.user.persona_id,)))
         return ret
@@ -112,7 +90,7 @@ class EventBackend(AbstractUserBackend):
                                                   ("event_id",), course_id))
         return event_id in rs.user.orga
 
-    @access("event_user")
+    @access("event")
     def is_offline_locked(self, rs, *, event_id=None, course_id=None):
         """Helper to determine if an event or course is locked for offline
         usage.
@@ -173,7 +151,7 @@ class EventBackend(AbstractUserBackend):
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
-    @access("event_user")
+    @access("event")
     @singularize("participation_info")
     def participation_infos(self, rs, ids):
         """List concluded events visited by specific personas.
@@ -195,67 +173,6 @@ class EventBackend(AbstractUserBackend):
         ret = {}
         for anid in ids:
             ret[anid] = tuple(x for x in event_data if x['persona_id'] == anid)
-        return ret
-
-    @access("event_user")
-    def change_user(self, rs, data):
-        return super().change_user(rs, data)
-
-    @access("event_user")
-    @singularize("get_data_one")
-    def get_data(self, rs, ids):
-        return super().get_data(rs, ids)
-
-    @access("event_admin")
-    def create_user(self, rs, data):
-        return super().create_user(rs, data)
-
-    @access("anonymous")
-    def genesis_check(self, rs, case_id, secret):
-        return super().genesis_check(rs, case_id, secret)
-
-    @access("anonymous")
-    def genesis(self, rs, case_id, secret, data):
-        return super().genesis(rs, case_id, secret, data)
-
-    @access("event_user")
-    @singularize("acquire_data_one")
-    def acquire_data(self, rs, ids):
-        """Return user data sets.
-
-        This is somewhat like :py:meth:`get_data`, but more general in
-        that it allows ids from event and cde realm and dispatches the
-        request to the correct place. Thus this is the default way to
-        obtain persona data pertaining to a registration.
-
-        This has the special behaviour that it can retrieve cde member
-        datasets without interacting with the quota mechanism. Thus
-        usage should be limited privileged users (basically orgas).
-
-        .. warning:: It is impossible to atomize this operation. Since this
-          allows a non-member to retrieve member data we have to escalate
-          privileges (which happens in
-          :py:meth:`cdedb.backend.cde.CdEBackend.get_data_no_quota`) thus
-          breaking any attempt at atomizing.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        """
-        ids = affirm_array("int", ids)
-        realms = self.core.get_realms(rs, ids)
-        ret = {}
-        ids_event = tuple(anid for anid in realms if realms[anid] == "event")
-        if ids_event:
-            ret.update(self.get_data(rs, ids_event))
-        ids_cde = tuple(anid for anid in realms if realms[anid] == "cde")
-        if ids_cde:
-            ## filter fields, so that we do not leak cde internal stuff
-            tmp = self.cde.get_data_no_quota(rs, ids_cde)
-            temp = {key: {k: v for k, v in value.items()
-                          if k in PERSONA_DATA_FIELDS + EVENT_USER_DATA_FIELDS}
-                    for key, value in tmp.items()}
-            ret.update(temp)
         return ret
 
     def event_log(self, rs, code, event_id, persona_id=None,
@@ -285,7 +202,7 @@ class EventBackend(AbstractUserBackend):
         }
         return self.sql_insert(rs, "event.log", data)
 
-    @access("event_user")
+    @access("event")
     def retrieve_log(self, rs, codes=None, event_id=None, start=None,
                      stop=None):
         """Get recorded activity.
@@ -434,7 +351,7 @@ class EventBackend(AbstractUserBackend):
                                entity_key="event_id")
         return {e['id']: e['title'] for e in data}
 
-    @access("event_user")
+    @access("event")
     def submit_general_query(self, rs, query, event_id=None):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
@@ -453,10 +370,6 @@ class EventBackend(AbstractUserBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
             event_data = self.get_event_data_one(rs, event_id)
-            user_data_columns = (
-                "persona_id", "title", "name_supplement", "gender", "birthday",
-                "telephone", "mobile", "address_supplement", "address",
-                "postal_code", "location", "country",)
             part_table_template = glue(
                 "LEFT OUTER JOIN (SELECT registration_id, {part_data}",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
@@ -467,9 +380,6 @@ class EventBackend(AbstractUserBackend):
                 "{col} AS {col}{part_id}".format(col=col, part_id=part_id)
                 for col in part_data_columns)
             view = _REGISTRATION_VIEW_TEMPLATE.format(
-                member_stati=", ".join(str(x.value)
-                                       for x in const.MEMBER_STATI),
-                user_data=", ".join(user_data_columns),
                 part_tables=" ".join(
                     part_table_template.format(
                         part_data=part_data_gen(part_id), part_id=part_id)
@@ -484,14 +394,13 @@ class EventBackend(AbstractUserBackend):
         elif query.scope == "qview_event_user":
             if not self.is_admin(rs):
                 raise PrivilegeError("Admin only.")
-            query.constraints.append(("status", QueryOperators.equal,
-                                      const.PersonaStati.event_user))
-            query.spec['status'] = "int"
+            query.constraints.append(("is_event_realm", QueryOperators.equal,
+                                      True))
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query, view=view)
 
-    @access("event_user")
+    @access("event")
     @singularize("get_past_event_data_one")
     def get_past_event_data(self, rs, ids):
         """Retrieve data for some concluded events.
@@ -504,7 +413,7 @@ class EventBackend(AbstractUserBackend):
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
 
-    @access("event_user")
+    @access("event")
     @singularize("get_event_data_one")
     def get_event_data(self, rs, ids):
         """Retrieve data for some events organized via DB.
@@ -562,7 +471,7 @@ class EventBackend(AbstractUserBackend):
                             data['id'])
         return ret
 
-    @access("event_user")
+    @access("event")
     def set_event_data(self, rs, data):
         """Update some keys of an event organized via DB.
 
@@ -739,7 +648,7 @@ class EventBackend(AbstractUserBackend):
         self.event_log(rs, const.EventLogCodes.event_created, new_id)
         return new_id
 
-    @access("event_user")
+    @access("event")
     @singularize("get_past_course_data_one")
     def get_past_course_data(self, rs, ids):
         """Retrieve data for some concluded courses.
@@ -755,7 +664,7 @@ class EventBackend(AbstractUserBackend):
                                ids)
         return {e['id']: e for e in data}
 
-    @access("event_user")
+    @access("event")
     @singularize("get_course_data_one")
     def get_course_data(self, rs, ids):
         """Retrieve data for some courses organized via DB.
@@ -798,7 +707,7 @@ class EventBackend(AbstractUserBackend):
             additional_info=current['title'])
         return ret
 
-    @access("event_user")
+    @access("event")
     def set_course_data(self, rs, data):
         """Update some keys of a course linked to an event organized via DB.
 
@@ -872,7 +781,7 @@ class EventBackend(AbstractUserBackend):
                             data['event_id'], additional_info=data['title'])
         return ret
 
-    @access("event_user")
+    @access("event")
     def create_course(self, rs, data):
         """Make a new course organized via DB.
 
@@ -988,7 +897,7 @@ class EventBackend(AbstractUserBackend):
             persona_id=persona_id)
         return ret
 
-    @access("event_user")
+    @access("event")
     def list_participants(self, rs, *, event_id=None, course_id=None):
         """List all participants of a concluded event or course.
 
@@ -1016,7 +925,7 @@ class EventBackend(AbstractUserBackend):
             entity_key=entity_key)
         return {e['persona_id']: e for e in data}
 
-    @access("event_user")
+    @access("event")
     def list_registrations(self, rs, event_id, persona_id=None):
         """List all registrations of an event.
 
@@ -1041,7 +950,7 @@ class EventBackend(AbstractUserBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 
-    @access("event_user")
+    @access("event")
     @singularize("get_registration")
     def get_registrations(self, rs, ids):
         """Retrieve data for some registrations.
@@ -1099,7 +1008,7 @@ class EventBackend(AbstractUserBackend):
                 ret[anid]['choices'] = choices
         return ret
 
-    @access("event_user")
+    @access("event")
     def set_registration(self, rs, data):
         """Update some keys of a registration.
 
@@ -1205,7 +1114,7 @@ class EventBackend(AbstractUserBackend):
             persona_id=persona_id)
         return ret
 
-    @access("event_user")
+    @access("event")
     def create_registration(self, rs, data):
         """Make a new registration.
 
@@ -1249,7 +1158,7 @@ class EventBackend(AbstractUserBackend):
             persona_id=data['persona_id'])
         return new_id
 
-    @access("event_user")
+    @access("event")
     def list_lodgements(self, rs, event_id):
         """List all lodgements for an event.
 
@@ -1265,7 +1174,7 @@ class EventBackend(AbstractUserBackend):
                                (event_id,), entity_key="event_id")
         return {e['id']: e['moniker'] for e in data}
 
-    @access("event_user")
+    @access("event")
     @singularize("get_lodgement")
     def get_lodgements(self, rs, ids):
         """Retrieve data for some lodgements.
@@ -1292,7 +1201,7 @@ class EventBackend(AbstractUserBackend):
                 raise PrivilegeError("Not privileged.")
         return {e['id']: e for e in data}
 
-    @access("event_user")
+    @access("event")
     def set_lodgement(self, rs, data):
         """Update some keys of a lodgement.
 
@@ -1316,7 +1225,7 @@ class EventBackend(AbstractUserBackend):
                 additional_info=moniker)
             return ret
 
-    @access("event_user")
+    @access("event")
     def create_lodgement(self, rs, data):
         """Make a new lodgement.
 
@@ -1336,7 +1245,7 @@ class EventBackend(AbstractUserBackend):
             additional_info=data['moniker'])
         return ret
 
-    @access("event_user")
+    @access("event")
     def delete_lodgement(self, rs, lodgement_id):
         """Make a new lodgement.
 
@@ -1363,7 +1272,7 @@ class EventBackend(AbstractUserBackend):
                 additional_info=moniker)
             return ret
 
-    @access("event_user")
+    @access("event")
     def get_questionnaire(self, rs, event_id):
         """Retrieve the questionnaire rows for a specific event.
 
@@ -1379,7 +1288,7 @@ class EventBackend(AbstractUserBackend):
             (event_id,), entity_key="event_id")
         return sorted(data, key=lambda x: x['pos'])
 
-    @access("event_user")
+    @access("event")
     def set_questionnaire(self, rs, event_id, data):
         """Replace current questionnaire rows for a specific event.
 

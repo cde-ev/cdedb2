@@ -23,8 +23,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """
     #: Specification how user management works. To be filled by child classes.
     user_management = {
-        "proxy": None, ## callable
-        "validator": None, ## str
+        "persona_getter": None, ## callable
     }
 
     def __init__(self, configpath):
@@ -41,27 +40,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    def redirect_realm(self, rs, persona_id, target, params=None):
-        """Check that the persona is in the realm of this class. If
-        not so create a redirect to the correct realm.
-
-        This is intended to check for an id which is filled in
-        automatically. Thus it is acceptable to raise an error upon
-        impossible input (i.e. input which has been tampered) and not
-        return a nice validation failure message.
-
-        :type rs: :py:class:`cdedb.frontend.common.FrontendRequestState`
-        :type persona_id: int
-        :type target: str
-        :rtype: :py:class:`werkzeug.wrappers.Response` or None
-        """
-        if not self.coreproxy.verify_ids(rs, (persona_id,)):
-            raise werkzeug.exceptions.BadRequest("Nonexistant user.")
-        realm = self.coreproxy.get_realm(rs, persona_id)
-        if realm != self.realm:
-            return self.redirect(rs, "{}/{}".format(realm, target), params)
-        return None
-
     ## @access("user")
     ## @REQUESTdata(("confirm_id", "#int"))
     @abc.abstractmethod
@@ -75,59 +53,29 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
-        if self.coreproxy.get_realm(rs, persona_id) != self.realm:
-            return werkzeug.exceptions.NotFound()
-        data = self.user_management['proxy'](self).get_data_one(rs, persona_id)
-        data['db_privileges_ascii'] = ", ".join(
-            bit.name for bit in const.PrivilegeBits
-            if data['db_privileges'] & bit.value)
+        data = self.user_management['persona_getter'](self)(rs, persona_id)
         return self.render(rs, "show_user", {'data': data})
 
-    ## @access("user")
-    @abc.abstractmethod
-    def change_user_form(self, rs):
-        """Render form."""
-        data = self.user_management['proxy'](self).get_data_one(
-            rs, rs.user.persona_id)
-        merge_dicts(rs.values, data)
-        return self.render(rs, "change_user", {'username': data['username']})
-
-    ## @access("user", {"POST"})
-    ## @REQUESTdatadict(...)
-    @abc.abstractmethod
-    def change_user(self, rs, data):
-        """Modify own account details."""
-        data = data or {}
-        data['id'] = rs.user.persona_id
-        data = check(rs, self.user_management['validator'], data)
-        if rs.errors:
-            return self.change_user_form(rs)
-        code = self.user_management['proxy'](self).change_user(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect_show_user(rs, rs.user.persona_id)
-
     ## @access("realm_admin")
-    ## @persona_dataset_guard()
     @abc.abstractmethod
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
-        data = self.user_management['proxy'](self).get_data_one(rs, persona_id)
+        data = self.user_management['persona_getter'](self)(rs, persona_id)
         merge_dicts(rs.values, data)
         return self.render(rs, "admin_change_user",
                            {'username': data['username']})
 
-    ## @access("realm_admin", {"POST"})
+    ## @access("realm_admin", modi={"POST"})
     ## @REQUESTdatadict(...)
-    ## @persona_dataset_guard()
     @abc.abstractmethod
     def admin_change_user(self, rs, persona_id, data):
         """Modify account details by administrator."""
         data = data or {}
         data['id'] = persona_id
-        data = check(rs, self.user_management['validator'], data)
+        data = check(rs, "persona", data)
         if rs.errors:
             return self.admin_change_user_form(rs, persona_id)
-        code = self.user_management['proxy'](self).change_user(rs, data)
+        code = self.coreproxy.change_persona(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
@@ -137,16 +85,53 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         """Render form."""
         return self.render(rs, "create_user")
 
-    ## @access("realm_admin", {"POST"})
+    ## @access("realm_admin", modi={"POST"})
     ## @REQUESTdatadict(...)
     @abc.abstractmethod
     def create_user(self, rs, data):
         """Create new user account."""
-        data = check(rs, self.user_management['validator'], data,
-                     creation=True)
+        defaults = {
+            'is_cde_realm': False,
+            'is_event_realm': False,
+            'is_ml_realm': False,
+            'is_assembly_realm': False,
+            'is_member': False,
+            'is_searchable': False,
+            'is_active': True,
+            'cloud_account': False,
+            'title': None,
+            'name_supplement': None,
+            'gender': None,
+            'birthday': None,
+            'telephone': None,
+            'mobile': None,
+            'address_supplement': None,
+            'address': None,
+            'postal_code': None,
+            'location': None,
+            'country': None,
+            'birth_name': None,
+            'address_supplement2': None,
+            'address2': None,
+            'postal_code2': None,
+            'location2': None,
+            'country2': None,
+            'weblink': None,
+            'specialisation': None,
+            'affiliation': None,
+            'timeline': None,
+            'interests': None,
+            'free_form': None,
+            'trial_member': None,
+            'decided_search': None,
+            'bub_search': None,
+            'foto': None,
+        }
+        merge_dicts(data, defaults)
+        data = check(rs, "persona", data, creation=True)
         if rs.errors:
             return self.create_user_form(rs)
-        new_id = self.user_management['proxy'](self).create_user(rs, data)
+        new_id = self.coreproxy.create_persona(rs, data)
         self.notify_return_code(rs, new_id, success="User created.")
         if new_id:
             return self.redirect_show_user(rs, new_id)
@@ -164,36 +149,83 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         email containing the approval. Hence we have to store a shared
         secret and verify this.
         """
-        if rs.errors or not self.user_management['proxy'](self).genesis_check(
-                rs, case_id, secret):
+        if rs.errors or not self.coreproxy.genesis_check(rs, case_id, secret,
+                                                         self.realm):
             rs.notify("error", "Broken link.")
             return self.redirect(rs, "core/index")
         case = self.coreproxy.genesis_my_case(rs, case_id, secret)
         return self.render(rs, "genesis", {'case': case})
 
-    ## @access("anonymous", {"POST"})
+    ## @access("anonymous", modi={"POST"})
     ## @REQUESTdata(("secret", "str"))
     ## @REQUESTdatadict(...)
     @abc.abstractmethod
     def genesis(self, rs, case_id, secret, data):
         """Create new user account by anonymous."""
-        if rs.errors or not self.user_management['proxy'](self).genesis_check(
-                rs, case_id, secret):
+        if rs.errors:
+            # FIXME this doesn't display errors
+            return self.genesis_form(rs, case_id, secret=secret)
+        if  not self.coreproxy.genesis_check(rs, case_id, secret, self.realm):
             rs.notify("error", "Broken link.")
             return self.redirect(rs, "core/index")
         case = self.coreproxy.genesis_my_case(rs, case_id, secret)
         for key in ("username", "given_names", "family_name"):
             data[key] = case[key]
-        data = check(rs, self.user_management['validator'], data,
-                     creation=True)
+        defaults = {
+            'is_cde_realm': False,
+            'is_event_realm': False,
+            'is_ml_realm': False,
+            'is_assembly_realm': False,
+            'is_member': False,
+            'is_searchable': False,
+            'is_active': True,
+            'cloud_account': False,
+            'title': None,
+            'name_supplement': None,
+            'gender': None,
+            'birthday': None,
+            'telephone': None,
+            'mobile': None,
+            'address_supplement': None,
+            'address': None,
+            'postal_code': None,
+            'location': None,
+            'country': None,
+            'birth_name': None,
+            'address_supplement2': None,
+            'address2': None,
+            'postal_code2': None,
+            'location2': None,
+            'country2': None,
+            'weblink': None,
+            'specialisation': None,
+            'affiliation': None,
+            'timeline': None,
+            'interests': None,
+            'free_form': None,
+            'trial_member': None,
+            'decided_search': None,
+            'bub_search': None,
+            'foto': None,
+        }
+        merge_dicts(data, defaults)
+        if case['realm'] == "event":
+            data['is_event_realm'] = True
+            data['is_ml_realm'] = True
+        elif case['realm'] == "ml":
+            data['is_ml_realm'] = True
+        data = check(rs, "persona", data, creation=True)
         if rs.errors:
-            return self.genesis_form(rs, case_id, secret)
-        new_id = self.user_management['proxy'](self).genesis(rs, case_id,
-                                                             secret, data)
+            return self.genesis_form(rs, case_id, secret=secret)
+        new_id = self.coreproxy.genesis(rs, case_id, secret, case['realm'],
+                                        data)
         self.notify_return_code(rs, new_id, success="User created.")
         if new_id:
+            success, message = self.coreproxy.make_reset_cookie(
+                rs, data['username'])
             return self.redirect(rs, "core/do_password_reset_form", {
                 'email': self.encode_parameter(
-                    "core/do_password_reset_form", "email", data['username'])})
+                    "core/do_password_reset_form", "email", data['username']),
+                'cookie': message})
         else:
-            return self.genesis_form(rs, case_id, secret)
+            return self.genesis_form(rs, case_id, secret=secret)

@@ -4,7 +4,7 @@
 {% block navigation %}
     <h2>Navigation</h2>
     <div class="list-group">
-        {% if user.is_searchable %}
+        {% if "searchable" in user.roles %}
             {{ util.href(cdedblink("cde/member_search"), "CdE-Mitglied suchen", aclass="list-group-item", icon="search",
                     active=(sidenav_active=='cde_member_search')) }}
         {% else %}
@@ -20,8 +20,6 @@
             {{ util.href(cdedblink("cde/user_search_form"), "Nutzer verwalten", aclass="list-group-item", icon="cog") }}
             {# FIXME #}
             {{ util.href(cdedblink("cde/create_user_form"), "Neues Mitglied anlegen") }}
-            {{ util.href(cdedblink("cde/list_pending_changes"), "Änderungen prüfen", aclass="list-group-item",
-                    icon="check") }}
             {# FIXME #}
             {{ util.href(cdedblink("cde/meta_info_form"), "Vereins-Metadaten") }}
             {{ util.href(cdedblink("cde/lastschrift_index"), "Einzugserächtigungen", aclass="list-group-item",
@@ -29,8 +27,6 @@
             {{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche", aclass="list-group-item",
                     icon="inbox") }}
             {{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log", aclass="list-group-item", icon="list-alt") }}
-            {{ util.href(cdedblink("cde/view_changelog_meta"), "Nutzerdaten-Log", aclass="list-group-item",
-                    icon="list-alt") }}
         </div>
     {% endif %}
 {% endblock %}

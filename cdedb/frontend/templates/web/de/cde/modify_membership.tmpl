@@ -15,7 +15,7 @@ Mitgliedschaftsstatus von {{ data['given_names']|e }} {{ data['family_name']|e }
 
         <form action="{{ cdedblink('cde/modify_membership')|e }}" method="POST" id="modifymembershipform">
             <div>
-                {{ util.input_hidden(name="newstatus", value=stati.formermember.value) }}
+                {{ util.input_hidden(name="is_member", value=False) }}
                 {{ util.input_submit(value="Mitgliedschaft terminieren") }}
             </div>
         </form>
@@ -23,7 +23,7 @@ Mitgliedschaftsstatus von {{ data['given_names']|e }} {{ data['family_name']|e }
 
         <form action="{{ cdedblink('cde/modify_membership')|e }}" method="POST" id="modifymembershipform">
             <div>
-                {{ util.input_hidden(name="newstatus", value=stati.member.value) }}
+                {{ util.input_hidden(name="is_member", value=True) }}
                 {{ util.input_submit(value="zum Mitglied machen") }}
             </div>
         </form>

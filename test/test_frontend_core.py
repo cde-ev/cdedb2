@@ -68,6 +68,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn(user['display_name'], self.response)
 
     def test_reset_password(self):
+        new_password = "krce63koLe#$e"
         for i, u in enumerate(("anton", "berta", "emilia")):
             with self.subTest(u=u):
                 if i > 0:
@@ -87,8 +88,10 @@ class TestCoreFrontend(FrontendTest):
                         link = line[4:]
                 link = quopri.decodestring(link).decode('utf-8')
                 self.get(link)
+                self.follow()
                 self.assertTitle("Passwort zurücksetzen -- Bestätigung")
                 f = self.response.forms['passwordresetform']
+                f['new_password'] = new_password
                 if u in {"anton"}:
                     self.submit(f, check_notification=False)
                     ## admins are not resettable
@@ -96,13 +99,6 @@ class TestCoreFrontend(FrontendTest):
                     continue
                 else:
                     self.submit(f)
-                mail = self.fetch_mail()[0]
-                for line in mail.split('\n'):
-                    if line.startswith('zur'):
-                        words = line.split(' ')
-                        break
-                index = words.index('nun')
-                new_password = quopri.decodestring(words[index + 1])
                 self.login(user)
                 self.assertIn('loginform', self.response.forms)
                 new_user = copy.deepcopy(user)
@@ -186,34 +182,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('loginform', self.response.forms)
         self.assertIn(new_berta['display_name'], self.response)
 
-    @as_users("anton")
-    def test_adjust_privileges(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        self.submit(f)
-        self.traverse({'href': '/privileges/change'})
-        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_event_admin').checked)
-        f = self.response.forms['adjustmentform']
-        ## webtest requires a list and not a tuple on the RHS
-        f['newprivileges'] = ["2", "4"]
-        self.submit(f)
-        self.traverse({'href': '/privileges/change'})
-        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_admin').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_core_admin').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('indicator_checkbox_cde_admin').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('indicator_checkbox_event_admin').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_admin').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_core_admin').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_cde_admin').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_event_admin').checked)
-
     def test_log(self):
         ## First: generate data
-        self.test_adjust_privileges()
-        self.logout()
         self.test_admin_password_reset()
         self.logout()
 

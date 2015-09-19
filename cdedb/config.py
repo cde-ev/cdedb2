@@ -107,7 +107,7 @@ _DEFAULTS = {
         "qview_cde_user": {
             "trial members": Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
-                ("member_data.persona_id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True)),),
         },
@@ -115,7 +115,7 @@ _DEFAULTS = {
             "with notes": Query(
                 "qview_cde_archived_user",
                 QUERY_SPECS['qview_cde_archived_user'],
-                ("member_data.persona_id", "given_names", "family_name",
+                ("personas.id", "given_names", "family_name",
                  "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
                 (("family_name", True), ("given_names", True)),),
@@ -241,6 +241,9 @@ _SECRECTS_DEFAULTS = {
 
     ## salting value used for verifying sensitve url parameters
     "URL_PARAMETER_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
+
+    ## salting value used for verifying password reset authorization
+    "RESET_SALT": "aoeuidhtns9KT6AOR2kNjq2zO",
 
     ## salting value used for verifying tokens for username changes
     "USERNAME_CHANGE_TOKEN_SALT": "kaoslrcekhvx2387krcoekd983xRKCh309xKX",

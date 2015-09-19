@@ -9,7 +9,12 @@ DROP SCHEMA IF EXISTS core;
 CREATE SCHEMA core;
 GRANT USAGE ON SCHEMA core TO cdb_anonymous;
 
+-- Store all user attributes, many attributes are only meaningful if the
+-- persona has the access bit to the corresponding realm.
 CREATE TABLE core.personas (
+        --
+        -- global attributes
+        --
         id                      serial PRIMARY KEY,
         -- an email address (should be lower-cased)
         -- may be NULL (which is not nice, but dictated by reality, like expired addresses)
@@ -17,31 +22,118 @@ CREATE TABLE core.personas (
         -- password hash as specified by passlib.hash.sha512_crypt
         -- not logged in changelog
         password_hash           varchar NOT NULL,
+        -- inactive accounts may not log in
+        is_active               boolean NOT NULL DEFAULT True,
+        -- administrative notes about this user
+        notes                   varchar,
+
+        -- global admin, grants all privileges
+        is_admin                boolean NOT NULL DEFAULT False,
+        -- allows managing all users and general database configuration
+        is_core_admin           boolean NOT NULL DEFAULT False,
+        -- allows managing of cde users (members and former members) and
+        -- other cde stuff (past events, direct debit)
+        is_cde_admin            boolean NOT NULL DEFAULT False,
+        -- allows managing of events and event users
+        is_event_admin          boolean NOT NULL DEFAULT False,
+        -- allows managing of mailinglists and ml users
+        is_ml_admin             boolean NOT NULL DEFAULT False,
+        -- allows managing of assemblies and assembly users
+        is_assembly_admin       boolean NOT NULL DEFAULT False,
+        -- allows usage of cde functionality
+        is_cde_realm            boolean NOT NULL,
+        -- allows usage of cde functionality
+        is_event_realm          boolean NOT NULL,
+        -- allows usage of mailinglist functionality
+        is_ml_realm             boolean NOT NULL,
+        -- allows usage of assembly functionality
+        is_assembly_realm       boolean NOT NULL,
+        -- member status grants access to additional functionality
+        is_member               boolean NOT NULL,
+        -- searchability governs whether a persona may search for others
+        is_searchable           boolean NOT NULL DEFAULT False,
+        -- grant access to the CdE cloud (this is utilized via LDAP)
+        cloud_account           boolean NOT NULL DEFAULT False,
+        -- signal a data set of a former member which was stripped of all
+        -- non-essential attributes to implement data protection
+        is_archived             boolean NOT NULL DEFAULT False,
+
         -- name to use when adressing user/"Rufname"
         display_name            varchar NOT NULL,
         -- "Vornamen" (including middle names)
         given_names             varchar NOT NULL,
         -- "Nachname"
         family_name             varchar NOT NULL,
-        -- inactive accounts may not log in
-        is_active               boolean NOT NULL DEFAULT True,
-        -- nature of this entry
-        -- see cdedb.database.constants.PersonaStati
-        status                  integer NOT NULL,
-        -- bitmask of possible privileges
-        -- see cdedb.database.constants.PrivilegeBits
-        db_privileges           integer NOT NULL DEFAULT 0,
-        -- grant access to the CdE cloud (this is utilized via LDAP)
-        cloud_account           boolean NOT NULL DEFAULT False,
-        -- administrative notes about this user
-        notes                   varchar
+
+        --
+        -- event and cde attributes
+        --
+        -- in front of name
+        title                   varchar DEFAULT NULL,
+        -- after name
+        name_supplement         varchar DEFAULT NULL,
+        -- see cdedb.database.constants.Genders
+        gender                  integer,
+        CHECK((NOT is_cde_realm AND NOT is_event_realm) OR gender IS NOT NULL),
+        -- may be NULL in historical cases; we try to minimize these occurences
+        birthday                date,
+        telephone               varchar,
+        mobile                  varchar,
+        address_supplement      varchar,
+        address                 varchar,
+        postal_code             varchar,
+        -- probably a city
+        location                varchar,
+        country                 varchar,
+
+        --
+        -- cde only attributes
+        --
+        birth_name              varchar DEFAULT NULL,
+        address_supplement2     varchar,
+        address2                varchar,
+        postal_code2            varchar,
+        -- probably a city
+        location2               varchar,
+        country2                varchar,
+        -- homepage, blog, twitter, ...
+        weblink                 varchar,
+        -- Leistungskurse, Studienfach, ...
+        specialisation          varchar,
+        -- Schule, Universitaet, ...
+        affiliation             varchar,
+        -- Abiturjahrgang, Studienabschluss, ...
+        timeline                varchar,
+        -- Interessen, Hobbys, ...
+        interests               varchar,
+        -- anything else the member wants to tell
+        free_form               varchar,
+        balance                 numeric(8,2) DEFAULT 0.00,
+        CHECK(NOT is_cde_realm OR balance IS NOT NULL),
+        -- True if user decided (positive or negative) on searchability
+        decided_search          boolean DEFAULT FALSE,
+        CHECK(NOT is_cde_realm OR decided_search IS NOT NULL),
+        -- True for trial members (first semester after the first official academy)
+        trial_member            boolean,
+        CHECK(NOT is_cde_realm OR trial_member IS NOT NULL),
+        -- if True this member's data may be passed on to BuB
+        bub_search              boolean DEFAULT FALSE,
+        CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
+        -- file name of image
+        foto                    varchar DEFAULT NULL
+
+        -- fulltext FIXME cannot be done otherwise
 );
-CREATE INDEX idx_personas_status ON core.personas(status);
 CREATE INDEX idx_personas_username ON core.personas(username);
-GRANT SELECT ON core.personas TO cdb_anonymous;
-GRANT UPDATE (username, password_hash, display_name, given_names, family_name) ON core.personas TO cdb_persona;
-GRANT UPDATE (status) ON core.personas TO cdb_member;
-GRANT INSERT, UPDATE ON core.personas TO cdb_admin;
+CREATE INDEX idx_personas_is_cde_realm ON core.personas(is_cde_realm);
+CREATE INDEX idx_personas_is_event_realm ON core.personas(is_event_realm);
+CREATE INDEX idx_personas_is_ml_realm ON core.personas(is_ml_realm);
+CREATE INDEX idx_personas_is_assembly_realm ON core.personas(is_assembly_realm);
+CREATE INDEX idx_personas_is_member ON core.personas(is_member);
+CREATE INDEX idx_personas_is_searchable ON core.personas(is_searchable);
+GRANT SELECT (id, username, password_hash, is_active, is_admin, is_core_admin, is_cde_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived) ON core.personas TO cdb_anonymous;
+GRANT SELECT, UPDATE ON core.personas TO cdb_persona; -- TODO maybe be more restrictive
+GRANT INSERT ON core.personas TO cdb_admin;
 GRANT SELECT, UPDATE ON core.personas_id_seq TO cdb_admin;
 
 -- table for managing creation of new accounts by arbitrary request
@@ -52,8 +144,8 @@ CREATE TABLE core.genesis_cases (
         username                varchar NOT NULL,
         given_names             varchar NOT NULL,
         family_name             varchar NOT NULL,
-        -- status the persona is going to have initially
-        persona_status          integer DEFAULT NULL,
+        -- initial target realm, note that e.g. event implies is_event_realm and is_ml_realm
+        realm                   varchar DEFAULT NULL,
         -- user-supplied comment (short justification of request)
         -- may be amended during review
         notes                   varchar,
@@ -112,7 +204,7 @@ GRANT UPDATE (queries) ON core.quota TO cdb_member;
 -- keys of the dict stored here, will be runtime configurable.
 --
 -- This is in the core schema to allow anonymous access.
-CREATE TABLE core.cde_meta_info
+CREATE TABLE core.cde_meta_info -- FIXME rename to meta_info
 (
         id                      serial PRIMARY KEY,
 	-- variable store for things like names of persons on
@@ -139,9 +231,6 @@ GRANT INSERT ON core.log TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.log_id_seq TO cdb_anonymous;
 
 -- log all changes made to the personal data of members (require approval)
---
--- this is in the core realm since the core backend has to be aware of the
--- changelog
 CREATE TABLE core.changelog (
         id                      bigserial PRIMARY KEY,
         --
@@ -158,20 +247,30 @@ CREATE TABLE core.changelog (
         --
         -- data fields
         --
-        -- first those from personas directly
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         username                varchar,
-        display_name            varchar,
         is_active               boolean,
-        status                  integer,
-        db_privileges           integer,
+        notes                   varchar,
+        is_admin                boolean,
+        is_core_admin           boolean,
+        is_cde_admin            boolean,
+        is_event_admin          boolean,
+        is_ml_admin             boolean,
+        is_assembly_admin       boolean,
+        is_cde_realm            boolean,
+        is_event_realm          boolean,
+        is_ml_realm             boolean,
+        is_assembly_realm       boolean,
+        is_member               boolean,
+        is_searchable           boolean,
         cloud_account           boolean,
-        -- now those frome member_data
-        family_name             varchar NOT NULL,
-        given_names             varchar NOT NULL,
+        is_archived             boolean,
+        display_name            varchar,
+        given_names             varchar,
+        family_name             varchar,
         title                   varchar,
         name_supplement         varchar,
-        gender                  integer NOT NULL,
+        gender                  integer,
         birthday                date,
         telephone               varchar,
         mobile                  varchar,
@@ -180,7 +279,6 @@ CREATE TABLE core.changelog (
         postal_code             varchar,
         location                varchar,
         country                 varchar,
-        notes                   varchar,
         birth_name              varchar,
         address_supplement2     varchar,
         address2                varchar,
@@ -193,17 +291,17 @@ CREATE TABLE core.changelog (
         timeline                varchar,
         interests               varchar,
         free_form               varchar,
-        balance                 numeric(8,2) NOT NULL,
+        balance                 numeric(8, 2),
         decided_search          boolean,
         trial_member            boolean,
-        bub_search              boolean
+        bub_search              boolean,
+        foto                    varchar
 );
 CREATE INDEX idx_changelog_change_status ON core.changelog(change_status);
 CREATE INDEX idx_changelog_persona_id ON core.changelog(persona_id);
-GRANT SELECT (persona_id) ON core.changelog TO cdb_persona;
-GRANT SELECT, INSERT ON core.changelog TO cdb_member;
-GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_member;
-GRANT UPDATE (change_status) ON core.changelog TO cdb_member;
+GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
+GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
+GRANT UPDATE (change_status) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 
 ---
@@ -212,70 +310,6 @@ GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
 DROP SCHEMA IF EXISTS cde;
 CREATE SCHEMA cde;
 GRANT USAGE ON SCHEMA cde TO cdb_member;
-
-CREATE TABLE cde.member_data (
-        persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
-
-        -- the data fields
-        -- in front of name
-        title                   varchar DEFAULT NULL,
-        -- after name
-        name_supplement         varchar DEFAULT NULL,
-        -- see cdedb.database.constants.Genders
-        gender                  integer NOT NULL,
-        -- may be NULL in historical cases; we try to minimize these occurences
-        birthday                date,
-        telephone               varchar,
-        mobile                  varchar,
-        address_supplement      varchar,
-        address                 varchar,
-        postal_code             varchar,
-        -- probably a city
-        location                varchar,
-        country                 varchar,
-        --
-        -- here is the cut for event.user_data
-        --
-        birth_name              varchar DEFAULT NULL,
-        address_supplement2     varchar,
-        address2                varchar,
-        postal_code2            varchar,
-        -- probably a city
-        location2               varchar,
-        country2                varchar,
-        -- homepage, blog, twitter, ...
-        weblink                 varchar,
-        -- Leistungskurse, Studienfach, ...
-        specialisation          varchar,
-        -- Schule, Universitaet, ...
-        affiliation             varchar,
-        -- Abiturjahrgang, Studienabschluss, ...
-        timeline                varchar,
-        -- Interessen, Hobbys, ...
-        interests               varchar,
-        -- anything else the member wants to tell
-        free_form               varchar,
-        balance                 numeric(8,2) NOT NULL DEFAULT 0.00,
-        -- True if user decided (positive or negative) on searchability
-        decided_search          boolean NOT NULL DEFAULT FALSE,
-        -- True for trial members (first semester after the first official academy)
-        trial_member            boolean NOT NULL,
-        -- if True this member's data may be passed on to BuB
-        bub_search              boolean NOT NULL DEFAULT FALSE,
-        -- file name of image
-        -- not logged in the changelog
-        foto                    varchar DEFAULT NULL,
-
-        -- internal field for fulltext search
-        -- this contains a concatenation of all other fields
-        -- thus enabling fulltext search as substring search on this field
-        -- it is automatically updated when a change is committed
-        -- this is not logged in the changelog
-        fulltext                varchar NOT NULL
-);
-GRANT SELECT ON cde.member_data TO cdb_member;
-GRANT UPDATE ON cde.member_data TO cdb_member;
-GRANT INSERT, UPDATE ON cde.member_data TO cdb_admin;
 
 CREATE TABLE cde.org_period (
         -- historically this was determined by the exPuls number
@@ -362,7 +396,7 @@ CREATE TABLE cde.finance_log (
         -- checksums
         -- number of members (SELECT COUNT(*) FROM core.personas WHERE status = ...)
         members                 integer NOT NULL,
-        -- sum of all balances (SELECT SUM(balance) FROM cde.member_data)
+        -- sum of all balances (SELECT SUM(balance) FROM core.personas)
         total                   numeric(10,2) NOT NULL
 );
 CREATE INDEX idx_cde_finance_log_code ON cde.finance_log(code);
@@ -393,31 +427,6 @@ GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_persona;
 DROP SCHEMA IF EXISTS event;
 CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona;
-
--- this is a partial copy of cde.member_data with the irrelevant fields ommited
--- thus it is possible to upgrade an external user account to a member account
-CREATE TABLE event.user_data (
-        persona_id              integer PRIMARY KEY REFERENCES core.personas(id),
-
-        -- the data fields
-        -- in front of name
-        title                   varchar DEFAULT NULL,
-        -- after name
-        name_supplement         varchar DEFAULT NULL,
-        -- see cdedb.database.constants.Genders
-        gender                  integer NOT NULL,
-        birthday                date NOT NULL,
-        telephone               varchar,
-        mobile                  varchar,
-        address_supplement      varchar,
-        address                 varchar,
-        postal_code             varchar,
-        -- probably a city
-        location                varchar,
-        country                 varchar
-);
-GRANT SELECT, UPDATE ON event.user_data TO cdb_persona;
-GRANT INSERT ON event.user_data TO cdb_admin;
 
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
@@ -476,7 +485,7 @@ CREATE INDEX idx_courses_event_id ON event.courses(event_id);
 GRANT SELECT, INSERT, UPDATE ON event.courses TO cdb_persona;
 GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_persona;
 
--- not an array inside event.course_data since no ELEMENT REFERENCES in postgres
+-- not an array inside event.courses since no ELEMENT REFERENCES in postgres
 CREATE TABLE event.course_parts (
         id                      serial PRIMARY KEY,
         course_id               integer NOT NULL REFERENCES event.courses(id),
@@ -850,9 +859,9 @@ CREATE TABLE ml.mailinglists (
         -- see cdedb.database.constants.ModerationPolicy
         mod_policy              integer NOT NULL,
         -- see cdedb.database.constants.AttachmentPolicy
-        attachment_policy      integer NOT NULL,
-        -- list of PersonaStati
-        audience                integer[] NOT NULL,
+        attachment_policy       integer NOT NULL,
+        -- see cdedb.database.constants.AudiencePolicy
+        audience_policy         integer NOT NULL,
         subject_prefix          varchar,
         -- in kB
         maxsize                 integer,

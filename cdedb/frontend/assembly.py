@@ -4,7 +4,7 @@
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
-    connect_proxy, check_validation as check, persona_dataset_guard,
+    connect_proxy, check_validation as check,
     request_data_extractor)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
@@ -30,8 +30,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     realm = "assembly"
     logger = logging.getLogger(__name__)
     user_management = {
-        "proxy": lambda obj: obj.assemblyproxy,
-        "validator": "persona_data",
+        "persona_getter": lambda obj: obj.coreproxy.get_assembly_user,
     }
 
     def __init__(self, configpath):
@@ -54,46 +53,53 @@ class AssemblyFrontend(AbstractUserFrontend):
         assemblies = self.assemblyproxy.list_assemblies(rs)
         return self.render(rs, "index", {'assemblies': assemblies})
 
-    @access("assembly_user")
+    @access("assembly")
     @REQUESTdata(("confirm_id", "#int"))
     def show_user(self, rs, persona_id, confirm_id):
         return super().show_user(rs, persona_id, confirm_id)
 
-    @access("assembly_user")
+    @access("assembly")
     def change_user_form(self, rs):
         return super().change_user_form(rs)
 
-    @access("assembly_user", {"POST"})
+    @access("assembly", modi={"POST"})
     @REQUESTdatadict(
         "display_name", "family_name", "given_names")
     def change_user(self, rs, data):
         return super().change_user(rs, data)
 
     @access("assembly_admin")
-    @persona_dataset_guard()
     def admin_change_user_form(self, rs, persona_id):
         return super().admin_change_user_form(rs, persona_id)
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes")
-    @persona_dataset_guard()
     def admin_change_user(self, rs, persona_id, data):
         return super().admin_change_user(rs, persona_id, data)
 
     @access("assembly_admin")
     def create_user_form(self, rs):
+        defaults = {
+            'is_member': False,
+            'bub_search': False,
+            'cloud_account': False,
+        }
+        merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes", "username")
     def create_user(self, rs, data):
-        data.update({
-            'status': const.PersonaStati.assembly_user,
+        defaults = {
+            'is_cde_realm': False,
+            'is_event_realm': False,
+            'is_ml_realm': True,
+            'is_assembly_realm': True,
             'is_active': True,
-            'cloud_account': False,
-        })
+        }
+        data.update(defaults)
         return super().create_user(rs, data)
 
     @access("anonymous")
@@ -102,7 +108,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Assembly accounts cannot be requested."""
         raise NotImplementedError("Not available in assembly realm.")
 
-    @access("anonymous", {"POST"})
+    @access("anonymous", modi={"POST"})
     @REQUESTdata(("secret", "str"))
     @REQUESTdatadict("display_name",)
     def genesis(self, rs, case_id, secret, data):
@@ -153,7 +159,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         personas = (
             {entry['submitted_by'] for entry in log}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_data(rs, personas)
+        persona_data = self.coreproxy.get_personas(rs, personas)
         assemblies = {entry['assembly_id']
                       for entry in log if entry['assembly_id']}
         assembly_data = self.assemblyproxy.get_assembly_data(rs, assemblies)
@@ -162,7 +168,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'log': log, 'persona_data': persona_data,
             'assembly_data': assembly_data, 'assemblies': assemblies})
 
-    @access("assembly_user")
+    @access("assembly")
     def show_assembly(self, rs, assembly_id):
         """Present an assembly."""
         assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
@@ -194,7 +200,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, data)
         return self.render(rs, "change_assembly", {"data": data})
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "signup_end", "notes")
     def change_assembly(self, rs, assembly_id, data):
         """Modify an assembly."""
@@ -211,7 +217,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Render form."""
         return self.render(rs, "create_assembly")
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "signup_end", "notes")
     def create_assembly(self, rs, data):
         """Make a new assembly."""
@@ -223,7 +229,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly", {
             'assembly_id': new_id})
 
-    @access("assembly_user", {"POST"})
+    @access("assembly", modi={"POST"})
     def signup(self, rs, assembly_id):
         """Join an assembly."""
         assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
@@ -231,7 +237,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if now() > assembly_data['signup_end']:
             rs.notify("warning", "Signup already ended.")
             return self.redirect(rs, "assembly/show_assembly")
-        user_data = self.assemblyproxy.acquire_data_one(rs, rs.user.persona_id)
+        user_data = self.coreproxy.get_assembly_user(rs, rs.user.persona_id)
         secret = self.assemblyproxy.signup(rs, assembly_id)
         if secret:
             rs.notify("success", "Signed up.")
@@ -251,17 +257,17 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("info", "Already signed up.")
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly_user")
+    @access("assembly")
     def list_attendees(self, rs, assembly_id):
         """Provide a list of who is/was present."""
         assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
                                                                  assembly_id)
         attendees = self.assemblyproxy.list_attendees(rs, assembly_id)
-        user_data = self.assemblyproxy.acquire_data(rs, attendees)
+        user_data = self.coreproxy.get_assembly_users(rs, attendees)
         return self.render(rs, "list_attendees", {
             "assembly_data": assembly_data, "user_data": user_data})
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     def conclude_assembly(self, rs, assembly_id):
         """Archive an assembly.
 
@@ -271,7 +277,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly_user")
+    @access("assembly")
     def list_ballots(self, rs, assembly_id):
         """View available ballots for an assembly."""
         assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
@@ -292,7 +298,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "create_ballot", {
             "assembly_data": assembly_data})
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
                      "vote_extension_end", "quorum", "votes", "notes")
     def create_ballot(self, rs, assembly_id, data):
@@ -306,7 +312,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_ballot", {
             'ballot_id': new_id})
 
-    @access("assembly_user")
+    @access("assembly")
     def get_attachment(self, rs, attachment_id):
         """Retrieve an attachment."""
         data = self.assemblyproxy.get_attachment(rs, attachment_id)
@@ -332,7 +338,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "add_attachment", {
             'data': data, 'is_assembly': bool(assembly_id)})
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("assembly_id", "int_or_None"), ("ballot_id", "int_or_None"),
                  ("title", "str"), ("filename", "identifier_or_None"))
     @REQUESTfile("attachment")
@@ -378,7 +384,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'assembly_id': ballot_data['assembly_id'],
                 'ballot_id': ballot_id})
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     def remove_attachment(self, rs, attachment_id):
         """Delete an attachment."""
         data = self.assemblyproxy.get_attachment(rs, attachment_id)
@@ -396,7 +402,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'assembly_id': ballot_data['assembly_id'],
                 'ballot_id': data['ballot_id']})
 
-    @access("assembly_user")
+    @access("assembly")
     def show_ballot(self, rs, assembly_id, ballot_id):
         """Present a ballot.
 
@@ -426,7 +432,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
             if did_tally:
                 attendees = self.assemblyproxy.list_attendees(rs, assembly_id)
-                user_data = self.assemblyproxy.acquire_data(rs, attendees)
+                user_data = self.coreproxy.get_assembly_users(rs, attendees)
                 mails = tuple(x['username'] for x in user_data.values())
                 attachment_script = {
                     'path': os.path.join(self.conf.REPOSITORY_PATH,
@@ -511,7 +517,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "change_ballot", {
             "assembly_data": assembly_data, 'ballot_data': ballot_data})
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
                      "vote_extension_end", "bar", "quorum", "votes", "notes")
     def change_ballot(self, rs, assembly_id, ballot_id, data):
@@ -524,14 +530,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     def delete_ballot(self, rs, assembly_id, ballot_id):
         """Remove a ballot."""
         code = self.assemblyproxy.delete_ballot(rs, ballot_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/list_ballots")
 
-    @access("assembly_user", {"POST"})
+    @access("assembly", modi={"POST"})
     def vote(self, rs, assembly_id, ballot_id):
         """Decide on the options of a ballot.
 
@@ -564,7 +570,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.show_ballot(rs, assembly_id, ballot_id)
 
-    @access("assembly_user")
+    @access("assembly")
     def get_result(self, rs, assembly_id, ballot_id):
         """Download the tallied stats of a ballot."""
         ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
@@ -578,7 +584,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.send_file(rs, path=path,
                               filename=self.i18n("result.json", rs.lang))
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
     def add_candidate(self, rs, assembly_id, ballot_id, moniker, description):
         """Create a new option for a ballot."""
@@ -602,7 +608,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_ballot")
 
 
-    @access("assembly_admin", {"POST"})
+    @access("assembly_admin", modi={"POST"})
     def remove_candidate(self, rs, assembly_id, ballot_id, candidate_id):
         """Delete an option from a ballot."""
         data = {

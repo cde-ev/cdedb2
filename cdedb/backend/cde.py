@@ -6,13 +6,12 @@ organization. We will speak of members in most contexts where former
 members are also possible.
 """
 
-from cdedb.backend.uncommon import AbstractUserBackend
 from cdedb.backend.common import (
     access, internal_access, make_RPCDaemon, run_RPCDaemon,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, create_fulltext, batchify)
+    singularize, batchify, AbstractBackend)
 from cdedb.common import (
-    glue, PERSONA_DATA_FIELDS, MEMBER_DATA_FIELDS, QuotaException, merge_dicts,
+    glue, QuotaException, merge_dicts,
     PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
     LASTSCHRIFT_TRANSACTION_FIELDS)
 from cdedb.query import QueryOperators
@@ -25,18 +24,12 @@ import datetime
 import decimal
 import psycopg2.extras
 
-class CdEBackend(AbstractUserBackend):
+class CdEBackend(AbstractBackend):
     """This is the backend with the most additional role logic.
 
     .. note:: The changelog functionality is to be found in the core backend.
     """
     realm = "cde"
-    user_management = {
-        "data_table": "cde.member_data",
-        "data_fields": MEMBER_DATA_FIELDS,
-        "validator": "member_data",
-        "user_status": const.PersonaStati.member,
-    }
 
     def __init__(self, configpath):
         super().__init__(configpath)
@@ -73,44 +66,6 @@ class CdEBackend(AbstractUserBackend):
         }
         return self.sql_insert(rs, "cde.log", data)
 
-    def finance_log(self, rs, code, persona_id, delta, new_balance,
-                    additional_info=None):
-        """Make an entry in the finance log.
-
-        See
-        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type code: int
-        :param code: One of :py:class:`cdedb.database.constants.CdeLogCodes`.
-        :type persona_id: int or None
-        :param persona_id: ID of affected user
-        :type delta: decimal or None
-        :param delta: change of balance
-        :type new_balance: decimal
-        :param new_balance: balance of user after the transaction
-        :type additional_info: str or None
-        :param additional_info: Infos not conveyed by other columns.
-        :rtype: int
-        :returns: default return code
-        """
-        data = {
-            "code": code,
-            "submitted_by": rs.user.persona_id,
-            "persona_id": persona_id,
-            "delta": delta,
-            "new_balance": new_balance,
-            "additional_info": additional_info
-        }
-        with Atomizer(rs):
-            query = glue("SELECT COUNT(*) AS num FROM core.personas",
-                         "WHERE status = ANY(%s)")
-            data['members'] = unwrap(
-                self.query_one(rs, query, (const.MEMBER_STATI,)))
-            query = "SELECT SUM(balance) AS num FROM cde.member_data"
-            data['total'] = unwrap(self.query_one(rs, query, tuple()))
-            return self.sql_insert(rs, "cde.finance_log", data)
-
     @access("cde_admin")
     def retrieve_cde_log(self, rs, codes=None, persona_id=None, start=None,
                          stop=None):
@@ -129,422 +84,6 @@ class CdEBackend(AbstractUserBackend):
         return self.generic_retrieve_log(
             rs, "enum_cdelogcodes", "persona", "cde.log", codes, persona_id,
             start, stop)
-
-    @access("cde_admin")
-    def retrieve_changelog_meta(self, rs, stati=None, start=None, stop=None):
-        """Get changelog activity.
-
-        Similar to
-        :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type stati: [int] or None
-        :type start: int or None
-        :type stop: int or None
-        :rtype: [{str: object}]
-        """
-        stati = affirm_array("enum_memberchangestati", stati, allow_None=True)
-        start = affirm("int_or_None", start)
-        stop = affirm("int_or_None", stop)
-        start = start or 0
-        if stop:
-            stop = max(start, stop)
-        query = glue(
-            "SELECT submitted_by, reviewed_by, ctime, generation, change_note,",
-            "change_status, persona_id FROM core.changelog {} ORDER BY id DESC")
-        if stop:
-            query = glue(query, "LIMIT {}".format(stop-start))
-        if start:
-            query = glue(query, "OFFSET {}".format(start))
-        condition = ""
-        params = []
-        if stati:
-            condition = glue(condition, "WHERE change_status = ANY(%s)")
-            params.append(stati)
-        query = query.format(condition)
-        return self.query_all(rs, query, params)
-
-    def set_user_data(self, rs, data, generation, allow_username_change=False,
-                      allow_finance_change=False, may_wait=True,
-                      change_note=''):
-        """This checks for privileged fields, implements the change log and
-        updates the fulltext in addition to what
-        :py:meth:`cdedb.backend.common.AbstractUserBackend.set_user_data`
-        does. If a change requires review it has to be committed using
-        :py:meth:`resolve_change` by an administrator.
-
-        .. note:: Upon losing membership the balance of the account has
-                  to be cleared.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str: object}
-        :type generation: int or None
-        :param generation: generation on which this request is based, if this
-           is not the current generation we abort, may be None to override
-           the check
-        :type allow_username_change: bool
-        :param allow_username_change: Usernames are special because they
-          are used for login and password recovery, hence we require an
-          explicit statement of intent to change a username. Obviously this
-          should only be set if necessary.
-        :type allow_finance_change: bool
-        :param allow_finance_change: The fields ``balance`` and
-          ``trial_member`` are special in that they are logged in the
-          finance_log. However this logging should happen in the caller, who
-          has to set this flag to signal that he did so.
-        :type may_wait: bool
-        :param may_wait: Whether this change may wait in the changelog. If
-          this is ``False`` and there is a pending change in the changelog,
-          the new change is slipped in between.
-        :type change_note: str
-        :param change_note: Comment to record in the changelog entry.
-        :rtype: int
-        :returns: number of changed entries, however if changes were only
-          written to changelog and are waiting for review, the negative number
-          of changes written to changelog is returned
-        """
-        self.affirm_realm(rs, (data['id'],))
-
-        if rs.user.persona_id != data['id'] and not self.is_admin(rs):
-            raise PrivilegeError("Not privileged.")
-        privileged_fields = {'balance'}
-        if set(data) & privileged_fields and not self.is_admin(rs):
-            raise PrivilegeError("Modifying sensitive key forbidden.")
-        if 'username' in data  and not allow_username_change:
-            raise RuntimeError("Modification of username prevented.")
-        finance_fields = {'trial_member', 'balance'}
-        if set(data) & finance_fields and not allow_finance_change:
-            raise RuntimeError("Modification of finance information prevented.")
-        if not may_wait and generation is not None:
-            raise ValueError("Non-waiting change without generation override.")
-
-        with Atomizer(rs):
-            ## Save current state for logging to the finance_log
-            if 'status' in data:
-                previous = unwrap(self.retrieve_user_data(rs, (data['id'],)))
-            else:
-                previous = None
-
-            ret = self.core.changelog_submit_change(
-                rs, data, generation, change_note=change_note,
-                may_wait=may_wait, allow_username_change=allow_username_change)
-
-            if allow_finance_change and ret < 0:
-                raise RuntimeError("Finance change not committed.")
-
-            ## Log changes to membership status to the finance_log
-            if previous and data['status'] != previous['status']:
-                ex_stati = const.ALL_CDE_STATI - const.MEMBER_STATI
-                code = None
-                if (data['status'] in ex_stati
-                        and previous['status'] in const.MEMBER_STATI):
-                    code = const.FinanceLogCodes.lose_membership
-                elif (data['status'] in const.MEMBER_STATI
-                      and previous['status'] in ex_stati):
-                    code = const.FinanceLogCodes.gain_membership
-                if code is not None:
-                    new_balance = data.get('balance', previous['balance'])
-                    delta = new_balance - previous['balance']
-                    self.finance_log(rs, code, data['id'], delta, new_balance)
-            return ret
-
-    @access("cde_admin")
-    def resolve_change(self, rs, persona_id, generation, ack,
-                       allow_username_change=False, reviewed=True):
-        """Review a currently pending change from the changelog.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type persona_id: int
-        :type generation: int
-        :type ack: bool
-        :param ack: whether to commit or refuse the change
-        :type allow_username_change: bool
-        :param allow_username_change: Usernames are special because they
-          are used for login and password recovery, hence we require an
-          explicit statement of intent to change a username. Obviously this
-          should only be set if necessary.
-        :type reviewed: bool
-        :param reviewed: Signals wether the change was reviewed. This exists,
-          so that automatically resolved changes are not marked as reviewed.
-        :rtype: int
-        :returns: default return code
-        """
-        persona_id = affirm("int", persona_id)
-        generation = affirm("int", generation)
-        ack = affirm("bool", ack)
-        allow_username_change = affirm("bool", allow_username_change)
-
-        return self.core.changelog_resolve_change(
-            rs, persona_id, generation, ack,
-            allow_username_change=allow_username_change, reviewed=reviewed)
-
-    @access("formermember")
-    def change_user(self, rs, data, generation, may_wait=True,
-                    change_note=None):
-        """Change a data set. Note that you need privileges to edit someone
-        elses data set.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str: object}
-        :type may_wait: bool
-        :param may_wait: override for system requests (which may not wait)
-        :type change_note: str
-        :param change_note: Descriptive line for changelog
-        :rtype: int
-        :returns: default return code
-        """
-        data = affirm("member_data", data)
-        generation = affirm("int_or_None", generation)
-        may_wait = affirm("bool", may_wait)
-        change_note = affirm("str_or_None", change_note)
-        if change_note is None:
-            self.logger.info("No change note specified (persona_id={}).".format(
-                data['id']))
-            change_note = "Unspecified change."
-
-        return self.set_user_data(rs, data, generation, may_wait=may_wait,
-                                  change_note=change_note)
-
-    @access("event_user")
-    @singularize("get_data_no_quota_one")
-    def get_data_no_quota(self, rs, ids):
-        """This behaves like
-        :py:meth:`cdedb.backend.common.AbstractUserBackend.get_data`, that is
-        it does not check or update the quota.
-
-        This is intended for consumption by the event backend, where
-        orgas will need access. This should only be used after serious
-        consideration. This is a separate function (and not a mere
-        parameter to :py:meth:`get_data`) so that its usage can be
-        tracked.
-
-        This escalates privileges so non-member orgas are able to utilize
-        the administrative interfaces to an event.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        :returns: dict mapping ids to requested data
-        """
-        orig_conn = None
-        if not rs.user.is_member:
-            if rs.conn.is_contaminated:
-                raise RuntimeError("Atomized -- impossible to escalate.")
-            orig_conn = rs.conn
-            rs.conn = self.connpool['cdb_member']
-        ret = super().get_data(rs, ids)
-        if orig_conn:
-            rs.conn = orig_conn
-        return ret
-
-    @access("formermember")
-    @singularize("get_data_outline_one")
-    def get_data_outline(self, rs, ids):
-        """This is a restricted version of :py:meth:`get_data`.
-
-        It does not incorporate quotas, but returns only a limited
-        number of attributes.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        :returns: dict mapping ids to requested data
-        """
-        ret = super().get_data(rs, ids)
-        fields = ("id", "username", "display_name", "status", "family_name",
-                  "given_names", "title", "name_supplement")
-        return {key: {k: v for k, v in value.items() if k in fields}
-                for key, value in ret.items()}
-
-    @access("formermember")
-    @singularize("get_data_one")
-    def get_data(self, rs, ids):
-        """This checks for quota in addition to what
-        :py:meth:`cdedb.backend.common.AbstractUserBackend.get_data` does.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: {str: object}}
-        :returns: dict mapping ids to requested data
-        """
-        ids = affirm_array("int", ids)
-
-        with Atomizer(rs):
-            query = glue("SELECT queries FROM core.quota WHERE persona_id = %s",
-                         "AND qdate = %s")
-            today = now().date()
-            num = self.query_one(rs, query, (rs.user.persona_id, today))
-            query = glue("UPDATE core.quota SET queries = %s",
-                         "WHERE persona_id = %s AND qdate = %s")
-            if num is None:
-                query = glue("INSERT INTO core.quota",
-                             "(queries, persona_id, qdate) VALUES (%s, %s, %s)")
-                num = 0
-            else:
-                num = unwrap(num)
-            new = tuple(i == rs.user.persona_id for i in ids).count(False)
-            if (num + new > self.conf.MAX_QUERIES_PER_DAY
-                    and not self.is_admin(rs)):
-                raise QuotaException("Too many queries.")
-            if new:
-                self.query_exec(rs, query,
-                                (num + new, rs.user.persona_id, today))
-        return self.retrieve_user_data(rs, ids)
-
-    @access("cde_admin")
-    def create_user(self, rs, data, change_note="Member creation."):
-        """Make a new member account.
-
-        This caters to the cde realm specifics, foremost the changelog.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str: object}
-        :rtype: int
-        :returns: The id of the newly created persona.
-        """
-        data = affirm("member_data", data, creation=True)
-        change_note = affirm("str", change_note)
-        ## insert default for optional and non-settable fields for changelog
-        update = {
-            'balance': decimal.Decimal(0),
-            'decided_search': False,
-            'bub_search': False,
-        }
-        merge_dicts(data, update)
-
-        with Atomizer(rs):
-            new_id = self.core.create_persona(rs, data)
-            udata = {k: v for k, v in data.items() if k in MEMBER_DATA_FIELDS}
-            udata['persona_id'] = new_id
-            udata['fulltext'] = create_fulltext(data)
-            self.sql_insert(rs, "cde.member_data", udata,
-                            entity_key="persona_id")
-            keys = list(PERSONA_DATA_FIELDS + MEMBER_DATA_FIELDS)
-            keys.remove("id")
-            cdata = {k: data.get(k) for k in keys}
-            cdata.update({
-                "submitted_by": rs.user.persona_id,
-                "generation": 1,
-                "change_status": const.MemberChangeStati.committed,
-                "persona_id": new_id,
-                "change_note": change_note,
-            })
-            self.sql_insert(rs, "core.changelog", cdata)
-            ## It's unlikely but possible to create an account for a former
-            ## member
-            if data['status'] in const.MEMBER_STATI:
-                self.finance_log(rs, const.FinanceLogCodes.new_member,
-                                 new_id, data['balance'], data['balance'])
-        return new_id
-
-    def genesis_check(self, rs, case_id, secret):
-        """Member accounts cannot be requested."""
-        raise NotImplementedError("Not available for cde realm.")
-
-    def genesis(self, rs, case_id, secret, data):
-        """Member accounts cannot be requested."""
-        raise NotImplementedError("Not available for cde realm.")
-
-    @access("formermember")
-    @singularize("get_generation")
-    def get_generations(self, rs, ids):
-        """Retrieve the current generation of the persona ids in the
-        changelog. This includes committed and pending changelog entries.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: int}
-        :returns: dict mapping ids to generations
-        """
-        ids = affirm_array("int", ids)
-        return self.core.changelog_get_generations(rs, ids)
-
-    @access("cde_admin")
-    def get_changes(self, rs, stati):
-        """Retrive changes in the changelog.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type stati: [int]
-        :param stati: limit changes to those with a status in this
-        :rtype: {int: {str: object}}
-        :returns: dict mapping persona ids to dicts containing information
-          about the change and the persona
-        """
-        affirm_array("int", stati)
-        return self.core.changelog_get_changes(rs, stati)
-
-    @access("cde_admin")
-    def get_history(self, rs, anid, generations):
-        """Retrieve history of a member data set.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type anid: int
-        :type generations: [int] or None
-        :parameter generations: generations to retrieve, all if None
-        :rtype: {int: {str: object}}
-        :returns: mapping generation to data set
-        """
-        anid = affirm("int", anid)
-        generations = affirm_array("int", generations, allow_None=True)
-        return self.core.changelog_get_history(rs, anid, generations)
-
-    @access("formermember")
-    @singularize("get_foto")
-    def get_fotos(self, rs, ids):
-        """Retrieve the profile picture attribute.
-
-        This is separate since it is not logged in the changelog and
-        hence not present in :py:data:`cdedb.common.MEMBER_DATA_FIELDS`.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type ids: [int]
-        :rtype: {int: str}
-        """
-        ids = affirm_array("int", ids)
-        data = self.sql_select(rs, "cde.member_data", ("persona_id", "foto"),
-                               ids, entity_key="persona_id")
-        if len(data) != len(ids):
-            raise ValueError("Invalid ids requested.")
-        return {e['persona_id']: e['foto'] for e in data}
-
-    @access("formermember")
-    def set_foto(self, rs, persona_id, foto):
-        """Set the profile picture attribute.
-
-        This is separate since it is not logged in the changelog and
-        hence not present in :py:data:`cdedb.common.MEMBER_DATA_FIELDS`.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type persona_id: int
-        :type foto: str or None
-        :rtype: bool
-        """
-        persona_id = affirm("int", persona_id)
-        foto = affirm("str_or_None", foto)
-        if rs.user.persona_id != persona_id and not self.is_admin(rs):
-            raise PrivilegeError("Not privileged.")
-        data = {
-            'persona_id': persona_id,
-            'foto': foto,
-        }
-        num = self.sql_update(rs, "cde.member_data", data,
-                              entity_key="persona_id")
-        self.cde_log(rs, const.CdeLogCodes.foto_update, persona_id)
-        return bool(num)
-
-    @access("formermember")
-    def foto_usage(self, rs, foto):
-        """Retrieve usage number for a specific foto.
-
-        So we know when a foto is up for garbage collection.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type foto: str
-        :rtype: int
-        """
-        foto = affirm("str", foto)
-        query = "SELECT COUNT(*) AS num FROM cde.member_data WHERE foto = %s"
-        return unwrap(self.query_one(rs, query, (foto,)))
 
     @access("member")
     def list_lastschrift(self, rs, persona_ids=None, active=True):
@@ -615,7 +154,7 @@ class CdEBackend(AbstractUserBackend):
             ret = self.sql_update(rs, "cde.lastschrift", data)
             persona_id = unwrap(self.sql_select_one(
                 rs, "cde.lastschrift", ("persona_id",), data['id']))
-            self.finance_log(rs, log_code, persona_id, None, None)
+            self.core.finance_log(rs, log_code, persona_id, None, None)
         return ret
 
     @access("cde_admin")
@@ -631,8 +170,8 @@ class CdEBackend(AbstractUserBackend):
         data['submitted_by'] = rs.user.persona_id
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "cde.lastschrift", data)
-            self.finance_log(rs, const.FinanceLogCodes.grant_lastschrift,
-                             data['persona_id'], None, None)
+            self.core.finance_log(rs, const.FinanceLogCodes.grant_lastschrift,
+                                  data['persona_id'], None, None)
         return new_id
 
     @access("member")
@@ -727,7 +266,7 @@ class CdEBackend(AbstractUserBackend):
             if 'amount' not in data:
                 data['amount'] = lastschrift['amount']
             ret = self.sql_insert(rs, "cde.lastschrift_transactions", data)
-            self.finance_log(
+            self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_issue,
                 lastschrift['persona_id'], None, None,
                 additional_info=data['amount'])
@@ -786,18 +325,16 @@ class CdEBackend(AbstractUserBackend):
             new_balance = None
             if status == const.LastschriftTransactionStati.success:
                 code = const.FinanceLogCodes.lastschrift_transaction_success
-                current = unwrap(self.get_data(rs, (persona_id,)))
+                current = self.core.get_cde_user(rs, persona_id)
                 fee = self.conf.PERIODS_PER_YEAR * self.conf.MEMBERSHIP_FEE
                 delta = min(tally, fee)
                 new_balance = current['balance'] + delta
-                persona_update = {
-                    'id': persona_id,
-                    'balance': new_balance,
-                }
-                self.set_user_data(
-                    rs, persona_update, generation=None, may_wait=False,
-                    allow_finance_change=True,
-                    change_note="Successful direct debit transaction")
+                self.core.change_persona_balance(
+                    rs, persona_id, new_balance,
+                    const.FinanceLogCodes.lastschrift_transaction_success,
+                    change_note="Successful direct debit transaction.")
+                ## Return early since change_persona_balance does the logging
+                return ret
             elif status == const.LastschriftTransactionStati.failure:
                 code = const.FinanceLogCodes.lastschrift_transaction_failure
                 lastschrift_update = {
@@ -809,8 +346,8 @@ class CdEBackend(AbstractUserBackend):
                 code = const.FinanceLogCodes.lastschrift_transaction_cancelled
             else:
                 raise RuntimeError("Impossible.")
-            self.finance_log(rs, code, persona_id, delta, new_balance,
-                             additional_info=update['tally'])
+            self.core.finance_log(rs, code, persona_id, delta, new_balance,
+                                  additional_info=update['tally'])
             return ret
 
     @access("cde_admin")
@@ -847,24 +384,17 @@ class CdEBackend(AbstractUserBackend):
             persona_id = lastschrift['persona_id']
             fee = self.conf.PERIODS_PER_YEAR * self.conf.MEMBERSHIP_FEE
             delta = min(transaction['tally'], fee)
-            current = unwrap(self.get_data(rs, (persona_id,)))
+            current = self.core.get_cde_user(rs, persona_id)
             new_balance = current['balance'] - delta
-            persona_update = {
-                'id': persona_id,
-                'balance': new_balance,
-            }
-            self.set_user_data(
-                rs, persona_update, generation=None, may_wait=False,
-                allow_finance_change=True,
+            self.core.change_persona_balance(
+                rs, persona_id, new_balance,
+                const.FinanceLogCodes.lastschrift_transaction_revoked,
                 change_note="Revoked direct debit transaction")
             lastschrift_update = {
                 'id': lastschrift['id'],
                 'revoked_at': now(),
             }
             self.set_lastschrift(rs, lastschrift_update)
-            self.finance_log(
-                rs, const.FinanceLogCodes.lastschrift_transaction_revoked,
-                persona_id, delta, new_balance, additional_info=update['tally'])
             return ret
 
     def lastschrift_may_skip(self, rs, lastschrift):
@@ -927,12 +457,12 @@ class CdEBackend(AbstractUserBackend):
                 'status': const.LastschriftTransactionStati.skipped,
             }
             ret = self.sql_insert(rs, "cde.lastschrift_transactions", insert)
-            self.finance_log(
+            self.core.finance_log(
                 rs, const.FinanceLogCodes.lastschrift_transaction_skip,
                 lastschrift['persona_id'], None, None)
             return ret
 
-    @access("formermember")
+    @access("cde")
     def current_period(self, rs):
         """Check for the current semester
 
@@ -943,6 +473,7 @@ class CdEBackend(AbstractUserBackend):
         query = "SELECT MAX(id) FROM cde.org_period"
         return unwrap(self.query_one(rs, query, tuple()))
 
+    # FIXME move to core realm?
     @access("anonymous")
     def get_meta_info(self, rs):
         """Retrieve changing info about the CdE e.V.
@@ -974,7 +505,7 @@ class CdEBackend(AbstractUserBackend):
         query = "UPDATE core.cde_meta_info SET info = %s"
         return self.query_exec(rs, query, (psycopg2.extras.Json(the_data),))
 
-    @access("searchmember")
+    @access("searchable")
     def submit_general_query(self, rs, query):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
@@ -985,20 +516,26 @@ class CdEBackend(AbstractUserBackend):
         """
         query = affirm("serialized_query", query)
         if query.scope == "qview_cde_member":
-            query.constraints.append(("status", QueryOperators.oneof,
-                                      const.SEARCHMEMBER_STATI))
-            query.spec['status'] = "int"
+            query.constraints.append(("is_cde_realm", QueryOperators.equal,
+                                      True))
+            query.constraints.append(("is_searchable", QueryOperators.equal,
+                                      True))
+            query.spec['is_cde_realm'] = "bool"
+            query.spec['is_searchable'] = "bool"
         elif query.scope == "qview_cde_user":
             if not self.is_admin(rs):
                 raise PrivilegeError("Admin only.")
-            query.constraints.append(("status", QueryOperators.oneof,
-                                      const.CDE_STATI))
+            query.constraints.append(("is_cde_realm", QueryOperators.equal,
+                                      True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      False))
         elif query.scope == "qview_cde_archived_user":
             if not self.is_admin(rs):
                 raise PrivilegeError("Admin only.")
-            query.constraints.append(("status", QueryOperators.equal,
-                                      const.PersonaStati.archived_member))
-            query.spec['status'] = "int"
+            query.constraints.append(("is_cde_realm", QueryOperators.equal,
+                                      True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      True))
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)

@@ -100,31 +100,6 @@ def now():
     """
     return datetime.datetime.now(pytz.utc)
 
-def extract_realm(status):
-    """Which realm does a persona belong to?
-
-    Note how the conditions look, especially that they do not
-    commute. The point being, that this symbols the interdependencies
-    between backends. If we have a cycle in this dependency tree, we
-    have a problem -- and we won't be able to make this function work
-    properly too, so this is a nice indicator.
-
-    :type status: int
-    :rtype: str
-    """
-    if status is None:
-        return None
-    elif status in const.ALL_CDE_STATI:
-        return "cde"
-    elif status in const.EVENT_STATI:
-        return "event"
-    elif status in const.ASSEMBLY_STATI:
-        return "assembly"
-    elif status in const.ML_STATI:
-        return "ml"
-    else:
-        raise ValueError("Invalid status {} found.".format(status))
-
 class QuotaException(RuntimeError):
     """
     Exception for signalling a quota excess. This is thrown in
@@ -144,17 +119,11 @@ class PrivilegeError(RuntimeError):
 
 class CommonUser(metaclass=abc.ABCMeta):
     """Abstract base class for container representing a persona."""
-    def __init__(self, persona_id=None, roles=None, realm=None, status=None,
-                 orga=None, moderator=None):
+    def __init__(self, persona_id=None, roles=None, orga=None, moderator=None):
         """
         :type persona_id: int or None
         :type roles: {str}
         :param roles: python side privilege levels
-        :type realm: str or None
-        :param realm: realm of origin, describing which component is
-          responsible for handling the basic aspects of this user
-        :type status: int or None
-        :param status: Value of column status in core.personas if not anonymous.
         :type orga: {int} or None
         :param orga: Set of event ids for which this user is orga, only
           available in the event realm.
@@ -164,51 +133,8 @@ class CommonUser(metaclass=abc.ABCMeta):
         """
         self.persona_id = persona_id
         self.roles = roles or {"anonymous"}
-        self.realm = realm
-        self.status = status
         self.orga = orga or set()
         self.moderator = moderator or set()
-
-    @property
-    def is_persona(self):
-        """Shorthand to determine user state."""
-        return "persona" in self.roles
-
-    @property
-    def is_member(self):
-        """Shorthand to determine user state."""
-        return "member" in self.roles
-
-    @property
-    def is_searchable(self):
-        """Shorthand to determine user state."""
-        return "searchmember" in self.roles
-
-def extract_roles(db_privileges, status):
-    """Take numerical raw values from the database and convert it into a
-    set of semantic privilege levels.
-
-    :type db_privileges: int or None
-    :type status: int or None
-    :param status: will be converted to a
-      :py:class:`cdedb.database.constants.PersonaStati`.
-    :rtype: {str}
-    """
-    if db_privileges is None or status is None:
-        return {"anonymous"}
-    ret = {"anonymous", "persona"}
-    status = const.PersonaStati(status)
-    if status == const.PersonaStati.archived_member:
-        raise RuntimeError("Impossible archived member found.")
-    ret.add(status.name)
-    for privilege in const.PrivilegeBits:
-        if db_privileges & privilege.value:
-            ret.add(privilege.name)
-    ## ensure transitivity, that is that all dominated roles are present
-    for possiblerole in ALL_ROLES:
-        if ret & ALL_ROLES[possiblerole]:
-            ret.add(possiblerole)
-    return ret
 
 # TODO decide whether we sort by first or last name
 def name_key(entry):
@@ -548,53 +474,57 @@ def determine_age_class(birth, reference):
         return AgeClasses.u16
     return AgeClasses.u14
 
-#: A collection of the available privilege levels. More specifically the
-#: keys of this dict specify the roles. The corresponding value is a set of
-#: all roles which are upwards in the hierachy. Thus we have an encoded
-#: graph, for a picture see :ref:`privileges`.
-ALL_ROLES = {
-    "anonymous": {"anonymous", "persona", "core_admin",
-                  "formermember", "member", "searchmember", "cde_admin",
-                  "event_user", "event_admin",
-                  "assembly_user", "assembly_admin",
-                  "ml_user", "ml_admin", "ml_script",
-                  "admin"},
-    "persona": {"persona", "core_admin",
-                "formermember", "member", "searchmember", "cde_admin",
-                "event_user", "event_admin",
-                "assembly_user", "assembly_admin",
-                "ml_user", "ml_admin",
-                "admin"},
-    "core_admin": {"core_admin",
-                   "admin"},
-    "formermember": {"formermember", "member", "searchmember", "cde_admin",
-                     "admin"},
-    "member": {"member", "searchmember", "cde_admin",
-               "admin"},
-    "searchmember": {"searchmember", "cde_admin",
-                     "admin"},
-    "cde_admin": {"cde_admin",
-                  "admin"},
-    "event_user": {"formermember", "member", "searchmember", "cde_admin",
-                   "event_user", "event_admin",
-                   "admin"},
-    "event_admin": {"event_admin",
-                    "admin"},
-    "assembly_user": {"member", "searchmember", "cde_admin",
-                      "assembly_user", "assembly_admin",
-                      "admin"},
-    "assembly_admin": {"assembly_admin",
-                       "admin"},
-    "ml_user": {"formermember", "member", "searchmember", "cde_admin",
-                "event_user", "event_admin",
-                "assembly_user", "assembly_admin",
-                "ml_user", "ml_admin",
-                "admin"},
-    "ml_admin": {"ml_admin",
-                 "admin"},
-    "ml_script": {"admin"},
-    "admin": {"admin"},
-}
+def extract_roles(session_data):
+    """FIXME
+
+    NOTE: this also works on non-personas (i.e. dicts of is_* flags)
+
+    :type db_privileges: int or None
+    :type status: int or None
+    :param status: will be converted to a
+      :py:class:`cdedb.database.constants.PersonaStati`.
+    :rtype: {str}
+    """
+    ret = {"anonymous"}
+    if session_data['is_active']:
+        ret.add("persona")
+    else:
+        return ret
+    realms = {"cde", "event", "ml", "assembly"}
+    for realm in realms:
+        if session_data["is_{}_realm".format(realm)]:
+            ret.add(realm)
+            if session_data.get("is_{}_admin".format(realm)):
+                ret.add("{}_admin".format(realm))
+    if "cde" in ret:
+        if session_data.get("is_core_admin"):
+            ret.add("core_admin")
+        if session_data.get("is_admin"):
+            ret.add("admin")
+        if session_data["is_member"]:
+            ret.add("member")
+            if session_data.get("is_searchable"):
+                ret.add("searchable")
+    ## Grant global admin all roles
+    if "admin" in ret:
+        for level in ("core", "cde", "event", "assembly", "ml"):
+            ret.add("{}_admin".format(level))
+        ret = ret | realms | {"member", "searchable"}
+    return ret
+
+def privilege_tier(roles):
+    """FIXME"""
+    relevant = roles & {"cde", "event", "ml", "assembly"}
+    ret = {"core_admin", "admin"}
+    if relevant == {"ml"}:
+        return ret | {"ml_admin"}
+    if "assembly" in relevant and relevant <= {"ml", "assembly"}:
+        return ret | {"assembly_admin"}
+    if "event" in relevant and relevant <= {"ml", "event"}:
+        return ret | {"event_admin"}
+    if "cde" in relevant and relevant <= {"ml", "event", "assembly", "cde"}:
+        return ret | {"cde_admin"}
+    return ret
 
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).
@@ -609,46 +539,62 @@ DB_ROLE_MAPPING = collections.OrderedDict((
     ("assembly_admin", "cdb_admin"),
     ("event_admin", "cdb_admin"),
 
-    ("searchmember", "cdb_member"),
+    ("searchable", "cdb_member"),
     ("member", "cdb_member"),
-    ("formermember", "cdb_member"),
-    ("assembly_user", "cdb_member"),
+    ("cde", "cdb_member"),
+    ("assembly", "cdb_member"),
 
-    ("event_user", "cdb_persona"),
-    ("ml_user", "cdb_persona"),
+    ("event", "cdb_persona"),
+    ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
 
     ("anonymous", "cdb_anonymous"),
 ))
 
-#: Names of all columns associated to a persona.
-#: This does not include the ``password_hash`` for security reasons.
-PERSONA_DATA_FIELDS = (
-    "id", "username", "display_name", "family_name", "given_names",
-    "is_active", "status", "db_privileges", "cloud_account", "notes")
+#: All columns deciding on the current status of a persona
+PERSONA_STATUS_FIELDS = (
+    "is_active", "is_admin", "is_core_admin", "is_cde_admin",
+    "is_event_admin", "is_ml_admin", "is_assembly_admin", "is_cde_realm",
+    "is_event_realm", "is_ml_realm", "is_assembly_realm", "is_member",
+    "is_searchable", "is_archived")
 
-#: names of columns associated to a cde member (in addition to those which
-#: exist for every persona)
-MEMBER_DATA_FIELDS = (
+#: Names of all columns associated to an abstract persona.
+#: This does not include the ``password_hash`` for security reasons.
+PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
+    "id", "username", "display_name", "family_name", "given_names",
+    "cloud_account", "notes")
+
+#: Names of columns associated to a cde (formor)member
+PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
     "title", "name_supplement", "gender", "birthday", "telephone", "mobile",
     "address_supplement", "address", "postal_code", "location", "country",
     "birth_name", "address_supplement2", "address2", "postal_code2",
     "location2", "country2", "weblink", "specialisation", "affiliation",
     "timeline", "interests", "free_form", "balance", "decided_search",
-    "trial_member", "bub_search")
+    "trial_member", "bub_search", "foto")
+    # FIXME foto was added
 
-#: Names of columns associated to an event user (in addition to those which
-#: exist for every persona). This should be a subset of
-#: :py:data:`MEMBER_DATA_FIELDS` to facilitate upgrading of event users to
-#: memebers.
-EVENT_USER_DATA_FIELDS = (
+#: Names of columns associated to an event user. This should be a subset of
+#: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to
+#: members.
+PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
     "title", "name_supplement", "gender", "birthday", "telephone", "mobile",
     "address_supplement", "address", "postal_code", "location", "country")
+
+#: Names of columns associated to a ml user.
+PERSONA_ML_FIELDS = PERSONA_CORE_FIELDS
+
+#: Names of columns associated to an assembly user.
+PERSONA_ASSEMBLY_FIELDS = PERSONA_CORE_FIELDS
+
+#: Names of all columns associated to an abstract persona.
+#: This does not include the ``password_hash`` for security reasons.
+PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS
 
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
-    "persona_status", "notes", "case_status", "secret", "reviewer")
+    "realm", "notes", "case_status", "secret", "reviewer")
 
 #: Fields of a concluded event
 PAST_EVENT_FIELDS = ("id", "title", "organizer", "description", "tempus")
@@ -684,8 +630,9 @@ LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (
     "id", "title", "address", "description", "sub_policy", "mod_policy",
-    "notes", "attachment_policy", "audience", "subject_prefix", "maxsize",
-    "is_active", "gateway", "event_id", "registration_stati", "assembly_id")
+    "notes", "attachment_policy", "audience_policy", "subject_prefix",
+    "maxsize", "is_active", "gateway", "event_id", "registration_stati",
+    "assembly_id")
 
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "description", "signup_end", "is_active",

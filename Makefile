@@ -30,7 +30,7 @@ help:
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 CONFIGPATH ?= ""
-PYTHONBIN ?= python3
+PYTHONBIN ?= "python3.4"
 TESTPATTERN ?= ""
 
 pyro-nameserver:
@@ -168,7 +168,7 @@ lint:
 check:
 	make quit-test-backends
 	make sample-data-test &> /dev/null
-	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-*
+	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-*
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m test.main ${TESTPATTERN}
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
@@ -176,7 +176,7 @@ check:
 single-check:
 	make quit-test-backends
 	make sample-data-test &> /dev/null
-	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-*
+	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-*
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
 	${PYTHONBIN} -m unittest ${TESTPATTERN}
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true

@@ -96,13 +96,13 @@ class Query:
 #: Available query templates. These may be enriched by ext-fields. Order is
 #: important for UI purposes, hence the ordered dicts.
 #:
-#: .. note:: For schema specified columns (like ``member_data.persona_id``)
+#: .. note:: For schema specified columns (like ``personas.id``)
 #:           the schema part does not survive querying and needs to be stripped
 #:           before output.
 QUERY_SPECS = {
     "qview_cde_member" :
     collections.OrderedDict([
-        ("fulltext", "str"),
+        ("family_name,birth_name,given_names,display_name,username,address,address_supplement,address2,address_supplement2,postal_code,postal_code2,location,location2,country,country2,weblink,specialisation,affiliation,timeline,interests,free_form", "str"), # replacement for fulltext FIXME does not really work (see general_query)
         ("family_name,birth_name", "str"),
         ("given_names,display_name", "str"),
         ("username", "str"),
@@ -117,12 +117,23 @@ QUERY_SPECS = {
         ]),
     "qview_cde_user" :
     collections.OrderedDict([
-        ("fulltext", "str"),
-        ("member_data.persona_id", "int"),
+        # ("fulltext", "str"), FIXME reintroduce
+        ("personas.id", "int"),
         ("username", "str"),
-        ("status", "int"),
+        ("is_admin", "bool"),
+        ("is_core_admin", "bool"),
+        ("is_cde_admin", "bool"),
+        ("is_event_admin", "bool"),
+        ("is_ml_admin", "bool"),
+        ("is_assembly_admin", "bool"),
+        ("is_cde_realm", "bool"),
+        ("is_event_realm", "bool"),
+        ("is_ml_realm", "bool"),
+        ("is_assembly_realm", "bool"),
+        ("is_member", "bool"),
+        ("is_searchable", "bool"),
         ("is_active", "bool"),
-        ("db_privileges", "int"),
+        ("is_archived", "bool"),
         ("cloud_account", "bool"),
         ("family_name", "str"),
         ("birth_name", "str"),
@@ -160,7 +171,7 @@ QUERY_SPECS = {
         ]),
     "qview_cde_archived_user" :
     collections.OrderedDict([
-        ("member_data.persona_id", "int"),
+        ("personas.id", "int"),
         ("family_name", "str"),
         ("birth_name", "str"),
         ("given_names", "str"),
@@ -173,10 +184,22 @@ QUERY_SPECS = {
         ]),
     "qview_event_user" :
     collections.OrderedDict([
-        ("user_data.persona_id", "int"),
+        ("personas.id", "int"),
         ("username", "str"),
+        ("is_admin", "bool"),
+        ("is_core_admin", "bool"),
+        ("is_cde_admin", "bool"),
+        ("is_event_admin", "bool"),
+        ("is_ml_admin", "bool"),
+        ("is_assembly_admin", "bool"),
+        ("is_cde_realm", "bool"),
+        ("is_event_realm", "bool"),
+        ("is_ml_realm", "bool"),
+        ("is_assembly_realm", "bool"),
+        ("is_member", "bool"),
+        ("is_searchable", "bool"),
         ("is_active", "bool"),
-        ("db_privileges", "int"),
+        ("is_archived", "bool"),
         ("cloud_account", "bool"),
         ("family_name", "str"),
         ("given_names", "str"),
@@ -206,30 +229,42 @@ QUERY_SPECS = {
         ("reg.mixed_lodging", "bool"),
         ("reg.checkin", "datetime"),
         ("reg.foto_consent", "bool"),
-        ("membership.is_member", "bool"),
+        ("persona.is_member", "bool"),
         ("persona.username", "str"),
         ("persona.family_name", "str"),
         ("persona.given_names", "str"),
         ("persona.display_name", "str"),
-        ("user_data.title", "str"),
-        ("user_data.name_supplement", "str"),
-        ("user_data.gender", "int"),
-        ("user_data.birthday", "date"),
-        ("user_data.telephone", "str"),
-        ("user_data.mobile", "str"),
-        ("user_data.address", "str"),
-        ("user_data.address_supplement", "str"),
-        ("user_data.postal_code", "str"),
-        ("user_data.location", "str"),
-        ("user_data.country", "str"),
+        ("persona.title", "str"),
+        ("persona.name_supplement", "str"),
+        ("persona.gender", "int"),
+        ("persona.birthday", "date"),
+        ("persona.telephone", "str"),
+        ("persona.mobile", "str"),
+        ("persona.address", "str"),
+        ("persona.address_supplement", "str"),
+        ("persona.postal_code", "str"),
+        ("persona.location", "str"),
+        ("persona.country", "str"),
         ## This will be augmented with additional fields on the fly.
         ]),
     "qview_generic_user" :
     collections.OrderedDict([
         ("id", "int"),
         ("username", "str"),
+        ("is_admin", "bool"),
+        ("is_core_admin", "bool"),
+        ("is_cde_admin", "bool"),
+        ("is_event_admin", "bool"),
+        ("is_ml_admin", "bool"),
+        ("is_assembly_admin", "bool"),
+        ("is_cde_realm", "bool"),
+        ("is_event_realm", "bool"),
+        ("is_ml_realm", "bool"),
+        ("is_assembly_realm", "bool"),
+        ("is_member", "bool"),
+        ("is_searchable", "bool"),
         ("is_active", "bool"),
-        ("db_privileges", "int"),
+        ("is_archived", "bool"),
         ("cloud_account", "bool"),
         ("family_name", "str"),
         ("given_names", "str"),
@@ -243,23 +278,19 @@ QUERY_SPECS = {
 #: columns with the same name, but each join brings in an id column.
 QUERY_VIEWS = {
     "qview_cde_member": glue(
-        "(core.personas JOIN cde.member_data",
-        "ON personas.id = member_data.persona_id)",
+        "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_cde_user": glue(
-        "(core.personas JOIN cde.member_data",
-        "ON personas.id = member_data.persona_id)",
+        "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_cde_archived_user": glue(
-        "(core.personas JOIN cde.member_data",
-        "ON personas.id = member_data.persona_id)",
+        "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_event_user": glue(
-        "(core.personas JOIN event.user_data",
-        "ON personas.id = user_data.persona_id)",
+        "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_registration": None, ## dummy -- value will be generated on the fly

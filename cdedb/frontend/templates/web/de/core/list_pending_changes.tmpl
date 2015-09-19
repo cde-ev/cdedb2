@@ -1,11 +1,11 @@
-{% extends "web/de/cde/base.tmpl" %}
+{% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Änderungen (zurzeit {{ pending|length|e }} zu begutachten){% endblock %}
 {% block content %}
    <ul>
         {% for persona_id, entry in pending|dictsort %}
            <li>
-               {{ util.href(cdedblink('cde/inspect_change', {'persona_id': persona_id}),
+               {{ util.href(cdedblink('core/inspect_change', {'persona_id': persona_id}),
                             "{} {}".format(entry['given_names'], entry['family_name'])) }}
            </li>
         {% endfor %}

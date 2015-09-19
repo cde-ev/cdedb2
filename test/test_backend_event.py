@@ -2,6 +2,7 @@
 
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators
+from cdedb.common import PERSONA_EVENT_FIELDS
 import cdedb.database.constants as const
 import datetime
 import pytz
@@ -12,13 +13,13 @@ class TestEventBackend(BackendTest):
 
     @as_users("emilia")
     def test_basics(self, user):
-        data = self.event.get_data_one(self.key, user['id'])
+        data = self.core.get_event_user(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['name_supplement'] = "von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'name_supplement', 'display_name', 'telephone'}}
-        self.event.change_user(self.key, setter)
-        new_data = self.event.get_data_one(self.key, user['id'])
+        self.core.change_persona(self.key, setter)
+        new_data = self.core.get_event_user(self.key, user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("anton", "berta")
@@ -45,24 +46,27 @@ class TestEventBackend(BackendTest):
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
             "notes": "Some blah",
+            "realm": "event",
         }
         case_id = self.core.genesis_request(None, data)
         self.core.genesis_verify(None, case_id)
         update = {
             'id': case_id,
-            'persona_status': const.PersonaStati.event_user,
             'case_status': const.GenesisStati.approved,
             'secret': "foobar",
+            'reviewer': user['id'],
         }
         self.core.genesis_modify_case(self.key, update)
-        self.assertTrue(self.event.genesis_check(
-            None, case_id, update['secret']))
-        self.assertFalse(self.event.genesis_check(None, case_id, "wrong"))
+        self.assertTrue(self.core.genesis_check(
+            None, case_id, update['secret'], "event"))
+        self.assertFalse(self.core.genesis_check(
+            None, case_id, "wrong", "event"))
+        self.assertFalse(self.core.genesis_check(
+            None, case_id, update['secret'], "cde"))
         user_data = {
             "username": 'zelda@example.cde',
             "display_name": 'Zelda',
             "is_active": True,
-            "status": const.PersonaStati.event_user,
             "cloud_account": True,
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
@@ -78,15 +82,37 @@ class TestEventBackend(BackendTest):
             "location": "Lynna",
             "country": "Hyrule",
             "notes": None,
+            "birth_name": None,
+            "address_supplement2": None,
+            "address2": None,
+            "postal_code2": None,
+            "location2": None,
+            "country2": None,
+            "weblink": None,
+            "specialisation": None,
+            "affiliation": None,
+            "timeline": None,
+            "interests": None,
+            "free_form": None,
+            "trial_member": None,
+            "decided_search": None,
+            "bub_search": None,
+            "foto": None,
         }
-        new_id = self.event.genesis(None, case_id, update['secret'], user_data)
+        new_id = self.core.genesis(None, case_id, update['secret'], "event", user_data)
         self.assertLess(0, new_id)
-        value = self.event.get_data_one(self.key, new_id)
+        value = self.core.get_event_user(self.key, new_id)
+        user_data = {k: v for k, v in user_data.items() if k in PERSONA_EVENT_FIELDS}
         user_data.update({
+            'is_admin': False,
+            'is_archived': False,
+            'is_assembly_admin': False,
+            'is_cde_admin': False,
+            'is_core_admin': False,
+            'is_event_admin': False,
+            'is_member': False,
+            'is_ml_admin': False,
             'id': new_id,
-            'db_privileges': 0,
-            "gender": 0,
-            "status": 20,
         })
         self.assertEqual(user_data, value)
 
@@ -362,58 +388,6 @@ class TestEventBackend(BackendTest):
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_courses(self.key, event_id, past=False)
         self.assertIn(new_id, new_courses)
-
-    @as_users("berta", "emilia")
-    def test_acquire_data(self, user):
-        expectation = {
-            1: {
-                'address': 'Auf der Düne 42',
-                'address_supplement': None,
-                'birthday': datetime.date(1991, 3, 30),
-                'cloud_account': True,
-                'country': None,
-                'db_privileges': 1,
-                'display_name': 'Anton',
-                'family_name': 'Administrator',
-                'gender': 1,
-                'given_names': 'Anton Armin A.',
-                'id': 1,
-                'is_active': True,
-                'location': 'Musterstadt',
-                'mobile': None,
-                'name_supplement': None,
-                'notes': None,
-                'postal_code': '03205',
-                'status': 0,
-                'telephone': '+49 (234) 98765',
-                'title': None,
-                'username': 'anton@example.cde',
-            },
-            5: {
-                'address': 'Hohle Gasse 13',
-                'address_supplement': None,
-                'birthday': datetime.date(2012, 6, 2),
-                'cloud_account': False,
-                'country': 'Deutschland',
-                'db_privileges': 0,
-                'display_name': 'Emilia',
-                'family_name': 'Eventis',
-                'gender': 0,
-                'given_names': 'Emilia E.',
-                'id': 5,
-                'is_active': True,
-                'location': 'Wolkenkuckuksheim',
-                'mobile': None,
-                'name_supplement': None,
-                'notes': None,
-                'postal_code': '56767',
-                'status': 20,
-                'telephone': '+49 (5432) 555666777',
-                'title': None,
-                'username': 'emilia@example.cde',
-            },
-        }
-        self.assertEqual(expectation, self.event.acquire_data(self.key, (1, 5)))
 
     @as_users("anton", "garcia")
     def test_sidebar_events(self, user):
@@ -843,8 +817,8 @@ class TestEventBackend(BackendTest):
             "scope": "qview_registration",
             "spec": dict(QUERY_SPECS["qview_registration"]),
             "fields_of_interest": (
-                "reg.id", "reg.payment", "persona.status", "persona.family_name",
-                "user_data.birthday", "part1.lodgement_id1", "part3.status3",
+                "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
+                "birthday", "part1.lodgement_id1", "part3.status3",
                 "fields.brings_balls", "fields.transportation"),
             "constraints": (("reg.id", QueryOperators.greater.value, 0),
                             ("persona.given_names", QueryOperators.regex.value, '[aeiou]'),
@@ -868,7 +842,7 @@ class TestEventBackend(BackendTest):
              'id': 2,
              'lodgement_id1': None,
              'payment': datetime.date(2014, 2, 2),
-             'status': 20,
+             'is_cde_realm': False,
              'status3': 1,
              'transportation': 'pedes'},
             {'birthday': datetime.date(2222, 1, 1),
@@ -877,7 +851,7 @@ class TestEventBackend(BackendTest):
              'id': 4,
              'lodgement_id1': None,
              'payment': datetime.date(2014, 4, 4),
-             'status': 0,
+             'is_cde_realm': True,
              'status3': 1,
              'transportation': 'etc'})
         self.assertEqual(expectation, result)

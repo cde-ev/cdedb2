@@ -13,13 +13,13 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("kalif")
     def test_basics(self, user):
-        data = self.assembly.get_data_one(self.key, user['id'])
+        data = self.core.get_assembly_user(self.key, user['id'])
         data['display_name'] = "Zelda"
         data['family_name'] = "Lord von und zu Hylia"
         setter = {k: v for k, v in data.items() if k in
                   {'id', 'display_name', 'given_names', 'family_name'}}
-        self.assembly.change_user(self.key, setter)
-        new_data = self.assembly.get_data_one(self.key, user['id'])
+        self.core.change_persona(self.key, setter)
+        new_data = self.core.get_assembly_user(self.key, user['id'])
         self.assertEqual(data, new_data)
 
     @as_users("anton", "berta", "charly", "kalif")

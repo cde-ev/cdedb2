@@ -42,7 +42,7 @@ from cdedb.serialization import deserialize
 from cdedb.config import BasicConfig
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
-    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts,
+    extract_roles, glue, CommonUser, merge_dicts,
     compute_checkdigit, now)
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
@@ -532,15 +532,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           database
         :rtype: :py:class:`FrontendUser`
         """
-        realm = extract_realm(sessiondata["status"])
-        roles = extract_roles(sessiondata["db_privileges"],
-                              sessiondata["status"])
+        sd = sessiondata
+        roles = extract_roles(sd)
         return FrontendUser(
-            persona_id=sessiondata['persona_id'], roles=roles, realm=realm,
-            status=sessiondata['status'], username=sessiondata['username'],
-            display_name=sessiondata['display_name'],
-            given_names=sessiondata['given_names'],
-            family_name=sessiondata['family_name'])
+            persona_id=sd['persona_id'], roles=roles, username=sd['username'],
+            display_name=sd['display_name'], given_names=sd['given_names'],
+            family_name=sd['family_name'])
 
     @classmethod
     @abc.abstractmethod
@@ -580,7 +577,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params = params or {}
             return cdedburl(rs, endpoint, params)
 
-        def _show_user_link(persona_id):
+        def _show_user_link(persona_id, realm=None):
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -588,12 +585,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             have this helper.
 
             :type persona_id: int
+            :type realm: str or None
+            :param realm: If given this is the target realm for the show user
+              page.
             :rtype: str
             """
-            return cdedburl(rs, 'core/show_user', params={
+            realm = realm or self.realm
+            return cdedburl(rs, '{}/show_user'.format(realm), params={
                 'persona_id': persona_id,
-                'confirm_id': self.encode_parameter("core/show_user",
-                                                    "confirm_id", persona_id)})
+                'confirm_id': self.encode_parameter(
+                    "{}/show_user".format(realm),
+                    "confirm_id", persona_id)})
         default_selections = {
             'gender': tuple((k, v, None) for k, v in
                             self.enum_choice(rs, const.Genders).items()),
@@ -858,7 +860,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             msg['Subject'], msg['To']))
         return ret
 
-    def redirect_show_user(self, rs, persona_id):
+    def redirect_show_user(self, rs, persona_id, realm=None):
         """Convenience function to redirect to a user detail page.
 
         The point is, that encoding the ``confirm_id`` parameter is
@@ -868,10 +870,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type persona_id: int
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
-        cid = self.encode_parameter("{}/show_user".format(self.realm),
+        realm = realm or self.realm
+        cid = self.encode_parameter("{}/show_user".format(realm),
                                     "confirm_id", persona_id)
         params = {'confirm_id': cid, 'persona_id': persona_id}
-        return self.redirect(rs, '{}/show_user'.format(self.realm),
+        return self.redirect(rs, '{}/show_user'.format(realm),
                              params=params)
 
     @classmethod
@@ -1027,6 +1030,8 @@ class FrontendUser(CommonUser):
                  username="", **kwargs):
         """
         :type display_name: str or None
+        :type given_names: str or None
+        :type family_name or None
         :type username: str or None
         """
         super().__init__(**kwargs)
@@ -1062,7 +1067,7 @@ def reconnoitre_ambience(obj, rs):
         # live below the assembly/ballot they are associated to
         pass
     scouts = (
-        Scout(lambda anid: obj.coreproxy.get_data_one(rs, anid), 'persona_id',
+        Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', t),
         # no case_id for genesis cases since they are special and cause
         # PrivilegeErrors
@@ -1122,17 +1127,17 @@ def reconnoitre_ambience(obj, rs):
                 consistency_checker(ambience)
     return ambience
 
-def access(role, modi=None):
+def access(*roles, modi=None):
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
-    :type role: str
-    :param role: least level of privileges required
+    :type roles: [str]
+    :param roles: privilege required (any of the passed)
     :type modi: {str}
     :param modi: HTTP methods allowed for this invocation
     """
     modi = modi or {"GET", "HEAD"}
-    access_list = ALL_ROLES[role]
+    access_list = set(roles)
     def decorator(fun):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
@@ -1324,47 +1329,6 @@ def REQUESTfile(*args):
                     kwargs[name] = rs.request.files.get(name, None)
                 rs.values[name] = kwargs[name]
             return fun(obj, rs, *args2, **kwargs)
-        return new_fun
-    return wrap
-
-def persona_dataset_guard(argname="persona_id", realms=tuple(),
-                          disallow_archived=True):
-    """This decorator checks the access with respect to a specific persona. The
-    persona is specified by id which has either to be a keyword
-    parameter or the first positional parameter after the request state.
-
-    Only the persona itself or a privileged user is
-    admitted. Additionally the realm of the persona may be verified and
-    archived member datasets may be excluded.
-
-    An example use case is the page for changing user details.
-
-    :type argname: str
-    :param argname: name of the keyword argument specifying the id
-    :type realms: [str] or None
-    :param realms: If not None the realm of the persona is checked. The
-      realm of the persona has to be in this list (if the list is empty
-      the realm of the current frontend is checked against).
-    :type disallow_archived: bool
-    :param disallow_archived: defaults to True
-    """
-    def wrap(fun):
-        @functools.wraps(fun)
-        def new_fun(obj, rs, *args, **kwargs):
-            if argname in kwargs:
-                arg = kwargs[argname]
-            else:
-                arg = args[0]
-            if arg != rs.user.persona_id and not obj.is_admin(rs):
-                return werkzeug.exceptions.Forbidden()
-            if realms is not None:
-                therealms = realms or (obj.realm,)
-                status = obj.coreproxy.get_data_one(rs, arg)['status']
-                if (extract_realm(status) not in therealms
-                        or (disallow_archived and status ==
-                            const.PersonaStati.archived_member)):
-                    return werkzeug.exceptions.NotFound()
-            return fun(obj, rs, *args, **kwargs)
         return new_fun
     return wrap
 

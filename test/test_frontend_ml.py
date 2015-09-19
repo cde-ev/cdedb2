@@ -18,7 +18,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("janis")
     def test_changeuser(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/ml/self/change'})
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         self.submit(f)
@@ -30,6 +30,7 @@ class TestMlFrontend(FrontendTest):
     def test_adminchangeuser(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-10-I"
+        f['realm'] = "ml"
         self.submit(f)
         self.traverse({'href': '/ml/user/10/adminchange'})
         f = self.response.forms['changedataform']
@@ -44,6 +45,7 @@ class TestMlFrontend(FrontendTest):
     def test_toggleactivity(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-10-I"
+        f['realm'] = "ml"
         self.submit(f)
         self.assertTitle("Janis Jalapeño")
         self.assertEqual(
@@ -96,6 +98,7 @@ class TestMlFrontend(FrontendTest):
         f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
         f['notes'] = "Gimme!"
+        f['realm'] = "ml"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None
@@ -109,7 +112,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen (zurzeit 1 zu begutachten)")
         f = self.response.forms['genesisapprovalform1']
-        f['persona_status'] = 40
+        f['realm'] = "ml"
         self.submit(f)
         mail = self.fetch_mail()[0]
         link = None
@@ -130,15 +133,10 @@ class TestMlFrontend(FrontendTest):
         f['display_name'] = data['display_name']
         self.submit(f)
         self.assertTitle("Passwort zurücksetzen -- Bestätigung")
+        new_password = "saFe_37pass"
         f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
         self.submit(f)
-        mail = self.fetch_mail()[0]
-        for line in mail.split('\n'):
-            if line.startswith('zur'):
-                words = line.split(' ')
-                break
-        index = words.index('nun')
-        new_password = quopri.decodestring(words[index + 1])
         new_user = {
             'id': 11,
             'username': "zelda@example.cde",
@@ -220,7 +218,7 @@ class TestMlFrontend(FrontendTest):
         f['sub_policy'] = 2
         f['mod_policy'] = 0
         f['attachment_policy'] = 1
-        f['audience'] = [0, 1, 40]
+        f['audience_policy'] = 0
         f['subject_prefix'] = "[munkel]"
         f['maxsize'] = 512
         f['is_active'].checked = True
@@ -242,7 +240,7 @@ class TestMlFrontend(FrontendTest):
         f['address'] = "munkelwand@example.cde"
         self.assertEqual("1", f['sub_policy'].value)
         f['sub_policy'] = 2
-        f['audience'] = [0, 1, 40]
+        f['audience_policy'] = 0
         self.assertTrue(f['is_active'].checked)
         f['is_active'].checked = False
         self.submit(f)
@@ -332,7 +330,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/3/change'},)
         self.assertTitle("Witz des Tages -- Konfiguration")
         f = self.response.forms['changelistform']
-        f['audience'] = [0]
+        f['audience_policy'] = 4
         self.submit(f)
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},

@@ -13,7 +13,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_showuser(self, user):
-        self.traverse({'href': '/core/self/show'})
+        self.traverse({'href': '/core/self/show'},
+                      {'href': '/cde/user/{}/show'.format(user['id'])})
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
         if user['id'] == 2:
@@ -21,7 +22,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta")
     def test_changedata(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/cde/self/change'})
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"
@@ -37,6 +38,7 @@ class TestCdEFrontend(FrontendTest):
     def test_adminchangedata(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
@@ -51,6 +53,7 @@ class TestCdEFrontend(FrontendTest):
     def test_validation(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
@@ -61,10 +64,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Administration -- Bertålotta Beispiel bearbeiten")
         self.assertIn("alert alert-danger", self.response)
 
+    # FIXME maybe move to core
     def test_changelog(self):
         user = USER_DICT["berta"]
         self.login(user)
-        self.traverse({'href': '/core/self/show'}, {'href': '/cde/self/change'})
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
         f = self.response.forms['changedataform']
         f['family_name'] = "Ganondorf"
         self.submit(f, check_notification=False)
@@ -73,9 +77,9 @@ class TestCdEFrontend(FrontendTest):
         self.logout()
         user = USER_DICT["anton"]
         self.login(user)
-        self.traverse({'href': '/cde/$'}, {'href': '/cde/changelog/list'})
+        self.traverse({'href': '^/$'}, {'href': '/core/changelog/list'})
         self.assertTitle("Änderungen (zurzeit 1 zu begutachten)")
-        self.traverse({'href': '/cde/user/2/changelog/inspect'})
+        self.traverse({'href': '/core/persona/2/changelog/inspect'})
         f = self.response.forms['ackchangeform']
         self.submit(f)
         self.assertTitle("Änderungen (zurzeit 0 zu begutachten)")
@@ -156,6 +160,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_member_search_fulltext(self, user):
+        return # FIXME redo after getting fulltext in again
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
@@ -177,7 +182,7 @@ class TestCdEFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("\nCdE Nutzersuche -- 1 Ergebnis gefunden\n")
-        self.assertIn("persona_id=2", self.response.text)
+        self.assertIn('"row_0_id" value="2"', self.response.text)
 
     @as_users("anton")
     def test_user_search_csv(self, user):
@@ -185,14 +190,14 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'a[rm]'
-        f['qsel_member_data.persona_id'].checked = True
+        f['qsel_personas.id'].checked = True
         f['qsel_birthday'].checked = True
         f['qsel_decided_search'].checked = True
         f['qsel_free_form'].checked = True
         f['qsel_given_names'].checked = True
-        f['qord_primary'] = "member_data.persona_id"
+        f['qord_primary'] = "personas.id"
         self.response = f.submit("CSV")
-        expectation = '''member_data.persona_id;given_names;birthday;free_form;decided_search
+        expectation = '''personas.id;given_names;birthday;free_form;decided_search
 2;Bertålotta;1981-02-11;Jede Menge Gefasel         Gut verteilt        Über mehrere Zeilen;True
 3;Charly C.;1984-05-13;;True
 4;Daniel D.;1963-02-19;;False
@@ -202,6 +207,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_archived_user_search(self, user):
+        return # FIXME move to core realm
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/archiveduser/form'})
         self.assertTitle("CdE Archivsuche")
@@ -217,8 +223,10 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_show_archived_user(self, user):
+        return # FIXME move to core realm
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-8-G"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Archivzugriff -- Hades Hell")
 
@@ -226,6 +234,7 @@ class TestCdEFrontend(FrontendTest):
     def test_toggle_activity(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertTrue(self.response.lxml.get_element_by_id('activity_checkbox').checked)
@@ -237,6 +246,7 @@ class TestCdEFrontend(FrontendTest):
     def test_modify_membership(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
         self.assertIn("Daten sind für andere Mitglieder sichtbar.", self.response.text)
@@ -286,11 +296,12 @@ class TestCdEFrontend(FrontendTest):
             "notes": "some talk",
         }
         f = self.response.forms['newuserform']
-        self.assertEqual("1", self.response.lxml.get_element_by_id('input_select_status').value)
+        self.assertEqual(None, self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
         self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_trial_member').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_bub_search').checked)
         self.assertTrue(self.response.lxml.get_element_by_id('input_checkbox_cloud_account').checked)
-        f['status'] = 0
+        f['is_searchable'].checked = True
+        f['is_member'].checked = True
         f['trial_member'].checked = True
         f['bub_search'].checked = True
         f['cloud_account'].checked = False
@@ -370,6 +381,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertIn("17.50€", self.response.text)
@@ -380,6 +392,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertIn("12.50€", self.response.text)
@@ -431,6 +444,7 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_create(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-3-F"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Charly C. Clown")
         self.traverse({'href': '/cde/user/3/lastschrift'})
@@ -454,6 +468,7 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_change(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'href': '/cde/user/2/lastschrift'},
@@ -476,6 +491,7 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_receipt(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
+        f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'href': '/cde/user/2/lastschrift'})
@@ -516,10 +532,10 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/log'})
-        self.assertTitle("\nCdE allgemein -- Logs (0--1)\n")
+        self.assertTitle("\nCdE allgemein -- Logs (0--0)\n")
 
     @as_users("anton")
     def test_changelog_meta(self, user):
-        self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/changelog/view'})
-        self.assertTitle("\nCdE Nutzerdaten -- Logs (0--7)\n")
+        self.traverse({'href': '^/$'},
+                      {'href': '/core/changelog/view'})
+        self.assertTitle("\nNutzerdaten -- Logs (0--11)\n")

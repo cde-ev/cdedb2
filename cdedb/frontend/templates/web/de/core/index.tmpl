@@ -3,7 +3,7 @@
 {% block title %}CdE Datenbank{% endblock %}
 {% block content %}
     <h2>Willkommen!</h2>
-    {% if not user.is_persona %}
+    {% if "persona" not in user.roles %}
         <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform" class="form-horizontal">
             <p>
                 {{ util.input_text(name="username", label="E-Mail:", type="email", small=True, anid="login_name") }}

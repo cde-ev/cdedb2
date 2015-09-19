@@ -11,7 +11,7 @@ decorator). Everything is a bit special in here.
 
 from cdedb.database.connection import connection_pool_factory
 from cdedb.backend.common import make_RPCDaemon, run_RPCDaemon
-from cdedb.common import glue, make_root_logger, now
+from cdedb.common import glue, make_root_logger, now, PERSONA_STATUS_FIELDS
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
 import psycopg2.extensions
@@ -133,20 +133,21 @@ class SessionBackend:
                 with self.connpool["cdb_anonymous"] as conn:
                     with conn.cursor() as cur:
                         cur.execute(query, (sessionkey,))
-        ret = {'persona_id': persona_id,
-               'db_privileges': None,
-               'status': None,
+
+        ret = {'persona_id': None,
                'display_name': "",
                'given_names': "",
                'family_name': "",
                'username': "",}
+        for key in PERSONA_STATUS_FIELDS:
+            ret[key] = False
         if persona_id:
             query = glue("UPDATE core.sessions SET atime = now()",
                          "WHERE sessionkey = %s")
             query2 = glue(
-                "SELECT status, db_privileges, display_name, given_names,",
-                "family_name, is_active, username FROM core.personas",
-                "WHERE id = %s")
+                "SELECT id AS persona_id, display_name, given_names,",
+                "family_name, username, {} FROM core.personas",
+                "WHERE id = %s").format(', '.join(PERSONA_STATUS_FIELDS))
             with self.connpool["cdb_persona"] as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, (sessionkey,))
