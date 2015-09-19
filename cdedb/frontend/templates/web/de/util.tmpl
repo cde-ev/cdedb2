@@ -30,8 +30,8 @@
      {% if aclass %} class="{{ aclass|e }}" {% endif %}>
 {% endmacro %}
 
-{% macro href(ref, label, disabled=False) %}
-    <a href="{{ ref|e }}" {% if disabled %}disabled{% endif %}>{{ label|e }}</a>
+{% macro href(ref, label, disabled=False, icon="") %}
+    <a href="{{ ref|e }}" {% if disabled %}disabled{% endif %}>{% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}</a>
 {% endmacro %}
 
 {% macro output_errors(name, displayerrors=True) %}
