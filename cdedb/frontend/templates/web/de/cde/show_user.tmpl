@@ -208,13 +208,14 @@
         {% for info in participation_info|sort(attribute="event_id") %}
             <tr>
                 <td colspan="2">
-                    {{ util.href(cdedblink("event/show_event", {"event_id": info['event_id']}), info['event_name']) }}
+                    {{ util.href(cdedblink("event/show_past_event", {"event_id": info['event_id']}),
+                                 info['event_name']) }}
                     {% if info['is_orga'] %}
                         (Orga)
                     {% else %}
                         {% if info['course_name'] %}
-                            {{ util.href(cdedblink("event/show_course", {"event_id": info['event_id'],
-                                                                         "course_id": info['course_id']}),
+                            {{ util.href(cdedblink("event/show_past_course", {"event_id": info['event_id'],
+                                                                              "course_id": info['course_id']}),
                                          info['course_name']) }}
                             {% if info['is_instructor'] %}
                                 (Kursleiter)

@@ -513,7 +513,7 @@ class CdEFrontend(AbstractUserFrontend):
             rs, periods=(period,),
             stati=(const.LastschriftTransactionStati.issued,))
         transaction_data = self.cdeproxy.get_lastschrift_transactions(
-                rs, transaction_ids.keys())
+            rs, transaction_ids.keys())
         persona_ids = set(lastschrift_ids.values()).union({
             x['submitted_by'] for x in lastschrift_data.values()})
         persona_data = self.cdeproxy.get_data_outline(rs, persona_ids)

@@ -50,7 +50,9 @@
            <li>
                 {{ util.persona_anchor(persona_data[lastschrift_data[transaction['lastschrift_id']]['persona_id']]) }}
                 (am {{ transaction['issued_at']|datetime|e }}, Betrag {{ transaction['amount']|e }}€)
-                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', {'lastschrift_id': transaction['lastschrift_id'], 'transaction_id': transaction_id})|e }}" method="POST"
+                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
+                                           {'lastschrift_id': transaction['lastschrift_id'], 
+                                            'transaction_id': transaction_id})|e }}" method="POST"
                   id="transactionsuccessform{{ transaction_id|e }}">
                     <div>
                         {{ util.input_submit(value="Erfolg!") }}
@@ -58,7 +60,9 @@
                         {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.success.value) }}
                     </div>
                 </form>
-                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', {'lastschrift_id': transaction['lastschrift_id'], 'transaction_id': transaction_id})|e }}" method="POST"
+                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
+                                           {'lastschrift_id': transaction['lastschrift_id'], 
+                                            'transaction_id': transaction_id})|e }}" method="POST"
                   id="transactioncancelform{{ transaction_id|e }}">
                     <div>
                         {{ util.input_submit(value="Abbruch") }}
@@ -66,7 +70,9 @@
                         {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.cancelled.value) }}
                     </div>
                 </form>
-                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', {'lastschrift_id': transaction['lastschrift_id'], 'transaction_id': transaction_id})|e }}" method="POST"
+                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
+                                           {'lastschrift_id': transaction['lastschrift_id'], 
+                                            'transaction_id': transaction_id})|e }}" method="POST"
                   id="transactionfailureform{{ transaction_id|e }}">
                     <div>
                         {{ util.input_submit(value="Geplatzt!") }}

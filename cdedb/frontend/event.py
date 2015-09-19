@@ -563,7 +563,7 @@ class EventFrontend(AbstractUserFrontend):
         if field_id not in data['fields']:
             return werkzeug.exceptions.NotFound("Wrong associated event.")
         field_data = data['fields'][field_id]
-        if 'entries' not in rs.values:
+        if 'entries' not in rs.values and field_data['entries']:
             ## format the entries value
             rs.values['entries'] = "\n".join(";".join(x for x in e)
                                              for e in field_data['entries'])

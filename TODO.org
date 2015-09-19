@@ -16,6 +16,31 @@
 ** implement support for reStructuredText for large text fields (like descriptions of events, ...)
 ** Add JS or python code to convert raw numbers to DB-IDs for the admin show-ID form in the sidebar
 ** past_event.events.organizer could be deduplicated (i.e. a reference to a table past_event.organizers)
+** move past_event to cde realm
+** allow comma-separated list of ids to lodgement/manage (non-JS fallback)
+** multi-edit formular (multiple ids, merge values and display only equal ones, activate fields by checkbox)
+** maybe add crosstables for course choices
+** expose genesis_cases.persona_status in the request form
+** allow to delete event parts and courses (the last one is a bit tricky)
+*** constrain deletion and addition of parts to before registration
+*** some stuff has to be deleted (course_parts, registration_parts)
+** detect inconsistencies in course choices when removing a course from a part
+** maybe split frontend.event.course_choices
+** course list: on separate page, sorted by nr
+** remove some view pages, where redundant (e.g. courses)
+** format dates in donation certificate
+** allow arbitrary number of orderings in queries (only frontend needs to be beefed up)
+** maybe allow storing of custom queries per event
+** enhance checkin with more functionality (show fields, link to edit user)
+** return http code 500 for error pages
+** move member search to cde index page (maybe add statistics)
+** allow to set custom password on reset (after email validation)
+** add dash-board to index pages
+*** link to relevant events (orga, open to registration) [if event user]
+*** link to open assemblies
+*** web configurable text
+*** administration requests (account creation, data change reviews, ...) [number with link to list]
+*** quick links (whatever is useful)
 * abstract items
 ** Finalize SQL
 ** use framework for html? (maybe pure?) -- CSS is really rudimentary
@@ -24,6 +49,14 @@
 ** make test-suite faster
 ** investigate python3 ldap library (there are actually two of them!)
 ** develop a migration strategy
+** what about assembly-users which want to participate in an event?
+*** make realm association independently toggleable
+
+    Define a most significant association. Each admin may only view/edit
+    users significantly associated to his realm. However highest association
+    level is "cde", which also catches all combinations like
+    "event"+"assembly".
+*** think about separating a finance_admin and past_event_admin privilege
 ** handling of invalid datasets needs to be taken care of
 *** the real data probably contains some surprises (like NULL usernames due to email trouble)
 * missing functionality compared to v1 which should be implemented
@@ -31,7 +64,6 @@
 ** batch editing of past events
 ** membership management ("Semesterverwaltung")
 ** financial transaction log ("Kassenbuch", "Finanzbericht")
-** direct debit support
 ** email trouble (bounceparser and friends)
 *** should users be allowed to have a NULL username? what happens if we try to send them a mail? what if they are subscribed to a mailing list?
 ** history view of member datasets

@@ -945,7 +945,7 @@ class CdEBackend(AbstractUserBackend):
 
     @access("anonymous")
     def get_meta_info(self, rs):
-        """Retrieve changing info about the CdE e.\,V.
+        """Retrieve changing info about the CdE e.V.
 
         This is a relatively painless way to specify lots of constants
         like who is responsible for donation certificates.
@@ -958,7 +958,7 @@ class CdEBackend(AbstractUserBackend):
 
     @access("cde_admin")
     def set_meta_info(self, rs, data):
-        """Change infos about the CdE e.\,V.
+        """Change infos about the CdE e.V.
 
         This is expected to occur regularly.
 
