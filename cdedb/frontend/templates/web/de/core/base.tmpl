@@ -2,6 +2,7 @@
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block navigation %}
+    {% if user.is_persona %}
     <h2>Navigation</h2>
     <div class="list-group">
         {{ util.href(cdedblink("core/mydata"), "Meine Daten", aclass="list-group-item",
@@ -27,4 +28,5 @@
                     icon="list-alt", active=(sidenav_active=='core_log')) }}</li>
         {% endif %}
     </div>
+    {% endif %}
 {% endblock %}
