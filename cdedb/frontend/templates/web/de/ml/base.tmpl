@@ -1,37 +1,50 @@
+{% set mainnav_active='ml' %}
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro ml_inner_navigation(data) %}
-    <li>
-        {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), data['title']) }}
-        <ul>
+        <div class="list-group">
+            {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), "Übersicht",
+                    icon="triangle-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
             {% if data['id'] in user.moderator or is_admin %}
-                <li>{{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), "Log") }}</li>
-                <li>{{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), "Verwalten") }}</li>
-                <li>{{ util.href(cdedblink("ml/check_states", {'mailinglist_id': data['id']}), "Statuscheck") }}</li>
+                {{ util.href(cdedblink("ml/management", {'mailinglist_id': data['id']}), "Verwalten",
+                        aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_manage')) }}
             {% endif %}
             {% if is_admin %}
-                <li>
-                    {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
-                                 "Konfiguration") }}
-                </li>
+                {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
+                        "Konfiguration", aclass="list-group-item", icon="cog",
+                        active=(sidenav_active == 'ml_change')) }}
             {% endif %}
-        </ul>
-    </li>
+            {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), "Log", aclass="list-group-item",
+                    icon="list-alt", active=(sidenav_active == 'ml_ml_log')) }}
+        </div>
 {% endmacro %}
 
-{% block ml_navigation %}
-    <ul>
-        <li>{{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten-Übersicht") }}</li>
-        {% if is_admin %}
-            <li>{{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}</li>
-            <li>{{ util.href(cdedblink("ml/user_search_form"), "Nutzersuche") }}</li>
-            <li>{{ util.href(cdedblink("ml/view_log"), "Log") }}</li>
-            <li>{{ util.href(cdedblink("ml/list_all_mailinglists"), "alle Mailinglisten") }}</li>
-            <li>{{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen") }}</li>
-        {% endif %}
-        {% block inner_navigation %}
-            <!-- for mailinglist specific actions -->
-        {% endblock %}
-    </ul>
+{% block navigation %}
+    <h2>Navigation</h2>
+    {% if values.get('mailinglist_id') %}
+        <p>
+            {{ util.href(cdedblink("ml/index"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
+        </p>
+        
+        <h4><span class="glyphicon glyphicon-envelope"></span> {{ mailinglist_data['title'] }}</h4>
+        {{ ml_inner_navigation(mailinglist_data) }}
+    {% else %}
+        <div class="list-group">
+            {{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten-Übersicht",
+                    aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_list')) }}
+            {% if is_admin %}
+                {# FIXME #}
+                {{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}
+                {{ util.href(cdedblink("ml/user_search_form"), "Mailinglisten-Nutzer verwalten",
+                        icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
+                {{ util.href(cdedblink("ml/view_log"), "Log", icon="list-alt", aclass="list-group-item",
+                        active=(sidenav_active == 'ml_log')) }}
+                {{ util.href(cdedblink("ml/list_all_mailinglists"), "Mailinglisten verwalten", icon="cog",
+                        aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
+                {# FIXME #}
+                {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen") }}
+            {% endif %}
+        </div>
+    {% endif %}
 {% endblock %}

@@ -1,6 +1,6 @@
+{% set sidenav_active='event_config' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}{{ data['title']|e }} bearbeiten{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/event_config"), "Abbrechen") }}

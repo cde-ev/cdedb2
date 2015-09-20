@@ -1,6 +1,6 @@
+{% set sidenav_active='event_config' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}
 Feld {{ event_data['fields'][values['field_id']|int]['field_name']|e }} setzen ({{ event_data['title']|e }})
 {% endblock %}

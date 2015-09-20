@@ -1,6 +1,6 @@
+{% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
 {% block title %}{{ values['title']|e }} bearbeiten ({{ assembly_data['title']|e }}){% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/change_ballot')|e }}" method="POST" id="changeballotform">

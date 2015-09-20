@@ -1,8 +1,8 @@
+{% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}
 Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }}
 {% endblock %}

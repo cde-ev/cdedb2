@@ -1,35 +1,55 @@
+{% set mainnav_active='assembly' %}
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro assembly_inner_navigation(data) %}
-    <li>
-        {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
-        <ul>
+        <div class="list-group">
+            {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), "Übersicht",
+                    aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'assembly_show')) }}
             {% if is_admin %}
-                <li>{{ util.href(cdedblink("assembly/view_log", {'assembly_id': data['id']}), "Log") }}</li>
-                <li>
-                    {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}),
-                                 "Konfiguration") }}
-                </li>
-                <li>
-                    {{ util.href(cdedblink("assembly/create_ballot", {'assembly_id': data['id']}),
-                                 "Abstimmung anlegen") }}
-                </li>
+                {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), "Konfiguration",
+                        aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
+                
+                {{ util.href(cdedblink("assembly/list_attendees", {'assembly_id': data['id']}), "Teilnehmer",
+                        aclass="list-group-item", icon="user", active=(sidenav_active == 'assembly_attendees')) }}
+                
+                {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), "Abstimmungen",
+                        aclass="list-group-item", icon="stats", active=(sidenav_active == 'assembly_ballots')) }}
+                
+                {# FIXME #}
+                {{ util.href(cdedblink("assembly/create_ballot", {'assembly_id': data['id']}),
+                         "Abstimmung anlegen") }}
+                
+                {{ util.href(cdedblink("assembly/view_log", {'assembly_id': data['id']}), "Log",
+                        aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'assembly_a_log')) }}
             {% endif %}
-        </ul>
-    </li>
+        </div>
 {% endmacro %}
 
-{% block assembly_navigation %}
-    <ul>
+{% block navigation %}
+    {% if values.get('assembly_id') and assembly_data %}
+        <h2>Navigation</h2>
+        <p>
+            {{ util.href(cdedblink("assembly/index"), "Zur Versammlungs-Übersicht", icon="circle-arrow-up") }}
+        </p>
+        
+        <h4><span class="glyphicon glyphicon-stats"></span> {{ assembly_data['title'] }}</h4>
+        {{ assembly_inner_navigation(assembly_data) }}
+    {% else %}
         {% if is_admin %}
-            <li>{{ util.href(cdedblink("assembly/create_user_form"), "Neuen Nutzer anlegen") }}</li>
-            <li>{{ util.href(cdedblink("assembly/user_search_form"), "Nutzersuche") }}</li>
-            <li>{{ util.href(cdedblink("assembly/view_log"), "Log") }}</li>
-            <li>{{ util.href(cdedblink("assembly/create_assembly_form"), "Versammlung anlegen") }}</li>
+            <h2>Navigation</h2>
+            <div class="list-group">
+                {{ util.href(cdedblink("assembly/index"), "Alle Versammlungen", icon="list",
+                        aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
+                {{ util.href(cdedblink("assembly/user_search_form"), "Versammlungs-Nutzer verwalten", icon="user",
+                        aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
+                {# FIXME #}
+                {{ util.href(cdedblink("assembly/create_user_form"), "Neuen Nutzer anlegen") }}
+                {{ util.href(cdedblink("assembly/view_log"), "Log", icon="list-alt", aclass="list-group-item",
+                        active=(sidenav_active == 'assembly_log')) }}
+                {# FIXME #}
+                {{ util.href(cdedblink("assembly/create_assembly_form"), "Versammlung anlegen") }}
+            </div>
         {% endif %}
-        {% block inner_navigation %}
-            <!-- for assembly specific actions -->
-        {% endblock %}
-    </ul>
+    {% endif %}
 {% endblock %}

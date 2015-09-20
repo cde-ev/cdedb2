@@ -8,7 +8,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         
-        <title>{% block title %}CdEDB{% endblock %}</title>
+        <title>CdEDB – {% block title %}CdEDB{% endblock %}</title>
         <script type="text/javascript" src="{{ staticurl("jquery-2.min.js")|e }}"></script>
         
         <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
@@ -46,9 +46,8 @@
                                 {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
                             </li>
                             <li>
-                                <span class="navbar-text">
-                                <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform">
-                                    <button type="submit" name="submitlogout" value="Abmelden" class="btn btn-xs">
+                                <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform" class="navbar-form">
+                                    <button type="submit" name="submitlogout" value="Abmelden" class="btn navbar-button" title="Logout" data-placement="bottom">
                                         <span class="glyphicon glyphicon-off"></span>
                                     </button>
                                 </form>
@@ -58,18 +57,28 @@
                     </ul>
                     
                     <ul class="nav navbar-nav">
-                        <li>{{ util.href(cdedblink("core/index"), "Start", icon="dashboard") }}</li>
+                        <li {% if mainnav_active == 'core' %}class="active"{% endif %}>
+                            {{ util.href(cdedblink("core/index"), "Start", icon="dashboard") }}
+                            </li>
                         {% if "formermember" in user.roles %}
-                            <li>{{ util.href(cdedblink("cde/index"), "CdE", icon="education") }}</li>
+                            <li {% if mainnav_active == 'cde' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("cde/index"), "CdE", icon="education") }}
+                                </li>
                         {% endif %}
                         {% if "event_user" in user.roles %}
-                            <li>{{ util.href(cdedblink("event/index"), "Veranstaltungen", icon="blackboard") }}</li>
+                            <li {% if mainnav_active == 'event' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("event/index"), "Veranstaltungen", icon="blackboard") }}
+                                </li>
                         {% endif %}
                         {% if "ml_user" in user.roles %}
-                            <li>{{ util.href(cdedblink("ml/index"), "Mailinglisten", icon="envelope") }}</li>
+                            <li {% if mainnav_active == 'ml' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("ml/index"), "Mailinglisten", icon="envelope") }}
+                            </li>
                         {% endif %}
                         {% if "assembly_user" in user.roles %}
-                            <li>{{ util.href(cdedblink("assembly/index"), "Versammlung", icon="stats") }}</li>
+                            <li {% if mainnav_active == 'assembly' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("assembly/index"), "Versammlung", icon="stats") }}
+                            </li>
                         {% endif %}
                     </ul>
                 </div><!-- /.navbar-collapse -->
@@ -78,43 +87,30 @@
         
         <div class="container">
             <div class="row">
-                <div class="col-md-4">
-                    <h2>Navigation</h2>
-                        {% block navigation %}
-                                
-                            {% block core_navigation %}
-                                <!-- nothing here -->
-                            {% endblock %}
-                            {% block cde_navigation %}
-                                <!-- nothing here -->
-                            {% endblock %}
-                   
-                            {% block event_navigation %}
-                                <!-- nothing here -->
-                            {% endblock %}
-                            {% block ml_navigation %}
-                                <!-- nothing here -->
-                            {% endblock %}
-                  
-                            {% block assembly_navigation %}
-                                <!-- nothing here -->
-                            {% endblock %}
-                                      
-                        {% endblock %}
+                <div class="col-md-3">
+                    {% block navigation %}
+                    {% endblock %}
                 </div>
-                <div class="col-md-8">
-                    <h1>{{ self.title() }}</h1>
-                    {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign", "warning" : "exclamation-sign", "error" : "remove-sign"},
-                            alerttypes = {"success" : "success", "info" : "info", "question" : "info", "warning" : "warning", "error" : "danger"},
-                            messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:", "warning" : "Warnung!", "error" : "Fehler!"} %}
-                    {% for ntype, message in notifications %}
-                        <div class="alert alert-{{ alerttypes[ntype] }}">
-                            <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
-                            <strong>{{ messagetypes[ntype] }}</strong>
-                            <span class="notificationMessage">{{ i18n(message)|e }}</span>
-                        </div>
-                    {% endfor %}
+                <div class="col-md-9">
+                    {% block heading %}
+                        <h1>{{ self.title() }}</h1>
+                    {% endblock %}
+                    
+                    {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign",
+                                         "warning" : "exclamation-sign", "error" : "remove-sign"},
+                            alerttypes = {"success" : "success", "info" : "info", "question" : "info",
+                                          "warning" : "warning", "error" : "danger"},
+                            messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:",
+                                            "warning" : "Warnung!", "error" : "Fehler!"} %}
+                        {% for ntype, message in notifications %}
+                            <div class="alert alert-{{ alerttypes[ntype] }}">
+                                <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
+                                <strong>{{ messagetypes[ntype] }}</strong>
+                                <span class="notificationMessage">{{ i18n(message)|e }}</span>
+                            </div>
+                        {% endfor %}
                     {% endwith %}
+                    
                     {% block content %}
                         This should not be visible.
                     {% endblock %}

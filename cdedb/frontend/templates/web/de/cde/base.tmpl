@@ -1,14 +1,22 @@
+{% set mainnav_active='cde' %}
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block cde_navigation %}
-    <ul>
+{% block navigation %}
+    <h2>Navigation</h2>
+    <div class="list-group">
+        {{ util.href(cdedblink("cde/member_search"), "CdE-Mitglied suchen", aclass="list-group-item", icon="search",
+                    active=(sidenav_active=='cde_member_search')) }}
         {% if is_admin %}
-            <li>{{ util.href(cdedblink("cde/create_user_form"), "Neues Mitglied anlegen") }}</li>
-            <li>{{ util.href(cdedblink("cde/list_pending_changes"), "Änderungen begutachten") }}</li>
-            <li>{{ util.href(cdedblink("cde/user_search_form"), "Nutzersuche") }}</li>
-            <li>{{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche") }}</li>
-            <li>{{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log") }}</li>
-            <li>{{ util.href(cdedblink("cde/view_changelog_meta"), "Nutzerdaten Log") }}</li>
+            {{ util.href(cdedblink("cde/user_search_form"), "Nutzer verwalten", aclass="list-group-item", icon="cog") }}
+            {# FIXME #}
+            {{ util.href(cdedblink("cde/create_user_form"), "Neues Mitglied anlegen") }}
+            {{ util.href(cdedblink("cde/list_pending_changes"), "Änderungen prüfen", aclass="list-group-item",
+                    icon="check") }}
+            {{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche", aclass="list-group-item",
+                    icon="inbox") }}
+            {{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log", aclass="list-group-item", icon="list-alt") }}
+            {{ util.href(cdedblink("cde/view_changelog_meta"), "Nutzerdaten-Log", aclass="list-group-item",
+                    icon="list-alt") }}
         {% endif %}
-    </ul>
+    </div>
 {% endblock %}

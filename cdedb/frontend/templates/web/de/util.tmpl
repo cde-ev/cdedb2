@@ -30,8 +30,9 @@
         id="{{ anid|e }}"{% endif %}{% if aclass %} class="{{ aclass|e }}"{% endif %} />
 {% endmacro %}
 
-{% macro href(ref, label, disabled=False, icon="") %}
-    <a href="{{ ref|e }}" {% if disabled %}disabled{% endif %}>
+{% macro href(ref, label, readonly=False, icon="", aclass='', active=False) %}
+    <a href="{{ ref|e }}" {% if readonly %}disabled="disabled"{% endif %}
+        {% if aclass or active %}class="{{ aclass }}{% if active %} active{% endif %}"{% endif %}>
         {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}
     </a>
 {% endmacro %}

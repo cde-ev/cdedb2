@@ -1,6 +1,6 @@
+{% set sidenav_active='event_summary' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Übersicht {{ event_data['title']|e }}{% endblock %}
 {% block content %}
     <h2>Statistik</h2>

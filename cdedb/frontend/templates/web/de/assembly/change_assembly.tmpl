@@ -1,6 +1,6 @@
+{% set sidenav_active='assembly_config' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block inner_navigation %}{{assembly_inner_navigation(data)}}{% endblock %}
 {% block title %}{{ values['title']|e }} bearbeiten{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("assembly/show_assembly"), "Abbrechen") }}

@@ -1,19 +1,30 @@
+{% set mainnav_active='core' %}
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block core_navigation %}
-    <ul>
+{% block navigation %}
+    <h2>Navigation</h2>
+    <div class="list-group">
+        {{ util.href(cdedblink("core/mydata"), "Meine Daten", aclass="list-group-item",
+                icon="user", active=(sidenav_active=='core_mydata')) }}
+        
         {% if is_admin %}
-            <li>
+            <div class="list-group-item">
                 <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET"
                  id="adminshowuserform">
-                    <div>
-                        {{ util.input_text(name="id_to_show") }}
-                        {{ util.input_submit(value="ID") }}
+                    <div class="input-group">
+                        <input type="text" name="id_to_show" class="form-control" placeholder="DB-XXXX-X" />
+                        <span class="input-group-btn">
+                            <button type="submit" class="btn btn-primary" title="Suchen">
+                                <span class="glyphicon glyphicon-search"></span>
+                            </button>
+                        </span>
                     </div>
                 </form>
-            </li>
-            <li>{{ util.href(cdedblink("core/genesis_list_cases"), "Accountanfragen") }}</li>
-            <li>{{ util.href(cdedblink("core/view_log"), "Account-Log") }}</li>
+            </div>
+            {{ util.href(cdedblink("core/genesis_list_cases"), "Accountanfragen", aclass="list-group-item",
+                    icon="flag", active=(sidenav_active=='core_genesis_list')) }}
+            {{ util.href(cdedblink("core/view_log"), "Account-Log", aclass="list-group-item",
+                    icon="list-alt", active=(sidenav_active=='core_log')) }}</li>
         {% endif %}
-    </ul>
+    </div>
 {% endblock %}

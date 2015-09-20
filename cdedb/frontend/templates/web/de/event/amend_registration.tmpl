@@ -1,6 +1,6 @@
+{% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Anmeldung zur Veranstaltung {{ event_data['title']|e }} aktualisieren{% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/amend_registration')|e }}" method="POST" id="amendregistrationform">

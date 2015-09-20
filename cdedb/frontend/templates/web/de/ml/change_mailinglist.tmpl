@@ -1,6 +1,6 @@
+{% set sidenav_active='ml_change' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block inner_navigation %}{{ ml_inner_navigation(mailinglist_data) }}{% endblock %}
 {% block title %}{{ mailinglist_data['title']|e }} -- Konfiguration{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("ml/index"), "Abbrechen") }}
