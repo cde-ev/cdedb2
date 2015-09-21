@@ -17,15 +17,15 @@
                             {% for field_id, fdata in event_data['fields']|dictsort %}
                                 {{ myentries.append((field_id, fdata['field_name'], None))|e }}
                             {% endfor %}
-                            {{ util.tab_input_select("field_id_{}".format(loop.index0), title="Abfrage",
+                            {{ util.input_select("field_id_{}".format(loop.index0), label="Abfrage",
                                                      entries=myentries) }}
-                            {{ util.tab_input_text(name="title_{}".format(loop.index0), label="Label/Überschrift") }}
-                            {{ util.tab_input_textarea(name="info_{}".format(loop.index0), label="Text") }}
-                            {{ util.tab_input_select(
-                                "input_size_{}".format(loop.index0), title="Eingabefeldgröße", entries=(
+                            {{ util.input_text(name="title_{}".format(loop.index0), label="Label/Überschrift") }}
+                            {{ util.input_textarea(name="info_{}".format(loop.index0), label="Text") }}
+                            {{ util.input_select(
+                                "input_size_{}".format(loop.index0), label="Eingabefeldgröße", entries=(
                                     (0, INPUT_SIZE_LABELS[0], None), (2, INPUT_SIZE_LABELS[2], None),
                                     (3, INPUT_SIZE_LABELS[3], None), (4, INPUT_SIZE_LABELS[4], None))) }}
-                            {{ util.tab_input_checkbox("readonly_{}".format(loop.index0), label="Schreibgeschützt") }}
+                            {{ util.input_checkbox("readonly_{}".format(loop.index0), label="Schreibgeschützt") }}
                         </table>
                     </li>
                 {% endfor %}

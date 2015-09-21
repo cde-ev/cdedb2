@@ -483,17 +483,17 @@
         {% for value, description in field_data['entries'] %}
             {{ myentries.append((value, description, None))|e }}
         {% endfor %}
-        {{ tab_input_select(name=name, title=label, entries=myentries, nulloption=True,
+        {{ input_select(name=name, label=label, entries=myentries, nulloption=True,
                             readonly=readonly, defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
    {% else %}
         {% if field_data['kind'] == "bool" %}
-            {{ tab_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
+            {{ input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
                                   aclass=aclass) }}
         {% elif field_data['kind'] == "str" %}
-            {{ tab_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+            {{ input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
                                   defaultvalue=defaultvalue, anid=anid, aclass=(aclass + " bigg")) }}
         {% else %}
-            {{ tab_input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+            {{ input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
                               defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
         {% endif %}
    {% endif %}

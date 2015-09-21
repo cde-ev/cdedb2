@@ -61,7 +61,7 @@
 
 {% block navigation %}
     <h2>Navigation</h2>
-    {% if values.get('event_id') %}
+    {% if values.get('event_id') and event_data %}
         <p>
             {{ util.href(cdedblink("event/index"), "Zur Veranstaltungs-Übersicht", icon="circle-arrow-up") }}
         </p>

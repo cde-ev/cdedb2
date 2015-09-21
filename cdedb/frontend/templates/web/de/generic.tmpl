@@ -6,10 +6,10 @@
 {% macro admin_change_user(realm) %}
     <form action="{{ cdedblink('{}/admin_change_user'.format(realm))|e }}" method="POST" id="changedataform">
         <table>
-            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.tab_input_text(name="family_name", label="Nachname") }}
-            {{ util.tab_input_text(name="display_name", label="Rufname") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.input_text(name="family_name", label="Nachname") }}
+            {{ util.input_text(name="display_name", label="Rufname") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}
@@ -21,9 +21,9 @@
 {% macro change_user(realm) %}
     <form action="{{ cdedblink('{}/change_user'.format(realm))|e }}" method="POST" id="changedataform">
         <table>
-            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.tab_input_text(name="family_name", label="Nachname") }}
-            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+            {{ util.input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.input_text(name="family_name", label="Nachname") }}
+            {{ util.input_text(name="display_name", label="Rufname") }}
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}
@@ -35,11 +35,11 @@
 {% macro create_user(realm) %}
     <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform">
         <table>
-            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.tab_input_text(name="family_name", label="Nachname") }}
-            {{ util.tab_input_text(name="display_name", label="Rufname") }}
-            {{ util.tab_input_text(name="username", label="Email") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.input_text(name="family_name", label="Nachname") }}
+            {{ util.input_text(name="display_name", label="Rufname") }}
+            {{ util.input_text(name="username", label="Email") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Anlegen") }}
@@ -57,7 +57,7 @@
             <tr> <th colspan="2">Person</th> </tr>
             <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
             <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
-            {{ util.tab_input_text(name="display_name", label="Rufname") }}
+            {{ util.input_text(name="display_name", label="Rufname") }}
             <tr> <td>Email</td> <td> {{ username|e }} </td> </tr>
         </table>
         <div>

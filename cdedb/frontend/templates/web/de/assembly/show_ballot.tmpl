@@ -36,8 +36,8 @@
             </form>
             <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform">
                 <table>
-                    {{ util.tab_input_text(name="moniker", label="Kurzname") }}
-                    {{ util.tab_input_text(name="description", label="Beschreibung") }}
+                    {{ util.input_text(name="moniker", label="Kurzname") }}
+                    {{ util.input_text(name="description", label="Beschreibung") }}
                 </table>
                 <div>
                     {{ util.input_submit(value="Option hinzufügen") }}

@@ -6,18 +6,18 @@
     {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/create_course')|e }}" method="POST" id="createcourseform">
         <table>
-            {{ util.tab_input_text(name="title", label="Titel") }}
-            {{ util.tab_input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
-            {{ util.tab_input_text(name="nr", label="Nummer") }}
-            {{ util.tab_input_text(name="shortname", label="Kürzel") }}
-            {{ util.tab_input_text(name="instructors", label="Kursleiter") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+            {{ util.input_text(name="nr", label="Nummer") }}
+            {{ util.input_text(name="shortname", label="Kürzel") }}
+            {{ util.input_text(name="instructors", label="Kursleiter") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for part_id, pdata in data['parts']|dictsort %}
                 {{ myentries.append((part_id, pdata['title'], "manipulator_checkbox_{}".format(part_id)))|e }}
             {% endfor %}
-            {{ util.tab_input_checkboxes(name="parts", title="Veranstaltungsteile", entries=myentries) }}
+            {{ util.input_checkboxes(name="parts", title="Veranstaltungsteile", entries=myentries) }}
         </table>
         <div>
             {{ util.input_submit(value="Kurs hinzufügen") }}

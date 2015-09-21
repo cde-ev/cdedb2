@@ -47,9 +47,9 @@
             <td>{{ data['notes']|e|linebreaks }}</td>
         </tr>
     </table>
-    {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", disabled=locked) }}
+    {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", readonly=locked) }}
     <h2>Kurs hinzufügen</h2>
-    {{ util.href(cdedblink("event/create_course_form"), ">Kurs hinzufügen", disabled=locked) }}
+    {{ util.href(cdedblink("event/create_course_form"), ">Kurs hinzufügen", readonly=locked) }}
     <h2>Minderjährigenformular</h2>
     {% if minor_form_present %}
         {{ util.href(cdedblink('event/get_minor_form'), "aktuelles Formular") }}
@@ -69,17 +69,17 @@
             <li>
                 {{ entry['title']|e }}
                 ({{ entry['part_begin']|date|e }}--{{ entry['part_end']|date|e }}; {{ entry['fee']|e }}€)
-                {{ util.href(cdedblink('event/change_part_form', {'part_id': anid}), "bearbeiten", disabled=locked) }}
+                {{ util.href(cdedblink('event/change_part_form', {'part_id': anid}), "bearbeiten", readonly=locked) }}
             </li>
         {% endfor %}
     </ul>
     <h3>Teil hinzufügen</h3>
     <form action="{{ cdedblink('event/add_part')|e }}" method="POST" id="addpartform">
         <table>
-            {{ util.tab_input_text(name="part_title", label="Name") }}
-            {{ util.tab_input_text(name="part_begin", label="Beginn") }}
-            {{ util.tab_input_text(name="part_end", label="Ende") }}
-            {{ util.tab_input_text(name="fee", label="Teilnehmerbeitrag") }}
+            {{ util.input_text(name="part_title", label="Name") }}
+            {{ util.input_text(name="part_begin", label="Beginn") }}
+            {{ util.input_text(name="part_end", label="Ende") }}
+            {{ util.input_text(name="fee", label="Teilnehmerbeitrag") }}
         </table>
         <div>
             {{ util.input_submit(value="Teil hinzufügen", readonly=locked) }}
@@ -130,7 +130,7 @@
                         </table>
                     </p>
                 {% endif %}
-                {{ util.href(cdedblink('event/change_field_form', {'field_id': anid}), "bearbeiten", disabled=locked) }}
+                {{ util.href(cdedblink('event/change_field_form', {'field_id': anid}), "bearbeiten", readonly=locked) }}
                 <form action="{{ cdedblink('event/remove_field', {'field_id': anid})|e }}" method="POST"
                  id="removefieldform{{ anid|e }}">
                     <div>
@@ -144,11 +144,11 @@
     <h3>Feld hinzufügen</h3>
     <form action="{{ cdedblink('event/add_field')|e }}" method="POST" id="addfieldform">
         <table>
-            {{ util.tab_input_text(name="field_name", label="Name") }}
-            {{ util.tab_input_select(name="kind", title="Typ", entries=(
+            {{ util.input_text(name="field_name", label="Name") }}
+            {{ util.input_select(name="kind", label="Typ", entries=(
                 ("str", "String", None), ("bool", "Ja/Nein", None), ("int", "Zahl", None), ("date", "Datum", None),
                 ("datetime", "Datum mit Uhrzeit", None))) }}
-            {{ util.tab_input_textarea(name="entries", label="Auswahlmöglichkeiten",
+            {{ util.input_textarea(name="entries", label="Auswahlmöglichkeiten",
                                        info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
         </table>
         <div>
@@ -180,8 +180,8 @@
                 </li>
             {% endfor %}
         </ul>
-        {{ util.href(cdedblink('event/change_questionnaire_form'), "bearbeiten", disabled=locked) }}
-        {{ util.href(cdedblink('event/reorder_questionnaire_form'), "umordnen", disabled=locked) }}
+        {{ util.href(cdedblink('event/change_questionnaire_form'), "bearbeiten", readonly=locked) }}
+        {{ util.href(cdedblink('event/reorder_questionnaire_form'), "umordnen", readonly=locked) }}
         <h3>Zeile anfügen</h3>
         <form action="{{ cdedblink('event/add_questionnaire_row')|e }}" method="POST" id="addquestionnairerowform">
             <table>
@@ -190,13 +190,13 @@
                 {% for field_id, fdata in data['fields']|dictsort %}
                     {{ myentries.append((field_id, fdata['field_name'], None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select("row_field_id", title="Abfrage", entries=myentries) }}
-                {{ util.tab_input_text(name="row_title", label="Label/Überschrift") }}
-                {{ util.tab_input_textarea(name="row_info", label="Text") }}
-                {{ util.tab_input_select("row_input_size", title="Eingabefeldgröße",
+                {{ util.input_select("row_field_id", label="Abfrage", entries=myentries) }}
+                {{ util.input_text(name="row_title", label="Label/Überschrift") }}
+                {{ util.input_textarea(name="row_info", label="Text") }}
+                {{ util.input_select("row_input_size", label="Eingabefeldgröße",
                                          entries=((0, INPUT_SIZE_LABELS[0], None), (2, INPUT_SIZE_LABELS[2], None),
                                                   (3, INPUT_SIZE_LABELS[3], None), (4, INPUT_SIZE_LABELS[4], None))) }}
-                {{ util.tab_input_checkbox("row_readonly", label="Schreibgeschützt") }}
+                {{ util.input_checkbox("row_readonly", label="Schreibgeschützt") }}
             </table>
             <div>
                 {{ util.input_submit(value="Zeile anfügen", readonly=locked) }}

@@ -55,7 +55,7 @@ Mailinglisten -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + lo
             {% for mailinglist_id, title in mailinglists|dictsort %}
                 {{ myentries.append((mailinglist_id, title, None))|e }}
             {% endfor %}
-            {{ util.input_select(name="mailinglist_id", title="Mailingliste", nulloption=True, entries=myentries) }}
+            {{ util.input_select(name="mailinglist_id", label="Mailingliste", nulloption=True, entries=myentries) }}
             {{ util.input_text(name="start", label="Anfang") }}
             {{ util.input_text(name="stop", label="Ende") }}
             {{ util.input_submit(value="Anzeigen") }}

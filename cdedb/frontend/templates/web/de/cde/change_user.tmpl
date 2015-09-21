@@ -6,38 +6,38 @@
         <div>{{ util.input_hidden(name="generation") }}</div>
         <table>
             <tr> <th colspan="2">Person</th> </tr>
-            {{ util.tab_input_text(name="title", label="Titel") }}
-            {{ util.tab_input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.tab_input_text(name="family_name", label="Nachname") }}
-            {{ util.tab_input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.tab_input_text(name="display_name", label="Rufname") }}
-            {{ util.tab_input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
-            {{ util.tab_input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
-            {{ util.tab_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
-            {{ util.tab_input_textarea(name="interests", label="Interessen", aclass="bigg") }}
-            {{ util.tab_input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
+            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.input_text(name="family_name", label="Nachname") }}
+            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
+            {{ util.input_text(name="display_name", label="Rufname") }}
+            {{ util.input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
+            {{ util.input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
+            {{ util.input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
+            {{ util.input_textarea(name="interests", label="Interessen", aclass="bigg") }}
+            {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
             <tr> <th colspan="2">Kontakt</th> </tr>
             <tr>
                 <td>Email</td>
                 <td>{{ username|e }}</td>
             </tr>
-            {{ util.tab_input_text(name="telephone", label="Telefon") }}
-            {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
-            {{ util.tab_input_text(name="weblink", label="WWW") }}
+            {{ util.input_text(name="telephone", label="Telefon") }}
+            {{ util.input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.input_text(name="weblink", label="WWW") }}
             <tr> <th colspan="2">Adresse</th> </tr>
-            {{ util.tab_input_text(name="address", label="Straße") }}
-            {{ util.tab_input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.tab_input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.tab_input_text(name="location", label="Stadt") }}
-            {{ util.tab_input_text(name="country", label="Land") }}
+            {{ util.input_text(name="address", label="Straße") }}
+            {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.input_text(name="location", label="Stadt") }}
+            {{ util.input_text(name="country", label="Land") }}
             <tr> <th colspan="2">Zweitadresse</th> </tr>
-            {{ util.tab_input_text(name="address2", label="Straße") }}
-            {{ util.tab_input_text(name="address_supplement2", label="Addresszusatz") }}
-            {{ util.tab_input_text(name="postal_code2", label="Postleitzahl") }}
-            {{ util.tab_input_text(name="location2", label="Stadt") }}
-            {{ util.tab_input_text(name="country2", label="Land") }}
+            {{ util.input_text(name="address2", label="Straße") }}
+            {{ util.input_text(name="address_supplement2", label="Addresszusatz") }}
+            {{ util.input_text(name="postal_code2", label="Postleitzahl") }}
+            {{ util.input_text(name="location2", label="Stadt") }}
+            {{ util.input_text(name="country2", label="Land") }}
             <tr> <th colspan="2">Datenzugriff durch BuB</th> </tr>
-            {{ util.tab_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
+            {{ util.input_checkbox(name="bub_search", label="Zugriff für BuB") }}
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}

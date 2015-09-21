@@ -55,7 +55,7 @@ Versammlung -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|
             {% for assembly_id, adata in assemblies|dictsort %}
                 {{ myentries.append((assembly_id, adata['title'], None))|e }}
             {% endfor %}
-            {{ util.input_select(name="assembly_id", title="Versammlung", nulloption=True, entries=myentries) }}
+            {{ util.input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}
             {{ util.input_text(name="start", label="Anfang") }}
             {{ util.input_text(name="stop", label="Ende") }}
             {{ util.input_submit(value="Anzeigen") }}

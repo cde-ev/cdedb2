@@ -96,7 +96,7 @@ Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ re
                             {{ myentries.append((field, titles[field], None))|e }}
                         {% endif %}
                     {% endfor %}
-                    {{ util.input_select(name="column", title="", entries=myentries, anid="column_selector",
+                    {{ util.input_select(name="column", label="", entries=myentries, anid="column_selector",
                                          readonly=locked) }}
                 {% endwith %}
                 <span id="value_span">

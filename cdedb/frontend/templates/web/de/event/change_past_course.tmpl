@@ -4,8 +4,8 @@
 {% block content %}
     <form action="{{ cdedblink('event/change_past_course')|e }}" method="POST" id="changecourseform">
         <table>
-            {{ util.tab_input_text(name="title", label="Titel") }}
-            {{ util.tab_input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}

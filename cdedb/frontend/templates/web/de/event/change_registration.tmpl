@@ -10,14 +10,14 @@ Anmeldung von {{ persona_data['given_names']|e }} {{ persona_data['family_name']
     <form action="{{ cdedblink('event/change_registration')|e }}" method="POST" id="changeregistrationform">
         <table>
             <tr><th colspan="2">Allgemeine Angaben</th></tr>
-            {{ util.tab_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
-            {{ util.tab_input_textarea(name="reg.notes", label="Anmerkungen", aclass="biggg") }}
-            {{ util.tab_input_textarea(name="reg.orga_notes", label="Orga-Notizen", aclass="biggg") }}
-            {{ util.tab_input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am") }}
-            {{ util.tab_input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern") }}
-            {{ util.tab_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
-            {{ util.tab_input_text(name="reg.checkin", label="Checkin") }}
-            {{ util.tab_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
+            {{ util.input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
+            {{ util.input_textarea(name="reg.notes", label="Anmerkungen", aclass="biggg") }}
+            {{ util.input_textarea(name="reg.orga_notes", label="Orga-Notizen", aclass="biggg") }}
+            {{ util.input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am") }}
+            {{ util.input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern") }}
+            {{ util.input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
+            {{ util.input_text(name="reg.checkin", label="Checkin") }}
+            {{ util.input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
             {% for part_id, pdata in event_data['parts']|dictsort %}
                 <tr><th colspan="2">{{ pdata['title']|e }}</th></tr>
                 {# jinja does not support list comprehension ... #}
@@ -25,28 +25,28 @@ Anmeldung von {{ persona_data['given_names']|e }} {{ persona_data['family_name']
                 {% for s in const.RegistrationPartStati %}
                     {{ myentries.append((s.value, i18n(s|string), None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.status".format(part_id), title="Status", entries=myentries) }}
+                {{ util.input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_choices[part_id] %}
                     {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.course_id".format(part_id), title="Kurs", entries=myentries,
+                {{ util.input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
                                          nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_0".format(part_id), title="Erstwahl",
+                {{ util.input_select(name="part{}.course_choice_0".format(part_id), label="Erstwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_1".format(part_id), title="Zweitwahl",
+                {{ util.input_select(name="part{}.course_choice_1".format(part_id), label="Zweitwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_2".format(part_id), title="Drittwahl",
+                {{ util.input_select(name="part{}.course_choice_2".format(part_id), label="Drittwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_instructor".format(part_id), title="Kursleiter",
+                {{ util.input_select(name="part{}.course_instructor".format(part_id), label="Kursleiter",
                                          entries=myentries, nulloption=True) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for lodgement_id, ldata in lodgement_data|dictsort %}
                     {{ myentries.append((lodgement_id, ldata['moniker'], None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.lodgement_id".format(part_id), title="Unterkunft",
+                {{ util.input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                          entries=myentries, nulloption=True) }}
             {% endfor %}
             <tr><th colspan="2">Felder</th></tr>
