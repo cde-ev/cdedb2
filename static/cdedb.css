@@ -14,3 +14,31 @@ body{
     display: block;
     color: #a94442;
 }
+
+/* Helper classes */
+.float-along {
+    display: block;
+    overflow: hidden;
+}
+.pull-right-responsive {
+    float: right;
+    margin-left: 20px;
+}
+@media (max-width: 768px) {
+    .pull-right-responsive {
+        float: none;
+        margin-left: 0;
+    }
+}
+.pull-right-responsive {
+
+}
+
+/* Extra styling */
+.heading-underline {
+    padding-bottom: 2px;
+    border-bottom: solid 1px #ddd;
+}
+.profilepic {
+    max-width: 150px;
+}
