@@ -32,7 +32,8 @@ Pyro4.util.all_exceptions.update(custom_exceptions)
 ## old-style usage, namely
 ##     Pyro4.errors.PyroError:
 ##     remote object doesn't expose any methods or attributes
-Pyro4.config.METADATA = False
+if hasattr(Pyro4.config, 'METADATA'):
+    Pyro4.config.METADATA = False
 
 ## pyro uses serpent as serializers and we want some additional comfort so
 ## we register some additional serializers, they are reversed in

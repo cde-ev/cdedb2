@@ -97,8 +97,10 @@ def create_RPCDaemon(backend, socket_address, access_logging=True):
     """
     Pyro4.config.LOGWIRE = access_logging
     Pyro4.config.DETAILED_TRACEBACK = True
-    ## Use old behaviour of exposing everything
-    Pyro4.config.REQUIRE_EXPOSE = False
+    ## Use old behaviour of exposing everything (only applicable if Pyro is
+    ## new enough to have this configuration option)
+    if hasattr(Pyro4.config, 'REQUIRE_EXPOSE'):
+        Pyro4.config.REQUIRE_EXPOSE = False
     server = InsulationBackendServer(backend)
     daemon = Pyro4.Daemon(unixsocket=socket_address)
     ## if this is not an abstract socket
