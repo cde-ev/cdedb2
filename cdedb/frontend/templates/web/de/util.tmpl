@@ -52,6 +52,17 @@
       {% if anid %} id="{{ anid|e }}"{% endif %}></span>
 {% endmacro %}
 
+{% macro persona_anchor(persona_data, verbose=False) %}
+    {% if verbose %}
+        {{ href(show_user_link(persona_data['id']), "{} {} {} {}".format(
+              persona_data['title'], persona_data['given_names'],
+              persona_data['family_name'], persona_data['name_supplement'])) }}
+    {% else %}
+        {{ href(show_user_link(persona_data['id']), "{} {}".format(
+              persona_data['given_names'], persona_data['family_name'])) }}
+    {% endif %}
+{% endmacro %}
+
 {% macro input_hidden(name, value=None, defaultvalue='', anid='', aclass='') %}
     {% if value is none %}
         <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"

@@ -1,4 +1,4 @@
-<<% extends "tex/de/event/base.tmpl" %>>
+<<% extends "tex/de/event/base_article.tmpl" %>>
 <<% block extra_preamble %>>
     \KOMAoptions{DIV=21}
     \raggedright
@@ -10,6 +10,7 @@
     % \newcommand\debugbox[1]{\fbox{#1}} % frames around content
 
     \newcommand\nametag[5]{\framebox{\parbox[t][5.3cm][t]{8.7cm}{%
+        % FIXME make firstname bigger than lastname
         % name
         \parbox[t][0pt][t]{0pt}{%
             \vspace{5pt}%

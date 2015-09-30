@@ -90,6 +90,16 @@ def random_ascii(length=12):
     chars = string.ascii_letters + string.digits + string.punctuation
     return ''.join(random.choice(chars) for _ in range(length))
 
+def now():
+    """Return an up to date timestamp.
+
+    This is a separate function so we do not forget to make it time zone
+    aware.
+
+    :rtype: datetime.datetime
+    """
+    return datetime.datetime.now(pytz.utc)
+
 def extract_realm(status):
     """Which realm does a persona belong to?
 
@@ -212,13 +222,18 @@ def name_key(entry):
     """
     return (entry['family_name'] + " " + entry['given_names']).lower()
 
-def compute_checkdigit(value):
-    """Map a persona id (integer) to the checksum used for UI purposes.
+def compute_checkdigit(value, isbn=False):
+    """Map an integer to the checksum used for UI purposes.
 
     This checkdigit allows for error detection if somebody messes up a
     handwritten ID or such.
 
+    Most of the time, the integer will be a persona id.
+
     :type value: int
+    :type isbn: bool
+    :param isbn: If True return a check digit according to the ISBN standard,
+      otherwise we map the interval from 0 to 10 to the letters A to K.
     :rtype: str
     """
     digits = []
@@ -226,8 +241,92 @@ def compute_checkdigit(value):
     while tmp > 0:
         digits.append(tmp % 10)
         tmp = tmp // 10
-    dsum = sum((i+1)*d for i, d in enumerate(digits))
-    return chr(65 + (dsum % 11))
+    dsum = sum((i+2)*d for i, d in enumerate(digits))
+    if isbn:
+        return "0123456789X"[-dsum % 11]
+    else:
+        return "ABCDEFGHIJK"[-dsum % 11]
+
+def lastschrift_reference(persona_id, lastschrift_id):
+    """Return an identifier for usage with the bank.
+
+    This is the so called 'Mandatsreferenz'.
+
+    :type persona_id: int
+    :type lastschrift_id: int
+    :rtype: str
+    """
+    return "CDE-I25-{}-{}-{}-{}".format(
+        persona_id, compute_checkdigit(persona_id, isbn=True), lastschrift_id,
+        compute_checkdigit(lastschrift_id, isbn=True))
+
+def _small_int_to_words(num, lang):
+    """Convert a small integer into a written representation.
+
+    Helper for the general function.
+
+    :type num: int
+    :param num: Must be between 0 and 999
+    :type lang: str
+    :param lang: Currently we only suppert 'de'.
+    :rtype: str
+    """
+    if num < 0 or num > 999:
+        raise ValueError("Out of scope.")
+    digits = tuple((num // 10**i) % 10 for i in range(3))
+    if lang == "de":
+        atoms = ("null", "ein", "zwei", "drei", "vier", "fünf", "sechs",
+                 "sieben", "acht", "neun", "zehn", "elf", "zwölf", "dreizehn",
+                 "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn",
+                 "neunzehn")
+        tens = ("", "", "zwanzig", "dreißig", "vierzig", "fünfzig", "sechzig",
+                "siebzig", "achtzig", "neunzig")
+        ret = ""
+        if digits[2]:
+            ret += atoms[digits[2]] + "hundert"
+        if num % 100 < 20:
+            if num % 100:
+                ret += atoms[num %100]
+            return ret
+        if digits[0]:
+            ret += atoms[digits[0]]
+        if digits[0] and digits[1]:
+            ret += "und"
+        if digits[1]:
+            ret += tens[digits[1]]
+        return ret
+    else:
+        raise NotImplementedError("Not supported.")
+
+def int_to_words(num, lang):
+    """Convert an integer into a written representation.
+
+    This is for the usage such as '2 apples' -> 'two apples'.
+
+    :type num: int
+    :type lang: str
+    :param lang: Currently we only suppert 'de'.
+    :rtype: str
+    """
+    if num < 0 or num > 999999:
+        raise ValueError("Out of scope.")
+    if lang == "de":
+        if num == 0:
+            return "null"
+        multipliers = ("", "tausend")
+        number_words = []
+        tmp = num
+        while tmp > 0:
+            number_words.append(_small_int_to_words(tmp % 1000, lang))
+            tmp = tmp // 1000
+        ret = ""
+        for number_word, multiplier in reversed(tuple(zip(number_words,
+                                                          multipliers))):
+            if number_word != "null":
+                ret += number_word + multiplier
+        return ret
+    else:
+        raise NotImplementedError("Not supported.")
 
 def _schulze_winners(d, candidates):
     """This is the abstract part of the Schulze method doing the actual work.
@@ -602,6 +701,16 @@ BALLOT_FIELDS = (
 #: assembly or a ballot)
 ASSEMBLY_ATTACHMENT_FIELDS = ("id", "assembly_id", "ballot_id", "title",
                               "filename")
+
+#: Fields of one direct debit permit
+LASTSCHRIFT_FIELDS = (
+    "id", "submitted_by", "persona_id", "amount", "max_dsa", "iban",
+    "account_owner", "account_address", "granted_at", "revoked_at", "notes")
+
+#: Fields of one interaction on behalf of a direct debit permit
+LASTSCHRIFT_TRANSACTION_FIELDS = (
+    "id", "submitted_by", "lastschrift_id", "period_id", "status", "amount",
+    "issued_at", "processed_at", "tally")
 
 EPSILON = 10**(-6) #:
 

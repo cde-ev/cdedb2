@@ -1,0 +1,108 @@
+<<% extends "tex/de/cde/base_letter.tmpl" %>>
+<<% block extra_preamble %>>
+    \usepackage{url}
+    \usepackage{multicol}
+
+    \setkomavar{signature}{<<< cde_info['Finanzvorstand_Vorname']|te >>>\\ Vorstand CdE e.\,V.}
+    \setkomavar{subject}{Zuwendungsbestätigung Initiative 25+}
+<<% endblock %>>
+<<% block backaddress_line1 -%>>
+    <<< cde_info['Finanzvorstand_Name']|te >>>
+<<%- endblock %>>
+<<% block backaddress_line2 -%>>
+    <<< cde_info['Finanzvorstand_Adresse_Zeile2']|te >>>
+<<%- endblock %>>
+<<% block backaddress_line3 -%>>
+    <<< cde_info['Finanzvorstand_Adresse_Zeile3']|te >>>
+<<%- endblock %>>
+<<% block backaddress_line4 -%>>
+    <<< cde_info['Finanzvorstand_Adresse_Zeile4']|te >>>
+<<%- endblock %>>
+<<% block backaddress_oneline -%>>
+    <<< cde_info['Finanzvorstand_Adresse_Einzeiler']|te >>>
+<<%- endblock %>>
+<<% block content %>>
+    \begin{letter}{
+        <<%- for line in addressee -%>>
+            <<< line|te >>>
+            <<%- if not loop.last -%>>
+                \\
+            <<%- endif -%>>
+        <<%- endfor -%>>}
+
+        \opening{Liebe<<< persona_data['gender']|genus('', 'r')|te >>> <<< persona_data['given_names']|te >>>,}
+
+        für deine Unterstützung der gemeinnützigen Arbeit des CdE durch die Initiative 25+ möchten wir uns herzlich
+        bedanken.
+
+        Deine Spende ist sehr wertvoll für uns und wird uns helfen, unsere Ziele auf dem Gebiet der Förderung und
+        Bildung von Jugendlichen zu verwirklichen. Die Spenden aus der Initiative 25+ ermöglichen uns, die
+        Veranstaltungen des CdE e.\,V.  mit jährlich über 2.000\,€ zu unterstützen. Das führt zur Senkung der
+        Teilnehmerbeiträge, so dass die CdE-Akademien auch für finanziell schlechter gestellte Teilnehmerinnen und
+        Teilnehmer bezahlbar bleiben.
+
+        Im Jahr 2014 konnten wir außerdem der Deutschen JuniorAkademie in Meisenheim und der JGW-MatheAkademie
+        kurzfristig benötigte Unterstützung zusagen. Dafür sind 600\,€ aus den Spenden der Initiative 25+ eingeplant.
+
+        \closing{Viele Grüße}
+
+        \ps\newpage
+        \parindent0mm
+
+        \textbf{Aussteller:} CdE e.\,V., p. Adr. Rechtsanwalt Manger, Goseriede 13, 30159 Hannover
+        \par\bigskip
+        \textbf{\large Bestätigung über Geldzuwendungen/Mitgliedsbeitrag}\\
+        im Sinne des {\S}\,10\,b des Einkommensteuergesetzes an eine der in {\S}\,5 Abs. 1 Nr. 9 des
+        Körperschaftsteuergesetzes bezeichneten Körperschaften, Personenvereinigungen oder Vermögensmassen
+        \par\bigskip
+        Name und Anschrift des Zuwendenden:
+        \par\smallskip
+        \begin{center}
+            <<< ", ".join(addressee)|te >>>
+        \end{center}
+        \par\smallskip
+        \begin{tabular}{l|l|l}
+            \multicolumn{2}{@{}l|}{Betrag der Zuwendung}&\\
+            -- in Ziffern -- & -- in Buchstaben -- & Tag der Zuwendung:\\
+            <<< "{:.2f}".format(transaction_data['amount'])|te >>>\,€
+                & <<< transaction_data['amount_words'][0]|te >>> Euro
+                  <<< transaction_data['amount_words'][1]|te >>> Cent
+                & <<< transaction_data['processed_at']|date|te >>>
+        \end{tabular}
+        \par\bigskip
+        Es handelt sich nicht um den Verzicht auf Erstattung von Aufwendungen.
+        \par\bigskip
+        Wir sind wegen Förderung der Volks- und Berufsbildung sowie der Studentenhilfe nach dem Freistellungsbescheid
+        des Finanzamts Aachen-Stadt, StNr. 201/5907/4693 vom 08.08.2014 für den letzten Veranlagungszeitraum 2011--2013
+        nach {\S}\,5 Abs. 1 Nr. 9 des Körperschaftsteuergesetzes von der Körperschaftsteuer und nach {\S}\,3 Nr. 6 des
+        Gewerbesteuergesetzes von der Gewerbesteuer befreit.
+
+        Die Einhaltung der satzungsmäßigen Voraussetzungen nach den \S{\S}\,51, 59, 60 und 61 AO wurde vom Finanzamt
+        Aachen-Stadt, StNr. 201/5907/4693 VBZ 19 mit Bescheid vom 30.07.2014 nach {\S}\,60a AO gesondert
+        festgestellt. Wir fördern nach unserer Satzung die Volks- und Berufsbildung sowie die Studentenhilfe.
+
+        Es wird bestätigt, dass die Zuwendung nur zur Förderung der Volks- und Berufsbildung sowie der Studentenhilfe
+        verwendet wird.
+
+        \vspace{15mm}\par
+        \begin{tabular}{@{}lc}
+            <<< cde_info['Finanzvorstand_Ort']|te >>>,  den <<< now()|date|te >>> & \makebox[7cm]{\dotfill} \\
+            & {\small <<< cde_info['Finanzvorstand_Name']|te >>>, Vorstand}
+        \end{tabular}
+        \par\vfill
+        \begin{footnotesize}
+            \textbf{Hinweis:}
+            \par
+            Wer vorsätzlich oder grob fahrlässig eine unrichtige Zuwendungsbestätigung erstellt oder veranlasst, dass
+            Zuwendungen nicht zu den in der Zuwendungsbestätigung angegebenen steuerbegünstigten Zwecken verwendet
+            werden, haftet für die entgangene Steuer ({\S}\,10b Absatz 4 EStG, {\S}\,9 Absatz 3 KStG, {\S}\,9 Nummer 5
+            GewStG).
+            \par
+            Diese Bestätigung wird nicht als Nachweis für die steuerliche Berücksichtigung der Zuwendung anerkannt, wenn
+            das Datum des Freistellungsbescheides länger als 5 Jahre bzw. das Datum der Feststellung der Einhaltung der
+            satzungsmäßigen Voraussetzungen nach {\S}\,60a Abs. 1 AO länger als 3 Jahre seit Ausstellung des Bescheides
+            zurückliegt ({\S}\,63 Abs. 5 AO).
+            \par
+        \end{footnotesize}
+    \end{letter}
+<<% endblock %>>

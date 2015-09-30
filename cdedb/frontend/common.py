@@ -4,49 +4,49 @@
 overall topic.
 """
 
-import os
-import os.path
-import werkzeug
-import werkzeug.exceptions
-import werkzeug.datastructures
-import werkzeug.utils
-import functools
-from cdedb.config import Config, SecretsConfig
-from cdedb.common import (
-    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts,
-    compute_checkdigit)
-from cdedb.query import VALID_QUERY_OPERATORS
-import cdedb.validation as validate
-import cdedb.database.constants as const
-import jinja2
-import json
-import werkzeug.wrappers
+import abc
+import collections
 import datetime
-import pytz
-import hashlib
-import Pyro4
-import logging
-import io
-import re
-import subprocess
-
-import urllib.parse
-import smtplib
 import email
+import email.charset
+import email.encoders
+import email.header
 import email.mime
 import email.mime.application
 import email.mime.audio
 import email.mime.image
 import email.mime.multipart
 import email.mime.text
-import email.encoders
-import email.header
-import email.charset
+import functools
+import hashlib
+import io
+import jinja2
+import json
+import logging
+import os
+import os.path
+import Pyro4
+import re
+import smtplib
+import subprocess
 import tempfile
-import abc
+import urllib.parse
+import werkzeug
+import werkzeug.datastructures
+import werkzeug.exceptions
+import werkzeug.utils
+import werkzeug.wrappers
+
 from cdedb.internationalization import i18n_factory
 from cdedb.serialization import deserialize
 from cdedb.config import BasicConfig
+from cdedb.config import Config, SecretsConfig
+from cdedb.common import (
+    extract_realm, extract_roles, glue, ALL_ROLES, CommonUser, merge_dicts,
+    compute_checkdigit, now)
+from cdedb.query import VALID_QUERY_OPERATORS
+import cdedb.validation as validate
+import cdedb.database.constants as const
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -91,6 +91,16 @@ class ProxyShim:
             return self._attrs[name]
         else:
             return getattr(self._proxy, name)
+
+class Response(werkzeug.wrappers.Response):
+    """Wrapper around werkzeugs Response to handle displaynote cookie.
+
+    This is a pretty thin wrapper, but essential so our magic cookie
+    gets cleared and no stale notifications remain.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.delete_cookie("displaynote")
 
 def connect_proxy(name):
     """
@@ -455,6 +465,19 @@ def linebreaks_filter(val, replacement="<br>"):
     val = str(val)
     return val.replace('\n', replacement)
 
+def xdictsort_filter(value, attribute):
+    """Allow sorting by an arbitrary attribute of the value.
+
+    Jinja only provides sorting by key or entire value. Also Jinja does
+    not allow comprehensions or lambdas, hence we have to use this.
+
+    This obviously only works if the values allow access by key.
+
+    :type value: {object: dict}
+    :rtype: [(object, dict)]
+    """
+    return sorted(value.items(), key=lambda item: item[1].get(attribute))
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -487,6 +510,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'genus': genus_filter,
             'linebreaks': linebreaks_filter,
             'enum': enum_filter,
+            'xdictsort': xdictsort_filter,
             'tex_escape': tex_escape_filter,
             'te': tex_escape_filter,
         }
@@ -579,20 +603,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             errorsdict.setdefault(key, []).append(value)
         ## here come the always accessible things promised above
         data = {
+            'ambience': rs.ambience,
             'cdedblink': _cdedblink,
             'const': const,
             'default_selections': default_selections,
             'encode_parameter': self.encode_parameter,
             'errors': errorsdict,
-            'generation_time': lambda: (datetime.datetime.now(pytz.utc)
-                                        - rs.begin),
+            'generation_time': lambda: (now() - rs.begin),
             'glue': glue,
             'i18n': lambda string: self.i18n(string, rs.lang),
             'is_admin': self.is_admin(rs),
             'notifications': rs.notifications,
-            'now': lambda: datetime.datetime.now(pytz.utc), # TODO make this
-                                                            # constant after
-                                                            # the first call
+            'now': now,
             'show_user_link': _show_user_link,
             'staticurl': staticurl,
             'user': rs.user,
@@ -663,10 +685,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             ## a download box -- we don't want that.
             headers.append(('Content-Disposition',
                             'inline; filename="{}"'.format(filename)))
-        headers.append(('X-Generation-Time', str(
-            datetime.datetime.now(pytz.utc) - rs.begin)))
-        return werkzeug.wrappers.Response(
-            f, direct_passthrough=True, headers=headers, **extra_args)
+        headers.append(('X-Generation-Time', str(now() - rs.begin)))
+        return Response(f, direct_passthrough=True, headers=headers,
+                        **extra_args)
 
     def render(self, rs, templatename, params=None):
         """Wrapper around :py:meth:`fill_template` specialised to generating
@@ -683,11 +704,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             debugstring = glue(
                 "We have is_multithreaded={}; is_multiprocess={};",
                 "base_url={} ; cookies={} ; url={} ; is_secure={} ;",
-                "method={} ; remote_addr={} ; values={}").format(
+                "method={} ; remote_addr={} ; values={}, ambience={}").format(
                     rs.request.is_multithread, rs.request.is_multiprocess,
                     rs.request.base_url, rs.request.cookies, rs.request.url,
                     rs.request.is_secure, rs.request.method,
-                    rs.request.remote_addr, rs.request.values)
+                    rs.request.remote_addr, rs.request.values, rs.ambience)
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
             rs.notify("error", "Failed validation.")
@@ -695,10 +716,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if "<pre>" not in html:
             ## eliminate empty lines, since they don't matter
             html = "\n".join(line for line in html.split('\n') if line.strip())
-        rs.response = werkzeug.wrappers.Response(html, mimetype='text/html')
-        rs.response.headers.add('X-Generation-Time', str(
-            datetime.datetime.now(pytz.utc) - rs.begin))
-        rs.response.delete_cookie("displaynote")
+        rs.response = Response(html, mimetype='text/html')
+        rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return rs.response
 
     def do_mail(self, rs, templatename, headers, params=None, attachments=None):
@@ -777,8 +796,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("From", "Reply-To", "Subject", "Return-Path"):
             msg[header] = headers[header]
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
-        msg["Date"] = datetime.datetime.now(pytz.utc).strftime(
-            "%Y-%m-%d %H:%M:%S%z")
+        msg["Date"] = now().strftime("%Y-%m-%d %H:%M:%S%z")
         return msg
 
     def _create_attachment(self, attachment):
@@ -1017,6 +1035,93 @@ class FrontendUser(CommonUser):
         self.given_names = given_names
         self.family_name = family_name
 
+def reconnoitre_ambience(obj, rs):
+    """Provide automatic lookup of objects in a standard way.
+
+    This creates an ambience dict providing objects for all ids passed
+    as part of the URL path. The naming is not predetermined, but as a
+    convention the object name should be the parameter named minus the
+    '_id' suffix.
+
+    FIXME currently this is broken for past events, where some renaming
+    from event_id to past_event_id should happen before this can be used
+    there.
+
+    :type obj: :py:class:`AbstractFrontend`
+    :type rs: :py:class:`FrontendRequestState`
+    :rtype: {str: object}
+    """
+    Scout = collections.namedtuple('Scout', ('getter', 'param_name',
+                                             'object_name', 'dependencies'))
+    t = tuple()
+    def myAssert(x):
+        if not x:
+            raise werkzeug.exceptions.BadRequest("Inconsistent request.")
+    def attachment_check(a):
+        # FIXME change routing before implementing this, attachments should
+        # live below the assembly/ballot they are associated to
+        pass
+    scouts = (
+        Scout(lambda anid: obj.coreproxy.get_data_one(rs, anid), 'persona_id',
+              'persona', t),
+        # no case_id for genesis cases since they are special and cause
+        # PrivilegeErrors
+        Scout(lambda anid: obj.cdeproxy.get_lastschrift_one(rs, anid),
+              'lastschrift_id', 'lastschrift', t),
+        Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
+              'transaction_id', 'transaction',
+              ((lambda a: myAssert(a['transaction']['lastschrift_id']
+                                   == a['lastschrift']['id'])),)),
+        Scout(lambda anid: obj.eventproxy.get_event_data_one(rs, anid),
+              'event_id', 'event', t),
+        Scout(lambda anid: obj.eventproxy.get_course_data_one(rs, anid),
+              'course_id', 'course',
+              ((lambda a: myAssert(a['course']['event_id']
+                                   == a['event']['id'])),)),
+        Scout(None, 'part_id', None,
+              ((lambda a: myAssert(rs.requestargs['part_id']
+                                   in a['event']['parts'])),)),
+        Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
+              'registration_id', 'registration',
+              ((lambda a: myAssert(a['registration']['event_id']
+                                   == a['event']['id'])),)),
+        Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
+              'lodgement_id', 'lodgement',
+              ((lambda a: myAssert(a['lodgement']['event_id']
+                                   == a['event']['id'])),)),
+        Scout(None, 'field_id', None,
+              ((lambda a: myAssert(rs.requestargs['field_id']
+                                   in a['event']['fields'])),)),
+        Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
+              'attachment_id', 'attachment', (attachment_check,)),
+        Scout(lambda anid: obj.assemblyproxy.get_assembly_data_one(rs, anid),
+              'assembly_id', 'assembly', t),
+        Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
+              'ballot_id', 'ballot',
+              ((lambda a: myAssert(a['ballot']['assembly_id']
+                                   == a['assembly']['id'])),)),
+        Scout(None, 'candidate_id', None,
+              ((lambda a: myAssert(rs.requestargs['candidate_id']
+                                   in a['ballot']['candidates'])),)),
+        Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
+              'mailinglist_id', 'mailinglist', t),
+    )
+    scouts_dict = {s.param_name: s for s in scouts}
+    ambience = {}
+    for param, value in rs.requestargs.items():
+        s = scouts_dict.get(param)
+        if s and s.getter:
+            try:
+                ambience[s.object_name] = s.getter(value)
+            except KeyError:
+                raise werkzeug.exceptions.NotFound(
+                    "Object {}={} not found".format(param, value))
+    for param, value in rs.requestargs.items():
+        if param in scouts_dict:
+            for consistency_checker in scouts_dict[param].dependencies:
+                consistency_checker(ambience)
+    return ambience
+
 def access(role, modi=None):
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -1032,6 +1137,7 @@ def access(role, modi=None):
         @functools.wraps(fun)
         def new_fun(obj, rs, *args, **kwargs):
             if rs.user.roles & access_list:
+                rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
                 if rs.user.roles == {"anonymous"}:
@@ -1350,8 +1456,8 @@ def encode_parameter(salt, target, name, param):
     :rtype: str
     """
     myhash = hashlib.sha512()
-    now = datetime.datetime.now(pytz.utc)
-    message = "{}--{}".format(now.strftime("%Y-%m-%d %H:%M:%S%z"), param)
+    timestamp = now()
+    message = "{}--{}".format(timestamp.strftime("%Y-%m-%d %H:%M:%S%z"), param)
     tohash = "{}--{}--{}--{}".format(salt, target, name, message)
     myhash.update(tohash.encode("utf-8"))
     return "{}--{}".format(myhash.hexdigest(), message)
@@ -1377,7 +1483,7 @@ def decode_parameter(salt, target, name, param, timeout):
             myhash.hexdigest(), mac, tohash))
         return None
     timestamp = datetime.datetime.strptime(message[:24], "%Y-%m-%d %H:%M:%S%z")
-    if timestamp + timeout <= datetime.datetime.now(pytz.utc):
+    if timestamp + timeout <= now():
         _LOGGER.debug("Expired protected parameter {}".format(tohash))
         return None
     return message[26:]
@@ -1413,8 +1519,7 @@ def basic_redirect(rs, url):
     :rtype: :py:class:`werkzeug.wrappers.Response`
     """
     rs.response = construct_redirect(rs.request, url)
-    rs.response.headers.add('X-Generation-Time', str(
-        datetime.datetime.now(pytz.utc) - rs.begin))
+    rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
     return rs.response
 
 def construct_redirect(request, url):
@@ -1440,7 +1545,36 @@ def construct_redirect(request, url):
         You can also access the target via <a href="{url}">this link</a>.
     </body>
 </html>"""
-        return werkzeug.wrappers.Response(
-            template.format(url=urllib.parse.quote(url)), mimetype="text/html")
+        return Response(template.format(url=urllib.parse.quote(url)),
+                        mimetype="text/html")
     else:
-        return werkzeug.utils.redirect(url, 303)
+        ret = werkzeug.utils.redirect(url, 303)
+        ret.delete_cookie("displaynote")
+        return ret
+
+def make_postal_address(persona_data):
+    """Prepare address info for formatting.
+
+    Addresses have some specific formatting wishes, so we are flexible
+    in that we represent an address to be printed as a list of strings
+    each containing one line. The final formatting is now basically an
+    ``'\n'.join()``.
+
+    :type persona_data: {str: object}
+    :rtype: [str]
+    """
+    pd = persona_data
+    name = "{} {}".format(pd['given_names'], pd['family_name'])
+    if pd['title']:
+        name = glue(pd['title'], name)
+    if pd['name_supplement']:
+        name = glue(name, pd['name_supplement'])
+    ret = [name]
+    if pd['address_supplement']:
+        ret.append(pd['address_supplement'])
+    ret.append(pd['address'])
+    ret.append("{} {}".format(pd['postal_code'], pd['location']))
+    if pd['country']:
+        ret.append(pd['country'])
+    return ret
+

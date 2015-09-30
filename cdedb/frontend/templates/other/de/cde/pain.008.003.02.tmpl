@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.003.02" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.003.02 pain.008.003.02.xsd">
+	<CstmrDrctDbtInitn>
+		<GrpHdr>
+			<MsgId>{{ meta['message_id'] }}</MsgId>
+			<CreDtTm>{{ now().isoformat() }}</CreDtTm>
+			<NbOfTxs>{{ meta['count'] }}</NbOfTxs>
+			<CtrlSum>{{ "{:.2f}".format(meta['total_sum']) }}</CtrlSum>
+			<InitgPty>
+				<Nm>{{ meta['sender']['name'] }}</Nm>
+			</InitgPty>
+		</GrpHdr>
+                {% for ttype, ttransactions in transactions|dictsort -%}
+                        <PmtInf>
+                                <PmtInfId>{{ "{}-{}".format(meta['message_id'], ttype) }}</PmtInfId>
+                                <PmtMtd>DD</PmtMtd>
+                                <BtchBookg>false</BtchBookg>
+                                <NbOfTxs>{{ ttransactions|length }}</NbOfTxs>
+                                <CtrlSum>{{ "{:.2f}".format(meta['partial_sums'][ttype]) }}</CtrlSum>
+                                <PmtTpInf>
+                                        <SvcLvl>
+                                                <Cd>SEPA</Cd>
+                                        </SvcLvl>
+                                        <LclInstrm>
+                                                <Cd>CORE</Cd>
+                                        </LclInstrm>
+                                        <SeqTp>{{ ttype }}</SeqTp>
+                                </PmtTpInf>
+                                <ReqdColltnDt>{{ meta['payment_date'] }}</ReqdColltnDt>
+                                <Cdtr>
+                                        <Nm>{{ meta['sender']['name'] }}</Nm>
+                                        <PstlAdr>
+                                                <Ctry>{{ meta['sender']['country'] }}</Ctry>
+                                                {% for line in meta['sender']['address'] -%}
+                                                        <AdrLine>{{ line }}</AdrLine>
+                                                {% endfor %}
+                                        </PstlAdr>
+                                </Cdtr>
+                                <CdtrAcct>
+                                        <Id>
+                                                <IBAN>{{ meta['sender']['iban'] }}</IBAN>
+                                        </Id>
+                                </CdtrAcct>
+                                <CdtrAgt>
+                                        <FinInstnId>
+                                                <Othr>
+                                                        <Id>NOTPROVIDED</Id>
+
+                                                </Othr>
+                                        </FinInstnId>
+                                </CdtrAgt>
+                                <ChrgBr>SLEV</ChrgBr>
+                                <CdtrSchmeId>
+                                        <Id>
+                                                <PrvtId>
+                                                        <Othr>
+                                                                <Id>{{ meta['sender']['glaeubigerid'] }}</Id>
+                                                                <SchmeNm>
+                                                                        <Prtry>SEPA</Prtry>
+                                                                </SchmeNm>
+                                                        </Othr>
+                                                </PrvtId>
+                                        </Id>
+                                </CdtrSchmeId>
+                                {% for transaction in ttransactions -%}
+                                        <DrctDbtTxInf>
+                                                <PmtId>
+                                                        <EndToEndId>{{ transaction['unique_id'] }}</EndToEndId>
+                                                </PmtId>
+                                                <InstdAmt Ccy="EUR">{{ "{:.2f}".format(transaction['amount']) }}</InstdAmt>
+                                                <DrctDbtTx>
+                                                        <MndtRltdInf>
+                                                                <MndtId>{{ transaction['mandate_reference'] }}</MndtId>
+                                                                <DtOfSgntr>{{ transaction['mandate_date'] }}</DtOfSgntr>
+                                                                <AmdmntInd>false</AmdmntInd>
+                                                        </MndtRltdInf>
+                                                </DrctDbtTx>
+                                                <DbtrAgt>
+                                                        <FinInstnId>
+                                                                <Othr>
+                                                                        <Id>NOTPROVIDED</Id>
+
+                                                                </Othr>
+                                                        </FinInstnId>
+                                                </DbtrAgt>
+                                                <Dbtr>
+                                                        <Nm>{{ transaction['account_owner'] }}</Nm>
+                                                </Dbtr>
+                                                <DbtrAcct>
+                                                        <Id>
+                                                                <IBAN>{{ transaction['iban'] }}</IBAN>
+                                                        </Id>
+                                                </DbtrAcct>
+                                                <RmtInf>
+                                                        <Ustrd>{{ transaction['subject'] }}</Ustrd>
+                                                </RmtInf>
+                                        </DrctDbtTxInf>
+                                {% endfor %}
+		        </PmtInf>
+		{% endfor %}
+	</CstmrDrctDbtInitn>
+</Document>

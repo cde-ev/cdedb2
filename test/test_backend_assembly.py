@@ -382,29 +382,29 @@ class TestAssemblyBackend(BackendTest):
             "filename": "beschluss.pdf",
         }
         self.assertLess(0, self.assembly.add_attachment(self.key, data))
-        expectation = {2: 'Rechenschaftsbericht', 3: 'Verfassung des Staates der CdEler'}
+        expectation = {1: 'Rechenschaftsbericht', 2: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
-        expectation = {4: 'Beschlussvorlage'}
+        expectation = {3: 'Beschlussvorlage'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, ballot_id=2))
         expectation = {
-            2: {'assembly_id': 1,
+            1: {'assembly_id': 1,
                 'ballot_id': None,
                 'filename': 'rechen.pdf',
-                'id': 2,
+                'id': 1,
                 'title': 'Rechenschaftsbericht'},
-            3: {'assembly_id': 1,
+            2: {'assembly_id': 1,
                 'ballot_id': None,
                 'filename': 'verf.pdf',
-                'id': 3,
+                'id': 2,
                 'title': 'Verfassung des Staates der CdEler'},
-            4: {'assembly_id': None,
+            3: {'assembly_id': None,
                 'ballot_id': 2,
                 'filename': 'beschluss.pdf',
-                'id': 4,
+                'id': 3,
                 'title': 'Beschlussvorlage'}}
-        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (2, 3, 4)))
-        self.assertLess(0, self.assembly.remove_attachment(self.key, 2))
-        expectation = {3: 'Verfassung des Staates der CdEler'}
+        self.assertEqual(expectation, self.assembly.get_attachments(self.key, (1, 2, 3)))
+        self.assertLess(0, self.assembly.remove_attachment(self.key, 1))
+        expectation = {2: 'Verfassung des Staates der CdEler'}
         self.assertEqual(expectation, self.assembly.list_attachments(self.key, assembly_id=1))
 
     @as_users("anton")

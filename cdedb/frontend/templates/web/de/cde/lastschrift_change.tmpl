@@ -1,0 +1,23 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Einzugsermächtigung bearbeiten{% endblock %}
+{% block content %}
+    {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': lastschrift_data['persona_id']}), "Abbrechen") }}
+    <form action="{{ cdedblink('cde/lastschrift_change')|e }}" method="POST" id="changelastschriftform">
+        <table>
+	    <tr>
+		<td>Person</td>
+		<td>{{ "{} {}".format(persona_data['given_names'], persona_data['family_name'])|e }}</td>
+	    </tr>
+            {{ util.input_text(name="amount", label="Betrag") }}
+            {{ util.input_text(name="iban", label="IBAN") }}
+            {{ util.input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
+            {{ util.input_textarea(name="account_address", label="Adresse (falls abweichend)", aclass="bigg") }}
+            {{ util.input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Ändern") }}
+        </div>
+    </form>
+{% endblock %}

@@ -9,14 +9,15 @@ here, the site specific global overrides in
 """
 
 import datetime
-import logging
+import decimal
 import importlib.machinery
+import logging
 import os.path
-import uuid
 import pytz
+import uuid
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import deduct_years
+from cdedb.common import deduct_years, now
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ _DEFAULTS = {
                 ("user_data.persona_id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
-                  deduct_years(datetime.datetime.now(pytz.utc).date(), 18)),),
+                  deduct_years(now().date(), 18)),),
                 (("birthday", True), ("family_name", True),
                  ("given_names", True)),),
         },
@@ -173,6 +174,36 @@ _DEFAULTS = {
     "MAX_QUERIES_PER_DAY": 50,
     ## maximal number of results for a member search
     "MAX_QUERY_RESULTS": 50,
+    ## amount deducted from balance each period (semester)
+    "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
+    ## probably always 1 or 2
+    "PERIODS_PER_YEAR": 2,
+
+    ## Name of the organization where the SEPA transaction originated
+    "SEPA_SENDER_NAME": "CdE e.V.",
+    ## Address of the originating organization
+    ## The actual address consists of multiple lines
+    "SEPA_SENDER_ADDRESS": ("Musterstrasse 123", "00000 Teststadt"),
+    "SEPA_SENDER_COUNTRY": "DE",
+    ## Bank details of the originator
+    "SEPA_SENDER_IBAN": "DE87200500001234567890",
+    ## "Gläubiger-ID" for direct debit transfers
+    "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
+    ## Date at which SEPA was introduced
+    "SEPA_INITIALISATION_DATE": datetime.date(2013, 7, 30),
+    ## Date after which SEPA was used exclusively
+    "SEPA_CUTOFF_DATE": datetime.date(2013, 10, 14),
+    ## Timespan to wait between issuing of SEPA order and fulfillment
+    "SEPA_PAYMENT_OFFSET": datetime.timedelta(days=17),
+    ## processing fee we incur if a transaction is rolled back
+    "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
+
+    ## Keys of the dict in the cde.meta_info.info column
+    "META_INFO_KEYS": (
+        "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
+        "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
+        "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4"),
+
 
     ### event stuff
 

@@ -291,6 +291,8 @@ class CoreBackend(AbstractBackend):
                 "change_note": change_note,
             })
             del insert['id']
+            if 'ctime' in insert:
+                del insert['ctime']
             self.sql_insert(rs, "core.changelog", insert)
 
             ## resolve change if it doesn't require review
@@ -883,8 +885,11 @@ class CoreBackend(AbstractBackend):
         """Change a persona.
 
         This is for administrative purposes (like toggling account
-        activity). Normally one should use the change_user functions of
-        the respective realm to change a persona.
+        activity).
+
+        .. note:: Usage of this functionality is discouraged, normally one
+                  should use the change_user functions of the respective
+                  realm to change a persona.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type data: {str: object}

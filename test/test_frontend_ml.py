@@ -29,7 +29,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangeuser(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-10-C"
+        f['id_to_show'] = "DB-10-I"
         self.submit(f)
         self.traverse({'href': '/ml/user/10/adminchange'})
         f = self.response.forms['changedataform']
@@ -43,7 +43,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton")
     def test_toggleactivity(self, user):
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-10-C"
+        f['id_to_show'] = "DB-10-I"
         self.submit(f)
         self.assertTitle("Janis Jalapeño")
         self.assertEqual(
@@ -176,7 +176,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         self.assertNotIn("Inga Iota", self.response.text)
         f = self.response.forms['addmoderatorform']
-        f['moderator_id'] = "DB-9-J"
+        f['moderator_id'] = "DB-9-E"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         self.assertIn("Inga Iota", self.response.text)
@@ -201,7 +201,7 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn("Janis Jalapeño", self.response.text)
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
-        f['subscriber_id'] = "DB-9-J"
+        f['subscriber_id'] = "DB-9-E"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
         self.assertIn("removesubscriberform9", self.response.forms)

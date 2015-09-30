@@ -14,16 +14,14 @@ from cdedb.common import (
     glue, EVENT_USER_DATA_FIELDS, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS,
     PERSONA_DATA_FIELDS, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS,
     COURSE_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    LODGEMENT_FIELDS, unwrap)
+    LODGEMENT_FIELDS, unwrap, now)
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 import argparse
 import copy
-import datetime
 import psycopg2.extras
-import pytz
 
 #: This is used for generating the table for general queries for
 #: registrations. We moved this rather huge blob here, so it doesn't
@@ -396,7 +394,7 @@ class EventBackend(AbstractUserBackend):
                 "ON p.event_id = e.id WHERE registration_start IS NOT NULL",
                 "GROUP BY e.id")
             data = self.query_all(rs, query, tuple())
-            today = datetime.datetime.now(pytz.utc).date()
+            today = now().date()
             ret = {e['id']: {"title": e['title'],
                              "use_questionnaire": e["use_questionnaire"],
                              "locked": (e['offline_lock']
@@ -1430,7 +1428,7 @@ class EventBackend(AbstractUserBackend):
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
             event_data = unwrap(self.get_event_data(rs, (event_id,)))
-            if any(datetime.datetime.now(pytz.utc).date() < part['part_end']
+            if any(now().date() < part['part_end']
                    for part in event_data['parts'].values()):
                 return None, "Event not concluded."
             pevent = {k: v for k, v in event_data.items()

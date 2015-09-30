@@ -11,11 +11,9 @@ decorator). Everything is a bit special in here.
 
 from cdedb.database.connection import connection_pool_factory
 from cdedb.backend.common import make_RPCDaemon, run_RPCDaemon
-from cdedb.common import glue, make_root_logger
+from cdedb.common import glue, make_root_logger, now
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
-import datetime
-import pytz
 import psycopg2.extensions
 import argparse
 import logging
@@ -108,10 +106,10 @@ class SessionBackend:
             deactivate = False
             if data["is_active"]:
                 if data["ip"] == ip:
-                    if (data["atime"] + self.conf.SESSION_TIMEOUT
-                            >= datetime.datetime.now(pytz.utc)):
+                    timestamp = now()
+                    if (data["atime"] + self.conf.SESSION_TIMEOUT >= timestamp):
                         if (data["ctime"] + self.conf.SESSION_LIFESPAN
-                                >= datetime.datetime.now(pytz.utc)):
+                                >= timestamp):
                             ## here we finally verified the session key
                             persona_id = data["persona_id"]
                         else:

@@ -10,16 +10,14 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap)
+    unwrap, now)
 import cdedb.database.constants as const
 
 import os
 import os.path
 import logging
 from collections import OrderedDict
-import datetime
 import werkzeug
-import pytz
 import copy
 import re
 import itertools
@@ -51,7 +49,7 @@ class EventFrontend(AbstractUserFrontend):
         if 'sidebar_events' not in params and "event_user" in rs.user.roles:
             params['sidebar_events'] = self.eventproxy.sidebar_events(rs)
         if 'today' not in params:
-            params['today'] = datetime.datetime.now(pytz.utc).date()
+            params['today'] = now().date()
         return super().render(rs, templatename, params=params)
 
     @classmethod
@@ -68,7 +66,7 @@ class EventFrontend(AbstractUserFrontend):
         :param event_data: event dataset as returned by the backend
         :rtype: bool
         """
-        today = datetime.datetime.now(pytz.utc).date()
+        today = now().date()
         return (event_data['registration_start']
                 and event_data['registration_start'] <= today
                 and (event_data['registration_hard_limit'] is None
@@ -565,7 +563,7 @@ class EventFrontend(AbstractUserFrontend):
         if field_id not in data['fields']:
             return werkzeug.exceptions.NotFound("Wrong associated event.")
         field_data = data['fields'][field_id]
-        if 'entries' not in rs.values:
+        if 'entries' not in rs.values and field_data['entries']:
             ## format the entries value
             rs.values['entries'] = "\n".join(";".join(x for x in e)
                                              for e in field_data['entries'])
@@ -1338,9 +1336,8 @@ class EventFrontend(AbstractUserFrontend):
         registration_data = self.eventproxy.get_registration(rs,
                                                              registration_id)
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        today = datetime.datetime.now(pytz.utc).date()
         if (event_data['registration_soft_limit'] and
-                today > event_data['registration_soft_limit']):
+                now().date() > event_data['registration_soft_limit']):
             rs.notify("warning", "Registration closed, no changes possible.")
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(event_data):
@@ -1384,9 +1381,8 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("warning", "Not registered for event.")
             return self.redirect(rs, "event/show_event")
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        today = datetime.datetime.now(pytz.utc).date()
         if (event_data['registration_soft_limit'] and
-                today > event_data['registration_soft_limit']):
+                now().date() > event_data['registration_soft_limit']):
             rs.notify("error", "No changes allowed anymore.")
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(event_data):
@@ -2347,7 +2343,7 @@ class EventFrontend(AbstractUserFrontend):
             ("reg.id", "user_data.given_names", "user_data.family_name",
              "birthday"),
             (("birthday", QueryOperators.greater,
-              deduct_years(datetime.datetime.now(pytz.utc).date(), 18)),),
+              deduct_years(now().date(), 18)),),
             (("user_data.birthday", True), ("reg.id", True)),)
         return self.render(rs, "registration_query", {
             'spec': spec, 'choices': choices, 'queryops': QueryOperators,
@@ -2441,7 +2437,7 @@ class EventFrontend(AbstractUserFrontend):
     def checkin_form(self, rs, event_id):
         """Render form."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        today = datetime.datetime.now(pytz.utc).date()
+        today = now().date()
         for part_id, pdata in event_data['parts'].items():
             if pdata['part_begin'] <= today and pdata['part_end'] >= today:
                 current_part = part_id
@@ -2482,7 +2478,7 @@ class EventFrontend(AbstractUserFrontend):
 
         new_reg = {
             'id': registration_id,
-            'checkin': datetime.datetime.now(pytz.utc),
+            'checkin': now(),
         }
         code = self.eventproxy.set_registration(rs, new_reg)
         self.notify_return_code(rs, code)

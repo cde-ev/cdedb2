@@ -108,6 +108,20 @@ GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
 GRANT UPDATE (queries) ON core.quota TO cdb_member;
 
+-- This table is designed to hold just a single row. Additionally the
+-- keys of the dict stored here, will be runtime configurable.
+--
+-- This is in the core schema to allow anonymous access.
+CREATE TABLE core.cde_meta_info
+(
+        id                      serial PRIMARY KEY,
+	-- variable store for things like names of persons on
+	-- regularily changing posts
+        info			jsonb NOT NULL
+);
+GRANT SELECT ON core.cde_meta_info TO cdb_anonymous;
+GRANT UPDATE ON core.cde_meta_info TO cdb_admin;
+
 CREATE TABLE core.log (
         id                      bigserial PRIMARY KEY,
         ctime                   timestamp WITH TIME ZONE DEFAULT now(),
@@ -280,7 +294,8 @@ CREATE TABLE cde.org_period (
         balance_state           integer REFERENCES core.personas(id),
         balance_done            timestamp WITH TIME ZONE DEFAULT NULL
 );
-GRANT SELECT, INSERT, UPDATE ON cde.org_period TO cdb_admin;
+GRANT SELECT ON cde.org_period TO cdb_persona;
+GRANT INSERT, UPDATE ON cde.org_period TO cdb_admin;
 
 CREATE TABLE cde.expuls_period (
         -- historically this was the same as cde.org_period(id)
@@ -298,10 +313,10 @@ CREATE TABLE cde.lastschrift (
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         -- actual data
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
-        amount                  numeric(7,2),
+        amount                  numeric(7,2) NOT NULL,
         -- upper limit for donations to DSA
-        max_dsa                 numeric(2,2) DEFAULT 0.4,
-        iban                    varchar,
+        max_dsa                 numeric(2,2) DEFAULT 0.4 NOT NULL,
+        iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
         account_address         varchar,
@@ -311,24 +326,27 @@ CREATE TABLE cde.lastschrift (
         notes                   varchar
 );
 CREATE INDEX idx_lastschrift_persona_id ON cde.lastschrift(persona_id);
-GRANT SELECT, UPDATE ON cde.lastschrift TO cdb_member;
-GRANT INSERT ON cde.lastschrift TO cdb_admin;
+GRANT SELECT ON cde.lastschrift TO cdb_member;
+GRANT UPDATE, INSERT ON cde.lastschrift TO cdb_admin;
 GRANT SELECT, UPDATE ON cde.lastschrift_id_seq TO cdb_admin;
 
-CREATE TABLE cde.lastschrift_transaction
+CREATE TABLE cde.lastschrift_transactions
 (
         id                      serial PRIMARY KEY,
         submitted_by            integer REFERENCES core.personas(id) NOT NULL,
         lastschrift_id          integer REFERENCES cde.lastschrift(id) NOT NULL,
         period_id               integer REFERENCES cde.org_period(id) NOT NULL,
+        status                  integer NOT NULL,
+        amount                  numeric(7,2) NOT NULL,
         issued_at               timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         processed_at            timestamp WITH TIME ZONE DEFAULT NULL,
         -- positive for money we got and negative if bounced with fee
         tally                   numeric(7,2) DEFAULT NULL
 );
-CREATE INDEX idx_cde_lastschrift_transaction_lastschrift_id ON cde.lastschrift_transaction(lastschrift_id);
-GRANT SELECT, UPDATE, INSERT ON cde.lastschrift_transaction TO cdb_admin;
-GRANT SELECT, UPDATE ON cde.lastschrift_transaction_id_seq TO cdb_admin;
+CREATE INDEX idx_cde_lastschrift_transactions_lastschrift_id ON cde.lastschrift_transactions(lastschrift_id);
+GRANT SELECT ON cde.lastschrift_transactions TO cdb_member;
+GRANT UPDATE, INSERT ON cde.lastschrift_transactions TO cdb_admin;
+GRANT SELECT, UPDATE ON cde.lastschrift_transactions_id_seq TO cdb_admin;
 
 CREATE TABLE cde.finance_log (
         id                      bigserial PRIMARY KEY,

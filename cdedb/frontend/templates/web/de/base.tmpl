@@ -68,7 +68,7 @@
                         {% if "event_user" in user.roles %}
                             <li {% if mainnav_active == 'event' %}class="active"{% endif %}>
                                 {{ util.href(cdedblink("event/index"), "Veranstaltungen", icon="blackboard") }}
-                                </li>
+                            </li>
                         {% endif %}
                         {% if "ml_user" in user.roles %}
                             <li {% if mainnav_active == 'ml' %}class="active"{% endif %}>

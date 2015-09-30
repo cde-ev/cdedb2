@@ -1,0 +1,171 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title -%}
+   Einzugsermächtigungen ({{ "{} {}".format(persona_data[values['persona_id']]['given_names'],
+                                            persona_data[values['persona_id']]['family_name'])|e }})
+{%- endblock %}
+{% block content %}
+    {% if active_permit %}
+        <h2>Aktive Einzugsermächtigung</h2>
+        {% with lastschrift = lastschrift_data[active_permit] %}
+            <table>
+                <tr>
+                    <td>Betrag</td>
+                    <td>{{ lastschrift['amount']|e }}€</td>
+                </tr>
+                <tr>
+                    <td>Maximaler DSA-Anteil</td>
+                    <td>{{ lastschrift['max_dsa']|e }}</td>
+                </tr>
+                <tr>
+                    <td>IBAN</td>
+                    <td>{{ lastschrift['iban']|e }}</td>
+                </tr>
+                <tr>
+                    <td>Kontoinhaber (falls abweichend)</td>
+                    <td>{{ lastschrift['account_owner']|e }}</td>
+                </tr>
+                <tr>
+                    <td>Anschrift Kontoinhaber</td>
+                    <td>{{ lastschrift['account_address']|e|linebreaks }}</td>
+                </tr>
+                <tr>
+                    <td>Erteilt</td>
+                    <td>{{ lastschrift['granted_at']|datetime|e }}</td>
+                </tr>
+                {% if is_admin %}
+                    <tr>
+                        <td>Erteilt durch</td>
+                        <td>{{ "{} {}".format(persona_data[lastschrift['submitted_by']]['given_names'],
+			                      persona_data[lastschrift['submitted_by']]['family_name'])|e }}</td>
+                    </tr>
+                    <tr>
+                        <td>Notizen</td>
+                        <td>{{ lastschrift['notes']|e|linebreaks }}</td>
+                    </tr>
+                {% endif %}
+            </table>
+        {% endwith %}
+        {{ util.href(cdedblink('cde/lastschrift_change_form', {'lastschrift_id': active_permit}), "Bearbeiten") }}
+        {% if is_admin %}
+            <form action="{{ cdedblink('cde/lastschrift_revoke', {'lastschrift_id': active_permit})|e }}" method="POST"
+              id="revokeform">
+                <div>
+                    {{ util.input_submit(value="Ermächtigung widerrufen") }}
+                </div>
+            </form>
+            {% if active_open %}
+                <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
+                  id="generatetransactionform">
+                    <div>
+                        {{ util.input_submit(value="Einzeldatei generieren") }}
+                        {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
+                    </div>
+                </form>
+                <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit})|e }}"
+                  method="POST" id="skiptransactionform">
+                    <div>
+                        {{ util.input_submit(value="Pausieren") }}
+                        {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
+                    </div>
+                </form>
+            {% endif %}
+        {% endif %}
+    {% else %}
+        Keine aktive Einzugsermächtigung -- {{ util.href(cdedblink('cde/lastschrift_create_form'), "Erstellen") }}
+    {% endif %}
+
+    {% if transaction_data %}
+        <h2>Getätigte Lastschriften</h2>
+        <table>
+            <tr>
+                <th>Erstellt</th>
+                <th>Finalisiert</th>
+                <th>Semester</th>
+                <th>Status</th>
+                <th>Betrag</th>
+                <th>Buchung</th>
+                <th>Ersteller</th>
+                <th>
+                    {% if is_admin %}
+                        Aktionen
+                    {% endif %}
+                </th>
+            </tr>
+            {% for transaction_id, transaction in transaction_data|xdictsort('issued_at')|reverse %}
+                <tr>
+                    <td>{{ transaction['issued_at']|datetime|e }}</td>
+                    <td>{{ transaction['processed_at']|datetime|e }}</td>
+                    <td>{{ transaction['period_id']|e }}</td>
+                    <td>{{ transaction['status']|enum(const.LastschriftTransactionStati)|e }}</td>
+                    <td>{{ transaction['amount']|e }}€</td>
+                    <td>{{ transaction['tally']|e }}€</td>
+                    <td>{{ "{} {}".format(persona_data[transaction['submitted_by']]['given_names'],
+			                  persona_data[transaction['submitted_by']]['family_name'])|e }}</td>
+                    <td>
+                        {% if transaction['status'] == const.LastschriftTransactionStati.issued %}
+			    {% if is_admin %}
+				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
+							   {'lastschrift_id': transaction['lastschrift_id'],
+                                                            'transaction_id': transaction_id})|e }}"
+				  method="POST" id="transactionsuccessform{{ transaction_id|e }}">
+				    <div>
+					{{ util.input_submit(value="Erfolg!") }}
+					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
+                                        {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
+					{{ util.input_hidden(name="status",
+							     value=const.LastschriftTransactionStati.success.value) }}
+				    </div>
+				</form>
+				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
+							   {'lastschrift_id': transaction['lastschrift_id'],
+                                                            'transaction_id': transaction_id})|e }}"
+				  method="POST" id="transactioncancelform{{ transaction_id|e }}">
+				    <div>
+					{{ util.input_submit(value="Abbruch") }}
+					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
+                                        {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
+					{{ util.input_hidden(name="status",
+							     value=const.LastschriftTransactionStati.cancelled.value) }}
+				    </div>
+				</form>
+				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
+							   {'lastschrift_id': transaction['lastschrift_id'],
+                                                            'transaction_id': transaction_id})|e }}"
+				  method="POST" id="transactionfailureform{{ transaction_id|e }}">
+				    <div>
+					{{ util.input_submit(value="Geplatzt!") }}
+					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
+                                        {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
+					{{ util.input_hidden(name="status",
+							     value=const.LastschriftTransactionStati.failure.value) }}
+				    </div>
+				</form>
+			    {% endif %}
+                        {% elif transaction['status'] == const.LastschriftTransactionStati.success %}
+			    {% if is_admin %}
+                                <form action="{{ cdedblink('cde/lastschrift_receipt',
+                                                           {'lastschrift_id': transaction['lastschrift_id'],
+                                                            'transaction_id': transaction_id})|e }}"
+                                  method="GET" id="receiptform{{ transaction_id|e }}">
+                                    <div>
+                                        {{ util.input_submit(value="Spendenbescheinigung") }}
+                                    </div>
+                                </form>
+				<form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
+							   {'lastschrift_id': transaction['lastschrift_id'],
+                                                            'transaction_id': transaction_id})|e }}"
+				  method="POST" id="transactionrollbackform{{ transaction_id|e }}">
+				    <div>
+					{{ util.input_submit(value="Rückbuchung") }}
+                                        {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
+				    </div>
+				</form>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+{% endblock %}

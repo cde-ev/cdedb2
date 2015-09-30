@@ -1,0 +1,96 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Übersicht Einzugsermächtigungen{% endblock %}
+{% block content %}
+    <h2>Offene Einzugsermächtigungen</h2>
+    <p>
+        Im Laufe dieses Semesters -- und dabei möglichst früh, aber erst nach der Zahlungsinformation -- sind noch
+        folgende Lastschriften auszuführen. Dazu eine dtx-Datei generieren und in die Online-Banking-Software
+        importieren.
+    </p>
+    <ul>
+        {% for lastschrift_id, lastschrift in lastschrift_data|dictsort %}
+            {% if lastschrift['open'] %}
+               <li>
+                    {{ util.persona_anchor(persona_data[lastschrift['persona_id']]) }}
+                    ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
+                                  "Ermächtigung") }})
+                    <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
+                      id="generatetransactionform{{ lastschrift_id|e }}">
+                        <div>
+                            {{ util.input_submit(value="Einzeldatei generieren") }}
+                            {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
+                        </div>
+                    </form>
+                    <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id})|e }}"
+                      method="POST" id="skiptransactionform{{ lastschrift_id|e }}">
+                        <div>
+                            {{ util.input_submit(value="Pausieren") }}
+                            {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
+                        </div>
+                    </form>
+               </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
+      id="generatetransactionsform">
+        <div>
+            {{ util.input_submit(value="SEPA-Datei generieren") }}
+        </div>
+    </form>
+    <h2>Offene Einzüge</h2>
+    <p>
+        Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald diese ausgeführt wurden, bitte hier eintragen, ob
+        diese erfolgreich ausgeführt wurden, gar nicht ausgeführt wurden oder geplatzt sind. Im letzteren Falle wird die
+        Ermächtigung als Widerrufen angesehen.
+    </p>
+    <ul>
+        {% for transaction_id, transaction in transaction_data|xdictsort('issued_at')|reverse %}
+           <li>
+                {{ util.persona_anchor(persona_data[lastschrift_data[transaction['lastschrift_id']]['persona_id']]) }}
+                (am {{ transaction['issued_at']|datetime|e }}, Betrag {{ transaction['amount']|e }}€)
+                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
+                                           {'lastschrift_id': transaction['lastschrift_id'], 
+                                            'transaction_id': transaction_id})|e }}" method="POST"
+                  id="transactionsuccessform{{ transaction_id|e }}">
+                    <div>
+                        {{ util.input_submit(value="Erfolg!") }}
+                        {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
+                        {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.success.value) }}
+                    </div>
+                </form>
+                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
+                                           {'lastschrift_id': transaction['lastschrift_id'], 
+                                            'transaction_id': transaction_id})|e }}" method="POST"
+                  id="transactioncancelform{{ transaction_id|e }}">
+                    <div>
+                        {{ util.input_submit(value="Abbruch") }}
+                        {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
+                        {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.cancelled.value) }}
+                    </div>
+                </form>
+                <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
+                                           {'lastschrift_id': transaction['lastschrift_id'], 
+                                            'transaction_id': transaction_id})|e }}" method="POST"
+                  id="transactionfailureform{{ transaction_id|e }}">
+                    <div>
+                        {{ util.input_submit(value="Geplatzt!") }}
+                        {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
+                        {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.failure.value) }}
+                    </div>
+                </form>
+           </li>
+        {% endfor %}
+    </ul>
+    <h2>Alle aktiven Einzugsermächtigungen</h2>
+    <ul>
+        {% for lastschrift_id, lastschrift in lastschrift_data|dictsort %}
+           <li>
+                {{ util.persona_anchor(persona_data[lastschrift['persona_id']]) }}
+                ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
+                              "Ermächtigung") }})
+           </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

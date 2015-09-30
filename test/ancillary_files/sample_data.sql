@@ -1,4 +1,10 @@
 --
+-- fix some serials (otherwise the test suite gets messed up)
+--
+ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
+ALTER SEQUENCE cde.lastschrift_transactions_id_seq RESTART WITH 1;
+
+--
 -- personas
 --
 INSERT INTO core.personas (id, username, display_name, given_names, family_name, is_active, status, db_privileges, cloud_account, notes, password_hash) VALUES
@@ -34,21 +40,35 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (1, NULL, now(), 1, 'Init.', 1, 6, 'ferdinand@example.cde', 'Ferdinand', True, 0, 254, True, 'Findus', 'Ferdinand F.', NULL, NULL, 1, date '1988-01-01', NULL, NULL, NULL, 'Am Rathaus 1', '64358', 'Burokratia', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 22.2, True, False, False),
     (1, NULL, now(), 1, 'Init.', 1, 7, 'garcia@example.cde', 'Garcia', True, 1, 0, True, 'Generalis', 'Garcia G.', NULL, NULL, 0, date '1978-12-12', NULL, NULL, NULL, 'Bei der Wüste 39', '8888', 'Weltstadt', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3.3, False, False, False),
     (1, NULL, now(), 1, 'Init.', 1, 9, 'inga@example.cde', 'Inga', True, 1, 0, True, 'Iota', 'Inga', NULL, NULL, 0, date '2222-01-01', NULL, NULL, NULL, 'Zwergstraße 1', '1111', 'Liliput', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5, True, True, True);
+INSERT INTO core.cde_meta_info (info) VALUES
+    ('{"Finanzvorstand_Vorname": "Bertålotta",
+       "Finanzvorstand_Name": "Bertålotta Beispiel",
+       "Finanzvorstand_Adresse_Einzeiler": "Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia",
+       "Finanzvorstand_Adresse_Zeile2": "bei Spielmanns",
+       "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
+       "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
+       "Finanzvorstand_Ort": "Utopia"}'::jsonb);
 
 --
 -- cde
 --
 INSERT INTO cde.org_period (id, billing_state, billing_done, ejection_state, ejection_done, balance_state, balance_done) VALUES
+    (41, NULL, timestamp with time zone '2000-01-11 11:11:11.111111+01', NULL, timestamp with time zone '2000-01-12 11:11:11.111111+01', NULL, timestamp with time zone '2000-01-13 11:11:11.111111+01'),
     (42, NULL, now(), NULL, now(), NULL, now()),
     (43, NULL, NULL, NULL, NULL, NULL, NULL);
 INSERT INTO cde.expuls_period (id, addresscheck_state, addresscheck_done) VALUES
+    (41, NULL, now()),
     (42, NULL, now()),
     (43, NULL, NULL);
 INSERT INTO cde.lastschrift (id, submitted_by, persona_id, amount, max_dsa, iban, account_owner, account_address, granted_at, revoked_at, notes) VALUES
-    (1, 1, 2, 42.23, 0.4, 'DE12500105170648489890', 'Dagobert Anatidae', 'Im Geldspeicher 1', timestamp with time zone '2002-02-22 22:22:22.222222+02', NULL, 'reicher Onkel');
-INSERT INTO cde.lastschrift_transaction (submitted_by, lastschrift_id, period_id, issued_at, processed_at, tally) VALUES
-    (1, 1, 42, timestamp with time zone '2012-02-22 00:00:00+02', timestamp with time zone '2002-02-22 22:22:22.222222+02', 42.23);
+    (1, 1, 2, 32.00, 0.4, 'DE26370205000008068900', NULL, NULL, timestamp with time zone '2000-02-22 22:22:22.222222+02', timestamp with time zone '2001-02-22 22:22:22.222222+02', NULL),
+    (2, 1, 2, 42.23, 0.4, 'DE12500105170648489890', 'Dagobert Anatidae', 'Im Geldspeicher 1', timestamp with time zone '2002-02-22 22:22:22.222222+02', NULL, 'reicher Onkel');
+INSERT INTO cde.lastschrift_transactions (submitted_by, lastschrift_id, period_id, status, amount, issued_at, processed_at, tally) VALUES
+    (1, 1, 41, 12, 32.00, timestamp with time zone '2000-03-22 00:00:00+02', timestamp with time zone '2012-03-22 22:22:22.222222+02', 0.00),
+    (1, 1, 41, 11, 32.00, timestamp with time zone '2000-03-23 00:00:00+02', timestamp with time zone '2012-03-23 22:22:22.222222+02', -4.50),
+    (1, 2, 41, 10, 42.23, timestamp with time zone '2012-02-22 00:00:00+02', timestamp with time zone '2012-02-22 22:22:22.222222+02', 42.23);
 INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance, additional_info, members, total) VALUES
+    (32, 1, 2, NULL, NULL, '-4.50€', 7, 106.5),
     (31, 1, 2, 5.0, 12.5, '42.23€', 7, 111.5);
 
 --
@@ -297,11 +317,11 @@ INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES
     (10, 7);
 
 --
--- fix serials (we want to have total control over some ids so we reference
--- the correct things)
+-- fix serials (we gave explicit ids since want to have total control over
+-- them so we reference the correct things in the test suite)
 --
 SELECT setval('core.personas_id_seq', 12);
-SELECT setval('cde.lastschrift_id_seq', 1);
+SELECT setval('cde.lastschrift_id_seq', 2);
 SELECT setval('past_event.events_id_seq', 1);
 SELECT setval('past_event.courses_id_seq', 1);
 SELECT setval('event.events_id_seq', 1);
@@ -314,7 +334,3 @@ SELECT setval('ml.mailinglists_id_seq', 10);
 SELECT setval('assembly.assemblies_id_seq', 1);
 SELECT setval('assembly.ballots_id_seq', 5);
 SELECT setval('assembly.candidates_id_seq', 27);
---
--- fix more serials (otherwise the test suite gets messed up)
---
-SELECT setval('assembly.attachments_id_seq', 1);
