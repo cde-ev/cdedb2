@@ -92,6 +92,8 @@
                     {% endblock %}
                 </div>
                 <div class="col-md-9">
+                    {% block breadcrumb %}
+                    {% endblock %}
                     {% block heading %}
                         <h1>{{ self.title() }}</h1>
                     {% endblock %}

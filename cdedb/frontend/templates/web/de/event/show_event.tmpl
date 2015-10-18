@@ -2,6 +2,12 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ event_data['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
 {% block content %}
     {% if event_data['id'] in user.orga or is_admin %}
         {{ util.href(cdedblink('event/event_config'), "Konfiguration") }}
