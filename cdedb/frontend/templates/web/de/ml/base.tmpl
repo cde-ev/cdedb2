@@ -22,13 +22,13 @@
 
 {% block navigation %}
     <h2>Navigation</h2>
-    {% if values.get('mailinglist_id') %}
+    {% if ambience['mailinglist'] %}
         <p>
             {{ util.href(cdedblink("ml/index"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
         </p>
         
-        <h4><span class="glyphicon glyphicon-envelope"></span> {{ mailinglist_data['title'] }}</h4>
-        {{ ml_inner_navigation(mailinglist_data) }}
+        <h4><span class="glyphicon glyphicon-envelope"></span> {{ ambience['mailinglist']['title'] }}</h4>
+        {{ ml_inner_navigation(ambience['mailinglist']) }}
     {% else %}
         <div class="list-group">
             {{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten-Übersicht",

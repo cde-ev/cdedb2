@@ -27,14 +27,14 @@
 {% endmacro %}
 
 {% block navigation %}
-    {% if values.get('assembly_id') and assembly_data %}
+    {% if ambience['assembly'] %}
         <h2>Navigation</h2>
         <p>
             {{ util.href(cdedblink("assembly/index"), "Zur Versammlungs-Übersicht", icon="circle-arrow-up") }}
         </p>
         
-        <h4><span class="glyphicon glyphicon-stats"></span> {{ assembly_data['title'] }}</h4>
-        {{ assembly_inner_navigation(assembly_data) }}
+        <h4><span class="glyphicon glyphicon-stats"></span> {{ ambience['assembly']['title'] }}</h4>
+        {{ assembly_inner_navigation(ambience['assembly']) }}
     {% else %}
         {% if is_admin %}
             <h2>Navigation</h2>
