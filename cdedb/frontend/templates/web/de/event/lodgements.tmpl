@@ -23,7 +23,7 @@
         </ul>
     {% endif %}
     <h2>Neue Unterkunft anlegen</h2>
-    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", disabled=locked) }}
+    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", readonly=locked) }}
     <h2>Alle Unterkünfte</h2>
     <table class="checkeredTable">
         <tr>
