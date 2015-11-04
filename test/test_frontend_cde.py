@@ -59,7 +59,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("Zelda", self.response)
         self.assertTitle("Administration -- Bertålotta Beispiel bearbeiten")
-        self.assertIn("errorInput", self.response)
+        self.assertIn("alert alert-error", self.response)
 
     def test_changelog(self):
         user = USER_DICT["berta"]

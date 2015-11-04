@@ -301,7 +301,7 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate()
         if method == "POST" and check_notification:
             ## check that we acknowledged the POST with a notification
-            self.assertIn("successNotification", self.response.text)
+            self.assertIn("alert alert-success", self.response.text)
 
     def traverse(self, *links):
         for link in links:
