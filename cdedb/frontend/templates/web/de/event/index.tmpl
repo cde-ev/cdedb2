@@ -2,4 +2,14 @@
 {% block title %}Veranstaltungen{% endblock %}
 {% block content %}
     Hier findest Du Akademien und andere Veranstaltungen.
+
+    FIXME Liste der sidebarevents FIXME
+    <ul>
+        {% for event_id, entry in sidebar_events|dictsort|reverse %}
+            <li>
+                {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
+            </li>
+        {% endfor %}
+    </ul>
+    
 {% endblock %}

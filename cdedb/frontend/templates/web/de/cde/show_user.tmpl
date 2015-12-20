@@ -11,7 +11,6 @@
                 <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild" class="profilepic img-thumbnail">
             {% endif %}
         </p>
-    
         {% if data['id'] == user.persona_id or is_admin %}
             <div class="panel panel-default">
                 <div class="panel-heading">Aktionen</div>
@@ -20,6 +19,9 @@
                         {{ util.href(cdedblink('cde/admin_change_user_form'), "Bearbeiten") }}
                     {% else %}
                         {{ util.href(cdedblink('cde/change_user_form'), "Bearbeiten") }}
+                    {% endif %}
+                    {% if data['id'] == user.persona_id %}
+                        {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}
                     {% endif %}
                     {{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern") }}
                     {{ util.href(cdedblink('cde/lastschrift_show'), "Einzugsermächtigung") }}

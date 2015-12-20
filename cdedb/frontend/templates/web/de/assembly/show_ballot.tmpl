@@ -81,7 +81,7 @@
                                 {{ myentries.append((cdata['moniker'], cdata['description'], None))|e }}
                             {% endif %}
                         {% endfor %}
-                        {{ util.input_radio("vote", title="Kandidaten", entries=myentries) }}
+                        {{ util.input_radio("vote", label="Kandidaten", entries=myentries) }}
                     {% else %}
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}

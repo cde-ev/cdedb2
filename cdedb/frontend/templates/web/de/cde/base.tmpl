@@ -22,6 +22,8 @@
             {{ util.href(cdedblink("cde/create_user_form"), "Neues Mitglied anlegen") }}
             {{ util.href(cdedblink("cde/list_pending_changes"), "Änderungen prüfen", aclass="list-group-item",
                     icon="check") }}
+            {# FIXME #}
+            {{ util.href(cdedblink("cde/meta_info_form"), "Vereins-Metadaten") }}
             {{ util.href(cdedblink("cde/lastschrift_index"), "Einzugserächtigungen", aclass="list-group-item",
                     icon="euro", active=(sidenav_active=='cde_consent_form')) }}
             {{ util.href(cdedblink("cde/archived_user_search_form"), "Archivsuche", aclass="list-group-item",

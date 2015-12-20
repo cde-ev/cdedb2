@@ -43,7 +43,7 @@
                     {% if user.is_persona %}
                         <ul class="nav navbar-nav navbar-right">
                             <li>
-                                {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
+                                <span id="displayname">{{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}</span>
                             </li>
                             <li>
                                 <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform" class="navbar-form">

@@ -7,7 +7,7 @@
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
                     readonly=data['locked'], aclass="list-group-item", icon="triangle-right",
                     active=(sidenav_active == 'event_show')) }}
-        {% if not data['registration_id'] %}
+        {% if not sidebar_events or not sidebar_events[data['id']] or not sidebar_events[data['id']]['registration_id'] %}
             {{ util.href(cdedblink("event/register_form", {"event_id": data['id']}), "Anmelden",
                     readonly=data['locked'], aclass="list-group-item", icon="log-in",
                     active=(sidenav_active == 'event_register')) }}
