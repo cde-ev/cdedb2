@@ -20,13 +20,13 @@ class TestCoreFrontend(FrontendTest):
                 self.submit(f, check_notification=False)
                 self.assertEqual(
                     user['display_name'],
-                    self.response.lxml.get_element_by_id('displayname').text_content())
+                    self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
     @as_users("anton", "berta", "emilia")
     def test_logout(self, user):
         self.assertEqual(
             user['display_name'],
-            self.response.lxml.get_element_by_id('displayname').text_content())
+            self.response.lxml.get_element_by_id('displayname').text_content().strip())
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
         self.assertNotIn(user['display_name'], self.response)
@@ -50,6 +50,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
+        self.traverse({'href': '/core/self/show'})
         self.traverse({'href': '/core/self/password/change'})
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
@@ -218,6 +219,6 @@ class TestCoreFrontend(FrontendTest):
 
         ## Now check it
         self.login(USER_DICT['anton'])
-        self.traverse({'description': '^Start$'},
+        self.traverse({'description': 'Start', 'href': '^/d?b?/?$'},
                       {'href': '/core/log'})
         self.assertTitle("\nAccounts -- Logs (0--2)\n")

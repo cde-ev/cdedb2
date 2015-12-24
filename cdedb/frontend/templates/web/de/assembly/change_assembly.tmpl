@@ -1,15 +1,15 @@
+{% set sidenav_active='assembly_config' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block inner_navigation %}{{assembly_inner_navigation(data)}}{% endblock %}
 {% block title %}{{ values['title']|e }} bearbeiten{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("assembly/show_assembly"), "Abbrechen") }}
     <form action="{{ cdedblink('assembly/change_assembly')|e }}" method="POST" id="changeassemblyform">
         <table>
-            {{ util.tab_input_text(name="title", label="Titel") }}
-            {{ util.tab_input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
-            {{ util.tab_input_text(name="signup_end", label="Anmeldeschluss") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+            {{ util.input_text(name="signup_end", label="Anmeldeschluss") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}

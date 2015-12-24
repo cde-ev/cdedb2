@@ -1,81 +1,99 @@
+{% set mainnav_active='event' %}
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 
-{% macro one_event_links(event_id, event_entry) %}
-{# Uninlined code to generate links for the current relevant event. #}
-    <ul>
-        {% if not event_entry['registration_id'] %}
-            <li>
-                {{ util.href(cdedblink("event/register_form", {"event_id": event_id}), "Anmelden",
-                             disabled=event_entry['locked']) }}
-            </li>
+{% macro one_event_links(data) %}
+    <div class="list-group">
+        {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
+                    readonly=data['locked'], aclass="list-group-item", icon="triangle-right",
+                    active=(sidenav_active == 'event_show')) }}
+        {% if not sidebar_events or not sidebar_events[data['id']] or not sidebar_events[data['id']]['registration_id'] %}
+            {{ util.href(cdedblink("event/register_form", {"event_id": data['id']}), "Anmelden",
+                    readonly=data['locked'], aclass="list-group-item", icon="log-in",
+                    active=(sidenav_active == 'event_register')) }}
         {% else %}
-            <li>
-                {{ util.href(cdedblink("event/registration_status", {"event_id": event_id}), "Meine Anmeldung") }}
-            </li>
-            {% if event_entry['use_questionnaire'] %}
-                <li>{{ util.href(cdedblink("event/questionnaire_form", {"event_id": event_id}), "Fragebogen") }}</li>
+            {{ util.href(cdedblink("event/registration_status", {"event_id": data['id']}), "Meine Anmeldung",
+                    aclass="list-group-item", icon="log-in", active=(sidenav_active == 'event_register')) }}
+            {% if data['use_questionnaire'] %}
+                {{ util.href(cdedblink("event/questionnaire_form", {"event_id": data['id']}), "Fragebogen",
+                        aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest')) }}
             {% endif %}
         {% endif %}
-        {% if event_id in user.orga or is_admin %}
-            <li>{{ util.href(cdedblink("event/summary", {"event_id": event_id}), "Übersicht") }}</li>
-            <li>{{ util.href(cdedblink("event/event_config", {"event_id": event_id}), "Konfiguration") }}</li>
-            <li>{{ util.href(cdedblink("event/view_event_log", {"event_id": event_id}), "Log") }}</li>
-            <li>{{ util.href(cdedblink("event/registration_query", {"event_id": event_id}), "Anmeldungen") }}</li>
-            <li>
-                {{ util.href(cdedblink("event/add_registration_form", {"event_id": event_id}), "Neuer Teilnehmer",
-                             disabled=event_entry['locked']) }}
-            </li>
-            <li>{{ util.href(cdedblink("event/lodgements", {"event_id": event_id}), "Unterkunft") }}</li>
-            <li>
-                {{ util.href(cdedblink("event/field_set_select", {"event_id": event_id}), "Datenfeld setzen",
-                             disabled=event_entry['locked']) }}
-            </li>
-            <li>{{ util.href(cdedblink("event/course_choices", {"event_id": event_id}), "Kurswahlen") }}</li>
-            <li>{{ util.href(cdedblink("event/downloads", {"event_id": event_id}), "Downloads") }}</li>
-            <li>
-                {{ util.href(cdedblink("event/checkin_form", {"event_id": event_id}), "Checkin",
-                             disabled=event_entry['locked']) }}
-            </li>
-        {% endif %}
-    </ul>
+    </div>
+    
+    {% if data['id'] in user.orga or is_admin %}
+        <div class="list-group">
+            {{ util.href(cdedblink("event/event_config", {"event_id": data['id']}), "Konfiguration",
+                    aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_config')) }}
+            {{ util.href(cdedblink("event/registration_query", {"event_id": data['id']}), "Anmeldungen",
+                    aclass="list-group-item", icon="list", active=(sidenav_active == 'event_registration')) }}
+            {{ util.href(cdedblink("event/summary", {"event_id": data['id']}), "Teilnehmer-Übersicht",
+                    aclass="list-group-item", icon="stats", active=(sidenav_active == 'event_summary')) }}
+            
+            {# FIXME #}
+            {{ util.href(cdedblink("event/add_registration_form", {"event_id": data['id']}), "Neuer Teilnehmer",
+                     readonly=data['locked']) }}
+            
+            {{ util.href(cdedblink("event/lodgements", {"event_id": data['id']}), "Unterkunft", aclass="list-group-item",
+                    icon="home", active=(sidenav_active == 'event_lodgements')) }}
+            
+            {# FIXME #}
+            {{ util.href(cdedblink("event/field_set_select", {"event_id": data['id']}), "Datenfeld setzen",
+                     readonly=data['locked']) }}
+            
+            {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), "Kurswahlen",
+                    aclass="list-group-item", icon="briefcase", active=(sidenav_active == 'event_lodgements')) }}
+            {{ util.href(cdedblink("event/downloads", {"event_id": data['id']}), "Downloads", aclass="list-group-item",
+                    icon="download", active=(sidenav_active == 'event_downloads')) }}
+            
+            {{ util.href(cdedblink("event/view_event_log", {"event_id": data['id']}), "Log", aclass="list-group-item",
+                    icon="list-alt", active=(sidenav_active == 'event_event_log')) }}
+        </div>
+            
+        <div class="list-group">
+            {{ util.href(cdedblink("event/checkin_form", {"event_id": data['id']}), "Checkin",
+                    readonly=data['locked'], aclass="list-group-item", icon="check",
+                    active=(sidenav_active == 'event_checkin')) }}
+        </div>
+    {% endif %}
 {% endmacro %}
 
-{% macro event_navigation_gen(unfold=False) %}
-    <ul>
+{% block navigation %}
+    <h2>Navigation</h2>
+    {% if ambience['event'] %}
+        <p>
+            {{ util.href(cdedblink("event/index"), "Zur Veranstaltungs-Übersicht", icon="circle-arrow-up") }}
+        </p>
+        
+        <h4><span class="glyphicon glyphicon-blackboard"></span> {{ ambience['event']['title'] }}</h4>
+        {{ one_event_links(ambience['event']) }}    
+    {% else %}
         {% if is_admin %}
-            <li>{{ util.href(cdedblink("event/create_user_form"), "Neuen Nutzer anlegen") }}</li>
-            <li>{{ util.href(cdedblink("event/user_search_form"), "Nutzersuche") }}</li>
-            <li>{{ util.href(cdedblink("event/view_log"), "Log") }}</li>
-            <li>{{ util.href(cdedblink("event/list_events"), "alle DB-Veranstaltungen") }}</li>
-            <li>{{ util.href(cdedblink("event/create_event_form"), "DB-Veranstaltung anlegen") }}</li>
+            <div class="list-group">
+                {{ util.href(cdedblink("event/list_events"), "DB-Veranstaltungen verwalten", aclass="list-group-item",
+                        icon="cog", active=(sidenav_active == 'event_list')) }}
+                {# FIXME #}
+                {{ util.href(cdedblink("event/create_event_form"), "DB-Veranstaltung anlegen") }}
+                {{ util.href(cdedblink("event/user_search_form"), "Verantstaltungs-Nutzer verwalten",
+                        aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
+                {# FIXME #}
+                {{ util.href(cdedblink("event/create_user_form"), "Neuen Nutzer anlegen") }}
+                {{ util.href(cdedblink("event/view_log"), "Log", aclass="list-group-item", icon="list-alt",
+                        active=(sidenav_active == 'event_log')) }}
+            </div>
         {% endif %}
-        <li>
-            aktuelle Veranstaltungen
-            <ul>
-                {% for anid, entry in sidebar_events|dictsort|reverse %}
-                    <li>
-                        {{ util.href(cdedblink("event/show_event", {"event_id": anid}), entry['title']) }}
-                        {% if unfold and anid == values.get('event_id') %}
-                            {{ one_event_links(anid, entry) }}
-                        {% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
-        </li>
+        
         {% if is_admin %}
-            <li>
-                abgeschlossene Veranstaltungen
-                <ul>
-                    <li>{{ util.href(cdedblink("event/list_past_events"), "alle abg. Veranstaltungen") }}</li>
-                    <li>
-                        {{ util.href(cdedblink("event/create_past_event_form"), "abg. Veranstaltung anlegen") }}
-                    </li>
-                    <li>{{ util.href(cdedblink("event/view_past_log"), "Log") }}</li>
-                </ul>
-            </li>
+            <h4>abgeschlossene Veranstaltungen</h4>
+            <div class="list-group">
+                {{ util.href(cdedblink("event/list_past_events"), "Abg. Veranstaltungen verwalten", icon="cog",
+                        aclass="list-group-item") }}
+                
+                {# FIXME #}
+                {{ util.href(cdedblink("event/create_past_event_form"), "abg. Veranstaltung anlegen") }}
+                
+                {{ util.href(cdedblink("event/view_past_log"), "Log", icon="list-alt", aclass="list-group-item") }}
+            </div>
         {% endif %}
-    </ul>
-{% endmacro %}
-
-{% block event_navigation %}{{ event_navigation_gen() }}{% endblock %}
+    {% endif %}
+{% endblock %}

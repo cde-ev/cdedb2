@@ -3,11 +3,9 @@
 {% block title %}Allgemeine Vereinsmetainformationen{% endblock %}
 {% block content %}
     <form action="{{ cdedblink('cde/change_meta_info')|e }}" method="POST" id="changeinfoform">
-        <table>
-	    {% for key in keys %}
-                {{ util.tab_input_text(name=key, label=key) }}
-	    {% endfor %}
-        </table>
+        {% for key in keys %}
+            {{ util.input_text(name=key, label=key) }}
+        {% endfor %}
         <div>
             {{ util.input_submit(value="Ändern") }}
         </div>

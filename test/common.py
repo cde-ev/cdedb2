@@ -265,7 +265,7 @@ class FrontendTest(unittest.TestCase):
         if self.response.content_type == "text/html":
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
-            self.assertNotEqual('Fehler', texts[0])
+            self.assertNotEqual('CdEDB – Fehler', texts[0])
         self.log_generation_time()
 
     def log_generation_time(self, response=None):
@@ -301,7 +301,7 @@ class FrontendTest(unittest.TestCase):
         self.basic_validate()
         if method == "POST" and check_notification:
             ## check that we acknowledged the POST with a notification
-            self.assertIn("successNotification", self.response.text)
+            self.assertIn("alert alert-success", self.response.text)
 
     def traverse(self, *links):
         for link in links:
@@ -323,7 +323,7 @@ class FrontendTest(unittest.TestCase):
         self.submit(f, check_notification=False)
 
     def fetch_mail(self):
-        elements = self.response.lxml.xpath("//div[@class='notification infoNotification']/span/text()")
+        elements = self.response.lxml.xpath("//div[@class='alert alert-info']/span/text()")
         mails = [x[30:] for x in elements if x.startswith("Stored email to hard drive at ")]
         ret = []
         for path in mails:

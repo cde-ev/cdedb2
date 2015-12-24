@@ -2,124 +2,131 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
-    {% if data['id'] == user.persona_id or is_admin %}
+
+    <div class="pull-right-responsive">
         <p>
-            {% if is_admin %}
-                {{ util.href(cdedblink('cde/admin_change_user_form'), "Bearbeiten") }}
+            {% if foto %}
+                <img src="{{ cdedblink('cde/get_foto', {'foto': foto})|e }}" alt="Profilbild" class="profilepic img-thumbnail">
             {% else %}
-                {{ util.href(cdedblink('cde/change_user_form'), "Bearbeiten") }}
+                <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild" class="profilepic img-thumbnail">
             {% endif %}
-            {{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern") }}
-            {{ util.href(cdedblink('cde/lastschrift_show'), "Einzugsermächtigung") }}
         </p>
-    {% endif %}
-    {% if foto %}
-       <img src="{{ cdedblink('cde/get_foto', {'foto': foto})|e }}" alt="Profilbild" class="profilepic">
-    {% else %}
-       <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild" class="profilepic">
-    {% endif %}
-    <table>
-        <tr> <th colspan="2">Person</th> </tr>
-        <tr>
-            <td>Name</td>
-            <td>{{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }}
-              {{ data['name_supplement']|e }}</td>
-        </tr>
-        <tr>
-            <td>Rufname</td>
-            <td>{{ data['display_name']|e }}</td>
-        </tr>
-        <tr>
-            <td>Geburtsname</td>
-            <td>{{ data['birth_name']|e }}</td>
-        </tr>
-        <tr>
-            <td>Geburtstag</td>
-            <td>{{ data['birthday']|date|e }}</td>
-        </tr>
-        <tr>
-            <td>Geschlecht</td>
-            <td>{{ data['gender']|gender|e }}</td>
-        </tr>
-        <tr>
-            <td>Fachgebiet</td>
-            <td>{{ data['specialisation']|e|linebreaks }}</td>
-        </tr>
-        <tr>
-            <td>Schule, Uni, ...</td>
-            <td>{{ data['affiliation']|e|linebreaks }}</td>
-        </tr>
-        <tr>
-            <td>Jahrgang, Matrikel, ...</td>
-            <td>{{ data['timeline']|e|linebreaks }}</td>
-        </tr>
-        <tr>
-            <td>Interessen</td>
-            <td>{{ data['interests']|e|linebreaks }}</td>
-        </tr>
-        <tr>
-            <td>Sonstiges</td>
-            <td>{{ data['free_form']|e|linebreaks }}</td>
-        </tr>
-            <tr> <th colspan="2">Kontakt</th> </tr>
-        <tr>
-            <td>Email</td>
-            <td>
+        {% if data['id'] == user.persona_id or is_admin %}
+            <div class="panel panel-default">
+                <div class="panel-heading">Aktionen</div>
+                <div class="panel-body">
+                    {% if is_admin %}
+                        {{ util.href(cdedblink('cde/admin_change_user_form'), "Bearbeiten") }}
+                    {% else %}
+                        {{ util.href(cdedblink('cde/change_user_form'), "Bearbeiten") }}
+                    {% endif %}
+                    {% if data['id'] == user.persona_id %}
+                        {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}
+                    {% endif %}
+                    {{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern") }}
+                    {{ util.href(cdedblink('cde/lastschrift_show'), "Einzugsermächtigung") }}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div class="float-along">
+        {% if not data['is_active'] %}
+            <p class="text-danger">
+                Der Benutzer ist deaktiviert.
+            </p>
+        {% endif %}
+    
+        <h4 class="heading-underline">Person</h4>
+        <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd>
+                {{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }}{{ data['name_supplement']|e }}
+            </dd>
+            {% if data['display_name'] %}
+                <dt>Rufname</dt>
+                <dd>{{ data['display_name']|e }}</dd>
+            {% endif %}
+            {% if data['birth_name'] %}
+                <dt>Geburtsname</dt>
+                <dd>{{ data['birth_name']|e }}</dd>
+            {% endif %}
+            <dt>Geburtstag</dt>
+            <dd>{{ data['birthday']|date|e }}</dd>
+            <dt>Geschlecht</dt>
+            <dd>{{ data['gender']|gender|e }}</dd>
+            {% if data['specialisation'] %}
+                <dt>Fachgebiet</dt>
+                <dd>{{ data['specialisation']|e|linebreaks }}</dd>
+            {% endif %}
+            {% if data['affiliation'] %}
+                <td>Schule, Uni, ...</td>
+                <td>{{ data['affiliation']|e|linebreaks }}</td>
+            {% endif %}
+            {% if data['timeline'] %}
+                <td>Jahrgang, Matrikel, ...</td>
+                <td>{{ data['timeline']|e|linebreaks }}</td>
+            {% endif %}
+            {% if data['interests'] %}
+                <td>Interessen</td>
+                <td>{{ data['interests']|e|linebreaks }}</td>
+            {% endif %}
+            {% if data['free_form'] %}
+                <td>Sonstiges</td>
+                <td>{{ data['free_form']|e|linebreaks }}</td>
+            {% endif %}
+        </dl>
+
+        <h4 class="heading-underline">Kontakt</h4>
+        <dl class="dl-horizontal">
+            <dt>Email</dt>
+            <dd>
                 {{ data['username']|e }}
                 {% if is_admin and data['id'] != user.persona_id %}
-                    {{ util.href(cdedblink('core/admin_username_change_form'), "Email ändern") }}
+                    {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten", aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% elif data['id'] == user.persona_id %}
-                    {{ util.href(cdedblink('core/change_username_form'), "Email ändern") }}
+                    {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten", aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>Telefon</td>
-            <td>{{ data['telephone']|e }}</td>
-        </tr>
-        <tr>
-            <td>Mobiltelefon</td>
-            <td>{{ data['mobile']|e }}</td>
-        </tr>
-        <tr>
-            <td>WWW</td>
-            {# TODO maybe add links or so #}
-            <td>{{ data['weblink']|e }}</td>
-        </tr>
-        <tr> <th colspan="2">Adresse</th> </tr>
-        <tr>
-            <td>Straße</td>
-            <td>{{ data['address']|e }}</td>
-        </tr>
-        <tr>
-            <td>Adresszusatz</td>
-            <td>{{ data['address_supplement']|e }}</td>
-        </tr>
-        <tr>
-            <td>Stadt</td>
-            <td>{{ data['postal_code']|e }} {{ data['location']|e }}</td>
-        </tr>
-        <tr>
-            <td>Land</td>
-            <td>{{ data['country']|e }}</td>
-        </tr>
-        <tr> <th colspan="2">Zweitadresse</th> </tr>
-        <tr>
-            <td>Straße</td>
-            <td>{{ data['address2']|e }}</td>
-        </tr>
-        <tr>
-            <td>Adresszusatz</td>
-            <td>{{ data['address_supplement2']|e }}</td>
-        </tr>
-        <tr>
-            <td>Stadt</td>
-            <td>{{ data['postal_code2']|e }} {{ data['location2']|e }}</td>
-        </tr>
-        <tr>
-            <td>Land</td>
-            <td>{{ data['country2']|e }}</td>
-        </tr>
+            </dd>
+            {% if data['telephone'] %}
+                <dt>Telefon</dt>
+                <dd>{{ data['telephone']|e }}</dd>
+            {% endif %}
+            {% if data['mobile'] %}
+                <dt>Mobiltelefon</dt>
+                <dd>{{ data['mobile']|e }}</dd>
+            {% endif %}
+            {% if data['weblink'] %}
+                <dt>WWW</dt>
+                {# TODO maybe add links or so - must be validated before! #}
+                <dd>{{ data['weblink']|e }}</dd>
+            {% endif %}
+        </dl>
+        
+        <h4 class="heading-underline">Adresse</h4>
+        <dl class="dl-horizontal">
+            <dt>Adresse</dt>
+            <dd>
+                {{ data['address']|e }}{% if data['address'] %}<br />{% endif %}
+                {{ data['address_supplement']|e }}{% if data['address_supplement'] %}<br />{% endif %}
+                {{ data['postal_code']|e }} {{ data['location']|e }}{% if data['location'] %}<br />{% endif %}
+                {{ data['country']|e }}
+            </dd>
+        </dl>
+            
+        {% if data['address2'] or data['address_supplement2'] or data['postal_code2']
+                or data['location2'] or data['country2'] %}
+            <dl class="dl-horizontal">
+                <dt>Zweitadresse</dt>
+                <dd>
+                    {{ data['address2']|e }}{% if data['address2'] %}<br />{% endif %}
+                    {{ data['address_supplement2']|e }}{% if data['address_supplement2'] %}<br />{% endif %}
+                    {{ data['postal_code2']|e }} {{ data['location2']|e }}{% if data['location2'] %}<br />{% endif %}
+                    {{ data['country2']|e }}
+                </dd>
+            </dl>    
+        {% endif %}
+            
         {% if data['id'] == user.persona_id or is_admin %}
             <tr> <th colspan="2">Mitgliedschaft</th> </tr>
             <tr>
@@ -225,7 +232,7 @@
                 </td>
             </tr>
         {% endfor %}
-    </table>
+    </div>
 
     {% if data['id'] == user.persona_id or is_admin %}
         <p>

@@ -2,161 +2,43 @@ body{
     margin: 0px;
 }
 
-#header{
-    background: blue;
-    width: 100%;
-    padding: 5px;
-}
-
-#middle{
-    background: #ccc;
-    display: table;
-}
-
-#strut{
-    width: 0px;
-    height: 100ex;
-    display: table-cell;
-}
-
-#navigation{
-    min-width: 14em;
-    min-height: 100ex;
-    background: red;
-    vertical-align: top;
-    display: table-cell;
-    padding: 10px;
-}
-
-#navigation ul{
-    padding-left: 10px;
-}
-
-#content{
-    background: green;
-    display: table-cell;
-    vertical-align: top;
-    padding: 5px;
-    width: 100%;
-}
-
-#footer{
-    background: yellow;
-    width: 100%;
-    padding: 5px;
-}
-
-.notification{
-    margin: auto;
-    width: 30em;
-    min-height: 15ex;
+#footer {
+    margin-top: 20px;
+    font-size: 85%;
+    color: #777;
     text-align: center;
-    background: cyan;
-    border: solid;
 }
 
-.errorNotification{
-    background: cyan;
-    border-color: #abc;
+/* Bootstrap enhancements */
+.input-error-block {
+    display: block;
+    color: #a94442;
 }
 
-.warningNotification{
-    background: #ddd;
-    border-color: #abc;
+/* Helper classes */
+.float-along {
+    display: block;
+    overflow: hidden;
+}
+.pull-right-responsive {
+    float: right;
+    margin-left: 20px;
+}
+@media (max-width: 768px) {
+    .pull-right-responsive {
+        float: none;
+        margin-left: 0;
+    }
+}
+.pull-right-responsive {
+
 }
 
-.infoNotification{
-    background: #ccc;
-    border-color: #abc;
+/* Extra styling */
+.heading-underline {
+    padding-bottom: 2px;
+    border-bottom: solid 1px #ddd;
 }
-
-.successNotification{
-    background: #999;
-    border-color: #abc;
-}
-
-.questionNotification{
-    background: #999;
-    border-color: #abc;
-}
-
-.notificationMessage{
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.notificationIcon{
-    height: 5ex;
-    width: 5ex;
-    margin-top: 5ex;
-    margin-bottom: 5ex;
-    vertical-align: middle;
-}
-
-.errorInput{
-    background: #f33;
-}
-
-.stacking{
-    display: inline-block;
-}
-
-.changedValue{
-    background: #dd6;
-}
-
-.profilepic{
-    width: 10ex;
-    height: 10ex;
-}
-
-.invisible{
-    display: none;
-}
-
-.infoHover{
-    width: 4ex;
-    height: 4ex;
-}
-
-.bigg{
-    height: 4ex;
-    width: 20em;
-}
-
-.biggg{
-    height: 8ex;
-    width: 20em;
-}
-
-.bigggg{
-    height: 16ex;
-    width: 20em;
-}
-
-.bigggg{
-    height: 32ex;
-    width: 20em;
-}
-
-.scrollList{
-    max-height: 32ex;
-    overflow-y: scroll;
-}
-
-.shortScrollList{
-    max-height: 16ex;
-    overflow-y: scroll;
-}
-
-.nonVanish{
-    min-height: 3ex;
-    min-width: 9em;
-}
-
-.checkeredTable tr:nth-child(odd) {
-    background: #FFF;
-}
-.checkeredTable tr:nth-child(even) {
-    background: #CCC;
+.profilepic {
+    max-width: 150px;
 }

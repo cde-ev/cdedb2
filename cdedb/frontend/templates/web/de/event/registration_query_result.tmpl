@@ -1,10 +1,17 @@
+{% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}
 Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }}
+{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen", active=True) }}
+{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/registration_query_action', query|querytoparams)|e }}" method="POST"
@@ -96,7 +103,7 @@ Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ re
                             {{ myentries.append((field, titles[field], None))|e }}
                         {% endif %}
                     {% endfor %}
-                    {{ util.input_select(name="column", title="", entries=myentries, anid="column_selector",
+                    {{ util.input_select(name="column", label="", entries=myentries, anid="column_selector",
                                          readonly=locked) }}
                 {% endwith %}
                 <span id="value_span">

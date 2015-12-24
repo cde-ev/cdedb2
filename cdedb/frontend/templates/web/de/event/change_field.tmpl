@@ -1,6 +1,6 @@
+{% set sidenav_active='event_config' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}
 Datenfeld {{ data['fields'][values['field_id']]['field_name']|e }} ({{ data['title']|e }}) bearbeiten
 {% endblock %}
@@ -8,11 +8,11 @@ Datenfeld {{ data['fields'][values['field_id']]['field_name']|e }} ({{ data['tit
     {{ util.href(cdedblink("event/change_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/change_field')|e }}" method="POST" id="changefieldform">
         <table>
-            {{ util.tab_input_text(name="field_name", label="Name", readonly=True) }}
-            {{ util.tab_input_select(name="kind", title="Typ", entries=(
+            {{ util.input_text(name="field_name", label="Name", readonly=True) }}
+            {{ util.input_select(name="kind", label="Typ", entries=(
                 ("str", "String", None), ("bool", "Ja/Nein", None), ("int", "Zahl", None), ("float", "Kommazahl", None),
                 ("date", "Datum", None), ("datetime", "Datum mit Uhrzeit", None))) }}
-            {{ util.tab_input_textarea(name="entries", label="Auswahlmöglichkeiten",
+            {{ util.input_textarea(name="entries", label="Auswahlmöglichkeiten",
                                        info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
         </table>
         <div>

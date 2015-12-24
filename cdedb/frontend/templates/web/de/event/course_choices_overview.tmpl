@@ -1,6 +1,6 @@
+{% set sidenav_active='event_course_choices' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Kurswahlen -- Übersicht ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/course_choices')|e }}" method="GET" id="choiceform">
@@ -9,7 +9,7 @@
         {% for course_id, cdata in course_data|dictsort %}
             {{ myentries.append((course_id, cdata['title'], None))|e }}
         {% endfor %}
-        {{ util.input_select(name="course_id", title="Auswahl", entries=myentries) }}
+        {{ util.input_select(name="course_id", label="Auswahl", entries=myentries) }}
         {{ util.input_submit(value="Aktualisieren") }}
     </form>
     <table>

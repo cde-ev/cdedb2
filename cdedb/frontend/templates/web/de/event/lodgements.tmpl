@@ -1,7 +1,13 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Unterkunftsübersicht ({{ event_data['title']|e }}){% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
 {% block content %}
     {% if problems %}
         <h2>Probleme</h2>
@@ -24,7 +30,7 @@
         </ul>
     {% endif %}
     <h2>Neue Unterkunft anlegen</h2>
-    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", disabled=locked) }}
+    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", readonly=locked) }}
     <h2>Alle Unterkünfte</h2>
     <table class="checkeredTable">
         <tr>

@@ -1,165 +1,127 @@
 {# This is the base template to be extended by (nearly) all html templates.
    It provides a skeleton where only the content needs to be filled in. #}
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
     <head>
-        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
-        <title>{% block title %}CdEDB{% endblock %}</title>
-        <link rel="stylesheet" type="text/css" href="/static/cdedb.css" media="all">
-        <link rel="stylesheet" type="text/css" href="/static/print.css" media="print">
-        {% block colorscheme %}
-        <!-- TODO colorscheme: user - blue; orga or ml-moderator - green; realm admin - yellow; global admin - red -->
-        {% endblock %}
-        {% block jquery %} <!-- insert jquery here --> {% endblock %}
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <title>CdEDB – {% block title %}CdEDB{% endblock %}</title>
+        <script type="text/javascript" src="{{ staticurl("jquery-2.min.js")|e }}"></script>
+        
+        <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
+        <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js")|e }}"></script>
+        
+        <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css")|e }}" media="all" />
+        <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css")|e }}" media="print" />
+        
+        <script type="text/javascript" src="{{ staticurl("cdedb-general.js")|e }}"></script>
+        
+        {% block scripts %}{% endblock %}
     </head>
     <body>
-        <div id="header">
-            {% block header %}More logo{% endblock %}
+        <div class="container" id="header">
+            %logo%
         </div>
-        <div id="middle">
-            <div id="strut"></div>
-            <div id="navigation">
-                <h1>{{ util.href(cdedblink("core/index"), "CdEDB") }}</h1>
-                {% if not user.is_persona %}
-                    <p>
-                        Nicht eingeloggt<br>
-                        {{ util.href(cdedblink("core/index"), "Login") }}
-                    </p>
-                {% else %}
-                    <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform">
-                        <p>
-                            Eingeloggt als:<br>
-                            <span id="displayname">{{ user.display_name|e }}</span>
-                            <input type="submit" name="submitlogout" value="Abmelden">
-                        </p>
-                    </form>
-                {% endif %}
-                <hr>
-                <h2>Navigation</h2>
-                    {% block navigation %}
-                        <ul>
-                            {% if user.persona_id %}
-                                <li>
-                                    {{ util.href(cdedblink("core/index"), "Start") }}
-                                    <ul>
-                                        <li>{{ util.href(cdedblink("core/mydata"), "Meine Daten") }}</li>
-                                        <li>
-                                            {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}
-                                        </li>
-                                    </ul>
-                                    {% block core_navigation %}
-                                        <!-- nothing here -->
-                                    {% endblock %}
-                                </li>
-                                {% if "formermember" in user.roles %}
-                                    <li>
-                                        {{ util.href(cdedblink("cde/index"), "CdE") }}
-                                        <ul>
-                                            {% if user.is_searchable %}
-                                                <li>
-                                                    {{ util.href(cdedblink("cde/member_search"), "Mitgliedersuche") }}
-                                                </li>
-                                            {% else %}
-                                                <li>
-                                                    {{ util.href(cdedblink("cde/consent_decision_form"),
-                                                                 "Datenschutzerklärung") }}
-                                                </li>
-                                            {% endif %}
-                                            <li>
-                                                {{ util.href(cdedblink("cde/lastschrift_subscription_form"),
-                                                                       "Initiative 25+ beitreten") }}
-                                            </li>
-                                        </ul>
-                                        {% block cde_navigation %}
-                                            <!-- nothing here -->
-                                        {% endblock %}
-                                    </li>
-                                {% endif %}
-                                {% if "event_user" in user.roles %}
-                                    <li>
-                                        {{ util.href(cdedblink("event/index"), "Veranstaltungen") }}
-                                        {% block event_navigation %}
-                                            <!-- nothing here -->
-                                        {% endblock %}
-                                    </li>
-                                {% endif %}
-                                {% if "ml_user" in user.roles %}
-                                    <li>
-                                        {{ util.href(cdedblink("ml/index"), "Mailinglisten") }}
-                                        {% block ml_navigation %}
-                                            <!-- nothing here -->
-                                        {% endblock %}
-                                    </li>
-                                {% endif %}
-                                {% if "assembly_user" in user.roles %}
-                                    <li>
-                                        {{ util.href(cdedblink("assembly/index"), "Versammlung") }}
-                                        {% block assembly_navigation %}
-                                            <!-- nothing here -->
-                                        {% endblock %}
-                                    </li>
-                                {% endif %}
-                            {% else %}
-                                <li>
-                                    {{ util.href(cdedblink("core/index"), "Start") }}
-                                    <ul>
-                                        <li>
-                                            {{ util.href(cdedblink("core/genesis_request_form"), "Account anfordern") }}
-                                        </li>
-                                    </ul>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    {% endblock %}
-            </div>
-            <div id="content">
-                {% for ntype, message in notifications %}
-                    <div class="notification {{ ntype|e }}Notification">
-                        <img src="{{ staticurl("icons/{}.png".format(ntype))|e }}"
-                          alt="{{ ntype|e }}" class="notificationIcon">
-                        <span class="notificationMessage">{{ i18n(message)|e }}</span>
-                    </div>
-                {% endfor %}
-                {% block javascripthint %}{% endblock %}
-                <h1>{{ self.title() }}</h1>
-                {% block content %}
-                    This should not be visible.
-                {% endblock %}
-            </div>
-            <div id="confirmation_dialogue"><!-- for later user --></div>
-        </div>
-        <div id="footer">
-            {% block footer %}{{ debugstring|e }} ; time taken: {{ generation_time()|e }}{% endblock %}
-        </div>
-        <!-- common script snippets -->
-        <script type="text/javascript">
-            if (typeof cdedb_javascript !== 'undefined') {
-                $(document).ready(function(){
-                    $(".jsEnabled").prop('disabled', false);
-                    $(".jsDeleted").remove();
-                    $(".jsConfirmed").submit(function(e){
-                        e.preventDefault()
-                        var form = this;
-                        $("#confirmation_dialogue").html("Sind Sie sich sicher?")
-                        $("#confirmation_dialogue").dialog({
-                            modal: true,
-                            title: "Bestätigen",
-                            buttons: {
-                                "Ja": function() {
-                                    $(this).dialog("close");
-                                    form.submit();
-                                },
-                                "Nein": function() {
-                                    $(this).dialog("close");
-                                }
-                            }
-                        });
-                    });
+        
+        <!-- main navigation bar -->
+        <nav class="navbar navbar-default">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                </div>
 
-                });
-            };
-        </script>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    {% if user.is_persona %}
+                        <ul class="nav navbar-nav navbar-right">
+                            <li>
+                                <span id="displayname">{{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}</span>
+                            </li>
+                            <li>
+                                <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform" class="navbar-form">
+                                    <button type="submit" name="submitlogout" value="Abmelden" class="btn navbar-button" title="Logout" data-placement="bottom">
+                                        <span class="glyphicon glyphicon-off"></span>
+                                    </button>
+                                </form>
+                            </li>
+                    
+                    {% endif %}
+                    </ul>
+                    
+                    <ul class="nav navbar-nav">
+                        <li {% if mainnav_active == 'core' %}class="active"{% endif %}>
+                            {{ util.href(cdedblink("core/index"), "Start", icon="dashboard") }}
+                            </li>
+                        {% if "formermember" in user.roles %}
+                            <li {% if mainnav_active == 'cde' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("cde/index"), "CdE", icon="education") }}
+                                </li>
+                        {% endif %}
+                        {% if "event_user" in user.roles %}
+                            <li {% if mainnav_active == 'event' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("event/index"), "Veranstaltungen", icon="blackboard") }}
+                            </li>
+                        {% endif %}
+                        {% if "ml_user" in user.roles %}
+                            <li {% if mainnav_active == 'ml' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("ml/index"), "Mailinglisten", icon="envelope") }}
+                            </li>
+                        {% endif %}
+                        {% if "assembly_user" in user.roles %}
+                            <li {% if mainnav_active == 'assembly' %}class="active"{% endif %}>
+                                {{ util.href(cdedblink("assembly/index"), "Versammlung", icon="stats") }}
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div><!-- /.navbar-collapse -->
+            </div><!-- /.container-fluid -->
+        </nav>
+        
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    {% block navigation %}
+                    {% endblock %}
+                </div>
+                <div class="col-md-9">
+                    {% block breadcrumb %}
+                    {% endblock %}
+                    {% block heading %}
+                        <h1>{{ self.title() }}</h1>
+                    {% endblock %}
+                    
+                    {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign",
+                                         "warning" : "exclamation-sign", "error" : "remove-sign"},
+                            alerttypes = {"success" : "success", "info" : "info", "question" : "info",
+                                          "warning" : "warning", "error" : "danger"},
+                            messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:",
+                                            "warning" : "Warnung!", "error" : "Fehler!"} %}
+                        {% for ntype, message in notifications %}
+                            <div class="alert alert-{{ alerttypes[ntype] }}">
+                                <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
+                                <strong>{{ messagetypes[ntype] }}</strong>
+                                <span class="notificationMessage">{{ i18n(message)|e }}</span>
+                            </div>
+                        {% endfor %}
+                    {% endwith %}
+                    
+                    {% block content %}
+                        This should not be visible.
+                    {% endblock %}
+                </div>
+            </div>
+            <div id="footer">
+                {% block footer %}{{ debugstring|e }} ; time taken: {{ generation_time()|e }}{% endblock %}
+            </div>
+        </div>
     </body>
     {% if errors %}
         <!-- error listing for debugging

@@ -1,3 +1,4 @@
+{% set sidenav_active='event_log' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
@@ -54,7 +55,7 @@ Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + 
             {% for event_id, title in events|dictsort %}
                 {{ myentries.append((event_id, title, None))|e }}
             {% endfor %}
-            {{ util.input_select(name="event_id", title="Veranstaltung", nulloption=True, entries=myentries) }}
+            {{ util.input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
             {{ util.input_text(name="start", label="Anfang") }}
             {{ util.input_text(name="stop", label="Ende") }}
             {{ util.input_submit(value="Anzeigen") }}

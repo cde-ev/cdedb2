@@ -1,5 +1,5 @@
+{% set sidenav_active='assembly_show' %}
 {% extends "web/de/assembly/base.tmpl" %}
-{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
 {% block title %}{{ assembly_data['title']|e }}{% endblock %}
 {% block content %}
     <p>{{ assembly_data['description']|e|linebreaks }}</p>

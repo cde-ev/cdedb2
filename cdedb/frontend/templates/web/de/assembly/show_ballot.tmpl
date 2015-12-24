@@ -1,7 +1,7 @@
+{% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
 {% block title %}{{ ballot_data['title']|e }} ({{ assembly_data['title']|e }}){% endblock %}
 {% block content %}
     <p>{{ ballot_data['description']|e|linebreaks }}</p>
@@ -36,8 +36,8 @@
             </form>
             <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform">
                 <table>
-                    {{ util.tab_input_text(name="moniker", label="Kurzname") }}
-                    {{ util.tab_input_text(name="description", label="Beschreibung") }}
+                    {{ util.input_text(name="moniker", label="Kurzname") }}
+                    {{ util.input_text(name="description", label="Beschreibung") }}
                 </table>
                 <div>
                     {{ util.input_submit(value="Option hinzufügen") }}
@@ -81,7 +81,7 @@
                                 {{ myentries.append((cdata['moniker'], cdata['description'], None))|e }}
                             {% endif %}
                         {% endfor %}
-                        {{ util.input_radio("vote", title="Kandidaten", entries=myentries) }}
+                        {{ util.input_radio("vote", label="Kandidaten", entries=myentries) }}
                     {% else %}
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}

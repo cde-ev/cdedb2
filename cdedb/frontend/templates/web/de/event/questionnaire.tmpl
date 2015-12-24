@@ -1,6 +1,6 @@
+{% set sidenav_active='event_quest' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Fragebogen zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/registration_status"), "Abbrechen") }}
@@ -15,21 +15,21 @@
                             {% for value, description in FIELD['entries'] %}
                                 {{ myentries.append((value, description, None))|e }}
                             {% endfor %}
-                            {{ util.tab_input_select(name=FIELD['field_name'], entries=myentries, title=entry['title'],
+                            {{ util.input_select(name=FIELD['field_name'], entries=myentries, label=entry['title'],
                                                      info=entry['info'], readonly=(entry['readonly'] or locked)) }}
                         {% else %}
                             {% if FIELD['kind'] == "bool" %}
-                                {{ util.tab_input_checkbox(
+                                {{ util.input_checkbox(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or locked)) }}
                             {% else %}
                                 {% if entry['input_size'] %}
-                                    {{ util.tab_input_textarea(
+                                    {{ util.input_textarea(
                                         name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                         readonly=(entry['readonly'] or locked),
                                         aclass=('bi' + entry['input_size']*'g')) }}
                                 {% else %}
-                                    {{ util.tab_input_text(
+                                    {{ util.input_text(
                                         name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                         readonly=(entry['readonly'] or locked)) }}
                                 {% endif %}

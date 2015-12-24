@@ -8,23 +8,23 @@
     <form action="{{ cdedblink('event/genesis')|e }}" method="POST" id="newuserform">
         <table>
             <tr> <th colspan="2">Person</th> </tr>
-            {{ util.tab_input_text(name="title", label="Titel") }}
+            {{ util.input_text(name="title", label="Titel") }}
             <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
             <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
-            {{ util.tab_input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.tab_input_text(name="display_name", label="Rufname") }}
-            {{ util.tab_input_text(name="birthday", label="Geburtstag") }}
-            {{ util.tab_input_select(name="gender", entries=default_selections['gender'], title="Geschlecht") }}
+            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
+            {{ util.input_text(name="display_name", label="Rufname") }}
+            {{ util.input_text(name="birthday", label="Geburtstag") }}
+            {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
             <tr> <th colspan="2">Kontakt</th> </tr>
             <tr> <td>Email</td> <td> {{ case['username']|e }} </td> </tr>
-            {{ util.tab_input_text(name="telephone", label="Telefon") }}
-            {{ util.tab_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.input_text(name="telephone", label="Telefon") }}
+            {{ util.input_text(name="mobile", label="Mobiltelefon") }}
             <tr> <th colspan="2">Adresse</th> </tr>
-            {{ util.tab_input_text(name="address", label="Straße") }}
-            {{ util.tab_input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.tab_input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.tab_input_text(name="location", label="Stadt") }}
-            {{ util.tab_input_text(name="country", label="Land") }}
+            {{ util.input_text(name="address", label="Straße") }}
+            {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.input_text(name="location", label="Stadt") }}
+            {{ util.input_text(name="country", label="Land") }}
         </table>
         <div>
             {{ util.input_hidden(name="case_id") }}

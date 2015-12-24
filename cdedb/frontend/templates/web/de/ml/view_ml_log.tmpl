@@ -1,6 +1,6 @@
+{% set sidenav_active='ml_ml_log' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block inner_navigation %}{{ ml_inner_navigation(mailinglist_data) }}{% endblock %}
 {% block title %}
 {{ mailinglist_data['title']|e }} -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
 {% endblock %}

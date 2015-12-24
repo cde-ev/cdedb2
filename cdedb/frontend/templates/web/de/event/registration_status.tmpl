@@ -1,7 +1,14 @@
+{% set sidenav_active='event_register' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Status der Anmeldung zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_status"), "Anmeldung", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
 {% block content %}
     {% if event_data['registration_soft_limit'] >= today %}
         <p>

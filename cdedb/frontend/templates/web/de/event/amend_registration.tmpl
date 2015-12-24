@@ -1,7 +1,15 @@
+{% set sidenav_active='event_register' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Anmeldung zur Veranstaltung {{ event_data['title']|e }} aktualisieren{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/register"), "Anmeldung") }}
+{{ util.breadcrumb_link(cdedblink("event/amend_registration"), "Ändern", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/amend_registration')|e }}" method="POST" id="amendregistrationform">
         <table>
@@ -10,7 +18,7 @@
                     <td>Gemischte Unterbringung</td>
                     <td>
                         Keine gemischte Unterbringung.
-                        {{ util.tab_input_hidden(name="mixed_lodging", value=False) }}
+                        {{ util.input_hidden(name="mixed_lodging", value=False) }}
                     </td>
                 </tr>
             {% else %}
@@ -20,17 +28,17 @@
                 {% else %}
                     {% set mix_info = "" %}
                 {% endif %}
-                {{ util.tab_input_select(name="mixed_lodging", entries=(
+                {{ util.input_select(name="mixed_lodging", entries=(
                     (True, "Ich bin mit einer gemischten Unterbringung einverstanden.", None),
                     (False, "Ich will geschlechter-getrennt untergebracht werden.", None)),
-                    title="Gemischte Unterbringung", info=mix_info, readonly=readonly) }}
+                    label="Gemischte Unterbringung", info=mix_info, readonly=readonly) }}
             {% endif %}
-            {{ util.tab_input_checkbox(name="foto_consent", readonly=readonly, label=glue(
+            {{ util.input_checkbox(name="foto_consent", readonly=readonly, label=glue(
                     "Ich bin damit einverstanden, dass Fotos und Aufnahmen meiner Person, die im Rahmen dieser",
                     "Veranstaltung entstehen, für die Veranstaltungsdokumentation und eine CdE-interne,",
                     "passwortgeschützte Fotogalerie verwendet werden. Einzelne Fotos können auf gesonderten",
                     "Wunsch davon ausgenommen werden.")) }}
-            {{ util.tab_input_textarea(name="notes", label="Anmerkungen", aclass="biggg", readonly=readonly) }}
+            {{ util.input_textarea(name="notes", label="Anmerkungen", aclass="biggg", readonly=readonly) }}
             {% for part_id, course_list in course_choices|dictsort %}
                 {% if (course_list and part_id in parts
                        and const.RegistrationPartStati(parts[part_id]['status']).is_involved()) %}
@@ -40,19 +48,19 @@
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.tab_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
-                                             title="Erstwahl", readonly=readonly) }}
-                    {{ util.tab_input_select(name="course_choice{}_1".format(part_id), entries=myentries,
-                                             title="Zweitwahl", readonly=readonly) }}
-                    {{ util.tab_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
-                                             title="Drittwahl", readonly=readonly) }}
+                    {{ util.input_select(name="course_choice{}_0".format(part_id), entries=myentries,
+                                             label="Erstwahl", readonly=readonly) }}
+                    {{ util.input_select(name="course_choice{}_1".format(part_id), entries=myentries,
+                                             label="Zweitwahl", readonly=readonly) }}
+                    {{ util.input_select(name="course_choice{}_2".format(part_id), entries=myentries,
+                                             label="Drittwahl", readonly=readonly) }}
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [("", "Ich bin kein Kursleiter.", None)] %}
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.tab_input_select(name="course_instructor{}".format(part_id), entries=myentries,
-                                             title="Kursleiter", readonly=readonly) }}
+                    {{ util.input_select(name="course_instructor{}".format(part_id), entries=myentries,
+                                             label="Kursleiter", readonly=readonly) }}
                 {% endif %}
             {% endfor %}
         </table>

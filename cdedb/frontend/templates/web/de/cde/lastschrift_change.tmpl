@@ -9,12 +9,12 @@
 		<td>Person</td>
 		<td>{{ "{} {}".format(persona_data['given_names'], persona_data['family_name'])|e }}</td>
 	    </tr>
-            {{ util.tab_input_text(name="amount", label="Betrag") }}
-            {{ util.tab_input_text(name="iban", label="IBAN") }}
-            {{ util.tab_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
-            {{ util.tab_input_textarea(name="account_address", label="Adresse (falls abweichend)", aclass="bigg") }}
-            {{ util.tab_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.input_text(name="amount", label="Betrag") }}
+            {{ util.input_text(name="iban", label="IBAN") }}
+            {{ util.input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
+            {{ util.input_textarea(name="account_address", label="Adresse (falls abweichend)", aclass="bigg") }}
+            {{ util.input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Ändern") }}

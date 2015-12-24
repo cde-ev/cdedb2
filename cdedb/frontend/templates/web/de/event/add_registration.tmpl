@@ -1,22 +1,30 @@
+{% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Neue Anmeldung ({{ event_data['title']|e }}){% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
+{{ util.breadcrumb_link(cdedblink("event/add_registration"), "Hinzufügen", active=True, icon="pencil") }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/add_registration')|e }}" method="POST" id="addregistrationform">
         <table>
             <tr><th colspan="2">Person</th></tr>
-            {{ util.tab_input_text(name="user_data.persona_id", label="CdEDB-ID") }}
+            {{ util.input_text(name="user_data.persona_id", label="CdEDB-ID") }}
             <tr><th colspan="2">Allgemeine Angaben</th></tr>
-            {{ util.tab_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
-            {{ util.tab_input_textarea(name="reg.notes", label="Anmerkungen", aclass="biggg") }}
-            {{ util.tab_input_textarea(name="reg.orga_notes", label="Orga-Notizen", aclass="biggg") }}
-            {{ util.tab_input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am") }}
-            {{ util.tab_input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern") }}
-            {{ util.tab_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
-            {{ util.tab_input_text(name="reg.checkin", label="Checkin") }}
-            {{ util.tab_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
+            {{ util.input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
+            {{ util.input_textarea(name="reg.notes", label="Anmerkungen", aclass="biggg") }}
+            {{ util.input_textarea(name="reg.orga_notes", label="Orga-Notizen", aclass="biggg") }}
+            {{ util.input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am") }}
+            {{ util.input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern") }}
+            {{ util.input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
+            {{ util.input_text(name="reg.checkin", label="Checkin") }}
+            {{ util.input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
             {% for part_id in event_data['parts']|sort %}
                 <tr><th colspan="2">{{ event_data['parts'][part_id]['title']|e }}</th></tr>
                 {# jinja does not support list comprehension ... #}
@@ -24,28 +32,28 @@
                 {% for s in const.RegistrationPartStati %}
                     {{ myentries.append((s.value, i18n(s|string), None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.status".format(part_id), title="Status", entries=myentries) }}
+                {{ util.input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_choices[part_id] %}
                     {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.course_id".format(part_id), title="Kurs", entries=myentries,
+                {{ util.input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
                                          nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_0".format(part_id), title="Erstwahl",
+                {{ util.input_select(name="part{}.course_choice_0".format(part_id), label="Erstwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_1".format(part_id), title="Zweitwahl",
+                {{ util.input_select(name="part{}.course_choice_1".format(part_id), label="Zweitwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_choice_2".format(part_id), title="Drittwahl",
+                {{ util.input_select(name="part{}.course_choice_2".format(part_id), label="Drittwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.tab_input_select(name="part{}.course_instructor".format(part_id), title="Kursleiter",
+                {{ util.input_select(name="part{}.course_instructor".format(part_id), label="Kursleiter",
                                          entries=myentries, nulloption=True) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for lodgement_id, ldata in lodgement_data|dictsort %}
                     {{ myentries.append((lodgement_id, ldata['moniker'], None))|e }}
                 {% endfor %}
-                {{ util.tab_input_select(name="part{}.lodgement_id".format(part_id), title="Unterkunft",
+                {{ util.input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                          entries=myentries, nulloption=True) }}
             {% endfor %}
         </table>

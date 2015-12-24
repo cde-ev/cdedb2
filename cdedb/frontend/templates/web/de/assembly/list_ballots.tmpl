@@ -1,7 +1,7 @@
+{% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
 {% block title %}{{ assembly_data['title']|e }} -- Abstimmungen{% endblock %}
 {% block content %}
     <ul>

@@ -1,25 +1,25 @@
+{% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
 {% block title %}{{ values['title']|e }} bearbeiten ({{ assembly_data['title']|e }}){% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/change_ballot')|e }}" method="POST" id="changeballotform">
         <table>
-            {{ util.tab_input_text(name="title", label="Titel") }}
-            {{ util.tab_input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
-            {{ util.tab_input_text(name="vote_begin", label="Beginn der Abstimmung") }}
-            {{ util.tab_input_text(name="vote_end", label="Ende der Abstimmung") }}
-            {{ util.tab_input_text(name="quorum", label="Quorum") }}
+            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+            {{ util.input_text(name="vote_begin", label="Beginn der Abstimmung") }}
+            {{ util.input_text(name="vote_end", label="Ende der Abstimmung") }}
+            {{ util.input_text(name="quorum", label="Quorum") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
                 {{ myentries.append((cdata['moniker'], cdata['moniker'], None))|e }}
             {% endfor %}
-            {{ util.tab_input_select(name="bar", entries=myentries, title="Schwellwertoption", nulloption=True) }}
-            {{ util.tab_input_text(name="vote_extension_end", label="Ende der Verlängerung") }}
-            {{ util.tab_input_text(name="votes", label="Anzahl der Stimmen",
+            {{ util.input_select(name="bar", entries=myentries, label="Schwellwertoption", nulloption=True) }}
+            {{ util.input_text(name="vote_extension_end", label="Ende der Verlängerung") }}
+            {{ util.input_text(name="votes", label="Anzahl der Stimmen",
                                    info="Leer lassen für vollständige Präferenzwahl.") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Ändern") }}

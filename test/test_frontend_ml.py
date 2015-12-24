@@ -24,7 +24,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertEqual(
             "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content())
+            self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
     @as_users("anton")
     def test_adminchangeuser(self, user):
@@ -57,7 +57,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search(self, user):
-        self.traverse({'description': '^Mailinglisten$'}, {'href': '/ml/search/user/form'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user/form'})
         self.assertTitle("Mailinglistennutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_username'] = 's@'
@@ -70,7 +70,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_user(self, user):
-        self.traverse({'description': '^Mailinglisten$'}, {'href': '/ml/user/create'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/user/create'})
         self.assertTitle("Neuen Mailinglistennutzer anlegen")
         data = {
             "username": 'zelda@example.cde',
@@ -153,7 +153,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("berta", "janis")
     def test_show_mailinglist(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'})
         self.assertTitle("Mailinglisten Übersicht")
         self.traverse({'href': '/ml/mailinglist/4'})
@@ -161,7 +161,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_list_all_mailinglist(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list/all'})
         self.assertTitle("Mailinglisten Komplettübersicht")
         self.traverse({'href': '/ml/mailinglist/6'})
@@ -169,7 +169,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_mailinglist_management(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
@@ -208,7 +208,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_mailinglist(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'})
         self.assertTitle("Mailinglisten Übersicht")
         self.assertNotIn("Munkelwand", self.response.text)
@@ -230,7 +230,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_change_mailinglist(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/2'},
                       {'href': '/ml/mailinglist/2/change'},)
@@ -253,13 +253,14 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("munkelwand@example.cde", f['address'].value)
         self.assertEqual("2", f['sub_policy'].value)
         self.assertFalse(f['is_active'].checked)
-        self.traverse({'href': '/ml/mailinglist/list$'})
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list$'})
         self.assertTitle("Mailinglisten Übersicht")
         self.assertNotIn("Munkelwand", self.response.text)
 
     def test_subscription_request(self):
         self.login(USER_DICT['inga'])
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
@@ -267,7 +268,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.logout()
         self.login(USER_DICT['berta'])
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'},)
@@ -278,14 +279,14 @@ class TestMlFrontend(FrontendTest):
         self.assertNotIn('ackrequestform9', self.response.forms)
         self.logout()
         self.login(USER_DICT['inga'])
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},)
         self.assertIn('unsubscribeform', self.response.forms)
 
     @as_users("charly", "inga")
     def test_subscribe_unsubscribe(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/3'},)
         self.assertTitle("Witz des Tages")
@@ -299,7 +300,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("janis")
     def test_change_sub_address(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
@@ -321,21 +322,20 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_check_states(self, user):
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/3'},
                       {'href': '/ml/mailinglist/3/management'},
                       {'href': '/ml/mailinglist/3/check'},)
         self.assertTitle("Witz des Tages -- Konsistenzcheck")
         self.assertNotIn("Janis Jalapeño", self.response.text)
-        self.traverse({'href': '/ml/mailinglist/list$'},
-                      {'href': '/ml/mailinglist/3'},
-                      {'href': '/ml/mailinglist/3/change'},)
+        self.traverse({'href': '/ml/mailinglist/3/change'},)
         self.assertTitle("Witz des Tages -- Konfiguration")
         f = self.response.forms['changelistform']
         f['audience'] = [0]
         self.submit(f)
-        self.traverse({'href': '/ml/mailinglist/list$'},
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/3'},
                       {'href': '/ml/mailinglist/3/management'},
                       {'href': '/ml/mailinglist/3/check'},)
@@ -351,7 +351,7 @@ class TestMlFrontend(FrontendTest):
 
         ## Now check it
         self.login(USER_DICT['anton'])
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
         self.assertTitle("\nMailinglisten -- Logs (0--7)\n")
         f = self.response.forms['logshowform']
@@ -362,7 +362,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("\nMailinglisten -- Logs (1--3)\n")
 
-        self.traverse({'description': '^Mailinglisten$'},
+        self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})

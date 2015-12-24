@@ -1,8 +1,16 @@
+{% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}
 Anmeldung von {{ user_data['given_names']|e }} {{ user_data['family_name']|e }} ({{ event_data['title']|e }})
+{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_registration"), user_data['given_names']|e + " " + user_data['family_name']|e, active=True, icon="user") }}
+{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     <table>

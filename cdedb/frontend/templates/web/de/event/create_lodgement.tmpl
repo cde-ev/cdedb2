@@ -1,15 +1,15 @@
+{% set sidenav_active='event_lodgement' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Neue Unterkunft anlegen ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/lodgements"), "Abbrechen") }}
     <form action="{{ cdedblink('event/create_lodgement')|e }}" method="POST" id="createlodgementform">
         <table>
-            {{ util.tab_input_text(name="moniker", label="Bezeichnung") }}
-            {{ util.tab_input_text(name="capacity", label="normale Plätze") }}
-            {{ util.tab_input_text(name="reserve", label="Reserveplätze") }}
-            {{ util.tab_input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.input_text(name="moniker", label="Bezeichnung") }}
+            {{ util.input_text(name="capacity", label="normale Plätze") }}
+            {{ util.input_text(name="reserve", label="Reserveplätze") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Anlegen") }}

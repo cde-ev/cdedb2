@@ -5,7 +5,7 @@
     <script type="text/javascript">
         cdedb_javascript = true;
     </script>
-    <script type="text/javascript" src="{{ staticurl("jquery.js")|e }}"></script>
+    <script type="text/javascript" src="{{ staticurl("jquery-2.min.js")|e }}"></script>
 {% endmacro %}
 
 {% macro jquery_with_ui_preamble() %}
@@ -26,12 +26,15 @@
 {% endmacro %}
 
 {% macro deko_checkbox(checked, anid='', aclass='') %}
-   <input type="checkbox" {% if checked %} checked {% endif %} disabled {% if anid %} id="{{ anid|e }}" {% endif %}
-     {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+    <input type="checkbox" {% if checked %} checked="checked"{% endif %} disabled="disabled"{% if anid %}
+        id="{{ anid|e }}"{% endif %}{% if aclass %} class="{{ aclass|e }}"{% endif %} />
 {% endmacro %}
 
-{% macro href(ref, label, disabled=False) %}
-    <a href="{{ ref|e }}" {% if disabled %}disabled{% endif %}>{{ label|e }}</a>
+{% macro href(ref, label, readonly=False, icon="", aclass='', active=False) %}
+    <a href="{{ ref|e }}" {% if readonly %}disabled="disabled"{% endif %}
+        {% if aclass or active %}class="{{ aclass }}{% if active %} active{% endif %}"{% endif %}>
+        {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}
+    </a>
 {% endmacro %}
 
 {% macro output_errors(name, displayerrors=True) %}
@@ -45,8 +48,8 @@
 {% endmacro %}
 
 {% macro info_hover(info, anid='', aclass='') %}
-    <img src="{{ staticurl("icons/info.png")|e }}" alt="info" title="{{ info|e }}"
-      {% if anid %} id="{{ anid|e }}" {% endif %} class="infoHover {{ aclass|e }}">
+    <span class="glyphicon glyphicon-question-sign {{ aclass|e }}" title="{{ info|e }}"
+      {% if anid %} id="{{ anid|e }}"{% endif %}></span>
 {% endmacro %}
 
 {% macro persona_anchor(persona_data, verbose=False) %}
@@ -70,358 +73,197 @@
     {% endif %}
 {% endmacro %}
 
-{% macro input_file(name, displayerrors=True, accept='', info='', anid='', aclass='') %}
-    <span class="stacking">
-        {{ output_errors(name, displayerrors) }}
-        <input type="file" name="{{ name|e }}" {% if accept %} accept="{{ accept|e }}" {% endif %}
-          {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-        {% if info %} {{ info_hover(info) }} {% endif %}
-    </span>
-{% endmacro %}
-
-{% macro input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='', aclass='') %}
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        <label>
+{% macro input_file(name, displayerrors=True, accept='', info='', anid='', aclass='form-control') %}
+    <div class="form-group {% if name in errors %}has-error{% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {% if info %}{{ info_hover(info) }}{% endif %}
             {{ label|e }}
-            <span class="stacking">
-                {{ output_errors(name, displayerrors) }}
-                {% if readonly %}
-                    <span>{{ values.get(name, defaultvalue)|e }}</span>
-                    <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
-                      {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {% else %}
-                    <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
-                      {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {% endif %}
-                {% if info %} {{ info_hover(info) }} {% endif %}
-            </span>
         </label>
-    </span>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+            <input type="file" name="{{ name|e }}" {% if accept %} accept="{{ accept|e }}" {% endif %}
+                    {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name, displayerrors) }}</div>
+            {% endif %}
+        </div>
+    </div>
 {% endmacro %}
 
-{% macro tab_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-                        aclass='') %}
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td>
-            <label for="{{ name|e }}">{{ label|e }}</label>
-            {% if info %} {{ info_hover(info) }} {% endif %}
-        </td>
-        <td>
-            {{ output_errors(name, displayerrors) }}
-            {% if readonly %}
-                <span>{{ values.get(name, defaultvalue)|e }}</span>
-                <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
-                  {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-            {% else %}
-                <input type="text" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
-                  {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+{% macro input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
+        aclass='form-control', type='text', small=False) %}
+    <div class="form-group {% if name in errors %}has-error{% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {% if info %}{{ info_hover(info) }}{% endif %}
+            {{ label|e }}
+        </label>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+            <input type="{{ type|e }}" {% if aclass %} class="{{ aclass|e }}"{% endif %}
+                    {% if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"
+                    name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name, displayerrors) }}</div>
             {% endif %}
-        </td>
-    </tr>
+        </div>
+    </div>
 {% endmacro %}
 
 {% macro input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-                        aclass='') %}
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        <label>
+                        aclass='form-control', small=False) %}
+    <div class="form-group {% if name in errors %}has-error{% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {% if info %}{{ info_hover(info) }}{% endif %}
             {{ label|e }}
-            <span class="stacking">
-                {{ output_errors(name, displayerrors) }}
-                {% if info %} {{ info_hover(info) }} {% endif %}
-                {% if readonly %}
-                    <span>{{ values.get(name, defaultvalue)|e }}</span>
-                    <textarea name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-                      class="{{ aclass|e }} invisible">{{ values.get(name, defaultvalue)|e }}</textarea>
-                {% else %}
-                    <textarea name="{{ name|e }}" {% if aclass %} class="{{ aclass|e }}" {% endif %}
-                      {% if anid %} id="{{ anid|e }}" {% endif %}>{{ values.get(name, defaultvalue)|e }}</textarea>
-                {% endif %}
-            </span>
         </label>
-    </span>
-{% endmacro %}
-
-{% macro tab_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-                            aclass='') %}
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td>
-            <label for="{{ name|e }}">{{ label|e }}</label>
-            {% if info %} {{ info_hover(info) }} {% endif %}
-        </td>
-        <td>
-            {{ output_errors(name, displayerrors) }}
-            {% if readonly %}
-                <span>{{ values.get(name, defaultvalue)|e }}</span>
-                <textarea name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-                  class="{{ aclass|e }} invisible">{{ values.get(name, defaultvalue)|e }}</textarea>
-            {% else %}
-                <textarea name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>{{ values.get(name, defaultvalue)|e }}</textarea>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+            <textarea {% if aclass %} class="{{ aclass|e }}"{% endif %}
+                    {% if anid %} id="{{ anid|e }}"{% endif %} name="{{ name|e }}"
+                    {% if readonly %}disabled="disabled"{% endif %}>{{ values.get(name, defaultvalue)|e }}</textarea>
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name, displayerrors) }}</div>
             {% endif %}
-        </td>
-    </tr>
+        </div>
+    </div>
 {% endmacro %}
 
-{% macro input_password(name="password", label="", info='', readonly=False, anid='', aclass='') %}
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        <label>
+{% macro input_password(name="password", label="", info='', readonly=False, anid='', aclass='form-control',
+        small=False) %}
+    <div class="form-group {% if name in errors %}has-error {% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {% if info %}{{ info_hover(info) }}{% endif %}
             {{ label|e }}
-            {% if readonly %}
-                <span>******</span>
-                <input type="hidden" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-            {% else %}
-                <input type="password" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-            {% endif %}
-            {% if info %} {{ info_hover(info) }} {% endif %}
         </label>
-    </span>
-{% endmacro %}
-
-{% macro tab_input_password(name="password", label="", info='', readonly=False, anid='', aclass='') %}
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td>
-            <label for="{{ name|e }}">{{ label|e }}</label>
-            {% if info %} {{ info_hover(info) }} {% endif %}
-        </td>
-        <td>
-            {% if readonly %}
-                <span>******</span>
-                <input type="hidden" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-            {% else %}
-                <input type="password" name="{{ name|e }}" value=""  {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+            <input type="password" {% if aclass %} class="{{ aclass|e }}"{% endif %}
+                    {% if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"
+                    name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name) }}</div>
             {% endif %}
-        </td>
-    </tr>
+        </div>
+    </div>
 {% endmacro %}
 
 {% macro input_checkbox(name, label="", value=True, info='', readonly=False, defaultvalue='', anid='', aclass='') %}
 {# This is the version for single checkboxes as opposed to input_checkboxes(). #}
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        <label>
-            <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-              {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
-              {% if readonly %} disabled {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
-              {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+    <div class="form-group {% if name in errors %}has-error{% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {% if info %}{{ info_hover(info) }}{% endif %}
             {{ label|e }}
-            {% if info %} {{ info_hover(info) }} {% endif %}
         </label>
-    </span>
-{% endmacro %}
-
-{% macro tab_input_checkbox(name, label="", value=True, info='', readonly=False, defaultvalue='', anid='', aclass='') %}
-{# This is the version for single checkboxes as opposed to tab_input_checkboxes(). #}
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td colspan="2">
-            <label>
-                <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                  {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
-                  {% if readonly %} disabled {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {{ label|e }}
-            </label>
-            {% if info %} {{ info_hover(info) }} {% endif %}
-        </td>
-    </tr>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+            <div class="checkbox {% if readonly %}disabled{% endif %}">
+                <label>
+                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
+                        {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
+                        {% if readonly %} disabled {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
+                        {% if aclass %} class="{{ aclass|e }}" {% endif %} />
+                    {{ label|e }}
+                </label>
+            </div>
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name) }}</div>
+            {% endif %}
+        </div>
+    </div>
 {% endmacro %}
 
 {% macro input_checkboxes(name, title, entries, info='', readonly=False) %}
 {# This is the version for multiple checkboxes as opposed to input_checkbox().
    entries is of type [(str, str, str)]. #}
-
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        {{ title|e }}
-        <span class="stacking">
-            {% if info %} {{ info_hover(info) }} {% endif %}
+    <div class="form-group {% if name in errors %}has-error{% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {% if info %}{{ info_hover(info) }}{% endif %}
+            {{ label|e }}
+        </label>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
             {% for value, label, entry_id in entries %}
-                <label>
-                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %}
-                      {% if readonly %} disabled {% endif %} {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
-                    {{ label|e }}
-                </label>
-            {% endfor %}
-        </span>
-    </span>
-{% endmacro %}
-
-{% macro tab_input_checkboxes(name, title, entries, info='', readonly=False) %}
-{# This is the version for multiple checkboxes as opposed to tab_input_checkbox().
-   entries is of type [(str, str, str)]. #}
-
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td>{{ title|e }}</td>
-        <td>
-            {% if info %} {{ info_hover(info) }} {% endif %}
-            {% for value, label, entry_id in entries %}
-                <label>
-                    <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
-                      {% if value|stringIn(values.getlist(name)) %} checked {% endif %}
-                      {% if readonly %} disabled {% endif %} {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
-                    {{ label|e }}
-                </label>
-            {% endfor %}
-        </td>
-    </tr>
-{% endmacro %}
-
-{% macro input_radio(name, entries, title="", info='', readonly=False, defaultvalue=None) %}
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        {{ title|e }}
-        {% if info %} {{ info_hover(info) }} {% endif %}
-        {% if readonly %}
-            <span>{{ values.get(name, defaultvalue)|e }}</span>
-        {% else %}
-            <span class="stacking">
-                {% for value, label, entry_id in entries %}
+                <div class="checkbox {% if readonly %}disabled{% endif %}">
                     <label>
-                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}"
-                          {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
-                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
+                        <input type="checkbox" name="{{ name|e }}" value="{{ value|e }}"
+                            {% if value|stringIn(values.getlist(name)) %} checked {% endif %}
+                            {% if readonly %} disabled {% endif %} {% if entry_id %} id="{{ entry_id|e }}"{% endif %} />
                         {{ label|e }}
-                    </label><br>
-                {% endfor %}
-            </span>
-        {% endif %}
-    </span>
-{% endmacro %}
-
-{% macro tab_input_radio(name, entries, title="", info='', readonly=False, defaultvalue=None) %}
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td>
-            {{ title|e }}
-            {% if info %} {{ info_hover(info) }} {% endif %}
-        </td>
-        <td>
-            {% if readonly %}
-                <span>{{ values.get(name, defaultvalue)|e }}</span>
-            {% else %}
-                {% for value, label, entry_id in entries %}
-                    <label>
-                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}"
-                          {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
-                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
-                        {{ label|e }}
-                    </label><br>
-                {% endfor %}
+                    </label>
+                </div>
+            {% endfor %}
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name) }}</div>
             {% endif %}
-        </td>
-    </tr>
+        </div>
+    </div>
 {% endmacro %}
 
-{% macro input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False, anid='',
-                      aclass='') %}
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        {{ title|e }}
-        {% if info %} {{ info_hover(info) }} {% endif %}
-        {% if readonly %}
-            <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {{ values.get(name, defaultvalue)|e }}
-            </span>
-        {% else %}
+{% macro input_radio(name, entries, label="", info='', readonly=False, defaultvalue=None) %}
+    <div class="form-group {% if name in errors %}has-error{% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {% if info %}{{ info_hover(info) }}{% endif %}
+            {{ label|e }}
+        </label>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+            {% for value, label, entry_id in entries %}
+                <div class="checkbox {% if readonly %}disabled{% endif %}">
+                    <label>
+                        <input type="radio" name="{{ name|e }}" value="{{ value|e }}"
+                          {% if values.get(name, defaultvalue)|string == value|string %} checked {% endif %}
+                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}
+                          {% if readonly %}disabled="disabled"{% endif %} />
+                        {{ label|e }}
+                    </label>
+                </div>
+            {% endfor %}
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name) }}</div>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro input_select(name, entries, label="", info='', readonly=False, defaultvalue=None, nulloption=False, anid='',
+                      aclass='form-control', small=False) %}
+    <div class="form-group {% if name in errors %}has-error{% endif %}">
+        <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+                {% if info %}{{ info_hover(info) }}{% endif %}
+                {{ label|e }}
+        </label>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
             <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-              {% if aclass %} class="{{ aclass|e }}" {% endif %}>
+              {% if aclass %} class="{{ aclass|e }}" {% endif %}{% if readonly %}disabled="disabled"{% endif %}>
                 {% if nulloption %}
                      <option value=""> </option>
                 {% endif %}
                 {% for value, label, entry_id in entries %}
                     <option value="{{ value|e }}"
-                      {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
+                      {% if values.get(name, defaultvalue)|string == value|string %} selected="selected" {% endif %}
                       {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
                         {{ label|e }}
                     </option>
                 {% endfor %}
             </select>
-        {% endif %}
-    </span>
-{% endmacro %}
-
-{% macro tab_input_select(name, entries, title="", info='', readonly=False, defaultvalue=None, nulloption=False,
-                          anid='', aclass='') %}
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td>
-            {{ title|e }}
-            {% if info %} {{ info_hover(info) }} {% endif %}
-        </td>
-        <td>
-            {% if readonly %}
-                <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                    {{ values.get(name, defaultvalue)|e }}
-                </span>
-            {% else %}
-                <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                    {% if nulloption %}
-                         <option value=""> </option>
-                    {% endif %}
-                    {% for value, label, entry_id in entries %}
-                        <option value="{{ value|e }}"
-                          {% if values.get(name, defaultvalue)|string == value|string %} selected {% endif %}
-                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
-                            {{ label|e }}
-                        </option>
-                    {% endfor %}
-                </select>
+            {% if name in errors %}
+                <div class="input-error-block">{{ output_errors(name) }}</div>
             {% endif %}
-        </td>
-    </tr>
+        </div>
+    </div>
 {% endmacro %}
 
-{% macro input_multiselect(name, entries, title="", info='', readonly=False, anid='', aclass='') %}
-    <span {% if name in errors %} class="errorInput" {% endif %}>
-        {{ title|e }}
-        {% if info %} {{ info_hover(info) }} {% endif %}
-        {% if readonly %}
-            <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {{ values.getlist(name)|join(", ")|e }}
-            </span>
-        {% else %}
-            <select name="{{ name|e }}" multiple  {% if anid %} id="{{ anid|e }}" {% endif %}
-              {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                {% for value, label, entry_id in entries %}
-                    <option value="{{ value|e }}" {% if value|stringIn(values.getlist(name)) %} selected {% endif %}
-                      {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
-                        {{ label|e }}
-                    </option>
-                {% endfor %}
-            </select>
-        {% endif %}
-    </span>
-{% endmacro %}
-
-{% macro tab_input_multiselect(name, entries, title="", info='', readonly=False, anid='', aclass='') %}
-    <tr {% if name in errors %} class="errorInput" {% endif %}>
-        <td>
-            {{ title|e }}
+{% macro input_submit(value, name="submitform", info='', readonly=False, anid='', aclass='btn btn-primary',
+        small=False) %}
+    <div class="form-group">
+        {% if info %}<div class="control-label">{{ info_hover(info) }}</div>{% endif %}
+        <div class="{% if small %}col-sm-offset-2 col-sm-10{% else %}col-sm-offset-4 col-sm-8{% endif %}">
+            <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
+            id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>{{ value|e }}</button>
             {% if info %} {{ info_hover(info) }} {% endif %}
-        </td>
-        <td>
-            {% if readonly %}
-                <span {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                    {{ values.getlist(name)|join(", ")|e }}
-                </span>
-            {% else %}
-                <select name="{{ name|e }}" multiple {% if anid %} id="{{ anid|e }}" {% endif %}
-                  {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-                    {% for value, label, entry_id in entries %}
-                        <option value="{{ value|e }}" {% if value|stringIn(values.getlist(name)) %} selected {% endif %}
-                          {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
-                            {{ label|e }}
-                        </option>
-                    {% endfor %}
-                </select>
-            {% endif %}
-        </td>
-    </tr>
-{% endmacro %}
-
-{% macro input_submit(value, name="submitform", info='', readonly=False, anid='', aclass='') %}
-    <input type="submit" name="{{ name|e }}" value="{{ value|e }}" {% if readonly %} disabled {% endif %}
-      {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-    {% if info %} {{ info_hover(info) }} {% endif %}
+        </div>
+    </div>
 {% endmacro %}
 
 {% macro format_query(spec, titles, choices, output_selection=True, selection_blacklist=[]) %}
@@ -650,17 +492,17 @@
         {% for value, description in field_data['entries'] %}
             {{ myentries.append((value, description, None))|e }}
         {% endfor %}
-        {{ tab_input_select(name=name, title=label, entries=myentries, nulloption=True,
+        {{ input_select(name=name, label=label, entries=myentries, nulloption=True,
                             readonly=readonly, defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
    {% else %}
         {% if field_data['kind'] == "bool" %}
-            {{ tab_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
+            {{ input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
                                   aclass=aclass) }}
         {% elif field_data['kind'] == "str" %}
-            {{ tab_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+            {{ input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
                                   defaultvalue=defaultvalue, anid=anid, aclass=(aclass + " bigg")) }}
         {% else %}
-            {{ tab_input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+            {{ input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
                               defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
         {% endif %}
    {% endif %}
@@ -682,4 +524,20 @@
 {% if not loop.last %};{% endif -%}
 {% endfor %}
 {% endfor -%}
+{% endmacro %}
+
+{% macro breadcrumb_begin() %}
+<ol class="breadcrumb">
+{% endmacro %}
+
+{% macro breadcrumb_end() %}
+</ol>
+{% endmacro %}
+
+{% macro breadcrumb_link(ref, label, icon="", active=False) %}
+	{% if active %}
+		<li class="active">{% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}</li>
+	{% else %}
+		<li><a href="{{ ref|e }}">{% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}</a></li>
+	{% endif %}
 {% endmacro %}

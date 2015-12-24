@@ -31,7 +31,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertIn("Okarinas", self.response)
         self.assertEqual(
             "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content())
+            self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
     @as_users("anton")
     def test_adminchangedata(self, user):
@@ -59,7 +59,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertIn("Zelda", self.response)
         self.assertTitle("Administration -- Bertålotta Beispiel bearbeiten")
-        self.assertIn("errorInput", self.response)
+        self.assertIn("alert alert-danger", self.response)
 
     def test_changelog(self):
         user = USER_DICT["berta"]
@@ -73,7 +73,7 @@ class TestCdEFrontend(FrontendTest):
         self.logout()
         user = USER_DICT["anton"]
         self.login(user)
-        self.traverse({'description': '^CdE$'}, {'href': '/cde/changelog/list'})
+        self.traverse({'href': '/cde/$'}, {'href': '/cde/changelog/list'})
         self.assertTitle("Änderungen (zurzeit 1 zu begutachten)")
         self.traverse({'href': '/cde/user/2/changelog/inspect'})
         f = self.response.forms['ackchangeform']
@@ -97,7 +97,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/cde/self/consent'})
         f = self.response.forms['ackconsentform']
         self.submit(f)
-        self.assertIn("successNotification", self.response.text)
+        self.assertIn("alert alert-success", self.response.text)
 
     @as_users("anton", "berta")
     def test_get_foto(self, user):
@@ -109,7 +109,9 @@ class TestCdEFrontend(FrontendTest):
     def test_set_foto(self, user):
         self.traverse({'href': '/core/self/show'}, {'href': '/foto/change'})
         f = self.response.forms['setfotoform']
-        f['foto'] = webtest.Upload("/tmp/cdedb-store/testfiles/picture.png")
+        with open("/tmp/cdedb-store/testfiles/picture.png", 'rb') as datafile:
+            data = datafile.read()
+        f['foto'] = webtest.Upload("picture.png", data, "application/octet-stream")
         self.submit(f)
         self.assertIn('foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', self.response.text)
         with open('/tmp/cdedb-store/foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', 'rb') as f:
@@ -119,7 +121,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_member_search_one(self, user):
-        self.traverse({'href': '/cde/search/member'})
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_family_name,birth_name'] = "Beispiel"
@@ -129,7 +132,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_member_search_accents(self, user):
-        self.traverse({'href': '/cde/search/member'})
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_given_names,display_name'] = "Berta"
@@ -139,7 +143,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_member_search(self, user):
-        self.traverse({'href': '/cde/search/member'})
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_event_id'] = 1
@@ -151,7 +156,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_member_search_fulltext(self, user):
-        self.traverse({'href': '/cde/search/member'})
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "876 @example.cde"
@@ -162,7 +168,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search(self, user):
-        self.traverse({'description': '^CdE$'}, {'href': '/cde/search/user/form'})
+        self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user/form'})
         self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'Garten'
@@ -175,7 +181,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search_csv(self, user):
-        self.traverse({'description': '^CdE$'}, {'href': '/cde/search/user/form'})
+        self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user/form'})
         self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'a[rm]'
@@ -196,7 +202,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_archived_user_search(self, user):
-        self.traverse({'description': '^CdE$'}, {'href': '/cde/search/archiveduser/form'})
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/archiveduser/form'})
         self.assertTitle("CdE Archivsuche")
         f = self.response.forms['usersearchform']
         f['qval_birthday'] = '31.12.2000'
@@ -247,7 +254,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_user(self, user):
-        self.traverse({'description': '^CdE$'}, {'href': '/cde/user/create'})
+        self.traverse({'href': '/cde/$'}, {'href': '/cde/user/create'})
         self.assertTitle("Neues Mitglied anlegen")
         data = {
             "username": 'zelda@example.cde',
@@ -297,14 +304,15 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_index(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn("generatetransactionform2", self.response.text)
 
     @as_users("anton", "berta")
     def test_lastschrift_show(self, user):
-        self.traverse({'href': '/cde/search/member'})
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
         f = self.response.forms['membersearchform']
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
@@ -320,7 +328,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_generate_transactions(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionsform']
@@ -334,7 +342,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_generate_single_transaction(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
@@ -348,7 +356,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_transaction_rollback(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
@@ -378,7 +386,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_transaction_cancel(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
@@ -394,7 +402,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_transaction_failure(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['generatetransactionform2']
@@ -410,7 +418,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_skip(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
         f = self.response.forms['skiptransactionform2']
@@ -488,7 +496,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_cde_meta_info(self, user):
-        self.traverse({'href': '/cde'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/meta'})
         self.assertTitle("Allgemeine Vereinsmetainformationen")
         f = self.response.forms['changeinfoform']
@@ -506,12 +514,12 @@ class TestCdEFrontend(FrontendTest):
 
         ## Now check it
         self.login(USER_DICT['anton'])
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/log'})
         self.assertTitle("\nCdE allgemein -- Logs (0--1)\n")
 
     @as_users("anton")
     def test_changelog_meta(self, user):
-        self.traverse({'description': '^CdE$'},
+        self.traverse({'href': '/cde/$'},
                       {'href': '/cde/changelog/view'})
         self.assertTitle("\nCdE Nutzerdaten -- Logs (0--7)\n")

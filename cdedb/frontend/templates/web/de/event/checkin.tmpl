@@ -1,8 +1,8 @@
+{% set sidenav_active='event_checkin' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}Checkin ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     <div>

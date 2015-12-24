@@ -25,7 +25,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertEqual(
             "Zelda",
-            self.response.lxml.get_element_by_id('displayname').text_content())
+            self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
     @as_users("anton")
     def test_adminchangeuser(self, user):
@@ -58,7 +58,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search(self, user):
-        self.traverse({'description': '^Versammlung$'}, {'href': '/assembly/search/user/form'})
+        self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user/form'})
         self.assertTitle("Versammlungsnutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_username'] = 'f@'
@@ -71,7 +71,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_user(self, user):
-        self.traverse({'description': '^Versammlung$'}, {'href': '/assembly/user/create'})
+        self.traverse({'href': '/assembly/$'}, {'href': '/assembly/user/create'})
         self.assertTitle("Neuen Versammlungsnutzer anlegen")
         data = {
             "username": 'zelda@example.cde',
@@ -89,7 +89,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_change_assembly(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},)
         self.assertTitle("Internationaler Kongress")
         self.traverse({'href': '/assembly/1/change'},)
@@ -102,7 +102,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_assembly(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/create'},)
         self.assertTitle("Versammlung anlegen")
         f = self.response.forms['createassemblyform']
@@ -117,7 +117,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("charly")
     def test_signup(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},)
         self.assertTitle("Internationaler Kongress")
         f = self.response.forms['signupform']
@@ -134,7 +134,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("kalif")
     def test_list_attendees(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/attendees'})
         self.assertTitle("Anwesenheitsliste -- Internationaler Kongress")
@@ -149,7 +149,7 @@ class TestAssemblyFrontend(FrontendTest):
     def test_conclude_assembly(self, user):
         self.logout()
         self.test_create_assembly()
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/2/show'},)
         self.assertTitle("Drittes CdE-Konzil")
         f = self.response.forms['signupform']
@@ -179,7 +179,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_entity_ballot_simple(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
         self.assertTitle("Internationaler Kongress -- Abstimmungen")
@@ -221,14 +221,16 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_attachments(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/attachment/add'},)
         self.assertTitle("Datei anhängen (Internationaler Kongress)")
         f = self.response.forms['addattachmentform']
         f['title'] = "Maßgebliche Beschlussvorlage"
         f['filename'] = "beschluss.pdf"
-        f['attachment'] = webtest.Upload("/tmp/cdedb-store/testfiles/form.pdf")
+        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+            data = datafile.read()
+        f['attachment'] = webtest.Upload("form.pdf", data, "application/octet-stream")
         self.submit(f)
         self.traverse({'href': '/assembly/1/show'},)
         saved_response = self.response
@@ -242,7 +244,9 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Datei anhängen (Farbe des Logos)")
         f = self.response.forms['addattachmentform']
         f['title'] = "Magenta wie die Telekom"
-        f['attachment'] = webtest.Upload("/tmp/cdedb-store/testfiles/form.pdf")
+        with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
+            data = datafile.read()
+        f['attachment'] = webtest.Upload("form.pdf", data, "application/octet-stream")
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
         saved_response = self.response
@@ -257,7 +261,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton", "inga", "kalif")
     def test_vote(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/5/show'},)
@@ -277,7 +281,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton", "inga", "kalif")
     def test_classical_vote_radio(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/3/show'},)
@@ -308,7 +312,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton", "inga", "kalif")
     def test_classical_vote_select(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/4/show'},)
@@ -343,7 +347,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton", "inga", "kalif")
     def test_tally_and_get_result(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/1/show'},)
@@ -359,7 +363,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_extend(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/create'},)
@@ -376,7 +380,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_candidate_manipulation(self, user):
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/2/show'},)
@@ -399,7 +403,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.logout()
         self.test_conclude_assembly()
         ## test_tally_and_get_result
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/1/show'},)
@@ -409,7 +413,7 @@ class TestAssemblyFrontend(FrontendTest):
 
         ## Now check it
         self.login(USER_DICT['anton'])
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/log'})
         self.assertTitle("\nVersammlung -- Logs (0--16)\n")
         f = self.response.forms['logshowform']
@@ -420,7 +424,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("\nVersammlung -- Logs (1--7)\n")
 
-        self.traverse({'description': '^Versammlung$'},
+        self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/log.*1'})
         self.assertTitle("\nVersammlung -- Logs (0--8)\n")

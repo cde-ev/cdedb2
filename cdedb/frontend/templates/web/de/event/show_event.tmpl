@@ -1,15 +1,21 @@
+{% set sidenav_active='event_show' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block event_navigation %}{{ event_navigation_gen(unfold=True) }}{% endblock %}
 {% block title %}{{ event_data['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
 {% block content %}
     {% if event_data['id'] in user.orga or is_admin %}
         {{ util.href(cdedblink('event/event_config'), "Konfiguration") }}
-        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", disabled=locked) }}
+        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=True) }}
     {% endif %}
     <p>{{ event_data['description']|e }}</p>
     {% if event_data['is_open'] %}
-        {{ util.href(cdedblink("event/register"), "Zur Anmeldung", disabled=locked) }}
+        {{ util.href(cdedblink("event/register"), "Zur Anmeldung", readonly=True) }}
     {% endif %}
     {% if course_data %}
         <h2>Kurse</h2>
@@ -20,7 +26,7 @@
                                  "{} -- {}".format(entry['nr'], entry['title'])) }}
                     {% if event_data['id'] in user.orga or is_admin %}
                         {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), "Bearbeiten",
-                                     disabled=locked) }}
+                                     readonly=True) }}
                     {% endif %}
                     <p>Kursleiter: {{ entry['instructors']|e }}</p>
                     <p>{{ entry['description']|e }}</p>
@@ -29,6 +35,6 @@
         </ul>
     {% endif %}
     {% if event_data['is_open'] %}
-        {{ util.href(cdedblink("event/register"), "Zur Anmeldung", disabled=locked) }}
+        {{ util.href(cdedblink("event/register"), "Zur Anmeldung", readonly=True) }}
     {% endif %}
 {% endblock %}

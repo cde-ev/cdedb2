@@ -1,5 +1,5 @@
+{% set sidenav_active='assembly_attendees' %}
 {% extends "web/de/assembly/base.tmpl" %}
-{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
 {% block title %}Anwesenheitsliste -- {{ assembly_data['title']|e }}{% endblock %}
 {% block content %}
     <p>Insgesamt {{ user_data|length|e }} Anwesende.</p>
