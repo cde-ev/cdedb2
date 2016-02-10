@@ -1079,10 +1079,16 @@ def reconnoitre_ambience(obj, rs):
                                    == a['lastschrift']['id'])),)),
         Scout(lambda anid: obj.eventproxy.get_event_data_one(rs, anid),
               'event_id', 'event', t),
+        Scout(lambda anid: obj.eventproxy.get_past_event_data_one(rs, anid),
+              'pevent_id', 'pevent', t),
         Scout(lambda anid: obj.eventproxy.get_course_data_one(rs, anid),
               'course_id', 'course',
               ((lambda a: myAssert(a['course']['event_id']
                                    == a['event']['id'])),)),
+        Scout(lambda anid: obj.eventproxy.get_past_course_data_one(rs, anid),
+              'pcourse_id', 'pcourse',
+              ((lambda a: myAssert(a['pcourse']['pevent_id']
+                                   == a['pevent']['id'])),)),
         Scout(None, 'part_id', None,
               ((lambda a: myAssert(rs.requestargs['part_id']
                                    in a['event']['parts'])),)),

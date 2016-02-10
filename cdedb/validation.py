@@ -1560,10 +1560,10 @@ def _past_course_data(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), event_id=_int)
+        mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), pevent_id=_int)
         optional_fields = {}
     else:
-        ## no event_id, since the associated event should be fixed
+        ## no pevent_id, since the associated event should be fixed
         mandatory_fields = {'id': _int}
         optional_fields = _PAST_COURSE_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,

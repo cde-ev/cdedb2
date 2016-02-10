@@ -196,16 +196,16 @@ class CdEFrontend(AbstractUserFrontend):
         if not submitform or rs.errors:
             events = {k: v for k, v in self.eventproxy.list_events(
                 rs, past=True).items()}
-            event_id = None
+            pevent_id = None
             if query:
                 for field, _, value in query.constraints:
-                    if field == "event_id" and value:
-                        event_id = value
+                    if field == "pevent_id" and value:
+                        pevent_id = value
             courses = tuple()
-            if event_id:
+            if pevent_id:
                 courses = {k: v for k, v in self.eventproxy.list_courses(
-                    rs, event_id, past=True).items()}
-            choices = {"event_id": events, 'course_id': courses}
+                    rs, pevent_id, past=True).items()}
+            choices = {"pevent_id": events, 'pcourse_id': courses}
             return self.render(rs, "member_search",
                                {'spec': spec, 'choices': choices,
                                 'queryops': QueryOperators,})
@@ -229,7 +229,7 @@ class CdEFrontend(AbstractUserFrontend):
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
         events = self.eventproxy.list_events(rs, past=True)
-        choices = {'event_id': events,
+        choices = {'pevent_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
         return self.render(rs, "user_search", {
@@ -263,7 +263,7 @@ class CdEFrontend(AbstractUserFrontend):
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
         events = self.eventproxy.list_events(rs, past=True)
-        choices = {'event_id': events,
+        choices = {'pevent_id': events,
                    'status': self.enum_choice(rs, const.PersonaStati),
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_archived_user']

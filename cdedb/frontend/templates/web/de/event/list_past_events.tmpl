@@ -3,9 +3,9 @@
 {% block title %}Alle abgeschlossenen Veranstaltungen{% endblock %}
 {% block content %}
     <ul>
-        {% for event_id, title in events|dictsort|reverse %}
+        {% for pevent_id, title in events|dictsort|reverse %}
             <li>
-                {{ util.href(cdedblink("event/show_past_event", {"event_id": event_id}), title) }}
+                {{ util.href(cdedblink("event/show_past_event", {"pevent_id": pevent_id}), title) }}
             </li>
         {% endfor %}
     </ul>

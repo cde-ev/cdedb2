@@ -22,8 +22,8 @@ Abgeschlossene Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values[
                     {{ persona_data[entry['submitted_by']]['family_name']|e }}
                 </td>
                 <td>
-                    {% if entry['event_id'] %}
-                        {{ event_data[entry['event_id']]['title']|e }}
+                    {% if entry['pevent_id'] %}
+                        {{ event_data[entry['pevent_id']]['title']|e }}
                     {% else %}
                     -
                     {% endif %}
@@ -51,10 +51,10 @@ Abgeschlossene Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values[
                                      entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for event_id, title in events|dictsort %}
-                {{ myentries.append((event_id, title, None))|e }}
+            {% for pevent_id, title in events|dictsort %}
+                {{ myentries.append((pevent_id, title, None))|e }}
             {% endfor %}
-            {{ util.input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
+            {{ util.input_select(name="pevent_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
             {{ util.input_text(name="start", label="Anfang") }}
             {{ util.input_text(name="stop", label="Ende") }}
             {{ util.input_submit(value="Anzeigen") }}

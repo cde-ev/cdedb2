@@ -30,10 +30,10 @@ class TestEventBackend(BackendTest):
                             'is_orga': False,
                             'is_instructor': True,
                             'course_name': 'Swish -- und alles ist gut',
-                            'event_id': 1,
+                            'pevent_id': 1,
                             'event_name': 'PfingstAkademie 2014',
                             'tempus': datetime.date(2014, 5, 25),
-                            'course_id': 1},)}
+                            'pcourse_id': 1},)}
         self.assertEqual(expectation, participation_infos)
         participation_info = self.event.participation_info(self.key, 1)
         participation_infos = self.event.participation_infos(self.key, (1,))
@@ -142,10 +142,10 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton")
     def test_entity_past_course(self, user):
-        event_id = 1
-        old_courses = self.event.list_courses(self.key, event_id, past=True)
+        pevent_id = 1
+        old_courses = self.event.list_courses(self.key, pevent_id, past=True)
         data = {
-            'event_id': event_id,
+            'pevent_id': pevent_id,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -161,42 +161,42 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_past_course_data_one(self.key, new_id))
         self.assertNotIn(new_id, old_courses)
-        new_courses = self.event.list_courses(self.key, event_id, past=True)
+        new_courses = self.event.list_courses(self.key, pevent_id, past=True)
         self.assertIn(new_id, new_courses)
         self.event.delete_past_course(self.key, new_id)
-        newer_courses = self.event.list_courses(self.key, event_id, past=True)
+        newer_courses = self.event.list_courses(self.key, pevent_id, past=True)
         self.assertNotIn(new_id, newer_courses)
 
     @as_users("anton")
     def test_entity_participant(self, user):
-        expectation = {2: {'course_id': 1, 'is_instructor': True,
+        expectation = {2: {'pcourse_id': 1, 'is_instructor': True,
                            'is_orga': False, 'persona_id': 2}}
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, event_id=1))
+                         self.event.list_participants(self.key, pevent_id=1))
         self.event.add_participant(self.key, 1, None, 5, False, False)
-        expectation[5] = {'course_id': None, 'is_instructor': False,
+        expectation[5] = {'pcourse_id': None, 'is_instructor': False,
                           'is_orga': False, 'persona_id': 5}
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, event_id=1))
+                         self.event.list_participants(self.key, pevent_id=1))
         self.assertEqual(0, self.event.remove_participant(self.key, 1, 1, 5))
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, event_id=1))
+                         self.event.list_participants(self.key, pevent_id=1))
         self.assertEqual(1, self.event.remove_participant(self.key, 1, None, 5))
         del expectation[5]
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, event_id=1))
+                         self.event.list_participants(self.key, pevent_id=1))
         self.event.add_participant(self.key, 1, 1, 5, False, False)
-        expectation[5] = {'course_id': 1, 'is_instructor': False,
+        expectation[5] = {'pcourse_id': 1, 'is_instructor': False,
                           'is_orga': False, 'persona_id': 5}
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, event_id=1))
+                         self.event.list_participants(self.key, pevent_id=1))
         self.assertEqual(0, self.event.remove_participant(self.key, 1, None, 5))
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, event_id=1))
+                         self.event.list_participants(self.key, pevent_id=1))
         self.assertEqual(1, self.event.remove_participant(self.key, 1, 1, 5))
         del expectation[5]
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, event_id=1))
+                         self.event.list_participants(self.key, pevent_id=1))
 
     @as_users("anton", "garcia")
     def test_entity_event(self, user):
@@ -871,7 +871,7 @@ class TestEventBackend(BackendTest):
         self.event.set_past_event_data(self.key, {
             'id': new_id, 'title': "Alternate Universe Academy"})
         data = {
-            'event_id': 1,
+            'pevent_id': 1,
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -888,43 +888,43 @@ class TestEventBackend(BackendTest):
         expectation = ({'additional_info': None,
                         'code': 21,
                         'ctime': nearly_now(),
-                        'event_id': 1,
+                        'pevent_id': 1,
                         'persona_id': 5,
                         'submitted_by': 1},
                        {'additional_info': None,
                         'code': 20,
                         'ctime': nearly_now(),
-                        'event_id': 1,
+                        'pevent_id': 1,
                         'persona_id': 5,
                         'submitted_by': 1},
                        {'additional_info': 'New improved title',
                         'code': 12,
                         'ctime': nearly_now(),
-                        'event_id': 1,
+                        'pevent_id': 1,
                         'persona_id': None,
                         'submitted_by': 1},
                        {'additional_info': 'New improved title',
                         'code': 11,
                         'ctime': nearly_now(),
-                        'event_id': 1,
+                        'pevent_id': 1,
                         'persona_id': None,
                         'submitted_by': 1},
                        {'additional_info': 'Topos theory for the kindergarden',
                         'code': 10,
                         'ctime': nearly_now(),
-                        'event_id': 1,
+                        'pevent_id': 1,
                         'persona_id': None,
                         'submitted_by': 1},
                        {'additional_info': None,
                         'code': 1,
                         'ctime': nearly_now(),
-                        'event_id': 2,
+                        'pevent_id': 2,
                         'persona_id': None,
                         'submitted_by': 1},
                        {'additional_info': None,
                         'code': 0,
                         'ctime': nearly_now(),
-                        'event_id': 2,
+                        'pevent_id': 2,
                         'persona_id': None,
                         'submitted_by': 1})
         self.assertEqual(expectation, self.event.retrieve_past_log(self.key))
@@ -968,12 +968,12 @@ class TestEventBackend(BackendTest):
         self.assertEqual(expectation,
                          self.event.list_courses(self.key, new_id, past=True))
         expectation = {
-            7: {'course_id': 3,
+            7: {'pcourse_id': 3,
                 'is_instructor': False,
                 'is_orga': True,
                 'persona_id': 7}}
         self.assertEqual(expectation,
-                         self.event.list_participants(self.key, course_id=3))
+                         self.event.list_participants(self.key, pcourse_id=3))
 
     @as_users("anton")
     def test_log(self, user):

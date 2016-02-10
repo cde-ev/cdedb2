@@ -7,7 +7,7 @@
     {% if is_admin %}
         {{ util.href(cdedblink('event/change_past_course_form'), "Bearbeiten") }}
         <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
-            {{ util.input_hidden(name="course_id", value=values['course_id']) }}
+            {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
             {{ util.input_text(name="persona_id", label="ID") }}
             {{ util.input_checkbox(name="is_instructor", label="Kursleiter") }}
             {{ util.input_checkbox(name="is_orga", label="Orga") }}
@@ -32,7 +32,7 @@
                         <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
-                            {{ util.input_hidden(name="course_id", value=values['course_id']) }}
+                            {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
                             {{ util.input_submit(value="entfernen") }}
                         </form>

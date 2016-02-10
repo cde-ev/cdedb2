@@ -103,16 +103,16 @@
             </tr>
             <tr>
 
-                <td> <input type="hidden" name="qsel_event_id" value="True"  > </td>
+                <td> <input type="hidden" name="qsel_pevent_id" value="True"  > </td>
                 <td> Akademie </td>
-                <td> <input type="hidden" name="qop_event_id" value="{{ queryops.equal.value|e }}"  > </td>
+                <td> <input type="hidden" name="qop_pevent_id" value="{{ queryops.equal.value|e }}"  > </td>
                 <td>
-                    <select name="qval_event_id" >
+                    <select name="qval_pevent_id" >
                         <option value="" > </option>
-                        {% for key in choices['event_id']|sort %}
+                        {% for key in choices['pevent_id']|sort %}
                             <option value="{{ key|e }}"
-                             {% if values.get('qval_event_id') == key|string %} selected {% endif %} >
-                                {{ choices['event_id'][key]|e }}
+                             {% if values.get('qval_pevent_id') == key|string %} selected {% endif %} >
+                                {{ choices['pevent_id'][key]|e }}
                             </option>
                         {% endfor %}
                     </select>
@@ -120,16 +120,16 @@
                 </td>
             </tr>
             <tr>
-                <td> <input type="hidden" name="qsel_course_id" value="True"  > </td>
+                <td> <input type="hidden" name="qsel_pcourse_id" value="True"  > </td>
                 <td> Kurs </td>
-                <td> <input type="hidden" name="qop_course_id" value="{{ queryops.equal.value|e }}"  > </td>
+                <td> <input type="hidden" name="qop_pcourse_id" value="{{ queryops.equal.value|e }}"  > </td>
                 <td>
-                    <select name="qval_course_id" >
+                    <select name="qval_pcourse_id" >
                         <option value="" > </option>
-                        {% for key in choices['course_id']|sort %}
+                        {% for key in choices['pcourse_id']|sort %}
                             <option value="{{ key|e }}"
-                             {% if values.get('qval_course_id') == key|string %} selected {% endif %} >
-                                {{ choices['course_id'][key]|e }}
+                             {% if values.get('qval_pcourse_id') == key|string %} selected {% endif %} >
+                                {{ choices['pcourse_id'][key]|e }}
                             </option>
                         {% endfor %}
                     </select>

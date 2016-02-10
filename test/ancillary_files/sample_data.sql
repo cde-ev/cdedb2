@@ -68,9 +68,9 @@ INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance,
 --
 INSERT INTO past_event.events (id, title, organizer, tempus, description) VALUES
     (1, 'PfingstAkademie 2014', 'CdE', date '2014-05-25', 'Great event!');
-INSERT INTO past_event.courses (id, event_id, title, description) VALUES
+INSERT INTO past_event.courses (id, pevent_id, title, description) VALUES
     (1, 1, 'Swish -- und alles ist gut', 'Ringelpiez mit anfassen.');
-INSERT INTO past_event.participants (persona_id, event_id, course_id, is_instructor, is_orga) VALUES
+INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instructor, is_orga) VALUES
     (2, 1, 1, True, False);
 --
 -- events

@@ -163,11 +163,12 @@ class EventBackend(AbstractBackend):
         """
         ids = affirm_array("int", ids)
         query = glue(
-            "SELECT p.persona_id, p.event_id, e.title AS event_name, e.tempus,",
-            "p.course_id, c.title AS course_name, p.is_instructor, p.is_orga",
+            "SELECT p.persona_id, p.pevent_id, e.title AS event_name,",
+            "e.tempus, p.pcourse_id, c.title AS course_name, p.is_instructor,",
+            "p.is_orga",
             "FROM past_event.participants AS p",
-            "INNER JOIN past_event.events AS e ON (p.event_id = e.id)",
-            "LEFT OUTER JOIN past_event.courses AS c ON (p.course_id = c.id)",
+            "INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)",
+            "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
             "WHERE p.persona_id = ANY(%s)")
         event_data = self.query_all(rs, query, (ids,))
         ret = {}
@@ -225,7 +226,7 @@ class EventBackend(AbstractBackend):
             rs, "enum_eventlogcodes", "event", "event.log", codes, event_id,
             start, stop)
 
-    def past_event_log(self, rs, code, event_id, persona_id=None,
+    def past_event_log(self, rs, code, pevent_id, persona_id=None,
                        additional_info=None):
         """Make an entry in the log for concluded events.
 
@@ -236,7 +237,7 @@ class EventBackend(AbstractBackend):
         :type code: int
         :param code: One of
           :py:class:`cdedb.database.constants.PastEventLogCodes`.
-        :type event_id: int or None
+        :type pevent_id: int or None
         :type persona_id: int or None
         :param persona_id: ID of affected user
         :type additional_info: str or None
@@ -246,7 +247,7 @@ class EventBackend(AbstractBackend):
         """
         data = {
             "code": code,
-            "event_id": event_id,
+            "pevent_id": pevent_id,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
             "additional_info": additional_info,
@@ -254,7 +255,7 @@ class EventBackend(AbstractBackend):
         return self.sql_insert(rs, "past_event.log", data)
 
     @access("event_admin")
-    def retrieve_past_log(self, rs, codes=None, event_id=None, start=None,
+    def retrieve_past_log(self, rs, codes=None, pevent_id=None, start=None,
                           stop=None):
         """Get recorded activity for concluded events.
 
@@ -263,14 +264,14 @@ class EventBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
         :type codes: [int] or None
-        :type event_id: int or None
+        :type pevent_id: int or None
         :type start: int or None
         :type stop: int or None
         :rtype: [{str: object}]
         """
         return self.generic_retrieve_log(
-            rs, "enum_pasteventlogcodes", "event", "past_event.log", codes,
-            event_id, start, stop)
+            rs, "enum_pasteventlogcodes", "pevent", "past_event.log", codes,
+            pevent_id, start, stop)
 
     @access("persona")
     def list_events(self, rs, past):
@@ -345,10 +346,12 @@ class EventBackend(AbstractBackend):
         event_id = affirm("int", event_id)
         if past:
             table = "past_event.courses"
+            key = "pevent_id"
         else:
             table = "event.courses"
+            key = "event_id"
         data = self.sql_select(rs, table, ("id", "title"), (event_id,),
-                               entity_key="event_id")
+                               entity_key=key)
         return {e['id']: e['title'] for e in data}
 
     @access("event")
@@ -701,9 +704,9 @@ class EventBackend(AbstractBackend):
         data = affirm("past_course_data", data)
         ret = self.sql_update(rs, "past_event.courses", data)
         current = self.sql_select_one(rs, "past_event.courses",
-                                      ("title", "event_id"), data['id'])
+                                      ("title", "pevent_id"), data['id'])
         self.past_event_log(
-            rs, const.PastEventLogCodes.course_changed, current['event_id'],
+            rs, const.PastEventLogCodes.course_changed, current['pevent_id'],
             additional_info=current['title'])
         return ret
 
@@ -778,7 +781,7 @@ class EventBackend(AbstractBackend):
         data = affirm("past_course_data", data, creation=True)
         ret = self.sql_insert(rs, "past_event.courses", data)
         self.past_event_log(rs, const.PastEventLogCodes.course_created,
-                            data['event_id'], additional_info=data['title'])
+                            data['pevent_id'], additional_info=data['title'])
         return ret
 
     @access("event")
@@ -809,7 +812,7 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event_admin")
-    def delete_past_course(self, rs, course_id, cascade=False):
+    def delete_past_course(self, rs, pcourse_id, cascade=False):
         """Remove a concluded course.
 
         Because of referrential integrity only courses with no
@@ -824,23 +827,23 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        course_id = affirm("int", course_id)
+        pcourse_id = affirm("int", pcourse_id)
         current = self.sql_select_one(rs, "past_event.courses",
-                                      ("event_id", "title"), course_id)
+                                      ("pevent_id", "title"), pcourse_id)
         with Atomizer(rs):
-            if cascade and self.list_participants(rs, course_id=course_id):
-                cdata = self.get_past_course_data_one(rs, course_id)
-                for pid in self.list_participants(rs, course_id=course_id):
-                    self.delete_participant(rs, cdata['event_id'], course_id,
+            if cascade and self.list_participants(rs, pcourse_id=pcourse_id):
+                cdata = self.get_past_course_data_one(rs, pcourse_id)
+                for pid in self.list_participants(rs, pcourse_id=pcourse_id):
+                    self.delete_participant(rs, cdata['pevent_id'], pcourse_id,
                                             pid)
-            ret = self.sql_delete_one(rs, "past_event.courses", course_id)
+            ret = self.sql_delete_one(rs, "past_event.courses", pcourse_id)
             self.past_event_log(
-                rs, const.PastEventLogCodes.course_deleted, current['event_id'],
+                rs, const.PastEventLogCodes.course_deleted, current['pevent_id'],
                 additional_info=current['title'])
         return ret
 
     @access("event_admin")
-    def add_participant(self, rs, event_id, course_id, persona_id,
+    def add_participant(self, rs, pevent_id, pcourse_id, persona_id,
                         is_instructor, is_orga):
         """Add a participant to a concluded event.
 
@@ -848,9 +851,9 @@ class EventBackend(AbstractBackend):
         example if she took several courses in different parts of the event.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type event_id: int
-        :type course_id: int or None
-        :param course_id: If None the persona participated in the event, but
+        :type pevent_id: int
+        :type pcourse_id: int or None
+        :param pcourse_id: If None the persona participated in the event, but
           not in a course (this should be common for orgas).
         :type persona_id: int
         :type is_instructor: bool
@@ -860,18 +863,18 @@ class EventBackend(AbstractBackend):
         """
         data = {}
         data['persona_id'] = affirm("int", persona_id)
-        data['event_id'] = affirm("int", event_id)
-        data['course_id'] = affirm("int_or_None", course_id)
+        data['pevent_id'] = affirm("int", pevent_id)
+        data['pcourse_id'] = affirm("int_or_None", pcourse_id)
         data['is_instructor'] = affirm("bool", is_instructor)
         data['is_orga'] = affirm("bool", is_orga)
         ret = self.sql_insert(rs, "past_event.participants", data)
         self.past_event_log(
-            rs, const.PastEventLogCodes.participant_added, event_id,
+            rs, const.PastEventLogCodes.participant_added, pevent_id,
             persona_id=persona_id)
         return ret
 
     @access("event_admin")
-    def remove_participant(self, rs, event_id, course_id, persona_id):
+    def remove_participant(self, rs, pevent_id, pcourse_id, persona_id):
         """Remove a participant from a concluded event.
 
         All attributes have to match exactly, so that if someone
@@ -879,49 +882,49 @@ class EventBackend(AbstractBackend):
         are able to delete an exact instance.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type event_id: int
-        :type course_id: int or None
+        :type pevent_id: int
+        :type pcourse_id: int or None
         :type persona_id: int
         :rtype: int
         :returns: default return code
         """
-        event_id = affirm("int", event_id)
-        course_id = affirm("int_or_None", course_id)
+        pevent_id = affirm("int", pevent_id)
+        pcourse_id = affirm("int_or_None", pcourse_id)
         persona_id = affirm("int", persona_id)
-        query = glue("DELETE FROM past_event.participants WHERE event_id = %s",
-                     "AND persona_id = %s AND course_id {} %s")
-        query = query.format("IS" if course_id is None else "=")
-        ret = self.query_exec(rs, query, (event_id, persona_id, course_id))
+        query = glue("DELETE FROM past_event.participants WHERE pevent_id = %s",
+                     "AND persona_id = %s AND pcourse_id {} %s")
+        query = query.format("IS" if pcourse_id is None else "=")
+        ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
         self.past_event_log(
-            rs, const.PastEventLogCodes.participant_removed, event_id,
+            rs, const.PastEventLogCodes.participant_removed, pevent_id,
             persona_id=persona_id)
         return ret
 
     @access("event")
-    def list_participants(self, rs, *, event_id=None, course_id=None):
+    def list_participants(self, rs, *, pevent_id=None, pcourse_id=None):
         """List all participants of a concluded event or course.
 
         Exactly one of the inputs has to be provided.
 
         :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type event_id: int or None
-        :type course_id: int or None
+        :type pevent_id: int or None
+        :type pcourse_id: int or None
         :rtype: {int: {str: object}}
         """
-        if event_id is None and course_id is None:
+        if pevent_id is None and pcourse_id is None:
             raise ValueError("No input specified.")
-        if event_id is not None and course_id is not None:
+        if pevent_id is not None and pcourse_id is not None:
             raise ValueError("Too many inputs specified.")
-        if event_id is not None:
-            anid = affirm("int", event_id)
-            entity_key = "event_id"
-        if course_id is not None:
-            anid = affirm("int", course_id)
-            entity_key = "course_id"
+        if pevent_id is not None:
+            anid = affirm("int", pevent_id)
+            entity_key = "pevent_id"
+        if pcourse_id is not None:
+            anid = affirm("int", pcourse_id)
+            entity_key = "pcourse_id"
 
         data = self.sql_select(
             rs, "past_event.participants",
-            ("persona_id", "course_id", "is_instructor", "is_orga"), (anid,),
+            ("persona_id", "pcourse_id", "is_instructor", "is_orga"), (anid,),
             entity_key=entity_key)
         return {e['persona_id']: e for e in data}
 
@@ -1354,7 +1357,7 @@ class EventBackend(AbstractBackend):
                 pcourse = {k: v for k, v in cdata.items()
                            if k in PAST_COURSE_FIELDS}
                 del pcourse['id']
-                pcourse['event_id'] = new_id
+                pcourse['pevent_id'] = new_id
                 pcourse_id = self.create_past_course(rs, pcourse)
                 course_map[course_id] = pcourse_id
             registrations = self.list_registrations(rs, event_id)

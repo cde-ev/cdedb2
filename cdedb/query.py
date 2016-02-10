@@ -112,8 +112,8 @@ QUERY_SPECS = {
         ("country,country2", "str"),
         ("weblink,specialisation,affiliation,timeline,interests,free_form",
          "str"),
-        ("event_id", "int"),
-        ("course_id", "int"),
+        ("pevent_id", "int"),
+        ("pcourse_id", "int"),
         ]),
     "qview_cde_user" :
     collections.OrderedDict([
@@ -178,8 +178,8 @@ QUERY_SPECS = {
         ("display_name", "str"),
         ("gender", "int"),
         ("birthday", "date"),
-        ("event_id", "int"),
-        ("course_id", "int"),
+        ("pevent_id", "int"),
+        ("pcourse_id", "int"),
         ("notes", "str"),
         ]),
     "qview_event_user" :
@@ -215,8 +215,8 @@ QUERY_SPECS = {
         ("postal_code", "str"),
         ("location", "str"),
         ("country", "str"),
-        ("event_id", "int"),
-        ("course_id", "int"),
+        ("pevent_id", "int"),
+        ("pcourse_id", "int"),
         ("notes", "str"),
         ]),
     "qview_registration" :

@@ -151,7 +151,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
-        f['qval_event_id'] = 1
+        f['qval_pevent_id'] = 1
         self.submit(f, button="updateform")
         f = self.response.forms['membersearchform']
         f['qval_username'] = "@example"

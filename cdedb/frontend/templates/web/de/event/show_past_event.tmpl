@@ -7,7 +7,7 @@
         {{ util.href(cdedblink('event/create_past_course_form'), "Kurs hinzufügen") }}
         <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
             {{ util.input_text(name="persona_id", label="ID") }}
-            {{ util.input_hidden(name="course_id", value="") }}
+            {{ util.input_hidden(name="pcourse_id", value="") }}
             {{ util.input_hidden(name="is_instructor", value=False) }}
             {{ util.input_checkbox(name="is_orga", label="Orga") }}
             {{ util.input_submit(value="Teilnehmer (ohne Kurs) hinzufügen") }}
@@ -19,7 +19,7 @@
         <h2>Kurse</h2>
         <ul>
             {% for anid, title in courses|dictsort %}
-                <li>{{ util.href(cdedblink('event/show_past_course', {'course_id' : anid}), title) }}</li>
+                <li>{{ util.href(cdedblink('event/show_past_course', {'pcourse_id' : anid}), title) }}</li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -36,11 +36,11 @@
                         </strong>
                     {% endif %}
                     {# only allow removal of participants without a course #}
-                    {% if is_admin and pdata['course_id'] is none %}
+                    {% if is_admin and pdata['pcourse_id'] is none %}
                         <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
-                            {{ util.input_hidden(name="course_id", value=pdata['course_id']) }}
+                            {{ util.input_hidden(name="pcourse_id", value=pdata['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(value="entfernen") }}
                         </form>
