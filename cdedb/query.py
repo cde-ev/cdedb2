@@ -102,7 +102,7 @@ class Query:
 QUERY_SPECS = {
     "qview_cde_member" :
     collections.OrderedDict([
-        ("family_name,birth_name,given_names,display_name,username,address,address_supplement,address2,address_supplement2,postal_code,postal_code2,location,location2,country,country2,weblink,specialisation,affiliation,timeline,interests,free_form", "str"), # replacement for fulltext FIXME does not really work (see general_query)
+        ("fulltext", "str"),
         ("family_name,birth_name", "str"),
         ("given_names,display_name", "str"),
         ("username", "str"),
@@ -117,7 +117,7 @@ QUERY_SPECS = {
         ]),
     "qview_cde_user" :
     collections.OrderedDict([
-        # ("fulltext", "str"), FIXME reintroduce
+        ("fulltext", "str"),
         ("personas.id", "int"),
         ("username", "str"),
         ("is_admin", "bool"),
@@ -184,6 +184,7 @@ QUERY_SPECS = {
         ]),
     "qview_event_user" :
     collections.OrderedDict([
+        ("fulltext", "str"),
         ("personas.id", "int"),
         ("username", "str"),
         ("is_admin", "bool"),
@@ -249,6 +250,7 @@ QUERY_SPECS = {
         ]),
     "qview_generic_user" :
     collections.OrderedDict([
+        ("fulltext", "str"),
         ("id", "int"),
         ("username", "str"),
         ("is_admin", "bool"),

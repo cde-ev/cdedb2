@@ -119,6 +119,26 @@ class CoreBackend(AbstractBackend):
         """
         return sha512_crypt.encrypt(password)
 
+    @staticmethod
+    def create_fulltext(persona):
+        """Helper to mangle all data into a single string.
+
+        :type persona: {str: object}
+        :param persona: one persona data set to convert into a string for
+          fulltext search
+        :rtype: str
+        """
+        attributes = (
+            "id", "title", "username", "display_name", "given_names",
+            "family_name", "birth_name", "name_supplement", "birthday",
+            "telephone", "mobile", "address_supplement", "address",
+            "postal_code", "location", "country", "address_supplement2",
+            "address2", "postal_code2", "location2", "country2", "weblink",
+            "specialisation", "affiliation", "timeline", "interests",
+            "free_form")
+        values = (str(persona[a]) for a in attributes if persona[a] is not None)
+        return " ".join(values)
+
     def core_log(self, rs, code, persona_id, additional_info=None):
         """Make an entry in the log.
 
@@ -537,6 +557,14 @@ class CoreBackend(AbstractBackend):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
                 raise ValueError("Nonexistant user.")
+            current = unwrap(self.retrieve_personas(
+                rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
+            fulltext = self.create_fulltext(current)
+            fulltext_update = {
+                'id': data['id'],
+                'fulltext': fulltext
+            }
+            self.sql_update(rs, "core.personas", fulltext_update)
             self.core_log(rs, const.CoreLogCodes.persona_change, data['id'],
                           additional_info=change_note)
             if ldap_ops:
@@ -964,6 +992,9 @@ class CoreBackend(AbstractBackend):
         data['password_hash'] = glue(
             "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/",
             "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+        fulltext_data = copy.deepcopy(data)
+        fulltext_data['id'] = None
+        data['fulltext'] = self.create_fulltext(fulltext_data)
         ldap_ops = (
             ('objectClass', 'cdePersona'),
             ('sn', "({})".format(data['username'])),
@@ -985,6 +1016,7 @@ class CoreBackend(AbstractBackend):
             })
             ## remove unlogged attributes
             del data['password_hash']
+            del data['fulltext']
             self.sql_insert(rs, "core.changelog", data)
             dn = "uid={},{}".format(new_id, self.conf.LDAP_UNIT_NAME)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)

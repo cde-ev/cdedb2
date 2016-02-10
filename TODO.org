@@ -1,8 +1,6 @@
 * FIXMEs
 ** update documentation (maybe after RPC removal)
-** past_event_id
 ** move archived_user stuff to core realm
-** Reintroduce fulltext attribute
 ** Fix privilege bits in show user pages
 * actionable items
 ** rip out RPC system between frontend and backend (thus allowing atomicity in the frontend)

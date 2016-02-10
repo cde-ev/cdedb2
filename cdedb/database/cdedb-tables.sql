@@ -120,9 +120,10 @@ CREATE TABLE core.personas (
         bub_search              boolean DEFAULT FALSE,
         CHECK(NOT is_cde_realm OR bub_search IS NOT NULL),
         -- file name of image
-        foto                    varchar DEFAULT NULL
-
-        -- fulltext FIXME cannot be done otherwise
+        foto                    varchar DEFAULT NULL,
+        -- automatically managed attribute containing all above values as a
+        -- string for fulltext search
+        fulltext                varchar NOT NULL
 );
 CREATE INDEX idx_personas_username ON core.personas(username);
 CREATE INDEX idx_personas_is_cde_realm ON core.personas(is_cde_realm);
