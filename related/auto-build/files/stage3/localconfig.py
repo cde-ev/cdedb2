@@ -11,17 +11,11 @@ CONSOLE_LOG_LEVEL = logging.INFO
 
 GLOBAL_LOG = "/log/cdedb.log"
 FRONTEND_LOG = "/log/cdedb-frontend.log"
-CORE_ACCESS_LOG = "/log/cdedb-access-core.log"
 CORE_BACKEND_LOG = "/log/cdedb-backend-core.log"
-SESSION_ACCESS_LOG = "/log/cdedb-access-session.log"
 SESSION_BACKEND_LOG = "/log/cdedb-backend-session.log"
-CDE_ACCESS_LOG = "/log/cdedb-access-cde.log"
 CDE_BACKEND_LOG = "/log/cdedb-backend-cde.log"
-EVENT_ACCESS_LOG = "/log/cdedb-access-event.log"
 EVENT_BACKEND_LOG = "/log/cdedb-backend-event.log"
-ML_ACCESS_LOG = "/log/cdedb-access-ml.log"
 ML_BACKEND_LOG = "/log/cdedb-backend-ml.log"
-ASSEMBLY_ACCESS_LOG = "/log/cdedb-access-assembly.log"
 ASSEMBLY_BACKEND_LOG = "/log/cdedb-backend-assembly.log"
 
 try:

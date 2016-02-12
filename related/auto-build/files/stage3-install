@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-BACKENDS="session core cde event ml assembly"
-
 echo ""
 echo "cdedb - sandbox system: STAGE 3"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -27,7 +25,6 @@ chown cdedb:cdedb /cdedb2
 sudo -u cdedb git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2 /cdedb2 || sudo -u cdedb git clone ssh://gitolite@10.8.0.2:63332/cdedb2 /cdedb2
 cd /cdedb2
 chmod 600 /cdedb2/.ldap_rootpw
-chmod +x /cdedb2/related/auto-build/files/stage3/make-pyro-nameserver.sh
 # build the documentation
 make doc
 
@@ -81,51 +78,16 @@ echo "--------------------------------------------"
 cp /cdedb2/related/auto-build/files/stage3/localconfig.py /cdedb2/cdedb/
 chown cdedb:cdedb /cdedb2/cdedb/localconfig.py
 chmod 644 /cdedb2/cdedb/localconfig.py
-cp /cdedb2/related/auto-build/files/stage3/backendconfig.py /home/backend/
-chown backend:backend /home/backend/backendconfig.py
-chmod 600 /home/backend/backendconfig.py
-cp /cdedb2/related/auto-build/files/stage3/frontendconfig.py /etc/cdedb-frontend-config.py
-chown www-data:www-data /etc/cdedb-frontend-config.py
-chmod 640 /etc/cdedb-frontend-config.py
+cp /cdedb2/related/auto-build/files/stage3/applicationconfig.py /etc/cdedb-application-config.py
+chown www-data:www-data /etc/cdedb-application-config.py
+chmod 640 /etc/cdedb-application-config.py
 
 echo ""
 echo "Create central directory for log files..."
 echo "--------------------------------------------"
 
 mkdir -p /log
-chown cdedb:cdedb /log
-chmod 777 /log
-# this needs to be writable by frontend _and_ backend
-touch /log/cdedb.log
-chmod 666 /log/cdedb.log
-
-echo ""
-echo "Let the cdedb run automagically..."
-echo "--------------------------------------------"
-
-cp /cdedb2/related/auto-build/files/stage3/cdedb-rundir /etc/init.d
-chmod +x /etc/init.d/cdedb-rundir
-update-rc.d cdedb-rundir defaults
-
-cp /cdedb2/related/auto-build/files/stage3/pyro-nameserver /etc/init.d
-chmod +x /etc/init.d/pyro-nameserver
-update-rc.d pyro-nameserver defaults
-
-cp /cdedb2/related/auto-build/files/stage3/runit /etc/init.d
-chmod +x /etc/init.d/runit
-update-rc.d runit defaults
-
-for i in $BACKENDS; do
-    mkdir -p /etc/sv/$i;
-    cat >/etc/sv/$i/run <<EOF
-#!/bin/bash
-cd /cdedb2
-CONFIGPATH=/home/backend/backendconfig.py
-exec chpst -u backend:backend make run-$i
-EOF
-    chmod +x /etc/sv/$i/run;
-    ln -s /etc/sv/$i /etc/service/$i;
-done;
+chown www-data:www-data /log
 
 echo ""
 echo "Set up the apache2..."

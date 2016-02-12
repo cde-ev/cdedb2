@@ -1,1 +1,0 @@
-URL_PARAMETER_SALT = "aoeuidhtns9KT6AOR2kNjq2zO"

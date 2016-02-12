@@ -17,7 +17,7 @@ MKISOFS ?= genisoimage
 
 QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443
 
-DEBVERSION = 8.1.0
+DEBVERSION = 8.3.0
 NETINSTISO =  debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \

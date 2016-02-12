@@ -1,4 +1,4 @@
-SESSION_LOOKUP_KEY = "a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5"
+URL_PARAMETER_SALT = "aoeuidhtns9KT6AOR2kNjq2zO"
 CDB_DATABASE_ROLES = {
    "cdb_anonymous": "012345678901234567890123456789",
    "cdb_persona": "abcdefghijklmnopqrstuvwxyzabcd",

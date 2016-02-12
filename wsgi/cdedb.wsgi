@@ -13,7 +13,7 @@ repopath = currentpath[:-5]
 sys.path.append(repopath)
 
 from cdedb.frontend.application import Application
-configpath = "/etc/cdedb-frontend-config.py"
+configpath = "/etc/cdedb-application-config.py"
 if not os.path.isfile(configpath):
    configpath = None
 application = Application(configpath)
