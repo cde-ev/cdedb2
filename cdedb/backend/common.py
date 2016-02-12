@@ -12,8 +12,8 @@ import logging
 from cdedb.database.connection import connection_pool_factory, Atomizer
 from cdedb.database import DATABASE_ROLES
 from cdedb.common import (
-    glue, make_root_logger, extract_roles,
-    DB_ROLE_MAPPING, CommonUser, PrivilegeError, unwrap, PERSONA_STATUS_FIELDS)
+    glue, make_root_logger, extract_roles, ProxyShim,
+    DB_ROLE_MAPPING, PrivilegeError, unwrap, PERSONA_STATUS_FIELDS)
 from cdedb.query import QueryOperators, QUERY_VIEWS
 from cdedb.config import Config, SecretsConfig
 import abc
@@ -88,59 +88,6 @@ def batchify(batch_function_name, array_param_name="data",
         return fun
     return wrap
 
-def do_singularization(fun):
-    """Perform singularization on a function.
-
-    This is the companion to the @singularize decorator.
-    :type fun: callable
-    :param fun: function with ``fun.singularization_hint`` attribute
-    :rtype: callable
-    :returns: singularized function
-    """
-    hint = fun.singularization_hint
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        if hint['singular_param_name'] in kwargs:
-            param = kwargs.pop(hint['singular_param_name'])
-            kwargs[hint['array_param_name']] = (param,)
-        else:
-            param = args[0]
-            args = ((param,),) + args[1:]
-        data = fun(rs, *args, **kwargs)
-        ## raises KeyError if the requested thing does not exist
-        return data[param]
-    new_fun.__name__ = hint['singular_function_name']
-    return new_fun
-
-def do_batchification(fun):
-    """Perform batchification on a function.
-
-    This is the companion to the @batchify decorator.
-    :type fun: callable
-    :param fun: function with ``fun.batchification_hint`` attribute
-    :rtype: callable
-    :returns: batchified function
-    """
-    hint = fun.batchification_hint
-    @functools.wraps(fun)
-    def new_fun(rs, *args, **kwargs):
-        ret = []
-        with Atomizer(rs):
-            if hint['array_param_name'] in kwargs:
-                param = kwargs.pop(hint['array_param_name'])
-                for datum in param:
-                    new_kwargs = copy.deepcopy(kwargs)
-                    new_kwargs[hint['singular_param_name']] = datum
-                    ret.append(fun(rs, *args, **new_kwargs))
-            else:
-                param = args[0]
-                for datum in param:
-                    new_args = (datum,) + args[1:]
-                    ret.append(fun(rs, *new_args, **kwargs))
-        return ret
-    new_fun.__name__ = hint['batch_function_name']
-    return new_fun
-
 def access(*roles):
     """The @access decorator marks a function of a backend for publication via
     RPC.
@@ -164,20 +111,6 @@ def internal_access(*roles):
         fun.internal_access_list = set(roles)
         return fun
     return decorator
-
-class BackendRequestState:
-    """As the backends should be stateless most functions should as first
-    argument accept a request state object.
-    """
-    def __init__(self, sessionkey, user, conn):
-        """
-        :type sessionkey: str
-        :type user: :py:class:`BackendUser`
-        :type conn: :py:class:`cdedb.database.connection.IrradiatedConnection`
-        """
-        self.sessionkey = sessionkey
-        self.user = user
-        self.conn = conn
 
 class AbstractBackend(metaclass=abc.ABCMeta):
     """Basic template for all backend services.
@@ -204,9 +137,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 self.realm.upper())), self.conf.LOG_LEVEL,
             syslog_level=self.conf.SYSLOG_LEVEL,
             console_log_level=self.conf.CONSOLE_LOG_LEVEL)
-        self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            SecretsConfig(configpath))
         ## logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.{}".format(self.realm))
         self.logger.info("Instantiated {} with configpath {}.".format(
@@ -217,67 +147,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         else:
             # FIXME cyclic import
             from cdedb.backend.core import CoreBackend
-            self.core = AuthShim(CoreBackend(configpath))
-
-    @abc.abstractmethod
-    def establish(self, sessionkey, method, allow_internal=False):
-        """Do the initialization for an RPC connection.
-
-        :type sessionkey: str
-        :param sessionkey: used for authorization and converted into a
-          :py:class:`BackendRequestState`
-        :type method: str
-        :param method: name of the method to be invoked via RPC
-        :type allow_internal: bool
-        :param allow_internal: ``True`` for permitting
-          @internal_access. This is currently only used for testing.
-        :rtype: :py:class:`BackendRequestState` or None
-        """
-        persona_id = None
-        if sessionkey:
-            query = glue("SELECT persona_id FROM core.sessions",
-                         "WHERE sessionkey = %s AND is_active = True")
-            with self.connpool["cdb_anonymous"] as conn:
-                with conn.cursor() as cur:
-                    self.execute_db_query(cur, query, (sessionkey,))
-                    if cur.rowcount == 1:
-                        persona_id = cur.fetchone()["persona_id"]
-                    else:
-                        self.logger.info("Got invalid session key '{}'.".format(
-                            sessionkey))
-        user = BackendUser()
-        if persona_id:
-            ## no update to core.sessions(atime) here
-            ## these happen only in the frontend and on logout
-            ## the backend can generally be less paranoid about sessions
-            query = "SELECT {} FROM core.personas WHERE id = %s".format(
-                ', '.join(PERSONA_STATUS_FIELDS))
-            with self.connpool["cdb_anonymous"] as conn:
-                with conn.cursor() as cur:
-                    self.execute_db_query(cur, query, (persona_id,))
-                    data = self._sanitize_db_output(cur.fetchone())
-            if data["is_active"]:
-                roles = extract_roles(data)
-                user = BackendUser(persona_id=persona_id, roles=roles)
-            else:
-                self.logger.warning("Found inactive user {}".format(persona_id))
-        try:
-            access_list = getattr(self, method).access_list
-        except AttributeError:
-            if allow_internal:
-                access_list = getattr(self, method).internal_access_list
-            else:
-                raise
-        if user.roles & access_list:
-            ret = BackendRequestState(sessionkey, user,
-                                      self.connpool[self.db_role(user.roles)])
-            return ret
-        else:
-            message = glue("Missing access privileges to method {}",
-                           "(roles are {} and we require {})").format(
-                               method, user.roles, access_list)
-            self.logger.warn(message)
-            return None
+            self.core = ProxyShim(CoreBackend(configpath), internal=True)
 
     def affirm_realm(self, rs, ids, realms=None):
         """Check that all personas corresponding to the ids are in the
@@ -294,17 +164,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if any(not x >= realms for x in actual_realms.values()):
             raise ValueError("Wrong realm for personas.")
         return
-
-    @staticmethod
-    def db_role(roles):
-        """Convert a set of application level roles into a database level role.
-
-        :type roles: {str}
-        :rtype: str
-        """
-        for role in DB_ROLE_MAPPING:
-            if role in roles:
-                return DB_ROLE_MAPPING[role]
 
     @classmethod
     @abc.abstractmethod
@@ -756,11 +615,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                              table=table, condition=condition)
         return self.query_all(rs, query, params)
 
-class BackendUser(CommonUser):
-    """Container for a persona in the backend."""
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
 def affirm_validation(assertion, value, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
@@ -785,103 +639,6 @@ def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
         return None
     checker = getattr(validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
-
-def make_RPCDaemon(backend, socket_address, access_log=None):
-    """Wrapper around :py:func:`cdedb.backend.rpc.create_RPCDaemon` which is
-    necessary to set up the environment for :py:mod:`Pyro4` before it is
-    imported.
-
-    :type backend: :py:class:`AbstractBackend`
-    :type socket_address: str
-    :type access_log: str or None
-    :rtype: :py:class:`Pyro4.core.Daemon`
-    """
-    if access_log:
-        os.environ['PYRO_LOGFILE'] = access_log
-        if backend.conf.LOG_LEVEL <= logging.DEBUG:
-            os.environ['PYRO_LOGLEVEL'] = "DEBUG"
-        else:
-            os.environ['PYRO_LOGLEVEL'] = "INFO"
-    # TODO this is a cyclic import
-    from cdedb.backend.rpc import create_RPCDaemon
-    return create_RPCDaemon(backend, socket_address, bool(access_log))
-
-def run_RPCDaemon(daemon, pidfile=None):
-    """Helper to run :py:meth:`Pyro4.core.Daemon.requestLoop`. This provides a
-    handler for doing a clean shutdown on SIGTERM and creates a state file
-    to get the server pid.
-
-    :type daemon: :py:class:`Pyro4.core.Daemon`
-    :type pidfile: str or None
-    """
-    running = [True]
-    def handler(signum, frame): ## signature because of interface compatability
-        if running:
-            running.pop()
-    signal.signal(signal.SIGTERM, handler)
-    if pidfile:
-        with open(pidfile, 'w') as f:
-            f.write(str(os.getpid()))
-    try:
-        with daemon:
-            daemon.requestLoop(lambda: running)
-    finally:
-        if pidfile:
-            os.remove(pidfile)
-
-class AuthShim:
-    """Mediate calls between different backend components. This emulates an
-    RPC call without most of the overhead of actually doing an RPC call.
-    """
-    def __init__(self, backend):
-        """
-        :type backend: :py:class:`AbstractBackend`
-        """
-        self._backend = backend
-        self._funs = {}
-        funs = inspect.getmembers(backend, predicate=inspect.isroutine)
-        for name, fun in funs:
-            if hasattr(fun, "access_list") or hasattr(fun,
-                                                      "internal_access_list"):
-                self._funs[name] = self._wrapit(fun)
-                if hasattr(fun, "singularization_hint"):
-                    hint = fun.singularization_hint
-                    self._funs[hint['singular_function_name']] = self._wrapit(
-                        do_singularization(fun))
-                    setattr(backend, hint['singular_function_name'],
-                            do_singularization(fun))
-                if hasattr(fun, "batchification_hint"):
-                    hint = fun.batchification_hint
-                    self._funs[hint['batch_function_name']] = self._wrapit(
-                        do_batchification(fun))
-                    setattr(backend, hint['batch_function_name'],
-                            do_batchification(fun))
-
-    @staticmethod
-    def _wrapit(fun):
-        """
-        :type fun: callable
-        """
-        try:
-            access_list = fun.internal_access_list
-        except AttributeError:
-            access_list = fun.access_list
-        @functools.wraps(fun)
-        def new_fun(rs, *args, **kwargs):
-            if rs.user.roles & access_list:
-                return fun(rs, *args, **kwargs)
-            else:
-                raise PrivilegeError("Not in access list.")
-        return new_fun
-
-    def __getattr__(self, name):
-        if name in {"_funs", "_backend"}:
-            raise AttributeError()
-        try:
-            return self._funs[name]
-        except KeyError as e:
-            raise AttributeError from e
-
 
 #: Translate between validator names and sql data types.
 #:

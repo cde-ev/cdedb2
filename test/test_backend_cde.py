@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from cdedb.common import QuotaException
-from cdedb.query import QUERY_SPECS, QueryOperators
+from cdedb.query import QUERY_SPECS, QueryOperators, Query
 import cdedb.database.constants as const
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 import decimal
@@ -291,46 +291,43 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta")
     def test_member_search(self, user):
-        query = {
-            "scope": "qview_cde_member",
-            "spec": dict(QUERY_SPECS["qview_cde_member"]),
-            "fields_of_interest": ("personas.id", "family_name",
-                                    "birthday"),
-            "constraints": (("given_names,display_name", QueryOperators.regex.value, '[ae]'),
-                             ("country,country2", QueryOperators.empty.value, None)),
-            "order": (("family_name", True),),
-        }
+        query = Query(
+            scope="qview_cde_member",
+            spec=dict(QUERY_SPECS["qview_cde_member"]),
+            fields_of_interest=("personas.id", "family_name",
+                                   "birthday"),
+            constraints=[("given_names,display_name", QueryOperators.regex, '[ae]'),
+                            ("country,country2", QueryOperators.empty, None)],
+            order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({1, 2, 6, 9, 12}, {e['id'] for e in result})
 
     @as_users("anton")
     def test_user_search(self, user):
-        query = {
-            "scope": "qview_cde_user",
-            "spec": dict(QUERY_SPECS["qview_cde_user"]),
-            "fields_of_interest": ("personas.id", "family_name",
-                                    "birthday"),
-            "constraints": (("given_names", QueryOperators.regex.value, '[ae]'),
-                             ("birthday", QueryOperators.less.value, datetime.datetime.now())),
-            "order": (("family_name", True),),
-        }
+        query = Query(
+            scope="qview_cde_user",
+            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            fields_of_interest=("personas.id", "family_name",
+                                   "birthday"),
+            constraints=[("given_names", QueryOperators.regex, '[ae]'),
+                            ("birthday", QueryOperators.less, datetime.datetime.now())],
+            order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({1, 2, 3, 4, 6, 7}, {e['id'] for e in result})
 
     @as_users("anton")
     def test_user_search_operators(self, user):
-        query = {
-            "scope": "qview_cde_user",
-            "spec": dict(QUERY_SPECS["qview_cde_user"]),
-            "fields_of_interest": ("personas.id", "family_name",
-                                    "birthday"),
-            "constraints": (("given_names", QueryOperators.similar.value, 'Berta'),
-                             ("address", QueryOperators.oneof.value, ("Auf der Düne 42", "Im Garten 77")),
-                             ("weblink", QueryOperators.containsall.value, ("/", ":", "http")),
-                             ("birthday", QueryOperators.between.value, (datetime.datetime(1000, 1, 1),
-                                                                         datetime.datetime.now()))),
-            "order": (("family_name", True),),
-        }
+        query = Query(
+            scope="qview_cde_user",
+            spec=dict(QUERY_SPECS["qview_cde_user"]),
+            fields_of_interest=("personas.id", "family_name",
+                                   "birthday"),
+            constraints=[("given_names", QueryOperators.similar, 'Berta'),
+                            ("address", QueryOperators.oneof, ("Auf der Düne 42", "Im Garten 77")),
+                            ("weblink", QueryOperators.containsall, ("/", ":", "http")),
+                            ("birthday", QueryOperators.between, (datetime.datetime(1000, 1, 1),
+                                                                        datetime.datetime.now()))],
+            order=(("family_name", True),),)
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e['id'] for e in result})
 

@@ -2,4 +2,4 @@
 
 DB_PORT = 42
 CDB_DATABASE_NAME = "skynet"
-SESSION_LOOKUP_KEY = "matrix"
+ML_SCRIPT_KEY = "matrix"

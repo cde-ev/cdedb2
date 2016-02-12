@@ -40,7 +40,6 @@ import sys
 import werkzeug.datastructures
 
 from cdedb.common import EPSILON, compute_checkdigit, now, extract_roles
-from cdedb.serialization import deserialize
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
@@ -58,18 +57,10 @@ _ALL = []
 def _addvalidator(fun):
     """Mark a function for processing into validators.
 
-    Add an inversion of our custom serialization. This is for the
-    direction of frontend -> backend.
-
     :type fun: callable
     """
     _ALL.append(fun)
-    @functools.wraps(fun)
-    def new_fun(*args, **kwargs):
-        args = tuple(deserialize(arg) for arg in args)
-        kwargs = {key: deserialize(value) for key, value in kwargs.items()}
-        return fun(*args, **kwargs)
-    return new_fun
+    return fun
 
 def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
                                *, allow_superfluous=False, _convert=True):
@@ -2226,117 +2217,84 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     return Query(None, spec, fields_of_interest, constraints, order), errs
 
 @_addvalidator
-def _serialized_query(val, argname=None, *, _convert=True):
+def _query(val, argname=None, *, _convert=None):
     """This is for the queries from frontend to backend.
+
+    FIXME
 
     :type val: object
     :type argname: str or None
-    :type _convert: bool
+    :type _convert: ignored FIXME
     :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
-    val, errs = _mapping(val, argname, _convert=_convert)
-    if errs:
-        return val, errs
-    if set(val) != {"scope", "spec", "fields_of_interest", "constraints",
-                    "order"}:
-        return None, [(argname, ValueError("Wrong keys."))]
+    if not isinstance(val, Query):
+        return None, [(argname, TypeError("Not a Query."))]
     ## scope
-    scope, e = _identifier(val['scope'], "scope", _convert=_convert)
-    errs.extend(e)
-    if scope and not scope.startswith("qview_"):
+    _, errs = _identifier(val.scope, "scope", _convert=False)
+    if not val.scope.startswith("qview_"):
         errs.append(("scope", ValueError("Must start with 'qview_'.")))
     ## spec
-    spec_val, e = _mapping(val['spec'], "spec", _convert=_convert)
-    errs.extend(e)
-    if errs:
-        return None, errs
-    spec = {}
-    for field, validator in spec_val.items():
-        field, e = _csv_identifier(field, "spec", _convert=_convert)
+    for field, validator in val.spec.items():
+        _, e = _csv_identifier(field, "spec", _convert=False)
         errs.extend(e)
-        validator, e = _printable_ascii(validator, "spec", _convert=_convert)
+        _, e = _printable_ascii(validator, "spec", _convert=False)
         errs.extend(e)
-        spec[field] = validator
     ## fields_of_interest
-    fields_of_interest = []
-    oldfields, e = _iterable(val['fields_of_interest'], 'fields_of_interest',
-                             _convert=_convert)
-    if e:
+    for field in val.fields_of_interest:
+        _, e = _csv_identifier(field, "fields_of_interest",
+                                   _convert=False)
         errs.extend(e)
-    else:
-        for field in oldfields:
-            field, e = _csv_identifier(field, "fields_of_interest",
-                                       _convert=_convert)
-            fields_of_interest.append(field)
-            errs.extend(e)
-    if not fields_of_interest:
+    if not val.fields_of_interest:
         errs.append(("fields_of_interest", ValueError("Mustn't be empty.")))
     ## constraints
-    constraints = []
-    oldconstraints, e = _iterable(val['constraints'], 'constraints',
-                                  _convert=_convert)
-    if e:
+    for x in val.constraints:
+        try:
+            field, operator, value = x
+        except ValueError as e:
+            errs.append(("constraints", e))
+            continue
+        field, e = _csv_identifier(field, "constraints", _convert=False)
         errs.extend(e)
-    else:
-        for x in oldconstraints:
-            try:
-                field, operator, value = x
-            except ValueError as e:
-                errs.append(("constraints", e))
-                continue
-            field, e = _csv_identifier(field, "constraints", _convert=_convert)
-            errs.extend(e)
-            if field not in spec:
-                errs.append(("constraints", KeyError("Invalid field.")))
-                continue
-            operator, e = _enum_queryoperators(
-                operator, "constraints/{}".format(field), _convert=_convert)
-            errs.extend(e)
-            if operator not in VALID_QUERY_OPERATORS[spec[field]]:
-                errs.append(("constraints/{}".format(field),
-                             ValueError("Invalid operator.")))
-                continue
-            if operator in NO_VALUE_OPERATORS:
-                value = None
-            elif operator in MULTI_VALUE_OPERATORS:
-                tmp = []
-                validator = getattr(current_module, "_{}".format(spec[field]))
-                for v in value:
-                    v, e = validator(v, "constraints/{}".format(field),
-                                     _convert=_convert)
-                    tmp.append(v)
-                    errs.extend(e)
-                value = tmp
-            else:
-                value, e = getattr(current_module, "_{}".format(spec[field]))(
-                    value, "constraints/{}".format(field), _convert=_convert)
-            errs.extend(e)
-            constraints.append((field, operator, value))
-    ## order
-    order = []
-    oldorder, e = _iterable(val['order'], 'order', _convert=_convert)
-    if e:
+        if field not in val.spec:
+            errs.append(("constraints", KeyError("Invalid field.")))
+            continue
+        operator, e = _enum_queryoperators(
+            operator, "constraints/{}".format(field), _convert=False)
         errs.extend(e)
-    else:
-        for entry in oldorder:
-            entry, e = _iterable(entry, 'order', _convert=_convert)
-            errs.extend(e)
-            if e:
-                continue
-            try:
-                field, ascending = entry
-            except ValueError as e:
-                errs.append(('order', e))
-            else:
-                field, e = _csv_identifier(field, "order", _convert=_convert)
-                ascending, ee = _bool(ascending, "order", _convert=_convert)
-                order.append((field, ascending))
+        if operator not in VALID_QUERY_OPERATORS[val.spec[field]]:
+            errs.append(("constraints/{}".format(field),
+                         ValueError("Invalid operator.")))
+            continue
+        if operator in NO_VALUE_OPERATORS:
+            value = None
+        elif operator in MULTI_VALUE_OPERATORS:
+            validator = getattr(current_module, "_{}".format(val.spec[field]))
+            for v in value:
+                v, e = validator(v, "constraints/{}".format(field),
+                                 _convert=False)
                 errs.extend(e)
-                errs.extend(ee)
+        else:
+            _, e = getattr(current_module, "_{}".format(val.spec[field]))(
+                value, "constraints/{}".format(field), _convert=False)
+            errs.extend(e)
+    ## order
+    for entry in val.order:
+        entry, e = _iterable(entry, 'order', _convert=False)
+        errs.extend(e)
+        if e:
+            continue
+        try:
+            field, ascending = entry
+        except ValueError as e:
+            errs.append(('order', e))
+        else:
+            _, e = _csv_identifier(field, "order", _convert=False)
+            _, ee = _bool(ascending, "order", _convert=False)
+            errs.extend(e)
+            errs.extend(ee)
     if errs:
-        return None, errs
-    else:
-        return Query(scope, spec, fields_of_interest, constraints, order), errs
+        val = None
+    return val, errs
 
 def _enum_validator_maker(anenum, name=None):
     """Automate validator creation for enums.
@@ -2355,14 +2313,25 @@ def _enum_validator_maker(anenum, name=None):
         :type _convert: bool
         :rtype: (enum or None, [(str or None, exception)])
         """
-        val, errs = _int(val, argname=argname, _convert=_convert)
-        if errs:
-            return val, errs
-        try:
-            val = anenum(val)
-        except ValueError as e:
-            return None, [(argname, e)]
-        return val, errs
+        if _convert and not isinstance(val, anenum):
+            val, errs = _int(val, argname=argname, _convert=_convert)
+            if errs:
+                return val, errs
+            try:
+                val = anenum(val)
+            except ValueError as e:
+                return None, [(argname, e)]
+        else:
+            if not isinstance(val, anenum):
+                if isinstance(val, int):
+                    try:
+                        val = anenum(val)
+                    except ValueError as e:
+                        return None, [(argname, e)]
+                else:
+                    return None, [(argname,
+                                   TypeError("Must be an {}.".format(anenum)))]
+        return val, []
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
     _addvalidator(the_validator)

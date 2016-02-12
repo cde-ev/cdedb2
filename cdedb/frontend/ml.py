@@ -3,12 +3,19 @@
 """Services for the ml realm."""
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, ProxyShim, connect_proxy,
+    REQUESTdata, REQUESTdatadict, access,
     check_validation as check, mailinglist_guard)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
-from cdedb.common import name_key, merge_dicts, unwrap
+from cdedb.common import name_key, merge_dicts, unwrap, ProxyShim
 import cdedb.database.constants as const
+from cdedb.backend.event import EventBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.database import DATABASE_ROLES
+from cdedb.config import SecretsConfig
+from cdedb.database.connection import connection_pool_factory
 
 import logging
 import werkzeug
@@ -23,20 +30,27 @@ class MlFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.cdeproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("cde")))
-        self.eventproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("event")))
-        self.assemblyproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("assembly")))
-        self.mlproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("ml")))
+        self.cdeproxy = ProxyShim(CdEBackend(configpath))
+        self.eventproxy = ProxyShim(EventBackend(configpath))
+        self.mlproxy = ProxyShim(MlBackend(configpath))
+        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
+        secrets = SecretsConfig(configpath)
+        self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+        self.connpool = connection_pool_factory(
+            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
+            secrets)
 
-    def finalize_session(self, rs, sessiondata):
-        ret = super().finalize_session(rs, sessiondata)
-        if "persona" in ret.roles:
-            ret.moderator = self.mlproxy.moderator_info(rs, ret.persona_id)
-        return ret
+    def finalize_session(self, rs):
+        super().finalize_session(rs)
+        if self.validate_scriptkey(rs.sessionkey):
+            ## Special case the access of the mailing list software since
+            ## it's not tied to an actual persona.
+            rs.user.roles.add("ml_script")
+            ## Upgrade db connection
+            rs._conn = self.connpool["cdb_persona"]
+        if "ml" in rs.user.roles:
+            rs.user.moderator = self.mlproxy.moderator_info(rs,
+                                                            rs.user.persona_id)
 
     @classmethod
     def is_admin(cls, rs):

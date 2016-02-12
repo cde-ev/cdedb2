@@ -27,7 +27,7 @@ do it.
 """
 
 from cdedb.backend.common import (
-    access, internal_access, make_RPCDaemon, run_RPCDaemon,
+    access, internal_access,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
     singularize, AbstractBackend)
 from cdedb.common import (
@@ -49,10 +49,6 @@ import string
 class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
     realm = "assembly"
-
-    def establish(self, sessionkey, method, allow_internal=False):
-        return super().establish(sessionkey, method,
-                                 allow_internal=allow_internal)
 
     @classmethod
     def is_admin(cls, rs):
@@ -157,7 +153,7 @@ class AssemblyBackend(AbstractBackend):
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
-        query = affirm("serialized_query", query)
+        query = affirm("query", query)
         if query.scope == "qview_generic_user":
             query.constraints.append(("is_assembly_realm", QueryOperators.equal,
                                       True))
@@ -906,15 +902,3 @@ class AssemblyBackend(AbstractBackend):
         self.assembly_log(rs, const.AssemblyLogCodes.attachment_removed,
                           assembly_id, additional_info=current['title'])
         return ret
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Run CdEDB Backend for congregation services.')
-    parser.add_argument('-c', default=None, metavar='/path/to/config',
-                        dest="configpath")
-    args = parser.parse_args()
-    assembly_backend = AssemblyBackend(args.configpath)
-    conf = Config(args.configpath)
-    assembly_server = make_RPCDaemon(assembly_backend, conf.ASSEMBLY_SOCKET,
-                                     access_log=conf.ASSEMBLY_ACCESS_LOG)
-    run_RPCDaemon(assembly_server, conf.ASSEMBLY_STATE_FILE)

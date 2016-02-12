@@ -60,9 +60,6 @@ _DEFAULTS = {
     ## True for offline versions running on academies
     "CDEDB_OFFLINE_DEPLOYMENT": False,
 
-    ## Template for server names, one parameter will be substituted in
-    "SERVER_NAME_TEMPLATE": "{}_server",
-
     ## location of ldap server
     "LDAP_URL": "ldap://localhost",
 
@@ -145,17 +142,11 @@ _DEFAULTS = {
     ### Core stuff
 
     ## Core server configuration
-    "CORE_SOCKET": "/run/cdedb/coreserver.sock",
-    "CORE_STATE_FILE": "/run/cdedb/coreserver.pid",
-    "CORE_ACCESS_LOG": "/tmp/cdedb-access-core.log",
     "CORE_BACKEND_LOG": "/tmp/cdedb-backend-core.log",
 
     ### Session stuff
 
     ## session server configuration
-    "SESSION_SOCKET": "/run/cdedb/sessionserver.sock",
-    "SESSION_STATE_FILE": "/run/cdedb/sessionserver.pid",
-    "SESSION_ACCESS_LOG": "/tmp/cdedb-access-session.log",
     "SESSION_BACKEND_LOG": "/tmp/cdedb-backend-session.log",
 
     ## session parameters
@@ -165,9 +156,6 @@ _DEFAULTS = {
     ### CdE stuff
 
     ## CdE server configuration
-    "CDE_SOCKET": "/run/cdedb/cdeserver.sock",
-    "CDE_STATE_FILE": "/run/cdedb/cdeserver.pid",
-    "CDE_ACCESS_LOG": "/tmp/cdedb-access-cde.log",
     "CDE_BACKEND_LOG": "/tmp/cdedb-backend-cde.log",
 
     ## maximal number of data sets a normal user is allowed to view per day
@@ -208,29 +196,17 @@ _DEFAULTS = {
     ### event stuff
 
     ## event server configuration
-    "EVENT_SOCKET": "/run/cdedb/eventserver.sock",
-    "EVENT_STATE_FILE": "/run/cdedb/eventserver.pid",
-    "EVENT_ACCESS_LOG": "/tmp/cdedb-access-event.log",
     "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
 
     ## ml server configuration
-    "ML_SOCKET": "/run/cdedb/mlserver.sock",
-    "ML_STATE_FILE": "/run/cdedb/mlserver.pid",
-    "ML_ACCESS_LOG": "/tmp/cdedb-access-ml.log",
     "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
 
     ## assembly server configuration
-    "ASSEMBLY_SOCKET": "/run/cdedb/assemblyserver.sock",
-    "ASSEMBLY_STATE_FILE": "/run/cdedb/assemblyserver.pid",
-    "ASSEMBLY_ACCESS_LOG": "/tmp/cdedb-access-assembly.log",
     "ASSEMBLY_BACKEND_LOG": "/tmp/cdedb-backend-assembly.log",
 }
 
 #: defaults for :py:class:`SecretsConfig`
 _SECRECTS_DEFAULTS = {
-    ## special session key for session initialization
-    "SESSION_LOOKUP_KEY": "a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5",
-
     ## database users
     "CDB_DATABASE_ROLES": {
         "cdb_anonymous": "012345678901234567890123456789",
@@ -289,6 +265,7 @@ class Config(BasicConfig):
         """
         super().__init__()
         _LOGGER.debug("Initialising Config with path {}".format(configpath))
+        self._configpath = configpath
         if configpath:
             module_id = str(uuid.uuid4()) ## otherwise importlib caches wrongly
             loader = importlib.machinery.SourceFileLoader(module_id, configpath)

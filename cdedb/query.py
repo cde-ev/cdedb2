@@ -15,7 +15,7 @@ import enum
 from cdedb.common import glue
 
 @enum.unique
-class QueryOperators(enum.Enum):
+class QueryOperators(enum.IntEnum):
     """Enum for all possible operators on a query column."""
     empty = 0
     nonempty = 1

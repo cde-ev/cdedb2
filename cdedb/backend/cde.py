@@ -7,7 +7,7 @@ members are also possible.
 """
 
 from cdedb.backend.common import (
-    access, internal_access, make_RPCDaemon, run_RPCDaemon,
+    access, internal_access,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
     singularize, batchify, AbstractBackend)
 from cdedb.common import (
@@ -33,10 +33,6 @@ class CdEBackend(AbstractBackend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-
-    def establish(self, sessionkey, method, allow_internal=False):
-        return super().establish(sessionkey, method,
-                                 allow_internal=allow_internal)
 
     @classmethod
     def is_admin(cls, rs):
@@ -514,7 +510,7 @@ class CdEBackend(AbstractBackend):
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
-        query = affirm("serialized_query", query)
+        query = affirm("query", query)
         if query.scope == "qview_cde_member":
             query.constraints.append(("is_cde_realm", QueryOperators.equal,
                                       True))
@@ -539,15 +535,3 @@ class CdEBackend(AbstractBackend):
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Run CdEDB Backend for CdE services.')
-    parser.add_argument('-c', default=None, metavar='/path/to/config',
-                        dest="configpath")
-    args = parser.parse_args()
-    cde_backend = CdEBackend(args.configpath)
-    conf = Config(args.configpath)
-    cde_server = make_RPCDaemon(cde_backend, conf.CDE_SOCKET,
-                                access_log=conf.CDE_ACCESS_LOG)
-    run_RPCDaemon(cde_server, conf.CDE_STATE_FILE)

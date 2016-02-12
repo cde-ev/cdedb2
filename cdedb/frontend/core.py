@@ -5,9 +5,10 @@
 import logging
 import uuid
 from cdedb.frontend.common import (
-    AbstractFrontend, REQUESTdata, REQUESTdatadict, access, ProxyShim,
-    basic_redirect, connect_proxy, check_validation as check, merge_dicts)
-from cdedb.common import PERSONA_STATUS_FIELDS
+    AbstractFrontend, REQUESTdata, REQUESTdatadict, access,
+    basic_redirect, check_validation as check, merge_dicts)
+from cdedb.common import PERSONA_STATUS_FIELDS, ProxyShim
+from cdedb.backend.core import CoreBackend
 import cdedb.database.constants as const
 
 class CoreFrontend(AbstractFrontend):
@@ -21,11 +22,10 @@ class CoreFrontend(AbstractFrontend):
         :type configpath: str
         """
         super().__init__(configpath)
-        self.coreproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("core")))
+        self.coreproxy = ProxyShim(CoreBackend(configpath))
 
-    def finalize_session(self, rs, sessiondata):
-        return super().finalize_session(rs, sessiondata)
+    def finalize_session(self, rs):
+        super().finalize_session(rs)
 
     @classmethod
     def is_admin(cls, rs):

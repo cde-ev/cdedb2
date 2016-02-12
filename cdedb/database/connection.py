@@ -136,12 +136,12 @@ class Atomizer:
         self.rs = rs
 
     def __enter__(self):
-        self.rs.conn.contaminate()
-        return self.rs.conn.__enter__()
+        self.rs._conn.contaminate()
+        return self.rs._conn.__enter__()
 
     def __exit__(self, atype, value, tb):
-        self.rs.conn.decontaminate()
-        return self.rs.conn.__exit__(atype, value, tb)
+        self.rs._conn.decontaminate()
+        return self.rs._conn.__exit__(atype, value, tb)
 
 class IrradiatedConnection(psycopg2.extensions.connection):
     """Minimally modified version of :py:class:`psycopg2.extensions.connection`

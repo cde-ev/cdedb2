@@ -10,7 +10,6 @@ decorator). Everything is a bit special in here.
 """
 
 from cdedb.database.connection import connection_pool_factory
-from cdedb.backend.common import make_RPCDaemon, run_RPCDaemon
 from cdedb.common import glue, make_root_logger, now, PERSONA_STATUS_FIELDS
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
@@ -18,16 +17,12 @@ import psycopg2.extensions
 import argparse
 import logging
 
-def access(fun):
-    """Decorator mock to set ``access_list`` attribute, so ``fun`` will be
-    registered for RPC."""
-    fun.access_list = True
-    return fun
-
 class SessionBackend:
     """This is not derived from
     :py:class:`cdedb.backend.common.AbstractBackend` since the general
     base class makes more assumptions than we can fulfill.
+
+    FIXME
     """
     realm = "session"
 
@@ -56,25 +51,8 @@ class SessionBackend:
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
         ## logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.session")
-        self.validate_sessionkey = lambda k: k == secrets.SESSION_LOOKUP_KEY
 
-    def establish(self, sessionkey, method, allow_internal=False):
-        """Mock of :py:meth:`cdedb.backend.common.AbstractBackend.establish`.
-
-        :type sessionkey: str
-        :type method: str
-        :type allow_internal: bool
-        :param allow_internal: ignored, exists for signature compatability
-        """
-        if self.validate_sessionkey(sessionkey) and method == "lookupsession":
-            return True
-        else:
-            self.logger.warning("Invalid session lookup key {}.".format(
-                sessionkey))
-            return None
-
-    @access
-    def lookupsession(self, _, sessionkey, ip):
+    def lookupsession(self, sessionkey, ip):
         """Resolve a session key (originally stored in a cookie) into the data
         required for a
         :py:class:`cdedb.frontend.common.FrontendRequestState`. We bind
@@ -159,14 +137,3 @@ class SessionBackend:
                 self.logger.warning("Found inactive user {}".format(persona_id))
         return ret
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Run CdEDB Backend for session lookup.')
-    parser.add_argument('-c', default=None, metavar='/path/to/config',
-                        dest="configpath")
-    args = parser.parse_args()
-    session_backend = SessionBackend(args.configpath)
-    conf = Config(args.configpath)
-    session_server = make_RPCDaemon(session_backend, conf.SESSION_SOCKET,
-                                    access_log=conf.SESSION_ACCESS_LOG)
-    run_RPCDaemon(session_server, conf.SESSION_STATE_FILE)

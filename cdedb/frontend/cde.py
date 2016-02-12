@@ -14,13 +14,15 @@ import werkzeug
 import cdedb.database.constants as const
 from cdedb.common import (
     merge_dicts, name_key, lastschrift_reference, now, glue,
-    int_to_words, determine_age_class, PERSONA_STATUS_FIELDS)
+    int_to_words, determine_age_class, PERSONA_STATUS_FIELDS, ProxyShim)
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
-    connect_proxy, check_validation as check,
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access,
+    check_validation as check,
     cdedbid_filter, request_data_extractor, make_postal_address)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
+from cdedb.backend.event import EventBackend
+from cdedb.backend.cde import CdEBackend
 
 class CdEFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
@@ -33,13 +35,11 @@ class CdEFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.cdeproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("cde")))
-        self.eventproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("event")))
+        self.cdeproxy = ProxyShim(CdEBackend(configpath))
+        self.eventproxy = ProxyShim(EventBackend(configpath))
 
-    def finalize_session(self, rs, sessiondata):
-        return super().finalize_session(rs, sessiondata)
+    def finalize_session(self, rs):
+        super().finalize_session(rs)
 
     @classmethod
     def is_admin(cls, rs):

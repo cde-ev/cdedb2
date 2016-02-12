@@ -9,9 +9,10 @@ a part of :py:mod:`cdedb.frontend.common`, but then we get fatal circular
 dependencies.
 """
 
-from cdedb.common import merge_dicts
-from cdedb.frontend.common import AbstractFrontend, ProxyShim, connect_proxy
+from cdedb.common import merge_dicts, ProxyShim
+from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.common import check_validation as check
+from cdedb.backend.core import CoreBackend
 import cdedb.database.constants as const
 import abc
 import werkzeug
@@ -28,12 +29,11 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.coreproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("core")))
+        self.coreproxy = ProxyShim(CoreBackend(configpath))
 
     @abc.abstractmethod
-    def finalize_session(self, rs, sessiondata):
-        return super().finalize_session(rs, sessiondata)
+    def finalize_session(self, rs):
+        super().finalize_session(rs)
 
     @classmethod
     @abc.abstractmethod

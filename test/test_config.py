@@ -14,14 +14,14 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(6432, extraconfig.DB_PORT)
         self.assertEqual("skynet", extraconfig.CDB_DATABASE_NAME)
         secret = SecretsConfig(None)
-        self.assertEqual("a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5", secret.SESSION_LOOKUP_KEY)
+        self.assertEqual("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3", secret.ML_SCRIPT_KEY)
         extrasecret = SecretsConfig("test/ancillary_files/extra_config.py")
-        self.assertEqual("matrix", extrasecret.SESSION_LOOKUP_KEY)
+        self.assertEqual("matrix", extrasecret.ML_SCRIPT_KEY)
 
     def test_caching(self):
         ## this is a regression test
         basic = BasicConfig()
         extrasecret = SecretsConfig("test/ancillary_files/extra_config.py")
-        self.assertEqual("matrix", extrasecret.SESSION_LOOKUP_KEY)
+        self.assertEqual("matrix", extrasecret.ML_SCRIPT_KEY)
         testsecret = SecretsConfig(basic.TESTCONFIG_PATH)
-        self.assertEqual("a1o2e3u4i5d6h7t8n9s0a1o2e3u4i5", testsecret.SESSION_LOOKUP_KEY)
+        self.assertEqual("c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3", testsecret.ML_SCRIPT_KEY)

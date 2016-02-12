@@ -5,15 +5,15 @@ variant for external participants.
 """
 
 from cdedb.backend.common import (
-    access, internal_access, make_RPCDaemon, run_RPCDaemon,
+    access, internal_access,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, AuthShim, PYTHON_TO_SQL_MAP, AbstractBackend)
+    singularize, PYTHON_TO_SQL_MAP, AbstractBackend)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS,
     PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS,
     COURSE_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    LODGEMENT_FIELDS, unwrap, now)
+    LODGEMENT_FIELDS, unwrap, now, ProxyShim)
 from cdedb.config import Config
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
@@ -57,15 +57,7 @@ class EventBackend(AbstractBackend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.cde = AuthShim(CdEBackend(configpath))
-
-    def establish(self, sessionkey, method, allow_internal=False):
-        ret = super().establish(sessionkey, method,
-                                allow_internal=allow_internal)
-        if ret and "persona" in ret.user.roles:
-            ret.user.orga = unwrap(self.orga_infos(
-                ret, (ret.user.persona_id,)))
-        return ret
+        self.cde = ProxyShim(CdEBackend(configpath), internal=True)
 
     @classmethod
     def is_admin(cls, rs):
@@ -365,7 +357,7 @@ class EventBackend(AbstractBackend):
         :param event_id: For registration queries, specify the event.
         :rtype: [{str: object}]
         """
-        query = affirm("serialized_query", query)
+        query = affirm("query", query)
         view = None
         if query.scope == "qview_registration":
             event_id = affirm("int", event_id)
@@ -1383,15 +1375,3 @@ class EventBackend(AbstractBackend):
         return new_id, None
 
     # TODO locking, unlocking
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Run CdEDB Backend for event services.')
-    parser.add_argument('-c', default=None, metavar='/path/to/config',
-                        dest="configpath")
-    args = parser.parse_args()
-    event_backend = EventBackend(args.configpath)
-    conf = Config(args.configpath)
-    event_server = make_RPCDaemon(event_backend, conf.EVENT_SOCKET,
-                                  access_log=conf.EVENT_ACCESS_LOG)
-    run_RPCDaemon(event_server, conf.EVENT_STATE_FILE)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
-from cdedb.query import QUERY_SPECS, QueryOperators
+from cdedb.query import QUERY_SPECS, QueryOperators, Query
 from cdedb.common import PERSONA_EVENT_FIELDS
 import cdedb.database.constants as const
 import datetime
@@ -813,21 +813,20 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton", "garcia")
     def test_registration_query(self, user):
-        query = {
-            "scope": "qview_registration",
-            "spec": dict(QUERY_SPECS["qview_registration"]),
-            "fields_of_interest": (
-                "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
-                "birthday", "part1.lodgement_id1", "part3.status3",
-                "fields.brings_balls", "fields.transportation"),
-            "constraints": (("reg.id", QueryOperators.greater.value, 0),
-                            ("persona.given_names", QueryOperators.regex.value, '[aeiou]'),
-                            ("part2.status2", QueryOperators.nonempty.value, None),
-                            ("fields.transportation", QueryOperators.oneof.value, ['pedes', 'etc'])),
-            "order": (("reg.id", True),),
-        }
+        query = Query(
+            scope="qview_registration",
+            spec=dict(QUERY_SPECS["qview_registration"]),
+            fields_of_interest=(
+               "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
+               "birthday", "part1.lodgement_id1", "part3.status3",
+               "fields.brings_balls", "fields.transportation"),
+            constraints=[("reg.id", QueryOperators.greater, 0),
+                           ("persona.given_names", QueryOperators.regex, '[aeiou]'),
+                           ("part2.status2", QueryOperators.nonempty, None),
+                           ("fields.transportation", QueryOperators.oneof, ['pedes', 'etc'])],
+            order=(("reg.id", True),),)
         ## fix query spec (normally done by frontend)
-        query['spec'].update({
+        query.spec.update({
             'part1.lodgement_id1': "int",
             'part3.status3': "int",
             'fields.brings_balls': "bool",

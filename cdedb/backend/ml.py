@@ -9,9 +9,9 @@ if it has moderator privileges for all lists.
 """
 
 from cdedb.backend.common import (
-    access, internal_access, make_RPCDaemon, run_RPCDaemon,
+    access, internal_access,
     affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, BackendUser, BackendRequestState, AbstractBackend)
+    singularize, AbstractBackend)
 from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
 from cdedb.config import Config, SecretsConfig
 from cdedb.query import QueryOperators
@@ -23,27 +23,6 @@ class MlBackend(AbstractBackend):
     """Take note of the fact that some personas are moderators and thus have
     additional actions available."""
     realm = "ml"
-
-    def __init__(self, configpath):
-        super().__init__(configpath)
-        secrets = SecretsConfig(configpath)
-        self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
-
-    def establish(self, sessionkey, method, allow_internal=False):
-        if method == "export" and self.validate_scriptkey(sessionkey):
-            ## Special case the access of the mailing list software since
-            ## it's not tied to an actual persona.
-            user = BackendUser(
-                persona_id=None, roles={"anonymous", "ml_script"})
-            return BackendRequestState(
-                sessionkey, user, self.connpool[self.db_role("cdb_persona")])
-        else:
-            ret = super().establish(sessionkey, method,
-                                    allow_internal=allow_internal)
-            if ret and "persona" in ret.user.roles:
-                ret.user.moderator = unwrap(self.moderator_infos(
-                    ret, (ret.user.persona_id,)))
-            return ret
 
     @classmethod
     def is_admin(cls, rs):
@@ -138,7 +117,7 @@ class MlBackend(AbstractBackend):
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
-        query = affirm("serialized_query", query)
+        query = affirm("query", query)
         if query.scope == "qview_generic_user":
             query.constraints.append(("is_ml_realm", QueryOperators.equal,
                                       True))
@@ -675,15 +654,3 @@ class MlBackend(AbstractBackend):
         # omit subscriptions with empty email addresses (may happen in
         # reality, because username was deleted because of bouncing mail)
         raise NotImplementedError("TODO")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Run CdEDB Backend for mailinglist services.')
-    parser.add_argument('-c', default=None, metavar='/path/to/config',
-                        dest="configpath")
-    args = parser.parse_args()
-    ml_backend = MlBackend(args.configpath)
-    conf = Config(args.configpath)
-    ml_server = make_RPCDaemon(ml_backend, conf.ML_SOCKET,
-                               access_log=conf.ML_ACCESS_LOG)
-    run_RPCDaemon(ml_server, conf.ML_STATE_FILE)

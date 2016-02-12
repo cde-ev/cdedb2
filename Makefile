@@ -1,13 +1,6 @@
 SHELL := /bin/bash
 
 help:
-	@echo "run-core, run-cde, run-event, run-ml, run-assembly, run-session"
-	@echo "         -- run the respective backend (CONFIGPATH specifies configuration)"
-	@echo "quit-core, quit-cde, quit-event, quit-ml, quit-assembly, quit-session"
-	@echo "          -- quit the respective backend"
-	@echo "quit-all -- quit all running backends"
-	@echo "quit-test-backends -- quit all running backends started by the test suite"
-	@echo "pyro-nameserver -- run a pyro nameserver"
 	@echo "doc -- build documentation"
 	@echo "sample-data -- initialize database structures (DESTROYES DATA!)"
 	@echo "sample-data-test -- initialize database structures for test suite"
@@ -32,61 +25,6 @@ help:
 CONFIGPATH ?= ""
 PYTHONBIN ?= "python3.4"
 TESTPATTERN ?= ""
-
-pyro-nameserver:
-	${PYTHONBIN} -m Pyro4.naming
-
-run-core:
-	${PYTHONBIN} -m cdedb.backend.core -c ${CONFIGPATH}
-
-quit-core:
-	[ -f /run/cdedb/coreserver.pid ] && kill `cat /run/cdedb/coreserver.pid` || true
-
-run-cde:
-	${PYTHONBIN} -m cdedb.backend.cde -c ${CONFIGPATH}
-
-quit-cde:
-	[ -f /run/cdedb/cdeserver.pid ] && kill `cat /run/cdedb/cdeserver.pid` || true
-
-run-event:
-	${PYTHONBIN} -m cdedb.backend.event -c ${CONFIGPATH}
-
-quit-event:
-	[ -f /run/cdedb/eventserver.pid ] && kill `cat /run/cdedb/eventserver.pid` || true
-
-run-ml:
-	${PYTHONBIN} -m cdedb.backend.ml -c ${CONFIGPATH}
-
-quit-ml:
-	[ -f /run/cdedb/mlserver.pid ] && kill `cat /run/cdedb/mlserver.pid` || true
-
-run-assembly:
-	${PYTHONBIN} -m cdedb.backend.assembly -c ${CONFIGPATH}
-
-quit-assembly:
-	[ -f /run/cdedb/assemblyserver.pid ] && kill `cat /run/cdedb/assemblyserver.pid` || true
-
-run-session:
-	${PYTHONBIN} -m cdedb.backend.session -c ${CONFIGPATH}
-
-quit-session:
-	[ -f /run/cdedb/sessionserver.pid ] && kill `cat /run/cdedb/sessionserver.pid` || true
-
-quit-all:
-	make quit-core
-	make quit-cde
-	make quit-event
-	make quit-ml
-	make quit-assembly
-	make quit-session
-
-quit-test-backends:
-	[ -f /run/cdedb/test-coreserver.pid ] && kill `cat /run/cdedb/test-coreserver.pid` || true
-	[ -f /run/cdedb/test-sessionserver.pid ] && kill `cat /run/cdedb/test-sessionserver.pid` || true
-	[ -f /run/cdedb/test-cdeserver.pid ] && kill `cat /run/cdedb/test-cdeserver.pid` || true
-	[ -f /run/cdedb/test-eventserver.pid ] && kill `cat /run/cdedb/test-eventserver.pid` || true
-	[ -f /run/cdedb/test-mlserver.pid ] && kill `cat /run/cdedb/test-mlserver.pid` || true
-	[ -f /run/cdedb/test-assemblyserver.pid ] && kill `cat /run/cdedb/test-assemblyserver.pid` || true
 
 doc:
 	make -C doc html
@@ -166,7 +104,6 @@ lint:
 	/usr/lib/python-exec/python3.4/pylint --rcfile='./lint.rc' cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
 
 check:
-	make quit-test-backends
 	make sample-data-test &> /dev/null
 	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-*
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
@@ -174,7 +111,6 @@ check:
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 single-check:
-	make quit-test-backends
 	make sample-data-test &> /dev/null
 	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || sudo rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-*
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
@@ -187,4 +123,4 @@ single-check:
 coverage: .coverage
 	coverage report -m --omit='test/*,related/*'
 
-.PHONY: help pyro-nameserver run-core quit-core run-cde quit-cde run-event quit-event run-session quit-session quit-all quit-test-backends doc sample-data sample-data-test sample-data-test-shallow ldap ldap-test sql sql-test sql-test-shallow lint check single-check .coverage coverage
+.PHONY: help doc sample-data sample-data-test sample-data-test-shallow ldap ldap-test sql sql-test sql-test-shallow lint check single-check .coverage coverage

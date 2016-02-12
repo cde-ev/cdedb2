@@ -3,13 +3,14 @@
 """Services for the assembly realm."""
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, ProxyShim,
-    connect_proxy, check_validation as check,
-    request_data_extractor)
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access,
+    check_validation as check, request_data_extractor)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
-from cdedb.common import merge_dicts, unwrap, now
+from cdedb.common import merge_dicts, unwrap, now, ProxyShim
 import cdedb.database.constants as const
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.assembly import AssemblyBackend
 
 import json
 import logging
@@ -35,13 +36,11 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.cdeproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("cde")))
-        self.assemblyproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("assembly")))
+        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
+        self.cdeproxy = ProxyShim(CdEBackend(configpath))
 
-    def finalize_session(self, rs, sessiondata):
-        return super().finalize_session(rs, sessiondata)
+    def finalize_session(self, rs):
+        super().finalize_session(rs)
 
     @classmethod
     def is_admin(cls, rs):

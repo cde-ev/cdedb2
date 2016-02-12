@@ -7,3 +7,4 @@ backend).
 Each backend service module when executed as a python script runs a
 backend server. This requires a running :py:mod:`Pyro4` nameserver.
 """
+pass

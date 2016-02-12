@@ -37,6 +37,7 @@ class TestDatabase(unittest.TestCase):
         conn = factory["cdb_persona"]
         class Tmp:
             def __init__(self, conn):
+                self._conn = conn
                 self.conn = conn
         rs = Tmp(conn)
         with Atomizer(rs) as conn:
@@ -55,6 +56,7 @@ class TestDatabase(unittest.TestCase):
         conn = factory["cdb_admin"]
         class Tmp:
             def __init__(self, conn):
+                self._conn = conn
                 self.conn = conn
         rs = Tmp(conn)
         with self.assertRaises(RuntimeError):

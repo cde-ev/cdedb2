@@ -3,14 +3,15 @@
 """Services for the event realm."""
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, ProxyShim, connect_proxy,
+    REQUESTdata, REQUESTdatadict, access,
     check_validation as check, event_guard,
     REQUESTfile, request_data_extractor, cdedbid_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now)
+    unwrap, now, ProxyShim)
+from cdedb.backend.event import EventBackend
 import cdedb.database.constants as const
 
 import os
@@ -34,14 +35,12 @@ class EventFrontend(AbstractUserFrontend):
 
     def __init__(self, configpath):
         super().__init__(configpath)
-        self.eventproxy = ProxyShim(connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("event")))
+        self.eventproxy = ProxyShim(EventBackend(configpath))
 
-    def finalize_session(self, rs, sessiondata):
-        ret = super().finalize_session(rs, sessiondata)
-        if "persona" in ret.roles:
-            ret.orga = self.eventproxy.orga_info(rs, ret.persona_id)
-        return ret
+    def finalize_session(self, rs):
+        super().finalize_session(rs)
+        if "event" in rs.user.roles:
+            rs.user.orga = self.eventproxy.orga_info(rs, rs.user.persona_id)
 
     def render(self, rs, templatename, params=None):
         params = params or {}

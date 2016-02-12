@@ -25,7 +25,6 @@ import json
 import logging
 import os
 import os.path
-import Pyro4
 import re
 import smtplib
 import subprocess
@@ -38,11 +37,10 @@ import werkzeug.utils
 import werkzeug.wrappers
 
 from cdedb.internationalization import i18n_factory
-from cdedb.serialization import deserialize
 from cdedb.config import BasicConfig
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
-    extract_roles, glue, CommonUser, merge_dicts,
+    extract_roles, glue, merge_dicts,
     compute_checkdigit, now)
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
@@ -50,47 +48,6 @@ import cdedb.database.constants as const
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
-
-#: Set of possible values for ``ntype`` in
-#: :py:meth:`FrontendRequestState.notify`. Must conform to the regex
-#: ``[a-z]+``.
-NOTIFICATION_TYPES = {"success", "info", "question", "warning", "error"}
-
-class ProxyShim:
-    """Slim wrapper around a :py:class:`Pyro4.Proxy` to add some boiler plate
-    to all proxy calls.
-    """
-    def __init__(self, proxy):
-        """
-        :type proxy: :py:class:`Pyro4.Proxy`
-        """
-        self._proxy = proxy
-        self._attrs = {}
-
-    def _wrapit(self, name):
-        """
-        :type name: str
-        :rtype: callable
-        """
-        def proxy_fun(rs, *args, **kwargs):
-            ## use context to automatically close the pyro object
-            with self._proxy:
-                attr = getattr(self._proxy, name)
-                ## Invert our custom serialization.
-                ##
-                ## This is for backend -> frontend.
-                return deserialize(attr(rs.sessionkey, *args, **kwargs))
-        return proxy_fun
-
-    def __getattr__(self, name):
-        if name in {"_attrs", "_proxy"}:
-            raise AttributeError()
-        if not name.startswith('_'):
-            if name not in self._attrs:
-                self._attrs[name] = self._wrapit(name)
-            return self._attrs[name]
-        else:
-            return getattr(self._proxy, name)
 
 class Response(werkzeug.wrappers.Response):
     """Wrapper around werkzeugs Response to handle displaynote cookie.
@@ -101,94 +58,6 @@ class Response(werkzeug.wrappers.Response):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.delete_cookie("displaynote")
-
-def connect_proxy(name):
-    """
-    :type name: str
-    :rtype: :py:class:`Pyro4.Proxy`
-    """
-    ns = Pyro4.locateNS()
-    uri = ns.lookup(name)
-    proxy = Pyro4.Proxy(uri)
-    return proxy
-
-class FakeFrontendRequestState:
-    """Mock version of :py:class:`FrontendRequestState` to be used before a
-    real version is available. The basic requirement is, that the
-    :py:class:`ProxyShim` can work with this imitation.
-    """
-    def __init__(self, sessionkey):
-        """
-        :type sessionkey: str or None
-        """
-        self.sessionkey = sessionkey
-
-class FrontendRequestState:
-    """Container for request info. Besides this the python frontend code should
-    be state-less. This data structure enables several convenient
-    semi-magic behaviours (magic enough to be nice, but non-magic enough
-    to not be non-nice).
-    """
-    def __init__(self, sessionkey, user, request, response, notifications,
-                 mapadapter, requestargs, urlmap, errors, values, lang, coders,
-                 begin):
-        """
-        :type sessionkey: str or None
-        :type user: :py:class:`FrontendUser`
-        :type request: :py:class:`werkzeug.wrappers.Request`
-        :type response: :py:class:`werkzeug.wrappers.Response` or None
-        :type notifications: [(str, str)]
-        :param notifications: messages to be displayed to the user, to be
-          submitted by :py:meth:`notify`
-        :type mapadapter: :py:class:`werkzeug.routing.MapAdapter`
-        :param mapadapter: URL generator (specific for this request)
-        :type requestargs: {str: object}
-        :param requestargs: verbatim copy of the arguments contained in the URL
-        :type urlmap: :py:class:`werkzeug.routing.Map`
-        :param urlmap: abstract URL information
-        :type errors: [(str, exception)]
-        :param errors: validation errors, consisting of a pair of (parameter
-          name, the actual error)
-        :type values: {str: object}
-        :param values: Parameter values extracted via :py:func:`REQUESTdata`
-          and :py:func:`REQUESTdatadict` decorators, which allows automatically
-          filling forms in. This will be a
-          :py:class:`werkzeug.datastructures.MultiDict` to allow seamless
-          integration with the werkzeug provided data.
-        :type lang: str
-        :param lang: language code for i18n, currently only 'de' is valid
-        :type coders: {str: callable}
-        :param coders: Functions for encoding and decoding parameters primed
-          with secrets. This is hacky, but sadly necessary.
-        :type begin: datetime.datetime
-        :param begin: time where we started to process the request
-        """
-        self.sessionkey = sessionkey
-        self.user = user
-        self.request = request
-        self.response = response
-        self.notifications = notifications
-        self.urls = mapadapter
-        self.requestargs = requestargs
-        self.urlmap = urlmap
-        self.errors = errors
-        if not isinstance(values, werkzeug.datastructures.MultiDict):
-            values = werkzeug.datastructures.MultiDict(values)
-        self.values = values
-        self.lang = lang
-        self._coders = coders
-        self.begin = begin
-
-    def notify(self, ntype, message):
-        """Store a notification for later delivery to the user.
-
-        :type ntype: str
-        :param ntype: one of :py:data:`NOTIFICATION_TYPES`
-        :type message: str
-        """
-        if ntype not in NOTIFICATION_TYPES:
-            raise ValueError("Invalid notification type {} found".format(ntype))
-        self.notifications.append((ntype, message))
 
 class BaseApp(metaclass=abc.ABCMeta):
     """Additional base class under :py:class:`AbstractFrontend` which will be
@@ -517,10 +386,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env.filters.update(filters)
 
     @abc.abstractmethod
-    def finalize_session(self, rs, sessiondata):
+    def finalize_session(self, rs):
         """Create a :py:class:`FrontendUser` instance for this request. This is
         realm dependent and may add supplementary information (e.g. list of
         events which are organized by this persona).
+
+        FIXME
 
         This will be called by
         :py:class:`cdedb.frontend.application.Application` and is thus
@@ -532,12 +403,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           database
         :rtype: :py:class:`FrontendUser`
         """
-        sd = sessiondata
-        roles = extract_roles(sd)
-        return FrontendUser(
-            persona_id=sd['persona_id'], roles=roles, username=sd['username'],
-            display_name=sd['display_name'], given_names=sd['given_names'],
-            family_name=sd['family_name'])
+        return
 
     @classmethod
     @abc.abstractmethod
@@ -1023,22 +889,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, mimetype="application/pdf",
                 path=os.path.join(work_dir, pdf_file),
                 filename=self.i18n(pdf_file, rs.lang))
-
-class FrontendUser(CommonUser):
-    """Container for a persona in the frontend."""
-    def __init__(self, display_name="", given_names="", family_name="",
-                 username="", **kwargs):
-        """
-        :type display_name: str or None
-        :type given_names: str or None
-        :type family_name or None
-        :type username: str or None
-        """
-        super().__init__(**kwargs)
-        self.username = username
-        self.display_name = display_name
-        self.given_names = given_names
-        self.family_name = family_name
 
 def reconnoitre_ambience(obj, rs):
     """Provide automatic lookup of objects in a standard way.

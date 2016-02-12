@@ -11,15 +11,19 @@ import os.path
 import webtest
 import datetime
 import pytz
-from cdedb.config import BasicConfig
+from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.frontend.application import Application
-from cdedb.backend.common import do_singularization
+from cdedb.common import (
+    do_singularization, ProxyShim, extract_roles, RequestState, User,
+    roles_to_db_role, PrivilegeError)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.database import DATABASE_ROLES
+from cdedb.database.connection import connection_pool_factory
 
 _BASICCONF = BasicConfig()
 
@@ -45,35 +49,56 @@ def nearly_now():
     return NearlyNow(year=now.year, month=now.month, day=now.day, hour=now.hour,
                      minute=now.minute, second=now.second, tzinfo=pytz.utc)
 
-class BackendShim:
-    def __init__(self, backend):
-        self._backend = backend
-        self._funs = {}
-        funs = inspect.getmembers(backend, predicate=inspect.isroutine)
-        for name, fun in funs:
-            if hasattr(fun, "access_list") or hasattr(fun, "internal_access_list"):
-                self._funs[name] = self._wrapit(fun)
-                if hasattr(fun, "singularization_hint"):
-                    hint = fun.singularization_hint
-                    self._funs[hint['singular_function_name']] = self._wrapit(
-                        do_singularization(fun))
-                    setattr(self._backend, hint['singular_function_name'],
-                            do_singularization(fun))
+class BackendShim(ProxyShim):
+    def __init__(self, backend, *args, **kwargs):
+        super().__init__(backend, *args, **kwargs)
+        self.sessionproxy = SessionBackend(backend.conf._configpath)
+        secrets = SecretsConfig(backend.conf._configpath)
+        self.connpool = connection_pool_factory(
+            backend.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
+            secrets)
+        self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+
+    def _setup_requeststate(self, key):
+        data = self.sessionproxy.lookupsession(key, "127.0.0.0")
+        rs = RequestState(
+            key, None, None, None, [], None, None,
+            None, [], {}, "de", None, None)
+        vals = {k: data[k] for k in ('persona_id', 'username',
+                                     'given_names', 'display_name',
+                                     'family_name')}
+        rs.user = User(roles=extract_roles(data), **vals)
+        rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
+        if self.validate_scriptkey(key):
+            rs.user.roles.add("ml_script")
+            rs._conn = self.connpool["cdb_persona"]
+        rs.conn = rs._conn
+        if "event" in rs.user.roles and hasattr(self._backend, "orga_info"):
+            rs.user.orga = self._backend.orga_info(rs, rs.user.persona_id)
+        if "ml" in rs.user.roles and hasattr(self._backend, "moderator_info"):
+            rs.user.moderator = self._backend.moderator_info(rs, rs.user.persona_id)
+        return rs
+
 
     def _wrapit(self, fun):
+        """
+        :type fun: callable
+        """
+        try:
+            access_list = fun.access_list
+        except AttributeError:
+            if self._internal:
+                access_list = fun.internal_access_list
+            else:
+                raise
         @functools.wraps(fun)
         def new_fun(key, *args, **kwargs):
-            rs = self._backend.establish(key, fun.__name__, allow_internal=True)
-            if rs:
-                return getattr(self._backend, fun.__name__)(rs, *args, **kwargs)
+            rs = self._setup_requeststate(key)
+            if rs.user.roles & access_list:
+                return fun(rs, *args, **kwargs)
             else:
-                raise RuntimeError("Permission denied")
+                raise PrivilegeError("Not in access list.")
         return new_fun
-
-    def __getattr__(self, name):
-        if name in {"_funs", "_backend"}:
-            raise AttributeError()
-        return self._funs[name]
 
 class BackendUsingTest(unittest.TestCase):
     used_backends = None
@@ -82,8 +107,8 @@ class BackendUsingTest(unittest.TestCase):
         super().__init__(*args, **kwargs)
         self.maxDiff = None
 
-    def setUp(self):
-        subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    @classmethod
+    def setUpClass(cls):
         classes = {
             "core": CoreBackend,
             "session": SessionBackend,
@@ -91,17 +116,25 @@ class BackendUsingTest(unittest.TestCase):
             "event": EventBackend,
             "ml": MlBackend,
             "assembly": AssemblyBackend,
-            # TODO add more backends when they become available
         }
-        for backend in self.used_backends:
-            setattr(self, backend, self.initialize_backend(classes[backend]))
+        for backend in cls.used_backends:
+            if backend == "session":
+                setattr(cls, backend, cls.initialize_raw_backend(classes[backend]))
+            else:
+                setattr(cls, backend, cls.initialize_backend(classes[backend]))
 
-    def initialize_raw_backend(self, backendcls):
+    def setUp(self):
+        subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    @staticmethod
+    def initialize_raw_backend(backendcls):
         return backendcls(os.path.join(_BASICCONF.REPOSITORY_PATH,
                                        _BASICCONF.TESTCONFIG_PATH))
 
-    def initialize_backend(self, backendcls):
-        return BackendShim(self.initialize_raw_backend(backendcls))
+    @staticmethod
+    def initialize_backend(backendcls):
+        return BackendShim(BackendUsingTest.initialize_raw_backend(backendcls),
+                           internal=True)
 
 class BackendTest(BackendUsingTest):
     used_backends = ("core",)
@@ -221,39 +254,8 @@ class FrontendTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         env = os.putenv("CONFIGPATH", os.path.join(_BASICCONF.REPOSITORY_PATH, _BASICCONF.TESTCONFIG_PATH))
-        subprocess.Popen(("make", "run-core"), stdout=subprocess.DEVNULL)
-        subprocess.Popen(("make", "run-session"), stdout=subprocess.DEVNULL)
-        subprocess.Popen(("make", "run-cde"), stdout=subprocess.DEVNULL)
-        subprocess.Popen(("make", "run-event"), stdout=subprocess.DEVNULL)
-        subprocess.Popen(("make", "run-ml"), stdout=subprocess.DEVNULL)
-        subprocess.Popen(("make", "run-assembly"), stdout=subprocess.DEVNULL)
-        ## wait until the backend servers appear
-        pid_files = ('/run/cdedb/test-coreserver.pid',
-                     '/run/cdedb/test-cdeserver.pid',
-                     '/run/cdedb/test-sessionserver.pid',
-                     '/run/cdedb/test-eventserver.pid',
-                     '/run/cdedb/test-mlserver.pid',
-                     '/run/cdedb/test-assemblyserver.pid')
-        tries = 0
-        while tries < 10**4:
-            found = []
-            for pid_file in pid_files:
-                try:
-                    with open(pid_file) as f:
-                        found.append(f.read())
-                except FileNotFoundError:
-                    found.append(False)
-            if all(found):
-                break
-            time.sleep(0.01)
-        else:
-            raise RuntimeError("Backends did not appear.")
         app = Application(os.path.join(_BASICCONF.REPOSITORY_PATH, _BASICCONF.TESTCONFIG_PATH))
         cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR': "127.0.0.0", 'SERVER_PROTOCOL': "HTTP/1.1"})
-
-    @classmethod
-    def tearDownClass(cls):
-        subprocess.check_call(("make", "quit-test-backends"), stdout=subprocess.DEVNULL)
 
     def setUp(self):
         subprocess.check_call(("make", "sample-data-test-shallow"), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

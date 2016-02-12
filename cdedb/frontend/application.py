@@ -11,13 +11,15 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
-    glue, make_root_logger, QuotaException, PrivilegeError, now)
+    glue, make_root_logger, QuotaException, PrivilegeError, now,
+    roles_to_db_role, RequestState, User, extract_roles)
 from cdedb.frontend.common import (
-    FrontendRequestState, BaseApp, construct_redirect, connect_proxy,
-    FakeFrontendRequestState, Response)
-from cdedb.config import SecretsConfig
+    BaseApp, construct_redirect, Response)
+from cdedb.config import SecretsConfig, Config
+from cdedb.database import DATABASE_ROLES
+from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.paths import CDEDB_PATHS
-from cdedb.serialization import deserialize
+from cdedb.backend.session import SessionBackend
 import werkzeug.routing
 import werkzeug.exceptions
 import werkzeug.wrappers
@@ -39,8 +41,7 @@ class Application(BaseApp):
                          console_log_level=self.conf.CONSOLE_LOG_LEVEL)
         ## do not use a ProxyShim since the only usage here is before the
         ## RequestState exists
-        self.sessionproxy = connect_proxy(
-            self.conf.SERVER_NAME_TEMPLATE.format("session"))
+        self.sessionproxy = SessionBackend(configpath)
         self.core = CoreFrontend(configpath)
         self.cde = CdEFrontend(configpath)
         self.event = EventFrontend(configpath)
@@ -48,8 +49,10 @@ class Application(BaseApp):
         self.ml = MlFrontend(configpath)
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig(configpath)
-        self.session_lookup_key = secrets.SESSION_LOOKUP_KEY
-
+        self.conf = Config(configpath)
+        self.connpool = connection_pool_factory(
+            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
+            secrets)
 
     @werkzeug.wrappers.Request.application
     def __call__(self, request):
@@ -63,11 +66,8 @@ class Application(BaseApp):
                 ## note time for performance measurement
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
-                ## we have to do the work the ProxyShim normally does
-                with self.sessionproxy:
-                    data = deserialize(self.sessionproxy.lookupsession(
-                        self.session_lookup_key, sessionkey,
-                        request.remote_addr))
+                data = self.sessionproxy.lookupsession(sessionkey,
+                                                       request.remote_addr)
                 urls = self.urlmap.bind_to_environ(request.environ)
                 endpoint, args = urls.match()
                 if sessionkey and not data["persona_id"]:
@@ -87,9 +87,9 @@ class Application(BaseApp):
                     "encode_notification": self.encode_notification,
                     "decode_notification": self.decode_notification,
                 }
-                rs = FrontendRequestState(sessionkey, None, request, None,
-                                          [], urls, args, self.urlmap,
-                                          [], {}, "de", coders, begin)
+                rs = RequestState(
+                    sessionkey, None, request, None, [], urls, args,
+                    self.urlmap, [], {}, "de", coders, begin)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")
@@ -113,8 +113,15 @@ class Application(BaseApp):
                     raise werkzeug.exceptions.MethodNotAllowed(
                         handler.modi,
                         "Unsupported request method {}.".format(request.method))
-                rs.user = getattr(self, component).finalize_session(
-                    FakeFrontendRequestState(sessionkey), data)
+                vals = {k: data[k] for k in ('persona_id', 'username',
+                                             'given_names', 'display_name',
+                                             'family_name')}
+                rs.user = User(roles=extract_roles(data), **vals)
+                ## Store database connection as private attribute.
+                ## It will be made accessible for the backends by the ProxyShim.
+                rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
+                ## Add realm specific infos (mostly to the user object)
+                getattr(self, component).finalize_session(rs)
                 return handler(rs, **args)
             except werkzeug.exceptions.HTTPException:
                 ## do not log these, since they are not interesting and
@@ -127,9 +134,6 @@ class Application(BaseApp):
                 self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                 self.logger.error("SECOND TRY CGITB")
                 self.logger.error(cgitb.text(sys.exc_info(), context=7))
-                if hasattr(e, '_pyroTraceback'):
-                    self.logger.error("THIRD NESTED PYRO TRACEBACK")
-                    self.logger.error("".join(e._pyroTraceback))
                 raise
         except PrivilegeError as e:
             ## Convert permission errors from the backend to 503

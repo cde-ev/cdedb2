@@ -2,18 +2,242 @@
 
 """Global utility functions."""
 
-import cdedb.database.constants as const
 import abc
-import datetime
-import pytz
-import sys
-import logging
-import logging.handlers
 import collections
 import collections.abc
+import copy
+import datetime
 import enum
+import functools
+import inspect
+import logging
+import logging.handlers
+import pytz
 import random
 import string
+import sys
+import werkzeug.datastructures
+
+class RequestState:
+    """Container for request info. Besides this and db accesses the python
+    code should be state-less. This data structure enables several
+    convenient semi-magic behaviours (magic enough to be nice, but non-magic
+    enough to not be non-nice).
+    """
+    def __init__(self, sessionkey, user, request, response, notifications,
+                 mapadapter, requestargs, urlmap, errors, values, lang, coders,
+                 begin):
+        """
+        :type sessionkey: str or None
+        :type user: :py:class:`User`
+        :type request: :py:class:`werkzeug.wrappers.Request`
+        :type response: :py:class:`werkzeug.wrappers.Response` or None
+        :type notifications: [(str, str)]
+        :param notifications: messages to be displayed to the user, to be
+          submitted by :py:meth:`notify`
+        :type mapadapter: :py:class:`werkzeug.routing.MapAdapter`
+        :param mapadapter: URL generator (specific for this request)
+        :type requestargs: {str: object}
+        :param requestargs: verbatim copy of the arguments contained in the URL
+        :type urlmap: :py:class:`werkzeug.routing.Map`
+        :param urlmap: abstract URL information
+        :type errors: [(str, exception)]
+        :param errors: validation errors, consisting of a pair of (parameter
+          name, the actual error)
+        :type values: {str: object}
+        :param values: Parameter values extracted via :py:func:`REQUESTdata`
+          and :py:func:`REQUESTdatadict` decorators, which allows automatically
+          filling forms in. This will be a
+          :py:class:`werkzeug.datastructures.MultiDict` to allow seamless
+          integration with the werkzeug provided data.
+        :type lang: str
+        :param lang: language code for i18n, currently only 'de' is valid
+        :type coders: {str: callable}
+        :param coders: Functions for encoding and decoding parameters primed
+          with secrets. This is hacky, but sadly necessary.
+        :type begin: datetime.datetime
+        :param begin: time where we started to process the request
+        """
+        self.ambience = None
+        self.sessionkey = sessionkey
+        self.user = user
+        self.request = request
+        self.response = response
+        self.notifications = notifications
+        self.urls = mapadapter
+        self.requestargs = requestargs
+        self.urlmap = urlmap
+        self.errors = errors
+        if not isinstance(values, werkzeug.datastructures.MultiDict):
+            values = werkzeug.datastructures.MultiDict(values)
+        self.values = values
+        self.lang = lang
+        self._coders = coders
+        self.begin = begin
+        ## Visible version of the database connection
+        self.conn = None
+        ## Private version of the database connection, only visible in the
+        ## backends (mediated by the ProxyShim)
+        self._conn = None
+
+    def notify(self, ntype, message):
+        """Store a notification for later delivery to the user.
+
+        :type ntype: str
+        :param ntype: one of :py:data:`NOTIFICATION_TYPES`
+        :type message: str
+        """
+        if ntype not in NOTIFICATION_TYPES:
+            raise ValueError("Invalid notification type {} found".format(ntype))
+        self.notifications.append((ntype, message))
+
+class User:
+    """Container for a persona."""
+    def __init__(self, persona_id=None, roles=None, orga=None, moderator=None,
+                 display_name="", given_names="", family_name="", username=""):
+        """
+        :type persona_id: int or None
+        :type roles: {str}
+        :param roles: python side privilege levels
+        :type orga: {int} or None
+        :param orga: Set of event ids for which this user is orga, only
+          available in the event realm.
+        :type moderator: {int} or None
+        :param moderator: Set of mailing list ids for which this user is
+          moderator, only available in the ml realm.
+        :type display_name: str or None
+        :type given_names: str or None
+        :type family_name or None
+        :type username: str or None
+        """
+        self.persona_id = persona_id
+        self.roles = roles or {"anonymous"}
+        self.orga = orga or set()
+        self.moderator = moderator or set()
+        self.username = username
+        self.display_name = display_name
+        self.given_names = given_names
+        self.family_name = family_name
+
+def do_singularization(fun):
+    """Perform singularization on a function.
+
+    This is the companion to the @singularize decorator.
+    :type fun: callable
+    :param fun: function with ``fun.singularization_hint`` attribute
+    :rtype: callable
+    :returns: singularized function
+    """
+    hint = fun.singularization_hint
+    @functools.wraps(fun)
+    def new_fun(rs, *args, **kwargs):
+        if hint['singular_param_name'] in kwargs:
+            param = kwargs.pop(hint['singular_param_name'])
+            kwargs[hint['array_param_name']] = (param,)
+        else:
+            param = args[0]
+            args = ((param,),) + args[1:]
+        data = fun(rs, *args, **kwargs)
+        ## raises KeyError if the requested thing does not exist
+        return data[param]
+    new_fun.__name__ = hint['singular_function_name']
+    return new_fun
+
+def do_batchification(fun):
+    """Perform batchification on a function.
+
+    This is the companion to the @batchify decorator.
+    :type fun: callable
+    :param fun: function with ``fun.batchification_hint`` attribute
+    :rtype: callable
+    :returns: batchified function
+    """
+    hint = fun.batchification_hint
+    ## Break cyclic import by importing here
+    from cdedb.database.connection import Atomizer
+    @functools.wraps(fun)
+    def new_fun(rs, *args, **kwargs):
+        ret = []
+        with Atomizer(rs):
+            if hint['array_param_name'] in kwargs:
+                param = kwargs.pop(hint['array_param_name'])
+                for datum in param:
+                    new_kwargs = copy.deepcopy(kwargs)
+                    new_kwargs[hint['singular_param_name']] = datum
+                    ret.append(fun(rs, *args, **new_kwargs))
+            else:
+                param = args[0]
+                for datum in param:
+                    new_args = (datum,) + args[1:]
+                    ret.append(fun(rs, *new_args, **kwargs))
+        return ret
+    new_fun.__name__ = hint['batch_function_name']
+    return new_fun
+
+class ProxyShim:
+    """Mediate calls between different backend components. This emulates an
+    RPC call without most of the overhead of actually doing an RPC call.
+
+    FIXME
+    """
+    def __init__(self, backend, internal=False):
+        """
+        :type backend: :py:class:`AbstractBackend`
+        """
+        self._backend = backend
+        self._funs = {}
+        self._internal = internal
+        funs = inspect.getmembers(backend, predicate=inspect.isroutine)
+        for name, fun in funs:
+            if hasattr(fun, "access_list") or (
+                    internal and hasattr(fun, "internal_access_list")):
+                self._funs[name] = self._wrapit(fun)
+                if hasattr(fun, "singularization_hint"):
+                    hint = fun.singularization_hint
+                    self._funs[hint['singular_function_name']] = self._wrapit(
+                        do_singularization(fun))
+                    setattr(backend, hint['singular_function_name'],
+                            do_singularization(fun))
+                if hasattr(fun, "batchification_hint"):
+                    hint = fun.batchification_hint
+                    self._funs[hint['batch_function_name']] = self._wrapit(
+                        do_batchification(fun))
+                    setattr(backend, hint['batch_function_name'],
+                            do_batchification(fun))
+
+    def _wrapit(self, fun):
+        """
+        :type fun: callable
+        """
+        try:
+            access_list = fun.access_list
+        except AttributeError:
+            if self._internal:
+                access_list = fun.internal_access_list
+            else:
+                raise
+        @functools.wraps(fun)
+        def new_fun(rs, *args, **kwargs):
+            if rs.user.roles & access_list:
+                try:
+                    if not self._internal:
+                        ## Expose database connection for the backends
+                        rs.conn = rs._conn
+                    return fun(rs, *args, **kwargs)
+                finally:
+                    if not self._internal:
+                        rs.conn = None
+            else:
+                raise PrivilegeError("Not in access list.")
+        return new_fun
+
+    def __getattr__(self, name):
+        if name in {"_funs", "_backend"}:
+            raise AttributeError()
+        try:
+            return self._funs[name]
+        except KeyError as e:
+            raise AttributeError from e
 
 def make_root_logger(name, logfile_path, log_level, syslog_level=None,
                      console_log_level=None):
@@ -116,25 +340,6 @@ class PrivilegeError(RuntimeError):
     custom class so that we can distinguish it from other exceptions.
     """
     pass
-
-class CommonUser(metaclass=abc.ABCMeta):
-    """Abstract base class for container representing a persona."""
-    def __init__(self, persona_id=None, roles=None, orga=None, moderator=None):
-        """
-        :type persona_id: int or None
-        :type roles: {str}
-        :param roles: python side privilege levels
-        :type orga: {int} or None
-        :param orga: Set of event ids for which this user is orga, only
-          available in the event realm.
-        :type moderator: {int} or None
-        :param moderator: Set of mailing list ids for which this user is
-          moderator, only available in the ml realm.
-        """
-        self.persona_id = persona_id
-        self.roles = roles or {"anonymous"}
-        self.orga = orga or set()
-        self.moderator = moderator or set()
 
 # TODO decide whether we sort by first or last name
 def name_key(entry):
@@ -412,7 +617,7 @@ def unwrap(single_element_list, keys=False):
     return next(i for i in single_element_list)
 
 @enum.unique
-class AgeClasses(enum.Enum):
+class AgeClasses(enum.IntEnum):
     """Abstraction for encapsulating properties like legal status changing with
     age.
 
@@ -526,6 +731,11 @@ def privilege_tier(roles):
         return ret | {"cde_admin"}
     return ret
 
+#: Set of possible values for ``ntype`` in
+#: :py:meth:`FrontendRequestState.notify`. Must conform to the regex
+#: ``[a-z]+``.
+NOTIFICATION_TYPES = {"success", "info", "question", "warning", "error"}
+
 #: Map of available privilege levels to those present in the SQL database
 #: (where we have less differentiation for the sake of simplicity).
 #:
@@ -550,6 +760,18 @@ DB_ROLE_MAPPING = collections.OrderedDict((
 
     ("anonymous", "cdb_anonymous"),
 ))
+
+def roles_to_db_role(roles):
+    """Convert a set of application level roles into a database level role.
+
+    :type roles: {str}
+    :rtype: str
+    """
+    for role in DB_ROLE_MAPPING:
+        if role in roles:
+            return DB_ROLE_MAPPING[role]
+
+
 
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (

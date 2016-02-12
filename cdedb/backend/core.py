@@ -7,7 +7,7 @@ accesses.
 """
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
-    access, internal_access, make_RPCDaemon, run_RPCDaemon, singularize,
+    access, internal_access, singularize,
     affirm_validation as affirm, affirm_array_validation as affirm_array)
 from cdedb.common import (
     glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
@@ -18,6 +18,8 @@ from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
 import cdedb.database.constants as const
+from cdedb.database import DATABASE_ROLES
+from cdedb.database.connection import connection_pool_factory
 
 import argparse
 import copy
@@ -82,6 +84,9 @@ class CoreBackend(AbstractBackend):
         """
         super().__init__(configpath, is_core=True)
         secrets = SecretsConfig(configpath)
+        self.connpool = connection_pool_factory(
+            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
+            secrets)
         self.ldap_connect = lambda: LDAPConnection(
             self.conf.LDAP_URL, self.conf.LDAP_USER, secrets.LDAP_PASSWORD)
         self.generate_reset_cookie = (
@@ -90,10 +95,6 @@ class CoreBackend(AbstractBackend):
         self.verify_reset_cookie = (
             lambda rs, persona_id, cookie: self._verify_reset_cookie(
                 rs, persona_id, secrets.RESET_SALT, cookie))
-
-    def establish(self, sessionkey, method, allow_internal=False):
-        return super().establish(sessionkey, method,
-                                 allow_internal=allow_internal)
 
     @classmethod
     def is_admin(cls, rs):
@@ -1623,17 +1624,3 @@ class CoreBackend(AbstractBackend):
         rs.conn = orig_conn
         rs.user.roles = orig_roles
         return ret
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Run CdEDB Backend for core services.')
-    parser.add_argument('-c', default=None, metavar='/path/to/config',
-                        dest="configpath")
-    args = parser.parse_args()
-    core_backend = CoreBackend(args.configpath)
-    conf = Config(args.configpath)
-    core_server = make_RPCDaemon(core_backend, conf.CORE_SOCKET,
-                                 access_log=conf.CORE_ACCESS_LOG)
-    if not conf.CDEDB_DEV and conf.CORE_ACCESS_LOG:
-        raise RuntimeError("Logging will disclose passwords.")
-    run_RPCDaemon(core_server, conf.CORE_STATE_FILE)
