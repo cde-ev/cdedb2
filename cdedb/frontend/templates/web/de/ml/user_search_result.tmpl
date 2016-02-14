@@ -8,5 +8,5 @@
 Mailinglistennutzersuche -- {{ result|length|e }} Ergebnis{{ result|length|numerus("", "se")|e }} gefunden
 {% endblock %}
 {% block content %}
-    {{ generic.user_search_result('ml') }}
+    {{ generic.user_search_result(result, 'ml') }}
 {% endblock %}

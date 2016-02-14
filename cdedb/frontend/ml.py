@@ -81,10 +81,12 @@ class MlFrontend(AbstractUserFrontend):
         return super().admin_change_user_form(rs, persona_id)
 
     @access("ml_admin", modi={"POST"})
+    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
     @REQUESTdatadict(
         "given_names", "family_name", "display_name", "notes")
-    def admin_change_user(self, rs, persona_id, data):
-        return super().admin_change_user(rs, persona_id, data)
+    def admin_change_user(self, rs, persona_id, generation, change_note, data):
+        return super().admin_change_user(rs, persona_id, generation,
+                                         change_note, data)
 
     @access("ml_admin")
     def create_user_form(self, rs):

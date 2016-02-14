@@ -1,15 +1,62 @@
-{# This contains generic pages. Currently these are those for managing users
-   in a realm which provides no additional data. #}
+{# This contains generic pages. Currently these are those for managing users. #}
 
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro admin_change_user(realm) %}
-    <form action="{{ cdedblink('{}/admin_change_user'.format(realm))|e }}" method="POST" id="changedataform">
+    <form action="{{ cdedblink('{}/admin_change_user'.format(realm))|e }}" method="POST" id="changedataform" class="form-horizontal">
+        <div>{{ util.input_hidden(name="generation") }}</div>
         <table>
+            {{ util.input_textarea(name="change_note", label="Kommentar", aclass="bigg") }}
+            <tr> <th colspan="2">Person</th> </tr>
+            {{ util.input_text(name="title", label="Titel") }}
             {{ util.input_text(name="given_names", label="Vorname(n)") }}
             {{ util.input_text(name="family_name", label="Nachname") }}
+            {% if realm in ("core", "cde") and  values['is_cde_realm'] %}
+                {{ util.input_text(name="birth_name", label="Geburtsname") }}
+            {% endif %}
+            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
             {{ util.input_text(name="display_name", label="Rufname") }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {% if realm in ("core", "cde") and values['is_cde_realm'] %}
+                {{ util.input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
+                {{ util.input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
+                {{ util.input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
+                {{ util.input_textarea(name="interests", label="Interessen", aclass="bigg") }}
+                {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
+            {% endif %}
+            {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
+                {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+                {{ util.input_text(name="birthday", label="Geburtstag") }}
+            {% endif %}
+            <tr> <th colspan="2">Kontakt</th> </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ username|e }}</td>
+            </tr>
+            {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
+                {{ util.input_text(name="telephone", label="Telefon") }}
+                {{ util.input_text(name="mobile", label="Mobiltelefon") }}
+                {{ util.input_text(name="weblink", label="WWW") }}
+                <tr> <th colspan="2">Adresse</th> </tr>
+                {{ util.input_text(name="address", label="Straße") }}
+                {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
+                {{ util.input_text(name="postal_code", label="Postleitzahl") }}
+                {{ util.input_text(name="location", label="Stadt") }}
+                {{ util.input_text(name="country", label="Land") }}
+            {% endif %}
+            {% if realm in ("core", "cde") and values['is_cde_realm'] %}
+                <tr> <th colspan="2">Zweitadresse</th> </tr>
+                {{ util.input_text(name="address2", label="Straße") }}
+                {{ util.input_text(name="address_supplement2", label="Addresszusatz") }}
+                {{ util.input_text(name="postal_code2", label="Postleitzahl") }}
+                {{ util.input_text(name="location2", label="Stadt") }}
+                {{ util.input_text(name="country2", label="Land") }}
+                <tr> <th colspan="2">Account</th> </tr>
+                {{ util.input_checkbox(name="bub_search", label="Zugriff für BuB") }}
+            {% endif %}
+            {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
+                {{ util.input_checkbox(name="cloud_account", label="Cloud Account") }}
+            {% endif %}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
         </table>
         <div>
             {{ util.input_submit(value="Speichern") }}
@@ -18,32 +65,71 @@
     </form>
 {% endmacro %}
 
-{% macro change_user(realm) %}
-    <form action="{{ cdedblink('{}/change_user'.format(realm))|e }}" method="POST" id="changedataform">
-        <table>
-            {{ util.input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.input_text(name="family_name", label="Nachname") }}
-            {{ util.input_text(name="display_name", label="Rufname") }}
-        </table>
-        <div>
-            {{ util.input_submit(value="Speichern") }}
-            {{ util.href(show_user_link(user.persona_id), "Abbrechen") }}
-        </div>
-    </form>
-{% endmacro %}
-
 {% macro create_user(realm) %}
     <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform">
         <table>
+            <tr> <th colspan="2">Person</th> </tr>
+            {{ util.input_text(name="title", label="Titel") }}
             {{ util.input_text(name="given_names", label="Vorname(n)") }}
             {{ util.input_text(name="family_name", label="Nachname") }}
+            {% if realm == "cde" %}
+                {{ util.input_text(name="birth_name", label="Geburtsname") }}
+            {% endif %}
+            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
             {{ util.input_text(name="display_name", label="Rufname") }}
+            {% if realm == "cde" %}
+                {{ util.input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
+                {{ util.input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
+                {{ util.input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
+                {{ util.input_textarea(name="interests", label="Interessen", aclass="bigg") }}
+                {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
+            {% endif %}
+            {% if realm in ("cde", "event") %}
+                {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+                {{ util.input_text(name="birthday", label="Geburtstag") }}
+            {% endif %}
+            <tr> <th colspan="2">Kontakt</th> </tr>
             {{ util.input_text(name="username", label="Email") }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {% if realm in ("cde", "event") %}
+                {{ util.input_text(name="telephone", label="Telefon") }}
+                {{ util.input_text(name="mobile", label="Mobiltelefon") }}
+            {% endif %}
+            {% if realm == "cde" %}
+                {{ util.input_text(name="weblink", label="WWW") }}
+            {% endif %}
+            {% if realm in ("cde", "event") %}
+                <tr> <th colspan="2">Adresse</th> </tr>
+                {{ util.input_text(name="address", label="Straße") }}
+                {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
+                {{ util.input_text(name="postal_code", label="Postleitzahl") }}
+                {{ util.input_text(name="location", label="Stadt") }}
+                {{ util.input_text(name="country", label="Land") }}
+            {% endif %}
+            {% if realm == "cde" %}
+                <tr> <th colspan="2">Zweitadresse</th> </tr>
+                {{ util.input_text(name="address2", label="Straße") }}
+                {{ util.input_text(name="address_supplement2", label="Addresszusatz") }}
+                {{ util.input_text(name="postal_code2", label="Postleitzahl") }}
+                {{ util.input_text(name="location2", label="Stadt") }}
+                {{ util.input_text(name="country2", label="Land") }}
+            {% endif %}
+            <tr> <th colspan="2">Account</th> </tr>
+            {% if realm == "cde" %}
+                {{ util.input_checkbox(name="is_member", label="Mitgliedschaft",
+                                       anid="input_checkbox_is_member") }}
+                {{ util.input_checkbox(name="is_searchable", label="Sichtbarkeit (falls Einwilligung vorhanden)",
+                                       anid="input_checkbox_is_searchable") }}
+                {{ util.input_checkbox(name="trial_member", label="Probemitgliedschaft",
+                                           anid="input_checkbox_trial_member") }}
+                {{ util.input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}
+            {% endif %}
+            {{ util.input_checkbox(name="cloud_account", label="Cloud Account",
+                                       anid="input_checkbox_cloud_account") }}
+            {{ util.input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
         </table>
         <div>
-            {{ util.input_submit(value="Anlegen") }}
-            {{ util.href(cdedblink('{}/index'.format(realm)), "Abbrechen") }}
+            {{ util.input_submit(value="Nutzer anlegen") }}
+            {{ util.href(cdedblink("{}/index".format(realm)), "Abbrechen") }}
         </div>
     </form>
 {% endmacro %}
@@ -55,10 +141,27 @@
     <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform">
         <table>
             <tr> <th colspan="2">Person</th> </tr>
+            {{ util.input_text(name="title", label="Titel") }}
             <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
             <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
+            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
             {{ util.input_text(name="display_name", label="Rufname") }}
-            <tr> <td>Email</td> <td> {{ username|e }} </td> </tr>
+            {% if realm == "event" %}
+                {{ util.input_text(name="birthday", label="Geburtstag") }}
+                {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+            {% endif %}
+            <tr> <th colspan="2">Kontakt</th> </tr>
+            <tr> <td>Email</td> <td> {{ case['username']|e }} </td> </tr>
+            {% if realm == "event" %}
+                {{ util.input_text(name="telephone", label="Telefon") }}
+                {{ util.input_text(name="mobile", label="Mobiltelefon") }}
+                <tr> <th colspan="2">Adresse</th> </tr>
+                {{ util.input_text(name="address", label="Straße") }}
+                {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
+                {{ util.input_text(name="postal_code", label="Postleitzahl") }}
+                {{ util.input_text(name="location", label="Stadt") }}
+                {{ util.input_text(name="country", label="Land") }}
+            {% endif %}
         </table>
         <div>
             {{ util.input_hidden(name="case_id") }}
@@ -340,7 +443,7 @@
 
         {% if participation_info %}
             <tr> <th colspan="2">Veranstaltungen</th> </tr>
-            {% for info in participation_info|sort(attribute="event_id") %}
+            {% for info in participation_info|sort(attribute="pevent_id") %}
                 <tr>
                     <td colspan="2">
                         {{ util.href(cdedblink("event/show_past_event", {"pevent_id": info['pevent_id']}),
@@ -391,22 +494,57 @@
     {% endwith %}
 
     <h3>Suchmaske</h3>
+    {{ user_search_mask(realm) }}
+{% endmacro %}
+
+
+{% macro user_search_mask(realm, selection_blacklist=[]) %}
     {% with TITLES = {
-        "id": "ID",
+        "fulltext": "Volltext",
+        "personas.id": "ID",
         "username": "Email",
         "is_active": "Aktiv",
         "db_privileges": "DB-Rechte",
         "cloud_account": "Cloud Zugriff",
         "family_name": "Nachname",
+        "birth_name": "Geburtsname",
         "given_names": "Vorname",
         "display_name": "Rufname",
+        "title": "Titel",
+        "name_supplement": "Namenszusatz",
+        "gender": "Geschlecht",
+        "birthday": "Geburtstag",
+        "telephone": "Telefon",
+        "mobile": "Mobilfunk",
+        "address": "Anschrift",
+        "address_supplement": "Adresszusatz",
+        "postal_code": "PLZ",
+        "location": "Ort",
+        "country": "Land",
+        "address2": "Anschrift (Zweitadresse)",
+        "address_supplement2": "Adresszusatz (Zweitadresse)",
+        "postal_code2": "PLZ (Zweitadresse)",
+        "location2": "Ort (Zweitadresse)",
+        "country2": "Land (Zweitadresse)",
+        "weblink": "WWW",
+        "specialisation": "Fachgebiet",
+        "affiliation": "Schule, Uni, ...",
+        "timeline": "Jahrgang, Matrikel, ...",
+        "interests": "Interessen",
+        "free_form": "Sonstige Angaben",
+        "pevent_id": "Veranstaltung",
+        "pcourse_id": "Kurs",
+        "balance": "Guthaben",
+        "decided_search": "Sichtbarkeit entschieden",
+        "trial_member": "Probemitgliedschaft",
+        "bub_search": "Sichtbarkeit BuB",
         "notes": "Notizen",} %}
 
         <form action="{{ cdedblink('{}/user_search'.format(realm))|e }}" method="GET" id="usersearchform">
             <div>
                 {{ util.input_submit(value="Suchen") }}
                 {{ util.input_submit(value="CSV-Datei", name="CSV") }}
-                {{ util.format_query(spec, TITLES, choices) }}
+                {{ util.format_query(spec, TITLES, choices, selection_blacklist=selection_blacklist) }}
                 {{ util.input_submit(value="Suchen") }}
                 {{ util.input_submit(value="CSV-Datei", name="CSV") }}
             </div>
@@ -436,18 +574,49 @@
     </script>
 {% endmacro %}
 
-{% macro user_search_result(realm) %}
+{% macro user_search_result(result, realm) %}
     {{ util.href(cdedblink("{}/user_search_form".format(realm), query|querytoparams), "Zurück") }}
 
     {% with TITLES = {
-        "persona_id": "ID",
+        "fulltext": "Volltext",
+        "personas.id": "ID",
         "username": "Email",
+        "status": "Status",
         "is_active": "Aktiv",
         "db_privileges": "DB-Rechte",
         "cloud_account": "Cloud Zugriff",
         "family_name": "Nachname",
+        "birth_name": "Geburtsname",
         "given_names": "Vorname",
         "display_name": "Rufname",
+        "title": "Titel",
+        "name_supplement": "Namenszusatz",
+        "gender": "Geschlecht",
+        "birthday": "Geburtstag",
+        "telephone": "Telefon",
+        "mobile": "Mobilfunk",
+        "address": "Anschrift",
+        "address_supplement": "Adresszusatz",
+        "postal_code": "PLZ",
+        "location": "Ort",
+        "country": "Land",
+        "address2": "Anschrift (Zweitadresse)",
+        "address_supplement2": "Adresszusatz (Zweitadresse)",
+        "postal_code2": "PLZ (Zweitadresse)",
+        "location2": "Ort (Zweitadresse)",
+        "country2": "Land (Zweitadresse)",
+        "weblink": "WWW",
+        "specialisation": "Fachgebiet",
+        "affiliation": "Schule, Uni, ...",
+        "timeline": "Jahrgang, Matrikel, ...",
+        "interests": "Interessen",
+        "free_form": "Sonstige Angaben",
+        "pevent_id": "Veranstaltung",
+        "pcourse_id": "Kurs",
+        "balance": "Guthaben",
+        "decided_search": "Sichtbarkeit entschieden",
+        "trial_member": "Probemitgliedschaft",
+        "bub_search": "Sichtbarkeit BuB",
         "notes": "Notizen",} %}
 
         {{ util.display_query_result(result, query, TITLES, choices) }}

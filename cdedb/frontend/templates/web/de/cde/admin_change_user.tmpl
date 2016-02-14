@@ -1,53 +1,7 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Administration -- {{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/admin_change_user')|e }}" method="POST" id="changedataform" class="form-horizontal">
-        <div>{{ util.input_hidden(name="generation") }}</div>
-        <table>
-            {{ util.input_textarea(name="change_note", label="Kommentar", aclass="bigg") }}
-            <tr> <th colspan="2">Person</th> </tr>
-            {{ util.input_text(name="title", label="Titel") }}
-            {{ util.input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.input_text(name="family_name", label="Nachname") }}
-            {{ util.input_text(name="birth_name", label="Geburtsname") }}
-            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.input_text(name="display_name", label="Rufname") }}
-            {{ util.input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
-            {{ util.input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
-            {{ util.input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
-            {{ util.input_textarea(name="interests", label="Interessen", aclass="bigg") }}
-            {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
-            {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-            {{ util.input_text(name="birthday", label="Geburtstag") }}
-            <tr> <th colspan="2">Kontakt</th> </tr>
-            <tr>
-                <td>Email</td>
-                <td>{{ username|e }}</td>
-            </tr>
-            {{ util.input_text(name="telephone", label="Telefon") }}
-            {{ util.input_text(name="mobile", label="Mobiltelefon") }}
-            {{ util.input_text(name="weblink", label="WWW") }}
-            <tr> <th colspan="2">Adresse</th> </tr>
-            {{ util.input_text(name="address", label="Straße") }}
-            {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.input_text(name="location", label="Stadt") }}
-            {{ util.input_text(name="country", label="Land") }}
-            <tr> <th colspan="2">Zweitadresse</th> </tr>
-            {{ util.input_text(name="address2", label="Straße") }}
-            {{ util.input_text(name="address_supplement2", label="Addresszusatz") }}
-            {{ util.input_text(name="postal_code2", label="Postleitzahl") }}
-            {{ util.input_text(name="location2", label="Stadt") }}
-            {{ util.input_text(name="country2", label="Land") }}
-            <tr> <th colspan="2">Account</th> </tr>
-            {{ util.input_checkbox(name="bub_search", label="Zugriff für BuB") }}
-            {{ util.input_checkbox(name="cloud_account", label="Cloud Account") }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
-        </table>
-        <div>
-            {{ util.input_submit(value="Speichern") }}
-            {{ util.href(show_user_link(values['persona_id']), "Abbrechen") }}
-        </div>
-    </form>
+    {{ generic.admin_change_user("cde") }}
 {% endblock %}

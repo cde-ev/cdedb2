@@ -105,13 +105,15 @@ class EventFrontend(AbstractUserFrontend):
         return super().admin_change_user_form(rs, persona_id)
 
     @access("event_admin", modi={"POST"})
+    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
     @REQUESTdatadict(
         "title", "given_names", "family_name", "name_supplement",
         "display_name", "birthday", "gender", "telephone", "mobile",
         "address", "address_supplement", "postal_code", "location",
         "country", "cloud_account", "notes")
-    def admin_change_user(self, rs, persona_id, data):
-        return super().admin_change_user(rs, persona_id, data)
+    def admin_change_user(self, rs, persona_id, generation, change_note, data):
+        return super().admin_change_user(rs, persona_id, generation,
+                                         change_note, data)
 
     @access("event_admin")
     def create_user_form(self, rs):

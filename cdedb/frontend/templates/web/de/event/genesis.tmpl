@@ -1,36 +1,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Veranstaltungsaccount anlegen{% endblock %}
 {% block content %}
-    Gib unten Deine Daten ein um den Account anzulegen. Abschließend kannst
-    Du Dir ein neues Passwort zugeschicken lassen.
-
-    <form action="{{ cdedblink('event/genesis')|e }}" method="POST" id="newuserform">
-        <table>
-            <tr> <th colspan="2">Person</th> </tr>
-            {{ util.input_text(name="title", label="Titel") }}
-            <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
-            <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
-            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.input_text(name="display_name", label="Rufname") }}
-            {{ util.input_text(name="birthday", label="Geburtstag") }}
-            {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-            <tr> <th colspan="2">Kontakt</th> </tr>
-            <tr> <td>Email</td> <td> {{ case['username']|e }} </td> </tr>
-            {{ util.input_text(name="telephone", label="Telefon") }}
-            {{ util.input_text(name="mobile", label="Mobiltelefon") }}
-            <tr> <th colspan="2">Adresse</th> </tr>
-            {{ util.input_text(name="address", label="Straße") }}
-            {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.input_text(name="location", label="Stadt") }}
-            {{ util.input_text(name="country", label="Land") }}
-        </table>
-        <div>
-            {{ util.input_hidden(name="case_id") }}
-            {{ util.input_hidden(name="secret") }}
-            {{ util.input_submit(value="Account anlegen") }}
-            {{ util.href(cdedblink('core/index'), "Abbrechen") }}
-        </div>
-    </form>
+    {{ generic.genesis('event') }}
 {% endblock %}

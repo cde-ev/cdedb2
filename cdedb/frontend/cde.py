@@ -73,12 +73,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin")
     def admin_change_user_form(self, rs, persona_id):
-        """Common entry point redirecting to user's realm."""
-        data = self.coreproxy.get_cde_user(rs, persona_id)
-        data['generation'] = self.coreproxy.changelog_get_generation(
-            rs, persona_id)
-        merge_dicts(rs.values, data)
-        return self.render(rs, "admin_change_user")
+        return super().admin_change_user_form(rs, persona_id)
 
 
     @access("cde_admin", modi={"POST"})
@@ -92,15 +87,8 @@ class CdEFrontend(AbstractUserFrontend):
         "specialisation", "affiliation", "timeline", "interests",
         "free_form", "bub_search", "cloud_account", "notes")
     def admin_change_user(self, rs, persona_id, generation, change_note, data):
-        """FIXME"""
-        data['id'] = persona_id
-        data = check(rs, "persona", data)
-        if rs.errors:
-            return self.admin_change_user_form(rs, persona_id)
-        code = self.coreproxy.change_persona(rs, data, generation=generation,
-                                             change_note=change_note)
-        self.notify_return_code(rs, code)
-        return self.redirect_show_user(rs, persona_id)
+        return super().admin_change_user(rs, persona_id, generation,
+                                         change_note, data)
 
     @access("cde")
     def get_foto(self, rs, foto):

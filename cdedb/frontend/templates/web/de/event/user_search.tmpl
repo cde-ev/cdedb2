@@ -1,6 +1,7 @@
 {% set sidenav_active='event_users' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}Veranstaltungsnutzersuche{% endblock %}
@@ -15,60 +16,5 @@
     {% endwith %}
 
     <h3>Suchmaske</h3>
-    {% with TITLES = {
-        "user_data.persona_id": "ID",
-        "username": "Email",
-        "is_active": "Aktiv",
-        "db_privileges": "DB-Rechte",
-        "cloud_account": "Cloud Zugriff",
-        "family_name": "Nachname",
-        "given_names": "Vorname",
-        "display_name": "Rufname",
-        "title": "Titel",
-        "name_supplement": "Namenszusatz",
-        "gender": "Geschlecht",
-        "birthday": "Geburtstag",
-        "telephone": "Telefon",
-        "mobile": "Mobilfunk",
-        "address": "Anschrift",
-        "address_supplement": "Adresszusatz",
-        "postal_code": "PLZ",
-        "location": "Ort",
-        "country": "Land",
-        "event_id": "Veranstaltung",
-        "course_id": "Kurs",
-        "notes": "Notizen",} %}
-
-        <form action="{{ cdedblink('event/user_search')|e }}" method="GET" id="usersearchform">
-            <div>
-                {{ util.input_submit(value="Suchen") }}
-                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
-                {{ util.format_query(spec, TITLES, choices, selection_blacklist=("event_id", "course_id")) }}
-                {{ util.input_submit(value="Suchen") }}
-                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
-            </div>
-        </form>
-
-    {% endwith %}
-
-    <h3>Aktionen</h3>
-    <p>
-        <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
-        <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
-        <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
-    </p>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $("#action_select_all").click(function (){
-                 $(".outputSelector").prop('checked', true);
-                 });
-            $("#action_select_none").click(function (){
-                 $(".outputSelector").prop('checked', false);
-                 });
-            $("#action_select_invert").click(function (){
-                 $(".outputSelector").each(function (){
-                     $(this).prop('checked', !$(this).prop('checked'));
-                 })});
-        });
-    </script>
+    {{ generic.user_search_mask("event", ("pevent_id", "pcourse_id")) }}
 {% endblock %}

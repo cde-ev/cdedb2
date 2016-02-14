@@ -1,36 +1,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Administration -- {{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/admin_change_user')|e }}" method="POST" id="changedataform">
-        <table>
-            <tr> <th colspan="2">Person</th> </tr>
-            {{ util.input_text(name="title", label="Titel") }}
-            {{ util.input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.input_text(name="family_name", label="Nachname") }}
-            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.input_text(name="display_name", label="Rufname") }}
-            {{ util.input_text(name="birthday", label="Geburtstag") }}
-            {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-            <tr> <th colspan="2">Kontakt</th> </tr>
-            <tr>
-                <td>Email</td>
-                <td>{{ username|e }}</td>
-            </tr>
-            {{ util.input_text(name="telephone", label="Telefon") }}
-            {{ util.input_text(name="mobile", label="Mobiltelefon") }}
-            <tr> <th colspan="2">Adresse</th> </tr>
-            {{ util.input_text(name="address", label="Straße") }}
-            {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.input_text(name="location", label="Stadt") }}
-            {{ util.input_text(name="country", label="Land") }}
-            <tr> <th colspan="2">Account</th> </tr>
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
-        </table>
-        <div>
-            {{ util.input_submit(value="Speichern") }}
-            {{ util.href(show_user_link(values['persona_id']), "Abbrechen") }}
-        </div>
-    </form>
+    {{ generic.admin_change_user("event") }}
 {% endblock %}
