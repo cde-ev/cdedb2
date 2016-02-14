@@ -335,7 +335,7 @@
                             {% endwith %}
                         {% endif %}
                     </td>
-                    <td> {{ titles[field]|e }} </td>
+                    <td> {{ titles.get(field, field)|e }} </td>
                     <td>
                         {% with name = "qop_{}".format(field) %}
                             {% with theid = "qop_{}".format(field) %}
@@ -424,7 +424,7 @@
                                     by the query #}
                             {% with afield = field.split('.')[-1] %}
                                 <td>
-                                    {% if afield == "persona_id" %}
+                                    {% if field == "personas.id" %}
                                         {{ href(show_user_link(row[afield]), row[afield]|cdedbid) }}
                                     {% elif field == "reg.id" %}
                                         {# This should occur only if the context allows the following link. #}

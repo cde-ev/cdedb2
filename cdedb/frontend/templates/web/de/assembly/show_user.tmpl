@@ -3,5 +3,5 @@
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block content %}
-    {{ generic.show_user('assembly') }}
+    {{ generic.show_user(data, "assembly") }}
 {% endblock %}
