@@ -712,13 +712,13 @@ class CoreBackend(AbstractBackend):
             rs, data, may_wait=False, change_note="Foto modified.",
             allow_specials=("foto",))
 
-    @access("core_admin")
+    @access("admin")
     def change_admin_bits(self, rs, data):
         """FIXME"""
         data = affirm("persona", data)
         return self.set_persona(
             rs, data, may_wait=False, change_note="Admin bits modified.",
-            allow_specials=("admin",))
+            allow_specials=("admins",))
 
     @access("core_admin", "cde_admin")
     def change_persona_balance(self, rs, persona_id, balance, log_code,

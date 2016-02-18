@@ -334,4 +334,5 @@ class FrontendTest(unittest.TestCase):
         return ret
 
     def assertTitle(self, title):
-        self.assertIn(title, self.response.lxml.xpath('//h1/text()'))
+        components = tuple(x.strip() for x in self.response.lxml.xpath('//h1/text()'))
+        self.assertIn(title.strip(), components)

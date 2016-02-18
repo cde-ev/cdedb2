@@ -1,9 +1,7 @@
 * FIXMEs
 ** update documentation (maybe after RPC removal)
 ** move archived_user stuff to core realm
-** Fix privilege bits in show user pages
 * actionable items
-** rip out RPC system between frontend and backend (thus allowing atomicity in the frontend)
 ** maybe replace is_admin with is_priveleged (move checks for orga and moderator there)
 ** rename CDEDB_OFFLINE_DEPLOYMENT
 ** Kill third datum in parameter entries of util.input_checkboxes and similar
@@ -27,7 +25,6 @@
 ** allow comma-separated list of ids to lodgement/manage (non-JS fallback)
 ** multi-edit formular (multiple ids, merge values and display only equal ones, activate fields by checkbox)
 ** maybe add crosstables for course choices
-** expose genesis_cases.persona_status in the request form
 ** allow to delete event parts and courses (the last one is a bit tricky)
 *** constrain deletion and addition of parts to before registration
 *** some stuff has to be deleted (course_parts, registration_parts)

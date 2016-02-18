@@ -182,6 +182,28 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn('loginform', self.response.forms)
         self.assertIn(new_berta['display_name'], self.response)
 
+    @as_users("anton")
+    def test_privilege_change(self,  user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-2-H"
+        self.submit(f)
+        self.assertTitle("Bertålotta Beispiel")
+        self.traverse({'href': '/persona/2/privileges'})
+        self.assertTitle("Administration -- Privilegien ändern für Bertålotta Beispiel")
+        f = self.response.forms['privilegechangeform']
+        self.assertEqual(False, f['is_admin'].checked)
+        self.assertEqual(False, f['is_core_admin'].checked)
+        self.assertEqual(False, f['is_cde_admin'].checked)
+        f['is_core_admin'].checked = True
+        f['is_cde_admin'].checked = True
+        self.submit(f)
+        self.traverse({'href': '/persona/2/privileges'})
+        self.assertTitle("Administration -- Privilegien ändern für Bertålotta Beispiel")
+        f = self.response.forms['privilegechangeform']
+        self.assertEqual(False, f['is_admin'].checked)
+        self.assertEqual(True, f['is_core_admin'].checked)
+        self.assertEqual(True, f['is_cde_admin'].checked)
+
     def test_log(self):
         ## First: generate data
         self.test_admin_password_reset()

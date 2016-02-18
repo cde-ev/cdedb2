@@ -179,6 +179,36 @@ class CoreFrontend(AbstractFrontend):
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 
+    @access("admin")
+    def change_privileges_form(self, rs, persona_id):
+        """Render form."""
+        merge_dicts(rs.values, rs.ambience['persona'])
+        return self.render(rs, "change_privileges")
+
+    @access("admin", modi={"POST"})
+    @REQUESTdata(
+        ("is_admin", "bool"), ("is_core_admin", "bool"),
+        ("is_cde_admin", "bool"), ("is_event_admin", "bool"),
+        ("is_ml_admin", "bool"), ("is_assembly_admin", "bool"))
+    def change_privileges(self, rs, persona_id, is_admin, is_core_admin,
+                          is_cde_admin, is_event_admin, is_ml_admin,
+                          is_assembly_admin):
+        """FIXME"""
+        if rs.errors:
+            return self.change_privileges_form(rs, persona_id)
+        data = {
+            "id": persona_id,
+            "is_admin": is_admin,
+            "is_core_admin": is_core_admin,
+            "is_cde_admin": is_cde_admin,
+            "is_event_admin": is_event_admin,
+            "is_ml_admin": is_ml_admin,
+            "is_assembly_admin": is_assembly_admin,
+        }
+        code = self.coreproxy.change_admin_bits(rs, data)
+        self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
+
     @access("persona")
     def change_password_form(self, rs):
         """Render form."""

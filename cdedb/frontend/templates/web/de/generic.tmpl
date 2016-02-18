@@ -212,6 +212,9 @@
                         {% endif %}
                         <li>{{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern") }}</li>
                         <li>{{ util.href(cdedblink('cde/lastschrift_show'), "Einzugsermächtigung") }}</li>
+                        {% if "admin" in user.roles %}
+                            <li>{{ util.href(cdedblink("core/change_privileges_form"), "Privilegien anpassen") }}</li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
