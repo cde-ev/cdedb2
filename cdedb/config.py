@@ -108,10 +108,10 @@ _DEFAULTS = {
                 (("trial_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True)),),
         },
-        "qview_cde_archived_user": {
+        "qview_archived_persona": {
             "with notes": Query(
-                "qview_cde_archived_user",
-                QUERY_SPECS['qview_cde_archived_user'],
+                "qview_archived_persona",
+                QUERY_SPECS['qview_archived_persona'],
                 ("personas.id", "given_names", "family_name",
                  "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
@@ -130,9 +130,16 @@ _DEFAULTS = {
         "qview_registration": {
             ## none since they need additional input, will be created on the fly
         },
-        "qview_generic_user": {
+        "qview_core_user": {
             "all": Query(
-                "qview_generic_user", QUERY_SPECS['qview_generic_user'],
+                "qview_persona", QUERY_SPECS['qview_core_user'],
+                ("id", "given_names", "family_name"),
+                tuple(),
+                tuple(),)
+        },
+        "qview_persona": {
+            "all": Query(
+                "qview_persona", QUERY_SPECS['qview_persona'],
                 ("id", "given_names", "family_name"),
                 tuple(),
                 tuple(),)

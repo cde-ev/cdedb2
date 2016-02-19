@@ -543,7 +543,11 @@
         "bub_search": "Sichtbarkeit BuB",
         "notes": "Notizen",} %}
 
-        <form action="{{ cdedblink('{}/user_search'.format(realm))|e }}" method="GET" id="usersearchform">
+        {% if realm == "archived" %}
+            <form action="{{ cdedblink('core/archived_user_search')|e }}" method="GET" id="usersearchform">
+        {% else %}
+            <form action="{{ cdedblink('{}/user_search'.format(realm))|e }}" method="GET" id="usersearchform">
+        {% endif %}
             <div>
                 {{ util.input_submit(value="Suchen") }}
                 {{ util.input_submit(value="CSV-Datei", name="CSV") }}
@@ -578,7 +582,11 @@
 {% endmacro %}
 
 {% macro user_search_result(result, realm) %}
-    {{ util.href(cdedblink("{}/user_search_form".format(realm), query|querytoparams), "Zurück") }}
+    {% if realm == "archived" %}
+        {{ util.href(cdedblink("core/archived_user_search_form", query|querytoparams), "Zurück") }}
+    {% else %}
+        {{ util.href(cdedblink("{}/user_search_form".format(realm), query|querytoparams), "Zurück") }}
+    {% endif %}
 
     {% with TITLES = {
         "fulltext": "Volltext",
@@ -625,7 +633,11 @@
         {{ util.display_query_result(result, query, TITLES, choices) }}
     {% endwith %}
 
-    {{ util.href(cdedblink("{}/user_search_form".format(realm), query|querytoparams), "Zurück") }}
+    {% if realm == "archived" %}
+        {{ util.href(cdedblink("core/archived_user_search_form", query|querytoparams), "Zurück") }}
+    {% else %}
+        {{ util.href(cdedblink("{}/user_search_form".format(realm), query|querytoparams), "Zurück") }}
+    {% endif %}
 
     <h3>Aktionen</h3>
     <p>

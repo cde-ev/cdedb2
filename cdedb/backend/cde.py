@@ -516,8 +516,11 @@ class CdEBackend(AbstractBackend):
                                       True))
             query.constraints.append(("is_searchable", QueryOperators.equal,
                                       True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      False))
             query.spec['is_cde_realm'] = "bool"
             query.spec['is_searchable'] = "bool"
+            query.spec["is_archived"] = "bool"
         elif query.scope == "qview_cde_user":
             if not self.is_admin(rs):
                 raise PrivilegeError("Admin only.")
@@ -525,13 +528,7 @@ class CdEBackend(AbstractBackend):
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       False))
-        elif query.scope == "qview_cde_archived_user":
-            if not self.is_admin(rs):
-                raise PrivilegeError("Admin only.")
-            query.constraints.append(("is_cde_realm", QueryOperators.equal,
-                                      True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      True))
+            query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)

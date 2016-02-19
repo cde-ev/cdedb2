@@ -391,6 +391,9 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError("Admin only.")
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      False))
+            query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query, view=view)

@@ -133,7 +133,6 @@ QUERY_SPECS = {
         ("is_member", "bool"),
         ("is_searchable", "bool"),
         ("is_active", "bool"),
-        ("is_archived", "bool"),
         ("cloud_account", "bool"),
         ("family_name", "str"),
         ("birth_name", "str"),
@@ -169,7 +168,7 @@ QUERY_SPECS = {
         ("bub_search", "bool"),
         ("notes", "str"),
         ]),
-    "qview_cde_archived_user" :
+    "qview_archived_persona" :
     collections.OrderedDict([
         ("personas.id", "int"),
         ("family_name", "str"),
@@ -179,7 +178,6 @@ QUERY_SPECS = {
         ("gender", "int"),
         ("birthday", "date"),
         ("pevent_id", "int"),
-        ("pcourse_id", "int"),
         ("notes", "str"),
         ]),
     "qview_event_user" :
@@ -200,7 +198,6 @@ QUERY_SPECS = {
         ("is_member", "bool"),
         ("is_searchable", "bool"),
         ("is_active", "bool"),
-        ("is_archived", "bool"),
         ("cloud_account", "bool"),
         ("family_name", "str"),
         ("given_names", "str"),
@@ -248,7 +245,32 @@ QUERY_SPECS = {
         ("persona.country", "str"),
         ## This will be augmented with additional fields on the fly.
         ]),
-    "qview_generic_user" :
+    "qview_core_user" :
+    collections.OrderedDict([
+        ("fulltext", "str"),
+        ("personas.id", "int"),
+        ("username", "str"),
+        ("is_admin", "bool"),
+        ("is_core_admin", "bool"),
+        ("is_cde_admin", "bool"),
+        ("is_event_admin", "bool"),
+        ("is_ml_admin", "bool"),
+        ("is_assembly_admin", "bool"),
+        ("is_cde_realm", "bool"),
+        ("is_event_realm", "bool"),
+        ("is_ml_realm", "bool"),
+        ("is_assembly_realm", "bool"),
+        ("is_member", "bool"),
+        ("is_searchable", "bool"),
+        ("is_active", "bool"),
+        ("cloud_account", "bool"),
+        ("family_name", "str"),
+        ("given_names", "str"),
+        ("display_name", "str"),
+        ("pevent_id", "int"),
+        ("notes", "str"),
+        ]),
+    "qview_persona" :
     collections.OrderedDict([
         ("fulltext", "str"),
         ("id", "int"),
@@ -266,7 +288,6 @@ QUERY_SPECS = {
         ("is_member", "bool"),
         ("is_searchable", "bool"),
         ("is_active", "bool"),
-        ("is_archived", "bool"),
         ("cloud_account", "bool"),
         ("family_name", "str"),
         ("given_names", "str"),
@@ -287,16 +308,20 @@ QUERY_VIEWS = {
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
-    "qview_cde_archived_user": glue(
-        "core.personas",
-        "LEFT OUTER JOIN past_event.participants",
-        "ON personas.id = participants.persona_id"),
     "qview_event_user": glue(
         "core.personas",
         "LEFT OUTER JOIN past_event.participants",
         "ON personas.id = participants.persona_id"),
     "qview_registration": None, ## dummy -- value will be generated on the fly
-    "qview_generic_user": "core.personas",
+    "qview_core_user": glue(
+        "core.personas",
+        "LEFT OUTER JOIN past_event.participants",
+        "ON personas.id = participants.persona_id"),
+    "qview_persona": "core.personas",
+    "qview_archived_persona": glue(
+        "core.personas",
+        "LEFT OUTER JOIN past_event.participants",
+        "ON personas.id = participants.persona_id"),
 }
 
 def mangle_query_input(rs, spec):

@@ -245,46 +245,6 @@ class CdEFrontend(AbstractUserFrontend):
             return self.render(rs, "user_search_result", params)
 
     @access("cde_admin")
-    def archived_user_search_form(self, rs):
-        """Render form."""
-        spec = QUERY_SPECS['qview_cde_archived_user']
-        ## mangle the input, so we can prefill the form
-        mangle_query_input(rs, spec)
-        events = self.eventproxy.list_events(rs, past=True)
-        choices = {'pevent_id': events,
-                   'status': self.enum_choice(rs, const.PersonaStati),
-                   'gender': self.enum_choice(rs, const.Genders)}
-        default_queries = self.conf.DEFAULT_QUERIES['qview_cde_archived_user']
-        return self.render(rs, "archived_user_search", {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
-            'default_queries': default_queries,})
-
-    @access("cde_admin")
-    @REQUESTdata(("CSV", "bool"))
-    def archived_user_search(self, rs, CSV):
-        """Perform search.
-
-        Archived users are somewhat special since they are not visible
-        otherwise.
-        """
-        spec = QUERY_SPECS['qview_cde_archived_user']
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=False)
-        if rs.errors:
-            return self.archived_user_search_form(rs)
-        query.scope = "qview_cde_archived_user"
-        result = self.cdeproxy.submit_general_query(rs, query)
-        choices = {'status': self.enum_choice(rs, const.PersonaStati),
-                   'gender': self.enum_choice(rs, const.Genders)}
-        params = {'result': result, 'query': query, 'choices': choices}
-        if CSV:
-            data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data,
-                                  filename=self.i18n("result.txt", rs.lang))
-        else:
-            return self.render(rs, "archived_user_search_result", params)
-
-    @access("cde_admin")
     def modify_membership_form(self, rs, persona_id):
         """Render form."""
         data = self.coreproxy.get_persona(rs, persona_id)

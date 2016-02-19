@@ -119,10 +119,10 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly_admin")
     def user_search_form(self, rs):
         """Render form."""
-        spec = QUERY_SPECS['qview_generic_user']
+        spec = QUERY_SPECS['qview_persona']
         ## mangle the input, so we can prefill the form
         mangle_query_input(rs, spec)
-        default_queries = self.conf.DEFAULT_QUERIES['qview_generic_user']
+        default_queries = self.conf.DEFAULT_QUERIES['qview_persona']
         return self.render(rs, "user_search", {
             'spec': spec, 'queryops': QueryOperators,
             'default_queries': default_queries, 'choices': {}})
@@ -131,12 +131,12 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(("CSV", "bool"))
     def user_search(self, rs, CSV):
         """Perform search."""
-        spec = QUERY_SPECS['qview_generic_user']
+        spec = QUERY_SPECS['qview_persona']
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
                       spec=spec, allow_empty=False)
         if rs.errors:
             return self.user_search_form(rs)
-        query.scope = "qview_generic_user"
+        query.scope = "qview_persona"
         result = self.assemblyproxy.submit_general_query(rs, query)
         params = {'result': result, 'query': query, 'choices': {}}
         if CSV:

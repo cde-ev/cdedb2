@@ -31,6 +31,9 @@
                     icon="list-alt", active=(sidenav_active=='core_log')) }}</li>
             {{ util.href(cdedblink("core/view_changelog_meta"), "Nutzerdaten-Log", aclass="list-group-item",
                     icon="list-alt") }}
+            {{ util.href(cdedblink("core/user_search_form"), "Nutzer verwalten", aclass="list-group-item", icon="cog") }}
+            {{ util.href(cdedblink("core/archived_user_search_form"), "Archivsuche", aclass="list-group-item",
+                    icon="inbox") }}
         {% endif %}
     </div>
     {% endif %}

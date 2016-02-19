@@ -18,6 +18,7 @@ from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
 import cdedb.database.constants as const
+from cdedb.query import QueryOperators
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 
@@ -1624,3 +1625,25 @@ class CoreBackend(AbstractBackend):
         rs.conn = orig_conn
         rs.user.roles = orig_roles
         return ret
+
+    @access("core_admin") # FIXME
+    def submit_general_query(self, rs, query):
+        """Realm specific wrapper around
+        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
+
+        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :rtype: [{str: object}]
+        """
+        query = affirm("query", query)
+        if query.scope == "qview_core_user":
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      False))
+            query.spec["is_archived"] = "bool"
+        elif query.scope == "qview_archived_persona":
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      True))
+            query.spec["is_archived"] = "bool"
+        else:
+            raise RuntimeError("Bad scope.")
+        return self.general_query(rs, query)

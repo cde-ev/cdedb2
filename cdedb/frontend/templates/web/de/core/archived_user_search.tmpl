@@ -1,0 +1,17 @@
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
+{% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block title %}Archivnutzersuche{% endblock %}
+{% block content %}
+    <h3>Standardabfragen</h3>
+    {% with TITLES = {} %}
+        <div>
+            {{ util.place_default_queries("core/archived_user_search", default_queries, TITLES) }}
+        </div>
+    {% endwith %}
+
+    <h3>Suchmaske</h3>
+    {{ generic.user_search_mask("archived", ("pevent_id",)) }}
+{% endblock %}

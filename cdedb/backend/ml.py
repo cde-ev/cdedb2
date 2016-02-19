@@ -118,9 +118,12 @@ class MlBackend(AbstractBackend):
         :rtype: [{str: object}]
         """
         query = affirm("query", query)
-        if query.scope == "qview_generic_user":
+        if query.scope == "qview_persona":
             query.constraints.append(("is_ml_realm", QueryOperators.equal,
                                       True))
+            query.constraints.append(("is_archived", QueryOperators.equal,
+                                      False))
+            query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)

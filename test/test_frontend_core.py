@@ -204,6 +204,32 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(True, f['is_core_admin'].checked)
         self.assertEqual(True, f['is_cde_admin'].checked)
 
+    @as_users("anton")
+    def test_user_search(self,  user):
+        self.traverse({'href': '/core/search/user/form'})
+        self.assertTitle("Allgemeine Nutzersuche")
+        f = self.response.forms['usersearchform']
+        f['qval_username'] = 'n'
+        for field in f.fields:
+            if field.startswith('qsel_'):
+                f[field].checked = True
+        self.submit(f)
+        self.assertTitle("Allgemeine Nutzersuche -- 5 Ergebnisse gefunden")
+        self.assertIn("Jalapeño", self.response.text)
+
+    @as_users("anton")
+    def test_archived_user_search(self,  user):
+        self.traverse({'href': '/core/search/archiveduser/form'})
+        self.assertTitle("Archivnutzersuche")
+        f = self.response.forms['usersearchform']
+        f['qval_given_names'] = 'des'
+        for field in f.fields:
+            if field.startswith('qsel_'):
+                f[field].checked = True
+        self.submit(f)
+        self.assertTitle("Archivnutzersuche -- 1 Ergebnis gefunden")
+        self.assertIn("Hell", self.response.text)
+
     def test_log(self):
         ## First: generate data
         self.test_admin_password_reset()
