@@ -2,9 +2,16 @@
 
 """The WSGI-application to tie it all together."""
 
-import werkzeug
 import cgitb
+import json
 import sys
+
+import psycopg2.extensions
+import werkzeug
+import werkzeug.routing
+import werkzeug.exceptions
+import werkzeug.wrappers
+
 from cdedb.frontend.core import CoreFrontend
 from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.event import EventFrontend
@@ -20,11 +27,6 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
-import werkzeug.routing
-import werkzeug.exceptions
-import werkzeug.wrappers
-import psycopg2.extensions
-import json
 
 class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the

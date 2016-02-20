@@ -17,6 +17,3 @@ cd /cdedb2 && make sample-data
 # access ldap
 ldapsearch -Y EXTERNAL -H ldapi:/// <filter>
 ldapmodify -Y EXTERNAL -H ldapi:/// -f /path/to/ldif
-
-# list process ids of running backends
-cat /run/cdedb/*.pid

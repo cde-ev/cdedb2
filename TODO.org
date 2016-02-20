@@ -1,6 +1,3 @@
-* FIXMEs
-** update documentation (maybe after RPC removal)
-** move archived_user stuff to core realm
 * actionable items
 ** maybe replace is_admin with is_priveleged (move checks for orga and moderator there)
 ** rename CDEDB_OFFLINE_DEPLOYMENT
@@ -52,7 +49,6 @@
 ** investigate mypy and pytypedecl
 ** more logging
 ** make test-suite faster
-** investigate python3 ldap library (there are actually two of them!)
 ** develop a migration strategy
 ** what about assembly-users which want to participate in an event?
 *** make realm association independently toggleable

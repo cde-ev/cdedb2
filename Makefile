@@ -22,7 +22,6 @@ help:
 	@echo "                 'test.test_common.TestCommon.test_realm_extraction')"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
-CONFIGPATH ?= ""
 PYTHONBIN ?= "python3.4"
 TESTPATTERN ?= ""
 

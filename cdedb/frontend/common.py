@@ -20,7 +20,6 @@ import email.mime.text
 import functools
 import hashlib
 import io
-import jinja2
 import json
 import logging
 import os
@@ -30,6 +29,8 @@ import smtplib
 import subprocess
 import tempfile
 import urllib.parse
+
+import jinja2
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -40,8 +41,7 @@ from cdedb.internationalization import i18n_factory
 from cdedb.config import BasicConfig
 from cdedb.config import Config, SecretsConfig
 from cdedb.common import (
-    extract_roles, glue, merge_dicts,
-    compute_checkdigit, now)
+    glue, merge_dicts, compute_checkdigit, now)
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
@@ -186,7 +186,7 @@ def escape_filter(val):
       linebreaks filter has to make the string unsafe again, before it can
       work.
 
-    :type val: obj or None
+    :type val: object or None
     :rtype: str or None
     """
     if val is None:
@@ -204,7 +204,7 @@ LATEX_ESCAPE_REGEX = (
 def tex_escape_filter(val):
     """Custom jinja filter for escaping LaTeX-relevant charakters.
 
-    :type val: obj or None
+    :type val: object or None
     :rtype: str or None
     """
     if val is None:
@@ -293,8 +293,8 @@ def stringIn_filter(val, alist):
     This has to be an explicit filter becaus jinja does not support list
     comprehension.
 
-    :type val: obj
-    :type alist: [obj]
+    :type val: object
+    :type alist: [object]
     :rtype: bool
     """
     return str(val) in (str(x) for x in alist)
@@ -307,7 +307,7 @@ def querytoparams_filter(val):
     painful.
 
     :type val: :py:class:`cdedb.query.Query`
-    :rtype: {str: obj}
+    :rtype: {str: object}
     """
     params = {}
     for field in val.fields_of_interest:
@@ -387,21 +387,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def finalize_session(self, rs):
-        """Create a :py:class:`FrontendUser` instance for this request. This is
-        realm dependent and may add supplementary information (e.g. list of
-        events which are organized by this persona).
+        """Allow realm specific tweaking of the session.
 
-        FIXME
+        This is intended to add orga and moderator infos in the event
+        and ml realm respectively.
 
         This will be called by
         :py:class:`cdedb.frontend.application.Application` and is thus
         part of the interface.
 
-        :type rs: :py:class:`FakeFrontendRequestState`
-        :type sessiondata: {str: object}
-        :param sessiondata: values from the ``core.personas`` table in the
-          database
-        :rtype: :py:class:`FrontendUser`
+        :type rs: :py:class:`RequestState`
+        :rtype: None
         """
         return
 
@@ -508,8 +504,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return t.render(**data)
 
     @staticmethod
-    def send_file(rs, mimetype=None, filename=None, *, path=None, afile=None,
-                  data=None):
+    def send_file(rs, mimetype=None, filename=None, inline=True, *,
+                  path=None, afile=None, data=None):
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -521,6 +517,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type filename: str or None
         :param filename: If not None the default file name used if the user
           tries to save the file to disk
+        :type inline: bool
+        :param inline: Set content disposition to force display in browser (if
+          True) or to force a download box (if False).
         :type path: str
         :type afile: file like
         :param afile: should be opened in binary mode
@@ -548,11 +547,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if mimetype is not None:
             extra_args['mimetype'] = mimetype
         headers = []
+        disposition = "inline" if inline else "attachment"
         if filename is not None:
-            ## Alternative is content disposition 'attachment', which forces
-            ## a download box -- we don't want that.
-            headers.append(('Content-Disposition',
-                            'inline; filename="{}"'.format(filename)))
+            disposition += '; filename="{}"'.format(filename)
+        headers.append(('Content-Disposition', disposition))
         headers.append(('X-Generation-Time', str(now() - rs.begin)))
         return Response(f, direct_passthrough=True, headers=headers,
                         **extra_args)
@@ -658,7 +656,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("To", "Cc", "Bcc"):
             nonempty = {x for x in headers[header] if x}
             if nonempty != set(headers[header]):
-                self.logger.warn("Empty values zapped in email recipients.")
+                self.logger.warning("Empty values zapped in email recipients.")
             if headers[header]:
                 msg[header] = ", ".join(nonempty)
         for header in ("From", "Reply-To", "Subject", "Return-Path"):
@@ -667,7 +665,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg["Date"] = now().strftime("%Y-%m-%d %H:%M:%S%z")
         return msg
 
-    def _create_attachment(self, attachment):
+    @staticmethod
+    def _create_attachment(attachment):
         """Helper instantiating an attachment via the email module.
 
         :type attachment: {str: object}
@@ -710,7 +709,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         ret = None
         if not msg["To"] and not msg["Cc"] and not msg["Bcc"]:
-            self.logger.warn("No recipients for mail. Dropping it.")
+            self.logger.warning("No recipients for mail. Dropping it.")
             return None
         if not self.conf.CDEDB_DEV:
             s = smtplib.SMTP(self.conf.MAIL_HOST)
@@ -774,7 +773,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         if not code:
             rs.notify("error", error)
-        elif code == True or code > 0:
+        elif code is True or code > 0:
             rs.notify("success", success)
         elif code < 0:
             rs.notify("info", pending)
@@ -821,7 +820,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         if not runs:
             return self.send_file(
-                rs, data=data,
+                rs, data=data, inline=False,
                 filename=self.i18n("{}.tex".format(filename), rs.lang))
         else:
             pdf_data = self.latex_compile(data, runs=runs)
@@ -871,7 +870,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             subprocess.check_call(args, stdout=subprocess.DEVNULL,
                                   cwd=tmp_dir)
             return self.send_file(
-                rs, path=target,
+                rs, path=target, inline=False,
                 filename="{}.tar.gz".format(work_dir_name))
         else:
             work_dir = os.path.join(tmp_dir, work_dir_name)
@@ -898,10 +897,6 @@ def reconnoitre_ambience(obj, rs):
     convention the object name should be the parameter named minus the
     '_id' suffix.
 
-    FIXME currently this is broken for past events, where some renaming
-    from event_id to past_event_id should happen before this can be used
-    there.
-
     :type obj: :py:class:`AbstractFrontend`
     :type rs: :py:class:`FrontendRequestState`
     :rtype: {str: object}
@@ -913,9 +908,11 @@ def reconnoitre_ambience(obj, rs):
         if not x:
             raise werkzeug.exceptions.BadRequest("Inconsistent request.")
     def attachment_check(a):
-        # FIXME change routing before implementing this, attachments should
-        # live below the assembly/ballot they are associated to
-        pass
+        if a['attachment']['ballot_id']:
+            return a['attachment']['ballot_id'] == rs.requestargs['ballot_id']
+        else:
+            return (a['attachment']['assembly_id']
+                    == rs.requestargs['assembly_id'])
     scouts = (
         Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
               'persona', t),
@@ -1332,7 +1329,7 @@ def check_validation(rs, assertion, value, name=None, **kwargs):
 def basic_redirect(rs, url):
     """Convenience wrapper around :py:func:`construct_redirect`. This should
     be the main thing to use, however it is even more preferable to use
-    :py:meth:`AbstractFrontend.redirect`.
+    :py:meth:`BaseApp.redirect`.
 
     :type rs: :py:class:`FrontendRequestState`
     :type url: str
@@ -1377,8 +1374,8 @@ def make_postal_address(persona_data):
 
     Addresses have some specific formatting wishes, so we are flexible
     in that we represent an address to be printed as a list of strings
-    each containing one line. The final formatting is now basically an
-    ``'\n'.join()``.
+    each containing one line. The final formatting is now basically join
+    on line breaks.
 
     :type persona_data: {str: object}
     :rtype: [str]

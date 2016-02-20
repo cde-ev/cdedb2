@@ -1,7 +1,7 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Administration -- Privilegien ändern für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }}
+Privilegien ändern für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/change_privileges')|e }}" method="POST" id="privilegechangeform">

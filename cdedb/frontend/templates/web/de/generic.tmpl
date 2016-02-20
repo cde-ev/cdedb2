@@ -3,7 +3,8 @@
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro admin_change_user(realm) %}
-    <form action="{{ cdedblink('{}/admin_change_user'.format(realm))|e }}" method="POST" id="changedataform" class="form-horizontal">
+    <form action="{{ cdedblink('{}/admin_change_user'.format(realm))|e }}" method="POST" id="changedataform"
+      class="form-horizontal">
         <div>{{ util.input_hidden(name="generation") }}</div>
         <table>
             {{ util.input_textarea(name="change_note", label="Kommentar", aclass="bigg") }}
@@ -177,9 +178,11 @@
         {% if data['is_cde_realm'] and realm in ("core", "cde") %}
             <p>
                 {% if data['foto'] %}
-                    <img src="{{ cdedblink('cde/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild" class="profilepic img-thumbnail">
+                    <img src="{{ cdedblink('cde/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
+                      class="profilepic img-thumbnail">
                 {% else %}
-                    <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild" class="profilepic img-thumbnail">
+                    <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
+                      class="profilepic img-thumbnail">
                 {% endif %}
             </p>
         {% endif %}
@@ -193,13 +196,20 @@
                                 <li>{{ util.href(show_user_link(data['id'], realm="cde"), "CdE-Ansicht") }}</li>
                             {% endif %}
                             {% if data['is_event_realm'] %}
-                                <li>{{ util.href(show_user_link(data['id'], realm="event"), "Veranstaltungs-Ansicht") }}</li>
+                                <li>
+                                    {{ util.href(show_user_link(data['id'], realm="event"), "Veranstaltungs-Ansicht") }}
+                                </li>
                             {% endif %}
                             {% if data['is_assembly_realm'] %}
-                                <li>{{ util.href(show_user_link(data['id'], realm="assembly"), "Versammlungs-Ansicht") }}</li>
+                                <li>
+                                    {{ util.href(show_user_link(data['id'], realm="assembly"),
+                                                 "Versammlungs-Ansicht") }}
+                                </li>
                             {% endif %}
                             {% if data['is_ml_realm'] %}
-                                <li>{{ util.href(show_user_link(data['id'], realm="ml"), "Mailinglisten-Ansicht") }}</li>
+                                <li>
+                                    {{ util.href(show_user_link(data['id'], realm="ml"), "Mailinglisten-Ansicht") }}
+                                </li>
                             {% endif %}
                         {% endif %}
                         {% if is_admin %}
@@ -237,7 +247,8 @@
         <dl class="dl-horizontal">
             <dt>Name</dt>
             <dd>
-                {{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }}{{ data['name_supplement']|e }}
+                {{ data['title']|e }} {{ data['given_names']|e }} {{ data['family_name']|e }}
+                {{ data['name_supplement']|e }}
             </dd>
             {% if data['display_name'] %}
                 <dt>Rufname</dt>
@@ -283,9 +294,11 @@
             <dd>
                 {{ data['username']|e }}
                 {% if is_admin and data['id'] != user.persona_id %}
-                    {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten", aclass="btn btn-xs btn-warning", icon="pencil") }}
+                    {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
+                                 aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% elif data['id'] == user.persona_id %}
-                    {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten", aclass="btn btn-xs btn-warning", icon="pencil") }}
+                    {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten",
+                                 aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% endif %}
             </dd>
             {% if data['telephone'] and realm in ("core", "cde", "event") %}
@@ -322,7 +335,8 @@
                     <dd>
                         {{ data['address2']|e }}{% if data['address2'] %}<br />{% endif %}
                         {{ data['address_supplement2']|e }}{% if data['address_supplement2'] %}<br />{% endif %}
-                        {{ data['postal_code2']|e }} {{ data['location2']|e }}{% if data['location2'] %}<br />{% endif %}
+                        {{ data['postal_code2']|e }} {{ data['location2']|e }}
+                        {% if data['location2'] %}<br />{% endif %}
                         {{ data['country2']|e }}
                     </dd>
                 </dl>

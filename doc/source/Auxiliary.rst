@@ -9,12 +9,6 @@ cdedb.config
 .. automodule:: cdedb.config
    :members:
 
-cdedb.serialization
--------------------
-
-.. automodule:: cdedb.serialization
-   :members:
-
 cdedb.internationalization
 --------------------------
 

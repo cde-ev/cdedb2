@@ -6,23 +6,19 @@ organization. We will speak of members in most contexts where former
 members are also possible.
 """
 
-from cdedb.backend.common import (
-    access, internal_access,
-    affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, batchify, AbstractBackend)
-from cdedb.common import (
-    glue, QuotaException, merge_dicts,
-    PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
-    LASTSCHRIFT_TRANSACTION_FIELDS)
-from cdedb.query import QueryOperators
-from cdedb.config import Config
-from cdedb.database.connection import Atomizer
-import cdedb.database.constants as const
-
-import argparse
 import datetime
 import decimal
-import psycopg2.extras
+
+from cdedb.backend.common import (
+    access, internal_access, affirm_validation as affirm,
+    affirm_array_validation as affirm_array, singularize, batchify,
+    AbstractBackend)
+from cdedb.common import (
+    glue, merge_dicts, PrivilegeError, unwrap, now,
+    LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS)
+from cdedb.query import QueryOperators
+from cdedb.database.connection import Atomizer
+import cdedb.database.constants as const
 
 class CdEBackend(AbstractBackend):
     """This is the backend with the most additional role logic.
@@ -44,7 +40,7 @@ class CdEBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type code: int
         :param code: One of :py:class:`cdedb.database.constants.CdeLogCodes`.
         :type persona_id: int or None
@@ -70,7 +66,7 @@ class CdEBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type persona_id: int or None
         :type start: int or None
@@ -85,7 +81,7 @@ class CdEBackend(AbstractBackend):
     def list_lastschrift(self, rs, persona_ids=None, active=True):
         """List all direct debit permits.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_ids: [int] or None
         :param persona_ids: If this is not None show only those
           permits belonging to ids in the list.
@@ -116,7 +112,7 @@ class CdEBackend(AbstractBackend):
     def get_lastschrift(self, rs, ids):
         """Retrieve direct debit permits.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         :returns: Mapping ids to data sets.
@@ -132,7 +128,7 @@ class CdEBackend(AbstractBackend):
     def set_lastschrift(self, rs, data):
         """Modify a direct debit permit.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: standard return code
@@ -157,7 +153,7 @@ class CdEBackend(AbstractBackend):
     def create_lastschrift(self, rs, data):
         """Make a new direct debit permit.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: id of the new direct debit permit
@@ -175,7 +171,7 @@ class CdEBackend(AbstractBackend):
                                       stati=None, periods=None):
         """List direct debit transactions.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type lastschrift_ids: [int] or None
         :param lastschrift_ids: If this is not None show only those
           transactions originating with ids in the list.
@@ -213,7 +209,7 @@ class CdEBackend(AbstractBackend):
     def get_lastschrift_transactions(self, rs, ids):
         """Retrieve direct debit transactions.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         :returns: Mapping ids to data sets.
@@ -231,7 +227,7 @@ class CdEBackend(AbstractBackend):
         This only creates the database entry. The SEPA file will be
         generated in the frontend.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :type check_unique: bool
         :param check_unique: If True: raise an error if there already is an
@@ -276,7 +272,7 @@ class CdEBackend(AbstractBackend):
         That is either book the successful transaction, book the fees for a
         failure or cancel the transaction alltogether.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type transaction_id: int
         :type status: `cdedb.database.constants.LastschriftTransactionStati`
         :param status: If this is ``failed`` the direct debit permit is revoked
@@ -354,7 +350,7 @@ class CdEBackend(AbstractBackend):
         which is possible for some weeks. We deduct the now non-existing
         money from the balance and invalidate the permit.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type transaction_id: int
         :param tally: The fee incurred by the revokation.
         :rtype: int
@@ -400,7 +396,7 @@ class CdEBackend(AbstractBackend):
         permit, after three years of being unused. Thus only a certain
         number of skips will be allowed.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type lastschrift: {str: object}
         :rtype: bool
         """
@@ -428,7 +424,7 @@ class CdEBackend(AbstractBackend):
         long, since the permit is invalidated if it stays unused for
         three years.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type lastschrift_id: int
         :rtype: int
         :returns: Standard return code.
@@ -462,51 +458,19 @@ class CdEBackend(AbstractBackend):
     def current_period(self, rs):
         """Check for the current semester
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: int
         :returns: Id of the current org period.
         """
         query = "SELECT MAX(id) FROM cde.org_period"
         return unwrap(self.query_one(rs, query, tuple()))
 
-    # FIXME move to core realm?
-    @access("anonymous")
-    def get_meta_info(self, rs):
-        """Retrieve changing info about the CdE e.V.
-
-        This is a relatively painless way to specify lots of constants
-        like who is responsible for donation certificates.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :rtype: {str: str}
-        """
-        query = "SELECT info FROM core.cde_meta_info LIMIT 1"
-        return unwrap(self.query_one(rs, query, tuple()))
-
-    @access("cde_admin")
-    def set_meta_info(self, rs, data):
-        """Change infos about the CdE e.V.
-
-        This is expected to occur regularly.
-
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
-        :type data: {str: str}
-        :rtype: int
-        :returns: Standard return code.
-        """
-        data = affirm("cde_meta_info", data, keys=self.conf.META_INFO_KEYS)
-        query = "SELECT info FROM core.cde_meta_info LIMIT 1"
-        the_data = unwrap(self.query_one(rs, query, tuple()))
-        the_data.update(data)
-        query = "UPDATE core.cde_meta_info SET info = %s"
-        return self.query_exec(rs, query, (psycopg2.extras.Json(the_data),))
-
     @access("searchable")
     def submit_general_query(self, rs, query):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """

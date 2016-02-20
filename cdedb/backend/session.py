@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 
-"""This is a very specialised backend component for doing session lookup,
-basically providing the data for instantiating
-:py:class:`cdedb.frontend.common.FrontendRequestState`. It does have
-it's own realm, which does not occur anywhere else. We have to make do
-without most of the infrastructure, since we are providing it;
-additionally we mock out some of it (like e.g. the @access
-decorator). Everything is a bit special in here.
+"""This is a very specialised backend component for doing session lookup.
+
+It basically providies the data for instantiating
+:py:class:`cdedb.common.RequestState`. It does have it's own realm,
+which does not occur anywhere else. We have to make do without most of
+the infrastructure, since we are providing it. Everything is a bit
+special in here.
 """
+
+import logging
+
+import psycopg2.extensions
 
 from cdedb.database.connection import connection_pool_factory
 from cdedb.common import glue, make_root_logger, now, PERSONA_STATUS_FIELDS
 from cdedb.config import Config, SecretsConfig
 import cdedb.validation as validate
-import psycopg2.extensions
-import argparse
-import logging
 
 class SessionBackend:
-    """This is not derived from
+    """Single purpose backend to construct a request state.
+
+    This is not derived from
     :py:class:`cdedb.backend.common.AbstractBackend` since the general
     base class makes more assumptions than we can fulfill.
-
-    FIXME
     """
     realm = "session"
 
@@ -53,14 +54,12 @@ class SessionBackend:
         self.logger = logging.getLogger("cdedb.backend.session")
 
     def lookupsession(self, sessionkey, ip):
-        """Resolve a session key (originally stored in a cookie) into the data
-        required for a
-        :py:class:`cdedb.frontend.common.FrontendRequestState`. We bind
-        sessions to IPs, so they get automatically invalidated if the IP
-        changes.
+        """Raison d'etre.
 
-        The ignored first parameter is the request state in all other
-        rpc methods and kept for consintency.
+        Resolve a session key (originally stored in a cookie) into the
+        data required for a :py:class:`cdedb.common.RequestState`. We
+        bind sessions to IPs, so they get automatically invalidated if
+        the IP changes.
 
         :type sessionkey: str
         :type ip: str
@@ -85,7 +84,7 @@ class SessionBackend:
             if data["is_active"]:
                 if data["ip"] == ip:
                     timestamp = now()
-                    if (data["atime"] + self.conf.SESSION_TIMEOUT >= timestamp):
+                    if data["atime"] + self.conf.SESSION_TIMEOUT >= timestamp:
                         if (data["ctime"] + self.conf.SESSION_LIFESPAN
                                 >= timestamp):
                             ## here we finally verified the session key

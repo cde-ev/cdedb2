@@ -13,8 +13,9 @@ import decimal
 import importlib.machinery
 import logging
 import os.path
-import pytz
 import uuid
+
+import pytz
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
 from cdedb.common import deduct_years, now
@@ -193,7 +194,7 @@ _DEFAULTS = {
     ## processing fee we incur if a transaction is rolled back
     "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
 
-    ## Keys of the dict in the cde.meta_info.info column
+    ## Keys of the dict in the core.meta_info.info column
     "META_INFO_KEYS": (
         "Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
         "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",

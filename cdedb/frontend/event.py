@@ -2,6 +2,18 @@
 
 """Services for the event realm."""
 
+from collections import OrderedDict
+import copy
+import itertools
+import logging
+import os
+import os.path
+import re
+import shutil
+import tempfile
+
+import werkzeug
+
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access,
     check_validation as check, event_guard,
@@ -13,17 +25,6 @@ from cdedb.common import (
     unwrap, now, ProxyShim)
 from cdedb.backend.event import EventBackend
 import cdedb.database.constants as const
-
-import os
-import os.path
-import logging
-from collections import OrderedDict
-import werkzeug
-import copy
-import re
-import itertools
-import tempfile
-import shutil
 
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
@@ -190,7 +191,7 @@ class EventFrontend(AbstractUserFrontend):
         params = {'result': result, 'query': query, 'choices': choices}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data,
+            return self.send_file(rs, data=data, inline=False,
                                   filename=self.i18n("result.txt", rs.lang))
         else:
             return self.render(rs, "user_search_result", params)
@@ -200,7 +201,8 @@ class EventFrontend(AbstractUserFrontend):
         """Display concluded event."""
         event_data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
         courses = self.eventproxy.list_courses(rs, pevent_id, past=True)
-        participants = self.eventproxy.list_participants(rs, pevent_id=pevent_id)
+        participants = self.eventproxy.list_participants(rs,
+                                                         pevent_id=pevent_id)
         if not (rs.user.persona_id in participants or self.is_admin(rs)):
             ## make list of participants only visible to other participants
             participants = participant_data = None
@@ -814,7 +816,7 @@ class EventFrontend(AbstractUserFrontend):
                     1 for rdata in registration_data.values()
                     if test(event_data, rdata, rdata['parts'][part_id]))
                 for part_id in event_data['parts']}
-        tests = {
+        tests2 = {
             'not payed': (lambda edata, rdata, pdata: (
                 stati(pdata['status']).is_involved()
                 and not rdata['payment'])),
@@ -849,7 +851,7 @@ class EventFrontend(AbstractUserFrontend):
                     key=sorter)
                 for part_id in event_data['parts']
             }
-            for key, test in tests.items()
+            for key, test in tests2.items()
         }
         return self.render(rs, "summary", {
             'event_data': event_data, 'registration_data': registration_data,
@@ -1124,7 +1126,7 @@ class EventFrontend(AbstractUserFrontend):
         course_data = self.eventproxy.get_course_data(rs, courses)
         tex = self.fill_template(rs, "tex", "expuls", {
             'event_data': event_data, 'course_data': course_data})
-        return self.send_file(rs, data=tex,
+        return self.send_file(rs, data=tex, inline=False,
                               filename=self.i18n("expuls.tex", rs.lang))
 
     @access("event")
@@ -2373,7 +2375,7 @@ class EventFrontend(AbstractUserFrontend):
 
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data,
+            return self.send_file(rs, data=data, inline=False,
                                   filename=self.i18n("result.txt", rs.lang))
         else:
             params.update({

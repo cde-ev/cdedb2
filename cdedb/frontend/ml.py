@@ -2,6 +2,10 @@
 
 """Services for the ml realm."""
 
+import logging
+
+import werkzeug
+
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access,
     check_validation as check, mailinglist_guard)
@@ -16,9 +20,6 @@ from cdedb.backend.ml import MlBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import connection_pool_factory
-
-import logging
-import werkzeug
 
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""
@@ -153,7 +154,7 @@ class MlFrontend(AbstractUserFrontend):
         params = {'result': result, 'query': query, 'choices': {}}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data,
+            return self.send_file(rs, data=data, inline=False,
                                   filename=self.i18n("result.txt", rs.lang))
         else:
             return self.render(rs, "user_search_result", params)

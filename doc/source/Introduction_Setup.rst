@@ -23,12 +23,11 @@ Further we depend on a number of python packages:
 
 * passlib
 * psycopg2 (at least 2.5.4, for jsonb support)
-* pyro4 (which depends on serpent)
 * werkzeug (at least 0.10, bug in py3-handling of MultiDict input)
 * dateutil
 * jinja2
 * pytz
-* python-ldap (support for py3 is currently unreleased)
+* ldap3
 * python-magic
 * python-imaging-library (more specifically pillow)
 
@@ -42,12 +41,9 @@ At last there are some recommended dependencies:
 Here are some oneliners for the lazy::
 
   # Gentoo
-  emerge -avt >=dev-lang/python-3.4.0 >=dev-db/postgresql-server-9.4 www-servers/apache dev-vcs/git net-nds/openldap app-text/texlive dev-python/passlib >=dev-python/psycopg-2.5.4 dev-python/pyro:4 >=dev-python/werkzeug-0.10 dev-python/python-dateutil dev-python/jinja dev-python/pytz =dev-python/python-ldap-9999 dev-python/python-magic virtual/python-imaging dev-python/sphinx >=dev-python/webtest-2.0.17 dev-db/pgbouncer net-analyzer/fail2ban
+  emerge -avt >=dev-lang/python-3.4.0 >=dev-db/postgresql-server-9.4 www-servers/apache dev-vcs/git net-nds/openldap app-text/texlive dev-python/passlib >=dev-python/psycopg-2.5.4 >=dev-python/werkzeug-0.10 dev-python/python-dateutil dev-python/jinja dev-python/pytz dev-python/ldap3 dev-python/python-magic virtual/python-imaging dev-python/sphinx >=dev-python/webtest-2.0.17 dev-db/pgbouncer net-analyzer/fail2ban
   # Debian
-  aptitude install apache2 libapache2-mod-wsgi-py3 fail2ban slapd ldap-utils postgresql-client postgresql pgbouncer texlive-full python3 python3-psycopg2 python3-pyro4 python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-lxml python3-magic python3-pil # python3-webtest python3-werkzeug python3-passlib python3-ldap python3-serpent (note these last are not package or outdated)
-
-      
-
+  aptitude install apache2 libapache2-mod-wsgi-py3 fail2ban slapd ldap-utils postgresql-client postgresql pgbouncer texlive-full python3 python3-psycopg2 python3-dateutil python3-jinja2 python3-tz python3-sphinx python3-lxml python3-magic python3-pil python3-ldap3 # python3-webtest python3-werkzeug python3-passlib (note these last are not packaged or outdated)
 
 Checkout the repository
 -----------------------
@@ -180,48 +176,27 @@ The details can be found in :py:mod:`cdedb.config`. The global configuration
 can be done in ``cdedb/localconfig.py`` (a sample for this is provided at
 ``cdedb/localconfig.py.sample``, for development instances you are strongly
 encouraged to copy this file to ``cdedb/localconfig.py``). The configuration
-for the frontend resides in ``/etc/cdedb-frontend-config.py``. The path to
-the backend configuration is passed on the command line (if you use the make
-recipes, then via the environment variable ``CONFIGPATH``).
+for the application resides in ``/etc/cdedb-application-config.py``.
 
 Running it
 ----------
 
-First start a ``pyro`` nameserver with::
-
-  make pyro-nameserver
-
-Second create the directory ``/run/cdedb`` (for this you possibly need
-elevated privileges). This has to be writable by the user running the
-backends and readable by the user running the frontend (here go the sockets
-by default)::
-
-  mkdir /run/cdedb
-  chown <user>:<user> /run/cdedb
-
-Check if apache, postgres, pgbouncer and slapd are running. Optionally you
+Check if postgres, pgbouncer and slapd are running. Optionally you
 can run the test suite first to see whether everything is ready::
 
   make check
 
-Then spin up the backends (exemplary here for the core backend)::
-
-  make run-core
-
 Now start the apache and access ``https://localhost/db/`` with a
-browser. Finally you can shutdown the backends with::
-
-  make quit-all
+browser.
 
 Refreshing the running instance
 -------------------------------
 
 Changes to the code can be propagate as follows to the current instance. For
-templates no action is necessary. For the frontend updating the mtime the
-wsgi file resets the apache workers::
+templates no action is necessary. For the python code updating the mtime of
+the wsgi file resets the apache workers::
 
   touch wsgi/cdedb.wsgi
 
-For the backend a restart is required (``make quit-all`` and ``make
-run-...``). For the database you should restart pgbouncer (which probably
-has some open connections left) before doing a ``make sample-data``.
+For the database you should restart pgbouncer (which probably has some open
+connections left) before doing a ``make sample-data``.

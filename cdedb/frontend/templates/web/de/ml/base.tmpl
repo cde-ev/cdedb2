@@ -34,7 +34,7 @@
             {{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten-Übersicht",
                     aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_list')) }}
             {% if is_admin %}
-                {# FIXME #}
+                {# TODO #}
                 {{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}
                 {{ util.href(cdedblink("ml/user_search_form"), "Mailinglisten-Nutzer verwalten",
                         icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
@@ -42,7 +42,7 @@
                         active=(sidenav_active == 'ml_log')) }}
                 {{ util.href(cdedblink("ml/list_all_mailinglists"), "Mailinglisten verwalten", icon="cog",
                         aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
-                {# FIXME #}
+                {# TODO #}
                 {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen") }}
             {% endif %}
         </div>

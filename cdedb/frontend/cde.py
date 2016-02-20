@@ -14,7 +14,7 @@ import werkzeug
 import cdedb.database.constants as const
 from cdedb.common import (
     merge_dicts, name_key, lastschrift_reference, now, glue,
-    int_to_words, determine_age_class, PERSONA_STATUS_FIELDS, ProxyShim)
+    int_to_words, determine_age_class, ProxyShim)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     check_validation as check,
@@ -122,7 +122,7 @@ class CdEFrontend(AbstractUserFrontend):
             with open(path, 'wb') as f:
                 f.write(blob)
         code = self.coreproxy.change_foto(rs, persona_id,
-                                         foto=myhash.hexdigest())
+                                          foto=myhash.hexdigest())
         if previous:
             if not self.coreproxy.foto_usage(rs, previous):
                 path = os.path.join(self.conf.STORAGE_DIR, 'foto', previous)
@@ -239,7 +239,7 @@ class CdEFrontend(AbstractUserFrontend):
         params = {'result': result, 'query': query, 'choices': choices}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data,
+            return self.send_file(rs, data=data, inline=False,
                                   filename=self.i18n("result.txt", rs.lang))
         else:
             return self.render(rs, "user_search_result", params)
@@ -323,7 +323,7 @@ class CdEFrontend(AbstractUserFrontend):
         Helper to find out which of the passed lastschrift permits has
         not been debitted for a year.
 
-        :type rs: :py:class:`cdedb.frontend.common.FrontendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type lastschrift_ids: [int] or None
         :param lastschrift_ids: If None is passed all existing permits
           are checked.
@@ -465,7 +465,7 @@ class CdEFrontend(AbstractUserFrontend):
         participating members. Here we do all the dirty work to conform
         to the standard and produce an acceptable output.
 
-        :type rs: :py:class:`cdedb.frontend.common.FrontendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type transactions: [{str: object}]
         :param transactions: Transaction infos from the backend enriched by
           some additional attributes which are necessary.
@@ -580,7 +580,7 @@ class CdEFrontend(AbstractUserFrontend):
                     rs, transaction_id, stati.cancelled)
             rs.notify("error", "Creation of SEPA-PAIN-file failed.")
             return self.lastschrift_index(rs)
-        return self.send_file(rs, data=sepapain_file,
+        return self.send_file(rs, data=sepapain_file, inline=False,
                               filename=self.i18n("sepa.cdd", rs.lang))
 
     @access("cde_admin", modi={"POST"})
@@ -673,7 +673,7 @@ class CdEFrontend(AbstractUserFrontend):
             int_to_words(int(transaction_data['amount']), rs.lang),
             int_to_words(int(transaction_data['amount'] * 100) % 100, rs.lang))
         transaction_data['amount_words'] = words
-        cde_info = self.cdeproxy.get_meta_info(rs)
+        cde_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
             'lastschrift_data': lastschrift_data, 'cde_info': cde_info,
             'transaction_data': transaction_data, 'persona_data': persona_data,
@@ -701,7 +701,7 @@ class CdEFrontend(AbstractUserFrontend):
             persona_data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             minor = determine_age_class(
                 persona_data['birthday'], now().date()).is_minor()
-        cde_info = self.cdeproxy.get_meta_info(rs)
+        cde_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", {
             'cde_info': cde_info, 'persona_data': persona_data, 'minor': minor})
         return self.serve_latex_document(rs, tex,
@@ -710,7 +710,7 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def meta_info_form(self, rs):
         """Render form."""
-        info = self.cdeproxy.get_meta_info(rs)
+        info = self.coreproxy.get_meta_info(rs)
         merge_dicts(rs.values, info)
         return self.render(rs, "meta_info", {'keys': self.conf.META_INFO_KEYS})
 
@@ -719,9 +719,9 @@ class CdEFrontend(AbstractUserFrontend):
         """Change the meta info constants."""
         data_params = tuple((key, "any") for key in self.conf.META_INFO_KEYS)
         data = request_data_extractor(rs, data_params)
-        data = check(rs, "cde_meta_info", data, keys=self.conf.META_INFO_KEYS)
+        data = check(rs, "meta_info", data, keys=self.conf.META_INFO_KEYS)
         if rs.errors:
             return self.meta_info_form(rs)
-        code = self.cdeproxy.set_meta_info(rs, data)
+        code = self.coreproxy.set_meta_info(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/meta_info_form")

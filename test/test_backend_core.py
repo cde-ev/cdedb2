@@ -5,7 +5,7 @@ from test.common import BackendTest, as_users, USER_DICT, nearly_now
 import copy
 import datetime
 import decimal
-import ldap
+import ldap3
 import subprocess
 
 PERSONA_TEMPLATE = {
@@ -158,24 +158,27 @@ class TestCoreBackend(BackendTest):
         if user['id'] == 1:
             update['cloud_account'] = False
         self.core.set_persona(self.key, update, allow_specials=("username",))
-        ldap_con = ldap.initialize("ldap://localhost")
-        ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",
-                               "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")
-        val = ldap_con.search_s("ou=personas-test,dc=cde-ev,dc=de",
-                                ldap.SCOPE_ONELEVEL,
-                                filterstr='(uid={})'.format(user['id']),
-                                attrlist=['cn', 'displayName', 'mail',
-                                          'cloudAccount'])
-        cloud_expectation = b'TRUE'
-        if user['id'] == 1:
-            cloud_expectation = b'FALSE'
-        expectation = [(
-            dn, {'cn': [user['given_names'].encode('utf-8')],
-                 'displayName': [new_name.encode('utf-8')],
-                 'mail': [new_address.encode('utf-8')],
-                 'cloudAccount': [cloud_expectation],})]
-        self.assertEqual(expectation, val)
-        ldap_con.unbind()
+        ldap_server = ldap3.Server("ldap://localhost")
+        with ldap3.Connection(ldap_server, "cn=root,dc=cde-ev,dc=de",
+                              "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0") as l:
+            ret = l.search(
+                search_base="ou=personas-test,dc=cde-ev,dc=de",
+                search_scope=ldap3.LEVEL,
+                search_filter='(uid={})'.format(user['id']),
+                attributes=['cn', 'displayName', 'mail', 'cloudAccount'])
+            self.assertTrue(ret)
+            cloud_expectation = 'TRUE'
+            if user['id'] == 1:
+                cloud_expectation = 'FALSE'
+            expectation = {
+                'cn': user['given_names'],
+                'displayName': new_name,
+                'mail': new_address,
+                'cloudAccount': cloud_expectation,}
+            self.assertEqual(1, len(l.entries))
+            self.assertEqual(dn, l.entries[0].entry_get_dn())
+            for attr, val in expectation.items():
+                self.assertEqual(val, l.entries[0][attr].value)
 
     @as_users("anton")
     def test_create_persona(self, user):
@@ -254,23 +257,27 @@ class TestCoreBackend(BackendTest):
                 'weblink': None}}
         history = self.core.changelog_get_history(self.key, new_id, None)
         self.assertEqual(expectation, history)
-        ldap_con = ldap.initialize("ldap://localhost")
-        ldap_con.simple_bind_s("cn=root,dc=cde-ev,dc=de",
-                               "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0")
-        val = ldap_con.search_s("ou=personas-test,dc=cde-ev,dc=de",
-                                ldap.SCOPE_ONELEVEL,
-                                filterstr='(uid={})'.format(new_id),
-                                attrlist=['cn', 'displayName', 'mail',
-                                          'cloudAccount', 'isActive'])
-        dn = "uid={},{}".format(new_id, "ou=personas-test,dc=cde-ev,dc=de")
-        expectation = [(
-            dn, {'cn': [data['display_name'].encode('utf-8')],
-                 'displayName': [data['display_name'].encode('utf-8')],
-                 'mail': [data['username'].encode('utf-8')],
-                 'cloudAccount': [b"FALSE"],
-                 'isActive': [b"TRUE"]})]
-        self.assertEqual(expectation, val)
-        ldap_con.unbind()
+        ldap_server = ldap3.Server("ldap://localhost")
+        with ldap3.Connection(ldap_server, "cn=root,dc=cde-ev,dc=de",
+                              "s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0") as l:
+            ret = l.search(
+                search_base="ou=personas-test,dc=cde-ev,dc=de",
+                search_scope=ldap3.LEVEL,
+                search_filter='(uid={})'.format(new_id),
+                attributes=['cn', 'displayName', 'mail', 'cloudAccount',
+                            'isActive'])
+            self.assertTrue(ret)
+            dn = "uid={},{}".format(new_id, "ou=personas-test,dc=cde-ev,dc=de")
+            expectation = {
+                'cn': data['display_name'],
+                'displayName': data['display_name'],
+                'mail': data['username'],
+                'cloudAccount': "FALSE",
+                'isActive': "TRUE"}
+            self.assertEqual(1, len(l.entries))
+            self.assertEqual(dn, l.entries[0].entry_get_dn())
+            for attr, val in expectation.items():
+                self.assertEqual(val, l.entries[0][attr].value)
 
     @as_users("anton")
     def test_create_member(self, user):
@@ -415,6 +422,25 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
         })
         self.assertEqual(data, new_data)
+
+    @as_users("anton")
+    def test_meta_info(self, user):
+        expectation = {
+            'Finanzvorstand_Adresse_Einzeiler':
+                'Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia',
+            'Finanzvorstand_Adresse_Zeile2': 'bei Spielmanns',
+            'Finanzvorstand_Adresse_Zeile3': 'Im Garten 77',
+            'Finanzvorstand_Adresse_Zeile4': '34576 Utopia',
+            'Finanzvorstand_Name': 'Bertålotta Beispiel',
+            'Finanzvorstand_Ort': 'Utopia',
+            'Finanzvorstand_Vorname': 'Bertålotta'}
+        self.assertEqual(expectation, self.core.get_meta_info(self.key))
+        update = {
+            'Finanzvorstand_Name': 'Zelda'
+        }
+        self.assertLess(0, self.core.set_meta_info(self.key, update))
+        expectation.update(update)
+        self.assertEqual(expectation, self.core.get_meta_info(self.key))
 
     @as_users("anton")
     def test_genesis(self, user):

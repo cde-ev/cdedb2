@@ -5,6 +5,7 @@ import copy
 import quopri
 
 from test.common import as_users, USER_DICT, FrontendTest
+from cdedb.query import QueryOperators
 
 class TestCoreFrontend(FrontendTest):
     def test_login(self):
@@ -37,7 +38,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
-        self.assertIn(user['given_names'], self.response.text)
+        self.assertPresence(user['given_names'])
 
     @as_users("anton")
     def test_adminshowuser(self, user):
@@ -189,7 +190,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'href': '/persona/2/privileges'})
-        self.assertTitle("Administration -- Privilegien ändern für Bertålotta Beispiel")
+        self.assertTitle("Privilegien ändern für Bertålotta Beispiel")
         f = self.response.forms['privilegechangeform']
         self.assertEqual(False, f['is_admin'].checked)
         self.assertEqual(False, f['is_core_admin'].checked)
@@ -215,7 +216,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzersuche -- 5 Ergebnisse gefunden")
-        self.assertIn("Jalapeño", self.response.text)
+        self.assertPresence("Jalapeño")
 
     @as_users("anton")
     def test_archived_user_search(self,  user):
@@ -228,7 +229,54 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Archivnutzersuche -- 1 Ergebnis gefunden")
-        self.assertIn("Hell", self.response.text)
+        self.assertPresence("Hell")
+
+    @as_users("anton")
+    def test_archived_user_search2(self, user):
+        self.traverse({'href': '/core/search/archiveduser/form'})
+        self.assertTitle("Archivnutzersuche")
+        f = self.response.forms['usersearchform']
+        f['qval_birthday'] = '31.12.2000'
+        f['qop_birthday'] = QueryOperators.less.value
+        for field in f.fields:
+            if field.startswith('qsel_'):
+                f[field].checked = True
+        self.submit(f)
+        self.assertTitle("Archivnutzersuche -- 1 Ergebnis gefunden")
+        self.assertPresence("Hell")
+
+    @as_users("anton")
+    def test_show_archived_user(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-8-G"
+        f['realm'] = "cde"
+        self.submit(f)
+        self.assertTitle("Archivzugriff -- Hades Hell")
+
+    def test_changelog(self):
+        user = USER_DICT["berta"]
+        self.login(user)
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
+        f = self.response.forms['changedataform']
+        f['family_name'] = "Ganondorf"
+        self.submit(f, check_notification=False)
+        self.assertPresence(user['family_name'])
+        self.assertNonPresence('Ganondorf')
+        self.logout()
+        user = USER_DICT["anton"]
+        self.login(user)
+        self.traverse({'href': '^/$'}, {'href': '/core/changelog/list'})
+        self.assertTitle("Änderungen (zurzeit 1 zu begutachten)")
+        self.traverse({'href': '/core/persona/2/changelog/inspect'})
+        f = self.response.forms['ackchangeform']
+        self.submit(f)
+        self.assertTitle("Änderungen (zurzeit 0 zu begutachten)")
+        self.logout()
+        user = USER_DICT["berta"]
+        self.login(user)
+        self.traverse({'href': '/core/self/show'})
+        self.assertNonPresence(user['family_name'])
+        self.assertPresence('Ganondorf')
 
     def test_log(self):
         ## First: generate data

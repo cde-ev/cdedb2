@@ -7,7 +7,7 @@ Mitgliedersuche -- {{ result|length|e }} Mitglied{{ result|length|numerus("", "e
 {% block content %}
     {% for dataset in result %}
         <p>
-            {{ util.href(show_user_link(dataset['persona_id']),
+            {{ util.href(show_user_link(dataset['id']),
                          "{} {}".format(dataset['family_name'], dataset['given_names'])) }}
         </p>
     {% endfor %}

@@ -2,7 +2,6 @@
 
 """Global utility functions."""
 
-import abc
 import collections
 import collections.abc
 import copy
@@ -12,10 +11,11 @@ import functools
 import inspect
 import logging
 import logging.handlers
-import pytz
 import random
 import string
 import sys
+
+import pytz
 import werkzeug.datastructures
 
 class RequestState:
@@ -175,10 +175,13 @@ def do_batchification(fun):
     return new_fun
 
 class ProxyShim:
-    """Mediate calls between different backend components. This emulates an
-    RPC call without most of the overhead of actually doing an RPC call.
+    """Wrap a backend for some syntactic sugar.
 
-    FIXME
+    If we used an actual RPC mechanism, this would do some additional
+    lifting to accomodate this.
+
+    This takes care of the annotations given by the decorators on the
+    backend functions.
     """
     def __init__(self, backend, internal=False):
         """
@@ -296,7 +299,7 @@ def merge_dicts(*dicts):
     we create a new return dict we would have to add extra logic to
     cater for this.
 
-    :type dicts: [{obj: obj}]
+    :type dicts: [{object: object}]
     """
     assert(len(dicts) > 0)
     for adict in dicts[1:]:
@@ -347,7 +350,7 @@ def name_key(entry):
 
     This way we have a standardized sorting order for entries.
 
-    :type entry: {str: obj}
+    :type entry: {str: object}
     :param entry: A dataset of a persona from the cde or event realm.
     :rtype: str
     """
@@ -604,7 +607,7 @@ def unwrap(single_element_list, keys=False):
     :type keys: bool
     :param keys: If a mapping is input, this toggles between returning
       the key or value.
-    :rtype: obj or None
+    :rtype: object or None
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
             or len(single_element_list) != 1):
@@ -680,14 +683,16 @@ def determine_age_class(birth, reference):
     return AgeClasses.u14
 
 def extract_roles(session_data):
-    """FIXME
+    """Associate some roles to a data set.
 
-    NOTE: this also works on non-personas (i.e. dicts of is_* flags)
+    The data contains the relevant portion of attributes from the
+    core.personas table. We have some more logic than simply grabbing
+    the flags from the dict like only allowing admin privileges in a
+    realm if access to the realm is already granted.
 
-    :type db_privileges: int or None
-    :type status: int or None
-    :param status: will be converted to a
-      :py:class:`cdedb.database.constants.PersonaStati`.
+    Note that this also works on non-personas (i.e. dicts of is_* flags).
+
+    :type session_data: {str: object}
     :rtype: {str}
     """
     ret = {"anonymous"}
@@ -718,7 +723,15 @@ def extract_roles(session_data):
     return ret
 
 def privilege_tier(roles):
-    """FIXME"""
+    """Check admin privilege level.
+
+    If a user has access to the passed realms, what kind of admin
+    privileg does one need to edit the user?
+
+    :type roles: {str}
+    :rtype: {str}
+    :returns: Admin roles that may edit this user.
+    """
     relevant = roles & {"cde", "event", "ml", "assembly"}
     ret = {"core_admin", "admin"}
     if relevant == {"ml"}:
@@ -732,7 +745,7 @@ def privilege_tier(roles):
     return ret
 
 #: Set of possible values for ``ntype`` in
-#: :py:meth:`FrontendRequestState.notify`. Must conform to the regex
+#: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
 NOTIFICATION_TYPES = {"success", "info", "question", "warning", "error"}
 
@@ -794,7 +807,6 @@ PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
     "location2", "country2", "weblink", "specialisation", "affiliation",
     "timeline", "interests", "free_form", "balance", "decided_search",
     "trial_member", "bub_search", "foto")
-    # FIXME foto was added
 
 #: Names of columns associated to an event user. This should be a subset of
 #: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to

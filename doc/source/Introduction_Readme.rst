@@ -17,7 +17,7 @@ Here is a list of best practices to follow, so the code stays nice.
 
   This guarantees, that no transaction are left dangling and in case of
   error does a rollback. If these contexts are nested (e.g. through function
-  calls) use the :py:class:`cdedb.backend.common.Atomizer`.
+  calls) use the :py:class:`cdedb.database.connection.Atomizer`.
 * All functions with an ``@access`` decorator may only use the
   session-specific database connections/resources. All uses of elevated
   priviliges must be encapsulated into their own functions.

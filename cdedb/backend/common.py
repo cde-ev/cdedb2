@@ -6,23 +6,16 @@ The most important thing is :py:class:`AbstractBackend` which is the
 template for all services.
 """
 
-import os
-import signal
-import logging
-from cdedb.database.connection import connection_pool_factory, Atomizer
-from cdedb.database import DATABASE_ROLES
-from cdedb.common import (
-    glue, make_root_logger, extract_roles, ProxyShim,
-    DB_ROLE_MAPPING, PrivilegeError, unwrap, PERSONA_STATUS_FIELDS)
-from cdedb.query import QueryOperators, QUERY_VIEWS
-from cdedb.config import Config, SecretsConfig
 import abc
-import cdedb.validation as validate
-import functools
-import inspect
 import collections.abc
 import enum
-import copy
+import logging
+
+from cdedb.common import (
+    glue, make_root_logger, ProxyShim, unwrap)
+from cdedb.query import QueryOperators, QUERY_VIEWS
+from cdedb.config import Config
+import cdedb.validation as validate
 
 def singularize(singular_function_name, array_param_name="ids",
                 singular_param_name="anid"):
@@ -37,8 +30,7 @@ def singularize(singular_function_name, array_param_name="ids",
 
     Singularization is performed at the same spot as publishing of the
     functions with @access decorator, that is in
-    :py:class:`cdedb.backend.rpc.BackendServer` and
-    :py:class:`AuthShim`.
+    :py:class:`cdedb.common.ProxyShim`.
 
     :type singular_function_name: str
     :param singular_function_name: name for the new singularized function
@@ -69,8 +61,7 @@ def batchify(batch_function_name, array_param_name="data",
 
     Batchification is performed at the same spot as publishing of the
     functions with @access decorator, that is in
-    :py:class:`cdedb.backend.rpc.BackendServer` and
-    :py:class:`AuthShim`.
+    :py:class:`cdedb.common.ProxyShim`.
 
     :type batch_function_name: str
     :param batch_function_name: name for the new batchified function
@@ -89,8 +80,10 @@ def batchify(batch_function_name, array_param_name="data",
     return wrap
 
 def access(*roles):
-    """The @access decorator marks a function of a backend for publication via
-    RPC.
+    """The @access decorator marks a function of a backend for publication.
+
+    Think of this as an RPC interface, only published functions are
+    accessible (and only by users with the necessary roles).
 
     :type roles: [str]
     :param roles: required privilege level (any of)
@@ -101,8 +94,10 @@ def access(*roles):
     return decorator
 
 def internal_access(*roles):
-    """The @internal_access decorator marks a function of a backend for
-    internal publication. It will be accessible via the :py:class:`AuthShim`.
+    """Mark a function of a backend for internal publication.
+
+    It will be accessible via the :py:class:`cdedb.common.ProxyShim` in
+    internal mode.
 
     :type roles: [str]
     :param roles: required privilege level (any of)
@@ -115,20 +110,20 @@ def internal_access(*roles):
 class AbstractBackend(metaclass=abc.ABCMeta):
     """Basic template for all backend services.
 
-    Note the method :py:meth:`establish` which is used by
-    :py:mod:`cdedb.backend.rpc` to do authentification. Children classes
-    have to override some things: first :py:attr:`realm` identifies the
-    component; furthermore there are some abstract methods which specify
-    realm-specific behaviour (with a default implementation which is
-    sufficient for some cases).
+    Children classes have to override some things: first :py:attr:`realm`
+    identifies the component; furthermore there are some abstract methods
+    which specify realm-specific behaviour (with a default implementation
+    which is sufficient for some cases).
     """
     #: abstract str to be specified by children
     realm = None
 
     def __init__(self, configpath, is_core=False):
         """
-        FIXME
         :type configpath: str
+        :type is_core: bool
+        :param is_core: If not, we add instantiate a core backend for usage
+          by this backend.
         """
         self.conf = Config(configpath)
         ## initialize logging
@@ -145,7 +140,8 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if is_core:
             self.core = self
         else:
-            # FIXME cyclic import
+            ## Import here since we otherwise have a cyclic import.
+            ## I don't see how we can get out of this ...
             from cdedb.backend.core import CoreBackend
             self.core = ProxyShim(CoreBackend(configpath), internal=True)
 
@@ -153,7 +149,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         """Check that all personas corresponding to the ids are in the
         appropriate realm.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :type realms: {str}
         :param realms: Set of realms to check for. By default this is
@@ -168,15 +164,15 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     @classmethod
     @abc.abstractmethod
     def is_admin(cls, rs):
-        """Since each realm may have its own application level roles, it may
-        also have additional roles with elevated privileges.
+        """We abstract away the admin privilege.
 
-        FIXME
+        Maybe this can be beefed up to check for orgas and moderators too,
+        but for now it only checks the admin role.
 
         :type rs: :py:class:`BackendRequestState`
         :rtype: bool
         """
-        return "{}_admin".format(cls.realm) in rs.user.roles
+        return bool({"{}_admin".format(cls.realm), "admin"} & rs.user.roles)
 
     @staticmethod
     def _sanitize_db_output(output):
@@ -222,7 +218,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
     def execute_db_query(self, cur, query, params):
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
-        :py:meth:`_sanitize_tuple`. However in nearly all cases you want to
+        :py:meth:`_sanitize_db_input`. However in nearly all cases you want to
         call one of :py:meth:`query_exec`, :py:meth:`query_one`,
         :py:meth:`query_all` which utilize a transaction to do the query. If
         this is not called inside a transaction context (probably created by
@@ -559,7 +555,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
 
         However this handles the finance_log for financial transactions.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type code_validator: str
         :param code_validator: e.g. "enum_mllogcodes"
         :type entity_name: str

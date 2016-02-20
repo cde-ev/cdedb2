@@ -205,15 +205,15 @@ GRANT UPDATE (queries) ON core.quota TO cdb_member;
 -- keys of the dict stored here, will be runtime configurable.
 --
 -- This is in the core schema to allow anonymous access.
-CREATE TABLE core.cde_meta_info -- FIXME rename to meta_info
+CREATE TABLE core.meta_info
 (
         id                      serial PRIMARY KEY,
 	-- variable store for things like names of persons on
 	-- regularily changing posts
         info			jsonb NOT NULL
 );
-GRANT SELECT ON core.cde_meta_info TO cdb_anonymous;
-GRANT UPDATE ON core.cde_meta_info TO cdb_admin;
+GRANT SELECT ON core.meta_info TO cdb_anonymous;
+GRANT UPDATE ON core.meta_info TO cdb_admin;
 
 CREATE TABLE core.log (
         id                      bigserial PRIMARY KEY,

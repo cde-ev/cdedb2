@@ -8,13 +8,15 @@ contexts for database transactions across arbitrary backend logic.
 This should be the only module which makes subsistantial use of psycopg.
 """
 
+import logging
+
 import psycopg2
 import psycopg2.extras
 import psycopg2.extensions
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
-import logging
+
 from cdedb.config import BasicConfig
 _BASICCONF = BasicConfig()
 
@@ -101,7 +103,7 @@ class Atomizer:
     """Helper to create atomic transactions.
 
     The backend stores the database connection in the
-    :py:attr:`cdedb.backend.common.RequestState.conn` attribute. This
+    :py:attr:`cdedb.common.RequestState.conn` attribute. This
     connection is then used for all queries in this request, utilizing
     ``with`` contexts to control transactions. However if several of
     these contexts are nested for the same connection, the (regular)
@@ -131,7 +133,7 @@ class Atomizer:
     """
     def __init__(self, rs):
         """
-        :type rs: :py:class:`cdedb.backend.common.RequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         """
         self.rs = rs
 

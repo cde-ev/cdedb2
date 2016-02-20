@@ -26,25 +26,23 @@ change it, which has serious usability issues -- thus we currently don't
 do it.
 """
 
-from cdedb.backend.common import (
-    access, internal_access,
-    affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, AbstractBackend)
-from cdedb.common import (
-    glue, PrivilegeError, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS,
-    ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
-    FUTURE_TIMESTAMP, now)
-from cdedb.config import Config
-from cdedb.query import QueryOperators
-from cdedb.database.connection import Atomizer
-import cdedb.database.constants as const
-import argparse
 import copy
-import datetime
 import hashlib
 import json
 import os.path
 import string
+
+from cdedb.backend.common import (
+    access, internal_access, affirm_validation as affirm,
+    affirm_array_validation as affirm_array,
+    singularize, AbstractBackend)
+from cdedb.common import (
+    glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS,
+    ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
+    FUTURE_TIMESTAMP, now)
+from cdedb.query import QueryOperators
+from cdedb.database.connection import Atomizer
+import cdedb.database.constants as const
 
 class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
@@ -83,7 +81,7 @@ class AssemblyBackend(AbstractBackend):
         This assumes, that a vote actually exists and throws an error if
         not.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :type secret: str
         :rtype: str
@@ -103,7 +101,7 @@ class AssemblyBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type code: int
         :param code: One of
           :py:class:`cdedb.database.constants.AssemblyLogCodes`.
@@ -132,7 +130,7 @@ class AssemblyBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type assembly_id: int or None
         :type start: int or None
@@ -149,7 +147,7 @@ class AssemblyBackend(AbstractBackend):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
@@ -170,7 +168,7 @@ class AssemblyBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int or None
         :type ballot_id: int or None
         :rtype: bool
@@ -199,7 +197,7 @@ class AssemblyBackend(AbstractBackend):
         being an attendee. This seems reasonable since assemblies should
         be public to the entire association.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :rtype: [int]
         """
@@ -213,7 +211,7 @@ class AssemblyBackend(AbstractBackend):
     def list_assemblies(self, rs, is_active=None):
         """List all assemblies.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type is_active: bool or None
         :param is_active: If not None list only assemblies which have this
           activity status.
@@ -234,7 +232,7 @@ class AssemblyBackend(AbstractBackend):
     def get_assembly_data(self, rs, ids):
         """Retrieve data for some assemblies.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -246,7 +244,7 @@ class AssemblyBackend(AbstractBackend):
     def set_assembly_data(self, rs, data):
         """Update some keys of an assembly.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -264,7 +262,7 @@ class AssemblyBackend(AbstractBackend):
     def create_assembly(self, rs, data):
         """Make a new assembly.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new assembly
@@ -278,7 +276,7 @@ class AssemblyBackend(AbstractBackend):
     def list_ballots(self, rs, assembly_id):
         """List all ballots of an assembly.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :rtype: {int: str}
         :returns: Mapping of ballot ids to titles.
@@ -297,7 +295,7 @@ class AssemblyBackend(AbstractBackend):
         additional field 'candidates' listing the available candidates for
         this ballot.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -335,7 +333,7 @@ class AssemblyBackend(AbstractBackend):
         .. note:: It is forbidden to modify a ballot after voting has
                   started.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -397,7 +395,7 @@ class AssemblyBackend(AbstractBackend):
 
         This has to take care to keep the voter register consistent.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new event
@@ -448,7 +446,7 @@ class AssemblyBackend(AbstractBackend):
           attachments, voter register). As with modification of ballots
           this is forbidden after voting has started.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :rtype: int
         :returns: default return code
@@ -491,7 +489,7 @@ class AssemblyBackend(AbstractBackend):
         allowed to call this before the normal voting period has
         expired.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :rtype: bool
         """
@@ -525,7 +523,7 @@ class AssemblyBackend(AbstractBackend):
 
         This has to take care to keep the voter register consistent.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :rtype: str or None
         :returns: The secret if a new secret was generated or None if we
@@ -565,7 +563,7 @@ class AssemblyBackend(AbstractBackend):
 
         This does not accept a persona_id on purpose.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :type vote: str
         :type secret: str or None
@@ -632,7 +630,7 @@ class AssemblyBackend(AbstractBackend):
 
         It is only allowed to call this if we attend the ballot.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :type secret: str or None
         :param secret: The secret of this user. May be None to signal that the
@@ -675,7 +673,7 @@ class AssemblyBackend(AbstractBackend):
         We use the Schulze method as documented in
         :py:func:`cdedb.common.schulze_evaluate`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
         :rtype: bool
         :returns: True if a new result file was generated and False if the
@@ -775,7 +773,7 @@ class AssemblyBackend(AbstractBackend):
         This mainly purges the secrets which are no longer required for
         updating votes, so that they do not leak in the future.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int
         :rtype: int
         :returns: default return code
@@ -821,7 +819,7 @@ class AssemblyBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int or None
         :type ballot_id: int or None
         :rtype: {int: str}
@@ -847,7 +845,7 @@ class AssemblyBackend(AbstractBackend):
     def get_attachments(self, rs, ids):
         """Retrieve data on attachments
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -860,7 +858,7 @@ class AssemblyBackend(AbstractBackend):
     def add_attachment(self, rs, data):
         """Create a new attachment.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: id of the new attachment
@@ -886,7 +884,7 @@ class AssemblyBackend(AbstractBackend):
         .. note:: This only takes care of the entry in the database the
           actual file handling has to be done in the frontend.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type attachment_id: int
         :rtype: int
         :returns: default return code

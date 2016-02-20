@@ -69,7 +69,7 @@ class TestAssemblyFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("\nVersammlungsnutzersuche -- 1 Ergebnis gefunden\n")
-        self.assertIn("Karabatschi", self.response.text)
+        self.assertPresence("Karabatschi")
 
     @as_users("anton")
     def test_create_user(self, user):
@@ -87,7 +87,7 @@ class TestAssemblyFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertIn("some fancy talk", self.response.text)
+        self.assertPresence("some fancy talk")
 
     @as_users("anton")
     def test_change_assembly(self, user):
@@ -100,7 +100,7 @@ class TestAssemblyFrontend(FrontendTest):
         f['description'] = "Wir werden alle Häretiker exkommunizieren."
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
-        self.assertIn("Häretiker", self.response.text)
+        self.assertPresence("Häretiker")
 
     @as_users("anton")
     def test_create_assembly(self, user):
@@ -114,8 +114,8 @@ class TestAssemblyFrontend(FrontendTest):
         f['notes'] = "Nur ein Aprilscherz"
         self.submit(f)
         self.assertTitle("Drittes CdE-Konzil")
-        self.assertIn("Häretiker", self.response.text)
-        self.assertIn("Aprilscherz", self.response.text)
+        self.assertPresence("Häretiker")
+        self.assertPresence("Aprilscherz")
 
     @as_users("charly")
     def test_signup(self, user):
@@ -140,12 +140,12 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/attendees'})
         self.assertTitle("Anwesenheitsliste -- Internationaler Kongress")
-        self.assertIn("Anton", self.response.text)
-        self.assertIn("Bertålotta", self.response.text)
-        self.assertIn("Kalif", self.response.text)
-        self.assertIn("Inga", self.response.text)
-        self.assertIn("Insgesamt 4 Anwesende.", self.response.text)
-        self.assertNotIn("Charly", self.response.text)
+        self.assertPresence("Anton")
+        self.assertPresence("Bertålotta")
+        self.assertPresence("Kalif")
+        self.assertPresence("Inga")
+        self.assertPresence("Insgesamt 4 Anwesende.")
+        self.assertNonPresence("Charly")
 
     @as_users("anton")
     def test_conclude_assembly(self, user):
@@ -185,7 +185,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
         self.assertTitle("Internationaler Kongress -- Abstimmungen")
-        self.assertNotIn("Maximale Länge der Satzung", self.response.text)
+        self.assertNonPresence("Maximale Länge der Satzung")
         self.traverse({'href': '/assembly/1/ballot/create'},)
         f = self.response.forms['createballotform']
         f['title'] = 'Maximale Länge der Satzung'
@@ -211,7 +211,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
         self.assertTitle("Internationaler Kongress -- Abstimmungen")
-        self.assertIn("Maximale Länge der Satzung", self.response.text)
+        self.assertPresence("Maximale Länge der Satzung")
         self.traverse({'href': '/assembly/1/ballot/6/show'},)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
         f = self.response.forms['deleteballotform']
@@ -219,7 +219,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
         self.assertTitle("Internationaler Kongress -- Abstimmungen")
-        self.assertNotIn("Maximale Länge der Satzung", self.response.text)
+        self.assertNonPresence("Maximale Länge der Satzung")
 
     @as_users("anton")
     def test_attachments(self, user):
@@ -259,7 +259,7 @@ class TestAssemblyFrontend(FrontendTest):
         f = self.response.forms['removeattachmentform2']
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNotIn("Magenta wie die Telekom", self.response.text)
+        self.assertNonPresence("Magenta wie die Telekom")
 
     @as_users("anton", "inga", "kalif")
     def test_vote(self, user):
@@ -299,13 +299,13 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Bester Hof (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual("special: none", f['vote'].value)
-        self.assertNotIn("Du hast Dich enthalten.", self.response.text)
+        self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual(None, f['vote'].value)
-        self.assertIn("Du hast Dich enthalten.", self.response.text)
+        self.assertPresence("Du hast Dich enthalten.")
         f['vote'] = "St"
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
@@ -332,13 +332,13 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual(None, f.get('vote', index=0).value)
-        self.assertNotIn("Du hast Dich enthalten.", self.response.text)
+        self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual(None, f.get('vote', index=0).value)
-        self.assertIn("Du hast Dich enthalten.", self.response.text)
+        self.assertPresence("Du hast Dich enthalten.")
         f['vote'] = ["E"]
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
@@ -378,7 +378,7 @@ class TestAssemblyFrontend(FrontendTest):
         f['votes'] = ""
         self.submit(f)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
-        self.assertIn("Die Abstimmung hat das Quorum von 1000 Stimmen nicht erreicht,", self.response.text)
+        self.assertPresence("Die Abstimmung hat das Quorum von 1000 Stimmen nicht erreicht,")
 
     @as_users("anton")
     def test_candidate_manipulation(self, user):
@@ -387,17 +387,17 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/2/show'},)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNotIn("Dunkelaquamarin", self.response.text)
+        self.assertNonPresence("Dunkelaquamarin")
         f = self.response.forms['addcandidateform']
         f['moniker'] = 'aqua'
         f['description'] = 'Dunkelaquamarin'
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertIn("Dunkelaquamarin", self.response.text)
+        self.assertPresence("Dunkelaquamarin")
         f = self.response.forms['removecandidateform28']
         self.submit(f)
         self.assertTitle("Farbe des Logos (Internationaler Kongress)")
-        self.assertNotIn("Dunkelaquamarin", self.response.text)
+        self.assertNonPresence("Dunkelaquamarin")
 
     def test_log(self):
         ## First: generate data

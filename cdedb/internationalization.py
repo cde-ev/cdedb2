@@ -68,7 +68,7 @@ class I18N:
 def i18n_factory():
     """Create a ready-to-use instance of :py:class:`I18N`, which has been
     loaded with the data from
-    :py:mod:`cdedb.internationalizatiodata`.
+    :py:mod:`cdedb.internationalizationdata`.
 
     :rtype: :py:class:`I18N`"""
     i18n = I18N()

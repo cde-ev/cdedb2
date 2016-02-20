@@ -4,23 +4,22 @@
 variant for external participants.
 """
 
+import copy
+
+import psycopg2.extras
+
 from cdedb.backend.common import (
-    access, internal_access,
-    affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, PYTHON_TO_SQL_MAP, AbstractBackend)
+    access, internal_access, affirm_validation as affirm,
+    affirm_array_validation as affirm_array, singularize, PYTHON_TO_SQL_MAP,
+    AbstractBackend)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
-    glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS,
-    PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS,
-    COURSE_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS,
-    LODGEMENT_FIELDS, unwrap, now, ProxyShim)
-from cdedb.config import Config
+    glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
+    EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS,
+    REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap, now, ProxyShim)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
-import argparse
-import copy
-import psycopg2.extras
 
 #: This is used for generating the table for general queries for
 #: registrations. We moved this rather huge blob here, so it doesn't
@@ -68,7 +67,7 @@ class EventBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int or None
         :type course_id: int or None
         :rtype: bool
@@ -89,7 +88,7 @@ class EventBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int or None
         :type course_id: int or None
         :rtype: bool
@@ -116,7 +115,7 @@ class EventBackend(AbstractBackend):
         This raises an exception in case of the wrong locking state Exactly
         one of the inputs has to be provided.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int or None
         :type course_id: int or None
         """
@@ -131,7 +130,7 @@ class EventBackend(AbstractBackend):
     def orga_infos(self, rs, ids):
         """List events organized by specific personas.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {int}}
         """
@@ -148,7 +147,7 @@ class EventBackend(AbstractBackend):
     def participation_infos(self, rs, ids):
         """List concluded events visited by specific personas.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: [dict]}
         :returns: Keys are the ids and items are the event lists.
@@ -175,7 +174,7 @@ class EventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type code: int
         :param code: One of :py:class:`cdedb.database.constants.EventLogCodes`.
         :type event_id: int or None
@@ -203,7 +202,7 @@ class EventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type event_id: int or None
         :type start: int or None
@@ -225,7 +224,7 @@ class EventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type code: int
         :param code: One of
           :py:class:`cdedb.database.constants.PastEventLogCodes`.
@@ -254,7 +253,7 @@ class EventBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type pevent_id: int or None
         :type start: int or None
@@ -269,7 +268,7 @@ class EventBackend(AbstractBackend):
     def list_events(self, rs, past):
         """List all events, either concluded or organized via DB.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type past: bool
         :param past: Select whether to list past events or those organized via
           DB.
@@ -291,7 +290,7 @@ class EventBackend(AbstractBackend):
         That is all which are currently under way and furthermore all which
         are orga'd by this persona.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: {int: {str: object}}
         :returns: Mapping of event ids to infos (title and registration status).
         """
@@ -327,7 +326,7 @@ class EventBackend(AbstractBackend):
     def list_courses(self, rs, event_id, past):
         """List all courses of an event either concluded or organized via DB.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :type past: bool
         :param past: Select whether to list past events or those organized via
@@ -351,7 +350,7 @@ class EventBackend(AbstractBackend):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type query: :py:class:`cdedb.query.Query`
         :type event_id: int or None
         :param event_id: For registration queries, specify the event.
@@ -403,7 +402,7 @@ class EventBackend(AbstractBackend):
     def get_past_event_data(self, rs, ids):
         """Retrieve data for some concluded events.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -423,7 +422,7 @@ class EventBackend(AbstractBackend):
         * orgas,
         * fields.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -458,7 +457,7 @@ class EventBackend(AbstractBackend):
     def set_past_event_data(self, rs, data):
         """Update some keys of a concluded event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -490,7 +489,7 @@ class EventBackend(AbstractBackend):
           Any invalid entity id (that is negative integer) has to map to a
           complete data set which will be used to create a new entity.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -613,7 +612,7 @@ class EventBackend(AbstractBackend):
     def create_past_event(self, rs, data):
         """Make a new concluded event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new event
@@ -627,7 +626,7 @@ class EventBackend(AbstractBackend):
     def create_event(self, rs, data):
         """Make a new event organized via DB.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new event
@@ -653,7 +652,7 @@ class EventBackend(AbstractBackend):
 
         They do not need to be associated to the same event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -670,7 +669,7 @@ class EventBackend(AbstractBackend):
         They do not need to be associated to the same event. This contains
         additional information on the parts in which the course takes place.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -691,7 +690,7 @@ class EventBackend(AbstractBackend):
     def set_past_course_data(self, rs, data):
         """Update some keys of a concluded course.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -712,7 +711,7 @@ class EventBackend(AbstractBackend):
         If the 'parts' key is present you have to pass the complete list
         of part IDs, which will superseed the current list of parts.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -768,7 +767,7 @@ class EventBackend(AbstractBackend):
     def create_past_course(self, rs, data):
         """Make a new concluded course.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new course
@@ -783,7 +782,7 @@ class EventBackend(AbstractBackend):
     def create_course(self, rs, data):
         """Make a new course organized via DB.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new course
@@ -814,7 +813,7 @@ class EventBackend(AbstractBackend):
         participants can be removed. This function can first remove all
         participants and then remove the course.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type course_id: int
         :type cascade: bool
         :param cascade: If True participants are removed first, if False the
@@ -833,8 +832,8 @@ class EventBackend(AbstractBackend):
                                             pid)
             ret = self.sql_delete_one(rs, "past_event.courses", pcourse_id)
             self.past_event_log(
-                rs, const.PastEventLogCodes.course_deleted, current['pevent_id'],
-                additional_info=current['title'])
+                rs, const.PastEventLogCodes.course_deleted,
+                current['pevent_id'], additional_info=current['title'])
         return ret
 
     @access("event_admin")
@@ -845,7 +844,7 @@ class EventBackend(AbstractBackend):
         A persona can participate multiple times in a single event. For
         example if she took several courses in different parts of the event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type pevent_id: int
         :type pcourse_id: int or None
         :param pcourse_id: If None the persona participated in the event, but
@@ -876,7 +875,7 @@ class EventBackend(AbstractBackend):
         participated multiple times (for example in different courses) we
         are able to delete an exact instance.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type pevent_id: int
         :type pcourse_id: int or None
         :type persona_id: int
@@ -901,7 +900,7 @@ class EventBackend(AbstractBackend):
 
         Exactly one of the inputs has to be provided.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type pevent_id: int or None
         :type pcourse_id: int or None
         :rtype: {int: {str: object}}
@@ -927,7 +926,7 @@ class EventBackend(AbstractBackend):
     def list_registrations(self, rs, event_id, persona_id=None):
         """List all registrations of an event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :type persona_id: int or None
         :param persona_id: If passed restrict to registrations by this persona.
@@ -960,7 +959,7 @@ class EventBackend(AbstractBackend):
         * parts: per part data (like lodgement),
         * choices: course choices, also per part.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -1024,7 +1023,7 @@ class EventBackend(AbstractBackend):
           entries. Each supplied lists superseeds the current choice list
           for that part.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -1119,7 +1118,7 @@ class EventBackend(AbstractBackend):
         The data must contain a dataset for each part and may not contain a
         value for 'field_data', which is initialized to a default value.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new registration
@@ -1160,7 +1159,7 @@ class EventBackend(AbstractBackend):
     def list_lodgements(self, rs, event_id):
         """List all lodgements for an event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :rtype: {int: str}
         :returns: dict mapping ids to names
@@ -1179,7 +1178,7 @@ class EventBackend(AbstractBackend):
 
         All have to be from the same event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -1203,7 +1202,7 @@ class EventBackend(AbstractBackend):
     def set_lodgement(self, rs, data):
         """Update some keys of a lodgement.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -1227,7 +1226,7 @@ class EventBackend(AbstractBackend):
     def create_lodgement(self, rs, data):
         """Make a new lodgement.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new lodgement
@@ -1250,7 +1249,7 @@ class EventBackend(AbstractBackend):
         The lodgement has to be empty otherwise there will be an
         integrity exception.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type lodgement_id: int
         :rtype: int
         :returns: default return code
@@ -1274,7 +1273,7 @@ class EventBackend(AbstractBackend):
     def get_questionnaire(self, rs, event_id):
         """Retrieve the questionnaire rows for a specific event.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :rtype: [{str: object}]
         :returns: list of questionnaire row entries
@@ -1292,7 +1291,7 @@ class EventBackend(AbstractBackend):
 
         This superseeds the current questionnaire.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :type data: [{str: object}]
         :rtype: int
@@ -1324,7 +1323,7 @@ class EventBackend(AbstractBackend):
         participation information. This automates the process of converting
         data from one schema to the other.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :rtype: (int or None, str or None)
         :returns: The first entry is the id of the new past event or None if

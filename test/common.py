@@ -336,3 +336,17 @@ class FrontendTest(unittest.TestCase):
     def assertTitle(self, title):
         components = tuple(x.strip() for x in self.response.lxml.xpath('//h1/text()'))
         self.assertIn(title.strip(), components)
+
+    def assertPresence(self, s):
+        if self.response.content_type == "text/plain":
+            self.assertIn(s.strip(), self.response.text)
+        else:
+            content = self.response.lxml.xpath("//div[@id='content']")[0]
+            self.assertIn(s.strip(), content.text_content())
+
+    def assertNonPresence(self, s):
+        if self.response.content_type == "text/plain":
+            self.assertNotIn(s.strip(), self.response.text)
+        else:
+            content = self.response.lxml.xpath("//div[@id='content']")[0]
+            self.assertNotIn(s.strip(), content.text_content())

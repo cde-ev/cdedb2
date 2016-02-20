@@ -9,15 +9,12 @@ if it has moderator privileges for all lists.
 """
 
 from cdedb.backend.common import (
-    access, internal_access,
-    affirm_validation as affirm, affirm_array_validation as affirm_array,
-    singularize, AbstractBackend)
+    access, internal_access, affirm_validation as affirm,
+    affirm_array_validation as affirm_array, singularize, AbstractBackend)
 from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
-from cdedb.config import Config, SecretsConfig
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
-import argparse
 
 class MlBackend(AbstractBackend):
     """Take note of the fact that some personas are moderators and thus have
@@ -33,7 +30,7 @@ class MlBackend(AbstractBackend):
         """Check for moderator privileges as specified in the ml.moderators
         table.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ml_id: int
         :rtype: bool
         """
@@ -44,7 +41,7 @@ class MlBackend(AbstractBackend):
     def moderator_infos(self, rs, ids):
         """List mailing lists moderated by specific personas.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {int}}
         """
@@ -65,7 +62,7 @@ class MlBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type code: int
         :param code: One of :py:class:`cdedb.database.constants.MlLogCodes`.
         :type mailinglist_id: int or None
@@ -94,7 +91,7 @@ class MlBackend(AbstractBackend):
         See
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type codes: [int] or None
         :type mailinglist_id: int or None
         :type start: int or None
@@ -113,7 +110,7 @@ class MlBackend(AbstractBackend):
         """Realm specific wrapper around
         :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type query: :py:class:`cdedb.query.Query`
         :rtype: [{str: object}]
         """
@@ -132,7 +129,7 @@ class MlBackend(AbstractBackend):
     def list_mailinglists(self, rs, audience_policies=None, active_only=True):
         """List all mailinglists
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type audience_policies: [AudiencePolicy] or None
         :param audience_policies: If given, display only mailinglists with these
           audience policies.
@@ -166,7 +163,7 @@ class MlBackend(AbstractBackend):
         * moderators,
         * whitelist.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
@@ -201,7 +198,7 @@ class MlBackend(AbstractBackend):
         the complete set of moderator IDs or whitelisted addresses, which
         will superseed the current list.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: default return code
@@ -267,7 +264,7 @@ class MlBackend(AbstractBackend):
     def create_mailinglist(self, rs, data):
         """Make a new mailinglist.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
         :rtype: int
         :returns: the id of the new mailinglist
@@ -290,7 +287,7 @@ class MlBackend(AbstractBackend):
     def delete_mailinglist(self, rs, mailinglist_id, cascade=False):
         """Remove a mailinglist.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type cascade: bool
         :param cascade: If False, there must be no references to the list
@@ -319,7 +316,7 @@ class MlBackend(AbstractBackend):
     def subscribers(self, rs, mailinglist_id):
         """Compile a list of subscribers.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: {int: str}
         :returns: A dict mapping ids of subscribers to their subscribed
@@ -383,7 +380,7 @@ class MlBackend(AbstractBackend):
     def is_subscribed(self, rs, persona_id, mailinglist_id):
         """Sugar coating around :py:meth:`subscriptions`.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
         :type mailinglist_id: int
         :rtype: bool
@@ -399,7 +396,7 @@ class MlBackend(AbstractBackend):
           somewhat expensive. This is alleviated by the possibility to
           restrict the lookup to a subset of all lists.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type persona_id: int
         :type lists: [int] or None
         :param lists: If given check only these lists.
@@ -470,7 +467,7 @@ class MlBackend(AbstractBackend):
         We want to update existing infos instead of simply deleting all
         existing infos and inserting new ones. Thus this helper.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
         :type is_subscribed: bool
@@ -503,7 +500,7 @@ class MlBackend(AbstractBackend):
         a persona is subscribed and subscription requests for lists with
         moderated opt-in.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
         :type subscribe: bool
@@ -566,7 +563,7 @@ class MlBackend(AbstractBackend):
     def list_requests(self, rs, mailinglist_id):
         """Retrieve open subscription requests.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :rtype: [int]
         :returns: personas waiting for subscription
@@ -584,7 +581,7 @@ class MlBackend(AbstractBackend):
     def decide_request(self, rs, mailinglist_id, persona_id, ack):
         """Moderate subscription to an opt-in list.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_id: int
         :type persona_id: int
         :type ack: bool
@@ -625,7 +622,7 @@ class MlBackend(AbstractBackend):
         This also checks for inactive accounts which are subscribed to a
         list.
 
-        :type rs: :py:class:`cdedb.backend.common.BackendRequestState`
+        :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_ids: [int]
         :rtype: {int: [int]}
         :returns: A dict mapping list ids to offending personas.

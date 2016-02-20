@@ -536,8 +536,14 @@
 
 {% macro breadcrumb_link(ref, label, icon="", active=False) %}
 	{% if active %}
-		<li class="active">{% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}</li>
+		<li class="active">
+                    {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}
+                </li>
 	{% else %}
-		<li><a href="{{ ref|e }}">{% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}</a></li>
+		<li>
+                    <a href="{{ ref|e }}">
+                        {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}
+                    </a>
+                </li>
 	{% endif %}
 {% endmacro %}

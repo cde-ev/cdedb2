@@ -26,7 +26,6 @@ above. They return the tuple ``(mangled_value, errors)``, where
 import collections.abc
 import copy
 import datetime
-import dateutil.parser
 import decimal
 import functools
 import io
@@ -37,6 +36,8 @@ import pytz
 import re
 import string
 import sys
+
+import dateutil.parser
 import werkzeug.datastructures
 
 from cdedb.common import EPSILON, compute_checkdigit, now, extract_roles
@@ -286,6 +287,21 @@ def _bool(val, argname=None, *, _convert=True):
     if not isinstance(val, bool):
         return None, [(argname, TypeError("Must be a boolean."))]
     return val, []
+
+@_addvalidator
+def _realm(val, argname=None, *, _convert=True):
+    """A realm in the sense of the DB.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    val, errs = _str(val, argname, _convert=_convert)
+    if val not in ("session", "core", "cde", "event", "ml", "assembly"):
+        val = None
+        errs.append((argname, ValueError("Not a valid realm.")))
+    return val, errs
 
 _CDEDBID = re.compile('^DB-([0-9]*)-([A-K])$')
 @_addvalidator
@@ -705,8 +721,8 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     else:
         mandatory_fields = {'id': _int}
         optional_fields = _PERSONA_COMMON_FIELDS()
-    val, errs =  _examine_dictionary_fields(val, mandatory_fields,
-                                            optional_fields, _convert=_convert)
+    val, errs = _examine_dictionary_fields(val, mandatory_fields,
+                                           optional_fields, _convert=_convert)
     if errs:
         return val, errs
     for suffix in ("", "2"):
@@ -1124,14 +1140,14 @@ def asciificator(s):
         "ö": "oe", "ø": "oe", "œ": "oe",
         "ü": "ue",
         "ß": "ss",
-        "à": "a", "á": "a", "â": "a", "ã": "a", "ä": "a", "å": "a", "ą": "a",
+        "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
         "ç": "c", "č": "c", "ć": "c",
         "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
         "ì": "i", "í": "i", "î": "i", "ï": "i",
         "ł": "l",
         "ñ": "n", "ń": "n",
-        "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ö": "o", "ø": "o", "ő": "o",
-        "ù": "u", "ú": "u", "û": "u", "ü": "u", "ű": "u",
+        "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
+        "ù": "u", "ú": "u", "û": "u", "ű": "u",
         "ý": "y", "ÿ": "y",
         "ź": "z", "z": "z",
     }
@@ -1292,7 +1308,7 @@ def _safe_str(val, argname=None, *, _convert=True):
     return val, errs
 
 @_addvalidator
-def _cde_meta_info(val, keys, argname=None, *, _convert=True):
+def _meta_info(val, keys, argname=None, *, _convert=True):
     """
     :type val: object
     :type keys: [str]
@@ -1300,7 +1316,7 @@ def _cde_meta_info(val, keys, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "cde_meta_info"
+    argname = argname or "meta_info"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -2218,13 +2234,16 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
 
 @_addvalidator
 def _query(val, argname=None, *, _convert=None):
-    """This is for the queries from frontend to backend.
+    """Check query object for consistency.
 
-    FIXME
+    This is a tad weird, since the specification against which we check
+    is also provided by the query object. If we use an actual RPC
+    mechanism queries must be serialized and this gets more interesting.
 
     :type val: object
     :type argname: str or None
-    :type _convert: ignored FIXME
+    :type _convert: None
+    :param _convert: Ignored and only present for compatability reasons.
     :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
     if not isinstance(val, Query):
@@ -2241,8 +2260,7 @@ def _query(val, argname=None, *, _convert=None):
         errs.extend(e)
     ## fields_of_interest
     for field in val.fields_of_interest:
-        _, e = _csv_identifier(field, "fields_of_interest",
-                                   _convert=False)
+        _, e = _csv_identifier(field, "fields_of_interest", _convert=False)
         errs.extend(e)
     if not val.fields_of_interest:
         errs.append(("fields_of_interest", ValueError("Mustn't be empty.")))

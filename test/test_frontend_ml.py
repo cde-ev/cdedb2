@@ -68,7 +68,7 @@ class TestMlFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("\nMailinglistennutzersuche -- 1 Ergebnis gefunden\n")
-        self.assertIn("Jalapeño", self.response.text)
+        self.assertPresence("Jalapeño")
 
     @as_users("anton")
     def test_create_user(self, user):
@@ -86,7 +86,7 @@ class TestMlFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertIn("some fancy talk", self.response.text)
+        self.assertPresence("some fancy talk")
 
     def test_genesis(self):
         user = USER_DICT['anton']
@@ -172,31 +172,31 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
-        self.assertNotIn("Inga Iota", self.response.text)
+        self.assertNonPresence("Inga Iota")
         f = self.response.forms['addmoderatorform']
         f['moderator_id'] = "DB-9-E"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
-        self.assertIn("Inga Iota", self.response.text)
+        self.assertPresence("Inga Iota")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
-        self.assertNotIn("Inga Iota", self.response.text)
-        self.assertNotIn("zelda@example.cde", self.response.text)
+        self.assertNonPresence("Inga Iota")
+        self.assertNonPresence("zelda@example.cde")
         f = self.response.forms['addwhitelistform']
         f['email'] = "zelda@example.cde"
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
-        self.assertIn("zelda@example.cde", self.response.text)
+        self.assertPresence("zelda@example.cde")
         f = self.response.forms['removewhitelistform1']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
-        self.assertNotIn("zelda@example.cde", self.response.text)
-        self.assertIn("Janis Jalapeño", self.response.text)
+        self.assertNonPresence("zelda@example.cde")
+        self.assertPresence("Janis Jalapeño")
         f = self.response.forms['removesubscriberform10']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
-        self.assertNotIn("Janis Jalapeño", self.response.text)
+        self.assertNonPresence("Janis Jalapeño")
         self.assertNotIn("removesubscriberform9", self.response.forms)
         f = self.response.forms['addsubscriberform']
         f['subscriber_id'] = "DB-9-E"
@@ -209,7 +209,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'})
         self.assertTitle("Mailinglisten Übersicht")
-        self.assertNotIn("Munkelwand", self.response.text)
+        self.assertNonPresence("Munkelwand")
         self.traverse({'href': '/ml/mailinglist/create$'})
         self.assertTitle("Mailingliste anlegen")
         f = self.response.forms['createlistform']
@@ -254,7 +254,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'})
         self.assertTitle("Mailinglisten Übersicht")
-        self.assertNotIn("Munkelwand", self.response.text)
+        self.assertNonPresence("Munkelwand")
 
     def test_subscription_request(self):
         self.login(USER_DICT['inga'])
@@ -316,7 +316,7 @@ class TestMlFrontend(FrontendTest):
         self.follow()
         self.assertTitle("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
-        self.assertIn('pepper@example.cde', self.response.text)
+        self.assertPresence('pepper@example.cde')
 
     @as_users("anton")
     def test_check_states(self, user):
@@ -326,7 +326,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/3/management'},
                       {'href': '/ml/mailinglist/3/check'},)
         self.assertTitle("Witz des Tages -- Konsistenzcheck")
-        self.assertNotIn("Janis Jalapeño", self.response.text)
+        self.assertNonPresence("Janis Jalapeño")
         self.traverse({'href': '/ml/mailinglist/3/change'},)
         self.assertTitle("Witz des Tages -- Konfiguration")
         f = self.response.forms['changelistform']
@@ -338,7 +338,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/3/management'},
                       {'href': '/ml/mailinglist/3/check'},)
         self.assertTitle("Witz des Tages -- Konsistenzcheck")
-        self.assertIn("Janis Jalapeño", self.response.text)
+        self.assertPresence("Janis Jalapeño")
 
     def test_log(self):
         ## First: generate data

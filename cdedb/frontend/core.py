@@ -98,7 +98,12 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata(("confirm_id", "#int"))
     def show_user(self, rs, persona_id, confirm_id):
-        """FIXME"""
+        """Display user details.
+
+        This has an additional encoded parameter to make links to this
+        target ephemeral. Thus it is more difficult to algorithmically
+        extract user data from the web frontend.
+        """
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
@@ -108,14 +113,17 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     @REQUESTdata(("id_to_show", "cdedbid"), ("realm", "str"))
     def admin_show_user(self, rs, id_to_show, realm):
-        """Allow admins to view any user data set."""
+        """Allow admins to view any user data set.
+
+        The realm parameter selects which view on the data set is requested.
+        """
         if rs.errors or not "{}_admin".format(realm) in rs.user.roles:
             return self.redirect(rs, "core/index")
         return self.redirect_show_user(rs, id_to_show, realm)
 
     @access("persona")
     def change_user_form(self, rs):
-        """FIXME Common entry point redirecting to user's realm."""
+        """Render form."""
         data = self.coreproxy.get_total_persona(rs, rs.user.persona_id)
         data['generation'] = self.coreproxy.changelog_get_generation(
             rs, rs.user.persona_id)
@@ -132,7 +140,7 @@ class CoreFrontend(AbstractFrontend):
         "country2", "weblink", "specialisation", "affiliation", "timeline",
         "interests", "free_form", "bub_search")
     def change_user(self, rs, generation, data):
-        """FIXME"""
+        """Change own data set."""
         data['id'] = rs.user.persona_id
         data = check(rs, "persona", data)
         if rs.errors:
@@ -176,7 +184,7 @@ class CoreFrontend(AbstractFrontend):
         params = {'result': result, 'query': query, 'choices': {}}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data,
+            return self.send_file(rs, data=data, inline=False,
                                   filename=self.i18n("result.txt", rs.lang))
         else:
             return self.render(rs, "user_search_result", params)
@@ -214,14 +222,14 @@ class CoreFrontend(AbstractFrontend):
         params = {'result': result, 'query': query, 'choices': choices}
         if CSV:
             data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data,
+            return self.send_file(rs, data=data, inline=False,
                                   filename=self.i18n("result.txt", rs.lang))
         else:
             return self.render(rs, "archived_user_search_result", params)
 
     @access("core_admin")
     def admin_change_user_form(self, rs, persona_id):
-        """Common entry point redirecting to user's realm."""
+        """Render form."""
         data = self.coreproxy.get_total_persona(rs, persona_id)
         data['generation'] = self.coreproxy.changelog_get_generation(
             rs, persona_id)
@@ -239,7 +247,7 @@ class CoreFrontend(AbstractFrontend):
         "country2", "weblink", "specialisation", "affiliation", "timeline",
         "interests", "free_form", "bub_search")
     def admin_change_user(self, rs, persona_id, generation, change_note, data):
-        """FIXME"""
+        """Privileged edit of data set."""
         data['id'] = rs.user.persona_id
         current = self.coreproxy.get_persona(rs, persona_id)
         for item in PERSONA_STATUS_FIELDS:
@@ -266,7 +274,7 @@ class CoreFrontend(AbstractFrontend):
     def change_privileges(self, rs, persona_id, is_admin, is_core_admin,
                           is_cde_admin, is_event_admin, is_ml_admin,
                           is_assembly_admin):
-        """FIXME"""
+        """Grant or revoke admin bits."""
         if rs.errors:
             return self.change_privileges_form(rs, persona_id)
         data = {
@@ -362,12 +370,16 @@ class CoreFrontend(AbstractFrontend):
                  ("cookie", "str"))
     def do_password_reset(self, rs, email, new_password, cookie):
         """Now we can reset to a new password."""
+        if rs.errors:
+            rs.notify("error", "Link expired.")
+            return self.redirect(rs, "core/reset_password_form")
         new_password = check(rs, "password_strength", new_password,
                              "new_password")
         if rs.errors:
-            # FIXME if strength fails let user retry
-            rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/reset_password_form")
+            rs.notify("error", "Password to weak.")
+            rs.values['email'] = self.encode_parameter(
+                "core/do_password_reset", "email", email)
+            return self.redirect(rs, "core/do_password_reset")
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
         self.notify_return_code(rs, code, success="Password reset.",
@@ -545,7 +557,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"),
-                 ("realm", "str")) # FIXME maybe validate realm more?
+                 ("realm", "realm"))
     def genesis_decide(self, rs, case_id, case_status, realm):
         """Approve or decline a genensis case.
 

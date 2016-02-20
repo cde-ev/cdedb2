@@ -523,25 +523,6 @@ class TestCdEBackend(BackendTest):
         self.assertLess(0, self.cde.lastschrift_skip(self.key, new_id))
 
     @as_users("anton")
-    def test_cde_meta_info(self, user):
-        expectation = {
-            'Finanzvorstand_Adresse_Einzeiler':
-                'Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia',
-            'Finanzvorstand_Adresse_Zeile2': 'bei Spielmanns',
-            'Finanzvorstand_Adresse_Zeile3': 'Im Garten 77',
-            'Finanzvorstand_Adresse_Zeile4': '34576 Utopia',
-            'Finanzvorstand_Name': 'Bertålotta Beispiel',
-            'Finanzvorstand_Ort': 'Utopia',
-            'Finanzvorstand_Vorname': 'Bertålotta'}
-        self.assertEqual(expectation, self.cde.get_meta_info(self.key))
-        update = {
-            'Finanzvorstand_Name': 'Zelda'
-        }
-        self.assertLess(0, self.cde.set_meta_info(self.key, update))
-        expectation.update(update)
-        self.assertEqual(expectation, self.cde.get_meta_info(self.key))
-
-    @as_users("anton")
     def test_cde_log(self, user):
         ## first generate some data
         # TODO more when available

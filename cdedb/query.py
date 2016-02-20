@@ -75,7 +75,7 @@ class Query:
         :type spec: {str: str}
         :param spec: Keys are field names and values are validator names. See
             :py:const:`QUERY_SPECS`.
-        :type constraints: [(str, QueryOperators, obj)]
+        :type constraints: [(str, QueryOperators, object)]
         :param constraints: clauses for WHERE
         :type order: [(str, bool)]
         :param order: First components are the column names to be used for
@@ -332,7 +332,7 @@ def mangle_query_input(rs, spec):
     This has to be careful to treat checkboxes and selects correctly
     (which are partly handled by an absence of data).
 
-    :type rs: :py:class:`cdedb.frontend.common.FrontendRequestState`
+    :type rs: :py:class:`cdedb.common.RequestState`
     :type spec: {str: str}
     :param spec: one of :py:data:`QUERY_SPECS`
     :rtype: {str: str}

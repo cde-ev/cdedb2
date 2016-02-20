@@ -17,20 +17,8 @@ page linked below.
    Backend_Ml
    Backend_Assembly
 
-cdedb.backend.rpc
------------------
-
-.. automodule:: cdedb.backend.rpc
-   :members:
-
 cdedb.backend.common
 --------------------
 
 .. automodule:: cdedb.backend.common
-   :members:
-
-cdedb.backend.uncommon
-----------------------
-
-.. automodule:: cdedb.backend.uncommon
    :members:

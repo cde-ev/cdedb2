@@ -32,7 +32,7 @@ INSERT INTO core.changelog (submitted_by, reviewed_by, ctime, generation, change
     (1, NULL, now(), 1, 'Init.', 1, 10, 'janis@example.cde', True, 'sharp tongue', False, False, False, False, False, False, False, False, True, False, False, False, False, False, 'Janis', 'Janis', 'Jalapeño', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     (1, NULL, now(), 1, 'Init.', 1, 11, 'kalif@example.cde', True, 'represents our foreign friends', False, False, False, False, False, False, False, False, True, True, False, False, False, False, 'Kalif', 'Karabatschi', 'Kalif ibn al-Ḥasan', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
     (1, NULL, now(), 1, 'Init.', 1, 12, NULL, True, NULL, False, False, False, False, False, False, True, True, True, True, True, True, True, False, 'Lisa', 'Lost', 'Lisa', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 50, True, True, True, NULL);
-INSERT INTO core.cde_meta_info (info) VALUES
+INSERT INTO core.meta_info (info) VALUES
     ('{"Finanzvorstand_Vorname": "Bertålotta",
        "Finanzvorstand_Name": "Bertålotta Beispiel",
        "Finanzvorstand_Adresse_Einzeiler": "Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia",

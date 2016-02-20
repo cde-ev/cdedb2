@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Actual translations used by :py:module:`cdedb.internationalization`."""
+"""Actual translations used by :py:mod:`cdedb.internationalization`."""
 
 from cdedb.common import glue
 

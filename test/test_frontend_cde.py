@@ -18,7 +18,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
         if user['id'] == 2:
-            self.assertIn('PfingstAkademie', self.response.text)
+            self.assertPresence('PfingstAkademie')
 
     @as_users("berta")
     def test_changedata(self, user):
@@ -64,32 +64,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Administration -- Bertålotta Beispiel bearbeiten")
         self.assertIn("alert alert-danger", self.response)
 
-    # FIXME maybe move to core
-    def test_changelog(self):
-        user = USER_DICT["berta"]
-        self.login(user)
-        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
-        f = self.response.forms['changedataform']
-        f['family_name'] = "Ganondorf"
-        self.submit(f, check_notification=False)
-        self.assertIn(user['family_name'], self.response.text)
-        self.assertNotIn('Ganondorf', self.response.text)
-        self.logout()
-        user = USER_DICT["anton"]
-        self.login(user)
-        self.traverse({'href': '^/$'}, {'href': '/core/changelog/list'})
-        self.assertTitle("Änderungen (zurzeit 1 zu begutachten)")
-        self.traverse({'href': '/core/persona/2/changelog/inspect'})
-        f = self.response.forms['ackchangeform']
-        self.submit(f)
-        self.assertTitle("Änderungen (zurzeit 0 zu begutachten)")
-        self.logout()
-        user = USER_DICT["berta"]
-        self.login(user)
-        self.traverse({'href': '/core/self/show'})
-        self.assertNotIn(user['family_name'], self.response.text)
-        self.assertIn('Ganondorf', self.response.text)
-
     def test_consent(self):
         user = USER_DICT["garcia"]
         self.login(user)
@@ -101,7 +75,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/cde/self/consent'})
         f = self.response.forms['ackconsentform']
         self.submit(f)
-        self.assertIn("alert alert-success", self.response.text)
+        ## automatic check for success notification
 
     @as_users("anton", "berta")
     def test_get_foto(self, user):
@@ -132,7 +106,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertIn("Im Garten 77", self.response.text)
+        self.assertPresence("Im Garten 77")
 
     @as_users("anton", "berta")
     def test_member_search_accents(self, user):
@@ -143,7 +117,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_given_names,display_name'] = "Berta"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertIn("Im Garten 77", self.response.text)
+        self.assertPresence("Im Garten 77")
 
     @as_users("anton", "berta")
     def test_member_search(self, user):
@@ -160,7 +134,6 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_member_search_fulltext(self, user):
-        return # FIXME redo after getting fulltext in again
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
@@ -168,8 +141,8 @@ class TestCdEFrontend(FrontendTest):
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
         self.assertTitle("\nMitgliedersuche -- 2 Mitglieder gefunden\n")
-        self.assertIn("Anton", self.response.text)
-        self.assertIn("Bertålotta", self.response.text)
+        self.assertPresence("Anton")
+        self.assertPresence("Bertålotta")
 
     @as_users("anton")
     def test_user_search(self, user):
@@ -206,31 +179,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(expectation, self.response.body)
 
     @as_users("anton")
-    def test_archived_user_search(self, user):
-        return # FIXME move to core realm
-        self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/search/archiveduser/form'})
-        self.assertTitle("CdE Archivsuche")
-        f = self.response.forms['usersearchform']
-        f['qval_birthday'] = '31.12.2000'
-        f['qop_birthday'] = QueryOperators.less.value
-        for field in f.fields:
-            if field.startswith('qsel_'):
-                f[field].checked = True
-        self.submit(f)
-        self.assertTitle("\nCdE Archivsuche -- 1 Ergebnis gefunden\n")
-        self.assertIn("Hell", self.response.text)
-
-    @as_users("anton")
-    def test_show_archived_user(self, user):
-        return # FIXME move to core realm
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-8-G"
-        f['realm'] = "cde"
-        self.submit(f)
-        self.assertTitle("Archivzugriff -- Hades Hell")
-
-    @as_users("anton")
     def test_toggle_activity(self, user):
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
@@ -249,7 +197,7 @@ class TestCdEFrontend(FrontendTest):
         f['realm'] = "cde"
         self.submit(f)
         self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
-        self.assertIn("Daten sind für andere Mitglieder sichtbar.", self.response.text)
+        self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
         self.traverse({'href': '/membership/change'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
@@ -260,7 +208,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
-        self.assertIn("Daten sind nicht sichtbar.", self.response.text)
+        self.assertPresence("Daten sind nicht sichtbar.")
 
     @as_users("anton")
     def test_create_user(self, user):
@@ -309,9 +257,9 @@ class TestCdEFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertIn("12345", self.response.text)
-        self.assertIn("Probemitgliedschaft", self.response.text)
-        self.assertIn("Daten sind für andere Mitglieder sichtbar.", self.response.text)
+        self.assertPresence("12345")
+        self.assertPresence("Probemitgliedschaft")
+        self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
 
     @as_users("anton")
     def test_lastschrift_index(self, user):
@@ -384,18 +332,18 @@ class TestCdEFrontend(FrontendTest):
         f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertIn("17.50€", self.response.text)
+        self.assertPresence("17.50€")
         self.traverse({'href': '/cde/user/2/lastschrift'})
         f = self.response.forms['transactionrollbackform4']
         self.submit(f)
-        self.assertIn("Keine aktive Einzugsermächtigung", self.response.text)
+        self.assertPresence("Keine aktive Einzugsermächtigung")
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = "DB-2-H"
         f['realm'] = "cde"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertIn("12.50€", self.response.text)
+        self.assertPresence("12.50€")
 
     @as_users("anton")
     def test_lastschrift_transaction_cancel(self, user):
@@ -448,7 +396,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Charly C. Clown")
         self.traverse({'href': '/cde/user/3/lastschrift'})
-        self.assertIn("Keine aktive Einzugsermächtigung", self.response.text)
+        self.assertPresence("Keine aktive Einzugsermächtigung")
         self.traverse({'href': '/cde/user/3/lastschrift/create'})
         self.assertTitle("Neue Einzugsermächtigung anlegen (Charly C. Clown)")
         f = self.response.forms['createlastschriftform']
@@ -511,7 +459,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("anton")
-    def test_cde_meta_info(self, user):
+    def test_meta_info(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/meta'})
         self.assertTitle("Allgemeine Vereinsmetainformationen")

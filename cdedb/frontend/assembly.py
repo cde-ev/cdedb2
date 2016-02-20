@@ -2,6 +2,12 @@
 
 """Services for the assembly realm."""
 
+import json
+import logging
+import os
+
+import werkzeug
+
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     check_validation as check, request_data_extractor)
@@ -11,11 +17,8 @@ from cdedb.common import merge_dicts, unwrap, now, ProxyShim
 import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
+from cdedb.database.connection import Atomizer
 
-import json
-import logging
-import os
-import werkzeug
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a moniker since it contains
@@ -314,12 +317,13 @@ class AssemblyFrontend(AbstractUserFrontend):
             'ballot_id': new_id})
 
     @access("assembly")
-    def get_attachment(self, rs, attachment_id):
+    ## ballot_id is optional, but comes semantically before attachment_id
+    def get_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Retrieve an attachment."""
-        data = self.assemblyproxy.get_attachment(rs, attachment_id)
         path = os.path.join(self.conf.STORAGE_DIR, "assembly_attachment",
                             str(attachment_id))
-        return self.send_file(rs, filename=data['filename'], path=path)
+        return self.send_file(rs, path=path,
+                              filename=rs.ambience['attachment']['filename'])
 
     @access("assembly_admin")
     @REQUESTdata(("assembly_id", "int_or_None"), ("ballot_id", "int_or_None"))
@@ -386,22 +390,19 @@ class AssemblyFrontend(AbstractUserFrontend):
                 'ballot_id': ballot_id})
 
     @access("assembly_admin", modi={"POST"})
-    def remove_attachment(self, rs, attachment_id):
+    ## ballot_id is optional, but comes semantically before attachment_id
+    def remove_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Delete an attachment."""
-        data = self.assemblyproxy.get_attachment(rs, attachment_id)
-        code = self.assemblyproxy.remove_attachment(rs, attachment_id)
-        self.notify_return_code(rs, code)
-        path = os.path.join(self.conf.STORAGE_DIR, 'assembly_attachment',
-                            str(attachment_id))
-        os.remove(path)
-        if data['assembly_id']:
-            return self.redirect(rs, "assembly/show_assembly",
-                                 {'assembly_id': data['assembly_id']})
+        with Atomizer(rs):
+            code = self.assemblyproxy.remove_attachment(rs, attachment_id)
+            self.notify_return_code(rs, code)
+            path = os.path.join(self.conf.STORAGE_DIR, 'assembly_attachment',
+                                str(attachment_id))
+            os.remove(path)
+        if ballot_id:
+            return self.redirect(rs, "assembly/show_ballot")
         else:
-            ballot_data = self.assemblyproxy.get_ballot(rs, data['ballot_id'])
-            return self.redirect(rs, "assembly/show_ballot", {
-                'assembly_id': ballot_data['assembly_id'],
-                'ballot_id': data['ballot_id']})
+            return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")
     def show_ballot(self, rs, assembly_id, ballot_id):
@@ -582,7 +583,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_ballot(rs, assembly_id, ballot_id)
         path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
                             str(ballot_id))
-        return self.send_file(rs, path=path,
+        return self.send_file(rs, path=path, inline=False,
                               filename=self.i18n("result.json", rs.lang))
 
     @access("assembly_admin", modi={"POST"})

@@ -9,13 +9,13 @@ a part of :py:mod:`cdedb.frontend.common`, but then we get fatal circular
 dependencies.
 """
 
+import abc
+
 from cdedb.common import merge_dicts, ProxyShim
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.common import check_validation as check
 from cdedb.backend.core import CoreBackend
 import cdedb.database.constants as const
-import abc
-import werkzeug
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -153,8 +153,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         email containing the approval. Hence we have to store a shared
         secret and verify this.
         """
-        if rs.errors or not self.coreproxy.genesis_check(rs, case_id, secret,
-                                                         self.realm):
+        if not secret or not self.coreproxy.genesis_check(rs, case_id, secret,
+                                                          self.realm):
             rs.notify("error", "Broken link.")
             return self.redirect(rs, "core/index")
         case = self.coreproxy.genesis_my_case(rs, case_id, secret)
@@ -167,7 +167,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     def genesis(self, rs, case_id, secret, data):
         """Create new user account by anonymous."""
         if rs.errors:
-            # FIXME this doesn't display errors
             return self.genesis_form(rs, case_id, secret=secret)
         if  not self.coreproxy.genesis_check(rs, case_id, secret, self.realm):
             rs.notify("error", "Broken link.")
