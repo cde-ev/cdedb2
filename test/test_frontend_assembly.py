@@ -38,9 +38,9 @@ class TestAssemblyFrontend(FrontendTest):
         f['display_name'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.submit(f)
-        self.assertIn("Zelda", self.response)
+        self.assertPresence("Zelda")
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
-        self.assertIn("Blowing in the wind.", self.response)
+        self.assertPresence("Blowing in the wind.")
 
     @as_users("anton")
     def test_toggleactivity(self, user):

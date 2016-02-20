@@ -241,17 +241,29 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
     @REQUESTdatadict(
         "display_name", "family_name", "given_names", "title",
-        "name_supplement", "telephone", "mobile", "address_supplement",
-        "address", "postal_code", "location", "country",
-        "address_supplement2", "address2", "postal_code2", "location2",
-        "country2", "weblink", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "bub_search")
+        "name_supplement", "birth_name", "gender", "birthday", "telephone",
+        "mobile", "address_supplement", "address", "postal_code",
+        "location", "country", "address_supplement2", "address2",
+        "postal_code2", "location2", "country2", "weblink",
+        "specialisation", "affiliation", "timeline", "interests",
+        "free_form", "bub_search", "cloud_account", "notes")
     def admin_change_user(self, rs, persona_id, generation, change_note, data):
         """Privileged edit of data set."""
-        data['id'] = rs.user.persona_id
-        current = self.coreproxy.get_persona(rs, persona_id)
-        for item in PERSONA_STATUS_FIELDS:
-            data[item] = current[item]
+        data['id'] = persona_id
+        ## remove realm specific attributes if persona does not belong to the
+        ## realm
+        if not rs.ambience['persona']['is_cde_realm']:
+            for attr in ("birth_name", "address_supplement2", "address2",
+                         "postal_code2", "location2", "country2", "weblink",
+                         "specialisation", "affiliation", "timeline",
+                         "interests", "free_form", "bub_search"):
+                del data[attr]
+        if (not rs.ambience['persona']['is_cde_realm']
+                and not rs.ambience['persona']['is_event_realm']):
+            for attr in ("title", "name_supplement", "gender", "birthday",
+                         "telephone", "mobile", "address_supplement",
+                         "address", "postal_code", "location", "country"):
+                del data[attr]
         data = check(rs, "persona", data)
         if rs.errors:
             return self.admin_change_user_form(rs, persona_id)

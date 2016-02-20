@@ -214,9 +214,8 @@
                         {% endif %}
                         {% if is_admin %}
                             <li>{{ util.href(cdedblink('{}/admin_change_user_form'.format(realm)), "Bearbeiten") }}</li>
-                        {% else %}
-                            <li>{{ util.href(cdedblink('core/change_user_form'), "Bearbeiten") }}</li>
                         {% endif %}
+                        <li>{{ util.href(cdedblink('core/change_user_form'), "Bearbeiten") }}</li>
                         {% if data['id'] == user.persona_id %}
                             <li>{{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}</li>
                         {% endif %}
@@ -293,10 +292,11 @@
             <dt>Email</dt>
             <dd>
                 {{ data['username']|e }}
-                {% if is_admin and data['id'] != user.persona_id %}
+                {% if is_admin %}
                     {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
-                {% elif data['id'] == user.persona_id %}
+                {% endif %}
+                {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten",
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% endif %}
@@ -487,9 +487,8 @@
         <p>
             {% if is_admin %}
                 {{ util.href(cdedblink('{}/admin_change_user_form'.format(realm)), "Bearbeiten") }}
-            {% else %}
-                {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten") }}
             {% endif %}
+            {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten") }}
         </p>
     {% endif %}
     {% if is_admin and realm == "core" %}

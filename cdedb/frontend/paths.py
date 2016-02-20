@@ -76,9 +76,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/archiveduser", methods=_GET,
                      endpoint="archived_user_search"),)),
             sub('/persona/<int:persona_id>', (
-                rule("/change", methods=_GET,
+                rule("/adminchange", methods=_GET,
                      endpoint="admin_change_user_form"),
-                rule("/change", methods=_POST,
+                rule("/adminchange", methods=_POST,
                      endpoint="admin_change_user"),
                 rule("/privileges", methods=_GET,
                      endpoint="change_privileges_form"),

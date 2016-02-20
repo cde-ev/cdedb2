@@ -37,9 +37,9 @@ class TestMlFrontend(FrontendTest):
         f['display_name'] = "Zelda"
         f['notes'] = "Blowing in the wind."
         self.submit(f)
-        self.assertIn("Zelda", self.response)
+        self.assertPresence("Zelda")
         self.assertTitle("Janis Jalapeño")
-        self.assertIn("Blowing in the wind.", self.response)
+        self.assertPresence("Blowing in the wind.")
 
     @as_users("anton")
     def test_toggleactivity(self, user):

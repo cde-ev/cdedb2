@@ -30,7 +30,7 @@ class TestCoreFrontend(FrontendTest):
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
-        self.assertNotIn(user['display_name'], self.response)
+        self.assertNonPresence(user['display_name'])
         self.assertIn('loginform', self.response.forms)
 
     @as_users("anton", "berta", "emilia")
@@ -48,6 +48,52 @@ class TestCoreFrontend(FrontendTest):
         berta = USER_DICT['berta']
         self.assertTitle("Bertålotta Beispiel")
 
+    @as_users("anton", "berta", "garcia")
+    def test_changedata(self, user):
+        self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Zelda"
+        f['location'] = "Hyrule"
+        f['country'] = "Arcadia"
+        f['specialisation'] = "Okarinas"
+        self.submit(f)
+        self.assertTitle("{} {}".format(user['given_names'], user['family_name']))
+        self.assertPresence("Hyrule")
+        self.assertPresence("Okarinas")
+        self.assertPresence("Zelda")
+
+    @as_users("anton")
+    def test_adminchangedata(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-2-H"
+        f['realm'] = "core"
+        self.submit(f)
+        self.traverse({'href': '/core/persona/2/adminchange'})
+        self.assertTitle("Bertålotta Beispiel bearbeiten")
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Zelda"
+        f['birthday'] = "3.4.1933"
+        self.submit(f)
+        self.assertPresence("Zelda")
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertPresence("1933-04-03")
+
+    @as_users("anton")
+    def test_adminchangedata2(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-1-J"
+        f['realm'] = "core"
+        self.submit(f)
+        self.traverse({'href': '/core/persona/1/adminchange'})
+        self.assertTitle("Anton Armin A. Administrator bearbeiten")
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Zelda"
+        f['birthday'] = "3.4.1933"
+        self.submit(f)
+        self.assertPresence("Zelda")
+        self.assertTitle("Anton Armin A. Administrator")
+        self.assertPresence("1933-04-03")
+
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
         new_password = 'krce84#(=kNO3xb'
@@ -59,14 +105,14 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f)
         self.logout()
-        self.assertNotIn(user['display_name'], self.response)
+        self.assertNonPresence(user['display_name'])
         self.login(user)
         self.assertIn('loginform', self.response.forms)
         new_user = copy.deepcopy(user)
         new_user['password'] = new_password
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(user['display_name'], self.response)
+        self.assertLogin(user['display_name'])
 
     def test_reset_password(self):
         new_password = "krce63koLe#$e"
@@ -106,7 +152,7 @@ class TestCoreFrontend(FrontendTest):
                 new_user['password'] = new_password
                 self.login(new_user)
                 self.assertNotIn('loginform', self.response.forms)
-                self.assertIn(user['display_name'], self.response)
+                self.assertLogin(user['display_name'])
 
     def test_admin_password_reset(self):
         anton = USER_DICT['anton']
@@ -132,7 +178,7 @@ class TestCoreFrontend(FrontendTest):
         new_berta['password'] = new_password
         self.login(new_berta)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(new_berta['display_name'], self.response)
+        self.assertLogin(new_berta['display_name'])
 
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
@@ -152,14 +198,14 @@ class TestCoreFrontend(FrontendTest):
         f['password'] = user['password']
         self.submit(f)
         self.logout()
-        self.assertNotIn(user['display_name'], self.response)
+        self.assertIn('loginform', self.response.forms)
         self.login(user)
         self.assertIn('loginform', self.response.forms)
         new_user = copy.deepcopy(user)
         new_user['username'] = new_username
         self.login(new_user)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(user['display_name'], self.response)
+        self.assertLogin(user['display_name'])
 
     def test_admin_username_change(self):
         new_username = "zelda@example.cde"
@@ -181,7 +227,7 @@ class TestCoreFrontend(FrontendTest):
         new_berta['username'] = new_username
         self.login(new_berta)
         self.assertNotIn('loginform', self.response.forms)
-        self.assertIn(new_berta['display_name'], self.response)
+        self.assertLogin(new_berta['display_name'])
 
     @as_users("anton")
     def test_privilege_change(self,  user):
@@ -199,7 +245,7 @@ class TestCoreFrontend(FrontendTest):
         f['is_cde_admin'].checked = True
         self.submit(f)
         self.traverse({'href': '/persona/2/privileges'})
-        self.assertTitle("Administration -- Privilegien ändern für Bertålotta Beispiel")
+        self.assertTitle("Privilegien ändern für Bertålotta Beispiel")
         f = self.response.forms['privilegechangeform']
         self.assertEqual(False, f['is_admin'].checked)
         self.assertEqual(True, f['is_core_admin'].checked)

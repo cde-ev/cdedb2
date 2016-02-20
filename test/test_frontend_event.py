@@ -23,7 +23,7 @@ class TestEventFrontend(FrontendTest):
         f['display_name'] = "Zelda"
         f['location'] = "Hyrule"
         self.submit(f)
-        self.assertIn("Hyrule", self.response)
+        self.assertPresence("Hyrule")
         self.assertEqual(
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
@@ -39,9 +39,9 @@ class TestEventFrontend(FrontendTest):
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
-        self.assertIn("Zelda", self.response)
+        self.assertPresence("Zelda")
         self.assertTitle("Emilia E. Eventis")
-        self.assertIn("1933-04-03", self.response)
+        self.assertPresence("1933-04-03")
 
     @as_users("anton")
     def test_toggleactivity(self, user):

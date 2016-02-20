@@ -28,8 +28,8 @@ class TestCdEFrontend(FrontendTest):
         f['location'] = "Hyrule"
         f['specialisation'] = "Okarinas"
         self.submit(f)
-        self.assertIn("Hyrule", self.response)
-        self.assertIn("Okarinas", self.response)
+        self.assertPresence("Hyrule")
+        self.assertPresence("Okarinas")
         self.assertEqual(
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
@@ -45,9 +45,9 @@ class TestCdEFrontend(FrontendTest):
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
         self.submit(f)
-        self.assertIn("Zelda", self.response)
+        self.assertPresence("Zelda")
         self.assertTitle("Bertålotta Beispiel")
-        self.assertIn("1933-04-03", self.response)
+        self.assertPresence("1933-04-03")
 
     @as_users("anton")
     def test_validation(self, user):
@@ -60,9 +60,10 @@ class TestCdEFrontend(FrontendTest):
         f['display_name'] = "Zelda"
         f['birthday'] = "garbage"
         self.submit(f, check_notification=False)
-        self.assertIn("Zelda", self.response)
         self.assertTitle("Administration -- Bertålotta Beispiel bearbeiten")
-        self.assertIn("alert alert-danger", self.response)
+        self.assertIn("alert alert-danger", self.response.text)
+        f = self.response.forms['changedataform']
+        self.assertEqual("Zelda", f['display_name'].value)
 
     def test_consent(self):
         user = USER_DICT["garcia"]
@@ -266,7 +267,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/lastschrift$'})
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        self.assertIn("generatetransactionform2", self.response.text)
+        self.assertIn("generatetransactionform2", self.response.forms)
 
     @as_users("anton", "berta")
     def test_lastschrift_show(self, user):
@@ -279,11 +280,11 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/user/2/lastschrift'})
         self.assertTitle("Einzugsermächtigungen (Bertålotta Beispiel)")
         if user['id'] == 1:
-            self.assertIn("revokeform", self.response.text)
-            self.assertIn("receiptform3", self.response.text)
+            self.assertIn("revokeform", self.response.forms)
+            self.assertIn("receiptform3", self.response.forms)
         else:
-            self.assertNotIn("revokeform", self.response.text)
-            self.assertNotIn("receiptform3", self.response.text)
+            self.assertNotIn("revokeform", self.response.forms)
+            self.assertNotIn("receiptform3", self.response.forms)
 
     @as_users("anton")
     def test_lastschrift_generate_transactions(self, user):
@@ -358,8 +359,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transactioncancelform4']
         self.submit(f)
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        self.assertIn('generatetransactionform2', self.response.text)
-        self.assertNotIn('transactionsuccessform4', self.response.text)
+        self.assertIn('generatetransactionform2', self.response.forms)
+        self.assertNotIn('transactionsuccessform4', self.response.forms)
 
     @as_users("anton")
     def test_lastschrift_transaction_failure(self, user):
@@ -374,8 +375,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transactionfailureform4']
         self.submit(f)
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        self.assertNotIn('generatetransactionform2', self.response.text)
-        self.assertNotIn('transactionsuccessform4', self.response.text)
+        self.assertNotIn('generatetransactionform2', self.response.forms)
+        self.assertNotIn('transactionsuccessform4', self.response.forms)
 
     @as_users("anton")
     def test_lastschrift_skip(self, user):
@@ -385,8 +386,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['skiptransactionform2']
         self.submit(f)
         self.assertTitle("Übersicht Einzugsermächtigungen")
-        self.assertNotIn('generatetransactionform2', self.response.text)
-        self.assertNotIn('transactionsuccessform', self.response.text)
+        self.assertNotIn('generatetransactionform2', self.response.forms)
+        self.assertNotIn('transactionsuccessform', self.response.forms)
 
     @as_users("anton")
     def test_lastschrift_create(self, user):
@@ -406,7 +407,7 @@ class TestCdEFrontend(FrontendTest):
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
         self.assertTitle("Einzugsermächtigungen (Charly C. Clown)")
-        self.assertIn("revokeform", self.response.text)
+        self.assertIn("revokeform", self.response.forms)
         self.traverse({'href': '/cde/lastschrift/3/change'})
         f = self.response.forms['changelastschriftform']
         self.assertEqual("123.45", f['amount'].value)
