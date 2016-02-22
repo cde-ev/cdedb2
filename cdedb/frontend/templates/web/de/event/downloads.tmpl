@@ -81,14 +81,10 @@
             </form>
         </li>
         <li>
-            Export zur Initialisierung der Offline-Version
-            {% if event_data['offline_lock'] %}
-                <form action="{{ cdedblink('event/download_export')|e }}" method="GET" id="exportform">
-                    {{ util.input_submit(value="Download") }}
-                </form>
-            {% else %}
-                Veranstaltung noch nicht gesperrt.
-            {% endif %}
+            JSON-Export der Veranstaltung (für Initialisierung der VM)
+            <form action="{{ cdedblink('event/download_export')|e }}" method="GET" id="exportform">
+                {{ util.input_submit(value="Download") }}
+            </form>
         </li>
     </ul>
 {% endblock %}

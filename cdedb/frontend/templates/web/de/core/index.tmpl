@@ -3,6 +3,11 @@
 {% block title %}CdE Datenbank{% endblock %}
 {% block content %}
     <h2>Willkommen!</h2>
+    {% if CDEDB_OFFLINE_DEPLOYMENT %}
+        Dies ist die Offline-Datenbank.
+
+        TODO Erklaertext
+    {% endif %}
     {% if "persona" not in user.roles %}
         <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform" class="form-horizontal">
             <p>

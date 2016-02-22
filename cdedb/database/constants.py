@@ -271,6 +271,8 @@ class EventLogCodes(enum.IntEnum):
     course_parts_changed = 42 #:
     registration_created = 50 #:
     registration_changed = 51 #:
+    event_locked = 60 #:
+    event_unlocked = 61 #:
 
 @enum.unique
 class PastEventLogCodes(enum.IntEnum):

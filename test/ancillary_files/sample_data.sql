@@ -3,6 +3,11 @@
 --
 ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
 ALTER SEQUENCE cde.lastschrift_transactions_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.course_choices_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.course_parts_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.questionnaire_rows_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.registration_parts_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.orgas_id_seq RESTART WITH 1;
 
 --
 -- personas

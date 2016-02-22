@@ -484,6 +484,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'user': rs.user,
             'values': rs.values,
             'VALID_QUERY_OPERATORS': VALID_QUERY_OPERATORS,
+            'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
         }
         ## check that default values are not overridden
         assert(not set(data) & set(params))

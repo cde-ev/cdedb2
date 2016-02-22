@@ -345,7 +345,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/expuls", methods=_GET,
                          endpoint="download_expuls"),
                     rule("/export", methods=_GET,
-                         endpoint="download_nametags"),)),
+                         endpoint="download_export"),)),
                 sub('/course/<int:course_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_course"),

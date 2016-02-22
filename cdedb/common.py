@@ -6,9 +6,11 @@ import collections
 import collections.abc
 import copy
 import datetime
+import decimal
 import enum
 import functools
 import inspect
+import json
 import logging
 import logging.handlers
 import random
@@ -461,6 +463,23 @@ def int_to_words(num, lang):
         return ret
     else:
         raise NotImplementedError("Not supported.")
+
+class CustomJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder to handle the types that occur for us."""
+    def default(self, obj):
+        if isinstance(obj, (datetime.datetime, datetime.date)):
+            return obj.isoformat()
+        elif isinstance(obj, decimal.Decimal):
+            return str(obj)
+        return super().default(self, obj)
+
+def json_serialize(data):
+    """Do beefed up JSON serialization.
+
+    :type data: obj
+    :rtype: str
+    """
+    return json.dumps(data, indent=4, cls=CustomJSONEncoder)
 
 def _schulze_winners(d, candidates):
     """This is the abstract part of the Schulze method doing the actual work.

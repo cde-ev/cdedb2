@@ -29,6 +29,7 @@ import datetime
 import decimal
 import functools
 import io
+import json
 import logging
 import magic
 import PIL.Image
@@ -108,6 +109,44 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
             errs.append((key, KeyError("Mandatory key missing.")))
         retval = None
     return retval, errs
+
+def _augment_dict_validator(validator, augmentation, strict=True):
+    """Beef up a dict validator.
+
+    This is for the case where you have two similar specs for a data set
+    in form of a dict and already a validator for one of them, but some
+    additional fields in the second spec.
+
+    This can also be used as a decorator.
+
+    :type validator: callable
+    :type augmentation: {str: callable}
+    :param augmentation: Syntax is the same as for
+      :py:meth:`_examine_dictionary_fields`.
+    :type strict: bool
+    :param strict: If True the additional arguments are mandatory otherwise they
+      are optional.
+    :rtype: callable
+    """
+    @functools.wraps(validator)
+    def new_validator(val, argname=None, *, _convert=True):
+        mandatory_fields = augmentation if strict else {}
+        optional_fields = {} if strict else augmentation
+        ret, errs = _examine_dictionary_fields(
+            val, mandatory_fields, optional_fields, allow_superfluous=True,
+            _convert=_convert)
+        tmp = copy.deepcopy(val)
+        for field in augmentation:
+            if field in tmp:
+                del tmp[field]
+        v, e = validator(tmp, argname, _convert=_convert)
+        errs.extend(e)
+        if ret is not None and v is not None:
+            ret.update(v)
+        if errs:
+            ret = None
+        return ret, errs
+    return new_validator
 
 ##
 ## Below is the real stuff
@@ -286,6 +325,18 @@ def _bool(val, argname=None, *, _convert=True):
             return None, [(argname, e)]
     if not isinstance(val, bool):
         return None, [(argname, TypeError("Must be a boolean."))]
+    return val, []
+
+@_addvalidator
+def _empty_dict(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    if val != {}:
+        return None, [(argname, ValueError("Must be an empty dict."))]
     return val, []
 
 @_addvalidator
@@ -1838,6 +1889,115 @@ def _questionnaire_data(val, argname=None, *, _convert=True):
                 ret.append(value)
     return ret, errs
 
+@_addvalidator
+def _serialized_event_upload(val, argname=None, *, _convert=True):
+    """Check an event data set for import after offline usage.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "serialized_event_upload"
+    val, errs = _input_file(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    blob = val.read()
+    data = json.loads(blob.decode("ascii"))
+    return _serialized_event(data, argname, _convert=_convert)
+
+@_addvalidator
+def _serialized_event(val, argname=None, *, _convert=True):
+    """Check an event data set for import after offline usage.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "serialized_event"
+    ## First a basic check
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    mandatory_fields = {
+        'CDEDB_EXPORT_EVENT_VERSION': _int,
+        'id': _int,
+        'timestamp': _datetime,
+        'event.events': _iterable,
+        'event.event_parts': _iterable,
+        'event.courses': _iterable,
+        'event.course_parts': _iterable,
+        'event.orgas': _iterable,
+        'event.field_definitions': _iterable,
+        'event.lodgements': _iterable,
+        'event.registrations': _iterable,
+        'event.registration_parts': _iterable,
+        'event.course_choices': _iterable,
+        'event.questionnaire_rows': _iterable,
+    }
+    val, errs = _examine_dictionary_fields(
+        val, mandatory_fields, {'core.personas': _iterable}, _convert=_convert)
+    if errs:
+        return val, errs
+    ## Second a thorough investigation
+    ##
+    ## We reuse the existing validators, but have to augment them since the
+    ## data looks a bit different.
+    table_validators = {
+        'event.events': _event_data,
+        'event.event_parts': _augment_dict_validator(
+            _event_part_data, {'id': _int, 'event_id': _int}),
+        'event.courses': _augment_dict_validator(
+            _course_data, {'event_id': _int}),
+        'event.course_parts': _augment_dict_validator(
+            _empty_dict, {'id': _int, 'course_id': _int, 'part_id': _int}),
+        'event.orgas': _augment_dict_validator(
+            _empty_dict, {'id': _int, 'event_id': _int, 'persona_id': _int}),
+        'event.field_definitions': _augment_dict_validator(
+            _event_field_data, {'id': _int, 'event_id': _int,
+                                'field_name': _restrictive_identifier}),
+        'event.lodgements': _augment_dict_validator(
+            _lodgement_data, {'event_id': _int}),
+        'event.registrations': _augment_dict_validator(
+            _registration_data, {'event_id': _int, 'persona_id': _int}),
+        'event.registration_parts': _augment_dict_validator(
+            _registration_part_data, {'id': _int, 'part_id': _int,
+                                      'registration_id': _int}),
+        'event.course_choices': _augment_dict_validator(
+            _empty_dict, {'id': _int, 'course_id': _int, 'part_id':
+                          _int, 'registration_id': _int, 'rank': _int}),
+        'event.questionnaire_rows': _augment_dict_validator(
+            _empty_dict, {'id': _int, 'event_id': _int, 'pos': _int,
+                          'field_id': _int_or_None, 'title': _str_or_None,
+                          'info': _str_or_None, 'input_size': _int_or_None,
+                          'readonly': _bool_or_None,}),
+    }
+    for table, validator in table_validators.items():
+        new_table = []
+        for entry in val[table]:
+            new_entry, e = validator(entry, table, _convert=_convert)
+            if e:
+                errs.extend(e)
+            else:
+                new_table.append(new_entry)
+        val[table] = new_table
+    if errs:
+        return None, errs
+    ## Third a consistency check
+    if len(val['event.events']) != 1:
+        errs.append(('event.events',
+                     ValueError("Only a single event is supported.")))
+    if len(val['event.events']) and val['id'] != val['event.events'][0]['id']:
+        errs.append(('event.events', ValueError("Wrong event specified.")))
+    for k, v in val.items():
+        if k not in ('id', 'CDEDB_EXPORT_EVENT_VERSION', 'timestamp'):
+            for e in v:
+                if e.get('event_id') and e['event_id'] != val['id']:
+                    errs.append((k, ValueError("Mismatched event.")))
+    if errs:
+        val = None
+    return val, errs
 
 _MAILINGLIST_COMMON_FIELDS = lambda: {
     'title': _str,

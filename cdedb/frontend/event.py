@@ -5,6 +5,7 @@
 from collections import OrderedDict
 import copy
 import itertools
+import json
 import logging
 import os
 import os.path
@@ -22,7 +23,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now, ProxyShim)
+    unwrap, now, ProxyShim, json_serialize)
 from cdedb.backend.event import EventBackend
 import cdedb.database.constants as const
 
@@ -1134,7 +1135,10 @@ class EventFrontend(AbstractUserFrontend):
     def download_export(self, rs, event_id):
         """Retrieve all data for this event to initialize an offline
         instance."""
-        raise NotImplementedError("TODO")
+        data = self.eventproxy.export_event(rs, event_id)
+        json_data = json_serialize(data)
+        return self.send_file(rs, data=json_data, inline=False,
+                              filename=self.i18n("export_event.json", rs.lang))
 
     @access("event")
     def register_form(self, rs, event_id):
@@ -2559,14 +2563,32 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def lock_event(self, rs, event_id):
         """Lock an event for offline usage."""
-        raise NotImplementedError("TODO")
+        code = self.eventproxy.lock_event(rs, event_id)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/event_config")
 
     @access("event_admin", modi={"POST"})
-    # TODO REQUESTfile
-    def unlock_event(self, rs, event_id):
+    @REQUESTfile("json_data")
+    def unlock_event(self, rs, event_id, json_data):
         """Unlock an event after offline usage and incorporate the offline
         changes."""
-        raise NotImplementedError("TODO")
+        data = check(rs, "serialized_event_upload", json_data)
+        if rs.errors:
+            return self.event_config(rs, event_id)
+        if event_id != data['id']:
+            rs.notify("error", "Data from wrong event.")
+            return self.event_config(rs, event_id)
+        ## Check for unmigrated personas
+        current = self.eventproxy.export_event(rs, event_id)
+        claimed = {e['persona_id'] for e in data['event.registrations']
+                   if not e['real_persona_id']}
+        if claimed - {e['id'] for e in current['core.personas']}:
+            rs.notify("error", "There exist unmigrated personas.")
+            return self.event_config(rs, event_id)
+
+        code = self.eventproxy.unlock_import_event(rs, data)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/event_config")
 
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)

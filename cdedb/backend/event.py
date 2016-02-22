@@ -4,6 +4,7 @@
 variant for external participants.
 """
 
+import collections
 import copy
 
 import psycopg2.extras
@@ -16,7 +17,8 @@ from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
     EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap, now, ProxyShim)
+    REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap, now, ProxyShim,
+    PERSONA_EVENT_FIELDS)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -48,6 +50,10 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
         "json_to_recordset(to_json(array(",
             "SELECT field_data FROM event.registrations)))",
         "AS X({json_fields})) AS fields ON reg.id = fields.registration_id")
+
+#: Version tag, so we know that we don't run out of sync with exported event
+#: data
+_CDEDB_EXPORT_EVENT_VERSION = 1
 
 class EventBackend(AbstractBackend):
     """Take note of the fact that some personas are orgas and thus have
@@ -1376,4 +1382,225 @@ class EventBackend(AbstractBackend):
                     self.delete_past_course(rs, course_map[course_id])
         return new_id, None
 
-    # TODO locking, unlocking
+    @access("event")
+    def lock_event(self, rs, event_id):
+        """Lock an event for offline usage.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: int
+        :returns: standard return code
+        """
+        event_id = affirm("int", event_id)
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError("Not privileged.")
+        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            raise RuntimeError("It makes no sense to offline lock an event.")
+        self.assert_offline_lock(rs, event_id=event_id)
+        update = {
+            'id': event_id,
+            'offline_lock': True,
+        }
+        ret = self.sql_update(rs, "event.events", update)
+        self.event_log(rs, const.EventLogCodes.event_locked, event_id)
+        return ret
+
+    @access("event")
+    def export_event(self, rs, event_id):
+        """Export an event for offline usage or after offline usage.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: dict
+        :returns: dict holding all data of the exported event
+        """
+        event_id = affirm("int", event_id)
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError("Not privileged.")
+        with Atomizer(rs):
+            ret = {
+                "CDEDB_EXPORT_EVENT_VERSION": _CDEDB_EXPORT_EVENT_VERSION,
+                'id': event_id,
+                'event.events': self.sql_select(
+                        rs, "event.events", EVENT_FIELDS, (event_id,)),
+                'timestamp': now(),
+            }
+            ret['event.event_parts'] = self.sql_select(
+                rs, 'event.event_parts', EVENT_PART_FIELDS, (event_id,),
+                entity_key="event_id")
+            parts = set(e['id'] for e in ret['event.event_parts'])
+            tables = (
+                ('event.courses', "event_id", COURSE_FIELDS),
+                ('event.course_parts', "part_id", (
+                    'id', 'course_id', 'part_id',)),
+                ('event.orgas', "event_id", (
+                    'id', 'persona_id', 'event_id',)),
+                ('event.field_definitions', "event_id", (
+                    'id', 'event_id', 'field_name', 'kind', 'entries',)),
+                ('event.lodgements', "event_id", LODGEMENT_FIELDS),
+                ('event.registrations', "event_id", REGISTRATION_FIELDS),
+                ('event.registration_parts', "part_id",
+                 REGISTRATION_PART_FIELDS),
+                ('event.course_choices', "part_id", (
+                    'id', 'registration_id', 'part_id', 'course_id', 'rank',)),
+                ('event.questionnaire_rows', "event_id", (
+                    'id', 'event_id', 'field_id', 'pos', 'title', 'info',
+                    'input_size', 'readonly',)),
+            )
+            personas = set()
+            for table, id_name, columns in tables:
+                id_range = {event_id} if id_name == "event_id" else parts
+                if 'id' not in columns:
+                    columns += ('id',)
+                ret[table] = self.sql_select(rs, table, columns, id_range,
+                                             entity_key=id_name)
+                ## Note the personas present to export them further on
+                for e in ret[table]:
+                    if e.get('persona_id'):
+                        personas.add(e['persona_id'])
+            ret['core.personas'] = self.sql_select(
+                rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
+            return ret
+
+    @classmethod
+    def translate(cls, data, translations, extra_translations={}):
+        """Helper to do the actual translation of IDs which got out of sync.
+
+        This does some additional sanitizing besides applying the
+        translation.
+
+        :type data: [{str: object}]
+        :type translations: {str: {int: int}}
+        :type extra_translations: {str: str}
+        :rtype: [{str: object}]
+        """
+        ret = copy.deepcopy(data)
+        for x in ret:
+            if x in translations or x in extra_translations:
+                target = extra_translations.get(x, x)
+                ret[x] = translations[target].get(ret[x], ret[x])
+            if isinstance(ret[x], collections.Mapping):
+                ## All mappings have to be JSON columns in the database
+                ## (nothing else should be possible).
+                ret[x] = psycopg2.extras.Json(
+                    cls.translate(ret[x], translations, extra_translations))
+        if ret.get('real_persona_id'):
+            ret['real_persona_id'] = None
+        return ret
+
+    def synchronize_table(self, rs, table, data, current, translations,
+                          entity=None, extra_translations={}):
+        """Replace one data set in a table with another.
+
+        This is a bit involved, since both DB instances may have been
+        modified, so that conflicting primary keys were created. Thus we
+        have a snapshot ``current`` of the state at locking time and
+        apply the diff to the imported state in ``data``. Any IDs which
+        were not previously present in the DB into which we import have
+        to be kept track of -- this is done in ``translations``.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type table: str
+        :type data: [{str: object}]
+        :param data: Data set to put in.
+        :type current: [{str: object}]
+        :param current: Current state.
+        :type translations: {str: {int: int}}
+        :param translations: IDs which got out of sync during offline usage.
+        :type entity: str
+        :param entity: Name of IDs this table is referenced as. Any of the
+          primary keys which are processed here, that got out of sync are
+          added to the corresponding entry in ``translations``
+        :type extra_translations: {str: str}
+        :param extra_translations: Additional references which do not use a
+          standard name.
+        :rtype: int
+        :returns: standard return code
+        """
+        ret = 1
+        dlookup = {e['id'] for e in data}
+        for e in current:
+            if e['id'] not in dlookup:
+                ret *= self.sql_delete_one(rs, table, e['id'])
+        clookup = {e['id']: e for e in current}
+        for e in data:
+            if e != clookup.get(e['id']):
+                new_e = self.translate(e, translations, extra_translations)
+                if e['id'] in clookup:
+                    ret *= self.sql_update(rs, table, new_e)
+                else:
+                    if 'id' in new_e:
+                        del new_e['id']
+                    new_id = self.sql_insert(rs, table, new_e)
+                    ret *= new_id
+                    if entity:
+                        translations[entity][e['id']] = new_id
+        return ret
+
+    @access("event_admin")
+    def unlock_import_event(self, rs, data):
+        """Unlock an event after offline usage and import changes.
+
+        This is a combined action so that we stay consistent.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: dict
+        :rtype: int
+        :returns: standard return code
+        """
+        data = affirm("serialized_event", data)
+        if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+            raise RuntimeError("It makes no sense to do this.")
+        if not self.is_offline_locked(rs, event_id=data['id']):
+            raise RuntimeError("Not locked.")
+        if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
+            raise ValueError("Version mismatch -- aborting.")
+
+        with Atomizer(rs):
+            current = self.export_event(rs, data['id'])
+            ## First check that all newly created personas have been
+            ## transferred to the online DB
+            claimed = {e['persona_id'] for e in data['event.registrations']
+                       if not e['real_persona_id']}
+            if claimed - {e['id'] for e in current['core.personas']}:
+                raise ValueError("Non-transferred persona found")
+
+            ret = 1
+            ## Second synchronize the data sets
+            translations = collections.defaultdict(dict)
+            for reg in data['event.registrations']:
+                if reg['real_persona_id']:
+                    translations['persona_id'][reg['persona_id']] = \
+                      reg['real_persona_id']
+            extra_translations = {'course_instructor': 'course_id'}
+            tables = (('event.events', None),
+                      ('event.event_parts', 'part_id'),
+                      ('event.courses', 'course_id'),
+                      ('event.course_parts', None),
+                      ('event.orgas', None),
+                      ('event.field_definitions', 'field_id'),
+                      ('event.lodgements', 'lodgement_id'),
+                      ('event.registrations', 'registration_id'),
+                      ('event.registration_parts', None),
+                      ('event.course_choices', None),
+                      ('event.questionnaire_rows', None))
+            for table, entity in tables:
+                ret *= self.synchronize_table(
+                    rs, table, data[table], current[table], translations,
+                    entity=entity, extra_translations=extra_translations)
+            ## Third fix the ids embedded in json
+            for reg_id in translations['registration_id'].values():
+                json = self.sql_select_one(
+                    rs, 'event.registrations', ('id', 'field_data'), reg_id)
+                if json['field_data']['registration_id'] != reg_id:
+                    json['field_data']['registration_id'] = reg_id
+                    json['field_data'] = psycopg2.extras.Json(json['field_data'])
+                    self.sql_update(rs, 'event.registrations', json)
+            ## Fourth unlock the event
+            update = {
+                'id': data['id'],
+                'offline_lock': False,
+            }
+            ret *= self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.event_unlocked, data['id'])
+            return ret

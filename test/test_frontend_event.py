@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+import json
 import unittest
 import quopri
 import webtest
-from test.common import as_users, USER_DICT, FrontendTest
+from test.common import as_users, USER_DICT, FrontendTest, nearly_now
 
 class TestEventFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
@@ -895,6 +896,20 @@ class TestEventFrontend(FrontendTest):
         self.assertTrue(len(self.response.body) > 1000)
 
     @as_users("garcia")
+    def test_download_export(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/download'},)
+        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
+        f = self.response.forms['exportform']
+        self.submit(f)
+        with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
+            expectation = json.load(datafile)
+        result = json.loads(self.response.text)
+        expectation['timestamp'] = result['timestamp'] # nearly_now() won't do
+        self.assertEqual(expectation, result)
+
+    @as_users("garcia")
     def test_questionnaire_manipulation(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -1024,6 +1039,46 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
         self.assertPresence("Emilia")
         self.assertNonPresence("Inga")
+
+    @as_users("anton", "garcia")
+    def test_lock_event(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/config'})
+        self.assertTitle("Große Testakademie 2222 Details")
+        self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
+        f = self.response.forms["lockform"]
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222 Details")
+        self.assertPresence("Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
+
+    @as_users("anton")
+    def test_unlock_event(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/config'})
+        self.assertTitle("Große Testakademie 2222 Details")
+        f = self.response.forms["lockform"]
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/download'},)
+        self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
+        saved = self.response
+        f = self.response.forms['exportform']
+        self.submit(f)
+        data = self.response.body
+        data = data.replace(b"Gro\\u00dfe Testakademie 2222",
+                            b"Mittelgro\\u00dfe Testakademie 2222")
+        self.response = saved
+        self.traverse({'href': '/event/event/1/config'})
+        self.assertTitle("Große Testakademie 2222 Details")
+        self.assertPresence("Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
+        f = self.response.forms['unlockform']
+        f['json_data'] = webtest.Upload("event_export.json", data,
+                                        "application/octet-stream")
+        self.submit(f)
+        self.assertTitle("Mittelgroße Testakademie 2222 Details")
+        self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
     @as_users("anton")
     def test_archive(self, user):

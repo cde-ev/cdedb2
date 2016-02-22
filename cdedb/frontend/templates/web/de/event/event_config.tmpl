@@ -211,7 +211,26 @@
         </form>
     {% endwith %}
     <h2>Offline Nutzung</h2>
-    TODO
+    {% if ambience['event']['offline_lock'] %}
+        {% if  CDEDB_OFFLINE_DEPLOYMENT %}
+            Die Veranstaltung befindet sich im Offline-Modus.
+        {% else %}
+            Die Veranstaltung ist zur Offline-Nutzung gesperrt.
+            <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data" id="unlockform">
+                <div>
+                    {{ util.input_file(name="json_data", accept="text/json") }}
+                    {{ util.input_submit(value="Entsperren") }}
+                </div>
+            </form>
+        {% endif %}
+    {% else %}
+        Die Veranstaltung ist nicht gesperrt.
+        <form action="{{ cdedblink('event/lock_event')|e }}" method="POST" id="lockform">
+            <div>
+                {{ util.input_submit(value="Sperren") }}
+            </div>
+        </form>
+    {% endif %}
     {% if is_admin %}
         <h2>Archivierung</h2>
         <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed" id="archiveeventform">
