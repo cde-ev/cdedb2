@@ -117,9 +117,9 @@ single-check:
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) $(wildcard cdedb/frontend/*.py) $(wildcard cdedb/backend/*.py) $(wildcard test/*.py)
-	coverage run -m test.main
+	${PYTHONBIN} /usr/bin/coverage run -m test.main
 
 coverage: .coverage
-	coverage report -m --omit='test/*,related/*'
+	${PYTHONBIN} /usr/bin/coverage report -m --omit='test/*,related/*'
 
 .PHONY: help doc sample-data sample-data-test sample-data-test-shallow ldap ldap-test sql sql-test sql-test-shallow lint check single-check .coverage coverage
