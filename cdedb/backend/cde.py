@@ -14,8 +14,8 @@ from cdedb.backend.common import (
     affirm_array_validation as affirm_array, singularize, batchify,
     AbstractBackend)
 from cdedb.common import (
-    glue, merge_dicts, PrivilegeError, unwrap, now,
-    LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS)
+    glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
+    LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -454,6 +454,24 @@ class CdEBackend(AbstractBackend):
                 lastschrift['persona_id'], None, None)
             return ret
 
+    @access("cde_admin")
+    def finance_statistics(self, rs):
+        """Compute some financial statistics.
+
+        Mostly for use by the 'Semesterverwaltung'.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {str: object}
+        """
+        ret = {}
+        with Atomizer(rs):
+            query = glue("SELECT COUNT(*) FROM core.personas",
+                         "WHERE is_member = True AND balance < %s")
+            ret['low_balance_members'] = unwrap(self.query_one(
+                rs, query, (self.conf.MEMBERSHIP_FEE,)))
+
+            return ret
+
     @access("cde")
     def current_period(self, rs):
         """Check for the current semester
@@ -464,6 +482,123 @@ class CdEBackend(AbstractBackend):
         """
         query = "SELECT MAX(id) FROM cde.org_period"
         return unwrap(self.query_one(rs, query, tuple()))
+
+    @access("cde_admin")
+    def get_period(self, rs, period_id):
+        """Get data for the a semester
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type period_id: int
+        :rtype: {str: object}
+        """
+        period_id = affirm("int", period_id)
+        return self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
+                                   period_id)
+
+    @access("cde_admin")
+    def set_period(self, rs, period):
+        """Set data for the a semester
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type period: {str: object}
+        :rtype: int
+        :returns: standard return code
+        """
+        period = affirm("period", period)
+        with Atomizer(rs):
+            current_id = self.current_period(rs)
+            if period['id'] != current_id:
+                raise RuntimeError("Only able to modify current period.")
+            return self.sql_update(rs, "cde.org_period", period)
+
+    @access("cde_admin")
+    def create_period(self, rs):
+        """Make a new semester.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: int
+        :returns: ID of new semester
+        """
+        with Atomizer(rs):
+            current_id = self.current_period(rs)
+            current = self.get_period(rs, current_id)
+            if not current['balance_done']:
+                raise RuntimeError("Current period not finalized.")
+            new_period = {
+                'id': current_id + 1,
+                'billing_state': None,
+                'billing_done': None,
+                'ejection_state': None,
+                'ejection_done': None,
+                'balance_state': None,
+                'balance_done': None,
+            }
+            ret = self.sql_insert(rs, "cde.org_period", new_period)
+            self.cde_log(rs, const.CdeLogCodes.advance_semester,
+                         persona_id=None, additional_info=ret)
+            return ret
+
+    @access("cde_admin")
+    def current_expuls(self, rs):
+        """Check for the current expuls number
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: int
+        :returns: Id of the current expuls period.
+        """
+        query = "SELECT MAX(id) FROM cde.expuls_period"
+        return unwrap(self.query_one(rs, query, tuple()))
+
+    @access("cde_admin")
+    def get_expuls(self, rs, expuls_id):
+        """Get data for the an expuls.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type expuls_id: int
+        :rtype: {str: object}
+        """
+        expuls_id = affirm("int", expuls_id)
+        return self.sql_select_one(rs, "cde.expuls_period",
+                                   EXPULS_PERIOD_FIELDS, expuls_id)
+
+    @access("cde_admin")
+    def set_expuls(self, rs, expuls):
+        """Set data for the an expuls
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type expuls: {str: object}
+        :rtype: int
+        :returns: standard return code
+        """
+        expuls = affirm("expuls", expuls)
+        with Atomizer(rs):
+            current_id = self.current_expuls(rs)
+            if expuls['id'] != current_id:
+                raise RuntimeError("Only able to modify current expuls.")
+            return self.sql_update(rs, "cde.expuls_period", expuls)
+
+    @access("cde_admin")
+    def create_expuls(self, rs):
+        """Make a new expuls.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: int
+        :returns: ID of new expuls
+        """
+        with Atomizer(rs):
+            current_id = self.current_expuls(rs)
+            current = self.get_expuls(rs, current_id)
+            if not current['addresscheck_done']:
+                raise RuntimeError("Current expuls not finalized.")
+            new_expuls = {
+                'id': current_id + 1,
+                'addresscheck_state': None,
+                'addresscheck_done': None,
+            }
+            ret = self.sql_insert(rs, "cde.expuls_period", new_expuls)
+            self.cde_log(rs, const.CdeLogCodes.advance_expuls,
+                         persona_id=None, additional_info=ret)
+            return ret
 
     @access("searchable")
     def submit_general_query(self, rs, query):

@@ -228,7 +228,8 @@ class CoreLogCodes(enum.IntEnum):
 @enum.unique
 class CdeLogCodes(enum.IntEnum):
     """Available log messages cde.log."""
-    foto_update = 0 #:
+    advance_semester = 0 #:
+    advance_expuls = 1 #:
 
 @enum.unique
 class FinanceLogCodes(enum.IntEnum):

@@ -1,0 +1,120 @@
+Hallo {{ persona['display_name'] }},
+
+{% if persona['balance'] < fee and not lastschrift %}
+== Mitgliedsbeitrag bezahlen ==
+
+Schön, dass Du bis jetzt dem CdE treu geblieben bist. Leider reicht
+Dein Guthaben beim CdE jedoch nicht mehr, um für ein weiteres halbes
+Jahr den Mitgliedsbeitrag von {{ fee|money }} zu bezahlen.
+
+Deshalb bitten wir Dich, auf das CdE-Konto den halbjährlichen
+Mitgliedsbeitrag von {{ fee|money }} oder ein Vielfaches davon
+zu überweisen:
+
+Kontoinhaber:     CdE e.V.
+IBAN:             DE26 3702 0500 0008 0689 00
+BIC:              BFSWDE33XXX
+Kreditinstitut:   Bank für Sozialwirtschaft
+Verwendungszweck: {{ transaction_subject }}
+
+(Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
+so ist dies hier möglicherweise noch nicht berücksichtigt.)
+
+Es würde uns freuen, wenn Du die Überweisung in den nächsten zwei
+Wochen tätigen könntest, damit Du weiterhin Mitglied im CdE bleibst
+und die nächste Ausgabe unserer Mitglieder-Zeitschrift exPuls
+erhalten kannst.
+
+Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
+Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
+Mitgliedsbeitrag und eine Spende einzuziehen (Initiative 25+). Um
+Dich hieran zu beteiligen, rufe bitte
+{{ cdedblink("cde/i25p_index") }}
+auf und folge den dort angegebenen Hinweisen.
+
+Falls du kein CdE-Mitglied mehr sein möchtest, überweise bitte nichts.
+Deine Mitgliedschaft endet dann in wenigen Wochen automatisch. Solltest
+du später wieder Interesse am CdE haben, kannst du jederzeit wieder
+Mitglied werden.
+{% endif %}
+{% if lastschrift and lastschrift['id'] in open_lastschrift %}
+== Mitgliedsbeitrag per Lastschrift ==
+
+Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
+von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
+einzuziehen. Das Lastschriftmandat mit der Mandatsreferenz
+{{ lastschrift['reference'] }} kannst Du unter
+{{ cdedblink("core/index") }}
+widerrufen. Sollte sich Deine Bankverbindung geändert haben,
+so informiere uns bitte.
+
+In wenigen Tagen werden wir nun den vereinbarten Betrag
+von Deinem Konto abbuchen. Den genauen Termin werden wir Dir noch
+gesondert mitteilen. Sollte sich Deine Kontoverbindung inzwischen
+geändert haben, informiere uns bitte unter <verwaltung@cde-ev.de>.
+
+Bitte melde Dich auch bei uns, wenn Du diesen Betrag lieber von Deinem
+CdE-'Guthabenkonto' abgezogen haben möchtest, oder auch, wenn Du dieses
+Jahr mit dem Lastschrifteinzug pausieren möchtest.
+{% endif %}
+
+== Adresskontrolle ==
+
+Unter anderem für den Versand des exPuls ist es wichtig, dass wir
+Deine aktuelle Adresse kennen. Deine in der Datenbank eingetragene
+Adresse ist:
+
+{{ "\n".join(address) }}
+
+Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
+CdE-Datenbank unter der Adresse
+{{ cdedblink("core/index") }}
+einloggen und die Adresse korrigieren.
+
+{% if persona['balance'] >= fee and not lastschrift %}
+== Guthabenstatus ==
+
+Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
+sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
+von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
+
+(Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
+so ist dies hier möglicherweise noch nicht berücksichtigt.)
+
+Weitere Angaben zur Überweisung auf das CdE-Konto findest Du unter
+{{ cdedblink("core/index") }} {# TODO useful link #}
+
+Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
+Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den
+Mitgliedsbeitrag und eine Spende einzuziehen (Initiative 25+). Um
+Dich hieran zu beteiligen, rufe bitte
+{{ cdedblink("cde/i25p_index") }}
+auf und folge den dort angegebenen Hinweisen.
+{% endif %}
+{% if lastschrift and not lastschrift['id'] in open_lastschrift %}
+== Lastschriftmandat ==
+
+Wir danken Dir, dass Du uns erlaubt hast, jährlich per Lastschrift
+von Deinem Konto den jährlichen Mitgliedsbeitrag und eine Spende
+einzuziehen. Wir informieren Dich in einer gesonderten E-Mail vor
+jeder Lastschrift. Das Lastschriftmandat mit der Mandatsreferenz
+{{ lastschrift['reference'] }} kannst Du unter
+{{ cdedblink("core/index") }}
+widerrufen. Sollte sich Deine Bankverbindung geändert haben,
+so informiere uns bitte.
+{% endif %}
+== Noch Fragen? ==
+
+Wenn Du Fragen hast, so erreichst Du uns unter
+	<verwaltung@cde-ev.de>
+
+Viele Grüße
+
+das CdE-Verwaltungs-Team
+
+P.S.: Weitere Infos zur Mitgliedschaft findest Du unter
+	https://www.cde-ev.de/node/7
+
+P.P.S.: Du möchtest selbst im CdE aktiv werden, zum Beispiel einen Kurs
+leiten oder Akademie-Orga werden? Schau mal auf
+        https://www.cde-ev.de/node/828

@@ -141,6 +141,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="user_search_form"),
                 rule("/user", methods=_GET,
                      endpoint="user_search"),)),
+            rule("/i25p", methods=_GET,
+                 endpoint="i25p_index"),
             rule("/lastschrift", methods=_GET,
                  endpoint="lastschrift_index"),
             rule("/lastschrift/subscription", methods=_GET,
@@ -184,6 +186,22 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="modify_membership_form"),
                 rule("/membership/change", methods=_POST,
                      endpoint="modify_membership"),)),
+            sub('/semester', (
+                rule("/show", methods=_GET,
+                     endpoint="show_semester"),
+                rule("/bill", methods=_POST,
+                     endpoint="semester_bill"),
+                rule("/eject", methods=_POST,
+                     endpoint="semester_eject"),
+                rule("/balance", methods=_POST,
+                     endpoint="semester_balance_update"),
+                rule("/advance", methods=_POST,
+                     endpoint="semester_advance"),)),
+            sub('/expuls', (
+                rule("/address", methods=_POST,
+                     endpoint="expuls_addresscheck"),
+                rule("/advance", methods=_POST,
+                     endpoint="expuls_advance"),)),
         )),)),
     werkzeug.routing.EndpointPrefix('event/', (
         sub('/event', (

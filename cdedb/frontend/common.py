@@ -6,6 +6,7 @@ overall topic.
 
 import abc
 import collections
+import copy
 import datetime
 import email
 import email.charset
@@ -28,6 +29,7 @@ import re
 import smtplib
 import subprocess
 import tempfile
+import threading
 import urllib.parse
 
 import jinja2
@@ -38,10 +40,12 @@ import werkzeug.utils
 import werkzeug.wrappers
 
 from cdedb.internationalization import i18n_factory
-from cdedb.config import BasicConfig
-from cdedb.config import Config, SecretsConfig
+from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
-    glue, merge_dicts, compute_checkdigit, now)
+    glue, merge_dicts, compute_checkdigit, now, asciificator, roles_to_db_role,
+    RequestState)
+from cdedb.database import DATABASE_ROLES
+from cdedb.database.connection import connection_pool_factory
 from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
@@ -65,10 +69,11 @@ class BaseApp(metaclass=abc.ABCMeta):
     """
     logger = logging.getLogger(__name__)
 
-    def __init__(self, configpath):
+    def __init__(self, configpath, *args, **kwargs):
         """
         :type configpath: str
         """
+        super().__init__(*args, **kwargs)
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
         self.decode_parameter = (
@@ -109,7 +114,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type target: str
         :type params: {str: object}
         :rtype: :py:class:`werkzeug.wrappers.Response`
@@ -162,6 +167,18 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
     return val.strftime(formatstr)
+
+def money_filter(val, currency="€"):
+    """Custom jinja filter to format ``decimal.Decimal`` objects.
+
+    This is for values representing monetary amounts.
+
+    :type val: decimal.Decimal
+    :rtype: str
+    """
+    if val is None:
+        return None
+    return "{:.2f}{}".format(val, currency)
 
 def cdedbid_filter(val):
     """Custom jinja filter to format persona ids with a check digit. Every user
@@ -355,11 +372,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     ## logger are thread-safe!
     logger = logging.getLogger(__name__)
 
-    def __init__(self, configpath):
+    def __init__(self, configpath, *args, **kwargs):
         """
         :type configpath: str
         """
-        super().__init__(configpath)
+        super().__init__(configpath, *args, **kwargs)
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(os.path.join(
                 self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
@@ -368,6 +385,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         filters = {
             'date': date_filter,
             'datetime': datetime_filter,
+            'money': money_filter,
             'cdedbid': cdedbid_filter,
             'escape': escape_filter,
             'e': escape_filter,
@@ -407,7 +425,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :rtype: bool
         """
         return "{}_admin".format(cls.realm) in rs.user.roles
@@ -419,7 +437,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         .. note:: We change the templating syntax for TeX templates since
                   jinjas default syntax is nasty for this.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type modus: str
         :param modus: type of thing we want to generate (currently 'web' or
           'mail')
@@ -512,7 +530,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         Exactly one of the inputs has to be provided.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type mimetype: str or None
         :param mimetype: If not None the mime type of the file to be sent.
         :type filename: str or None
@@ -560,7 +578,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type templatename: str
         :type params: {str: object}
         :rtype: :py:class:`werkzeug.wrappers.Response`
@@ -597,7 +615,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         list specific bounce address which delivers the bounces to the
         moderators.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type templatename: str
         :type headers: {str: str}
         :param headers: mandatory headers to supply are To and Subject
@@ -732,7 +750,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         The point is, that encoding the ``confirm_id`` parameter is
         somewhat lengthy and only necessary because of our paranoia.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type persona_id: int
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
@@ -748,7 +766,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Convert an enum into a dict suitable for consumption by the template
         code (this will turn into an HTML select in the end).
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type anenum: :py:class:`enum.Enum`
         :rtype: {int: str}
         """
@@ -765,7 +783,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         the number of changed entries, and negative numbers for entries with
         pending review) or None (signalling failure to acquire something).
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type success: str
         :type code: int or bool or None
         :param success: Affirmative message for positive return codes.
@@ -809,7 +827,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         This takes care of the necessary temporary files.
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type data: str
         :param data: the LaTeX document
         :type filename: str
@@ -846,7 +864,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     |------- tex_file.tex
                     +------- ...
 
-        :type rs: :py:class:`FrontendRequestState`
+        :type rs: :py:class:`RequestState`
         :type tmp_dir: str
         :param tmp_dir: path of temporary directory
         :type work_dir_name: str
@@ -890,6 +908,37 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 path=os.path.join(work_dir, pdf_file),
                 filename=self.i18n(pdf_file, rs.lang))
 
+class Worker(threading.Thread):
+    """Customization wrapper around ``threading.Thread``.
+
+    This takes care of initializing a new (basically cloned) request
+    state object, containing a separate database connection, so that
+    concurrency is no concern.
+    """
+
+    def __init__(self, conf, task, rs, *args, **kwargs):
+        """
+        :type confpath: :py:class:`cdedb.Config`
+        :type realm: str
+        :type task: callable
+        :param task: Will be called with exactly one argument (the cloned
+          request state) until it returns something falsy.
+        :type rs: :py:class:`RequestState`
+        """
+        rrs = RequestState(
+            rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
+            rs.requestargs, rs.urlmap, [], copy.deepcopy(rs.values),
+            rs.lang, rs._coders, rs.begin)
+        secrets = SecretsConfig(conf._configpath)
+        connpool = connection_pool_factory(
+            conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets)
+        rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        def runner():
+            """Implements the actual loop running the task inside the Thread."""
+            while task(rrs):
+                pass
+        super().__init__(target=runner, daemon=False, *args, **kwargs)
+
 def reconnoitre_ambience(obj, rs):
     """Provide automatic lookup of objects in a standard way.
 
@@ -899,7 +948,7 @@ def reconnoitre_ambience(obj, rs):
     '_id' suffix.
 
     :type obj: :py:class:`AbstractFrontend`
-    :type rs: :py:class:`FrontendRequestState`
+    :type rs: :py:class:`RequestState`
     :rtype: {str: object}
     """
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
@@ -1020,7 +1069,7 @@ def access(*roles, modi=None):
 def cdedburl(rs, endpoint, params=None):
     """Construct an HTTP URL.
 
-    :type rs: :py:class:`FrontendRequestState`
+    :type rs: :py:class:`RequestState`
     :type endpoint: str
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
     :type params: {str: object}
@@ -1141,7 +1190,7 @@ def request_data_extractor(rs, args):
     registrations, here the parameter list has to be constructed from data
     retrieved from the backend.
 
-    :type rs: :py:class:`FrontendRequestState`
+    :type rs: :py:class:`RequestState`
     :type args: [(str, str)]
     :param args: handed through to the decorator
     :rtype: {str: object}
@@ -1157,7 +1206,7 @@ def request_data_dict_extractor(rs, args):
 
     Like :py:meth:`request_data_extractor`.
 
-    :type rs: :py:class:`FrontendRequestState`
+    :type rs: :py:class:`RequestState`
     :type args: [(str, str)]
     :param args: handed through to the decorator
     :rtype: {str: object}
@@ -1309,7 +1358,7 @@ def decode_parameter(salt, target, name, param, timeout):
 def check_validation(rs, assertion, value, name=None, **kwargs):
     """Helper to perform parameter sanitization.
 
-    :type rs: :py:class:`FrontendRequestState`
+    :type rs: :py:class:`RequestState`
     :type assertion: str
     :param assertion: name of validation routine to call
     :type value: object
@@ -1332,7 +1381,7 @@ def basic_redirect(rs, url):
     be the main thing to use, however it is even more preferable to use
     :py:meth:`BaseApp.redirect`.
 
-    :type rs: :py:class:`FrontendRequestState`
+    :type rs: :py:class:`RequestState`
     :type url: str
     :rtype: :py:class:`werkzeug.wrappers.Response`
     """
@@ -1390,9 +1439,25 @@ def make_postal_address(persona_data):
     ret = [name]
     if pd['address_supplement']:
         ret.append(pd['address_supplement'])
-    ret.append(pd['address'])
-    ret.append("{} {}".format(pd['postal_code'], pd['location']))
+    if pd['address']:
+        ret.append(pd['address'])
+    if pd['postal_code'] or pd['location']:
+        ret.append("{} {}".format(pd['postal_code'] or '',
+                                  pd['location'] or ''))
     if pd['country']:
         ret.append(pd['country'])
     return ret
+
+def make_transaction_subject(persona):
+    """Generate a string for users to put on a payment.
+
+    This is the "Verwendungszweck".
+
+    :type persona: {str: object}
+    :rtype: str
+    """
+    return "{}, {}, {}".format(cdedbid_filter(persona['id']),
+                               asciificator(persona['family_name']),
+                               asciificator(persona['given_names']))
+
 

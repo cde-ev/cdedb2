@@ -12,7 +12,7 @@
                     icon="check", active=(sidenav_active=='cde_consent_decision')) }}
         {% endif %}
         {# TODO #}
-        {{ util.href(cdedblink("cde/lastschrift_subscription_form"), "Initiative 25+ beitreten") }}
+        {{ util.href(cdedblink("cde/i25p_index"), "Initiative 25+") }}
     </div>
         
     {% if is_admin %}
@@ -24,6 +24,8 @@
             {{ util.href(cdedblink("cde/meta_info_form"), "Vereins-Metadaten") }}
             {{ util.href(cdedblink("cde/lastschrift_index"), "Einzugserächtigungen", aclass="list-group-item",
                     icon="euro", active=(sidenav_active=='cde_consent_form')) }}
+            {# TODO #}
+            {{ util.href(cdedblink("cde/show_semester"), "Semesterverwaltung") }}
             {{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log", aclass="list-group-item", icon="list-alt") }}
         </div>
     {% endif %}

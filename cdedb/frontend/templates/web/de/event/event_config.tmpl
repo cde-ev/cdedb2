@@ -216,7 +216,8 @@
             Die Veranstaltung befindet sich im Offline-Modus.
         {% else %}
             Die Veranstaltung ist zur Offline-Nutzung gesperrt.
-            <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data" id="unlockform">
+            <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data"
+              id="unlockform">
                 <div>
                     {{ util.input_file(name="json_data", accept="text/json") }}
                     {{ util.input_submit(value="Entsperren") }}

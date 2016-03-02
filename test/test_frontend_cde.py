@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+import time
 import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
@@ -452,6 +453,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_lastschrift_subscription_form(self, user):
         self.traverse({'href': '/cde'},
+                      {'href': '/cde/i25p'},
                       {'href': '/cde/lastschrift/subscription'})
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
@@ -471,6 +473,130 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Allgemeine Vereinsmetainformationen")
         f = self.response.forms['changeinfoform']
         self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
+
+    @as_users("anton")
+    def test_semester(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/semester/show'})
+        self.assertTitle("Semesterverwaltung")
+        f = self.response.forms['billform']
+        f['testrun'].checked = True
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'billform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        f = self.response.forms['billform']
+        f['addresscheck'].checked = True
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'ejectform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Derzeit haben 1 Mitglieder ein zu niedriges Guthaben")
+        f = self.response.forms['ejectform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'balanceform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        f = self.response.forms['balanceform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'proceedform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Semester Nummer 43")
+        f = self.response.forms['proceedform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'billform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Semester Nummer 44")
+        self.assertIn('billform', self.response.forms)
+
+    @as_users("anton")
+    def test_expuls(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/semester/show'})
+        self.assertTitle("Semesterverwaltung")
+        f = self.response.forms['addresscheckform']
+        f['testrun'].checked = True
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'addresscheckform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        f = self.response.forms['addresscheckform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'proceedexpulsform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("ExPuls trägt die Nummer 42")
+        f = self.response.forms['proceedexpulsform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'addresscheckform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("ExPuls trägt die Nummer 43")
+        f = self.response.forms['noaddresscheckform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'proceedexpulsform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("ExPuls trägt die Nummer 43")
+        f = self.response.forms['proceedexpulsform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'addresscheckform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("ExPuls trägt die Nummer 44")
+        self.assertIn('addresscheckform', self.response.forms)
 
     def test_cde_log(self):
         ## First: generate data

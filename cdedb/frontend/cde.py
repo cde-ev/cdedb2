@@ -12,13 +12,14 @@ import tempfile
 import werkzeug
 
 import cdedb.database.constants as const
+from cdedb.database.connection import Atomizer
 from cdedb.common import (
-    merge_dicts, name_key, lastschrift_reference, now, glue,
+    merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
     int_to_words, determine_age_class, ProxyShim)
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access,
-    check_validation as check,
-    cdedbid_filter, request_data_extractor, make_postal_address)
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, Worker,
+    check_validation as check, cdedbid_filter, request_data_extractor,
+    make_postal_address, make_transaction_subject)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 from cdedb.backend.event import EventBackend
@@ -707,6 +708,11 @@ class CdEFrontend(AbstractUserFrontend):
         return self.serve_latex_document(rs, tex,
                                          "lastschrift_subscription_form")
 
+    @access("anonymous")
+    def i25p_index(self, rs):
+        """Show information about 'Initiative 25+'."""
+        return self.render(rs, "i25p_index")
+
     @access("cde_admin")
     def meta_info_form(self, rs):
         """Render form."""
@@ -725,3 +731,266 @@ class CdEFrontend(AbstractUserFrontend):
         code = self.coreproxy.set_meta_info(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/meta_info_form")
+
+    @access("cde_admin")
+    def show_semester(self, rs):
+        """Show information."""
+        period_id = self.cdeproxy.current_period(rs)
+        period = self.cdeproxy.get_period(rs, period_id)
+        expuls_id = self.cdeproxy.current_expuls(rs)
+        expuls = self.cdeproxy.get_expuls(rs, expuls_id)
+        stats = self.cdeproxy.finance_statistics(rs)
+        return self.render(rs, "show_semester", {
+            'period': period, 'expuls': expuls, 'stats': stats})
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("addresscheck", "bool"), ("testrun", "bool"))
+    def semester_bill(self, rs, addresscheck, testrun):
+        """Send billing mail to all members.
+
+        In case of a test run we send only a single mail to the button
+        presser.
+        """
+        period_id = self.cdeproxy.current_period(rs)
+        period = self.cdeproxy.get_period(rs, period_id)
+        if period['billing_done']:
+            raise RuntimeError("Already done.")
+        open_lastschrift = self.determine_open_permits(rs)
+        def task(rrs, rs=None):
+            """Send one billing mail and advance state."""
+            with Atomizer(rrs):
+                period_id = self.cdeproxy.current_period(rrs)
+                period = self.cdeproxy.get_period(rrs, period_id)
+                previous = period['billing_state'] or 0
+                persona_id = self.coreproxy.next_persona(rrs, previous)
+                if testrun:
+                    persona_id = rrs.user.persona_id
+                if not persona_id or period['billing_done']:
+                    if not period['billing_done']:
+                        period_update = {
+                            'id': period_id,
+                            'billing_state': None,
+                            'billing_done': now(),
+                        }
+                        self.cdeproxy.set_period(rrs, period_update)
+                    return False
+                persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                lastschrift_list = self.cdeproxy.list_lastschrift(
+                    rrs, persona_ids=(persona_id,))
+                lastschrift = None
+                if lastschrift_list:
+                    lastschrift = self.cdeproxy.get_lastschrift_one(
+                        rrs, unwrap(lastschrift_list))
+                    lastschrift['reference'] = lastschrift_reference(
+                        persona['id'], lastschrift['id'])
+                address = make_postal_address(persona)
+                transaction_subject = make_transaction_subject(persona)
+                self.do_mail(
+                    rrs, "billing",
+                    {'To': (persona['username'],),
+                     'Subject': 'Renew your CdE membership'},
+                    {'persona': persona,
+                     'fee': self.conf.MEMBERSHIP_FEE,
+                     'lastschrift': lastschrift,
+                     'open_lastschrift': open_lastschrift,
+                     'address': address,
+                     'transaction_subject': transaction_subject,
+                     'addresscheck': addresscheck,})
+                if testrun:
+                    return False
+                period_update = {
+                    'id': period_id,
+                    'billing_state': persona_id,
+                }
+                self.cdeproxy.set_period(rrs, period_update)
+                return True
+        worker = Worker(self.conf, task, rs)
+        worker.start()
+        rs.notify("success", "Started sending mail.")
+        return self.redirect(rs, "cde/show_semester")
+
+    @access("cde_admin", modi={"POST"})
+    def semester_eject(self, rs):
+        """Eject members without enough credit."""
+        period_id = self.cdeproxy.current_period(rs)
+        period = self.cdeproxy.get_period(rs, period_id)
+        if not period['billing_done'] or period['ejection_done']:
+            raise RuntimeError("Wrong timing.")
+        def task(rrs, rs=None):
+            """Check one member for ejection and advance state."""
+            with Atomizer(rrs):
+                period_id = self.cdeproxy.current_period(rrs)
+                period = self.cdeproxy.get_period(rrs, period_id)
+                previous = period['ejection_state'] or 0
+                persona_id = self.coreproxy.next_persona(rrs, previous)
+                if not persona_id or period['ejection_done']:
+                    if not period['ejection_done']:
+                        period_update = {
+                            'id': period_id,
+                            'ejection_state': None,
+                            'ejection_done': now(),
+                        }
+                        self.cdeproxy.set_period(rrs, period_update)
+                    return False
+                persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                if persona['balance'] < self.conf.MEMBERSHIP_FEE:
+                    self.coreproxy.change_membership(rrs, persona_id,
+                                                     is_member=False)
+                    transaction_subject = make_transaction_subject(persona)
+                    self.do_mail(
+                        rrs, "ejection",
+                        {'To': (persona['username'],),
+                         'Subject': 'Ejection from CdE'},
+                        {'persona': persona,
+                         'fee': self.conf.MEMBERSHIP_FEE,
+                         'transaction_subject': transaction_subject,})
+                period_update = {
+                    'id': period_id,
+                    'ejection_state': persona_id,
+                }
+                self.cdeproxy.set_period(rrs, period_update)
+                return True
+        worker = Worker(self.conf, task, rs)
+        worker.start()
+        rs.notify("success", "Started ejection.")
+        return self.redirect(rs, "cde/show_semester")
+
+    @access("cde_admin", modi={"POST"})
+    def semester_balance_update(self, rs):
+        """Deduct membership fees from all member accounts."""
+        period_id = self.cdeproxy.current_period(rs)
+        period = self.cdeproxy.get_period(rs, period_id)
+        if not period['ejection_done'] or period['balance_done']:
+            raise RuntimeError("Wrong timing.")
+        def task(rrs, rs=None):
+            """Update one members balance and advance state."""
+            with Atomizer(rrs):
+                period_id = self.cdeproxy.current_period(rrs)
+                period = self.cdeproxy.get_period(rrs, period_id)
+                previous = period['balance_state'] or 0
+                persona_id = self.coreproxy.next_persona(rrs, previous)
+                if not persona_id or period['balance_done']:
+                    if not period['balance_done']:
+                        period_update = {
+                            'id': period_id,
+                            'balance_state': None,
+                            'balance_done': now(),
+                        }
+                        self.cdeproxy.set_period(rrs, period_update)
+                    return False
+                persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                if persona['balance'] < self.conf.MEMBERSHIP_FEE:
+                    raise ValueError("Balance too low.")
+                else:
+                    new_balance = persona['balance'] - self.conf.MEMBERSHIP_FEE
+                    self.coreproxy.change_persona_balance(
+                        rrs, persona_id, new_balance,
+                        const.FinanceLogCodes.deduct_membership_fee)
+                    if persona['trial_member']:
+                        update = {
+                            'id': persona_id,
+                            'trial_member': False,
+                        }
+                        self.coreproxy.change_persona(rrs, update)
+                period_update = {
+                    'id': period_id,
+                    'balance_state': persona_id,
+                }
+                self.cdeproxy.set_period(rrs, period_update)
+                return True
+        worker = Worker(self.conf, task, rs)
+        worker.start()
+        rs.notify("success", "Started updating balance.")
+        return self.redirect(rs, "cde/show_semester")
+
+    @access("cde_admin", modi={"POST"})
+    def semester_advance(self, rs):
+        """Proceed to next period."""
+        period_id = self.cdeproxy.current_period(rs)
+        period = self.cdeproxy.get_period(rs, period_id)
+        if not period['balance_done']:
+            raise RuntimeError("Wrong timing.")
+        self.cdeproxy.create_period(rs)
+        rs.notify("success", "New period started.")
+        return self.redirect(rs, "cde/show_semester")
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("testrun", "bool"), ("skip", "bool"))
+    def expuls_addresscheck(self, rs, testrun, skip):
+        """Send address check mail to all members.
+
+        In case of a test run we send only a single mail to the button
+        presser.
+        """
+        expuls_id = self.cdeproxy.current_expuls(rs)
+        expuls = self.cdeproxy.get_expuls(rs, expuls_id)
+        if expuls['addresscheck_done']:
+            raise RuntimeError("Already done.")
+        def task(rrs, rs=None):
+            """Send one address check mail and advance state."""
+            with Atomizer(rrs):
+                expuls_id = self.cdeproxy.current_expuls(rrs)
+                expuls = self.cdeproxy.get_expuls(rrs, expuls_id)
+                previous = expuls['addresscheck_state'] or 0
+                persona_id = self.coreproxy.next_persona(rrs, previous)
+                if testrun:
+                    persona_id = rrs.user.persona_id
+                if not persona_id or expuls['addresscheck_done']:
+                    if not expuls['addresscheck_done']:
+                        expuls_update = {
+                            'id': expuls_id,
+                            'addresscheck_state': None,
+                            'addresscheck_done': now(),
+                        }
+                        self.cdeproxy.set_expuls(rrs, expuls_update)
+                    return False
+                persona = self.coreproxy.get_cde_user(rrs, persona_id)
+                address = make_postal_address(persona)
+                lastschrift_list = self.cdeproxy.list_lastschrift(
+                    rrs, persona_ids=(persona_id,))
+                lastschrift = None
+                if lastschrift_list:
+                    lastschrift = self.cdeproxy.get_lastschrift_one(
+                        rrs, unwrap(lastschrift_list))
+                    lastschrift['reference'] = lastschrift_reference(
+                        persona['id'], lastschrift['id'])
+                self.do_mail(
+                    rrs, "addresscheck",
+                    {'To': (persona['username'],),
+                     'Subject': 'Address check for ExPuls'},
+                    {'persona': persona,
+                     'lastschrift': lastschrift,
+                     'fee': self.conf.MEMBERSHIP_FEE,
+                     'address': address,})
+                if testrun:
+                    return False
+                expuls_update = {
+                    'id': expuls_id,
+                    'addresscheck_state': persona_id,
+                }
+                self.cdeproxy.set_expuls(rrs, expuls_update)
+                return True
+        if skip:
+            expuls_update = {
+                'id': expuls_id,
+                'addresscheck_state': None,
+                'addresscheck_done': now(),
+                }
+            self.cdeproxy.set_expuls(rs, expuls_update)
+            rs.notify("success", "Not sending mail.")
+        else:
+            worker = Worker(self.conf, task, rs)
+            worker.start()
+            rs.notify("success", "Started sending mail.")
+        return self.redirect(rs, "cde/show_semester")
+
+    @access("cde_admin", modi={"POST"})
+    def expuls_advance(self, rs):
+        """Proceed to next expuls."""
+        expuls_id = self.cdeproxy.current_expuls(rs)
+        expuls = self.cdeproxy.get_expuls(rs, expuls_id)
+        if not expuls['addresscheck_done']:
+            raise RuntimeError("Wrong timing.")
+        self.cdeproxy.create_expuls(rs)
+        rs.notify("success", "New expuls started.")
+        return self.redirect(rs, "cde/show_semester")

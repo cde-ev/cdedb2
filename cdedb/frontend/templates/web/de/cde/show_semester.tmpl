@@ -1,0 +1,130 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Semesterverwaltung{% endblock %}
+{% block content %}
+    <p>
+        Die auf dieser Seite enthaltenen Aktionen betreffen alle
+        Mitglieder. Aus diesem Grund sind sie praktisch nicht rückgängig zu
+        machen. Führe diese Aktionen bitte nur aus, wenn du dir sicher bist,
+        was du tust!
+    </p>
+
+    <h2>CdE-Semester</h2>
+
+    Derzeit befinden wir uns in Semester Nummer {{ period['id']|e }}.
+
+    <ul>
+        <li>
+            Zahlungsaufforderung/-information versenden (01.01./01.07.)
+            <br>
+            {% if period['billing_done'] %}
+                Erledigt am {{ period['billing_done']|datetime }}.
+            {% else %}
+                {% if period['billing_state'] %}
+                    Bereits bis ID {{ period['billing_state']|cdedbid }} abgearbeitet.
+                {% endif %}
+                <form action="{{ cdedblink('cde/semester_bill')|e }}" method="POST" id="billform">
+                    <div>
+                        {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
+                        {{ util.input_checkbox("addresscheck", label="mit Adressabfrage") }}
+                        {{ util.input_submit(value="Mails verschicken") }}
+                    </div>
+                </form>
+            {% endif %}
+        </li>
+        <li>
+            Streichung inaktiver Mitglieder (01.03./01.09.)
+            <br>
+            {% if period['ejection_done'] %}
+                Erledigt am {{ period['ejection_done']|datetime }}.
+            {% elif period['billing_done'] %}
+                {% if period['ejection_state'] %}
+                    Bereits bis ID {{ period['ejection_state']|cdedbid }} abgearbeitet.
+                {% else %}
+                    Derzeit haben {{ stats['low_balance_members']|e }} Mitglieder ein zu niedriges Guthaben.
+                {% endif %}
+                <form action="{{ cdedblink('cde/semester_eject')|e }}" method="POST" id="ejectform">
+                    <div>
+                        {{ util.input_submit(value="Inaktive streichen") }}
+                    </div>
+                </form>
+            {% else %}
+                Später zu erledigen.
+            {% endif %}
+        </li>
+        <li>
+            Guthaben aktualisieren (01.04./01.10.)
+            <br>
+            {% if period['balance_done'] %}
+                Erledigt am {{ period['balance_done']|datetime }}.
+            {% elif period['ejection_done'] %}
+                {% if period['balance_state'] %}
+                    Bereits bis ID {{ period['balance_state']|cdedbid }} abgearbeitet.
+                {% endif %}
+                <form action="{{ cdedblink('cde/semester_balance_update')|e }}" method="POST" id="balanceform">
+                    <div>
+                        {{ util.input_submit(value="Guthaben aktualisieren") }}
+                    </div>
+                </form>
+            {% else %}
+                Später zu erledigen.
+            {% endif %}
+        </li>
+        <li>
+            Nächstes Semester (01.04./01.10.)
+            <br>
+            {% if period['balance_done'] %}
+                <form action="{{ cdedblink('cde/semester_advance')|e }}" method="POST" id="proceedform">
+                    <div>
+                        {{ util.input_submit(value="Nächstes Semester") }}
+                    </div>
+                </form>
+            {% else %}
+                Später zu erledigen.
+            {% endif %}
+        </li>
+    </ul>
+
+    <h2>Expuls-Semester</h2>
+
+    Der nächste ExPuls trägt die Nummer {{ expuls['id']|e }}.
+
+    <ul>
+        <li>
+            Adressabfrage verschicken
+            <br>
+            {% if expuls['addresscheck_done'] %}
+                Erledigt am {{ expuls['addresscheck_done']|datetime }}.
+            {% else %}
+                {% if expuls['addresscheck_state'] %}
+                    Bereits bis ID {{ expuls['addresscheck_state']|cdedbid }} abgearbeitet.
+                {% endif %}
+                <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="addresscheckform">
+                    <div>
+                        {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
+                        {{ util.input_submit(value="Mails verschicken") }}
+                    </div>
+                </form>
+                <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="noaddresscheckform">
+                    <div>
+                        {{ util.input_hidden("skip", value=True) }}
+                        {{ util.input_submit(value="Als erledigt markieren") }}
+                    </div>
+                </form>
+            {% endif %}
+        </li>
+        <li>
+            Nächster Expuls
+            <br>
+            {% if expuls['addresscheck_done'] %}
+                <form action="{{ cdedblink('cde/expuls_advance')|e }}" method="POST" id="proceedexpulsform">
+                    <div>
+                        {{ util.input_submit(value="Nächster Expuls") }}
+                    </div>
+                </form>
+            {% else %}
+                Später zu erledigen.
+            {% endif %}
+        </li>
+    </ul>
+{% endblock %}

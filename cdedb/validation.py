@@ -41,7 +41,8 @@ import sys
 import dateutil.parser
 import werkzeug.datastructures
 
-from cdedb.common import EPSILON, compute_checkdigit, now, extract_roles
+from cdedb.common import (
+    EPSILON, compute_checkdigit, now, extract_roles, asciificator)
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
@@ -1101,6 +1102,48 @@ def _pdffile(val, argname=None, *, _convert=True):
     return val, errs
 
 
+@_addvalidator
+def _period(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "period"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    optional_fields = {
+        'billing_state': _int_or_None,
+        'billing_done': _datetime,
+        'ejection_state': _int_or_None,
+        'ejection_done': _datetime,
+        'balance_state': _int_or_None,
+        'balance_done': _datetime,
+    }
+    return _examine_dictionary_fields(val, {'id': _int}, optional_fields,
+                                      _convert=_convert)
+
+@_addvalidator
+def _expuls(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "expuls"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    optional_fields = {
+        'addresscheck_state': _int_or_None,
+        'addresscheck_done': _datetime,
+    }
+    return _examine_dictionary_fields(val, {'id': _int}, optional_fields,
+                                      _convert=_convert)
+
 _LASTSCHRIFT_COMMON_FIELDS = lambda: {
     'amount': _decimal,
     'iban': _str,
@@ -1175,55 +1218,6 @@ def _lastschrift_transaction(val, argname=None, *, creation=False,
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs
-
-def asciificator(s):
-    """Pacify a string.
-
-    Replace or omit all characters outside a known good set. This is to
-    be used if your use case does not tolerate any fancy characters
-    (like SEPA files).
-
-    :type s: str
-    :rtype: str
-    """
-    umlaut_map = {
-        "ä": "ae", "æ": "ae",
-        "Ä": "AE", "Æ": "AE",
-        "ö": "oe", "ø": "oe", "œ": "oe",
-        "Ö": "Oe", "Ø": "Oe", "Œ": "Oe",
-        "ü": "ue",
-        "Ü": "Ue",
-        "ß": "ss",
-        "à": "a", "á": "a", "â": "a", "ã": "a", "å": "a", "ą": "a",
-        "À": "A", "Á": "A", "Â": "A", "Ã": "A", "Å": "A", "Ą": "A",
-        "ç": "c", "č": "c", "ć": "c",
-        "Ç": "C", "Č": "C", "Ć": "C",
-        "è": "e", "é": "e", "ê": "e", "ë": "e", "ę": "e",
-        "È": "E", "É": "E", "Ê": "E", "Ë": "E", "Ę": "E",
-        "ì": "i", "í": "i", "î": "i", "ï": "i",
-        "Ì": "I", "Í": "I", "Î": "I", "Ï": "I",
-        "ł": "l",
-        "Ł": "L",
-        "ñ": "n", "ń": "n",
-        "Ñ": "N", "Ń": "N",
-        "ò": "o", "ó": "o", "ô": "o", "õ": "o", "ő": "o",
-        "Ò": "O", "Ó": "O", "Ô": "O", "Õ": "O", "Ő": "O",
-        "ù": "u", "ú": "u", "û": "u", "ű": "u",
-        "Ù": "U", "Ú": "U", "Û": "U", "Ű": "U",
-        "ý": "y", "ÿ": "y",
-        "Ý": "Y", "Ÿ": "Y",
-        "ź": "z",
-        "Ź": "Z",
-    }
-    ret = ""
-    for char in s:
-        if char in umlaut_map:
-            ret += umlaut_map[char]
-        elif char in (string.ascii_letters + string.digits + " /-?:().,+"):
-            ret += char
-        else:
-            ret += ' '
-    return ret
 
 _SEPA_DATA_FIELDS = {
     'issued_at': _datetime,

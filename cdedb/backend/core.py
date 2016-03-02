@@ -503,6 +503,22 @@ class CoreBackend(AbstractBackend):
         data = self.sql_select(rs, "core.personas", columns, ids)
         return {d['id']: d for d in data}
 
+    @access("core_admin")
+    def next_persona(self, rs, persona_id, is_member=True):
+        """Look up the following persona.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :type is_member: bool
+        :param is_member: If True, restrict to members.
+        :rtype: int or None
+        :returns: Next valid id in table core.personas
+        """
+        query = "SELECT MIN(id) FROM core.personas WHERE id > %s"
+        if is_member:
+            query = glue(query, "AND is_member = True")
+        return unwrap(self.query_one(rs, query, (persona_id,)))
+
     def commit_persona(self, rs, data, change_note):
         """Actually update a persona data set.
 
