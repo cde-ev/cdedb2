@@ -7,7 +7,6 @@
 ** run validator on all html output
 ** do css layout
 ** improve ui
-** implement offline mode
 ** write tests for uncovered code
 ** add translations
 ** adjust LDAP indices
@@ -36,6 +35,7 @@
 ** move member search to cde index page (maybe add statistics)
 ** allow to set custom password on reset (after email validation)
 ** add page detailing where to send membership fees
+** zap _data postfixes in many places (without them it gets shorter but not less legible)
 ** add dash-board to index pages
 *** link to relevant events (orga, open to registration) [if event user]
 *** link to open assemblies
@@ -49,14 +49,6 @@
 ** more logging
 ** make test-suite faster
 ** develop a migration strategy
-** what about assembly-users which want to participate in an event?
-*** make realm association independently toggleable
-
-    Define a most significant association. Each admin may only view/edit
-    users significantly associated to his realm. However highest association
-    level is "cde", which also catches all combinations like
-    "event"+"assembly".
-*** think about separating a finance_admin and past_event_admin privilege
 ** handling of invalid datasets needs to be taken care of
 *** the real data probably contains some surprises (like NULL usernames due to email trouble)
 * missing functionality compared to v1 which should be implemented

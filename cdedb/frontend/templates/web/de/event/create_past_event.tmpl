@@ -8,6 +8,8 @@
             {{ util.input_text(name="organizer", label="Organisator") }}
             {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
             {{ util.input_text(name="tempus", label="Stichtag") }}
+            {{ util.input_textarea(name="courses", label="Kurse",
+                                   info='Hier einen Kurs pro Zeile im Format "Titel";"Beschreibung" eingeben.') }}
         </table>
         <div>
             {{ util.input_submit(value="Anlegen") }}

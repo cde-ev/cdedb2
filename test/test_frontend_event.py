@@ -285,6 +285,28 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Ganz ohne Minderjährige.")
 
     @as_users("anton")
+    def test_create_past_event_with_courses(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/pastevent/create'})
+        self.assertTitle("Veranstaltung anlegen")
+        f = self.response.forms['createeventform']
+        f['title'] = "Link Academy II"
+        f['organizer'] = "Privatvergnügen"
+        f['description'] = "Ganz ohne Minderjährige."
+        f['tempus'] = "1.1.2000"
+        f['courses'] = '''"Hoola Hoop";"Spaß mit dem Reifen"
+"Abseilen";"Von ganz oben"
+"Tretbootfahren";""
+'''
+        self.submit(f)
+        self.assertTitle("Link Academy II")
+        self.assertPresence("Privatvergnügen")
+        self.assertPresence("Ganz ohne Minderjährige.")
+        self.assertPresence("Hoola Hoop")
+        self.assertPresence("Abseilen")
+        self.assertPresence("Tretbootfahren")
+
+    @as_users("anton")
     def test_change_past_course(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/pastevent/list'},

@@ -4,6 +4,7 @@
 
 from collections import OrderedDict
 import copy
+import csv
 import itertools
 import json
 import logging
@@ -26,6 +27,7 @@ from cdedb.common import (
     unwrap, now, ProxyShim, json_serialize)
 from cdedb.backend.event import EventBackend
 import cdedb.database.constants as const
+from cdedb.database.connection import Atomizer
 
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
@@ -287,13 +289,33 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_past_event")
 
     @access("event_admin", modi={"POST"})
+    @REQUESTdata(("courses", "str_or_None"))
     @REQUESTdatadict("title", "organizer", "description", "tempus")
-    def create_past_event(self, rs, data):
+    def create_past_event(self, rs, courses, data):
         """Add new concluded event."""
         data = check(rs, "past_event_data", data, creation=True)
+        thecourses = []
+        if courses:
+            courselines = courses.split('\n')
+            reader = csv.DictReader(
+                courselines, fieldnames=("title", "description"), delimiter=';',
+                quoting=csv.QUOTE_ALL, doublequote=True, quotechar='"')
+            lineno = 0
+            for entry in reader:
+                lineno += 1
+                entry['pevent_id'] = 1
+                entry = check(rs, "past_course_data", entry, creation=True)
+                if entry:
+                    thecourses.append(entry)
+                else:
+                    rs.notify("warning", "Line {} is faulty.".format(lineno))
         if rs.errors:
             return self.create_past_event_form(rs)
-        new_id = self.eventproxy.create_past_event(rs, data)
+        with Atomizer(rs):
+            new_id = self.eventproxy.create_past_event(rs, data)
+            for cdata in thecourses:
+                cdata['pevent_id'] = new_id
+                self.eventproxy.create_past_course(rs, cdata)
         self.notify_return_code(rs, new_id, success="Event created.")
         return self.redirect(rs, "event/show_past_event", {'pevent_id': new_id})
 
