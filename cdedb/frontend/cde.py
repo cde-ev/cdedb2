@@ -833,7 +833,8 @@ class CdEFrontend(AbstractUserFrontend):
                         self.cdeproxy.set_period(rrs, period_update)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                if persona['balance'] < self.conf.MEMBERSHIP_FEE:
+                if (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                        and not persona['trial_member']):
                     self.coreproxy.change_membership(rrs, persona_id,
                                                      is_member=False)
                     transaction_subject = make_transaction_subject(persona)
@@ -879,19 +880,22 @@ class CdEFrontend(AbstractUserFrontend):
                         self.cdeproxy.set_period(rrs, period_update)
                     return False
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
-                if persona['balance'] < self.conf.MEMBERSHIP_FEE:
+                if (persona['balance'] < self.conf.MEMBERSHIP_FEE
+                        and not persona['trial_member']):
                     raise ValueError("Balance too low.")
                 else:
-                    new_balance = persona['balance'] - self.conf.MEMBERSHIP_FEE
-                    self.coreproxy.change_persona_balance(
-                        rrs, persona_id, new_balance,
-                        const.FinanceLogCodes.deduct_membership_fee)
                     if persona['trial_member']:
                         update = {
                             'id': persona_id,
                             'trial_member': False,
                         }
-                        self.coreproxy.change_persona(rrs, update)
+                        self.coreproxy.change_persona(
+                            rrs, update, change_note="End trial membership.")
+                    else:
+                        new_b = persona['balance'] - self.conf.MEMBERSHIP_FEE
+                        self.coreproxy.change_persona_balance(
+                            rrs, persona_id, new_b,
+                            const.FinanceLogCodes.deduct_membership_fee)
                 period_update = {
                     'id': period_id,
                     'balance_state': persona_id,

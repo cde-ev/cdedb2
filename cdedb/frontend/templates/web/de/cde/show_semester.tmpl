@@ -60,6 +60,8 @@
             {% elif period['ejection_done'] %}
                 {% if period['balance_state'] %}
                     Bereits bis ID {{ period['balance_state']|cdedbid }} abgearbeitet.
+                {% else %}
+                    Derzeit haben {{ stats['trial_members']|e }} Mitglieder eine Probemitgliedschaft.
                 {% endif %}
                 <form action="{{ cdedblink('cde/semester_balance_update')|e }}" method="POST" id="balanceform">
                     <div>

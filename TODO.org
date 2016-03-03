@@ -62,7 +62,6 @@
 * missing functionality compared to v1 which should be implemented
 ** batch admisssion of members
 ** batch editing of past events
-** membership management ("Semesterverwaltung")
 ** financial transaction log ("Kassenbuch", "Finanzbericht")
 ** email trouble (bounceparser and friends)
 *** should users be allowed to have a NULL username? what happens if we try to send them a mail? what if they are subscribed to a mailing list?

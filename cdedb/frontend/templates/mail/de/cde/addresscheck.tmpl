@@ -16,10 +16,13 @@ Mail-Adresse. Falls Du Dein Passwort vergessen hast, kannst Du Dir unter
 ein neues zusenden lassen.
 
 {% if not lastschrift %}
+{% if persona['balance'] %}
 Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
-
+{% else %}
+Du bist für dieses Halbjahr Probemitglied im CdE.
+{% endif %}
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
 

@@ -466,10 +466,13 @@ class CdEBackend(AbstractBackend):
         ret = {}
         with Atomizer(rs):
             query = glue("SELECT COUNT(*) FROM core.personas",
-                         "WHERE is_member = True AND balance < %s")
+                         "WHERE is_member = True AND balance < %s",
+                         "AND trial_member = False")
             ret['low_balance_members'] = unwrap(self.query_one(
                 rs, query, (self.conf.MEMBERSHIP_FEE,)))
-
+            query = glue("SELECT COUNT(*) FROM core.personas",
+                         "WHERE is_member = True AND trial_member = True")
+            ret['trial_members'] = unwrap(self.query_one(rs, query, tuple()))
             return ret
 
     @access("cde")

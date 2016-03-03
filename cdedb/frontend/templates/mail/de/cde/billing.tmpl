@@ -1,6 +1,6 @@
 Hallo {{ persona['display_name'] }},
 
-{% if persona['balance'] < fee and not lastschrift %}
+{% if (persona['balance'] < fee and not persona['trial_member']) and not lastschrift %}
 == Mitgliedsbeitrag bezahlen ==
 
 Schön, dass Du bis jetzt dem CdE treu geblieben bist. Leider reicht
@@ -57,7 +57,7 @@ Bitte melde Dich auch bei uns, wenn Du diesen Betrag lieber von Deinem
 CdE-'Guthabenkonto' abgezogen haben möchtest, oder auch, wenn Du dieses
 Jahr mit dem Lastschrifteinzug pausieren möchtest.
 {% endif %}
-
+{% if addresscheck %}
 == Adresskontrolle ==
 
 Unter anderem für den Versand des exPuls ist es wichtig, dass wir
@@ -70,14 +70,16 @@ Falls diese nicht mehr aktuell ist, so kannst Du Dich in die
 CdE-Datenbank unter der Adresse
 {{ cdedblink("core/index") }}
 einloggen und die Adresse korrigieren.
-
-{% if persona['balance'] >= fee and not lastschrift %}
+{% endif %}
+{% if (persona['balance'] >= fee or persona['trial_member']) and not lastschrift %}
 == Guthabenstatus ==
-
+{% if persona['balance'] %}
 Dein momentanes Guthaben beträgt {{ persona['balance']|money }}. Somit
 sind Deine Mitgliedsbeiträge bei der derzeitigen Beitragshöhe
 von {{ fee|money }} noch {{ persona['balance'] // fee }} Halbjahre bezahlt.
-
+{% else %}
+Du bist für dieses Halbjahr Probemitglied im CdE.
+{% endif %}
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
 

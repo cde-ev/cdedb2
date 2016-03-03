@@ -501,7 +501,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
-        self.assertPresence("Derzeit haben 1 Mitglieder ein zu niedriges Guthaben")
+        self.assertPresence("Derzeit haben 0 Mitglieder ein zu niedriges Guthaben")
         f = self.response.forms['ejectform']
         self.submit(f)
         count = 0
@@ -512,6 +512,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Derzeit haben 3 Mitglieder eine Probemitgliedschaft")
         f = self.response.forms['balanceform']
         self.submit(f)
         count = 0
@@ -534,6 +535,50 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 44")
+        f = self.response.forms['billform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'ejectform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Derzeit haben 2 Mitglieder ein zu niedriges Guthaben")
+        f = self.response.forms['ejectform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'balanceform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Derzeit haben 0 Mitglieder eine Probemitgliedschaft")
+        f = self.response.forms['balanceform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'proceedform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Semester Nummer 44")
+        f = self.response.forms['proceedform']
+        self.submit(f)
+        count = 0
+        while count < 42:
+            time.sleep(.1)
+            self.traverse({'href': '/cde/semester/show'})
+            if 'billform' in self.response.forms:
+                break
+            count += 1
+        self.assertTitle("Semesterverwaltung")
+        self.assertPresence("Semester Nummer 45")
         self.assertIn('billform', self.response.forms)
 
     @as_users("anton")
