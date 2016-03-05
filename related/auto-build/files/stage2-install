@@ -5,6 +5,12 @@ echo ""
 echo "cdedb - sandbox system: stage2"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo ""
+echo "Prefer IPv4 over IPv6..."
+echo "--------------------------------------------"
+
+echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf
+
+echo ""
 echo "Providing the host keys..."
 echo "--------------------------------------------"
 
