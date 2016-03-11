@@ -13,6 +13,7 @@
             {{ util.input_submit(value="Teilnehmer (ohne Kurs) hinzufügen") }}
         </form>
     {% endif %}
+    <p>Kürzel: {{ event_data['shortname']|e }}</p>
     <p>Organisator: {{ event_data['organizer']|e }}</p>
     <p>{{ event_data['description']|e }}</p>
     {% if courses %}

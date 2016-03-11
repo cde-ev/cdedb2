@@ -5,6 +5,7 @@ users/personas independent of their realm. Thus we have no user role
 since the basic division is between known accounts and anonymous
 accesses.
 """
+import collections
 import copy
 import decimal
 import hashlib
@@ -788,8 +789,10 @@ class CoreBackend(AbstractBackend):
             'is_member': is_member,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(rs, (persona_id,),
-                                                    ('is_member', 'balance')))
+            current = unwrap(self.retrieve_personas(
+                rs, (persona_id,), ('is_member', 'balance', 'is_cde_realm')))
+            if not current['is_cde_realm']:
+                raise RuntimeError("Not a CdE-Account.")
             if current['is_member'] == is_member:
                 return 0
             if not is_member:
@@ -1654,6 +1657,45 @@ class CoreBackend(AbstractBackend):
         rs.conn = orig_conn
         rs.user.roles = orig_roles
         return ret
+
+    @access("core_admin")
+    def find_doppelgangers(self, rs, persona):
+        """Look for accounts with data similar to the passed dataset.
+
+        This is for batch admission, where we may encounter datasets to
+        already existing accounts. In that case we do not want to create
+        a new account.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona: {str: object}
+        :rtype: {int: {str: object}}
+        :returns: A dict of possibly matching account data.
+        """
+        persona = affirm("persona", persona)
+        scores = collections.defaultdict(lambda: 0)
+        queries = (
+            (10, "given_names = %s OR display_name = %s",
+             (persona['given_names'], persona['given_names'])),
+            (10, "family_name = %s OR birth_name = %s",
+             (persona['family_name'], persona['family_name'])),
+            (10, "family_name = %s OR birth_name = %s",
+             (persona['birth_name'], persona['birth_name'])),
+            (10, "birthday = %s", (persona['birthday'],)),
+            (5, "location = %s", (persona['location'],)),
+            (5, "postal_code = %s", (persona['postal_code'],)),
+            (20, "given_names = %s AND family_name = %s",
+             (persona['family_name'],persona['given_names'],)),
+            (21, "username = %s", (persona['username'],)),)
+        ## Omit queries where some parameters are None
+        queries = tuple(e for e in queries if all(x is not None for x in e[2]))
+        for score, condition, params in queries:
+            query = "SELECT id FROM core.personas WHERE {}".format(condition)
+            result = self.query_all(rs, query, params)
+            for e in result:
+                scores[unwrap(e)] += score
+        CUTOFF = 21
+        persona_ids = tuple(k for k, v in scores.items() if v > CUTOFF)
+        return self.get_total_personas(rs, persona_ids)
 
     @access("anonymous")
     def get_meta_info(self, rs):

@@ -1,4 +1,5 @@
 * actionable items
+** make more use of ambience (especially in existing code)
 ** maybe replace is_admin with is_priveleged (move checks for orga and moderator there)
 ** rename CDEDB_OFFLINE_DEPLOYMENT
 ** Kill third datum in parameter entries of util.input_checkboxes and similar

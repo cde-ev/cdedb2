@@ -101,20 +101,22 @@
                         <h1>{{ self.title() }}</h1>
                     {% endblock %}
 
-                    {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign",
-                                         "warning" : "exclamation-sign", "error" : "remove-sign"},
-                            alerttypes = {"success" : "success", "info" : "info", "question" : "info",
-                                          "warning" : "warning", "error" : "danger"},
-                            messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:",
-                                            "warning" : "Warnung!", "error" : "Fehler!"} %}
-                        {% for ntype, message in notifications %}
-                            <div class="alert alert-{{ alerttypes[ntype] }}">
-                                <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
-                                <strong>{{ messagetypes[ntype] }}</strong>
-                                <span class="notificationMessage">{{ i18n(message)|e }}</span>
-                            </div>
-                        {% endfor %}
-                    {% endwith %}
+                    <div id="notifications">
+                        {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign",
+                                             "warning" : "exclamation-sign", "error" : "remove-sign"},
+                                alerttypes = {"success" : "success", "info" : "info", "question" : "info",
+                                              "warning" : "warning", "error" : "danger"},
+                                messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:",
+                                                "warning" : "Warnung!", "error" : "Fehler!"} %}
+                            {% for ntype, message in notifications %}
+                                <div class="alert alert-{{ alerttypes[ntype] }}">
+                                    <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
+                                    <strong>{{ messagetypes[ntype] }}</strong>
+                                    <span class="notificationMessage">{{ i18n(message)|e }}</span>
+                                </div>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
 
                     <div id="content">
                         {% block content %}

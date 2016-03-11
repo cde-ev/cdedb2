@@ -124,6 +124,7 @@ class TestEventBackend(BackendTest):
         old_events = self.event.list_events(self.key, past=True)
         data = {
             'title': "New Link Academy",
+            'shortname': "link",
             'organizer': "Illuminati",
             'description': """Some more text
 
@@ -1658,6 +1659,7 @@ class TestEventBackend(BackendTest):
         ## first generate some data
         data = {
             'title': "New Link Academy",
+            'shortname': "link",
             'organizer': "Illuminati",
             'description': """Some more text
 
@@ -1753,7 +1755,8 @@ class TestEventBackend(BackendTest):
             'description': 'Everybody come!',
             'id': 2,
             'organizer': 'CdE',
-            'title': 'Große Testakademie 2222'}
+            'title': 'Große Testakademie 2222',
+            'shortname': "TestAka",}
         data = self.event.get_past_event_data_one(self.key, new_id)
         self.assertIn(data['tempus'], {datetime.date(2003, 2, 2),
                                        datetime.date(2003, 11, 1),

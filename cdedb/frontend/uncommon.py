@@ -11,7 +11,7 @@ dependencies.
 
 import abc
 
-from cdedb.common import merge_dicts, ProxyShim
+from cdedb.common import merge_dicts, ProxyShim, PERSONA_DEFAULTS
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.common import check_validation as check
 from cdedb.backend.core import CoreBackend
@@ -94,48 +94,15 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_user(self, rs, data):
         """Create new user account."""
-        defaults = {
-            'is_cde_realm': False,
-            'is_event_realm': False,
-            'is_ml_realm': False,
-            'is_assembly_realm': False,
-            'is_member': False,
-            'is_searchable': False,
-            'is_active': True,
-            'cloud_account': False,
-            'title': None,
-            'name_supplement': None,
-            'gender': None,
-            'birthday': None,
-            'telephone': None,
-            'mobile': None,
-            'address_supplement': None,
-            'address': None,
-            'postal_code': None,
-            'location': None,
-            'country': None,
-            'birth_name': None,
-            'address_supplement2': None,
-            'address2': None,
-            'postal_code2': None,
-            'location2': None,
-            'country2': None,
-            'weblink': None,
-            'specialisation': None,
-            'affiliation': None,
-            'timeline': None,
-            'interests': None,
-            'free_form': None,
-            'trial_member': None,
-            'decided_search': None,
-            'bub_search': None,
-            'foto': None,
-        }
-        merge_dicts(data, defaults)
+        merge_dicts(data, PERSONA_DEFAULTS)
         data = check(rs, "persona", data, creation=True)
         if rs.errors:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
+        self.do_mail(rs, "welcome",
+                     {'To': (data['username'],),
+                      'Subject': 'CdEDB account creation',},
+                     {'data': data})
         self.notify_return_code(rs, new_id, success="User created.")
         if new_id:
             return self.redirect_show_user(rs, new_id)
@@ -174,44 +141,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         case = self.coreproxy.genesis_my_case(rs, case_id, secret)
         for key in ("username", "given_names", "family_name"):
             data[key] = case[key]
-        defaults = {
-            'is_cde_realm': False,
-            'is_event_realm': False,
-            'is_ml_realm': False,
-            'is_assembly_realm': False,
-            'is_member': False,
-            'is_searchable': False,
-            'is_active': True,
-            'cloud_account': False,
-            'title': None,
-            'name_supplement': None,
-            'gender': None,
-            'birthday': None,
-            'telephone': None,
-            'mobile': None,
-            'address_supplement': None,
-            'address': None,
-            'postal_code': None,
-            'location': None,
-            'country': None,
-            'birth_name': None,
-            'address_supplement2': None,
-            'address2': None,
-            'postal_code2': None,
-            'location2': None,
-            'country2': None,
-            'weblink': None,
-            'specialisation': None,
-            'affiliation': None,
-            'timeline': None,
-            'interests': None,
-            'free_form': None,
-            'trial_member': None,
-            'decided_search': None,
-            'bub_search': None,
-            'foto': None,
-        }
-        merge_dicts(data, defaults)
+        merge_dicts(data, PERSONA_DEFAULTS)
         if case['realm'] == "event":
             data['is_event_realm'] = True
             data['is_ml_realm'] = True

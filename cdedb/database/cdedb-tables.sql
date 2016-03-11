@@ -432,13 +432,13 @@ GRANT USAGE ON SCHEMA event TO cdb_persona;
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
+        shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
         organizer               varchar NOT NULL,
         description             varchar,
         --
         -- cut for past_event.events (modulo column tempus)
         --
-        shortname               varchar NOT NULL,
         registration_start      date,
         -- official end of registration
         registration_soft_limit date,
@@ -637,6 +637,7 @@ GRANT USAGE ON SCHEMA past_event TO cdb_persona;
 CREATE TABLE past_event.events (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
+        shortname               varchar NOT NULL UNIQUE,
         -- BuB,  JGW, CdE, ...
         organizer               varchar NOT NULL,
         description             varchar,

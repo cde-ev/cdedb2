@@ -1386,6 +1386,7 @@ def _meta_info(val, keys, argname=None, *, _convert=True):
 
 _PAST_EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
+    'shortname': _str,
     'organizer': _str,
     'tempus': _date,
     'description': _str_or_None,

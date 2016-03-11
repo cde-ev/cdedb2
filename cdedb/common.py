@@ -701,6 +701,43 @@ def determine_age_class(birth, reference):
         return AgeClasses.u16
     return AgeClasses.u14
 
+@enum.unique
+class LineResolutions(enum.IntEnum):
+    """Possible actions during batch admission
+    """
+    create = 0 #: Create a new account with this data.
+    skip = 1 #: Do nothing with this line.
+    renew_trial = 2 #: Renew the trial membership of an existing account.
+    update = 3 #: Update an existing account with this data.
+    renew_and_update = 4 #: A combination of renew_trial and update.
+
+    def do_trial(self):
+        """Whether to grant a trial membership.
+
+        :rtype: bool
+        """
+        return self in {LineResolutions.renew_trial,
+                        LineResolutions.renew_and_update}
+
+    def do_update(self):
+        """Whether to incorporate the new data (address, ...).
+
+        :rtype: bool
+        """
+        return self in {LineResolutions.update,
+                        LineResolutions.renew_and_update}
+
+    def is_modification(self):
+        """Whether we modify an existing account.
+
+        In this case we do not create a new account.
+
+        :rtype: bool
+        """
+        return self in {LineResolutions.renew_trial,
+                        LineResolutions.update,
+                        LineResolutions.renew_and_update}
+
 def asciificator(s):
     """Pacify a string.
 
@@ -812,6 +849,49 @@ def privilege_tier(roles):
         return ret | {"cde_admin"}
     return ret
 
+#: Creating a persona requires one to supply values for nearly all fields,
+#: although in some realms they are meaningless. Here we provide a base skeleton
+#: which can be used, so that these realms do not need to have any knowledge of
+#: these fields.
+PERSONA_DEFAULTS = {
+    'is_cde_realm': False,
+    'is_event_realm': False,
+    'is_ml_realm': False,
+    'is_assembly_realm': False,
+    'is_member': False,
+    'is_searchable': False,
+    'is_active': True,
+    'cloud_account': False,
+    'title': None,
+    'name_supplement': None,
+    'gender': None,
+    'birthday': None,
+    'telephone': None,
+    'mobile': None,
+    'address_supplement': None,
+    'address': None,
+    'postal_code': None,
+    'location': None,
+    'country': None,
+    'birth_name': None,
+    'address_supplement2': None,
+    'address2': None,
+    'postal_code2': None,
+    'location2': None,
+    'country2': None,
+    'weblink': None,
+    'specialisation': None,
+    'affiliation': None,
+    'timeline': None,
+    'interests': None,
+    'free_form': None,
+    'trial_member': None,
+    'decided_search': None,
+    'bub_search': None,
+    'foto': None,
+}
+
+
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
@@ -899,7 +979,8 @@ GENESIS_CASE_FIELDS = (
     "realm", "notes", "case_status", "secret", "reviewer")
 
 #: Fields of a concluded event
-PAST_EVENT_FIELDS = ("id", "title", "organizer", "description", "tempus")
+PAST_EVENT_FIELDS = ("id", "title", "shortname", "organizer", "description",
+                     "tempus")
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (

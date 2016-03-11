@@ -5,6 +5,7 @@
     <form action="{{ cdedblink('event/create_past_event')|e }}" method="POST" id="createeventform">
         <table>
             {{ util.input_text(name="title", label="Titel") }}
+            {{ util.input_text(name="shortname", label="Kürzel") }}
             {{ util.input_text(name="organizer", label="Organisator") }}
             {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
             {{ util.input_text(name="tempus", label="Stichtag") }}

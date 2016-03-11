@@ -6,6 +6,7 @@ variant for external participants.
 
 import collections
 import copy
+import datetime
 
 import psycopg2.extras
 
@@ -1320,6 +1321,66 @@ class EventBackend(AbstractBackend):
         self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 
+    @access("core_admin", "event_admin")
+    def find_past_event(self, rs, moniker):
+        """Look for events with a certain name.
+
+        This is mainly for batch admission, where we want to
+        automatically resolve past events to their ids.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type moniker: str
+        :rtype: (int or None, [exception])
+        :returns: The id of the past event or None if there were errors.
+        """
+        moniker = affirm("str_or_None", moniker)
+        if not moniker:
+            return None, [("pevent_id", ValueError("No input supplied."))]
+        pattern = "\\s*{}\\s*".format(moniker)
+        query = glue("SELECT id FROM past_event.events",
+                     "WHERE (title ~* %s OR shortname ~* %s) AND tempus >= %s")
+        today = now().date()
+        reference = today - datetime.timedelta(days=200)
+        reference = reference.replace(day=1, month=1)
+        ret = self.query_all(rs, query, (pattern, pattern, reference))
+        if len(ret) == 0:
+            ## retry with less restrictive conditions
+            ret = self.query_all(rs, query,
+                                 (pattern, pattern, datetime.date.min))
+        if len(ret) == 0:
+            return None, [("pevent_id", ValueError("No event found."))]
+        elif len(ret) > 1:
+            return None, [("pevent_id", ValueError("Ambiguous event."))]
+        else:
+            return unwrap(unwrap(ret)), []
+
+    @access("core_admin", "event_admin")
+    def find_past_course(self, rs, moniker, pevent_id):
+        """Look for courses with a certain name.
+
+        This is mainly for batch admission, where we want to
+        automatically resolve past courses to their ids.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type moniker: str
+        :type pevent_id: int
+        :param pevent_id: Restrict to courses of this past event.
+        :rtype: (int or None, [exception])
+        :returns: The id of the past course or None if there were errors.
+        """
+        moniker = affirm("str_or_None", moniker)
+        pevent_id = affirm("int", pevent_id)
+        pattern = "\\s*{}\\s*".format(moniker)
+        query = glue("SELECT id FROM past_event.courses",
+                     "WHERE title ~* %s AND pevent_id = %s")
+        ret = self.query_all(rs, query, (pattern, pevent_id))
+        if len(ret) == 0:
+            return None, [("pcourse_id", ValueError("No course found."))]
+        elif len(ret) > 1:
+            return None, [("pcourse_id", ValueError("Ambiguous course."))]
+        else:
+            return unwrap(ret), []
+
     @access("event_admin")
     def archive_event(self, rs, event_id):
         """Transfer data from a concluded event into a new past event instance.
@@ -1463,7 +1524,7 @@ class EventBackend(AbstractBackend):
             return ret
 
     @classmethod
-    def translate(cls, data, translations, extra_translations={}):
+    def translate(cls, data, translations, extra_translations=None):
         """Helper to do the actual translation of IDs which got out of sync.
 
         This does some additional sanitizing besides applying the
@@ -1474,6 +1535,7 @@ class EventBackend(AbstractBackend):
         :type extra_translations: {str: str}
         :rtype: [{str: object}]
         """
+        extra_translations = extra_translations or {}
         ret = copy.deepcopy(data)
         for x in ret:
             if x in translations or x in extra_translations:
@@ -1489,7 +1551,7 @@ class EventBackend(AbstractBackend):
         return ret
 
     def synchronize_table(self, rs, table, data, current, translations,
-                          entity=None, extra_translations={}):
+                          entity=None, extra_translations=None):
         """Replace one data set in a table with another.
 
         This is a bit involved, since both DB instances may have been
@@ -1517,6 +1579,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: standard return code
         """
+        extra_translations = extra_translations or {}
         ret = 1
         dlookup = {e['id'] for e in data}
         for e in current:

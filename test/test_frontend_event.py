@@ -276,6 +276,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Link Academy II"
+        f['shortname'] = "link"
         f['organizer'] = "Privatvergnügen"
         f['description'] = "Ganz ohne Minderjährige."
         f['tempus'] = "1.1.2000"
@@ -291,6 +292,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Link Academy II"
+        f['shortname'] = "link"
         f['organizer'] = "Privatvergnügen"
         f['description'] = "Ganz ohne Minderjährige."
         f['tempus'] = "1.1.2000"

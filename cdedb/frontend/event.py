@@ -6,7 +6,6 @@ from collections import OrderedDict
 import copy
 import csv
 import itertools
-import json
 import logging
 import os
 import os.path
@@ -272,7 +271,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "change_past_event", {'data': data})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdatadict("title", "organizer", "description", "tempus")
+    @REQUESTdatadict("title", "shortname", "organizer", "description", "tempus")
     def change_past_event(self, rs, pevent_id, data):
         """Modify a concluded event."""
         data['id'] = pevent_id
@@ -290,7 +289,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("courses", "str_or_None"))
-    @REQUESTdatadict("title", "organizer", "description", "tempus")
+    @REQUESTdatadict("title", "shortname", "organizer", "description", "tempus")
     def create_past_event(self, rs, courses, data):
         """Add new concluded event."""
         data = check(rs, "past_event_data", data, creation=True)
