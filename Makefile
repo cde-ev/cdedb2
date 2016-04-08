@@ -22,7 +22,7 @@ help:
 	@echo "                 'test.test_common.TestCommon.test_realm_extraction')"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
-PYTHONBIN ?= "python3.4"
+PYTHONBIN ?= "python3"
 TESTPATTERN ?= ""
 
 doc:
@@ -94,13 +94,13 @@ lint:
 	@echo "All of pylint"
 	@echo "================================================================================"
 	@echo ""
-	/usr/lib/python-exec/python3.4/pylint --rcfile='./lint.rc' cdedb || true
+	/usr/lib/python-exec/python3.5/pylint --rcfile='./lint.rc' cdedb || true
 	@echo ""
 	@echo "================================================================================"
 	@echo "And now only errors and warnings"
 	@echo "================================================================================"
 	@echo ""
-	/usr/lib/python-exec/python3.4/pylint --rcfile='./lint.rc' cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
+	/usr/lib/python-exec/python3.5/pylint --rcfile='./lint.rc' cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
 
 check:
 	make sample-data-test &> /dev/null
