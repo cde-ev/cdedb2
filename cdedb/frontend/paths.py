@@ -100,6 +100,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="resolve_change"),
                 rule("/show", methods=_GET,
                      endpoint="show_user"),
+                rule("/history", methods=_GET,
+                     endpoint="show_history"),
                 rule("/activity/change", methods=_POST,
                      endpoint="toggle_activity"),)),
             sub('/genesis', (

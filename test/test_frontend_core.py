@@ -514,6 +514,28 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence(user['family_name'])
         self.assertPresence('Ganondorf')
 
+    @as_users("anton")
+    def test_history(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-2-H"
+        f['realm'] = "core"
+        self.submit(f)
+        self.traverse({'href': '/core/persona/2/adminchange'})
+        self.assertTitle("Bertålotta Beispiel bearbeiten")
+        f = self.response.forms['changedataform']
+        f['display_name'] = "Zelda"
+        f['birthday'] = "3.4.1933"
+        self.submit(f)
+        self.assertPresence("Zelda")
+        self.assertTitle("Bertålotta Beispiel")
+        self.assertPresence("1933-04-03")
+        self.traverse({'href': '/core/persona/2/history'})
+        self.assertTitle("Geschichte von Bertålotta Beispiel")
+        self.assertPresence("2: 1933-04-03")
+        self.assertPresence("1: 1981-02-11")
+        element = self.response.lxml.xpath("//select[@name='birthday']")[0]
+        self.assertEqual('2', element.value)
+
     def test_log(self):
         ## First: generate data
         self.test_admin_password_reset()

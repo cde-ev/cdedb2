@@ -17,7 +17,7 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_data_extractor)
 from cdedb.common import (
-    ProxyShim, PERSONA_DEFAULTS, LineResolutions, glue)
+    ProxyShim, PERSONA_DEFAULTS, LineResolutions, glue, pairwise)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
@@ -121,6 +121,30 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
         data = self.coreproxy.get_total_persona(rs, persona_id)
         return self.render(rs, "show_user", {'data': data})
+
+    @access("core_admin")
+    def show_history(self, rs, persona_id):
+        """Display user history."""
+        history = self.coreproxy.changelog_get_history(rs, persona_id,
+                                                       generations=None)
+        current_generation = self.coreproxy.changelog_get_generation(
+            rs, persona_id)
+        current = history[current_generation]
+        fields = current.keys()
+        history_log = {f: {e['generation']: e[f] for e in history.values()}
+                       for f in fields}
+        constants = {f: tuple(y for x, y in pairwise(sorted(history.keys()))
+                              if history[x][f] == history[y][f])
+                     for f in fields}
+        for f in fields:
+            for c in constants[f]:
+                del history_log[f][c]
+        formatter = lambda gen, val: (
+            gen, "{}: {}".format(gen, val if val is not None else ""), None)
+        entries = {f: tuple(formatter(gen, history_log[f][gen])
+                            for gen in sorted(history_log[f])) for f in fields}
+        return self.render(rs, "show_history", {'entries': entries,
+                                                'current': current})
 
     @access("core_admin")
     @REQUESTdata(("id_to_show", "cdedbid"), ("realm", "str"))

@@ -10,6 +10,7 @@ import decimal
 import enum
 import functools
 import inspect
+import itertools
 import json
 import logging
 import logging.handlers
@@ -480,6 +481,18 @@ def json_serialize(data):
     :rtype: str
     """
     return json.dumps(data, indent=4, cls=CustomJSONEncoder)
+
+def pairwise(iterable):
+    """Iterate over adjacent pairs of values of an iterable.
+
+    For the input [1, 3, 6, 10] this returns [(1, 3), (3, 6), (6, 10)].
+
+    :type iterable: iterable
+    :rtype: iterable
+    """
+    x, y = itertools.tee(iterable)
+    next(y, None)
+    return zip(x, y)
 
 def _schulze_winners(d, candidates):
     """This is the abstract part of the Schulze method doing the actual work.

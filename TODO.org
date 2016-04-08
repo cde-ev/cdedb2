@@ -53,7 +53,6 @@
 ** handling of invalid datasets needs to be taken care of
 *** the real data probably contains some surprises (like NULL usernames due to email trouble)
 * missing functionality compared to v1 which should be implemented
-** batch admisssion of members
 ** batch editing of past events
 ** financial transaction log ("Kassenbuch", "Finanzbericht")
 ** email trouble (bounceparser and friends)
