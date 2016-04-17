@@ -1,19 +1,28 @@
 <<% extends "tex/de/event/base_article.tmpl" %>>
 <<% block extra_preamble %>>
     \parindent 0pt\relax
+    \newcommand\course[5]{
+        \section*{#1 (#2)}
+        Kursleiter: #3
+        \par
+        Notizen: #4
+        \par
+        Erst-/Zweit-/Drittwahlen: #5}
+    \newcommand\participant[6]{
+        \section*{#1 (#2)}
+        #3
+        #4
+        #5
+        #6}
 <<% endblock %>>
 <<% block content %>>
     <<% for course_id, cdata in course_data|dictsort %>>
         <<% for part_id in cdata['parts']|sort %>>
-            \section*{<<< cdata['title']|te >>> (<<< event_data['parts'][part_id]['title']|te >>>)}
-            Kursleiter: <<< cdata['instructors']|te >>>
-            \par
-            Notizen: <<< cdata['notes']|te >>>
-            \par
-            Erst-/Zweit-/Drittwahlen: <<< counts[course_id][(part_id, 0)] >>>/%
-                                      <<< counts[course_id][(part_id, 1)] >>>/%
-                                      <<< counts[course_id][(part_id, 2)] >>>
-            \par
+            \course{<<< cdata['title']|te >>>}{<<< event_data['parts'][part_id]['title']|te >>>}%
+                   {<<< cdata['instructors']|te >>>}{<<< cdata['notes']|te >>>}%
+                   {<<< counts[course_id][(part_id, 0)] >>>/%
+                    <<< counts[course_id][(part_id, 1)] >>>/%
+                    <<< counts[course_id][(part_id, 2)] >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
@@ -21,19 +30,20 @@
         <<% if rdata['persona_id'] not in event_data['orgas'] %>>
             <<% for part_id, pdata in event_data['parts']|dictsort %>>
                 <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.participant %>>
-                    \section*{%
-                        <<< persona_data[rdata['persona_id']]['given_names']|te >>>
-                        <<< persona_data[rdata['persona_id']]['family_name']|te >>>
-                        (<<< pdata['title']|te >>>)}
-                    <<% if rdata['parts'][part_id]['course_instructor'] %>>
-                        Kursleiter: <<< course_data[rdata['parts'][part_id]['course_instructor']]['title']|te >>>
-                        \par
-                    <<% endif %>>
-                    <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") %>>
-                        <<% if rdata['choices'][part_id]|length > loop.index0 %>>
-                            <<< label|te >>>: <<< course_data[rdata['choices'][part_id][loop.index0]]['title']|te >>>
-                            \par
-                        <<% endif %>>
+                    \participant{<<< persona_data[rdata['persona_id']]['given_names']|te >>>
+                                 <<< persona_data[rdata['persona_id']]['family_name']|te >>>}%
+                                {<<< pdata['title']|te >>>}%
+                                {<<% if rdata['parts'][part_id]['course_instructor'] -%>>
+                                    Kursleiter:
+                                    <<< course_data[rdata['parts'][part_id]['course_instructor']]['title']|te >>>
+                                    \par
+                                <<%- endif %>>}%
+                    <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") -%>>
+                                {<<% if rdata['choices'][part_id]|length > loop.index0 -%>>
+                                    <<< label|te >>>:
+                                    <<< course_data[rdata['choices'][part_id][loop.index0]]['title']|te >>>
+                                    \par
+                                 <<% endif %>>}%
                     <<% endfor %>>
                 <<% endif %>>
             <<% endfor %>>

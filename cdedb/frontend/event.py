@@ -1046,7 +1046,7 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'event_data': event_data, 'lodgement_data': lodgement_data,
             'registration_data': registration_data, 'user_data': user_data,
-            'lodge_present': lodge_present,
+            'lodge_present': lodge_present, 'AgeClasses': AgeClasses, 
             'may_reserve_present': may_reserve_present})
         return self.serve_latex_document(rs, tex, "lodgement_puzzle", runs)
 
