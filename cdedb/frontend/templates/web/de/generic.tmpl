@@ -270,23 +270,23 @@
             {% endif %}
             {% if data['specialisation'] and realm in ("core", "cde") %}
                 <dt>Fachgebiet</dt>
-                <dd>{{ data['specialisation']|e|linebreaks }}</dd>
+                <dd>{{ data['specialisation']|rst }}</dd>
             {% endif %}
             {% if data['affiliation'] and realm in ("core", "cde") %}
                 <td>Schule, Uni, ...</td>
-                <td>{{ data['affiliation']|e|linebreaks }}</td>
+                <td>{{ data['affiliation']|rst }}</td>
             {% endif %}
             {% if data['timeline'] and realm in ("core", "cde") %}
                 <td>Jahrgang, Matrikel, ...</td>
-                <td>{{ data['timeline']|e|linebreaks }}</td>
+                <td>{{ data['timeline']|rst }}</td>
             {% endif %}
             {% if data['interests'] and realm in ("core", "cde") %}
                 <td>Interessen</td>
-                <td>{{ data['interests']|e|linebreaks }}</td>
+                <td>{{ data['interests']|rst }}</td>
             {% endif %}
             {% if data['free_form'] and realm in ("core", "cde") %}
                 <td>Sonstiges</td>
-                <td>{{ data['free_form']|e|linebreaks }}</td>
+                <td>{{ data['free_form']|rst }}</td>
             {% endif %}
         </dl>
 
@@ -456,7 +456,7 @@
             {% if is_admin %}
                 <tr>
                     <td>Notizen</td>
-                    <td>{{ data['notes']|e|linebreaks }}</td>
+                    <td>{{ data['notes']|rst }}</td>
                 </tr>
             {% endif %}
         {% endif %}

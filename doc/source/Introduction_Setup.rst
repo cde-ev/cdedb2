@@ -25,6 +25,7 @@ Further we depend on a number of python packages:
 * psycopg2 (at least 2.5.4, for jsonb support)
 * werkzeug (at least 0.10, bug in py3-handling of MultiDict input)
 * dateutil
+* docutils
 * jinja2
 * pytz
 * ldap3

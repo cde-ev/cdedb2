@@ -2,11 +2,11 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% block title %}{{ assembly_data['title']|e }}{% endblock %}
 {% block content %}
-    <p>{{ assembly_data['description']|e|linebreaks }}</p>
+    <p>{{ assembly_data['description']|rst }}</p>
     <p>Anmeldeschluss: {{ assembly_data['signup_end']|datetime|e }}</p>
     <p>{{ util.href(cdedblink("assembly/list_attendees"), "Teilnehmerliste")}}</p>
     {% if is_admin %}
-        <p>Notizen: {{ assembly_data['notes']|e|linebreaks }}</p>
+        <p>Notizen: {{ assembly_data['notes']|rst }}</p>
     {% endif %}
     <p>
         Partizipationsstatus:

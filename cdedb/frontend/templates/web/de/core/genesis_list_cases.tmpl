@@ -8,7 +8,7 @@
         {% for case_id, entry in to_review|dictsort %}
             <li>
                 {{ entry['given_names']|e }} {{ entry['family_name']|e }} -- {{ entry['username']|e }}<br>
-                {{ entry['notes']|e|linebreaks }}<br>
+                {{ entry['notes']|rst }}<br>
                 <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                  id="genesisrejectionform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}

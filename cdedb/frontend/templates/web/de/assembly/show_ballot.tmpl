@@ -4,7 +4,7 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}{{ ballot_data['title']|e }} ({{ assembly_data['title']|e }}){% endblock %}
 {% block content %}
-    <p>{{ ballot_data['description']|e|linebreaks }}</p>
+    <p>{{ ballot_data['description']|rst }}</p>
     <p>
         Abstimmungszeitraum: {{ ballot_data['vote_begin']|datetime|e }} bis {{ ballot_data['vote_end']|datetime|e }}<br>
         {% if ballot_data['extended'] is none %}
@@ -23,7 +23,7 @@
         {% endif %}
     </p>
     {% if is_admin %}
-        <p>Notizen: {{ ballot_data['notes']|e|linebreaks }}</p>
+        <p>Notizen: {{ ballot_data['notes']|rst }}</p>
     {% endif %}
     {% if is_admin and now() < ballot_data['vote_begin']  %}
         <p>

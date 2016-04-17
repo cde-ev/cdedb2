@@ -23,7 +23,7 @@
         </tr>
         <tr>
             <td>Beschreibung</td>
-            <td>{{ data['description']|e|linebreaks }}</td>
+            <td>{{ data['description']|rst }}</td>
         </tr>
         <tr>
             <td>Kürzel</td>
@@ -51,7 +51,7 @@
         </tr>
         <tr>
             <td>Notizen</td>
-            <td>{{ data['notes']|e|linebreaks }}</td>
+            <td>{{ data['notes']|rst }}</td>
         </tr>
     </table>
     {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", readonly=locked) }}

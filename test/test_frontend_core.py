@@ -536,6 +536,15 @@ class TestCoreFrontend(FrontendTest):
         element = self.response.lxml.xpath("//select[@name='birthday']")[0]
         self.assertEqual('2', element.value)
 
+    @as_users("anton")
+    def test_rst(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-9-E"
+        f['realm'] = "core"
+        self.submit(f)
+        self.assertIn('<div class="document" id="CDEDB_RST_inga">',
+                      self.response.text)
+
     def test_log(self):
         ## First: generate data
         self.test_admin_password_reset()

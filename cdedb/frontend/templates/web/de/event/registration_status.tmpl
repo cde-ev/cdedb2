@@ -78,7 +78,7 @@
         <tr>
             <td>Anmerkungen</td>
             <td>
-                {{ registration_data['notes']|e|linebreaks }}
+                {{ registration_data['notes']|rst }}
             </td>
         </tr>
         {% for part_id, pdata in registration_data['parts']|dictsort %}

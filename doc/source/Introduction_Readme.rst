@@ -46,21 +46,21 @@ Sample Data
 There is a default data set for the development it contains some users
 (according to the table below).
 
-  ======================= ========== =======================================
-   User                    Password   Notes
-  ======================= ========== =======================================
-   anton@example.cde       secret     admin with all privileges
-   berta@example.cde       secret     canonical example member
-   charly@example.cde      secret     member, but not searchable
-   daniel@example.cde      secret     former member
-   emilia@example.cde      secret     event user
-   ferdinand@example.cde   secret     admin in all realms, but not globally
-   garcia@example.cde      secret     orga of an event
-   hades                   secret     archived member
-   inga@example.cde        secret     minor member
-   kalif@example.cde       secret     assembly user
-   lisa                    secret     member with whacked data
-  ======================= ========== =======================================
+  ======================= ========== ======================================= =========
+   User                    Password   Notes                                   ID
+  ======================= ========== ======================================= =========
+   anton@example.cde       secret     admin with all privileges               DB-1-J
+   berta@example.cde       secret     canonical example member                DB-2-H
+   charly@example.cde      secret     member, but not searchable              DB-3-F
+   daniel@example.cde      secret     former member                           DB-4-D
+   emilia@example.cde      secret     event user                              DB-5-B
+   ferdinand@example.cde   secret     admin in all realms, but not globally   DB-6-K
+   garcia@example.cde      secret     orga of an event                        DB-7-I
+   hades                   secret     archived member                         DB-8-G
+   inga@example.cde        secret     minor member                            DB-9-E
+   kalif@example.cde       secret     assembly user                           DB-10-I
+   lisa                    secret     member with whacked data                DB-11-G
+  ======================= ========== ======================================= =========
 
 Random Thoughts
 ---------------

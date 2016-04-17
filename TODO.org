@@ -14,7 +14,6 @@
 ** add ml test cases concerning assembly interaction
 ** add a nice UI for preferential voting (a la drag and drop with JS)
 ** make country choices into drop down menues
-** implement support for reStructuredText for large text fields (like descriptions of events, ...)
 ** Add JS or python code to convert raw numbers to DB-IDs for the admin show-ID form in the sidebar
 ** past_event.events.organizer could be deduplicated (i.e. a reference to a table past_event.organizers)
 ** move past_event to cde realm
@@ -57,4 +56,3 @@
 ** financial transaction log ("Kassenbuch", "Finanzbericht")
 ** email trouble (bounceparser and friends)
 *** should users be allowed to have a NULL username? what happens if we try to send them a mail? what if they are subscribed to a mailing list?
-** history view of member datasets

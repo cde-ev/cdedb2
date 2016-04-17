@@ -32,6 +32,7 @@ import tempfile
 import threading
 import urllib.parse
 
+import docutils.core
 import jinja2
 import werkzeug
 import werkzeug.datastructures
@@ -351,6 +352,21 @@ def linebreaks_filter(val, replacement="<br>"):
     val = str(val)
     return val.replace('\n', replacement)
 
+def rst_filter(val):
+    """Custom jinja filter to convert rst to html.
+
+    :type val: str
+    :rtype: str
+    """
+    if val is None:
+        return None
+    defaults = {'file_insertion_enabled': 0,
+                'raw_enabled': 0,
+                'id_prefix': "CDEDB_RST_"}
+    ret = docutils.core.publish_parts(val, writer_name='html',
+                                      settings_overrides=defaults)
+    return ret['html_body']
+
 def xdictsort_filter(value, attribute):
     """Allow sorting by an arbitrary attribute of the value.
 
@@ -396,6 +412,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'numerus': numerus_filter,
             'genus': genus_filter,
             'linebreaks': linebreaks_filter,
+            'rst': rst_filter,
             'enum': enum_filter,
             'xdictsort': xdictsort_filter,
             'tex_escape': tex_escape_filter,
