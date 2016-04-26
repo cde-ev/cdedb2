@@ -429,12 +429,21 @@ DROP SCHEMA IF EXISTS event;
 CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona;
 
+CREATE TABLE event.institutions (
+        id                      serial PRIMARY KEY,
+        title                   varchar NOT NULL,
+        moniker                 varchar NOT NULL
+);
+GRANT SELECT, UPDATE ON event.institutions TO cdb_persona;
+GRANT INSERT ON event.institutions TO cdb_admin;
+GRANT SELECT, UPDATE ON event.institutions_id_seq TO cdb_admin;
+
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        organizer               varchar NOT NULL,
+        institution               integer NOT NULL REFERENCES event.institutions(id),
         description             varchar,
         --
         -- cut for past_event.events (modulo column tempus)
@@ -639,7 +648,7 @@ CREATE TABLE past_event.events (
         title                   varchar NOT NULL UNIQUE,
         shortname               varchar NOT NULL UNIQUE,
         -- BuB,  JGW, CdE, ...
-        organizer               varchar NOT NULL,
+        institution               integer NOT NULL REFERENCES event.institutions(id),
         description             varchar,
         -- any day of the event, used for ordering and determining the first
         -- event a persona participated in

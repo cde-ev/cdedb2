@@ -50,7 +50,7 @@ Event realm
   first/second/third choice. Note: This may need reformulation to be
   feasible. (Sonja Kupfer)
 * Make email generation configurable. Example: Does the registration of a
-  new participant for an event cause an email to the organizers? (Cornelia
+  new participant for an event cause an email to the orgas? (Cornelia
   May)
 * Implement split events. (Jost Migenda)
 * Store information for which course a participant is instructor (not only,
@@ -131,8 +131,6 @@ This section is from direct correspondence with the Verwaltung.
 * Bouncing emails currently land at verwaltung@cde-ev.de -- it's somewhat
   questionable whether this is the corret place. (And there seem to be a lot
   of them.)
-* The field 'organizer' of an event should have a restricted range of
-  values. TODO poke the Verwaltung to decide which.
 * The page 'Veranstaltungsdownloads' in v1 is currently used solely for the
   MultiAka. It can be replaced by the possibility to query for multiple
   events at once in the search.

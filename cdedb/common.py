@@ -991,13 +991,16 @@ GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
     "realm", "notes", "case_status", "secret", "reviewer")
 
+#: Fields for institutions of events
+INSTITUTION_FIELDS = ("id", "title", "moniker")
+
 #: Fields of a concluded event
-PAST_EVENT_FIELDS = ("id", "title", "shortname", "organizer", "description",
+PAST_EVENT_FIELDS = ("id", "title", "shortname", "institution", "description",
                      "tempus")
 
 #: Fields of an event organized via the CdEDB
 EVENT_FIELDS = (
-    "id", "title", "organizer", "description", "shortname",
+    "id", "title", "institution", "description", "shortname",
     "registration_start", "registration_soft_limit", "registration_hard_limit",
     "iban", "use_questionnaire", "notes", "offline_lock")
 

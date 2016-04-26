@@ -6,7 +6,12 @@
         <table>
             {{ util.input_text(name="title", label="Titel") }}
             {{ util.input_text(name="shortname", label="Kürzel") }}
-            {{ util.input_text(name="organizer", label="Organisator") }}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for value, title in institutions|dictsort %}
+                {{ myentries.append((value, title, None))|e }}
+            {% endfor %}
+            {{ util.input_select(name="institution", label="Organisation", entries=myentries) }}
             {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
             {{ util.input_text(name="tempus", label="Stichtag") }}
         </table>

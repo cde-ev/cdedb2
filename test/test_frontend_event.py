@@ -216,6 +216,29 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("zelda@example.cde")
 
     @as_users("anton")
+    def test_institutions(self, user):
+        self.traverse({'href': '/event/$'}, {'href': '/event/institution/list'})
+        self.assertTitle("Alle Organisationen")
+        self.assertPresence("Club der Ehemaligen")
+        self.assertNonPresence("Bildung und Begabung")
+        f = self.response.forms['createinstitutionform']
+        f['title'] = "Bildung und Begabung"
+        f['moniker'] = "BuB"
+        self.submit(f)
+        self.assertTitle("Alle Organisationen")
+        self.assertPresence("Club der Ehemaligen")
+        self.assertPresence("Bildung und Begabung")
+        self.traverse({'href': '/event/institution/2/change'})
+        self.assertTitle("Bildung und Begabung bearbeiten")
+        f = self.response.forms['changeinstitutionform']
+        f['title'] = "Monster Academy"
+        f['moniker'] = "MA"
+        self.submit(f)
+        self.assertTitle("Alle Organisationen")
+        self.assertPresence("Monster Academy")
+        self.assertNonPresence("Bildung und Begabung")
+
+    @as_users("anton")
     def test_list_past_events(self, user):
         self.traverse({'href': '/event/$'}, {'href': '/event/pastevent/list'})
         self.assertTitle("Alle abgeschlossenen Veranstaltungen")
@@ -262,11 +285,11 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014 bearbeiten")
         f = self.response.forms['changeeventform']
         f['title'] = "Link Academy"
-        f['organizer'] = "Privatvergnügen"
+        f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
         self.submit(f)
         self.assertTitle("Link Academy")
-        self.assertPresence("Privatvergnügen")
+        self.assertPresence("Club der Ehemaligen")
         self.assertPresence("Ganz ohne Minderjährige.")
 
     @as_users("anton")
@@ -277,12 +300,12 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['createeventform']
         f['title'] = "Link Academy II"
         f['shortname'] = "link"
-        f['organizer'] = "Privatvergnügen"
+        f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
         f['tempus'] = "1.1.2000"
         self.submit(f)
         self.assertTitle("Link Academy II")
-        self.assertPresence("Privatvergnügen")
+        self.assertPresence("Club der Ehemaligen")
         self.assertPresence("Ganz ohne Minderjährige.")
 
     @as_users("anton")
@@ -293,7 +316,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['createeventform']
         f['title'] = "Link Academy II"
         f['shortname'] = "link"
-        f['organizer'] = "Privatvergnügen"
+        f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
         f['tempus'] = "1.1.2000"
         f['courses'] = '''"Hoola Hoop";"Spaß mit dem Reifen"
@@ -302,7 +325,7 @@ class TestEventFrontend(FrontendTest):
 '''
         self.submit(f)
         self.assertTitle("Link Academy II")
-        self.assertPresence("Privatvergnügen")
+        self.assertPresence("Club der Ehemaligen")
         self.assertPresence("Ganz ohne Minderjährige.")
         self.assertPresence("Hoola Hoop")
         self.assertPresence("Abseilen")
@@ -491,7 +514,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("DB-Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
-        f['organizer'] = "CdE"
+        f['institution'] = 1
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['registration_start'] = "2000-01-01"

@@ -1384,10 +1384,38 @@ def _meta_info(val, keys, argname=None, *, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs
 
+_INSTITUTION_COMMON_FIELDS = lambda: {
+    'title': _str,
+    'moniker': _str,
+}
+@_addvalidator
+def _institution(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "institution"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _INSTITUTION_COMMON_FIELDS()
+        optional_fields = {}
+    else:
+        mandatory_fields = {'id': _int,}
+        optional_fields = _INSTITUTION_COMMON_FIELDS()
+    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+                                      _convert=_convert)
+
 _PAST_EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
     'shortname': _str,
-    'organizer': _str,
+    'institution': _int,
     'tempus': _date,
     'description': _str_or_None,
 }
@@ -1417,7 +1445,7 @@ def _past_event_data(val, argname=None, *, creation=False, _convert=True):
 
 _EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
-    'organizer': _str,
+    'institution': _int,
     'description': _str_or_None,
     'shortname': _identifier,
     'registration_start': _date_or_None,

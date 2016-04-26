@@ -198,6 +198,43 @@ class EventFrontend(AbstractUserFrontend):
         else:
             return self.render(rs, "user_search_result", params)
 
+    @access("event_admin")
+    def list_institutions(self, rs):
+        """FIXME"""
+        institutions = self.eventproxy.list_institutions(rs)
+        return self.render(rs, "list_institutions", {
+            'institutions': institutions})
+
+    @access("event_admin", modi={"POST"})
+    @REQUESTdatadict("title", "moniker")
+    def create_institution(self, rs, data):
+        """FIXME"""
+        data = check(rs, "institution", data, creation=True)
+        if rs.errors:
+            return self.list_institutions(rs)
+        new_id = self.eventproxy.create_institution(rs, data)
+        self.notify_return_code(rs, new_id, success="Institution created.")
+        return self.redirect(rs, "event/list_institutions")
+
+    @access("event_admin")
+    def change_institution_form(self, rs, institution_id):
+        """Render form."""
+        data = self.eventproxy.get_institution(rs, institution_id)
+        merge_dicts(rs.values, data)
+        return self.render(rs, "change_institution", {'data': data})
+
+    @access("event_admin", modi={"POST"})
+    @REQUESTdatadict("title", "moniker")
+    def change_institution(self, rs, institution_id, data):
+        """FIXME"""
+        data['id'] = institution_id
+        data = check(rs, "institution", data)
+        if rs.errors:
+            return self.change_institution_form(rs, institution_id)
+        code = self.eventproxy.set_institution(rs, data)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/list_institutions")
+
     @access("event")
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
@@ -205,6 +242,7 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.list_courses(rs, pevent_id, past=True)
         participants = self.eventproxy.list_participants(rs,
                                                          pevent_id=pevent_id)
+        institutions = self.eventproxy.list_institutions(rs)
         if not (rs.user.persona_id in participants or self.is_admin(rs)):
             ## make list of participants only visible to other participants
             participants = participant_data = None
@@ -234,7 +272,8 @@ class EventFrontend(AbstractUserFrontend):
                 participants.items(), key=lambda x: name_key(pd[x[0]])))
         return self.render(rs, "show_past_event", {
             'event_data': event_data, 'courses': courses,
-            'participants': participants, 'participant_data': participant_data})
+            'participants': participants, 'participant_data': participant_data,
+            'institutions': institutions})
 
     @access("event")
     def show_past_course(self, rs, pevent_id, pcourse_id):
@@ -267,11 +306,13 @@ class EventFrontend(AbstractUserFrontend):
     def change_past_event_form(self, rs, pevent_id):
         """Render form."""
         data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
+        institutions = self.eventproxy.list_institutions(rs)
         merge_dicts(rs.values, data)
-        return self.render(rs, "change_past_event", {'data': data})
+        return self.render(rs, "change_past_event", {
+            'data': data, 'institutions': institutions})
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdatadict("title", "shortname", "organizer", "description", "tempus")
+    @REQUESTdatadict("title", "shortname", "institution", "description", "tempus")
     def change_past_event(self, rs, pevent_id, data):
         """Modify a concluded event."""
         data['id'] = pevent_id
@@ -285,11 +326,12 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin")
     def create_past_event_form(self, rs):
         """Render form."""
-        return self.render(rs, "create_past_event")
+        institutions = self.eventproxy.list_institutions(rs)
+        return self.render(rs, "create_past_event", {'institutions': institutions})
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("courses", "str_or_None"))
-    @REQUESTdatadict("title", "shortname", "organizer", "description", "tempus")
+    @REQUESTdatadict("title", "shortname", "institution", "description", "tempus")
     def create_past_event(self, rs, courses, data):
         """Add new concluded event."""
         data = check(rs, "past_event_data", data, creation=True)
@@ -419,9 +461,10 @@ class EventFrontend(AbstractUserFrontend):
             course_data = self.eventproxy.get_course_data(rs, courses.keys())
         else:
             course_data = None
+        institutions = self.eventproxy.list_institutions(rs)
         return self.render(rs, "show_event", {
             'event_data': event_data, 'course_data': course_data,
-            'locked': self.is_locked(event_data)})
+            'locked': self.is_locked(event_data), 'institutions': institutions})
 
     @access("event")
     @event_guard()
@@ -430,25 +473,29 @@ class EventFrontend(AbstractUserFrontend):
         data = self.eventproxy.get_event_data_one(rs, event_id)
         merge_dicts(rs.values, data)
         orgas = self.coreproxy.get_personas(rs, data['orgas'])
+        institutions = self.eventproxy.list_institutions(rs)
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         minor_form_present = os.path.isfile(os.path.join(
             self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
         return self.render(rs, "event_config", {
             'data': data, 'orgas': orgas, 'locked': self.is_locked(data),
             'questionnaire': questionnaire,
-            'minor_form_present': minor_form_present})
+            'minor_form_present': minor_form_present,
+            'institutions': institutions})
 
     @access("event")
     @event_guard(check_offline=True)
     def change_event_form(self, rs, event_id):
         """Render form."""
         data = self.eventproxy.get_event_data_one(rs, event_id)
+        institutions = self.eventproxy.list_institutions(rs)
         merge_dicts(rs.values, data)
-        return self.render(rs, "change_event", {'data': data})
+        return self.render(rs, "change_event", {
+            'data': data, 'institutions': institutions})
 
     @access("event", modi={"POST"})
     @REQUESTdatadict(
-        "title", "organizer", "description", "shortname",
+        "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "use_questionnaire", "notes")
     @event_guard(check_offline=True)
@@ -648,11 +695,12 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin")
     def create_event_form(self, rs):
         """Render form."""
-        return self.render(rs, "create_event")
+        institutions = self.eventproxy.list_institutions(rs)
+        return self.render(rs, "create_event", {'institutions': institutions})
 
     @access("event_admin", modi={"POST"})
     @REQUESTdatadict(
-        "title", "organizer", "description", "shortname",
+        "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "use_questionnaire", "notes",
         "orga_ids")

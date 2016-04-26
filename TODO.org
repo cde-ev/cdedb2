@@ -15,8 +15,7 @@
 ** add a nice UI for preferential voting (a la drag and drop with JS)
 ** make country choices into drop down menues
 ** Add JS or python code to convert raw numbers to DB-IDs for the admin show-ID form in the sidebar
-** past_event.events.organizer could be deduplicated (i.e. a reference to a table past_event.organizers)
-** move past_event to cde realm
+** maybe move past_event to cde realm
 ** allow comma-separated list of ids to lodgement/manage (non-JS fallback)
 ** multi-edit formular (multiple ids, merge values and display only equal ones, activate fields by checkbox)
 ** maybe add crosstables for course choices
@@ -36,6 +35,7 @@
 ** allow to set custom password on reset (after email validation)
 ** add page detailing where to send membership fees
 ** zap _data postfixes in many places (without them it gets shorter but not less legible)
+** untagle event/past_event functionality (choosing via the 'past' parameter is ugly)
 ** add dash-board to index pages
 *** link to relevant events (orga, open to registration) [if event user]
 *** link to open assemblies

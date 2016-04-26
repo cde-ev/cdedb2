@@ -689,7 +689,7 @@
     "event.events": [
         {
             "title": "Gro\u00dfe Testakademie 2222",
-            "organizer": "CdE",
+            "institution": 1,
             "offline_lock": false,
             "registration_soft_limit": "2200-10-30",
             "shortname": "TestAka",

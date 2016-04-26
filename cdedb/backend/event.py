@@ -19,7 +19,7 @@ from cdedb.common import (
     glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
     EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap, now, ProxyShim,
-    PERSONA_EVENT_FIELDS)
+    PERSONA_EVENT_FIELDS, INSTITUTION_FIELDS)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -403,6 +403,64 @@ class EventBackend(AbstractBackend):
         else:
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query, view=view)
+
+    @access("event")
+    def list_institutions(self, rs):
+        """List all institutions.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type past: bool
+        :rtype: {int: str}
+        :returns: Mapping of institution ids to titles.
+        """
+        query = "SELECT id, title FROM event.institutions"
+        data = self.query_all(rs, query, tuple())
+        return {e['id']: e['title'] for e in data}
+
+    @access("event")
+    @singularize("get_institution")
+    def get_institutions(self, rs, ids):
+        """Retrieve data for some institutions.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: {str: object}}
+        """
+        ids = affirm_array("int", ids)
+        data = self.sql_select(rs, "event.institutions", INSTITUTION_FIELDS,
+                               ids)
+        return {e['id']: e for e in data}
+
+    @access("event_admin")
+    def set_institution(self, rs, data):
+        """Update some keys of an institution.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: default return code
+        """
+        data = affirm("institution", data)
+        ret = self.sql_update(rs, "event.institutions", data)
+        current = unwrap(self.get_institutions(rs, (data['id'],)))
+        self.past_event_log(rs, const.PastEventLogCodes.institution_changed,
+                            pevent_id=None, additional_info=current['title'])
+        return ret
+
+    @access("event_admin")
+    def create_institution(self, rs, data):
+        """Make a new institution.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: {str: object}
+        :rtype: int
+        :returns: the id of the new institution
+        """
+        data = affirm("institution", data, creation=True)
+        ret = self.sql_insert(rs, "event.institutions", data)
+        self.past_event_log(rs, const.PastEventLogCodes.institution_created,
+                            pevent_id=None, additional_info=data['title'])
+        return ret
 
     @access("event")
     @singularize("get_past_event_data_one")

@@ -235,6 +235,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="view_past_log"),
             rule("/event/list", methods=_GET,
                  endpoint="list_events"),
+            rule("/institution/list", methods=_GET,
+                 endpoint="list_institutions"),
+            rule("/institution/create", methods=_POST,
+                 endpoint="create_institution"),
             rule("/event/create", methods=_GET,
                  endpoint="create_event_form"),
             rule("/event/create", methods=_POST,
@@ -272,6 +276,11 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="change_past_course"),
                     rule("/delete", methods=_POST,
                          endpoint="delete_past_course"),)),)),
+            sub('/institution/<int:institution_id>', (
+                rule("/change", methods=_GET,
+                     endpoint="change_institution_form"),
+                rule("/change", methods=_POST,
+                     endpoint="change_institution"),)),
             sub('/event/<int:event_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_event"),

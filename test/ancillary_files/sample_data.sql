@@ -70,8 +70,10 @@ INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance,
 --
 -- past_events
 --
-INSERT INTO past_event.events (id, title, shortname, organizer, tempus, description) VALUES
-    (1, 'PfingstAkademie 2014', 'pa14', 'CdE', date '2014-05-25', 'Great event!');
+INSERT INTO event.institutions(id, title, moniker) VALUES
+    (1, 'Club der Ehemaligen', 'CdE');
+INSERT INTO past_event.events (id, title, shortname, institution, tempus, description) VALUES
+    (1, 'PfingstAkademie 2014', 'pa14', 1, date '2014-05-25', 'Great event!');
 INSERT INTO past_event.courses (id, pevent_id, title, description) VALUES
     (1, 1, 'Swish -- und alles ist gut', 'Ringelpiez mit anfassen.');
 INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instructor, is_orga) VALUES
@@ -79,8 +81,8 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 --
 -- events
 --
-INSERT INTO event.events (id, title, organizer, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, iban, notes, offline_lock) VALUES
-    (1, 'Große Testakademie 2222', 'CdE', 'Everybody come!', 'TestAka', date '2000-10-30', date '2200-10-30', date '2220-10-30', 'DE96 3702 0500 0008 0689 01', 'Todoliste ... just kidding ;)', False);
+INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, iban, notes, offline_lock) VALUES
+    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', date '2000-10-30', date '2200-10-30', date '2220-10-30', 'DE96 3702 0500 0008 0689 01', 'Todoliste ... just kidding ;)', False);
 INSERT INTO event.event_parts (id, event_id, title, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', date '2222-11-01', date '2222-11-11', 123.00),
@@ -320,6 +322,7 @@ SELECT setval('core.personas_id_seq', 12);
 SELECT setval('cde.lastschrift_id_seq', 2);
 SELECT setval('past_event.events_id_seq', 1);
 SELECT setval('past_event.courses_id_seq', 1);
+SELECT setval('event.institutions_id_seq', 1);
 SELECT setval('event.events_id_seq', 1);
 SELECT setval('event.event_parts_id_seq', 3);
 SELECT setval('event.courses_id_seq', 5);

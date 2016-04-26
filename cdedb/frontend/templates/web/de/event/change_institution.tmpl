@@ -1,0 +1,15 @@
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}{{ data['title']|e }} bearbeiten{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/change_institution')|e }}" method="POST" id="changeinstitutionform">
+        <table>
+            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.input_text(name="moniker", label="Kürzel") }}
+        </table>
+        <div>
+            {{ util.input_submit(value="Speichern") }}
+            {{ util.href(cdedblink("event/list_institutions"), "Abbrechen") }}
+        </div>
+    </form>
+{% endblock %}

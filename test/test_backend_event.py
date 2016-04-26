@@ -125,7 +125,7 @@ class TestEventBackend(BackendTest):
         data = {
             'title': "New Link Academy",
             'shortname': "link",
-            'organizer': "Illuminati",
+            'institution': 1,
             'description': """Some more text
 
             on more lines.""",
@@ -209,7 +209,7 @@ class TestEventBackend(BackendTest):
         old_events = self.event.list_events(self.key, past=False)
         data = {
             'title': "New Link Academy",
-            'organizer': "Illuminati",
+            'institution': 1,
             'description': """Some more text
 
             on more lines.""",
@@ -1237,7 +1237,7 @@ class TestEventBackend(BackendTest):
                               'id': 1,
                               'notes': 'Todoliste ... just kidding ;)',
                               'offline_lock': False,
-                              'organizer': 'CdE',
+                              'institution': 1,
                               'registration_hard_limit': datetime.date(2220, 10, 30),
                               'registration_soft_limit': datetime.date(2200, 10, 30),
                               'registration_start': datetime.date(2000, 10, 30),
@@ -1660,7 +1660,7 @@ class TestEventBackend(BackendTest):
         data = {
             'title': "New Link Academy",
             'shortname': "link",
-            'organizer': "Illuminati",
+            'institution': 1,
             'description': """Some more text
 
             on more lines.""",
@@ -1754,7 +1754,7 @@ class TestEventBackend(BackendTest):
         expectation = {
             'description': 'Everybody come!',
             'id': 2,
-            'organizer': 'CdE',
+            'institution': 1,
             'title': 'Große Testakademie 2222',
             'shortname': "TestAka",}
         data = self.event.get_past_event_data_one(self.key, new_id)
@@ -1780,7 +1780,7 @@ class TestEventBackend(BackendTest):
         ## first generate some data
         data = {
             'title': "New Link Academy",
-            'organizer': "Illuminati",
+            'institution': 1,
             'description': """Some more text
 
             on more lines.""",

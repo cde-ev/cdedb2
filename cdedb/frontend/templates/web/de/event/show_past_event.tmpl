@@ -14,7 +14,7 @@
         </form>
     {% endif %}
     <p>Kürzel: {{ event_data['shortname']|e }}</p>
-    <p>Organisator: {{ event_data['organizer']|e }}</p>
+    <p>Organisation: {{ institutions[event_data['institution']]|e }}</p>
     <p>{{ event_data['description']|e }}</p>
     {% if courses %}
         <h2>Kurse</h2>
