@@ -200,7 +200,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event_admin")
     def list_institutions(self, rs):
-        """FIXME"""
+        """Display all organizing bodies."""
         institutions = self.eventproxy.list_institutions(rs)
         return self.render(rs, "list_institutions", {
             'institutions': institutions})
@@ -208,7 +208,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdatadict("title", "moniker")
     def create_institution(self, rs, data):
-        """FIXME"""
+        """Make a new institution."""
         data = check(rs, "institution", data, creation=True)
         if rs.errors:
             return self.list_institutions(rs)
@@ -226,7 +226,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdatadict("title", "moniker")
     def change_institution(self, rs, institution_id, data):
-        """FIXME"""
+        """Modify an institution."""
         data['id'] = institution_id
         data = check(rs, "institution", data)
         if rs.errors:
