@@ -188,7 +188,7 @@ class TestCoreBackend(BackendTest):
         self.assertGreater(new_id, 0)
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
-            'balance': decimal.Decimal('0.00'),
+            'balance': None,
             'is_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
@@ -355,7 +355,7 @@ class TestCoreBackend(BackendTest):
         self.assertGreater(new_id, 0)
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
-            'balance': decimal.Decimal('0.00'),
+            'balance': None,
             'is_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
@@ -377,7 +377,7 @@ class TestCoreBackend(BackendTest):
         self.assertGreater(new_id, 0)
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
-            'balance': decimal.Decimal('0.00'),
+            'balance': None,
             'is_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,
@@ -412,7 +412,7 @@ class TestCoreBackend(BackendTest):
         self.assertGreater(new_id, 0)
         new_data = self.core.get_total_persona(self.key, new_id)
         data.update({
-            'balance': decimal.Decimal('0.00'),
+            'balance': None,
             'is_admin': False,
             'is_archived': False,
             'is_assembly_admin': False,

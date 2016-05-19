@@ -704,9 +704,17 @@ class CoreBackend(AbstractBackend):
         :returns: default return code
         """
         data = affirm("persona", data, transition=True)
-        return self.set_persona(
-            rs, data, may_wait=False, change_note="Realms modified.",
-            allow_specials=("realms",))
+        with Atomizer(rs):
+            if data.get('is_cde_realm'):
+                ## Fix balance
+                tmp = unwrap(self.get_total_personas(rs, (data['id'],)))
+                if tmp['balance'] is None:
+                    data['balance'] = decimal.Decimal('0.0')
+                else:
+                    data['balance'] = tmp['balance']
+            return self.set_persona(
+                rs, data, may_wait=False, change_note="Realms modified.",
+                allow_specials=("realms", "finance"))
 
     @access("persona")
     def change_foto(self, rs, persona_id, foto):
@@ -1029,6 +1037,9 @@ class CoreBackend(AbstractBackend):
         data['password_hash'] = glue(
             "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/",
             "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+        ## add balance for cde users
+        if data.get('is_cde_realm') and 'balance' not in data:
+            data['balance'] = decimal.Decimal(0)
         fulltext_data = copy.deepcopy(data)
         fulltext_data['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_data)
@@ -1637,8 +1648,6 @@ class CoreBackend(AbstractBackend):
                 return None, "Invalid case."
             if case['case_status'] != const.GenesisStati.approved:
                 return None, "Invalid state."
-            #  if case['realm'] != realm:
-            #      return None, "Invalid realm."
             tier = privilege_tier(extract_roles(data))
             if "{}_admin".format(case['realm']) not in tier:
                 return None, "Wrong target realm."

@@ -58,8 +58,9 @@ There is a default data set for the development it contains some users
    garcia@example.cde      secret     orga of an event                        DB-7-I
    hades                   secret     archived member                         DB-8-G
    inga@example.cde        secret     minor member                            DB-9-E
-   kalif@example.cde       secret     assembly user                           DB-10-I
-   lisa                    secret     member with whacked data                DB-11-G
+   janis@example.cde       secret     mailinglist user                        DB-10-I
+   kalif@example.cde       secret     assembly user                           DB-11-G
+   lisa                    secret     member with whacked data                DB-12-E
   ======================= ========== ======================================= =========
 
 Random Thoughts

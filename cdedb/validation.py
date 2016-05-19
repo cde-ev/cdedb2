@@ -642,7 +642,7 @@ _PERSONA_CDE_CREATION = lambda: {
     'trial_member': _bool,
     'decided_search': _bool,
     'bub_search': _bool,
-    'foto': _str_or_None,
+    ## 'foto': _str_or_None, # No foto -- this is another special
 }
 _PERSONA_EVENT_CREATION = lambda: {
     'title': _str_or_None,
@@ -760,12 +760,12 @@ def _persona(val, argname=None, *, creation=False, transition=False,
         ## ml and assembly define no custom fields
     elif transition:
         realm_checks = {
-            'is_cde_realm': _PERSONA_CDE_CREATION,
-            'is_event_realm': _PERSONA_EVENT_CREATION,
+            'is_cde_realm': _PERSONA_CDE_CREATION(),
+            'is_event_realm': _PERSONA_EVENT_CREATION(),
             'is_ml_realm': {},
             'is_assembly_realm': {},
         }
-        mandatory_fields = {}
+        mandatory_fields = {'id': _int}
         for key, checkers in realm_checks.items():
             if val.get(key):
                 mandatory_fields.update(checkers)

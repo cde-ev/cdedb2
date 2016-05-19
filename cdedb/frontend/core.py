@@ -22,6 +22,9 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
 from cdedb.database.connection import Atomizer
+from cdedb.validation import (
+    _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
+    _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS)
 import cdedb.database.constants as const
 import cdedb.validation as validate
 
@@ -335,6 +338,65 @@ class CoreFrontend(AbstractFrontend):
             "is_assembly_admin": is_assembly_admin,
         }
         code = self.coreproxy.change_admin_bits(rs, data)
+        self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
+
+    @access("core_admin")
+    @REQUESTdata(("target_realm", "realm_or_None"))
+    def promote_user_form(self, rs, persona_id, target_realm):
+        """Render form.
+
+        This has two parts. If the target realm is absent, we let the
+        admin choose one. If it is present we present a mask to promote
+        the user.
+        """
+        if rs.errors:
+            return self.index(rs)
+        merge_dicts(rs.values, rs.ambience['persona'])
+        if (target_realm
+                and rs.ambience['persona']['is_{}_realm'.format(target_realm)]):
+            rs.notify("warning", "No promotion necessary.")
+            return self.redirect_show_user(rs, persona_id)
+        return self.render(rs, "promote_user")
+
+    @access("core_admin", modi={"POST"})
+    @REQUESTdata(("target_realm", "realm_or_None"))
+    @REQUESTdatadict(
+        "title", "name_supplement", "birthday", "gender", "free_form",
+        "telephone", "mobile", "address", "address_supplement", "postal_code",
+        "location", "country")
+    def promote_user(self, rs, persona_id, target_realm, data):
+        """Add a new realm to the users ."""
+        for key in tuple(k for k in data.keys() if not data[k]):
+            ## remove irrelevant keys, due to the possible combinations it is
+            ## rather lengthy to specify the exact set of them
+            del data[key]
+        persona = self.coreproxy.get_total_persona(rs, persona_id)
+        merge_dicts(data, persona)
+        ## Specific fixes by target realm
+        if target_realm == "cde":
+            reference = CDE_TRANSITION_FIELDS()
+            for key in ('trial_member', 'decided_search', 'bub_search'):
+                if data[key] is None:
+                    data[key] = False
+        elif target_realm == "event":
+            reference = EVENT_TRANSITION_FIELDS()
+        else:
+            reference = {}
+        for key in tuple(data.keys()):
+            if key not in reference and key != 'id':
+                del data[key]
+        data['is_{}_realm'.format(target_realm)] = True
+        ## implicit addition of realms as semantically sensible
+        if target_realm == "cde":
+            data['is_event_realm'] = True
+            data['is_assembly_realm'] = True
+        if target_realm in ("cde", "event", "assembly"):
+            data['is_ml_realm'] = True
+        data = check(rs, "persona", data, transition=True)
+        if rs.errors:
+            return self.promote_user_form(rs, persona_id)
+        code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
 

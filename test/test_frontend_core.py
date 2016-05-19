@@ -545,6 +545,41 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('<div class="document" id="CDEDB_RST_inga">',
                       self.response.text)
 
+    @as_users("anton")
+    def test_trivial_promotion(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-5-B"
+        f['realm'] = "core"
+        self.submit(f)
+        self.traverse({'href': '/core/persona/5/promote'})
+        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
+        f = self.response.forms['realmselectionform']
+        self.assertNotIn("event", f['target_realm'].options)
+        f['target_realm'] = "cde"
+        self.submit(f)
+        self.assertTitle("Emilia E. Eventis Bereich cde hinzufügen")
+        f = self.response.forms['promotionform']
+        self.submit(f)
+        self.assertTitle("Emilia E. Eventis")
+
+    @as_users("anton")
+    def test_nontrivial_promotion(self, user):
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = "DB-11-G"
+        f['realm'] = "core"
+        self.submit(f)
+        self.traverse({'href': '/core/persona/11/promote'})
+        self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
+        f = self.response.forms['realmselectionform']
+        f['target_realm'] = "event"
+        self.submit(f)
+        self.assertTitle("Kalif ibn al-Ḥasan Karabatschi Bereich event hinzufügen")
+        f = self.response.forms['promotionform']
+        f['birthday'] = "21.6.1977"
+        f['gender'] = 1
+        self.submit(f)
+        self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
+
     def test_log(self):
         ## First: generate data
         self.test_admin_password_reset()

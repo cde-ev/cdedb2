@@ -1,0 +1,67 @@
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}
+   {% with p = ambience['persona'] %}
+        {% if values['target_realm'] %}
+            {{ p['given_names']|e }} {{ p['family_name']|e }} Bereich {{ values['target_realm']|e }} hinzufügen
+        {% else %}
+            Bereichsänderung für {{ p['given_names']|e }} {{ p['family_name']|e }}
+        {% endif %}
+    {% endwith %}
+{% endblock %}
+{% block content %}
+   {% with p = ambience['persona'] %}
+        {% if not values['target_realm'] %}
+            <form action="{{ cdedblink('core/promote_user_form')|e }}" method="GET" id="realmselectionform">
+                <div>
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
+                    {% for realm, description in (('cde', 'CdE'), ('event', 'Veranstaltung'), ('ml', 'Mailinglisten'),
+                                                  ('assembly', 'Versammlung')) %}
+                        {% if not p['is_{}_realm'.format(realm)] %}
+                            {{ myentries.append((realm, description, None))|e }}
+                        {% endif %}
+                    {% endfor %}
+                    {{ util.input_radio(name="target_realm", entries=myentries, label="Zielbereich") }}
+                    {{ util.input_submit(value="Bereich wählen") }}
+                </div>
+            </form>
+        {% else %}
+            <p>
+                Diese Operation fügt gegebenenfalls implizit weitere Bereiche hinzu. Im konkreten Fall sind diese in
+                der folgenden (möglicherweise leeren) Liste zu finden.
+                <ul>
+                    {% if target_realm == 'cde' %}
+                        <li>Veranstaltung</li>
+                        <li>Versammlung</li>
+                    {% endif %}
+                    {% if target_realm in ('cde', 'event', 'assembly') %}
+                        <li>Mailinglisten</li>
+                    {% endif %}
+                </ul>
+            </p>
+            <form action="{{ cdedblink('core/promote_user')|e }}" method="POST" id="promotionform">
+                {{ util.input_hidden(name="target_realm") }}
+                {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
+                    {{ util.input_text(name="title", label="Titel") }}
+                    {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
+                    {{ util.input_text(name="birthday", label="Geburtstag") }}
+                    {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+                {% endif %}
+                {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
+                    {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
+                {% endif %}
+                {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
+                    {{ util.input_text(name="telephone", label="Telefon") }}
+                    {{ util.input_text(name="mobile", label="Mobiltelefon") }}
+                    {{ util.input_text(name="address", label="Straße") }}
+                    {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
+                    {{ util.input_text(name="postal_code", label="Postleitzahl") }}
+                    {{ util.input_text(name="location", label="Stadt") }}
+                    {{ util.input_text(name="country", label="Land") }}
+                {% endif %}
+                {{ util.input_submit(value="Bereich hinzufügen") }}
+            </form>
+        {% endif %}
+    {% endwith %}
+{% endblock %}

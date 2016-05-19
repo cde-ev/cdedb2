@@ -194,6 +194,7 @@
                         {% if realm == "core" %}
                             {% if is_admin %}
                                 <li>{{ util.href(cdedblink("core/show_history"), "Geschichte") }}</li>
+                                <li>{{ util.href(cdedblink("core/promote_user_form"), "Bereich hinzufügen") }}</li>
                             {% endif %}
                             {% if data['is_cde_realm'] %}
                                 <li>{{ util.href(show_user_link(data['id'], realm="cde"), "CdE-Ansicht") }}</li>

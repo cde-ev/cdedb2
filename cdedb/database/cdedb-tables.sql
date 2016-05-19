@@ -108,7 +108,7 @@ CREATE TABLE core.personas (
         interests               varchar,
         -- anything else the member wants to tell
         free_form               varchar,
-        balance                 numeric(8,2) DEFAULT 0.00,
+        balance                 numeric(8,2) DEFAULT NULL,
         CHECK(NOT is_cde_realm OR balance IS NOT NULL),
         -- True if user decided (positive or negative) on searchability
         decided_search          boolean DEFAULT FALSE,
