@@ -9,8 +9,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>CdEDB – {% block title %}CdEDB{% endblock %}</title>
+        <link rel="shortcut icon" type="image/x-icon" href="{{ staticurl("favicon.ico")|e }}" media="print" />
+        
         <script type="text/javascript" src="{{ staticurl("jquery-2.min.js")|e }}"></script>
-
         <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
         <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js")|e }}"></script>
 
@@ -22,10 +23,6 @@
         {% block scripts %}{% endblock %}
     </head>
     <body>
-        <div class="container" id="header">
-            %logo%
-        </div>
-
         <!-- main navigation bar -->
         <nav class="navbar navbar-default">
             <div class="container">
