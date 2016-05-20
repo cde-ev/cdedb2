@@ -78,7 +78,9 @@ _DEFAULTS = {
     ## log for frontend issues
     "FRONTEND_LOG": "/tmp/cdedb-frontend.log",
     ## timeout for protected url parameters to prevent replay
-    "URL_PARAMETER_TIMEOUT": datetime.timedelta(seconds=300),
+    "ONLINE_PARAMETER_TIMEOUT": datetime.timedelta(seconds=120),
+    ## email is a slower medium, so this has a longer timeout
+    "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=1),
     ## maximum length of rationale for requesting an account
     "MAX_RATIONALE": 200,
 

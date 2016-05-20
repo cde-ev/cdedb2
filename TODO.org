@@ -1,4 +1,7 @@
 * actionable items
+** merge profile pages
+** streamline search forms/pages
+** Allow specification of TTL for ephemeral links
 ** continuous integration (after online VM is set up)
 ** move genesis to core realm and change the process to (i) user data input (ii) administrative confirmation.
 ** make more use of ambience (especially in existing code)

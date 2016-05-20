@@ -17,31 +17,27 @@ def rand_str(chars, exclude=''):
 class TestFrontendCommon(unittest.TestCase):
     def test_parameter_encoding(self):
         rounds = 100
-        timeout = datetime.timedelta(seconds=300)
         for _ in range(rounds):
             salt = rand_str(12, exclude='-')
             target = rand_str(12, exclude='-')
             name = rand_str(12, exclude='-')
             param = rand_str(200, exclude='-')
             encoded = encode_parameter(salt, target, name, param)
-            decoded = decode_parameter(salt, target, name, encoded, timeout)
+            decoded = decode_parameter(salt, target, name, encoded)
             self.assertEqual(param, decoded)
         salt = "a salt"
         target = "some target"
         name = "fancy name"
         param = "an arbitrary message"
+        encoded = encode_parameter(salt, target, name, param,
+                                   timeout=datetime.timedelta(seconds=-1))
+        self.assertEqual(None, decode_parameter(salt, target, name, encoded))
         encoded = encode_parameter(salt, target, name, param)
-        self.assertEqual(None, decode_parameter(salt, target, name, encoded,
-                                                datetime.timedelta(seconds=0)))
-        self.assertEqual(None, decode_parameter("wrong", target, name, encoded,
-                                                timeout))
-        self.assertEqual(None, decode_parameter(salt, "wrong", name, encoded,
-                                                timeout))
-        self.assertEqual(None, decode_parameter(salt, target, "wrong", encoded,
-                                                timeout))
+        self.assertEqual(None, decode_parameter("wrong", target, name, encoded))
+        self.assertEqual(None, decode_parameter(salt, "wrong", name, encoded))
+        self.assertEqual(None, decode_parameter(salt, target, "wrong", encoded))
         wrong_encoded = "G" + encoded[1:]
-        self.assertEqual(None, decode_parameter(salt, target, name, wrong_encoded,
-                                                timeout))
+        self.assertEqual(None, decode_parameter(salt, target, name, wrong_encoded))
 
     def test_date_filters(self):
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)

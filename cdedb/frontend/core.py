@@ -456,7 +456,8 @@ class CoreFrontend(AbstractFrontend):
             rs, "reset_password",
             {'To': (email,), 'Subject': 'CdEDB password reset'},
             {'email': self.encode_parameter(
-                "core/do_password_reset_form", "email", email),
+                "core/do_password_reset_form", "email", email,
+                timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
              'cookie': message})
         self.logger.info("Sent password reset mail to {} for IP {}.".format(
             email, rs.request.remote_addr))
@@ -472,7 +473,8 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/reset_password_form")
         rs.values['email'] = self.encode_parameter(
-            "core/do_password_reset", "email", email)
+            "core/do_password_reset", "email", email,
+            timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
         return self.render(rs, "do_password_reset")
 
     @access("anonymous", modi={"POST"})
@@ -534,7 +536,8 @@ class CoreFrontend(AbstractFrontend):
                       'Subject': 'CdEDB username change'},
                      {'new_username': self.encode_parameter(
                          "core/do_username_change_form", "new_username",
-                         new_username)})
+                         new_username,
+                         timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)})
         self.logger.info("Sent username change mail to {} for {}.".format(
             new_username, rs.user.username))
         rs.notify("success", "Email sent.")
@@ -548,7 +551,8 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/change_username_form")
         rs.values['new_username'] = self.encode_parameter(
-            "core/do_username_change", "new_username", new_username)
+            "core/do_username_change", "new_username", new_username,
+            timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
         return self.render(rs, "do_username_change")
 
     @access("persona", modi={"POST"})
@@ -629,7 +633,8 @@ class CoreFrontend(AbstractFrontend):
             rs, "genesis_verify",
             {'To': (data['username'],), 'Subject': 'CdEDB account request'},
             {'case_id': self.encode_parameter(
-                "core/genesis_verify", "case_id", case_id),
+                "core/genesis_verify", "case_id", case_id,
+                timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
              'given_names': data['given_names'],
              'family_name': data['family_name'],})
         rs.notify("success", "Email sent.")

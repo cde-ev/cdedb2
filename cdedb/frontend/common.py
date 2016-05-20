@@ -79,11 +79,12 @@ class BaseApp(metaclass=abc.ABCMeta):
         secrets = SecretsConfig(configpath)
         self.decode_parameter = (
             lambda target, name, param:
-            decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param,
-                             self.conf.URL_PARAMETER_TIMEOUT))
-        self.encode_parameter = (
-            lambda target, name, param:
-            encode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
+            decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
+        def my_encode(target, name, param,
+                      timeout=self.conf.ONLINE_PARAMETER_TIMEOUT):
+            return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
+                                    param, timeout=timeout)
+        self.encode_parameter = my_encode
 
     def encode_notification(self, ntype, nmessage):
         """Wrapper around :py:meth:`encode_parameter` for notifications.
@@ -492,7 +493,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
                     "{}/show_user".format(realm),
-                    "confirm_id", persona_id)})
+                    "confirm_id", persona_id, timeout=None)},)
         default_selections = {
             'gender': tuple((k, v, None) for k, v in
                             self.enum_choice(rs, const.Genders).items()),
@@ -773,7 +774,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         realm = realm or self.realm
         cid = self.encode_parameter("{}/show_user".format(realm),
-                                    "confirm_id", persona_id)
+                                    "confirm_id", persona_id,
+                                    timeout=None)
         params = {'confirm_id': cid, 'persona_id': persona_id}
         return self.redirect(rs, '{}/show_user'.format(realm),
                              params=params)
@@ -1307,7 +1309,8 @@ def mailinglist_guard(argname="mailinglist_id"):
         return new_fun
     return wrap
 
-def encode_parameter(salt, target, name, param):
+def encode_parameter(salt, target, name, param,
+                     timeout=datetime.timedelta(seconds=60)):
     """Crypographically secure a parameter. This allows two things:
 
     * trust user submitted data (which we beforehand gave to the user in
@@ -1328,7 +1331,8 @@ def encode_parameter(salt, target, name, param):
 
     * A is 128 chars sha512 checksum of 'X--Y--Z--B--C' where X == salt, Y
       == target, Z == name
-    * B is 24 chars timestamp of format '%Y-%m-%d %H:%M:%S%z'
+    * B is 24 chars timestamp of format '%Y-%m-%d %H:%M:%S%z' or 24 dots
+      describing when the parameter expires (and the latter meaning never)
     * C is an arbitrary amount chars of payload
 
     :type salt: str
@@ -1339,24 +1343,30 @@ def encode_parameter(salt, target, name, param):
     :type name: str
     :param name: name of parameter, same security implications as ``target``
     :type param: str
+    :param timeout: time until parameter expires, if this is None, the
+      parameter never expires
+    :type timeout: datetime.timedelta or None
     :rtype: str
     """
     myhash = hashlib.sha512()
-    timestamp = now()
-    message = "{}--{}".format(timestamp.strftime("%Y-%m-%d %H:%M:%S%z"), param)
+    if timeout is None:
+        timestamp = 24 * '.'
+    else:
+        ttl = now() + timeout
+        timestamp = ttl.strftime("%Y-%m-%d %H:%M:%S%z")
+    message = "{}--{}".format(timestamp, param)
     tohash = "{}--{}--{}--{}".format(salt, target, name, message)
     myhash.update(tohash.encode("utf-8"))
     return "{}--{}".format(myhash.hexdigest(), message)
 
-def decode_parameter(salt, target, name, param, timeout):
+def decode_parameter(salt, target, name, param):
     """Inverse of :py:func:`encode_parameter`. See there for
-    documentation. Note the ``timeout`` parameter.
+    documentation.
 
     :type salt: str
     :type target: str
     :type name: str
     :type param: str
-    :type timeout: :py:class:`datetime.timedelta`
     :rtype: str or None
     :returns: decoded message, ``None`` if decoding or verification fails
     """
@@ -1368,10 +1378,14 @@ def decode_parameter(salt, target, name, param, timeout):
         _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
             myhash.hexdigest(), mac, tohash))
         return None
-    timestamp = datetime.datetime.strptime(message[:24], "%Y-%m-%d %H:%M:%S%z")
-    if timestamp + timeout <= now():
-        _LOGGER.debug("Expired protected parameter {}".format(tohash))
-        return None
+    timestamp = message[:24]
+    if timestamp == 24 * '.':
+        pass
+    else:
+        ttl = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S%z")
+        if ttl <= now():
+            _LOGGER.debug("Expired protected parameter {}".format(tohash))
+            return None
     return message[26:]
 
 def check_validation(rs, assertion, value, name=None, **kwargs):
