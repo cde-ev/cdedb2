@@ -2,60 +2,73 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Nutzerdaten -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block content %}
-    <table>
-        <tr>
-            <th>Zeitstempel</th>
-            <th>Status</th>
-            <th>Erstellt von</th>
-            <th>Begutachtet von</th>
-            <th>Betroffen</th>
-            <th>Generation</th>
-            <th>Notiz</th>
-        </tr>
-        {% for entry in log %}
+    <table class="table table-condensed table-hover">
+        <thead>
             <tr>
-                <td>{{ entry['ctime']|datetime|e }}</td>
-                <td>{{ i18n(const.MemberChangeStati(entry['change_status'])|string)|e }}</td>
-                <td>
-                    {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                    {{ persona_data[entry['submitted_by']]['family_name']|e }}
-                </td>
-                <td>
-                    {% if entry['reviewed_by'] %}
-                        {{ persona_data[entry['reviewed_by']]['given_names']|e }}
-                        {{ persona_data[entry['reviewed_by']]['family_name']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if entry['persona_id'] %}
-                        {{ persona_data[entry['persona_id']]['given_names']|e }}
-                        {{ persona_data[entry['persona_id']]['family_name']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ entry['generation']|e }}</td>
-                <td>{{ entry['change_note']|e }}</td>
+                <th>Zeitstempel</th>
+                <th>Status</th>
+                <th>Erstellt von</th>
+                <th>Begutachtet von</th>
+                <th>Betroffen</th>
+                <th>Generation</th>
+                <th>Notiz</th>
             </tr>
-        {% endfor %}
-    </table>
-    <form action="{{ cdedblink('core/view_changelog_meta')|e }}" method="GET" id="logshowform">
-        <div>
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for status in const.MemberChangeStati %}
-                {{ myentries.append((status.value, i18n(status|string), None))|e }}
+        </thead>
+        <tbody>
+            {% for entry in log %}
+                <tr>
+                    <td>{{ entry['ctime']|datetime|e }}</td>
+                    <td>{{ i18n(const.MemberChangeStati(entry['change_status'])|string)|e }}</td>
+                    <td>
+                        {{ util.href(show_user_link(entry['submitted_by']),
+                                persona_data[entry['submitted_by']]['given_names']|e
+                                + " " + persona_data[entry['submitted_by']]['family_name']|e)
+                        }}
+                    </td>
+                    <td>
+                        {% if entry['reviewed_by'] %}
+                            {{ util.href(show_user_link(entry['reviewed_by']),
+                                    persona_data[entry['reviewed_by']]['given_names']|e
+                                    + " " + persona_data[entry['reviewed_by']]['family_name']|e)
+                            }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry['persona_id'] %}
+                            {{ util.href(show_user_link(entry['persona_id']),
+                                    persona_data[entry['persona_id']]['given_names']|e
+                                    + " " + persona_data[entry['persona_id']]['family_name']|e)
+                            }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ entry['generation']|e }}</td>
+                    <td>{{ entry['change_note']|e }}</td>
+                </tr>
             {% endfor %}
-            {{ util.input_checkboxes("stati", title="Status", info="Keine Auswahl entspricht allem.",
-                                     entries=myentries) }}
-            {{ util.input_text(name="start", label="Anfang") }}
-            {{ util.input_text(name="stop", label="Ende") }}
-            {{ util.input_submit(value="Anzeigen") }}
-        </div>
-    </form>
+        </tbody>
+    </table>
+    
+    {{ util.box_filter_begin() }}
+        <form action="{{ cdedblink('core/view_changelog_meta')|e }}" method="GET" id="logshowform" class="form-horizontal">
+            <div>
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for status in const.MemberChangeStati %}
+                    {{ myentries.append((status.value, i18n(status|string), None))|e }}
+                {% endfor %}
+                {{ util.input_checkboxes("stati", title="Status", info="Keine Auswahl entspricht allem.",
+                                         entries=myentries, small=True) }}
+                {{ util.input_text(name="start", label="Anfang", small=True) }}
+                {{ util.input_text(name="stop", label="Ende", small=True) }}
+                {{ util.input_submit(value="Anzeigen", small=True) }}
+            </div>
+        </form>
+    {{ util.box_filter_end() }}
 {% endblock %}
