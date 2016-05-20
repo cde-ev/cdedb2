@@ -30,8 +30,9 @@
         <nav class="navbar navbar-default">
             <div class="container">
                 <div class="navbar-header">
+                    <p class="navbar-collapse-header">Hauptmenü</p>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                            data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                            data-target="#navbar-collapse-1" aria-expanded="false">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
@@ -39,20 +40,19 @@
                     </button>
                 </div>
 
-                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <div class="collapse navbar-collapse" id="navbar-collapse-1" role="navigation">
                     {% if "persona" in user.roles %}
                         <ul class="nav navbar-nav navbar-right">
                             <li>
-                                <span id="displayname">
-                                    {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
-                                </span>
-                            </li>
-                            <li>
                                 <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform"
                                   class="navbar-form">
+                                    <p class="navbar-text">
+                                        {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
+                                    </p>
                                     <button type="submit" name="submitlogout" value="Abmelden"
-                                      class="btn navbar-button" title="Logout" data-placement="bottom">
+                                      class="btn navbar-button" title="Logout">
                                         <span class="glyphicon glyphicon-off"></span>
+                                        <span class="visible-xs-inline-block">Logout</span>
                                     </button>
                                 </form>
                             </li>
@@ -90,11 +90,11 @@
 
         <div class="container">
             <div class="row row-wide">
-                <div class="col-md-3 col-wide-3">
+                <div class="col-md-3 col-wide-3" role="navigation">
                     {% block navigation %}
                     {% endblock %}
                 </div>
-                <div class="col-md-9 col-wide-auto">
+                <div class="col-md-9 col-wide-auto" role="main">
                     {% block breadcrumb %}
                     {% endblock %}
                     {% block heading %}
