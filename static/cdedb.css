@@ -15,6 +15,29 @@ body{
     color: #a94442;
 }
 
+/* wide layout */
+@media (min-width: 1200px) {
+    body.wide .container{
+        width: auto;
+    }
+    body.wide .row-wide {
+        white-space: nowrap;
+    }
+    body.wide .col-wide-3 {
+        width: 262px;
+    }
+    body.wide .col-wide-auto {
+        width: auto;
+    }
+    body.wide .col-wide-3, body.wide .col-wide-auto {
+        float: none;
+        display: inline-block;
+        vertical-align: top;
+        white-space: normal;
+    }
+}
+
+
 /* Helper classes */
 .float-along {
     display: block;
