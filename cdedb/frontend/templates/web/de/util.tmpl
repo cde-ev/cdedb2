@@ -107,7 +107,7 @@
         placeholder='') %}
     <input type="{{ type|e }}" {% if aclass %} class="{{ aclass|e }}"{% endif %}
             {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {% if placeholder %} placeholder="{{ maxlength|e }}"{% endif %}
+            {% if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
             {% if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"
             name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
 {% endmacro %}
@@ -227,16 +227,27 @@
             label, anid, small, info, displayerrors) }}
 {% endmacro%}
 
+{% macro input_static(value) %}
+    <p class="form-control-static">{{ value|e }}</p>
+{% endmacro %}
+{% macro form_input_static(label="", info='', value='', small=False) %}
+    {{ form_input_general(
+        input_static(value),
+        label, '', small, info) }}
+{% endmacro %}
 
-{% macro form_input_submit(value, name="submitform", info='', readonly=False, anid='', aclass='btn btn-primary',
-        icon="ok", small=False) %}
+{% macro form_input_submit(value='Speichern', name="submitform", info='', readonly=False, anid='',
+        aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue='Abbrechen',
+        small=False) %}
     <div class="form-group">
-        {% if info %}<div class="control-label">{{ info_hover(info) }}</div>{% endif %}
         <div class="{% if small %}col-sm-offset-2 col-sm-10{% else %}col-sm-offset-4 col-sm-8{% endif %}">
             <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
             id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>
             {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ value|e }}</button>
-            {% if info %} {{ info_hover(info) }} {% endif %}
+            {% if cancellink %}
+                &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default") }}
+            {% endif %}
+            {% if info %}<div class="control-label">{{ info_hover(info) }}</div>{% endif %}
         </div>
     </div>
 {% endmacro %}

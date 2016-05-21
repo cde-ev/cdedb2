@@ -1,53 +1,53 @@
+{% set sidenav_active='core_mydata'%}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Eigene Daten bearbeiten{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('core/change_user')|e }}" method="POST" id="changedataform">
-        <div>{{ util.input_hidden(name="generation") }}</div>
-        <table>
-            <tr> <th colspan="2">Person</th> </tr>
-            {{ util.form_input_text(name="title", label="Titel") }}
-            {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.form_input_text(name="family_name", label="Nachname") }}
-            {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.form_input_text(name="display_name", label="Rufname") }}
-            {% if values['is_cde_realm'] %}
-                {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
-                {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
-                {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
-                {{ util.form_input_textarea(name="interests", label="Interessen") }}
-                {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
-            {% endif %}
-            <tr> <th colspan="2">Kontakt</th> </tr>
-            <tr>
-                <td>Email</td>
-                <td>{{ username|e }}</td>
-            </tr>
-            {% if values['is_cde_realm'] or values['is_event_realm'] %}
-                {{ util.form_input_text(name="telephone", label="Telefon") }}
-                {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
-                {{ util.form_input_text(name="weblink", label="WWW") }}
-                <tr> <th colspan="2">Adresse</th> </tr>
-                {{ util.form_input_text(name="address", label="Straße") }}
-                {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
-                {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
-                {{ util.form_input_text(name="location", label="Stadt") }}
-                {{ util.form_input_text(name="country", label="Land") }}
-            {% endif %}
-            {% if values['is_cde_realm'] %}
-                <tr> <th colspan="2">Zweitadresse</th> </tr>
-                {{ util.form_input_text(name="address2", label="Straße") }}
-                {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
-                {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
-                {{ util.form_input_text(name="location2", label="Stadt") }}
-                {{ util.form_input_text(name="country2", label="Land") }}
-                <tr> <th colspan="2">Datenzugriff durch BuB</th> </tr>
-                {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
-            {% endif %}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Speichern") }}
-            {{ util.href(show_user_link(user.persona_id), "Abbrechen") }}
-        </div>
+    <form action="{{ cdedblink('core/change_user')|e }}" method="POST" id="changedataform" class="form-horizontal">
+        {{ util.input_hidden(name="generation") }}
+        
+        <h4 class="heading-underline">Person</h4>
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
+        {{ util.form_input_text(name="family_name", label="Nachname") }}
+        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+        {{ util.form_input_text(name="display_name", label="Rufname") }}
+        
+        {% if values['is_cde_realm'] %}
+            <h4 class="heading-underline">Lebenslauf</h4>
+            {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
+            {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
+            {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
+            {{ util.form_input_textarea(name="interests", label="Interessen") }}
+            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
+        {% endif %}
+        
+        <h4 class="heading-underline">Kontakt</h4>
+        {{ util.form_input_static(label="E-Mail", value=username) }}
+        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+            {{ util.form_input_text(name="telephone", label="Telefon") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.form_input_text(name="weblink", label="WWW") }}
+            
+            <h4 class="heading-underline">Adresse</h4>
+            {{ util.form_input_text(name="address", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location", label="Stadt") }}
+            {{ util.form_input_text(name="country", label="Land") }}
+        {% endif %}
+        {% if values['is_cde_realm'] %}
+            <h4 class="heading-underline">Zweitadresse</h4>
+            {{ util.form_input_text(name="address2", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location2", label="Stadt") }}
+            {{ util.form_input_text(name="country2", label="Land") }}
+            
+            <h4 class="heading-underline">Account</h4>
+            {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
+        {% endif %}
+        
+        {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(user.persona_id)) }}
     </form>
 {% endblock %}
