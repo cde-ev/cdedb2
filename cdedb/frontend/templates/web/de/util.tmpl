@@ -437,7 +437,7 @@
 {% endmacro %}
 
 {% macro event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-                           anid='', aclass='') %}
+                           anid='') %}
     {% if not name %}
         {% set name = "fields.{}".format(field_data['field_name']) %}
     {% endif %}
@@ -450,24 +450,23 @@
         {% for value, description in field_data['entries'] %}
             {{ myentries.append((value, description, None))|e }}
         {% endfor %}
-        {{ input_select(name=name, title=label, entries=myentries, nulloption=True,
-                        readonly=readonly, defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+        {{ form_input_select(name=name, title=label, entries=myentries, nulloption=True,
+                        readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
    {% else %}
         {% if field_data['kind'] == "bool" %}
-            {{ input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                              aclass=aclass) }}
+            {{ form_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
         {% elif field_data['kind'] == "str" %}
-            {{ input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                              defaultvalue=defaultvalue, anid=anid, aclass=(aclass + " bigg")) }}
+            {{ form_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                              defaultvalue=defaultvalue, anid=anid, rows=5) }}
         {% else %}
-            {{ input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                          defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+            {{ form_input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                          defaultvalue=defaultvalue, anid=anid) }}
         {% endif %}
    {% endif %}
 {% endmacro %}
 
 {% macro tab_event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False,
-                               defaultvalue='', anid='', aclass='') %}
+                               defaultvalue='', anid='') %}
     {% if not name %}
         {% set name = "fields.{}".format(field_data['field_name']) %}
     {% endif %}
@@ -480,18 +479,17 @@
         {% for value, description in field_data['entries'] %}
             {{ myentries.append((value, description, None))|e }}
         {% endfor %}
-        {{ input_select(name=name, label=label, entries=myentries, nulloption=True,
-                            readonly=readonly, defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+        {{ form_input_select(name=name, label=label, entries=myentries, nulloption=True,
+                            readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
    {% else %}
         {% if field_data['kind'] == "bool" %}
-            {{ input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid,
-                                  aclass=aclass) }}
+            {{ form_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
         {% elif field_data['kind'] == "str" %}
-            {{ input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                                  defaultvalue=defaultvalue, anid=anid, aclass=(aclass + " bigg")) }}
+            {{ form_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                                  defaultvalue=defaultvalue, anid=anid, rows=5) }}
         {% else %}
-            {{ input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                              defaultvalue=defaultvalue, anid=anid, aclass=aclass) }}
+            {{ form_input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
+                              defaultvalue=defaultvalue, anid=anid) }}
         {% endif %}
    {% endif %}
 {% endmacro %}

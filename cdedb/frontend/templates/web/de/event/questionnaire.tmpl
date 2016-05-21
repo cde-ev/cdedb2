@@ -27,7 +27,7 @@
                                     {{ util.form_input_textarea(
                                         name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                         readonly=(entry['readonly'] or locked),
-                                        aclass=('bi' + entry['input_size']*'g')) }}
+                                        rows=(2 + entry['input_size']*2)) }}
                                 {% else %}
                                     {{ util.form_input_text(
                                         name=FIELD['field_name'], label=entry['title'], info=entry['info'],
