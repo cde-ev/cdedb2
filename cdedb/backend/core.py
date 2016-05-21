@@ -1100,14 +1100,15 @@ class CoreBackend(AbstractBackend):
             return None
         else:
             sessionkey = str(uuid.uuid4())
-            query = glue(
-                "UPDATE core.sessions SET is_active = False",
-                "WHERE (persona_id = %s OR ip = %s) AND is_active = True;\n",
-                ## next
-                "INSERT INTO core.sessions (persona_id, ip, sessionkey)",
-                "VALUES (%s, %s, %s)")
-            self.query_exec(rs, query,
-                            (data["id"], ip, data["id"], ip, sessionkey))
+            with Atomizer(rs):
+                query = glue(
+                    "UPDATE core.sessions SET is_active = False",
+                    "WHERE persona_id = %s AND is_active = True")
+                self.query_exec(rs, query, (data["id"],))
+                query = glue(
+                    "INSERT INTO core.sessions (persona_id, ip, sessionkey)",
+                    "VALUES (%s, %s, %s)")
+                self.query_exec(rs, query, (data["id"], ip, sessionkey))
             return sessionkey
 
     @access("persona")
