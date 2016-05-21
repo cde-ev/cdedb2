@@ -9,8 +9,8 @@
         {% for course_id, cdata in course_data|dictsort %}
             {{ myentries.append((course_id, cdata['title'], None))|e }}
         {% endfor %}
-        {{ util.input_select(name="course_id", label="Auswahl", entries=myentries) }}
-        {{ util.input_submit(value="Aktualisieren") }}
+        {{ util.form_input_select(name="course_id", label="Auswahl", entries=myentries) }}
+        {{ util.form_input_submit(value="Aktualisieren") }}
     </form>
     <table>
         <tr>

@@ -8,14 +8,14 @@
         {{ util.href(cdedblink('event/change_past_course_form'), "Bearbeiten") }}
         <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
-            {{ util.input_text(name="persona_id", label="ID") }}
-            {{ util.input_checkbox(name="is_instructor", label="Kursleiter") }}
-            {{ util.input_checkbox(name="is_orga", label="Orga") }}
-            {{ util.input_submit(value="Teilnehmer hinzufügen") }}
+            {{ util.form_input_text(name="persona_id", label="ID") }}
+            {{ util.form_input_checkbox(name="is_instructor", label="Kursleiter") }}
+            {{ util.form_input_checkbox(name="is_orga", label="Orga") }}
+            {{ util.form_input_submit(value="Teilnehmer hinzufügen") }}
         </form>
         <form action="{{ cdedblink('event/delete_past_course')|e }}" method="POST" class="jsConfirmed"
          id="deletecourseform">
-            {{ util.input_submit(value="Gesamten Kurs löschen") }}
+            {{ util.form_input_submit(value="Gesamten Kurs löschen") }}
         </form>
     {% endif %}
     <p>{{ course_data['description']|e }}</p>
@@ -34,7 +34,7 @@
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
-                            {{ util.input_submit(value="entfernen") }}
+                            {{ util.form_input_submit(value="entfernen") }}
                         </form>
                     {% endif %}
                     {% if pdata['is_instructor'] %}

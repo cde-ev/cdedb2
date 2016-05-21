@@ -34,19 +34,19 @@
                     <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST" id="unsubscribeform">
                         <div>
                             {{ util.input_hidden(name="subscribe", value=False) }}
-                            {{ util.input_submit(value="Abbestellen") }}
+                            {{ util.form_input_submit(value="Abbestellen") }}
                         </div>
                     </form>
                     <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="changeaddressform">
                         <div>
-                            {{ util.input_text(name="email", label="Neue Emailadresse") }}
-                            {{ util.input_submit(value="Adresse ändern") }}
+                            {{ util.form_input_text(name="email", label="Neue Emailadresse") }}
+                            {{ util.form_input_submit(value="Adresse ändern") }}
                         </div>
                     </form>
                     <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="resetaddressform">
                         <div>
                             {{ util.input_hidden(name="email", value="") }}
-                            {{ util.input_submit(value="Adresse zurücksetzen") }}
+                            {{ util.form_input_submit(value="Adresse zurücksetzen") }}
                         </div>
                     </form>
                 {% endif %}
@@ -58,7 +58,7 @@
                     <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST" id="subscribeform">
                         <div>
                             {{ util.input_hidden(name="subscribe", value=True) }}
-                            {{ util.input_submit(value="Einschreiben") }}
+                            {{ util.form_input_submit(value="Einschreiben") }}
                         </div>
                     </form>
                 {% endif %}

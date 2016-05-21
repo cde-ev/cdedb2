@@ -51,21 +51,21 @@
             <form action="{{ cdedblink('cde/lastschrift_revoke', {'lastschrift_id': active_permit})|e }}" method="POST"
               id="revokeform">
                 <div>
-                    {{ util.input_submit(value="Ermächtigung widerrufen") }}
+                    {{ util.form_input_submit(value="Ermächtigung widerrufen") }}
                 </div>
             </form>
             {% if active_open %}
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
                   id="generatetransactionform">
                     <div>
-                        {{ util.input_submit(value="Einzeldatei generieren") }}
+                        {{ util.form_input_submit(value="Einzeldatei generieren") }}
                         {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
                     </div>
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit})|e }}"
                   method="POST" id="skiptransactionform">
                     <div>
-                        {{ util.input_submit(value="Pausieren") }}
+                        {{ util.form_input_submit(value="Pausieren") }}
                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
                     </div>
                 </form>
@@ -110,7 +110,7 @@
                                                             'transaction_id': transaction_id})|e }}"
 				  method="POST" id="transactionsuccessform{{ transaction_id|e }}">
 				    <div>
-					{{ util.input_submit(value="Erfolg!") }}
+					{{ util.form_input_submit(value="Erfolg!") }}
 					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
 					{{ util.input_hidden(name="status",
@@ -122,7 +122,7 @@
                                                             'transaction_id': transaction_id})|e }}"
 				  method="POST" id="transactioncancelform{{ transaction_id|e }}">
 				    <div>
-					{{ util.input_submit(value="Abbruch") }}
+					{{ util.form_input_submit(value="Abbruch") }}
 					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
 					{{ util.input_hidden(name="status",
@@ -134,7 +134,7 @@
                                                             'transaction_id': transaction_id})|e }}"
 				  method="POST" id="transactionfailureform{{ transaction_id|e }}">
 				    <div>
-					{{ util.input_submit(value="Geplatzt!") }}
+					{{ util.form_input_submit(value="Geplatzt!") }}
 					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
 					{{ util.input_hidden(name="status",
@@ -149,7 +149,7 @@
                                                             'transaction_id': transaction_id})|e }}"
                                   method="GET" id="receiptform{{ transaction_id|e }}">
                                     <div>
-                                        {{ util.input_submit(value="Spendenbescheinigung") }}
+                                        {{ util.form_input_submit(value="Spendenbescheinigung") }}
                                     </div>
                                 </form>
 				<form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
@@ -157,7 +157,7 @@
                                                             'transaction_id': transaction_id})|e }}"
 				  method="POST" id="transactionrollbackform{{ transaction_id|e }}">
 				    <div>
-					{{ util.input_submit(value="Rückbuchung") }}
+					{{ util.form_input_submit(value="Rückbuchung") }}
                                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
 				    </div>
 				</form>

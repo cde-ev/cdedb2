@@ -12,12 +12,12 @@
     {% if "persona" not in user.roles %}
         <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform" class="form-horizontal">
             <p>
-                {{ util.input_text(name="username", label="E-Mail:", type="email", small=True, anid="login_name") }}
-                {{ util.input_password(label="Passwort:", small=True, anid="login_password") }}
+                {{ util.form_input_text(name="username", label="E-Mail:", type="email", small=True, anid="login_name") }}
+                {{ util.form_input_text(name="password", label="Passwort:", small=True, anid="login_password", type="password") }}
                 
                 {{ util.input_hidden(name="wants") }}
 
-                {{ util.input_submit(value="Anmelden", small=True) }}
+                {{ util.form_input_submit(value="Anmelden", small=True) }}
             </p>
         </form>
         {{ util.href(cdedblink('core/reset_password_form'), "Passwort vergessen?") }} |

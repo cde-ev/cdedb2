@@ -70,7 +70,7 @@ Kursteilnehmer für Kurs {{ course_data['title']|e }} verwalten ({{ event_data['
             {{ util.input_hidden(name="attendees_{}".format(part_id), value="",
                                  anid="attendeesinput_{}".format(part_id)) }}
         {% endfor %}
-        {{ util.input_submit(value="Speichern", readonly=True, aclass="jsEnabled") }}
+        {{ util.form_input_submit(value="Speichern", readonly=True, aclass="jsEnabled") }}
     </form>
     <script type="text/javascript">
         $(document).ready(function(){

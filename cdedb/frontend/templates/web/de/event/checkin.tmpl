@@ -16,7 +16,7 @@
                 {{ user_data[rdata['persona_id']]['family_name']|e }}
                 <form action="{{ cdedblink('event/checkin')|e }}" method="POST" id="checkinform{{ registration_id|e }}">
                     {{ util.input_hidden(name="registration_id", value=registration_id) }}
-                    {{ util.input_submit(value="Checkin") }}
+                    {{ util.form_input_submit(value="Checkin") }}
                 </form>
             </li>
         {% endfor %}

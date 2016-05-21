@@ -6,66 +6,66 @@
     {{ util.href(cdedblink("ml/index"), "Abbrechen") }}
     <form action="{{ cdedblink('ml/change_mailinglist')|e }}" method="POST" id="changelistform">
         <table>
-            {{ util.input_text(name="title", label="Titel") }}
-            {{ util.input_text(name="address", label="Adresse") }}
-            {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
+            {{ util.form_input_text(name="title", label="Titel") }}
+            {{ util.form_input_text(name="address", label="Adresse") }}
+            {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for policy in const.SubscriptionPolicy %}
                 {{ myentries.append((policy.value, i18n(policy|string), None))|e }}
             {% endfor %}
-            {{ util.input_select(name="sub_policy", label="Einschreibung", entries=myentries) }}
+            {{ util.form_input_select(name="sub_policy", label="Einschreibung", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for policy in const.ModerationPolicy %}
                 {{ myentries.append((policy.value, i18n(policy|string), None))|e }}
             {% endfor %}
-            {{ util.input_select(name="mod_policy", label="Moderation", entries=myentries) }}
+            {{ util.form_input_select(name="mod_policy", label="Moderation", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for policy in const.AttachmentPolicy %}
                 {{ myentries.append((policy.value, i18n(policy|string), None))|e }}
             {% endfor %}
-            {{ util.input_select(name="attachment_policy", label="Anhänge", entries=myentries) }}
+            {{ util.form_input_select(name="attachment_policy", label="Anhänge", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for policy in const.AudiencePolicy %}
                 {{ myentries.append((policy.value, i18n(policy|string), None))|e }}
             {% endfor %}
-            {{ util.input_select(name="audience_policy", label="Empfängerkreis", entries=myentries) }}
-            {{ util.input_text(name="subject_prefix", label="Präfix (Betreffzeile)") }}
-            {{ util.input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}
-            {{ util.input_checkbox(name="is_active", label="Aktiv") }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.form_input_select(name="audience_policy", label="Empfängerkreis", entries=myentries) }}
+            {{ util.form_input_text(name="subject_prefix", label="Präfix (Betreffzeile)") }}
+            {{ util.form_input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}
+            {{ util.form_input_checkbox(name="is_active", label="Aktiv") }}
+            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for mailinglist_id, title in mailinglists|dictsort %}
                 {{ myentries.append((mailinglist_id, title, None))|e }}
             {% endfor %}
-            {{ util.input_select(name="gateway", label="Zugangsvererbung", nulloption=True, entries=myentries,
+            {{ util.form_input_select(name="gateway", label="Zugangsvererbung", nulloption=True, entries=myentries,
                                      info="Mitglieder der gewählten Liste können sich in diese Liste einschreiben.") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for event_id, title in events|dictsort %}
                 {{ myentries.append((event_id, title, None))|e }}
             {% endfor %}
-            {{ util.input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
+            {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for status in const.RegistrationPartStati %}
                 {{ myentries.append((status.value, i18n(status|string), None))|e }}
             {% endfor %}
-            {{ util.input_checkboxes(name="registration_stati", title="Veranstaltungsempfänger",
+            {{ util.form_input_checkboxes(name="registration_stati", label="Veranstaltungsempfänger",
                                          entries=myentries, info="Keine Auswahl entspricht einer Orgaliste.") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for assembly_id, adata in assemblies|dictsort %}
                 {{ myentries.append((assembly_id, adata['title'], None))|e }}
             {% endfor %}
-            {{ util.input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}
+            {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}
         </table>
         <div>
-            {{ util.input_submit(value="Speichern") }}
+            {{ util.form_input_submit(value="Speichern") }}
         </div>
     </form>
 {% endblock %}

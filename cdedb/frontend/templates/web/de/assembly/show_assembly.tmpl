@@ -17,7 +17,7 @@
             {% if now() < assembly_data['signup_end'] %}
                 <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
                     <div>
-                        {{ util.input_submit(value="Teilnehmen") }}
+                        {{ util.form_input_submit(value="Teilnehmen") }}
                     </div>
                 </form>
             {% endif %}
@@ -28,7 +28,7 @@
             {{ util.href(cdedblink("assembly/change_assembly"), "Bearbeiten")}}
             <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST" id="concludeassemblyform">
                 <div>
-                    {{ util.input_submit(value="Archivieren", readonly=(not has_activity)) }}
+                    {{ util.form_input_submit(value="Archivieren", readonly=(not has_activity)) }}
                 </div>
             </form>
         </p>
@@ -44,7 +44,7 @@
                         <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id})|e }}"
                          method="POST" id="removeattachmentform{{ attachment_id|e }}">
                             <div>
-                                {{ util.input_submit(value="Löschen") }}
+                                {{ util.form_input_submit(value="Löschen") }}
                             </div>
                         </form>
                     {% endif %}

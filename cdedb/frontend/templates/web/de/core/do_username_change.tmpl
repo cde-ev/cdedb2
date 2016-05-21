@@ -10,8 +10,8 @@
     <form action="{{ cdedblink('core/do_username_change')|e }}" method="POST" id="usernamechangeform">
         <div>
             {{ util.input_hidden(name="new_username") }}
-            {{ util.input_password() }}
-            {{ util.input_submit(value="Emailadresse ändern") }}
+            {{ util.form_input_text(name="password", type="password") }}
+            {{ util.form_input_submit(value="Emailadresse ändern") }}
         </div>
     </form>
 {% endblock %}

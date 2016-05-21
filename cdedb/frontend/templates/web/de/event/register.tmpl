@@ -26,7 +26,7 @@
             {% for part_id, pdata in event_data['parts']|dictsort %}
                 {{ myentries.append((part_id, pdata['title'], "manipulator_checkbox_{}".format(part_id)))|e }}
             {% endfor %}
-            {{ util.input_checkboxes(name="parts", title="Veranstaltungsteile", entries=myentries) }}
+            {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
             {% if not age.may_mix() %}
                 <tr>
                     <td>Gemischte Unterbringung</td>
@@ -42,17 +42,17 @@
                 {% else %}
                     {% set mix_info = "" %}
                 {% endif %}
-                {{ util.input_select(name="mixed_lodging", entries=(
+                {{ util.form_input_select(name="mixed_lodging", entries=(
                     (True, "Ich bin mit gemischter Unterbringung einverstanden.", None),
                     (False, "Ich will geschlechter-getrennt untergebracht werden.", None)),
                     label="Gemischte Unterbringung", info=mix_info) }}
             {% endif %}
-            {{ util.input_checkbox(name="foto_consent", label=glue(
+            {{ util.form_input_checkbox(name="foto_consent", label=glue(
                     "Ich bin damit einverstanden, dass Fotos und Aufnahmen meiner Person, die im Rahmen dieser",
                     "Veranstaltung entstehen, für die Veranstaltungsdokumentation und eine CdE-interne,",
                     "passwortgeschützte Fotogalerie verwendet werden. Einzelne Fotos können auf gesonderten",
                     "Wunsch davon ausgenommen werden.")) }}
-            {{ util.input_textarea(name="notes", label="Anmerkungen", aclass="biggg") }}
+            {{ util.form_input_textarea(name="notes", label="Anmerkungen", rows="5") }}
             {% for part_id, course_list in course_choices|dictsort %}
                 {% if course_list %}
                     <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
@@ -61,18 +61,18 @@
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.input_select(name="course_choice{}_0".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
                                              label="Erstwahl") }}
-                    {{ util.input_select(name="course_choice{}_1".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_1".format(part_id), entries=myentries,
                                              label="Zweitwahl") }}
-                    {{ util.input_select(name="course_choice{}_2".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
                                              label="Drittwahl") }}
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [("", "Ich bin kein Kursleiter.", None)] %}
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.input_select(name="course_instructor{}".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_instructor{}".format(part_id), entries=myentries,
                                              label="Kursleiter") }}
                 {% endif %}
             {% endfor %}
@@ -133,7 +133,7 @@
             </tr>
         </table>
         <div>
-            {{ util.input_submit(value="Anmelden") }}
+            {{ util.form_input_submit(value="Anmelden") }}
         </div>
     </form>
 {% endblock %}

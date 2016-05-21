@@ -4,11 +4,11 @@
 {% block content %}
     <form action="{{ cdedblink('core/batch_admission')|e }}" method="POST" id="admissionform">
         {{ util.input_hidden("finalized") }}
-        {{ util.input_checkbox("membership", label="CdE-Mitgliedschaft eintragen") }}
-        {{ util.input_checkbox("trial_membership", label="Probemitgliedschaft gutschreiben") }}
-        {{ util.input_checkbox("consent", label="Datenschutzeinwilligung gegeben") }}
-        {{ util.input_checkbox("sendmail", label="Willkommensmail verschicken") }}
-        {{ util.input_textarea(name="accounts", label="Daten",
+        {{ util.form_input_checkbox("membership", label="CdE-Mitgliedschaft eintragen") }}
+        {{ util.form_input_checkbox("trial_membership", label="Probemitgliedschaft gutschreiben") }}
+        {{ util.form_input_checkbox("consent", label="Datenschutzeinwilligung gegeben") }}
+        {{ util.form_input_checkbox("sendmail", label="Willkommensmail verschicken") }}
+        {{ util.form_input_textarea(name="accounts", label="Daten",
                                info='Hier einen Datensatz pro Zeile eingeben.') }}
         {% for dataset in data %}
             <div>
@@ -32,7 +32,8 @@
                 {% for resolution in LineResolutions %}
                     {{ myentries.append((resolution.value, i18n(resolution|string), None))|e }}
                 {% endfor %}
-                {{ util.input_radio("resolution{}".format(dataset['lineno'] - 1), myentries, label="Aktion") }}
+                {{ util.form_input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, label="Aktion",
+                        radio=True) }}
                 {% if dataset['doppelgangers'] %}
                     Die folgenden Accounts sind diesem ähnlich. Wähle einen
                     aus, um ihn mit der passenden Aktion zu modifizieren.
@@ -46,8 +47,8 @@
                             {{ myentries.append((key, description, None))|e }}
                         {% endwith %}
                     {% endfor %}
-                    {{ util.input_radio("doppelganger_id{}".format(dataset['lineno'] - 1), myentries,
-                                        label="Mögliche Duplikate", info='Accounts die dem gegebenen ähnlich sehen') }}
+                    {{ util.form_input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1), myentries,
+                            label="Mögliche Duplikate", info='Accounts die dem gegebenen ähnlich sehen', radio=True) }}
                 {% endif %}
             </div>
         {% endfor %}
@@ -60,9 +61,9 @@
 
             Bei Geschlecht 0 für weiblich, 1 für männlich und 2 für alles andere eintragen.
             {% if values['finalized'] %}
-                {{ util.input_submit(value="Anlegen") }}
+                {{ util.form_input_submit(value="Anlegen") }}
             {% else %}
-                {{ util.input_submit(value="Validieren") }}
+                {{ util.form_input_submit(value="Validieren") }}
             {% endif %}
         </div>
     </form>

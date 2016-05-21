@@ -6,27 +6,27 @@
     {{ util.href(cdedblink("event/index"), "Abbrechen") }}
     <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform">
         <table>
-            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.form_input_text(name="title", label="Titel") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for value, title in institutions|dictsort %}
                 {{ myentries.append((value, title, None))|e }}
             {% endfor %}
-            {{ util.input_select(name="institution", label="Organisation", entries=myentries) }}
-            {{ util.input_textarea(name="description", label="Beschreibung", aclass="biggg") }}
-            {{ util.input_text(name="shortname", label="Kürzel") }}
-            {{ util.input_text(name="registration_start", label="Anmeldebeginn") }}
-            {{ util.input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss") }}
-            {{ util.input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss") }}
-            {{ util.input_select(name="iban", label="CdE-Konto IBAN", entries=(
+            {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
+            {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+            {{ util.form_input_text(name="shortname", label="Kürzel") }}
+            {{ util.form_input_text(name="registration_start", label="Anmeldebeginn") }}
+            {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss") }}
+            {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss") }}
+            {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=(
                 ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01", None),
                 ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02", None)), nulloption=True) }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
-            {{ util.input_text(name="orga_ids", label="Orga-IDs", info="Kommaseparierte Liste von Orga-IDs.") }}
+            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+            {{ util.form_input_text(name="orga_ids", label="Orga-IDs", info="Kommaseparierte Liste von Orga-IDs.") }}
         </table>
         <div>
             {{ util.input_hidden(name="use_questionnaire", value=False) }}
-            {{ util.input_submit(value="Veranstaltung anlegen") }}
+            {{ util.form_input_submit(value="Veranstaltung anlegen") }}
         </div>
     </form>
 {% endblock %}

@@ -103,15 +103,15 @@ Anmeldungen ({{ event_data['title']|e }}) -- {{ result|length|e }} Ergebnis{{ re
                             {{ myentries.append((field, titles[field], None))|e }}
                         {% endif %}
                     {% endfor %}
-                    {{ util.input_select(name="column", label="", entries=myentries, anid="column_selector",
+                    {{ util.form_input_select(name="column", label="", entries=myentries, anid="column_selector",
                                          readonly=locked) }}
                 {% endwith %}
                 <span id="value_span">
-                    {{ util.input_text(name="value", anid="value_input", readonly=locked) }}
+                    {{ util.form_input_text(name="value", anid="value_input", readonly=locked) }}
                 </span>
                 {{ util.input_hidden(name="num_rows", value=result|length) }}
                 {% if "reg.id" in query.fields_of_interest %}
-                    {{ util.input_submit(value="Ändern", anid="value_input", readonly=locked) }}
+                    {{ util.form_input_submit(value="Ändern", anid="value_input", readonly=locked) }}
                 {% else %}
                     Für Änderungsoperation muss die Spalte ID ausgewählt sein.
                 {% endif %}

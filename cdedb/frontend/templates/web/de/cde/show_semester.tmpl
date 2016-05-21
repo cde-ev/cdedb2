@@ -25,9 +25,9 @@
                 {% endif %}
                 <form action="{{ cdedblink('cde/semester_bill')|e }}" method="POST" id="billform">
                     <div>
-                        {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
-                        {{ util.input_checkbox("addresscheck", label="mit Adressabfrage") }}
-                        {{ util.input_submit(value="Mails verschicken") }}
+                        {{ util.form_input_checkbox("testrun", label="nur einzelne Testemail") }}
+                        {{ util.form_input_checkbox("addresscheck", label="mit Adressabfrage") }}
+                        {{ util.form_input_submit(value="Mails verschicken") }}
                     </div>
                 </form>
             {% endif %}
@@ -45,7 +45,7 @@
                 {% endif %}
                 <form action="{{ cdedblink('cde/semester_eject')|e }}" method="POST" id="ejectform">
                     <div>
-                        {{ util.input_submit(value="Inaktive streichen") }}
+                        {{ util.form_input_submit(value="Inaktive streichen") }}
                     </div>
                 </form>
             {% else %}
@@ -65,7 +65,7 @@
                 {% endif %}
                 <form action="{{ cdedblink('cde/semester_balance_update')|e }}" method="POST" id="balanceform">
                     <div>
-                        {{ util.input_submit(value="Guthaben aktualisieren") }}
+                        {{ util.form_input_submit(value="Guthaben aktualisieren") }}
                     </div>
                 </form>
             {% else %}
@@ -78,7 +78,7 @@
             {% if period['balance_done'] %}
                 <form action="{{ cdedblink('cde/semester_advance')|e }}" method="POST" id="proceedform">
                     <div>
-                        {{ util.input_submit(value="Nächstes Semester") }}
+                        {{ util.form_input_submit(value="Nächstes Semester") }}
                     </div>
                 </form>
             {% else %}
@@ -103,14 +103,14 @@
                 {% endif %}
                 <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="addresscheckform">
                     <div>
-                        {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
-                        {{ util.input_submit(value="Mails verschicken") }}
+                        {{ util.form_input_checkbox("testrun", label="nur einzelne Testemail") }}
+                        {{ util.form_input_submit(value="Mails verschicken") }}
                     </div>
                 </form>
                 <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="noaddresscheckform">
                     <div>
                         {{ util.input_hidden("skip", value=True) }}
-                        {{ util.input_submit(value="Als erledigt markieren") }}
+                        {{ util.form_input_submit(value="Als erledigt markieren") }}
                     </div>
                 </form>
             {% endif %}
@@ -121,7 +121,7 @@
             {% if expuls['addresscheck_done'] %}
                 <form action="{{ cdedblink('cde/expuls_advance')|e }}" method="POST" id="proceedexpulsform">
                     <div>
-                        {{ util.input_submit(value="Nächster Expuls") }}
+                        {{ util.form_input_submit(value="Nächster Expuls") }}
                     </div>
                 </form>
             {% else %}

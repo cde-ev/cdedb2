@@ -4,10 +4,10 @@
 {% block content %}
     <form action="{{ cdedblink('cde/change_meta_info')|e }}" method="POST" id="changeinfoform">
         {% for key in keys %}
-            {{ util.input_text(name=key, label=key) }}
+            {{ util.form_input_text(name=key, label=key) }}
         {% endfor %}
         <div>
-            {{ util.input_submit(value="Ändern") }}
+            {{ util.form_input_submit(value="Ändern") }}
         </div>
     </form>
 {% endblock %}

@@ -69,7 +69,7 @@
                                  'is_assembly_admin', 'notes') %}
                     <dt>{{ TITLES[field]|e }}</dt>
                     <dd>
-                        {{ util.input_select(field, entries[field], defaultvalue=entries[field][-1][0]) }}
+                        {{ util.form_input_select(field, entries[field], defaultvalue=entries[field][-1][0]) }}
                     </dd>
                 {% endfor %}
             {% endwith %}

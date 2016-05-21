@@ -31,16 +31,16 @@
             <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST"
              class="jsConfirmed" id="deleteballotform">
                 <div>
-                    {{ util.input_submit(value="Löschen") }}
+                    {{ util.form_input_submit(value="Löschen") }}
                 </div>
             </form>
             <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform">
                 <table>
-                    {{ util.input_text(name="moniker", label="Kurzname") }}
-                    {{ util.input_text(name="description", label="Beschreibung") }}
+                    {{ util.form_input_text(name="moniker", label="Kurzname") }}
+                    {{ util.form_input_text(name="description", label="Beschreibung") }}
                 </table>
                 <div>
-                    {{ util.input_submit(value="Option hinzufügen") }}
+                    {{ util.form_input_submit(value="Option hinzufügen") }}
                 </div>
             </form>
         </p>
@@ -81,7 +81,7 @@
                                 {{ myentries.append((cdata['moniker'], cdata['description'], None))|e }}
                             {% endif %}
                         {% endfor %}
-                        {{ util.input_radio("vote", label="Kandidaten", entries=myentries) }}
+                        {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, radio=True) }}
                     {% else %}
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
@@ -90,23 +90,23 @@
                                 {{ myentries.append((cdata[ 'moniker'], cdata['description'], None))|e }}
                             {% endif %}
                         {% endfor %}
-                        {{ util.input_checkboxes("vote", title="Kandidaten", entries=myentries) }}
+                        {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries) }}
                     {% endif %}
-                    {{ util.input_submit(value="Abstimmen") }}
+                    {{ util.form_input_submit(value="Abstimmen") }}
                 </div>
             </form>
             {% if ballot_data['votes'] > 1 %}
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="rejectionform">
                     <div>
                         {{ util.input_hidden(name="vote", value="special: none") }}
-                        {{ util.input_submit(value="Keiner der Kandidaten") }}
+                        {{ util.form_input_submit(value="Keiner der Kandidaten") }}
                     </div>
                 </form>
             {% endif %}
             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform">
                 <div>
                     {{ util.input_hidden(name="vote", value="special: abstain") }}
-                    {{ util.input_submit(value="Enthalten") }}
+                    {{ util.form_input_submit(value="Enthalten") }}
                 </div>
             </form>
         {% elif ballot_data['is_tallied'] %}
@@ -148,7 +148,7 @@
                                                                {'candidate_id': candidate_id})|e }}"
                                      method="POST" id="removecandidateform{{ candidate_id|e }}">
                                         <div>
-                                            {{ util.input_submit(value="Löschen") }}
+                                            {{ util.form_input_submit(value="Löschen") }}
                                         </div>
                                     </form>
                                 {% endif %}
@@ -170,7 +170,7 @@
                                                        {'candidate_id': candidate_id})|e }}"
                              method="POST" id="removecandidateform{{ candidate_id|e }}">
                                 <div>
-                                    {{ util.input_submit(value="Löschen") }}
+                                    {{ util.form_input_submit(value="Löschen") }}
                                 </div>
                             </form>
                         {% endif %}
@@ -195,8 +195,8 @@
             {# TODO do something nice and interactive here (with drag and drop ...) #}
             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform">
                 <div>
-                    {{ util.input_text(name="vote", label="Präferenzliste") }}
-                    {{ util.input_submit(value="Abstimmen") }}
+                    {{ util.form_input_text(name="vote", label="Präferenzliste") }}
+                    {{ util.form_input_submit(value="Abstimmen") }}
                 </div>
             </form>
         {% elif ballot_data['is_tallied'] %}
@@ -214,7 +214,7 @@
                         <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id})|e }}"
                          method="POST" id="removeattachmentform{{ attachment_id|e }}">
                             <div>
-                                {{ util.input_submit(value="Löschen") }}
+                                {{ util.form_input_submit(value="Löschen") }}
                             </div>
                         </form>
                     {% endif %}

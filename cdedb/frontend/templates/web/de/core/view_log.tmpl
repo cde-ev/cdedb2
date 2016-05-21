@@ -50,12 +50,12 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
                 {% for code in const.CoreLogCodes %}
                     {{ myentries.append((code.value, i18n(code|string), None))|e }}
                 {% endfor %}
-                {{ util.input_checkboxes("codes", title="Kategorien", info="Keine Auswahl entspricht allem.",
+                {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                                          entries=myentries, small=True) }}
-                {{ util.input_text(name="persona_id", label="Account", small=True) }}
-                {{ util.input_text(name="start", label="Anfang", small=True) }}
-                {{ util.input_text(name="stop", label="Ende", small=True) }}
-                {{ util.input_submit(value="Anzeigen", small=True) }}
+                {{ util.form_input_text(name="persona_id", label="Account", small=True) }}
+                {{ util.form_input_text(name="start", label="Anfang", small=True) }}
+                {{ util.form_input_text(name="stop", label="Ende", small=True) }}
+                {{ util.form_input_submit(value="Anzeigen", small=True) }}
             </div>
         </form>
     {{ util.box_filter_end() }}

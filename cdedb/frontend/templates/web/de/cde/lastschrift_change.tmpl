@@ -9,15 +9,15 @@
 		<td>Person</td>
 		<td>{{ "{} {}".format(persona_data['given_names'], persona_data['family_name'])|e }}</td>
 	    </tr>
-            {{ util.input_text(name="amount", label="Betrag") }}
-            {{ util.input_text(name="iban", label="IBAN") }}
-            {{ util.input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
-            {{ util.input_textarea(name="account_address", label="Adresse (falls abweichend)", aclass="bigg") }}
-            {{ util.input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.form_input_text(name="amount", label="Betrag") }}
+            {{ util.form_input_text(name="iban", label="IBAN") }}
+            {{ util.form_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
+            {{ util.form_input_textarea(name="account_address", label="Adresse (falls abweichend)") }}
+            {{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
+            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
         </table>
         <div>
-            {{ util.input_submit(value="Ändern") }}
+            {{ util.form_input_submit(value="Ändern") }}
         </div>
     </form>
 {% endblock %}

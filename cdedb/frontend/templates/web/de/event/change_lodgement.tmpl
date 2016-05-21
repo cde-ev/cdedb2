@@ -6,13 +6,13 @@
     {{ util.href(cdedblink("event/show_lodgement"), "Abbrechen") }}
     <form action="{{ cdedblink('event/change_lodgement')|e }}" method="POST" id="changelodgementform">
         <table>
-            {{ util.input_text(name="moniker", label="Bezeichnung") }}
-            {{ util.input_text(name="capacity", label="normale Plätze") }}
-            {{ util.input_text(name="reserve", label="Reserveplätze") }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="biggg") }}
+            {{ util.form_input_text(name="moniker", label="Bezeichnung") }}
+            {{ util.form_input_text(name="capacity", label="normale Plätze") }}
+            {{ util.form_input_text(name="reserve", label="Reserveplätze") }}
+            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
         </table>
         <div>
-            {{ util.input_submit(value="Speichern") }}
+            {{ util.form_input_submit(value="Speichern") }}
         </div>
     </form>
 {% endblock %}

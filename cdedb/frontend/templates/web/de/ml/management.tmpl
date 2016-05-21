@@ -13,7 +13,7 @@
                   id="removemoderatorform{{ moderator|e }}">
                     <div>
                         {{ util.input_hidden(name="moderator_id", value=moderator) }}
-                        {{ util.input_submit(value="Moderator löschen") }}
+                        {{ util.form_input_submit(value="Moderator löschen") }}
                     </div>
                 </form>
             </li>
@@ -22,8 +22,8 @@
     <h3>Moderator hinzufügen</h3>
     <form action="{{ cdedblink('ml/add_moderator')|e }}" method="POST" id="addmoderatorform">
         <div>
-            {{ util.input_text(name="moderator_id", label="ID") }}
-            {{ util.input_submit(value="Moderator hinzufügen") }}
+            {{ util.form_input_text(name="moderator_id", label="ID") }}
+            {{ util.form_input_submit(value="Moderator hinzufügen") }}
         </div>
     </form>
     <h2>Abonnement-Anfragen</h2>
@@ -35,14 +35,14 @@
                     <div>
                         {{ util.input_hidden(name="ack", value=True) }}
                         {{ util.input_hidden(name="persona_id", value=request) }}
-                        {{ util.input_submit(value="Annehmen") }}
+                        {{ util.form_input_submit(value="Annehmen") }}
                     </div>
                 </form>
                 <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST" id="nackrequestform{{ request|e }}">
                     <div>
                         {{ util.input_hidden(name="ack", value=False) }}
                         {{ util.input_hidden(name="persona_id", value=request) }}
-                        {{ util.input_submit(value="Ablehnen") }}
+                        {{ util.form_input_submit(value="Ablehnen") }}
                     </div>
                 </form>
             </li>
@@ -57,7 +57,7 @@
                   id="removewhitelistform{{ loop.index|e }}">
                     <div>
                         {{ util.input_hidden(name="email", value=email) }}
-                        {{ util.input_submit(value="Löschen") }}
+                        {{ util.form_input_submit(value="Löschen") }}
                     </div>
                 </form>
             </li>
@@ -66,16 +66,16 @@
     <h3>Whitelisteintrag hinzufügen</h3>
     <form action="{{ cdedblink('ml/add_whitelist')|e }}" method="POST" id="addwhitelistform">
         <div>
-            {{ util.input_text(name="email", label="Emailadresse") }}
-            {{ util.input_submit(value="Eintrag hinzufügen") }}
+            {{ util.form_input_text(name="email", label="Emailadresse") }}
+            {{ util.form_input_submit(value="Eintrag hinzufügen") }}
         </div>
     </form>
     <h2>Abonennten</h2>
     <h3>Abonennt hinzufügen</h3>
     <form action="{{ cdedblink('ml/add_subscriber')|e }}" method="POST" id="addsubscriberform">
         <div>
-            {{ util.input_text(name="subscriber_id", label="ID") }}
-            {{ util.input_submit(value="Abonennt eintragen") }}
+            {{ util.form_input_text(name="subscriber_id", label="ID") }}
+            {{ util.form_input_submit(value="Abonennt eintragen") }}
         </div>
     </form>
     <h3>Abonenntenliste</h3>
@@ -87,7 +87,7 @@
                   id="removesubscriberform{{ anid|e }}">
                     <div>
                         {{ util.input_hidden(name="subscriber_id", value=anid) }}
-                        {{ util.input_submit(value="Abonennt austragen") }}
+                        {{ util.form_input_submit(value="Abonennt austragen") }}
                     </div>
                 </form>
             </li>

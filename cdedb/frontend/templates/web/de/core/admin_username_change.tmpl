@@ -8,8 +8,8 @@ Administration -- Emailadresse ändern für {{ data['given_names']|e }} {{ data[
 
     <form action="{{ cdedblink('core/admin_username_change')|e }}" method="POST" id="usernamechangeform">
         <div>
-            {{ util.input_text(name="new_username") }}
-            {{ util.input_submit(value="Emailadresse ändern") }}
+            {{ util.form_input_text(name="new_username") }}
+            {{ util.form_input_submit(value="Emailadresse ändern") }}
         </div>
     </form>
 {% endblock %}

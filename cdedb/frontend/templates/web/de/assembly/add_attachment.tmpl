@@ -13,10 +13,10 @@
             {% else %}
                 {{ util.input_hidden(name="ballot_id", value=data['id']) }}
             {% endif %}
-            {{ util.input_text(name="title", label="Bezeichnung") }}
-            {{ util.input_text(name="filename", label="Dateiname", info="Leer lassen für derzeitigen Dateinamen.") }}
-            {{ util.input_file(name="attachment", accept="application/pdf") }}
-            {{ util.input_submit(value="Hochladen") }}
+            {{ util.form_input_text(name="title", label="Bezeichnung") }}
+            {{ util.form_input_text(name="filename", label="Dateiname", info="Leer lassen für derzeitigen Dateinamen.") }}
+            {{ util.form_input_file(name="attachment", accept="application/pdf") }}
+            {{ util.form_input_submit(value="Hochladen") }}
         </div>
     </form>
 {% endblock %}

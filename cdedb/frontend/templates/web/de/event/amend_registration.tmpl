@@ -28,17 +28,17 @@
                 {% else %}
                     {% set mix_info = "" %}
                 {% endif %}
-                {{ util.input_select(name="mixed_lodging", entries=(
+                {{ util.form_input_select(name="mixed_lodging", entries=(
                     (True, "Ich bin mit einer gemischten Unterbringung einverstanden.", None),
                     (False, "Ich will geschlechter-getrennt untergebracht werden.", None)),
                     label="Gemischte Unterbringung", info=mix_info, readonly=readonly) }}
             {% endif %}
-            {{ util.input_checkbox(name="foto_consent", readonly=readonly, label=glue(
+            {{ util.form_input_checkbox(name="foto_consent", readonly=readonly, label=glue(
                     "Ich bin damit einverstanden, dass Fotos und Aufnahmen meiner Person, die im Rahmen dieser",
                     "Veranstaltung entstehen, für die Veranstaltungsdokumentation und eine CdE-interne,",
                     "passwortgeschützte Fotogalerie verwendet werden. Einzelne Fotos können auf gesonderten",
                     "Wunsch davon ausgenommen werden.")) }}
-            {{ util.input_textarea(name="notes", label="Anmerkungen", aclass="biggg", readonly=readonly) }}
+            {{ util.form_input_textarea(name="notes", label="Anmerkungen", rows="5", readonly=readonly) }}
             {% for part_id, course_list in course_choices|dictsort %}
                 {% if (course_list and part_id in parts
                        and const.RegistrationPartStati(parts[part_id]['status']).is_involved()) %}
@@ -48,25 +48,25 @@
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.input_select(name="course_choice{}_0".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
                                              label="Erstwahl", readonly=readonly) }}
-                    {{ util.input_select(name="course_choice{}_1".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_1".format(part_id), entries=myentries,
                                              label="Zweitwahl", readonly=readonly) }}
-                    {{ util.input_select(name="course_choice{}_2".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
                                              label="Drittwahl", readonly=readonly) }}
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [("", "Ich bin kein Kursleiter.", None)] %}
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
                     {% endfor %}
-                    {{ util.input_select(name="course_instructor{}".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_instructor{}".format(part_id), entries=myentries,
                                              label="Kursleiter", readonly=readonly) }}
                 {% endif %}
             {% endfor %}
         </table>
         <div>
             {% if not readonly %}
-                {{ util.input_submit(value="Daten aktualisieren") }}
+                {{ util.form_input_submit(value="Daten aktualisieren") }}
             {% endif %}
         </div>
     </form>

@@ -39,12 +39,12 @@ CdE allgemein -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + lo
             {% for code in const.CdeLogCodes %}
                 {{ myentries.append((code.value, i18n(code|string), None))|e }}
             {% endfor %}
-            {{ util.input_checkboxes("codes", title="Kategorien", info="Keine Auswahl entspricht allem.",
+            {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                                      entries=myentries) }}
-            {{ util.input_text(name="persona_id", label="Account") }}
-            {{ util.input_text(name="start", label="Anfang") }}
-            {{ util.input_text(name="stop", label="Ende") }}
-            {{ util.input_submit(value="Anzeigen") }}
+            {{ util.form_input_text(name="persona_id", label="Account") }}
+            {{ util.form_input_text(name="start", label="Anfang") }}
+            {{ util.form_input_text(name="stop", label="Ende") }}
+            {{ util.form_input_submit(value="Anzeigen") }}
         </div>
     </form>
 {% endblock %}

@@ -13,11 +13,11 @@
     <h2>Neue Organisation anlegen</h2>
     <form action="{{ cdedblink('event/create_institution')|e }}" method="POST" id="createinstitutionform">
         <table>
-            {{ util.input_text(name="title", label="Titel") }}
-            {{ util.input_text(name="moniker", label="Kürzel") }}
+            {{ util.form_input_text(name="title", label="Titel") }}
+            {{ util.form_input_text(name="moniker", label="Kürzel") }}
         </table>
         <div>
-            {{ util.input_submit(value="Anlegen") }}
+            {{ util.form_input_submit(value="Anlegen") }}
         </div>
     </form>
 {% endblock %}

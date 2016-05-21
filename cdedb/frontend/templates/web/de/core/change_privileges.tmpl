@@ -6,13 +6,13 @@ Privilegien ändern für {{ ambience['persona']['given_names']|e }} {{ ambience[
 {% block content %}
     <form action="{{ cdedblink('core/change_privileges')|e }}" method="POST" id="privilegechangeform">
         <div>
-            {{ util.input_checkbox(name="is_admin", label="Super-Admin") }}
-            {{ util.input_checkbox(name="is_core_admin", label="Core-Admin") }}
-            {{ util.input_checkbox(name="is_cde_admin", label="CdE-Admin") }}
-            {{ util.input_checkbox(name="is_event_admin", label="Veranstaltungs-Admin") }}
-            {{ util.input_checkbox(name="is_assembly_admin", label="Versammlungs-Admin") }}
-            {{ util.input_checkbox(name="is_ml_admin", label="Mailinglisten-Admin") }}
-            {{ util.input_submit(value="Privilegien setzen") }}
+            {{ util.form_input_checkbox(name="is_admin", label="Super-Admin") }}
+            {{ util.form_input_checkbox(name="is_core_admin", label="Core-Admin") }}
+            {{ util.form_input_checkbox(name="is_cde_admin", label="CdE-Admin") }}
+            {{ util.form_input_checkbox(name="is_event_admin", label="Veranstaltungs-Admin") }}
+            {{ util.form_input_checkbox(name="is_assembly_admin", label="Versammlungs-Admin") }}
+            {{ util.form_input_checkbox(name="is_ml_admin", label="Mailinglisten-Admin") }}
+            {{ util.form_input_submit(value="Privilegien setzen") }}
         </div>
     </form>
 {% endblock %}

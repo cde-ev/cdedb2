@@ -15,21 +15,21 @@
                             {% for value, description in FIELD['entries'] %}
                                 {{ myentries.append((value, description, None))|e }}
                             {% endfor %}
-                            {{ util.input_select(name=FIELD['field_name'], entries=myentries, label=entry['title'],
+                            {{ util.form_input_select(name=FIELD['field_name'], entries=myentries, label=entry['title'],
                                                      info=entry['info'], readonly=(entry['readonly'] or locked)) }}
                         {% else %}
                             {% if FIELD['kind'] == "bool" %}
-                                {{ util.input_checkbox(
+                                {{ util.form_input_checkbox(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or locked)) }}
                             {% else %}
                                 {% if entry['input_size'] %}
-                                    {{ util.input_textarea(
+                                    {{ util.form_input_textarea(
                                         name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                         readonly=(entry['readonly'] or locked),
                                         aclass=('bi' + entry['input_size']*'g')) }}
                                 {% else %}
-                                    {{ util.input_text(
+                                    {{ util.form_input_text(
                                         name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                         readonly=(entry['readonly'] or locked)) }}
                                 {% endif %}
@@ -48,7 +48,7 @@
         </table>
         {% if not locked %}
             <div>
-                {{ util.input_submit(value="Abschicken") }}
+                {{ util.form_input_submit(value="Abschicken") }}
             </div>
         {% endif %}
     </form>

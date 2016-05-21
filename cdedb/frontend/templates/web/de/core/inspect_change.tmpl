@@ -151,14 +151,14 @@
         <div>
             {{ util.input_hidden(name="ack", value="True") }}<br>
             {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
-            {{ util.input_submit(value="Änderung bestätigen") }}
+            {{ util.form_input_submit(value="Änderung bestätigen") }}
         </div>
     </form>
     <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="nackchangeform">
         <div>
             {{ util.input_hidden(name="ack", value="False") }}<br>
             {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
-            {{ util.input_submit(value="Änderung verwerfen") }}
+            {{ util.form_input_submit(value="Änderung verwerfen") }}
         </div>
     </form>
 {% endblock %}

@@ -51,11 +51,11 @@
 
     <form action="{{ cdedblink('event/registration_query_result')|e }}" method="GET" id="registrationqueryform">
         <div>
-            {{ util.input_submit(value="Suchen") }}
-            {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+            {{ util.form_input_submit(value="Suchen") }}
+            {{ util.form_input_submit(value="CSV-Datei", name="CSV") }}
             {{ util.format_query(spec, titles, choices) }}
-            {{ util.input_submit(value="Suchen") }}
-            {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+            {{ util.form_input_submit(value="Suchen") }}
+            {{ util.form_input_submit(value="CSV-Datei", name="CSV") }}
         </div>
     </form>
 

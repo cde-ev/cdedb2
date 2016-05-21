@@ -22,8 +22,8 @@
                             {{ myentries.append((realm, description, None))|e }}
                         {% endif %}
                     {% endfor %}
-                    {{ util.input_radio(name="target_realm", entries=myentries, label="Zielbereich") }}
-                    {{ util.input_submit(value="Bereich wählen") }}
+                    {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label="Zielbereich", radio=True) }}
+                    {{ util.form_input_submit(value="Bereich wählen") }}
                 </div>
             </form>
         {% else %}
@@ -43,24 +43,24 @@
             <form action="{{ cdedblink('core/promote_user')|e }}" method="POST" id="promotionform">
                 {{ util.input_hidden(name="target_realm") }}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
-                    {{ util.input_text(name="title", label="Titel") }}
-                    {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
-                    {{ util.input_text(name="birthday", label="Geburtstag") }}
-                    {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+                    {{ util.form_input_text(name="title", label="Titel") }}
+                    {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+                    {{ util.form_input_text(name="birthday", label="Geburtstag") }}
+                    {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
                 {% endif %}
                 {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
-                    {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
+                    {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
                 {% endif %}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
-                    {{ util.input_text(name="telephone", label="Telefon") }}
-                    {{ util.input_text(name="mobile", label="Mobiltelefon") }}
-                    {{ util.input_text(name="address", label="Straße") }}
-                    {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
-                    {{ util.input_text(name="postal_code", label="Postleitzahl") }}
-                    {{ util.input_text(name="location", label="Stadt") }}
-                    {{ util.input_text(name="country", label="Land") }}
+                    {{ util.form_input_text(name="telephone", label="Telefon") }}
+                    {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+                    {{ util.form_input_text(name="address", label="Straße") }}
+                    {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+                    {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+                    {{ util.form_input_text(name="location", label="Stadt") }}
+                    {{ util.form_input_text(name="country", label="Land") }}
                 {% endif %}
-                {{ util.input_submit(value="Bereich hinzufügen") }}
+                {{ util.form_input_submit(value="Bereich hinzufügen") }}
             </form>
         {% endif %}
     {% endwith %}

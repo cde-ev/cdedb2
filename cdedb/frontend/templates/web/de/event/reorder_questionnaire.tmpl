@@ -18,7 +18,7 @@
     </ul>
     <form action="{{ cdedblink('event/reorder_questionnaire')|e }}" method="POST" id="reorderquestionnaireform">
         {{ util.input_hidden(name="order", value="", anid="orderinput") }}
-        {{ util.input_submit(value="Umordnen", readonly=True, aclass="jsEnabled") }}
+        {{ util.form_input_submit(value="Umordnen", readonly=True, aclass="jsEnabled") }}
     </form>
     <script type="text/javascript">
         $(document).ready(function(){

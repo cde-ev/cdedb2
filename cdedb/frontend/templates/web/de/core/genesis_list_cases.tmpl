@@ -13,16 +13,16 @@
                  id="genesisrejectionform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_hidden(name="case_status", value=const.GenesisStati.rejected.value) }}
-                    {{ util.input_submit(value="Ablehnen") }}
+                    {{ util.form_input_submit(value="Ablehnen") }}
                 </form>
                 <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                  id="genesisapprovalform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_hidden(name="case_status", value=const.GenesisStati.approved.value) }}
-                    {{ util.input_select(name="realm", entries=(
+                    {{ util.form_input_select(name="realm", entries=(
                        ("event", "Veranstaltungsteilnehmer", None),
                        ("ml", "Mailinglistennutzer", None),)) }}
-                    {{ util.input_submit(value="Genehmigen") }}
+                    {{ util.form_input_submit(value="Genehmigen") }}
                 </form>
             </li>
         {% endfor %}
@@ -35,7 +35,7 @@
                 <form action="{{ cdedblink('core/genesis_timeout', {'case_id': case_id})|e }}" method="POST"
                  id="genesistimeoutform{{ loop.index|e }}">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.input_submit(value="Widerrufen") }}
+                    {{ util.form_input_submit(value="Widerrufen") }}
                 </form>
             </li>
         {% endfor %}

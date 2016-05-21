@@ -6,13 +6,13 @@
     {{ util.href(cdedblink("event/change_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/change_part')|e }}" method="POST" id="changepartform">
         <table>
-            {{ util.input_text(name="title", label="Name") }}
-            {{ util.input_text(name="part_begin", label="Beginn") }}
-            {{ util.input_text(name="part_end", label="Ende") }}
-            {{ util.input_text(name="fee", label="Teilnehmerbeitrag") }}
+            {{ util.form_input_text(name="title", label="Name") }}
+            {{ util.form_input_text(name="part_begin", label="Beginn") }}
+            {{ util.form_input_text(name="part_end", label="Ende") }}
+            {{ util.form_input_text(name="fee", label="Teilnehmerbeitrag") }}
         </table>
         <div>
-            {{ util.input_submit(value="Speichern") }}
+            {{ util.form_input_submit(value="Speichern") }}
         </div>
     </form>
 {% endblock %}

@@ -116,7 +116,7 @@
                             </option>
                         {% endfor %}
                     </select>
-                    {{ util.input_submit(value="Kursauswahl aktualisieren", name="updateform") }}
+                    {{ util.form_input_submit(value="Kursauswahl aktualisieren", name="updateform") }}
                 </td>
             </tr>
             <tr>
@@ -139,7 +139,7 @@
         <div>
             <input type="hidden" name="qord_primary" value="family_name,birth_name" >
             <input type="hidden" name="qord_primary_ascending" value="True" >
-            {{ util.input_submit(value="Suchen") }}
+            {{ util.form_input_submit(value="Suchen") }}
         </div>
     </form>
 {% endblock %}

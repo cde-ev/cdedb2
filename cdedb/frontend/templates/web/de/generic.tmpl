@@ -7,26 +7,26 @@
       class="form-horizontal">
         <div>{{ util.input_hidden(name="generation") }}</div>
         <table>
-            {{ util.input_textarea(name="change_note", label="Kommentar", aclass="bigg") }}
+            {{ util.form_input_textarea(name="change_note", label="Kommentar") }}
             <tr> <th colspan="2">Person</th> </tr>
-            {{ util.input_text(name="title", label="Titel") }}
-            {{ util.input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.input_text(name="family_name", label="Nachname") }}
+            {{ util.form_input_text(name="title", label="Titel") }}
+            {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.form_input_text(name="family_name", label="Nachname") }}
             {% if realm in ("core", "cde") and  values['is_cde_realm'] %}
-                {{ util.input_text(name="birth_name", label="Geburtsname") }}
+                {{ util.form_input_text(name="birth_name", label="Geburtsname") }}
             {% endif %}
-            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.input_text(name="display_name", label="Rufname") }}
+            {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+            {{ util.form_input_text(name="display_name", label="Rufname") }}
             {% if realm in ("core", "cde") and values['is_cde_realm'] %}
-                {{ util.input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
-                {{ util.input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
-                {{ util.input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
-                {{ util.input_textarea(name="interests", label="Interessen", aclass="bigg") }}
-                {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
+                {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
+                {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
+                {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
+                {{ util.form_input_textarea(name="interests", label="Interessen") }}
+                {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
             {% endif %}
             {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
-                {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-                {{ util.input_text(name="birthday", label="Geburtstag") }}
+                {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+                {{ util.form_input_text(name="birthday", label="Geburtstag") }}
             {% endif %}
             <tr> <th colspan="2">Kontakt</th> </tr>
             <tr>
@@ -34,33 +34,33 @@
                 <td>{{ username|e }}</td>
             </tr>
             {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
-                {{ util.input_text(name="telephone", label="Telefon") }}
-                {{ util.input_text(name="mobile", label="Mobiltelefon") }}
-                {{ util.input_text(name="weblink", label="WWW") }}
+                {{ util.form_input_text(name="telephone", label="Telefon") }}
+                {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+                {{ util.form_input_text(name="weblink", label="WWW") }}
                 <tr> <th colspan="2">Adresse</th> </tr>
-                {{ util.input_text(name="address", label="Straße") }}
-                {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
-                {{ util.input_text(name="postal_code", label="Postleitzahl") }}
-                {{ util.input_text(name="location", label="Stadt") }}
-                {{ util.input_text(name="country", label="Land") }}
+                {{ util.form_input_text(name="address", label="Straße") }}
+                {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+                {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+                {{ util.form_input_text(name="location", label="Stadt") }}
+                {{ util.form_input_text(name="country", label="Land") }}
             {% endif %}
             {% if realm in ("core", "cde") and values['is_cde_realm'] %}
                 <tr> <th colspan="2">Zweitadresse</th> </tr>
-                {{ util.input_text(name="address2", label="Straße") }}
-                {{ util.input_text(name="address_supplement2", label="Addresszusatz") }}
-                {{ util.input_text(name="postal_code2", label="Postleitzahl") }}
-                {{ util.input_text(name="location2", label="Stadt") }}
-                {{ util.input_text(name="country2", label="Land") }}
+                {{ util.form_input_text(name="address2", label="Straße") }}
+                {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
+                {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
+                {{ util.form_input_text(name="location2", label="Stadt") }}
+                {{ util.form_input_text(name="country2", label="Land") }}
                 <tr> <th colspan="2">Account</th> </tr>
-                {{ util.input_checkbox(name="bub_search", label="Zugriff für BuB") }}
+                {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
             {% endif %}
             {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
-                {{ util.input_checkbox(name="cloud_account", label="Cloud Account") }}
+                {{ util.form_input_checkbox(name="cloud_account", label="Cloud Account") }}
             {% endif %}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
+            {{ util.form_input_textarea(name="notes", label="Notizen", rows="7") }}
         </table>
         <div>
-            {{ util.input_submit(value="Speichern") }}
+            {{ util.form_input_submit(value="Speichern") }}
             {{ util.href(show_user_link(values['persona_id']), "Abbrechen") }}
         </div>
     </form>
@@ -70,66 +70,66 @@
     <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform">
         <table>
             <tr> <th colspan="2">Person</th> </tr>
-            {{ util.input_text(name="title", label="Titel") }}
-            {{ util.input_text(name="given_names", label="Vorname(n)") }}
-            {{ util.input_text(name="family_name", label="Nachname") }}
+            {{ util.form_input_text(name="title", label="Titel") }}
+            {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
+            {{ util.form_input_text(name="family_name", label="Nachname") }}
             {% if realm == "cde" %}
-                {{ util.input_text(name="birth_name", label="Geburtsname") }}
+                {{ util.form_input_text(name="birth_name", label="Geburtsname") }}
             {% endif %}
-            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.input_text(name="display_name", label="Rufname") }}
+            {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+            {{ util.form_input_text(name="display_name", label="Rufname") }}
             {% if realm == "cde" %}
-                {{ util.input_textarea(name="specialisation", label="Fachgebiet", aclass="bigg") }}
-                {{ util.input_textarea(name="affiliation", label="Schule, Uni, ...", aclass="bigg") }}
-                {{ util.input_textarea(name="timeline", label="Jahrgang, Matrikel, ...", aclass="bigg") }}
-                {{ util.input_textarea(name="interests", label="Interessen", aclass="bigg") }}
-                {{ util.input_textarea(name="free_form", label="Sonstiges", aclass="biggg") }}
+                {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
+                {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
+                {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
+                {{ util.form_input_textarea(name="interests", label="Interessen") }}
+                {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
             {% endif %}
             {% if realm in ("cde", "event") %}
-                {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-                {{ util.input_text(name="birthday", label="Geburtstag") }}
+                {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+                {{ util.form_input_text(name="birthday", label="Geburtstag") }}
             {% endif %}
             <tr> <th colspan="2">Kontakt</th> </tr>
-            {{ util.input_text(name="username", label="Email") }}
+            {{ util.form_input_text(name="username", label="Email") }}
             {% if realm in ("cde", "event") %}
-                {{ util.input_text(name="telephone", label="Telefon") }}
-                {{ util.input_text(name="mobile", label="Mobiltelefon") }}
+                {{ util.form_input_text(name="telephone", label="Telefon") }}
+                {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
             {% endif %}
             {% if realm == "cde" %}
-                {{ util.input_text(name="weblink", label="WWW") }}
+                {{ util.form_input_text(name="weblink", label="WWW") }}
             {% endif %}
             {% if realm in ("cde", "event") %}
                 <tr> <th colspan="2">Adresse</th> </tr>
-                {{ util.input_text(name="address", label="Straße") }}
-                {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
-                {{ util.input_text(name="postal_code", label="Postleitzahl") }}
-                {{ util.input_text(name="location", label="Stadt") }}
-                {{ util.input_text(name="country", label="Land") }}
+                {{ util.form_input_text(name="address", label="Straße") }}
+                {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+                {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+                {{ util.form_input_text(name="location", label="Stadt") }}
+                {{ util.form_input_text(name="country", label="Land") }}
             {% endif %}
             {% if realm == "cde" %}
                 <tr> <th colspan="2">Zweitadresse</th> </tr>
-                {{ util.input_text(name="address2", label="Straße") }}
-                {{ util.input_text(name="address_supplement2", label="Addresszusatz") }}
-                {{ util.input_text(name="postal_code2", label="Postleitzahl") }}
-                {{ util.input_text(name="location2", label="Stadt") }}
-                {{ util.input_text(name="country2", label="Land") }}
+                {{ util.form_input_text(name="address2", label="Straße") }}
+                {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
+                {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
+                {{ util.form_input_text(name="location2", label="Stadt") }}
+                {{ util.form_input_text(name="country2", label="Land") }}
             {% endif %}
             <tr> <th colspan="2">Account</th> </tr>
             {% if realm == "cde" %}
-                {{ util.input_checkbox(name="is_member", label="Mitgliedschaft",
+                {{ util.form_input_checkbox(name="is_member", label="Mitgliedschaft",
                                        anid="input_checkbox_is_member") }}
-                {{ util.input_checkbox(name="is_searchable", label="Sichtbarkeit (falls Einwilligung vorhanden)",
+                {{ util.form_input_checkbox(name="is_searchable", label="Sichtbarkeit (falls Einwilligung vorhanden)",
                                        anid="input_checkbox_is_searchable") }}
-                {{ util.input_checkbox(name="trial_member", label="Probemitgliedschaft",
+                {{ util.form_input_checkbox(name="trial_member", label="Probemitgliedschaft",
                                            anid="input_checkbox_trial_member") }}
-                {{ util.input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}
+                {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}
             {% endif %}
-            {{ util.input_checkbox(name="cloud_account", label="Cloud Account",
+            {{ util.form_input_checkbox(name="cloud_account", label="Cloud Account",
                                        anid="input_checkbox_cloud_account") }}
-            {{ util.input_textarea(name="notes", label="Notizen", aclass="bigggg") }}
+            {{ util.form_input_textarea(name="notes", label="Notizen", rows="7") }}
         </table>
         <div>
-            {{ util.input_submit(value="Nutzer anlegen") }}
+            {{ util.form_input_submit(value="Nutzer anlegen") }}
             {{ util.href(cdedblink("{}/index".format(realm)), "Abbrechen") }}
         </div>
     </form>
@@ -142,32 +142,32 @@
     <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform">
         <table>
             <tr> <th colspan="2">Person</th> </tr>
-            {{ util.input_text(name="title", label="Titel") }}
+            {{ util.form_input_text(name="title", label="Titel") }}
             <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
             <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
-            {{ util.input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.input_text(name="display_name", label="Rufname") }}
+            {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+            {{ util.form_input_text(name="display_name", label="Rufname") }}
             {% if realm == "event" %}
-                {{ util.input_text(name="birthday", label="Geburtstag") }}
-                {{ util.input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+                {{ util.form_input_text(name="birthday", label="Geburtstag") }}
+                {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
             {% endif %}
             <tr> <th colspan="2">Kontakt</th> </tr>
             <tr> <td>Email</td> <td> {{ case['username']|e }} </td> </tr>
             {% if realm == "event" %}
-                {{ util.input_text(name="telephone", label="Telefon") }}
-                {{ util.input_text(name="mobile", label="Mobiltelefon") }}
+                {{ util.form_input_text(name="telephone", label="Telefon") }}
+                {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
                 <tr> <th colspan="2">Adresse</th> </tr>
-                {{ util.input_text(name="address", label="Straße") }}
-                {{ util.input_text(name="address_supplement", label="Addresszusatz") }}
-                {{ util.input_text(name="postal_code", label="Postleitzahl") }}
-                {{ util.input_text(name="location", label="Stadt") }}
-                {{ util.input_text(name="country", label="Land") }}
+                {{ util.form_input_text(name="address", label="Straße") }}
+                {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+                {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+                {{ util.form_input_text(name="location", label="Stadt") }}
+                {{ util.form_input_text(name="country", label="Land") }}
             {% endif %}
         </table>
         <div>
             {{ util.input_hidden(name="case_id") }}
             {{ util.input_hidden(name="secret") }}
-            {{ util.input_submit(value="Account anlegen") }}
+            {{ util.form_input_submit(value="Account anlegen") }}
             {{ util.href(cdedblink('core/index'), "Abbrechen") }}
         </div>
     </form>
@@ -371,12 +371,12 @@
                         {% if data['is_active'] %}
                             <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
                              id="activitytoggleform">
-                                <div>{{ util.input_submit(value="Account deaktivieren") }}</div>
+                                <div>{{ util.form_input_submit(value="Account deaktivieren") }}</div>
                             </form>
                         {% else %}
                             <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
                              id="activitytoggleform">
-                                <div>{{ util.input_submit(value="Account aktivieren") }}</div>
+                                <div>{{ util.form_input_submit(value="Account aktivieren") }}</div>
                             </form>
                         {% endif %}
                     </td>
@@ -498,7 +498,7 @@
     {% if is_admin and realm == "core" %}
         <form action="{{ cdedblink('core/admin_password_reset')|e }}" method="POST"
           id="adminpasswordresetform">
-            <div>{{ util.input_submit(value="Passwort zurücksetzen") }}</div>
+            <div>{{ util.form_input_submit(value="Passwort zurücksetzen") }}</div>
         </form>
     {% endif %}
 {% endmacro %}
@@ -566,11 +566,11 @@
             <form action="{{ cdedblink('{}/user_search'.format(realm))|e }}" method="GET" id="usersearchform">
         {% endif %}
             <div>
-                {{ util.input_submit(value="Suchen") }}
-                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+                {{ util.form_input_submit(value="Suchen") }}
+                {{ util.form_input_submit(value="CSV-Datei", name="CSV") }}
                 {{ util.format_query(spec, TITLES, choices, selection_blacklist=selection_blacklist) }}
-                {{ util.input_submit(value="Suchen") }}
-                {{ util.input_submit(value="CSV-Datei", name="CSV") }}
+                {{ util.form_input_submit(value="Suchen") }}
+                {{ util.form_input_submit(value="CSV-Datei", name="CSV") }}
             </div>
         </form>
 

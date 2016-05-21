@@ -9,8 +9,8 @@
 
     <form action="{{ cdedblink('core/send_username_change_link')|e }}" method="GET" id="usernamechangeform">
         <div>
-            {{ util.input_text(name="new_username", label="Neue Emailadresse:") }}
-            {{ util.input_submit(value="Verifizierungsemail abschicken") }}
+            {{ util.form_input_text(name="new_username", label="Neue Emailadresse:") }}
+            {{ util.form_input_submit(value="Verifizierungsemail abschicken") }}
         </div>
     </form>
 {% endblock %}

@@ -18,14 +18,14 @@
                     <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
                       id="generatetransactionform{{ lastschrift_id|e }}">
                         <div>
-                            {{ util.input_submit(value="Einzeldatei generieren") }}
+                            {{ util.form_input_submit(value="Einzeldatei generieren") }}
                             {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
                         </div>
                     </form>
                     <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id})|e }}"
                       method="POST" id="skiptransactionform{{ lastschrift_id|e }}">
                         <div>
-                            {{ util.input_submit(value="Pausieren") }}
+                            {{ util.form_input_submit(value="Pausieren") }}
                             {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
                         </div>
                     </form>
@@ -36,7 +36,7 @@
     <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
       id="generatetransactionsform">
         <div>
-            {{ util.input_submit(value="SEPA-Datei generieren") }}
+            {{ util.form_input_submit(value="SEPA-Datei generieren") }}
         </div>
     </form>
     <h2>Offene Einzüge</h2>
@@ -55,7 +55,7 @@
                                             'transaction_id': transaction_id})|e }}" method="POST"
                   id="transactionsuccessform{{ transaction_id|e }}">
                     <div>
-                        {{ util.input_submit(value="Erfolg!") }}
+                        {{ util.form_input_submit(value="Erfolg!") }}
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                         {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.success.value) }}
                     </div>
@@ -65,7 +65,7 @@
                                             'transaction_id': transaction_id})|e }}" method="POST"
                   id="transactioncancelform{{ transaction_id|e }}">
                     <div>
-                        {{ util.input_submit(value="Abbruch") }}
+                        {{ util.form_input_submit(value="Abbruch") }}
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                         {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.cancelled.value) }}
                     </div>
@@ -75,7 +75,7 @@
                                             'transaction_id': transaction_id})|e }}" method="POST"
                   id="transactionfailureform{{ transaction_id|e }}">
                     <div>
-                        {{ util.input_submit(value="Geplatzt!") }}
+                        {{ util.form_input_submit(value="Geplatzt!") }}
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                         {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.failure.value) }}
                     </div>

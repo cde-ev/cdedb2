@@ -7,7 +7,7 @@
     nicht entschieden ob Du in diesem sichtbar sein möchtest.
 
     <form action="{{ cdedblink("core/index")|e }}" method="GET" id="toplaterform">
-        <p>{{ util.input_submit(value="Später entscheiden") }}</p>
+        <p>{{ util.form_input_submit(value="Später entscheiden") }}</p>
     </form>
 
     <h1>Einwilligung</h1>
@@ -32,20 +32,20 @@
     <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="ackconsentform">
         <div>
             {{ util.input_hidden(name="ack", value="True") }}
-            {{ util.input_submit(value="Einwilligung erteilen") }}
+            {{ util.form_input_submit(value="Einwilligung erteilen") }}
         </div>
     </form>
 
     <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="nackconsentform">
         <div>
             {{ util.input_hidden(name="ack", value="False") }}
-            {{ util.input_submit(value="Einwilligung verweigern") }}
+            {{ util.form_input_submit(value="Einwilligung verweigern") }}
         </div>
     </form>
 
     <form action="{{ cdedblink("core/index")|e }}" method="GET" id="bottomlaterform">
         <div>
-            {{ util.input_submit(value="Später entscheiden") }}
+            {{ util.form_input_submit(value="Später entscheiden") }}
         </div>
     </form>
 

@@ -7,8 +7,8 @@
 
     <form action="{{ cdedblink('cde/set_foto')|e }}" method="POST" enctype="multipart/form-data" id="setfotoform">
         <div>
-            {{ util.input_file(name="foto", accept="image/*") }}
-            {{ util.input_submit(value="Aktualisieren") }}
+            {{ util.form_input_file(name="foto", accept="image/*") }}
+            {{ util.form_input_submit(value="Aktualisieren") }}
         </div>
     </form>
 {% endblock %}

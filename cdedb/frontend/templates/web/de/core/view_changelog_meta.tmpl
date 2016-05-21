@@ -63,11 +63,11 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
                 {% for status in const.MemberChangeStati %}
                     {{ myentries.append((status.value, i18n(status|string), None))|e }}
                 {% endfor %}
-                {{ util.input_checkboxes("stati", title="Status", info="Keine Auswahl entspricht allem.",
+                {{ util.form_input_checkboxes("stati", label="Status", info="Keine Auswahl entspricht allem.",
                                          entries=myentries, small=True) }}
-                {{ util.input_text(name="start", label="Anfang", small=True) }}
-                {{ util.input_text(name="stop", label="Ende", small=True) }}
-                {{ util.input_submit(value="Anzeigen", small=True) }}
+                {{ util.form_input_text(name="start", label="Anfang", small=True) }}
+                {{ util.form_input_text(name="stop", label="Ende", small=True) }}
+                {{ util.form_input_submit(value="Anzeigen", small=True) }}
             </div>
         </form>
     {{ util.box_filter_end() }}
