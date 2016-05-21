@@ -1,16 +1,17 @@
 {% set sidenav_active='core_mydata' %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Emailadresse ändern{% endblock %}
+{% block title %}Eigene E-Mail-Adresse ändern{% endblock %}
 {% block content %}
-    Um Deine Emailadresse zu ändern wird zuerst eine Email an die neue
-    Adresse geschickt, um diese zu verifizieren. In der Email findest Du
-    einen Link, unter dem Du den Vorgang abschließen kannst.
+    <p>
+        Um Deine Emailadresse zu ändern wird zuerst eine E-Mail an die neue
+        Adresse geschickt, um diese zu verifizieren. In der E-Mail findest Du
+        einen Link, mit dem Du den Vorgang abschließen kannst.
+    </p>
 
-    <form action="{{ cdedblink('core/send_username_change_link')|e }}" method="GET" id="usernamechangeform">
-        <div>
-            {{ util.form_input_text(name="new_username", label="Neue Emailadresse:") }}
-            {{ util.form_input_submit(value="Verifizierungsemail abschicken") }}
-        </div>
+    <form action="{{ cdedblink('core/send_username_change_link')|e }}" method="GET" id="usernamechangeform"
+            class="form-horizontal">
+        {{ util.form_input_text(name="new_username", label="Neue E-Mail-Adresse", type="email") }}
+        {{ util.form_input_submit(value="Verifizierungs-E-Mail abschicken") }}
     </form>
 {% endblock %}

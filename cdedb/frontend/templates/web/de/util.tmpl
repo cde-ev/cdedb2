@@ -332,7 +332,7 @@
                                 {% for op in VALID_QUERY_OPERATORS[spec[field]] %}
                                     {{ myentries.append((op.value, OPERATOR_LABELS[op.value], None))|e }}
                                 {% endfor %}
-                                {{ input_select(name, entries=myentries,
+                                {{ input_select(name, entries=myentries, aclass='form-control input-sm',
                                                 defaultvalue=VALID_QUERY_OPERATORS[spec[field]][0].value, anid=theid) }}
                                 <script type="text/javascript">
                                     $(document).ready(function(){
