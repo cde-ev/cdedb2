@@ -226,7 +226,7 @@ class MlFrontend(AbstractUserFrontend):
         ## are lost
         log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         persona_data = self.coreproxy.get_personas(rs, personas)
         mailinglists = {entry['mailinglist_id']
@@ -319,7 +319,7 @@ class MlFrontend(AbstractUserFrontend):
         ## are lost
         log = self.mlproxy.retrieve_log(rs, codes, mailinglist_id, start, stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         persona_data = self.coreproxy.get_personas(rs, personas)
         mailinglist_data = self.mlproxy.get_mailinglist(rs, mailinglist_id)

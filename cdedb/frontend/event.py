@@ -2686,7 +2686,7 @@ class EventFrontend(AbstractUserFrontend):
         ## are lost
         log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         persona_data = self.coreproxy.get_personas(rs, personas)
         events = {entry['event_id'] for entry in log if entry['event_id']}
@@ -2708,7 +2708,7 @@ class EventFrontend(AbstractUserFrontend):
         log = self.eventproxy.retrieve_past_log(rs, codes, pevent_id, start,
                                                 stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         persona_data = self.coreproxy.get_personas(rs, personas)
         events = {entry['pevent_id'] for entry in log if entry['pevent_id']}
@@ -2730,7 +2730,7 @@ class EventFrontend(AbstractUserFrontend):
         ## are lost
         log = self.eventproxy.retrieve_log(rs, codes, event_id, start, stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         persona_data = self.coreproxy.get_personas(rs, personas)
         event_data = self.eventproxy.get_event_data_one(rs, event_id)

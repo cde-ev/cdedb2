@@ -312,7 +312,7 @@ class CdEFrontend(AbstractUserFrontend):
         ## are lost
         log = self.cdeproxy.retrieve_cde_log(rs, codes, persona_id, start, stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         persona_data = self.coreproxy.get_personas(rs, personas)
         return self.render(rs, "view_cde_log", {

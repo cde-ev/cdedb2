@@ -1083,7 +1083,7 @@ class CoreFrontend(AbstractFrontend):
         ## are lost
         log = self.coreproxy.retrieve_changelog_meta(rs, stati, start, stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['reviewed_by'] for entry in log if entry['reviewed_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         persona_data = self.coreproxy.get_personas(rs, personas)
@@ -1101,7 +1101,7 @@ class CoreFrontend(AbstractFrontend):
         ## are lost
         log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop)
         personas = (
-            {entry['submitted_by'] for entry in log}
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
         user_data = self.coreproxy.get_personas(rs, personas)
         return self.render(rs, "view_log", {'log': log, 'user_data': user_data})
