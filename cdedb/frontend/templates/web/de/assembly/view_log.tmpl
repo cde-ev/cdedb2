@@ -19,8 +19,12 @@ Versammlung -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|
                 <td>{{ entry['ctime']|datetime|e }}</td>
                 <td>{{ i18n(const.AssemblyLogCodes(entry['code'])|string)|e }}</td>
                 <td>
-                    {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                    {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                    {% if entry['submitted_by'] %}
+                        {{ persona_data[entry['submitted_by']]['given_names']|e }}
+                        {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                    {% else %}
+                        -
+                    {% endif %}
                 </td>
                 <td>
                     {% if entry['assembly_id'] %}

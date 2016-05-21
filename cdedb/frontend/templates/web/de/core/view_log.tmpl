@@ -21,10 +21,14 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
                     <td>{{ entry['ctime']|datetime|e }}</td>
                     <td>{{ i18n(const.CoreLogCodes(entry['code'])|string)|e }}</td>
                     <td>
-                        {{ util.href(show_user_link(entry['submitted_by']),
-                                user_data[entry['submitted_by']]['given_names']|e
-                                + " " + user_data[entry['submitted_by']]['family_name']|e)
-                        }}
+                        {% if entry['submitted_by'] %}
+                            {{ util.href(show_user_link(entry['submitted_by']),
+                                    user_data[entry['submitted_by']]['given_names']|e
+                                    + " " + user_data[entry['submitted_by']]['family_name']|e)
+                            }}
+                        {% else %}
+                            -
+                        {% endif %}
                     </td>
                     <td>
                         {% if entry['persona_id'] %}

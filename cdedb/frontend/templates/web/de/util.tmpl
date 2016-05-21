@@ -87,7 +87,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro form_input_general(input_code, label='', anid='', small=False, info='', displayerrors) %}
+{% macro form_input_general(input_code, label='', anid='', small=False, info='', displayerrors=True) %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         <label{% if anid %} for="{{ anid|e }}"{% endif %}
                 class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">

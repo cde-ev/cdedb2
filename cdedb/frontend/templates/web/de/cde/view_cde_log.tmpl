@@ -17,8 +17,12 @@ CdE allgemein -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + lo
                 <td>{{ entry['ctime']|datetime|e }}</td>
                 <td>{{ i18n(const.CdeLogCodes(entry['code'])|string)|e }}</td>
                 <td>
-                    {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                    {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                    {% if entry['submitted_by'] %}
+                        {{ persona_data[entry['submitted_by']]['given_names']|e }}
+                        {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                    {% else %}
+                        -
+                    {% endif %}
                 </td>
                 <td>
                     {% if entry['persona_id'] %}

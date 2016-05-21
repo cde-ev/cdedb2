@@ -23,10 +23,14 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
                     <td>{{ entry['ctime']|datetime|e }}</td>
                     <td>{{ i18n(const.MemberChangeStati(entry['change_status'])|string)|e }}</td>
                     <td>
-                        {{ util.href(show_user_link(entry['submitted_by']),
-                                persona_data[entry['submitted_by']]['given_names']|e
-                                + " " + persona_data[entry['submitted_by']]['family_name']|e)
-                        }}
+                        {% if entry['submitted_by'] %}
+                            {{ util.href(show_user_link(entry['submitted_by']),
+                                    persona_data[entry['submitted_by']]['given_names']|e
+                                    + " " + persona_data[entry['submitted_by']]['family_name']|e)
+                            }}
+                        {% else %}
+                            -
+                        {% endif %}
                     </td>
                     <td>
                         {% if entry['reviewed_by'] %}
