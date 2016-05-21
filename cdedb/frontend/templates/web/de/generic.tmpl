@@ -138,40 +138,38 @@
 {% endmacro %}
 
 {% macro genesis(realm) %}
-    Gib unten Deine Daten ein um den Account anzulegen. Abschließend kannst
-    Du Dir ein neues Passwort zugeschicken lassen.
+    Gib unten Deine Daten ein, um den Account anzulegen. Abschließend kannst
+    Du Dir ein Passwort zugeschicken lassen.
 
-    <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform">
-        <table>
-            <tr> <th colspan="2">Person</th> </tr>
-            {{ util.form_input_text(name="title", label="Titel") }}
-            <tr> <td>Vorname(n)</td> <td> {{ case['given_names']|e }} </td> </tr>
-            <tr> <td>Nachname</td> <td> {{ case['family_name']|e }} </td> </tr>
-            {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
-            {{ util.form_input_text(name="display_name", label="Rufname") }}
-            {% if realm == "event" %}
-                {{ util.form_input_text(name="birthday", label="Geburtstag") }}
-                {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-            {% endif %}
-            <tr> <th colspan="2">Kontakt</th> </tr>
-            <tr> <td>Email</td> <td> {{ case['username']|e }} </td> </tr>
-            {% if realm == "event" %}
-                {{ util.form_input_text(name="telephone", label="Telefon") }}
-                {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
-                <tr> <th colspan="2">Adresse</th> </tr>
-                {{ util.form_input_text(name="address", label="Straße") }}
-                {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
-                {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
-                {{ util.form_input_text(name="location", label="Stadt") }}
-                {{ util.form_input_text(name="country", label="Land") }}
-            {% endif %}
-        </table>
-        <div>
-            {{ util.input_hidden(name="case_id") }}
-            {{ util.input_hidden(name="secret") }}
-            {{ util.form_input_submit(value="Account anlegen") }}
-            {{ util.href(cdedblink('core/index'), "Abbrechen") }}
-        </div>
+    <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform" class="form-horizontal">
+        {{ util.input_hidden(name="case_id") }}
+        {{ util.input_hidden(name="secret") }}
+        
+        <h4 class="heading-underline">Person</h4>
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_static(label="Vorname(n)", value=case['given_names']) }}
+        {{ util.form_input_static(label="Nachname", value=case['family_name']) }}
+        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+        {{ util.form_input_text(name="display_name", label="Rufname") }}
+        {% if realm == "event" %}
+            {{ util.form_input_text(name="birthday", label="Geburtstag") }}
+            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+        {% endif %}
+        
+        <h4 class="heading-underline">Kontakt</h4>
+        {{ util.form_input_static(label="E-Mail-Adresse", value=case['username']) }}
+        {% if realm == "event" %}
+            {{ util.form_input_text(name="telephone", label="Telefon") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+            
+            <h4 class="heading-underline">Adresse</h4>
+            {{ util.form_input_text(name="address", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location", label="Stadt") }}
+            {{ util.form_input_text(name="country", label="Land") }}
+        {% endif %}
+        {{ util.form_input_submit(value="Account anlegen", cancellink=cdedblink('core/index')) }}
     </form>
 {% endmacro %}
 

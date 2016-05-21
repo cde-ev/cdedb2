@@ -18,6 +18,11 @@ body{
 }
 
 /* Main navbar */
+.navbar {
+    border-radius: 0;
+    border-style: solid none;
+    margin-bottom: 10px;
+}
 .navbar-form .navbar-text {
     margin: 7px 15px;
 }
@@ -65,6 +70,15 @@ body{
     }
 }
 
+/* Title header and breadcrumb bar */
+h1.title {
+}
+.breadcrumb-small {
+    background: none;
+    margin: 0 0 -20px 0;
+    padding: 4px 0;
+    font-size: 0.9em;
+}
 
 /* Helper classes */
 .float-along {
@@ -81,8 +95,10 @@ body{
         margin-left: 0;
     }
 }
-.pull-right-responsive {
-
+p.textbox {
+    padding: 4px 6px;
+    border: dashed 1px #888;
+    font-style: italic;
 }
 
 /* Extra styling */

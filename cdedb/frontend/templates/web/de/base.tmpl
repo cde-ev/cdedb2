@@ -92,10 +92,9 @@
                     {% endblock %}
                 </div>
                 <div class="col-md-9 col-wide-auto" role="main">
-                    {% block breadcrumb %}
-                    {% endblock %}
+                    {% block breadcrumb %}{% endblock %}
                     {% block heading %}
-                        <h1>{{ self.title() }}</h1>
+                        <h1 class="title">{{ self.title() }}</h1>
                     {% endblock %}
 
                     <div id="notifications">

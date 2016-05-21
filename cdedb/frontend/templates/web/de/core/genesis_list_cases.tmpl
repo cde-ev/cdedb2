@@ -2,40 +2,63 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
-{% block title %}Accountanfragen (zurzeit {{ to_review|length|e }} zu begutachten){% endblock %}
+{% block title %}Accountanfragen{% endblock %}
+{% block heading %}<h1 class="title">Accountanfragen <span class="badge">{{ to_review|length|e }}</span></h1>{% endblock %}
 {% block content %}
-    <ul>
+    <table class="table table-condensed table-hover">
+    <tbody>
         {% for case_id, entry in to_review|dictsort %}
-            <li>
-                {{ entry['given_names']|e }} {{ entry['family_name']|e }} -- {{ entry['username']|e }}<br>
-                {{ entry['notes']|rst }}<br>
-                <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
-                 id="genesisrejectionform{{ loop.index|e }}">
-                    {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.input_hidden(name="case_status", value=const.GenesisStati.rejected.value) }}
-                    {{ util.form_input_submit(value="Ablehnen") }}
-                </form>
-                <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
-                 id="genesisapprovalform{{ loop.index|e }}">
-                    {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.input_hidden(name="case_status", value=const.GenesisStati.approved.value) }}
-                    {{ util.form_input_select(name="realm", entries=(
-                       ("event", "Veranstaltungsteilnehmer", None),
-                       ("ml", "Mailinglistennutzer", None),)) }}
-                    {{ util.form_input_submit(value="Genehmigen") }}
-                </form>
-            </li>
+            <tr>
+                <td style="width: 40%;">
+                    <p>
+                        {{ entry['given_names']|e }} {{ entry['family_name']|e }}
+                        &lt;{{ util.href('mailto:'+entry['username']|e,entry['username']|e) }}&gt;
+                    </p>
+                    {% if entry['notes'] %}<p class="textbox">{{ entry['notes']|e }}</p>{% endif %}
+                </td>
+                <td>
+                    <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
+                     id="genesisrejectionform{{ loop.index|e }}">
+                        {{ util.input_hidden(name="case_id", value=case_id) }}
+                        {{ util.input_hidden(name="case_status", value=const.GenesisStati.rejected.value) }}
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <span class="glyphicon glyphicon-remove"></span> Ablehnen
+                        </button>
+                    </form>
+                </td>
+                <td>
+                    <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
+                     id="genesisapprovalform{{ loop.index|e }}">
+                        {{ util.input_hidden(name="case_id", value=case_id) }}
+                        {{ util.input_hidden(name="case_status", value=const.GenesisStati.approved.value) }}
+                        <div class="input-group">
+                        {{ util.input_select(name="realm", aclass="form-control input-sm", entries=(
+                           ("event", "Veranstaltungsteilnehmer", None),
+                           ("ml", "Mailinglistennutzer", None))) }}
+                            <span class="input-group-btn">
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <span class="glyphicon glyphicon-ok"></span> Genehmigen
+                                </button>
+                            </span>
+                        </div>
+                    </form>
+                </td>
+            </tr>
         {% endfor %}
-    </ul>
+    </tbody>
+    </table>
     <h1>Offene bestätigte Anfragen (zurzeit {{ approved|length|e }})</h1>
     <ul>
         {% for case_id, entry in approved|dictsort %}
             <li>
-                {{ entry['given_names']|e }} {{ entry['family_name']|e }} -- {{ entry['username']|e }}
+                {{ entry['given_names']|e }} {{ entry['family_name']|e }}
+                &lt;{{ util.href('mailto:'+entry['username']|e,entry['username']|e) }}&gt;
                 <form action="{{ cdedblink('core/genesis_timeout', {'case_id': case_id})|e }}" method="POST"
-                 id="genesistimeoutform{{ loop.index|e }}">
+                 id="genesistimeoutform{{ loop.index|e }}" style="display: inline;">
                     {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.form_input_submit(value="Widerrufen") }}
+                    <button type="submit" class="btn btn-danger btn-xs">
+                        <span class="glyphicon glyphicon-trash"></span> Widerrufen
+                    </button>
                 </form>
             </li>
         {% endfor %}
