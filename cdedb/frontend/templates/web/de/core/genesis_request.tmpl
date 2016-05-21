@@ -3,16 +3,16 @@
 {% block title %}Account anfordern{% endblock %}
 {% block content %}
     <p>
-        Mit dem folgenden Formular kannst Du einen Account beantragen. Gib dazu
-        bitte kurz an, zu welchem Zweck Du den Account benötigst (bspw. wenn Du
-        Dich für eine Veranstaltung anmelden möchtest).
+        Mit dem folgenden Formular kannst Du einen Account für die CdE-Datenbank beantragen. Gib dazu
+        bitte kurz an, zu welchem Zweck Du den Account benötigst (bspw. für welche Veranstaltung Du Dich anmelden
+        möchtest).
     </p>
     <p>
-        Nachdem Du das Formular abgeschickt hast, wird eine Email an die
-        angegebene Adresse verschickt, die einen Verifikationslink
-        enthält. Diesen musst Du dann mit einem Browser
-        besuchen. Anschließend wird Deine Anfrage moderiert und dann ein
-        Email mit dem Link zum endgültigen Erstellungsformular versandt.
+        Nachdem Du das Formular abgeschickt hast, wird eine E-Mail an die
+        angegebene Adresse verschickt, die einen Verifikations-Link
+        enthält. Diesen musst Du öffnen, um deine Anfrage zu bestätigen.
+        Erst danach wird die Anfrage von einem Admin überprüft und Du erhältst eine weitere
+        E-Mail mit dem Link zum endgültigen Erstellungsformular.
     </p>
 
     <form action="{{ cdedblink('core/genesis_request')|e }}" method="POST" id="genesisform" class="form-horizontal">
@@ -20,11 +20,11 @@
             {{ util.input_text(name="given_names", label="Vorname(n)", small=True) }}
             {{ util.input_text(name="family_name", label="Nachname", small=True) }}
             {{ util.input_text(name="username", label="Emailadresse", small=True) }}
-            {{ util.input_select(name="realm", entries=(
-                ("event", "Veranstaltungsnutzer", None),
-                ("ml", "Mailinglistennutzer", None)),
-                label="Accountart") }}
-            {{ util.input_textarea(name="notes", label="Begründung (max. 200 Zeichen)", small=True) }}
+            {{ util.input_select(name="realm", small=True, entries=(
+                ("event", "CdE-Veranstaltung", None),
+                ("ml", "CdE-Mailingliste", None)),
+                label="Grund") }}
+            {{ util.input_textarea(name="notes", label="Begründung (max. 200 Zeichen)", small=True, maxlength=200) }}
             {{ util.input_submit(value="Antrag abschicken", small=True) }}
         </div>
     </form>

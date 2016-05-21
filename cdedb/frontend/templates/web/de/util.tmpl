@@ -110,7 +110,7 @@
 {% endmacro %}
 
 {% macro input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-                        aclass='form-control', small=False) %}
+                        aclass='form-control', small=False, maxlength=0) %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         <label{% if anid %} for="{{ anid|e }}"{% endif %}
                 class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
@@ -120,6 +120,7 @@
         <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
             <textarea {% if aclass %} class="{{ aclass|e }}"{% endif %}
                     {% if anid %} id="{{ anid|e }}"{% endif %} name="{{ name|e }}"
+                    {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
                     {% if readonly %}disabled="disabled"{% endif %}>{{ values.get(name, defaultvalue)|e }}</textarea>
             {% if name in errors %}
                 <div class="input-error-block">{{ output_errors(name, displayerrors) }}</div>
