@@ -9,11 +9,62 @@ body{
     text-align: center;
 }
 
-/* Bootstrap enhancements */
+/* ********************** *
+ * Bootstrap enhancements *
+ * ********************** */
 .input-error-block {
     display: block;
     color: #a94442;
 }
+
+/* Main navbar */
+.navbar-form .navbar-text {
+    margin: 7px 15px;
+}
+.navbar-collapse.collapse .navbar-form .navbar-text, .navbar-collapse.collapsing .navbar-form .navbar-text {
+    display: inline-block;
+}
+@media (max-width: 767px) {
+    .navbar-form {
+        margin-right: 0;
+    }
+}
+.navbar-collapse-header {
+    float: left;
+    height: 50px;
+    padding: 15px 15px;
+    font-size: 18px;
+    line-height: 20px;
+    margin: 0;
+}
+@media (min-width: 768px) {
+    .navbar-collapse-header {
+        display: none;
+    }
+}
+
+/* wide layout */
+@media (min-width: 1200px) {
+    body.wide .container{
+        width: auto;
+    }
+    body.wide .row-wide {
+        white-space: nowrap;
+    }
+    body.wide .col-wide-3 {
+        width: 262px;
+    }
+    body.wide .col-wide-auto {
+        width: auto;
+    }
+    body.wide .col-wide-3, body.wide .col-wide-auto {
+        float: none;
+        display: inline-block;
+        vertical-align: top;
+        white-space: normal;
+    }
+}
+
 
 /* Helper classes */
 .float-along {

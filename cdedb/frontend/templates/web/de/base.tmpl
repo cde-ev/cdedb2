@@ -9,8 +9,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>CdEDB – {% block title %}CdEDB{% endblock %}</title>
+        <link rel="shortcut icon" type="image/x-icon" href="{{ staticurl("favicon.ico")|e }}" media="print" />
+        
         <script type="text/javascript" src="{{ staticurl("jquery-2.min.js")|e }}"></script>
-
         <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
         <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js")|e }}"></script>
 
@@ -22,16 +23,13 @@
         {% block scripts %}{% endblock %}
     </head>
     <body>
-        <div class="container" id="header">
-            %logo%
-        </div>
-
         <!-- main navigation bar -->
         <nav class="navbar navbar-default">
             <div class="container">
                 <div class="navbar-header">
+                    <p class="navbar-collapse-header">Hauptmenü</p>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                            data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                            data-target="#navbar-collapse-1" aria-expanded="false">
                         <span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
@@ -39,20 +37,19 @@
                     </button>
                 </div>
 
-                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <div class="collapse navbar-collapse" id="navbar-collapse-1" role="navigation">
                     {% if "persona" in user.roles %}
                         <ul class="nav navbar-nav navbar-right">
                             <li>
-                                <span id="displayname">
-                                    {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
-                                </span>
-                            </li>
-                            <li>
                                 <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform"
                                   class="navbar-form">
+                                    <p class="navbar-text">
+                                        {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
+                                    </p>
                                     <button type="submit" name="submitlogout" value="Abmelden"
-                                      class="btn navbar-button" title="Logout" data-placement="bottom">
+                                      class="btn navbar-button" title="Logout">
                                         <span class="glyphicon glyphicon-off"></span>
+                                        <span class="visible-xs-inline-block">Logout</span>
                                     </button>
                                 </form>
                             </li>
@@ -89,12 +86,12 @@
         </nav>
 
         <div class="container">
-            <div class="row">
-                <div class="col-md-3">
+            <div class="row row-wide">
+                <div class="col-md-3 col-wide-3" role="navigation">
                     {% block navigation %}
                     {% endblock %}
                 </div>
-                <div class="col-md-9">
+                <div class="col-md-9 col-wide-auto" role="main">
                     {% block breadcrumb %}
                     {% endblock %}
                     {% block heading %}

@@ -5,39 +5,26 @@
     {% if "persona" in user.roles %}
     <h2>Navigation</h2>
     <div class="list-group">
+        {{ util.href(cdedblink("core/index"), "Start", aclass="list-group-item",
+                icon="triangle-right", active=(sidenav_active=='core_index')) }}
         {{ util.href(cdedblink("core/mydata"), "Meine Daten", aclass="list-group-item",
                 icon="user", active=(sidenav_active=='core_mydata')) }}
-
+    </div>
         {% if is_admin %}
-            <div class="list-group-item">
-                <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET"
-                 id="adminshowuserform">
-                    <div class="input-group">
-                        <input type="text" name="id_to_show" class="form-control" placeholder="DB-XXXX-X" />
-                        <input type="hidden" name="realm" value="core" />
-                        <span class="input-group-btn">
-                            <button type="submit" class="btn btn-primary" title="Suchen">
-                                <span class="glyphicon glyphicon-search"></span>
-                            </button>
-                        </span>
-                    </div>
-                </form>
-            </div>
+            <div class="list-group">
+            {{ util.href(cdedblink("core/user_search_form"), "Nutzer verwalten", aclass="list-group-item",
+                    icon="user", active=(sidenav_active=='core_manage_users')) }}
+            {{ util.href(cdedblink("core/archived_user_search_form"), "Archivsuche", aclass="list-group-item",
+                    icon="inbox", active=(sidenav_active=='core_manage_archive')) }}
             {{ util.href(cdedblink("core/genesis_list_cases"), "Accountanfragen", aclass="list-group-item",
                     icon="flag", active=(sidenav_active=='core_genesis_list')) }}
             {{ util.href(cdedblink("core/list_pending_changes"), "Änderungen prüfen", aclass="list-group-item",
-                    icon="check") }}
+                    icon="check", active=(sidenav_active=='core_pending_changes')) }}
             {{ util.href(cdedblink("core/view_log"), "Account-Log", aclass="list-group-item",
-                    icon="list-alt", active=(sidenav_active=='core_log')) }}</li>
+                    icon="list-alt", active=(sidenav_active=='core_log')) }}
             {{ util.href(cdedblink("core/view_changelog_meta"), "Nutzerdaten-Log", aclass="list-group-item",
-                    icon="list-alt") }}
-            {{ util.href(cdedblink("core/user_search_form"), "Nutzer verwalten", aclass="list-group-item",
-                    icon="cog") }}
-            {{ util.href(cdedblink("core/archived_user_search_form"), "Archivsuche", aclass="list-group-item",
-                    icon="inbox") }}
-            {# TODO #}
-            {{ util.href(cdedblink("core/batch_admission_form"), "Accounts anlegen") }}
+                    icon="list-alt", active=(sidenav_active=='core_change_log')) }}
+            </div>
         {% endif %}
-    </div>
     {% endif %}
 {% endblock %}

@@ -172,7 +172,7 @@
     </div>
 {% endmacro %}
 
-{% macro input_checkboxes(name, title, entries, info='', readonly=False) %}
+{% macro input_checkboxes(name, title, entries, info='', readonly=False, small=False) %}
 {# This is the version for multiple checkboxes as opposed to input_checkbox().
    entries is of type [(str, str, str)]. #}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
@@ -255,12 +255,13 @@
 {% endmacro %}
 
 {% macro input_submit(value, name="submitform", info='', readonly=False, anid='', aclass='btn btn-primary',
-        small=False) %}
+        icon="ok", small=False) %}
     <div class="form-group">
         {% if info %}<div class="control-label">{{ info_hover(info) }}</div>{% endif %}
         <div class="{% if small %}col-sm-offset-2 col-sm-10{% else %}col-sm-offset-4 col-sm-8{% endif %}">
             <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
-            id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>{{ value|e }}</button>
+            id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>
+            {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ value|e }}</button>
             {% if info %} {{ info_hover(info) }} {% endif %}
         </div>
     </div>
@@ -546,4 +547,16 @@
                     </a>
                 </li>
 	{% endif %}
+{% endmacro %}
+
+
+{% macro box_filter_begin() %}
+<div class="panel panel-primary">
+    <div class="panel-heading"><h3 class="panel-title">Filter</h3></div>
+    <div class="panel-body">
+{% endmacro %}
+
+{% macro box_filter_end() %}
+    </div>
+</div>
 {% endmacro %}

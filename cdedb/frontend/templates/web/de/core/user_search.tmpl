@@ -1,10 +1,31 @@
+{% set sidenav_active='core_manage_users' %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}Allgemeine Nutzersuche{% endblock %}
+{% block title %}Allgemeine Nutzerverwaltung{% endblock %}
 {% block content %}
+    {# TODO make abstract template for action area #}
+    <div class="panel panel-default">
+        <div class="panel-heading"><h3 class="panel-title">Aktionen</h3></div>
+        <div class="panel-body">
+            {{ util.href(cdedblink("core/batch_admission_form"), "Accounts anlegen", aclass="btn btn-success", icon="plus") }}
+            <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform" style="display: inline-block; width:150px; vertical-align:middle;">
+                <input type="hidden" name="realm" value="core" />
+                <div class="input-group">
+                    <input type="text" name="id_to_show" class="form-control" placeholder="DB-XXXX-X" />
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-primary" title="Suchen">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </button>
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <h2>Nutzer suchen</h2>
     <h3>Standardabfragen</h3>
     {% with TITLES = {} %}
         <div>

@@ -1,3 +1,4 @@
+{% if data['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
