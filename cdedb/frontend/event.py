@@ -165,38 +165,36 @@ class EventFrontend(AbstractUserFrontend):
         return super().genesis(rs, case_id, secret=secret, data=data)
 
     @access("event_admin")
-    def user_search_form(self, rs):
-        """Render form."""
+    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
+    def user_search(self, rs, CSV, is_search):
+        """Perform search."""
         spec = QUERY_SPECS['qview_event_user']
         ## mangle the input, so we can prefill the form
-        mangle_query_input(rs, spec)
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query", spec=spec,
+                          allow_empty=False)
+        else:
+            query = None
         events = self.eventproxy.list_events(rs, past=True)
         choices = {'event_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
-        return self.render(rs, "user_search", {
+        params = {
             'spec': spec, 'choices': choices, 'queryops': QueryOperators,
-            'default_queries': default_queries,})
-
-    @access("event_admin")
-    @REQUESTdata(("CSV", "bool"))
-    def user_search(self, rs, CSV):
-        """Perform search."""
-        spec = QUERY_SPECS['qview_event_user']
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=False)
-        if rs.errors:
-            return self.user_search_form(rs)
-        query.scope = "qview_event_user"
-        result = self.eventproxy.submit_general_query(rs, query)
-        choices = {'gender': self.enum_choice(rs, const.Genders)}
-        params = {'result': result, 'query': query, 'choices': choices}
-        if CSV:
-            data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data, inline=False,
-                                  filename=self.i18n("result.txt", rs.lang))
+            'default_queries': default_queries, 'query': query}
+        ## Tricky logic: In case of no validation errors we perform a query
+        if not rs.errors and is_search:
+            query.scope = "qview_event_user"
+            result = self.eventproxy.submit_general_query(rs, query)
+            params['result'] = result
+            if CSV:
+                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                return self.send_file(rs, data=data, inline=False,
+                                      filename=self.i18n("result.txt", rs.lang))
         else:
-            return self.render(rs, "user_search_result", params)
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "user_search", params)
 
     @access("event_admin")
     def list_institutions(self, rs):
@@ -2387,13 +2385,22 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
+    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
     @event_guard()
-    def registration_query(self, rs, event_id):
-        """Render form."""
+    def registration_query(self, rs, event_id, CSV, is_search):
+        """Generate custom data sets from registration data.
+
+        This is a pretty versatile method building on the query module.
+        """
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         spec = self.make_registration_query_spec(event_data)
         ## mangle the input, so we can prefill the form
-        mangle_query_input(rs, spec)
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query", spec=spec,
+                          allow_empty=False)
+        else:
+            query = None
 
         courses = self.eventproxy.list_courses(rs, event_id, past=False)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
@@ -2414,56 +2421,33 @@ class EventFrontend(AbstractUserFrontend):
             (("birthday", QueryOperators.greater,
               deduct_years(now().date(), 18)),),
             (("user_data.birthday", True), ("reg.id", True)),)
-        return self.render(rs, "registration_query", {
+        params = {
             'spec': spec, 'choices': choices, 'queryops': QueryOperators,
             'default_queries': default_queries, 'titles': titles,
-            'event_data': event_data})
-
-    @access("event")
-    @REQUESTdata(("CSV", "bool"))
-    @event_guard()
-    def registration_query_result(self, rs, event_id, CSV):
-        """Generate custom data sets from registration data.
-
-        This is a pretty versatile method building on the query module.
-        """
-        event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        spec = self.make_registration_query_spec(event_data)
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=False)
-        if rs.errors:
-            return self.registration_query(rs, event_id)
-
-        query.scope = "qview_registration"
-        result = self.eventproxy.submit_general_query(rs, query,
-                                                      event_id=event_id)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
-        course_data = self.eventproxy.get_course_data(rs, courses.keys())
-        lodgements = self.eventproxy.list_lodgements(rs, event_id)
-        lodgement_data = self.eventproxy.get_lodgements(rs, lodgements)
-        choices, titles = self.make_registracion_query_aux(
-            rs, event_data, course_data, lodgement_data)
-        params = {'result': result, 'query': query, 'choices': choices,
-                  'titles': titles}
-
-        if CSV:
-            data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data, inline=False,
-                                  filename=self.i18n("result.txt", rs.lang))
+            'event_data': event_data, 'query': query,
+            'locked': self.is_locked(event_data)}
+        ## Tricky logic: In case of no validation errors we perform a query
+        if not rs.errors and is_search:
+            query.scope = "qview_registration"
+            result = self.eventproxy.submit_general_query(rs, query,
+                                                          event_id=event_id)
+            params['result'] = result
+            if CSV:
+                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                return self.send_file(rs, data=data, inline=False,
+                                      filename=self.i18n("result.txt", rs.lang))
         else:
-            params.update({
-                'choices': choices,
-                'titles': titles,
-                'event_data': event_data,
-                'spec': spec,
-                'locked': self.is_locked(event_data)})
-            return self.render(rs, "registration_query_result", params)
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "registration_query", params)
 
     @access("event", modi={"POST"})
     @REQUESTdata(("column", "str"), ("num_rows", "int"))
     @event_guard(check_offline=True)
-    def registration_query_action(self, rs, event_id, column, num_rows):
-        """Apply changes to a selection of registrations."""
+    def registration_action(self, rs, event_id, column, num_rows):
+        """Apply changes to a selection of registrations.
+
+        This works in conjunction with the query method above.
+        """
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         spec = self.make_registration_query_spec(event_data)
         ## The following should be safe, as there are no columns which
@@ -2478,7 +2462,8 @@ class EventFrontend(AbstractUserFrontend):
         id_params = (("row_{}_id".format(i), "int") for i in range(num_rows))
         id_data = request_data_extractor(rs, id_params)
         if rs.errors:
-            return self.registration_query_result(rs, event_id, CSV=False)
+            return self.registration_query(rs, event_id, CSV=False,
+                                           is_search=True)
         code = 1
         for i in range(num_rows):
             if selection_data["row_{}".format(i)]:
@@ -2499,7 +2484,8 @@ class EventFrontend(AbstractUserFrontend):
         params = {key: value for key, value in rs.request.values.items()
                   if key.startswith(("qsel_", "qop_", "qval_", "qord_"))}
         params['CSV'] = False
-        return self.redirect(rs, "event/registration_query_result", params)
+        params['is_search'] = True
+        return self.redirect(rs, "event/registration_query", params)
 
     @access("event")
     @event_guard(check_offline=True)

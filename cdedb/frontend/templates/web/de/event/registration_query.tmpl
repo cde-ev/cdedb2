@@ -18,7 +18,7 @@
         "minors": "Minderjährige",} %}
 
         <div>
-            {{ util.place_default_queries("event/registration_query_result", default_queries, TITLES) }}
+            {{ util.place_default_queries("event/registration_query", default_queries, TITLES) }}
         </div>
     {% endwith %}
 
@@ -49,8 +49,9 @@
         "user_data.location": "Ort",
         "user_data.country": "Land",})|e }}
 
-    <form action="{{ cdedblink('event/registration_query_result')|e }}" method="GET" id="registrationqueryform">
+    <form action="{{ cdedblink('event/registration_query')|e }}" method="GET" id="registrationqueryform">
         <div>
+            {{ util.input_hidden(name="is_search", value=True) }}
             {{ util.form_input_submit(value="Suchen") }}
             {{ util.form_input_submit(value="CSV-Datei", name="CSV") }}
             {{ util.format_query(spec, titles, choices) }}
@@ -65,6 +66,110 @@
         <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
         <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
     </p>
+
+    {% if values['is_search'] %}
+        <h3>Ergebnis -- {{ result|length|e }} {{ result|length|numerus("Eintrag", "Einträge")|e }} gefunden</h3>
+        <form action="{{ cdedblink('event/registration_action', query|querytoparams)|e }}" method="POST"
+         id="actionform">
+            {{ titles.update({
+                "reg.id": "ID",
+                "reg.notes": "Anmerkungen",
+                "reg.orga_notes": "Orga-Notizen",
+                "reg.payment": "Teilnehmerbeitrag",
+                "reg.parental_agreement": "Einverständniserklärung",
+                "reg.mixed_lodging": "Gemischte Unterbringung",
+                "reg.checkin": "Checkin",
+                "reg.foto_consent": "Foto-Einwilligung",
+                "membership.is_member": "CdE-Mitglied",
+                "persona.username": "Email",
+                "user_data.family_name": "Nachname",
+                "user_data.given_names": "Vorname",
+                "persona.display_name": "Rufname",
+                "user_data.title": "Titel",
+                "user_data.name_supplement": "Namenszusatz",
+                "user_data.gender": "Geschlecht",
+                "user_data.birthday": "Geburtstag",
+                "user_data.telephone": "Telefon",
+                "user_data.mobile": "Mobilfunk",
+                "user_data.address": "Anschrift",
+                "user_data.address_supplement": "Adresszusatz",
+                "user_data.postal_code": "PLZ",
+                "user_data.location": "Ort",
+                "user_data.country": "Land",})|e }}
+
+                {{ util.display_query_result(result, query, titles, choices) }}
+
+            <h3>Aktionen</h3>
+            <p>
+                <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
+                <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
+                <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
+            </p>
+            <div>
+                Ausgewählte Anmeldungen modifizieren
+                    <script type="text/javascript">
+                        function update_action_choices(choices, spec, selected) {
+                            var previous = $("#value_input").val();
+                            $("#value_input").remove();
+                            if (selected in choices && !$.isEmptyObject(choices[selected])) {
+                                $("#value_span").append($("<select>", {"name": "value", "id": "value_input"}));
+                                $("#value_input").append($("<option>", {"value": ""}));
+                                for (var key in choices[selected]) {
+                                    if (choices[selected].hasOwnProperty(key)) {
+                                        $("#value_input").append($("<option>", {
+                                            "value": key, "html": choices[selected][key], "selected": (key == previous)}));
+                                    }
+                                }
+                            } else if (spec[selected] == "bool") {
+                                $("#value_span").append($("<select>", {"name": "value", "id": "value_input"}));
+                                $("#value_input").append($("<option>", {"value": ""}));
+                                var bool_choices = {"True": "wahr", "False": "falsch"};
+                                for (var key in bool_choices) {
+                                    $("#value_input").append($("<option>", {"value": key, "html": bool_choices[key],
+                                                                            "selected": (key == previous)}));
+                                }
+                            } else {
+                                $("#value_span").append($("<input>", {"name": "value", "id": "value_input", "type": "text",
+                                                                      "value": previous}));
+                            }
+                        }
+                        $(document).ready(function(){
+                            $("#column_selector").change(function (){
+                                update_action_choices({{ choices|json }}, {{ spec|json }}, $(this).val()) });
+                            $("#column_selector").trigger('change');
+                        });
+                    </script>
+                    {# some fields are not sensibly modifyable #}
+                    {% with BLACKLIST = (
+                        "reg.id", "reg.notes", "reg.orga_notes", "membership.is_member", "persona.username",
+                        "user_data.family_name", "user_data.given_names", "persona.display_name", "user_data.title",
+                        "user_data.name_supplement", "user_data.gender", "user_data.birthday", "user_data.telephone",
+                        "user_data.mobile", "user_data.address", "user_data.address_supplement", "user_data.postal_code",
+                        "user_data.location", "user_data.country") %}
+
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for field in spec %}
+                            {% if field not in BLACKLIST and ',' not in field %}
+                                {{ myentries.append((field, titles[field], None))|e }}
+                            {% endif %}
+                        {% endfor %}
+                        {{ util.form_input_select(name="column", label="", entries=myentries, anid="column_selector",
+                                             readonly=locked) }}
+                    {% endwith %}
+                    <span id="value_span">
+                        {{ util.form_input_text(name="value", anid="value_input", readonly=locked) }}
+                    </span>
+                    {{ util.input_hidden(name="num_rows", value=result|length) }}
+                    {% if "reg.id" in query.fields_of_interest %}
+                        {{ util.form_input_submit(value="Ändern", anid="value_input", readonly=locked) }}
+                    {% else %}
+                        Für Änderungsoperation muss die Spalte ID ausgewählt sein.
+                    {% endif %}
+            </div>
+        </form>
+    {% endif %}
+
     <script type="text/javascript">
         $(document).ready(function(){
             $("#action_select_all").click(function (){

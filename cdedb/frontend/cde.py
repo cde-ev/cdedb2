@@ -212,38 +212,36 @@ class CdEFrontend(AbstractUserFrontend):
             return self.render(rs, "member_search_result", {'result': result})
 
     @access("cde_admin")
-    def user_search_form(self, rs):
-        """Render form."""
+    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
+    def user_search(self, rs, CSV, is_search):
+        """Perform search."""
         spec = QUERY_SPECS['qview_cde_user']
         ## mangle the input, so we can prefill the form
-        mangle_query_input(rs, spec)
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
+        else:
+            query = None
         events = self.eventproxy.list_events(rs, past=True)
         choices = {'pevent_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
-        return self.render(rs, "user_search", {
+        params = {
             'spec': spec, 'choices': choices, 'queryops': QueryOperators,
-            'default_queries': default_queries,})
-
-    @access("cde_admin")
-    @REQUESTdata(("CSV", "bool"))
-    def user_search(self, rs, CSV):
-        """Perform search."""
-        spec = QUERY_SPECS['qview_cde_user']
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=False)
-        if rs.errors:
-            return self.user_search_form(rs)
-        query.scope = "qview_cde_user"
-        result = self.cdeproxy.submit_general_query(rs, query)
-        choices = {'gender': self.enum_choice(rs, const.Genders)}
-        params = {'result': result, 'query': query, 'choices': choices}
-        if CSV:
-            data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data, inline=False,
-                                  filename=self.i18n("result.txt", rs.lang))
+            'default_queries': default_queries, 'query': query}
+        ## Tricky logic: In case of no validation errors we perform a query
+        if not rs.errors and is_search:
+            query.scope = "qview_cde_user"
+            result = self.cdeproxy.submit_general_query(rs, query)
+            params['result'] = result
+            if CSV:
+                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                return self.send_file(rs, data=data, inline=False,
+                                      filename=self.i18n("result.txt", rs.lang))
         else:
-            return self.render(rs, "user_search_result", params)
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "user_search", params)
 
     @access("cde_admin")
     def modify_membership_form(self, rs, persona_id):

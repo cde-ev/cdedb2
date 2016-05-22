@@ -12,9 +12,9 @@
     </div>
         {% if is_admin %}
             <div class="list-group">
-            {{ util.href(cdedblink("core/user_search_form"), "Nutzer verwalten", aclass="list-group-item",
+            {{ util.href(cdedblink("core/user_search"), "Nutzer verwalten", aclass="list-group-item",
                     icon="user", active=(sidenav_active=='core_manage_users')) }}
-            {{ util.href(cdedblink("core/archived_user_search_form"), "Archivsuche", aclass="list-group-item",
+            {{ util.href(cdedblink("core/archived_user_search"), "Archivsuche", aclass="list-group-item",
                     icon="inbox", active=(sidenav_active=='core_manage_archive')) }}
             {{ util.href(cdedblink("core/genesis_list_cases"), "Accountanfragen", aclass="list-group-item",
                     icon="flag", active=(sidenav_active=='core_genesis_list')) }}

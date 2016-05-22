@@ -197,74 +197,78 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("core_admin")
-    def user_search_form(self, rs):
-        """Render form."""
+    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
+    def user_search(self, rs, CSV, is_search):
+        """Perform search.
+
+        CSV signals whether the output should be a csv-file or an
+        ordinary HTML-page.
+
+        is_search signals whether the page was requested by an actual
+        query or just to display the search form.
+        """
         spec = QUERY_SPECS['qview_core_user']
         ## mangle the input, so we can prefill the form
-        mangle_query_input(rs, spec)
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
+        else:
+            query = None
         events = self.eventproxy.list_events(rs, past=True)
         choices = {'pevent_id': events}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
-        return self.render(rs, "user_search", {
+        params = {
             'spec': spec, 'choices': choices, 'queryops': QueryOperators,
-            'default_queries': default_queries,})
-
-    @access("core_admin")
-    @REQUESTdata(("CSV", "bool"))
-    def user_search(self, rs, CSV):
-        """Perform search."""
-        spec = QUERY_SPECS['qview_core_user']
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=False)
-        if rs.errors:
-            return self.user_search_form(rs)
-        query.scope = "qview_core_user"
-        result = self.coreproxy.submit_general_query(rs, query)
-        params = {'result': result, 'query': query, 'choices': {}}
-        if CSV:
-            data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data, inline=False,
-                                  filename=self.i18n("result.txt", rs.lang))
+            'default_queries': default_queries, 'query': query}
+        ## Tricky logic: In case of no validation errors we perform a query
+        if not rs.errors and is_search:
+            query.scope = "qview_core_user"
+            result = self.coreproxy.submit_general_query(rs, query)
+            params['result'] = result
+            if CSV:
+                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                return self.send_file(rs, data=data, inline=False,
+                                      filename=self.i18n("result.txt", rs.lang))
         else:
-            return self.render(rs, "user_search_result", params)
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "user_search", params)
 
     @access("core_admin")
-    def archived_user_search_form(self, rs):
-        """Render form."""
-        spec = QUERY_SPECS['qview_archived_persona']
-        ## mangle the input, so we can prefill the form
-        mangle_query_input(rs, spec)
-        events = self.eventproxy.list_events(rs, past=True)
-        choices = {'pevent_id': events,
-                   'gender': self.enum_choice(rs, const.Genders)}
-        default_queries = self.conf.DEFAULT_QUERIES['qview_archived_persona']
-        return self.render(rs, "archived_user_search", {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
-            'default_queries': default_queries,})
-
-    @access("core_admin")
-    @REQUESTdata(("CSV", "bool"))
-    def archived_user_search(self, rs, CSV):
+    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
+    def archived_user_search(self, rs, CSV, is_search):
         """Perform search.
 
         Archived users are somewhat special since they are not visible
         otherwise.
         """
         spec = QUERY_SPECS['qview_archived_persona']
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=False)
-        if rs.errors:
-            return self.archived_user_search_form(rs)
-        query.scope = "qview_archived_persona"
-        result = self.coreproxy.submit_general_query(rs, query)
-        choices = {'gender': self.enum_choice(rs, const.Genders)}
-        params = {'result': result, 'query': query, 'choices': choices}
-        if CSV:
-            data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data, inline=False,
-                                  filename=self.i18n("result.txt", rs.lang))
+        ## mangle the input, so we can prefill the form
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query", spec=spec,
+                          allow_empty=False)
         else:
-            return self.render(rs, "archived_user_search_result", params)
+            query = None
+        events = self.eventproxy.list_events(rs, past=True)
+        choices = {'pevent_id': events,
+                   'gender': self.enum_choice(rs, const.Genders)}
+        default_queries = self.conf.DEFAULT_QUERIES['qview_archived_persona']
+        params = {
+            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'default_queries': default_queries, 'query': query}
+        ## Tricky logic: In case of no validation errors we perform a query
+        if not rs.errors and is_search:
+            query.scope = "qview_archived_persona"
+            result = self.coreproxy.submit_general_query(rs, query)
+            params['result'] = result
+            if CSV:
+                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                return self.send_file(rs, data=data, inline=False,
+                                      filename=self.i18n("result.txt", rs.lang))
+        else:
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "archived_user_search", params)
 
     @access("core_admin")
     def admin_change_user_form(self, rs, persona_id):

@@ -130,34 +130,33 @@ class MlFrontend(AbstractUserFrontend):
         return super().genesis(rs, case_id, secret=secret, data=data)
 
     @access("ml_admin")
-    def user_search_form(self, rs):
-        """Render form."""
-        spec = QUERY_SPECS['qview_persona']
-        ## mangle the input, so we can prefill the form
-        mangle_query_input(rs, spec)
-        default_queries = self.conf.DEFAULT_QUERIES['qview_persona']
-        return self.render(rs, "user_search", {
-            'spec': spec, 'queryops': QueryOperators,
-            'default_queries': default_queries, 'choices': {}})
-
-    @access("ml_admin")
-    @REQUESTdata(("CSV", "bool"))
-    def user_search(self, rs, CSV):
+    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
+    def user_search(self, rs, CSV, is_search):
         """Perform search."""
         spec = QUERY_SPECS['qview_persona']
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=False)
-        if rs.errors:
-            return self.user_search_form(rs)
-        query.scope = "qview_persona"
-        result = self.mlproxy.submit_general_query(rs, query)
-        params = {'result': result, 'query': query, 'choices': {}}
-        if CSV:
-            data = self.fill_template(rs, 'web', 'csv_search_result', params)
-            return self.send_file(rs, data=data, inline=False,
-                                  filename=self.i18n("result.txt", rs.lang))
+        ## mangle the input, so we can prefill the form
+        query_input = mangle_query_input(rs, spec)
+        if is_search:
+            query = check(rs, "query_input", query_input, "query",
+                          spec=spec, allow_empty=False)
         else:
-            return self.render(rs, "user_search_result", params)
+            query = None
+        default_queries = self.conf.DEFAULT_QUERIES['qview_persona']
+        params = {
+            'spec': spec, 'queryops': QueryOperators,
+            'default_queries': default_queries, 'choices': {}, 'query': query}
+        ## Tricky logic: In case of no validation errors we perform a query
+        if not rs.errors and is_search:
+            query.scope = "qview_persona"
+            result = self.mlproxy.submit_general_query(rs, query)
+            params['result'] = result
+            if CSV:
+                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                return self.send_file(rs, data=data, inline=False,
+                                      filename=self.i18n("result.txt", rs.lang))
+        else:
+            rs.values['is_search'] = is_search = False
+        return self.render(rs, "user_search", params)
 
     def list_some_mailinglists(self, rs, mailinglists, complete):
         """Code deduplication helper displaying lists.

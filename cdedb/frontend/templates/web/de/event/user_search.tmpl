@@ -17,4 +17,9 @@
 
     <h3>Suchmaske</h3>
     {{ generic.user_search_mask("event", ("pevent_id", "pcourse_id")) }}
+
+    {% if values['is_search'] %}
+        <h3>Ergebnis -- {{ result|length|e }} {{ result|length|numerus("Eintrag", "Einträge")|e }} gefunden</h3>
+        {{ generic.user_search_result(result, "event") }}
+    {% endif %}
 {% endblock %}

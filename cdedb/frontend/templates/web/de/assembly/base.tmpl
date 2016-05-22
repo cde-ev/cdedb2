@@ -41,7 +41,7 @@
             <div class="list-group">
                 {{ util.href(cdedblink("assembly/index"), "Alle Versammlungen", icon="list",
                         aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
-                {{ util.href(cdedblink("assembly/user_search_form"), "Versammlungs-Nutzer verwalten", icon="user",
+                {{ util.href(cdedblink("assembly/user_search"), "Versammlungs-Nutzer verwalten", icon="user",
                         aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
                 {# TODO #}
                 {{ util.href(cdedblink("assembly/create_user_form"), "Neuen Nutzer anlegen") }}
