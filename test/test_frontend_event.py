@@ -55,7 +55,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search(self, user):
-        self.traverse({'href': '/event/$'}, {'href': '/event/search/user/form'})
+        self.traverse({'href': '/event/$'}, {'href': '/event/search/user'})
         self.assertTitle("Veranstaltungsnutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_username'] = 'a@'
@@ -63,7 +63,8 @@ class TestEventFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("\nVeranstaltungsnutzersuche -- 4 Ergebnisse gefunden\n")
+        self.assertTitle("Veranstaltungsnutzersuche")
+        self.assertPresence("Ergebnis -- 4 Einträge gefunden")
         self.assertPresence("Hohle Gasse 13")
 
     @as_users("anton")
@@ -659,7 +660,8 @@ class TestEventFrontend(FrontendTest):
         f['qval_persona.family_name'] = 'e'
         f['qord_primary'] = 'reg.id'
         self.submit(f)
-        self.assertTitle("\nAnmeldungen (Große Testakademie 2222) -- 2 Ergebnisse\n")
+        self.assertTitle("\nAnmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Ergebnis -- 2 Einträge gefunden")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
@@ -674,7 +676,8 @@ class TestEventFrontend(FrontendTest):
         f['column'] = 'part2.lodgement_id2'
         f['value'] = 3
         self.submit(f)
-        self.assertTitle("\nAnmeldungen (Große Testakademie 2222) -- 2 Ergebnisse\n")
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.assertPresence("Ergebnis -- 2 Einträge gefunden")
         self.assertEqual(
             '3',
             self.response.lxml.get_element_by_id('row_0_lodgement_id2').value)

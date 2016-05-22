@@ -142,7 +142,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search(self, user):
-        self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user/form'})
+        self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
         self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'Garten'
@@ -150,12 +150,13 @@ class TestCdEFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("\nCdE Nutzersuche -- 1 Ergebnis gefunden\n")
+        self.assertTitle("CdE Nutzersuche")
+        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
         self.assertIn('"row_0_id" value="2"', self.response.text)
 
     @as_users("anton")
     def test_user_search_csv(self, user):
-        self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user/form'})
+        self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
         self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_address'] = 'a[rm]'
@@ -625,4 +626,4 @@ class TestCdEFrontend(FrontendTest):
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/core/changelog/view'})
-        self.assertTitle("\nNutzerdaten -- Logs (0--11)\n")
+        self.assertTitle("Nutzerdaten-Log [0–11]")

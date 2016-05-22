@@ -339,6 +339,7 @@ def querytoparams_filter(val):
         field, ascending = entry
         params['qord_{}'.format(postfix)] = field
         params['qord_{}_ascending'.format(postfix)] = ascending
+    params['is_search'] = True
     return params
 
 def linebreaks_filter(val, replacement="<br>"):

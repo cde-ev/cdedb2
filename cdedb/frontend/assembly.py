@@ -123,7 +123,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
     def user_search(self, rs, CSV, is_search):
         """Perform search."""
-        spec = QUERY_SPECS['qview_core_user']
+        spec = QUERY_SPECS['qview_persona']
         ## mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:

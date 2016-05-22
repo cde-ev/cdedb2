@@ -75,7 +75,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminchangedata2(self, user):
-        self.admin_view_profile('berta', realm="core")
+        self.admin_view_profile('anton', realm="core")
         self.traverse({'href': '/core/persona/1/adminchange'})
         self.assertTitle("Anton Armin A. Administrator bearbeiten")
         f = self.response.forms['changedataform']
@@ -238,8 +238,8 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_user_search(self,  user):
-        self.traverse({'href': '/core/search/user/form'})
-        self.assertTitle("Allgemeine Nutzersuche")
+        self.traverse({'href': '/core/search/user'})
+        self.assertTitle("Allgemeine Nutzerverwaltung")
         f = self.response.forms['usersearchform']
         f['qval_username'] = 'n'
         for field in f.fields:
@@ -251,7 +251,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_archived_user_search(self,  user):
-        self.traverse({'href': '/core/search/archiveduser/form'})
+        self.traverse({'href': '/core/search/archiveduser'})
         self.assertTitle("Archivnutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_given_names'] = 'des'
@@ -259,12 +259,13 @@ class TestCoreFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivnutzersuche -- 1 Ergebnis gefunden")
+        self.assertTitle("Archivnutzersuche")
+        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
         self.assertPresence("Hell")
 
     @as_users("anton")
     def test_archived_user_search2(self, user):
-        self.traverse({'href': '/core/search/archiveduser/form'})
+        self.traverse({'href': '/core/search/archiveduser'})
         self.assertTitle("Archivnutzersuche")
         f = self.response.forms['usersearchform']
         f['qval_birthday'] = '31.12.2000'
@@ -273,17 +274,19 @@ class TestCoreFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Archivnutzersuche -- 1 Ergebnis gefunden")
+        self.assertTitle("Archivnutzersuche")
+        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
         self.assertPresence("Hell")
 
     @as_users("anton")
     def test_show_archived_user(self, user):
-        self.admin_view_profile('hades', realm="cde")
+        self.admin_view_profile('hades', realm="cde", check=False)
         self.assertTitle("Archivzugriff -- Hades Hell")
 
     @as_users("anton")
     def test_batch_admission(self, user):
-        self.traverse({'href': '/core/persona/admission$'})
+        self.traverse({'href': '/core/search/user$'},
+                      {'href': '/core/persona/admission$'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
         with open("/tmp/cdedb-store/testfiles/batch_admission.csv") as datafile:
@@ -559,4 +562,4 @@ class TestCoreFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Start', 'href': '^/d?b?/?$'},
                       {'href': '/core/log'})
-        self.assertTitle("\nAccounts -- Logs (0--2)\n")
+        self.assertTitle("Account-Log [0–2]")

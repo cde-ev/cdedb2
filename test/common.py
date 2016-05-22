@@ -352,14 +352,15 @@ class FrontendTest(unittest.TestCase):
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
 
-    def admin_view_profile(self, user, realm="core"):
+    def admin_view_profile(self, user, realm="core", check=True):
         u = USER_DICT[user]
         self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = u["DB-ID"]
         f['realm'] = realm
         self.submit(f)
-        self.assertTitle("{} {}".format(u['given_names'], u['family_name']))
+        if check:
+            self.assertTitle("{} {}".format(u['given_names'], u['family_name']))
 
     def fetch_mail(self):
         elements = self.response.lxml.xpath("//div[@class='alert alert-info']/span/text()")
