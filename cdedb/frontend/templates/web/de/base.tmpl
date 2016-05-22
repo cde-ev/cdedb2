@@ -44,7 +44,9 @@
                                 <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform"
                                   class="navbar-form">
                                     <p class="navbar-text">
-                                        {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
+                                        <span id="displayname">
+                                            {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
+                                        </span>
                                     </p>
                                     <button type="submit" name="submitlogout" value="Abmelden"
                                       class="btn navbar-button" title="Logout">

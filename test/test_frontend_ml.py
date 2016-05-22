@@ -28,10 +28,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminchangeuser(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-10-I"
-        f['realm'] = "ml"
-        self.submit(f)
+        self.admin_view_profile('janis', realm="ml")
         self.traverse({'href': '/ml/user/10/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -43,11 +40,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_toggleactivity(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-10-I"
-        f['realm'] = "ml"
-        self.submit(f)
-        self.assertTitle("Janis Jalapeño")
+        self.admin_view_profile('janis', realm="ml")
         self.assertEqual(
             True,
             self.response.lxml.get_element_by_id('activity_checkbox').checked)

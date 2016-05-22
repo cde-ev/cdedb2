@@ -31,10 +31,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminchangeuser(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-5-B"
-        f['realm'] = "event"
-        self.submit(f)
+        self.admin_view_profile('emilia', realm="event")
         self.traverse({'href': '/event/user/5/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -46,11 +43,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("anton")
     def test_toggleactivity(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-5-B"
-        f['realm'] = "event"
-        self.submit(f)
-        self.assertTitle("Emilia E. Eventis")
+        self.admin_view_profile('emilia', realm="event")
         self.assertEqual(
             True,
             self.response.lxml.get_element_by_id('activity_checkbox').checked)

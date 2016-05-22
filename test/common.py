@@ -150,6 +150,7 @@ class BackendTest(BackendUsingTest):
 USER_DICT = {
     "anton": {
         'id': 1,
+        'DB-ID': "DB-1-J",
         'username': "anton@example.cde",
         'password': "secret",
         'display_name': "Anton",
@@ -158,6 +159,7 @@ USER_DICT = {
     },
     "berta": {
         'id': 2,
+        'DB-ID': "DB-2-H",
         'username': "berta@example.cde",
         'password': "secret",
         'display_name': "Bertå",
@@ -166,6 +168,7 @@ USER_DICT = {
     },
     "charly": {
         'id': 3,
+        'DB-ID': "DB-3-F",
         'username': "charly@example.cde",
         'password': "secret",
         'display_name': "Charly",
@@ -174,6 +177,7 @@ USER_DICT = {
     },
     "daniel": {
         'id': 4,
+        'DB-ID': "DB-4-D",
         'username': "daniel@example.cde",
         'password': "secret",
         'display_name': "Daniel",
@@ -182,6 +186,7 @@ USER_DICT = {
     },
     "emilia": {
         'id': 5,
+        'DB-ID': "DB-5-B",
         'username': "emilia@example.cde",
         'password': "secret",
         'display_name': "Emilia",
@@ -190,6 +195,7 @@ USER_DICT = {
     },
     "ferdinand": {
         'id': 6,
+        'DB-ID': "DB-6-K",
         'username': "ferdinand@example.cde",
         'password': "secret",
         'display_name': "Ferdinand",
@@ -198,14 +204,25 @@ USER_DICT = {
     },
     "garcia": {
         'id': 7,
+        'DB-ID': "DB-7-I",
         'username': "garcia@example.cde",
         'password': "secret",
         'display_name': "Garcia",
         'given_names': "Garcia G.",
         'family_name': "Generalis",
     },
+    "hades": {
+        'id': 8,
+        'DB-ID': "DB-8-G",
+        'username': None,
+        'password': "secret",
+        'display_name': None,
+        'given_names': "Hades",
+        'family_name': "Hell",
+    },
     "inga": {
         'id': 9,
+        'DB-ID': "DB-9-E",
         'username': "inga@example.cde",
         'password': "secret",
         'display_name': "Inga",
@@ -214,6 +231,7 @@ USER_DICT = {
     },
     "janis": {
         'id': 10,
+        'DB-ID': "DB-10-I",
         'username': "janis@example.cde",
         'password': "secret",
         'display_name': "Janis",
@@ -222,11 +240,21 @@ USER_DICT = {
     },
     "kalif": {
         'id': 11,
+        'DB-ID': "DB-11-G",
         'username': "kalif@example.cde",
         'password': "secret",
-        'display_name': "Janis",
+        'display_name': "Kalif",
         'given_names': "Kalif ibn al-Ḥasan",
         'family_name': "Karabatschi",
+    },
+    "lisa": {
+        'id': 12,
+        'DB-ID': "DB-12-E",
+        'username': None,
+        'password': "secret",
+        'display_name': "Lisa",
+        'given_names': "Lisa",
+        'family_name': "Lost",
     },
 }
 
@@ -323,6 +351,15 @@ class FrontendTest(unittest.TestCase):
     def logout(self):
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
+
+    def admin_view_profile(self, user, realm="core"):
+        u = USER_DICT[user]
+        self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+        f = self.response.forms['adminshowuserform']
+        f['id_to_show'] = u["DB-ID"]
+        f['realm'] = realm
+        self.submit(f)
+        self.assertTitle("{} {}".format(u['given_names'], u['family_name']))
 
     def fetch_mail(self):
         elements = self.response.lxml.xpath("//div[@class='alert alert-info']/span/text()")

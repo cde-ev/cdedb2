@@ -37,10 +37,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminchangedata(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
+        self.admin_view_profile('berta', realm="cde")
         self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -52,10 +49,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_validation(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
+        self.admin_view_profile('berta', realm="cde")
         self.traverse({'href': '/cde/user/2/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -182,11 +176,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_toggle_activity(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.admin_view_profile('berta', realm="cde")
         self.assertTrue(self.response.lxml.get_element_by_id('activity_checkbox').checked)
         f = self.response.forms['activitytoggleform']
         self.submit(f)
@@ -194,10 +184,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_modify_membership(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
+        self.admin_view_profile('berta', realm="cde")
         self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
         self.traverse({'href': '/membership/change'})
@@ -329,22 +316,14 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.traverse({'href': '^/$'})
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.admin_view_profile('berta', realm="cde")
         self.assertPresence("17.50€")
         self.traverse({'href': '/cde/user/2/lastschrift'})
         f = self.response.forms['transactionrollbackform4']
         self.submit(f)
         self.assertPresence("Keine aktive Einzugsermächtigung")
         self.traverse({'href': '^/$'})
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.admin_view_profile('berta', realm="cde")
         self.assertPresence("12.50€")
 
     @as_users("anton")
@@ -392,11 +371,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_create(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-3-F"
-        f['realm'] = "cde"
-        self.submit(f)
-        self.assertTitle("Charly C. Clown")
+        self.admin_view_profile('charly', realm="cde")
         self.traverse({'href': '/cde/user/3/lastschrift'})
         self.assertPresence("Keine aktive Einzugsermächtigung")
         self.traverse({'href': '/cde/user/3/lastschrift/create'})
@@ -416,11 +391,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_change(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.admin_view_profile('berta', realm="cde")
         self.traverse({'href': '/cde/user/2/lastschrift'},
                       {'href': '/cde/lastschrift/2/change'})
         f = self.response.forms['changelastschriftform']
@@ -439,11 +410,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_lastschrift_receipt(self, user):
-        f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = "DB-2-H"
-        f['realm'] = "cde"
-        self.submit(f)
-        self.assertTitle("Bertålotta Beispiel")
+        self.admin_view_profile('berta', realm="cde")
         self.traverse({'href': '/cde/user/2/lastschrift'})
         self.assertTitle("Einzugsermächtigungen (Bertålotta Beispiel)")
         f = self.response.forms['receiptform3']
