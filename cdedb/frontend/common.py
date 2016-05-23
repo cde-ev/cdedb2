@@ -1146,7 +1146,12 @@ def REQUESTdata(*spec):
                     if argtype.startswith('[') and argtype.endswith(']'):
                         vals = tuple(val.strip()
                                      for val in rs.request.values.getlist(name))
-                        rs.values.setlist(name, vals)
+                        if vals:
+                            rs.values.setlist(name, vals)
+                        else:
+                            ## We have to be careful, since empty lists are
+                            ## problematic for the werkzeug MultiDict
+                            rs.values[name] = None
                         kwargs[name] = tuple(
                             check_validation(rs, argtype[1:-1], val, name)
                             for val in vals)
