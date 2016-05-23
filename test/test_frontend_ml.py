@@ -104,7 +104,9 @@ class TestMlFrontend(FrontendTest):
         self.follow()
         self.login(user)
         self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen (zurzeit 1 zu begutachten)")
+        self.assertTitle("Accountanfragen")
+        self.assertPresence("zelda@example.cde")
+        self.assertPresence("Offene bestätigte Anfragen (zurzeit 0)")
         f = self.response.forms['genesisapprovalform1']
         f['realm'] = "ml"
         self.submit(f)
@@ -114,7 +116,9 @@ class TestMlFrontend(FrontendTest):
             if line.startswith('[1] '):
                 link = line[4:]
         link = quopri.decodestring(link).decode('utf-8')
-        self.assertTitle("Accountanfragen (zurzeit 0 zu begutachten)")
+        self.assertTitle("Accountanfragen")
+        self.assertPresence("Offene bestätigte Anfragen (zurzeit 1)")
+        self.assertPresence("zelda@example.cde")
         self.logout()
         self.get(link)
         self.assertTitle("Mailinglistenaccount anlegen")

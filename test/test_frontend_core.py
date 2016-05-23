@@ -246,7 +246,8 @@ class TestCoreFrontend(FrontendTest):
             if field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Allgemeine Nutzersuche -- 5 Ergebnisse gefunden")
+        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertPresence("Ergebnis -- 5 Einträge gefunden")
         self.assertPresence("Jalapeño")
 
     @as_users("anton")
