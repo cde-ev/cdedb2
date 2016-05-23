@@ -148,13 +148,17 @@
 {% endmacro %}
 
 
-{% macro input_checkbox(name, label="", value=True, checked=False, readonly=False, anid='', aclass='', inline=False,
+{% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
         radio=False) %}
     {% if label %}
         <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
     {% endif %}
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name|e }}" value="{{ value|e }}"
-            {% if checked %} checked="checked" {% endif %}
+            {# TODO checkboxes don't support defaultvalues yet #}
+            {% if not radio and value|stringIn(values.getlist(name))
+                    or radio and values.get(name, defaultvalue)|string == value|string %}
+                checked="checked"
+            {% endif %}
             {% if readonly %} disabled="disabled" {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
             {% if aclass %} class="{{ aclass|e }}"{% endif %} />
         {{ label|e }}
@@ -166,11 +170,8 @@
         {% if not inline %}
             <div class="{% if radio %}radio{% else %}checkbox{% endif %} {% if readonly %}disabled{% endif %}">
         {% endif %}
-            {# TODO checkboxes don't support defaultvalues yet #}
-            {{ input_checkbox(name, entry_label, entry_value,
-                    (values.get(name, defaultvalue)|string == entry_value|string) if radio 
-                            else (entry_value|stringIn(values.getlist(name))),
-                    readonly, entry_id, inline=inline, radio=radio) }}
+            {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, entry_id, inline=inline,
+                    radio=radio) }}
         {% if not inline %}</div>{% endif %}
     {% endfor %}
 {% endmacro %}
@@ -182,11 +183,10 @@
         {% if info %}{{ info_hover(info) }}{% endif %}
         <div class="{% if small %}col-sm-6 col-sm-offset-2{% else %}col-sm-8 col-sm-offset-4{% endif %}">
             <div class="checkbox {% if readonly %}disabled{% endif %}">
-                {{ input_checkbox(name, label, value, (values.get(name, defaultvalue)|string == value|string),
-                           readonly, anid) }}
+                {{ input_checkbox(name, label, value, defaultvalue, readonly, anid) }}
             </div>
             {% if name in errors %}
-                <div class="input-error-block">{{ output_errors(name) }}</div>
+                <div class="input-error-block">{{ output_errors(name, displayerrors) }}</div>
             {% endif %}
         </div>
     </div>
