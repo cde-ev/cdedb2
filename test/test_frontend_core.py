@@ -475,6 +475,19 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Created 6 accounts.", div="notifications")
 
+    @as_users("anton")
+    def test_meta_info(self, user):
+        self.traverse({'href': '^/$'},
+                      {'href': '/meta'})
+        self.assertTitle("Allgemeine Metainformationen")
+        f = self.response.forms['changeinfoform']
+        self.assertEqual("Bertålotta Beispiel", f["Finanzvorstand_Name"].value)
+        f["Finanzvorstand_Name"] = "Zelda"
+        self.submit(f)
+        self.assertTitle("Allgemeine Metainformationen")
+        f = self.response.forms['changeinfoform']
+        self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
+
     def test_changelog(self):
         user = USER_DICT["berta"]
         self.login(user)

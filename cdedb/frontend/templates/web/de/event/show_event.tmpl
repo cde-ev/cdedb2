@@ -9,6 +9,9 @@
 {{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
+    {% if event_data['is_archived'] %}
+        <p>Diese Veranstaltung ist bereits abgeschlossen.</p>
+    {% endif %}
     {% if event_data['id'] in user.orga or is_admin %}
         {{ util.href(cdedblink('event/event_config'), "Konfiguration") }}
         {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=True) }}

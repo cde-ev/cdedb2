@@ -24,6 +24,8 @@
                     icon="list-alt", active=(sidenav_active=='core_log')) }}
             {{ util.href(cdedblink("core/view_changelog_meta"), "Nutzerdaten-Log", aclass="list-group-item",
                     icon="list-alt", active=(sidenav_active=='core_change_log')) }}
+            {# TODO #}
+            {{ util.href(cdedblink("core/meta_info_form"), "Metadaten") }}
             </div>
         {% endif %}
     {% endif %}

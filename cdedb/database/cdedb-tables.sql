@@ -443,7 +443,7 @@ CREATE TABLE event.events (
         title                   varchar NOT NULL UNIQUE,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution               integer NOT NULL REFERENCES event.institutions(id),
+        institution             integer NOT NULL REFERENCES event.institutions(id),
         description             varchar,
         --
         -- cut for past_event.events (modulo column tempus)
@@ -457,7 +457,8 @@ CREATE TABLE event.events (
         iban                    varchar,
         use_questionnaire       boolean NOT NULL DEFAULT False,
         notes                   varchar,
-        offline_lock            boolean NOT NULL DEFAULT False
+        offline_lock            boolean NOT NULL DEFAULT False,
+        is_archived             boolean NOT NULL DEFAULT False
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
 GRANT INSERT ON event.events TO cdb_admin;

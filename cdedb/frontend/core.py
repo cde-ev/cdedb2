@@ -73,6 +73,25 @@ class CoreFrontend(AbstractFrontend):
             kind = "general"
         return self.render(rs, "error", {'kind': kind})
 
+    @access("core_admin")
+    def meta_info_form(self, rs):
+        """Render form."""
+        info = self.coreproxy.get_meta_info(rs)
+        merge_dicts(rs.values, info)
+        return self.render(rs, "meta_info", {'keys': self.conf.META_INFO_KEYS})
+
+    @access("core_admin", modi={"POST"})
+    def change_meta_info(self, rs):
+        """Change the meta info constants."""
+        data_params = tuple((key, "any") for key in self.conf.META_INFO_KEYS)
+        data = request_data_extractor(rs, data_params)
+        data = check(rs, "meta_info", data, keys=self.conf.META_INFO_KEYS)
+        if rs.errors:
+            return self.meta_info_form(rs)
+        code = self.coreproxy.set_meta_info(rs, data)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "core/meta_info_form")
+
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("username", "printable_ascii"), ("password", "str"),
                  ("wants", "#str_or_None"))

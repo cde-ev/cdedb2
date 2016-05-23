@@ -202,7 +202,6 @@ _DEFAULTS = {
         "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
         "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4"),
 
-
     ### event stuff
 
     ## event server configuration

@@ -252,6 +252,7 @@ class TestEventBackend(BackendTest):
         self.login(user)
         data['id'] = new_id
         data['offline_lock'] = False
+        data['is_archived'] = False
         ## correct part and field ids
         tmp = self.event.get_event_data_one(self.key, new_id)
         part_map = {}
@@ -1237,6 +1238,7 @@ class TestEventBackend(BackendTest):
                               'id': 1,
                               'notes': 'Todoliste ... just kidding ;)',
                               'offline_lock': False,
+                              'is_archived': False,
                               'institution': 1,
                               'registration_hard_limit': datetime.date(2220, 10, 30),
                               'registration_soft_limit': datetime.date(2200, 10, 30),

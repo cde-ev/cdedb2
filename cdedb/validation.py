@@ -1457,6 +1457,7 @@ _EVENT_COMMON_FIELDS = lambda: {
 }
 _EVENT_OPTIONAL_FIELDS = {
     'offline_lock': _bool,
+    'is_archived': _bool,
     'orgas': _any,
     'parts': _any,
     'fields': _any,

@@ -232,7 +232,7 @@
             </div>
         </form>
     {% endif %}
-    {% if is_admin %}
+    {% if is_admin and not data['is_archived'] %}
         <h2>Archivierung</h2>
         <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed" id="archiveeventform">
             <div>

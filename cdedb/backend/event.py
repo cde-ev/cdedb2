@@ -1462,6 +1462,7 @@ class EventBackend(AbstractBackend):
             if any(now().date() < part['part_end']
                    for part in event_data['parts'].values()):
                 return None, "Event not concluded."
+            self.set_event_data(rs, {'id': event_id, 'is_archived': True})
             pevent = {k: v for k, v in event_data.items()
                       if k in PAST_EVENT_FIELDS}
             ## Use random day of the event as tempus
@@ -1499,6 +1500,11 @@ class EventBackend(AbstractBackend):
             for course_id in courses.keys():
                 if course_id not in courses_seen:
                     self.delete_past_course(rs, course_map[course_id])
+                else:
+                    if not course_data[course_id]['parts']:
+                        self.logger.warning(
+                            "Course {} remains without parts.".format(
+                                course_id))
         return new_id, None
 
     @access("event")

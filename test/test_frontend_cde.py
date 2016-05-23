@@ -430,19 +430,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertTrue(self.response.body.startswith(b"%PDF"))
 
     @as_users("anton")
-    def test_meta_info(self, user):
-        self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/meta'})
-        self.assertTitle("Allgemeine Vereinsmetainformationen")
-        f = self.response.forms['changeinfoform']
-        self.assertEqual("Bertålotta Beispiel", f["Finanzvorstand_Name"].value)
-        f["Finanzvorstand_Name"] = "Zelda"
-        self.submit(f)
-        self.assertTitle("Allgemeine Vereinsmetainformationen")
-        f = self.response.forms['changeinfoform']
-        self.assertEqual("Zelda", f["Finanzvorstand_Name"].value)
-
-    @as_users("anton")
     def test_semester(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/semester/show'})

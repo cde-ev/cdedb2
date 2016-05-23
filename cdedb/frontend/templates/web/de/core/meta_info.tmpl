@@ -1,8 +1,8 @@
-{% extends "web/de/cde/base.tmpl" %}
+{% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Allgemeine Vereinsmetainformationen{% endblock %}
+{% block title %}Allgemeine Metainformationen{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/change_meta_info')|e }}" method="POST" id="changeinfoform">
+    <form action="{{ cdedblink('core/change_meta_info')|e }}" method="POST" id="changeinfoform">
         {% for key in keys %}
             {{ util.form_input_text(name=key, label=key) }}
         {% endfor %}

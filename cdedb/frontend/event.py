@@ -2650,8 +2650,7 @@ class EventFrontend(AbstractUserFrontend):
     def archive_event(self, rs, event_id):
         """Make a past_event from an event."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        events = self.eventproxy.list_events(rs, past=True)
-        if any(event_data['title'] == title for title in events.values()):
+        if event_data['is_archived']:
             rs.notify("warning", "Event already archived.")
             return self.redirect(rs, "event/show_event")
         new_id, message = self.eventproxy.archive_event(rs, event_id)

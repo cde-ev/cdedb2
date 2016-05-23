@@ -691,6 +691,7 @@
             "title": "Gro\u00dfe Testakademie 2222",
             "institution": 1,
             "offline_lock": false,
+            "is_archived": false,
             "registration_soft_limit": "2200-10-30",
             "shortname": "TestAka",
             "iban": "DE96 3702 0500 0008 0689 01",
