@@ -576,7 +576,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :rtype: [{str: object}]
         """
         codes = affirm_array_validation(code_validator, codes, allow_None=True)
-        entity_id = affirm_validation("int_or_None", entity_id)
+        entity_id = affirm_validation("id_or_None", entity_id)
         start = affirm_validation("int_or_None", start)
         stop = affirm_validation("int_or_None", stop)
         additional_columns = affirm_array_validation(

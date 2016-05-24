@@ -91,7 +91,7 @@ class CdEBackend(AbstractBackend):
         :rtype: {int: int}
         :returns: Mapping of lastschrift ids to granting persona.
         """
-        persona_ids = affirm_array("int", persona_ids, allow_None=True)
+        persona_ids = affirm_array("id", persona_ids, allow_None=True)
         active = affirm("bool_or_None", active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = []
@@ -117,7 +117,7 @@ class CdEBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: Mapping ids to data sets.
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
         if (not self.is_admin(rs)
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
@@ -184,9 +184,10 @@ class CdEBackend(AbstractBackend):
         :rtype: {int: int}
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
-        lastschrift_ids = affirm_array("int", lastschrift_ids, allow_None=True)
-        stati = affirm_array("int", stati, allow_None=True)
-        periods = affirm_array("int", periods, allow_None=True)
+        lastschrift_ids = affirm_array("id", lastschrift_ids, allow_None=True)
+        stati = affirm_array("enum_lastschrifttransactionstati", stati,
+                             allow_None=True)
+        periods = affirm_array("id", periods, allow_None=True)
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
         params = []
         connector = "WHERE"
@@ -214,7 +215,7 @@ class CdEBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: Mapping ids to data sets.
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         return {e['id']: e for e in data}
@@ -285,7 +286,7 @@ class CdEBackend(AbstractBackend):
         :rtype: int
         :returns: Standard return code.
         """
-        transaction_id = affirm("int", transaction_id)
+        transaction_id = affirm("id", transaction_id)
         status = affirm("enum_lastschrifttransactionstati", status)
         if not status.is_finalized():
             raise RuntimeError("Non-final target state.")
@@ -356,7 +357,7 @@ class CdEBackend(AbstractBackend):
         :rtype: int
         :returns: Standard return code.
         """
-        transaction_id = affirm("int", transaction_id)
+        transaction_id = affirm("id", transaction_id)
         tally = affirm("decimal", tally)
         stati = const.LastschriftTransactionStati
         with Atomizer(rs):
@@ -429,7 +430,7 @@ class CdEBackend(AbstractBackend):
         :rtype: int
         :returns: Standard return code.
         """
-        lastschrift_id = affirm("int", lastschrift_id)
+        lastschrift_id = affirm("id", lastschrift_id)
         with Atomizer(rs):
             lastschrift = unwrap(self.get_lastschrift(rs, (lastschrift_id,)))
             if not self.lastschrift_may_skip(rs, lastschrift):
@@ -494,7 +495,7 @@ class CdEBackend(AbstractBackend):
         :type period_id: int
         :rtype: {str: object}
         """
-        period_id = affirm("int", period_id)
+        period_id = affirm("id", period_id)
         return self.sql_select_one(rs, "cde.org_period", ORG_PERIOD_FIELDS,
                                    period_id)
 
@@ -560,7 +561,7 @@ class CdEBackend(AbstractBackend):
         :type expuls_id: int
         :rtype: {str: object}
         """
-        expuls_id = affirm("int", expuls_id)
+        expuls_id = affirm("id", expuls_id)
         return self.sql_select_one(rs, "cde.expuls_period",
                                    EXPULS_PERIOD_FIELDS, expuls_id)
 

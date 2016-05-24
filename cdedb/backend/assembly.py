@@ -137,7 +137,7 @@ class AssemblyBackend(AbstractBackend):
         :type stop: int or None
         :rtype: [{str: object}]
         """
-        assembly_id = affirm("int_or_None", assembly_id)
+        assembly_id = affirm("id_or_None", assembly_id)
         return self.generic_retrieve_log(
             rs, "enum_assemblylogcodes", "assembly", "assembly.log", codes,
             assembly_id, start, stop)
@@ -173,8 +173,8 @@ class AssemblyBackend(AbstractBackend):
         :type ballot_id: int or None
         :rtype: bool
         """
-        assembly_id = affirm("int_or_None", assembly_id)
-        ballot_id = affirm("int_or_None", ballot_id)
+        assembly_id = affirm("id_or_None", assembly_id)
+        ballot_id = affirm("id_or_None", ballot_id)
         if assembly_id is None and ballot_id is None:
             raise ValueError("No input specified.")
         if assembly_id is not None and ballot_id is not None:
@@ -201,7 +201,7 @@ class AssemblyBackend(AbstractBackend):
         :type assembly_id: int
         :rtype: [int]
         """
-        assembly_id = affirm("int", assembly_id)
+        assembly_id = affirm("id", assembly_id)
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
             entity_key="assembly_id")
@@ -236,7 +236,7 @@ class AssemblyBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
 
@@ -281,7 +281,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: Mapping of ballot ids to titles.
         """
-        assembly_id = affirm("int", assembly_id)
+        assembly_id = affirm("id", assembly_id)
         data = self.sql_select(rs, "assembly.ballots", ("id", "title"),
                                (assembly_id,), entity_key="assembly_id")
         return {e['id']: e['title'] for e in data}
@@ -299,7 +299,7 @@ class AssemblyBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
 
         with Atomizer(rs):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ids)
@@ -451,7 +451,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        ballot_id = affirm("int", ballot_id)
+        ballot_id = affirm("id", ballot_id)
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (ballot_id,)))
@@ -493,7 +493,7 @@ class AssemblyBackend(AbstractBackend):
         :type ballot_id: int
         :rtype: bool
         """
-        ballot_id = affirm("int", ballot_id)
+        ballot_id = affirm("id", ballot_id)
 
         with Atomizer(rs):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
@@ -529,7 +529,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: The secret if a new secret was generated or None if we
           already attend.
         """
-        assembly_id = affirm("int", assembly_id)
+        assembly_id = affirm("id", assembly_id)
 
         with Atomizer(rs):
             if self.does_attend(rs, assembly_id=assembly_id):
@@ -572,7 +572,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        ballot_id = affirm("int", ballot_id)
+        ballot_id = affirm("id", ballot_id)
         secret = affirm("printable_ascii_or_None", secret)
 
         with Atomizer(rs):
@@ -638,7 +638,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: str or None
         :returns: The vote if we have voted or None otherwise.
         """
-        ballot_id = affirm("int", ballot_id)
+        ballot_id = affirm("id", ballot_id)
         secret = affirm("printable_ascii_or_None", secret)
 
         with Atomizer(rs):
@@ -679,7 +679,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: True if a new result file was generated and False if the
           ballot was already tallied.
         """
-        ballot_id = affirm("int", ballot_id)
+        ballot_id = affirm("id", ballot_id)
 
         ## We do not use jinja here as it is currently only used in the
         ## frontend.
@@ -778,7 +778,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        assembly_id = affirm("int", assembly_id)
+        assembly_id = affirm("id", assembly_id)
 
         with Atomizer(rs):
             assembly = unwrap(self.get_assembly_data(rs, (assembly_id,)))
@@ -831,10 +831,10 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError("Too many inputs specified.")
         if assembly_id is not None:
             column = "assembly_id"
-            key = affirm("int", assembly_id)
+            key = affirm("id", assembly_id)
         else:
             column = "ballot_id"
-            key = affirm("int", ballot_id)
+            key = affirm("id", ballot_id)
 
         data = self.sql_select(rs, "assembly.attachments", ("id", "title"),
                                (key,), entity_key=column)
@@ -849,7 +849,7 @@ class AssemblyBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "assembly.attachments",
                                ASSEMBLY_ATTACHMENT_FIELDS, ids)
         return {e['id']: e for e in data}
@@ -889,7 +889,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        attachment_id = affirm("int", attachment_id)
+        attachment_id = affirm("id", attachment_id)
         current = unwrap(self.get_attachments(rs, (attachment_id,)))
         if current['ballot_id']:
             ballot_data = unwrap(self.get_ballots(rs, (current['ballot_id'],)))

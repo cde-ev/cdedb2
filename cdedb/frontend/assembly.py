@@ -149,7 +149,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("assembly_admin")
-    @REQUESTdata(("codes", "[int]"), ("assembly_id", "int_or_None"),
+    @REQUESTdata(("codes", "[int]"), ("assembly_id", "id_or_None"),
                  ("start", "int_or_None"), ("stop", "int_or_None"))
     def view_log(self, rs, codes, assembly_id, start, stop):
         """View activities."""
@@ -325,7 +325,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                               filename=rs.ambience['attachment']['filename'])
 
     @access("assembly_admin")
-    @REQUESTdata(("assembly_id", "int_or_None"), ("ballot_id", "int_or_None"))
+    @REQUESTdata(("assembly_id", "id_or_None"), ("ballot_id", "id_or_None"))
     def add_attachment_form(self, rs, assembly_id, ballot_id):
         """Render form."""
         if (assembly_id and ballot_id) or (not assembly_id and not ballot_id):
@@ -343,7 +343,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             'data': data, 'is_assembly': bool(assembly_id)})
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("assembly_id", "int_or_None"), ("ballot_id", "int_or_None"),
+    @REQUESTdata(("assembly_id", "id_or_None"), ("ballot_id", "id_or_None"),
                  ("title", "str"), ("filename", "identifier_or_None"))
     @REQUESTfile("attachment")
     def add_attachment(self, rs, assembly_id, ballot_id, title, filename,

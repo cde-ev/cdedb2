@@ -411,7 +411,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_past_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("pcourse_id", "int_or_None"), ("persona_id", "cdedbid"),
+    @REQUESTdata(("pcourse_id", "id_or_None"), ("persona_id", "cdedbid"),
                  ("is_instructor", "bool"), ("is_orga", "bool"))
     def add_participant(self, rs, pevent_id, pcourse_id, persona_id,
                         is_instructor, is_orga):
@@ -428,7 +428,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_past_event")
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata(("persona_id", "int"), ("pcourse_id", "int_or_None"))
+    @REQUESTdata(("persona_id", "id"), ("pcourse_id", "id_or_None"))
     def remove_participant(self, rs, pevent_id, persona_id, pcourse_id):
         """Remove participant."""
         if rs.errors:
@@ -551,7 +551,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/event_config")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("orga_id", "int"))
+    @REQUESTdata(("orga_id", "id"))
     @event_guard(check_offline=True)
     def remove_orga(self, rs, event_id, orga_id):
         """Demote a persona.
@@ -670,7 +670,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/event_config")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("field_id", "int"))
+    @REQUESTdata(("field_id", "id"))
     @event_guard(check_offline=True)
     def remove_field(self, rs, event_id, field_id):
         """Delete a field.
@@ -927,7 +927,7 @@ class EventFrontend(AbstractUserFrontend):
             'statistics': statistics, 'listings': listings})
 
     @access("event")
-    @REQUESTdata(("course_id", "int_or_None"))
+    @REQUESTdata(("course_id", "id_or_None"))
     @event_guard()
     def course_choices(self, rs, event_id, course_id):
         """List course choices.
@@ -1272,12 +1272,12 @@ class EventFrontend(AbstractUserFrontend):
             standard_data['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
                 if const.RegistrationPartStati(entry['status']).is_involved())
-        choice_params = (("course_choice{}_{}".format(part_id, i), "int")
+        choice_params = (("course_choice{}_{}".format(part_id, i), "id")
                          for part_id in standard_data['parts']
                          for i in range(3))
         choices = request_data_extractor(rs, choice_params)
         instructor_params = (
-            ("course_instructor{}".format(part_id), "int_or_None")
+            ("course_instructor{}".format(part_id), "id_or_None")
             for part_id in standard_data['parts'])
         instructor = request_data_extractor(rs, instructor_params)
         if not standard_data['parts']:
@@ -1560,7 +1560,7 @@ class EventFrontend(AbstractUserFrontend):
         :rtype: [{str: object}]
         """
         spec = {
-            'field_id': "int_or_None",
+            'field_id': "id_or_None",
             'title': "str_or_None",
             'info': "str_or_None",
             'input_size': "int_or_None",
@@ -1769,7 +1769,7 @@ class EventFrontend(AbstractUserFrontend):
             part_params.append(("{}.status".format(prefix),
                                 "enum_registrationpartstati"))
             part_params.extend(
-                ("{}.{}".format(prefix, suffix), "int_or_None")
+                ("{}.{}".format(prefix, suffix), "id_or_None")
                 for suffix in ("course_id", "course_choice_0",
                                "course_choice_1", "course_choice_2",
                                "course_instructor", "lodgement_id"))
@@ -2302,18 +2302,18 @@ class EventFrontend(AbstractUserFrontend):
         spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
         ## note that spec is an ordered dict and we should respect the order
         for part_id in event_data['parts']:
-            spec["part{0}.course_id{0}".format(part_id)] = "int"
+            spec["part{0}.course_id{0}".format(part_id)] = "id"
             spec["part{0}.status{0}".format(part_id)] = "int"
-            spec["part{0}.lodgement_id{0}".format(part_id)] = "int"
-            spec["part{0}.course_instructor{0}".format(part_id)] = "int"
+            spec["part{0}.lodgement_id{0}".format(part_id)] = "id"
+            spec["part{0}.course_instructor{0}".format(part_id)] = "id"
         spec[",".join("part{0}.course_id{0}".format(part_id)
-                      for part_id in event_data['parts'])] = "int"
+                      for part_id in event_data['parts'])] = "id"
         spec[",".join("part{0}.status{0}".format(part_id)
                       for part_id in event_data['parts'])] = "int"
         spec[",".join("part{0}.lodgement{0}".format(part_id)
-                      for part_id in event_data['parts'])] = "int"
+                      for part_id in event_data['parts'])] = "id"
         spec[",".join("part{0}.course_instructor{0}".format(part_id)
-                      for part_id in event_data['parts'])] = "int"
+                      for part_id in event_data['parts'])] = "id"
         for e in sorted(event_data['fields'].values(),
                         key=lambda e: e['field_name']):
             spec["fields.{}".format(e['field_name'])] = e['kind']
@@ -2517,7 +2517,7 @@ class EventFrontend(AbstractUserFrontend):
             'user_data': user_data})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("registration_id", "int"))
+    @REQUESTdata(("registration_id", "id"))
     @event_guard(check_offline=True)
     def checkin(self, rs, event_id, registration_id):
         """Check a participant in."""
@@ -2540,7 +2540,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.checkin_form(rs, event_id)
 
     @access("event")
-    @REQUESTdata(("field_id", "int_or_None"))
+    @REQUESTdata(("field_id", "id_or_None"))
     @event_guard(check_offline=True)
     def field_set_select(self, rs, event_id, field_id):
         """Select a field for manipulation across all registrations."""
@@ -2555,7 +2555,7 @@ class EventFrontend(AbstractUserFrontend):
                                  {'field_id': field_id})
 
     @access("event")
-    @REQUESTdata(("field_id", "int"))
+    @REQUESTdata(("field_id", "id"))
     @event_guard(check_offline=True)
     def field_set_form(self, rs, event_id, field_id):
         """Render form."""
@@ -2582,7 +2582,7 @@ class EventFrontend(AbstractUserFrontend):
             'persona_data': persona_data, 'ordered': ordered})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("field_id", "int"))
+    @REQUESTdata(("field_id", "id"))
     @event_guard(check_offline=True)
     def field_set(self, rs, event_id, field_id):
         """Modify a specific field on all registrations."""
@@ -2661,7 +2661,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_past_event", {'pevent_id': new_id})
 
     @access("event_admin")
-    @REQUESTdata(("codes", "[int]"), ("event_id", "int_or_None"),
+    @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
                  ("start", "int_or_None"), ("stop", "int_or_None"))
     def view_log(self, rs, codes, event_id, start, stop):
         """View activities concerning events organized via DB."""
@@ -2682,7 +2682,7 @@ class EventFrontend(AbstractUserFrontend):
             'events': events})
 
     @access("event_admin")
-    @REQUESTdata(("codes", "[int]"), ("pevent_id", "int_or_None"),
+    @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
                  ("start", "int_or_None"), ("stop", "int_or_None"))
     def view_past_log(self, rs, codes, pevent_id, start, stop):
         """View activities concerning concluded events."""

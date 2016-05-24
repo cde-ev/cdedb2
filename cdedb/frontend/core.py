@@ -993,7 +993,7 @@ class CoreFrontend(AbstractFrontend):
             dataset = {'raw': raw_entry}
             params = (
                 ("resolution{}".format(lineno), "enum_lineresolutions_or_None"),
-                ("doppelganger_id{}".format(lineno), "int_or_None"),
+                ("doppelganger_id{}".format(lineno), "id_or_None"),
                 ("hash{}".format(lineno), "str_or_None"),)
             tmp = request_data_extractor(rs, params)
             dataset['resolution'] = tmp["resolution{}".format(lineno)]

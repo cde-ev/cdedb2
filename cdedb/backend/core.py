@@ -449,7 +449,7 @@ class CoreBackend(AbstractBackend):
         :returns: dict mapping persona ids to dicts containing information
           about the change and the persona
         """
-        stati = affirm_array("int", stati)
+        stati = affirm_array("enum_memberchangestati", stati)
         query = glue("SELECT persona_id, given_names, family_name, generation",
                      "FROM core.changelog WHERE change_status = ANY(%s)")
         data = self.query_all(rs, query, (stati,))
@@ -466,7 +466,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: mapping generation to data set
         """
-        anid = affirm("int", anid)
+        anid = affirm("id", anid)
         if anid != rs.user.persona_id and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         generations = affirm_array("int", generations, allow_None=True)
@@ -726,7 +726,7 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        persona_id = affirm("int", persona_id)
+        persona_id = affirm("id", persona_id)
         foto = affirm("str_or_None", foto)
         data = {
             'id': persona_id,
@@ -762,7 +762,7 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        persona_id = affirm("int", persona_id)
+        persona_id = affirm("id", persona_id)
         balance = affirm("decimal", balance)
         log_code = affirm("enum_financelogcodes", log_code)
         change_note = affirm("str_or_None", change_note)
@@ -790,7 +790,7 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        persona_id = affirm("int", persona_id)
+        persona_id = affirm("id", persona_id)
         is_member = affirm("bool", is_member)
         update = {
             'id': persona_id,
@@ -839,7 +839,7 @@ class CoreBackend(AbstractBackend):
         :type password: str or None
         :rtype: (bool, str)
         """
-        persona_id = affirm("int", persona_id)
+        persona_id = affirm("id", persona_id)
         new_username = affirm("email_or_None", new_username)
         password = affirm("str_or_None", password)
         if new_username is None and not self.is_admin(rs):
@@ -891,7 +891,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
 
     @access("event")
@@ -903,7 +903,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_EVENT_FIELDS)
         if (ids != (rs.user.persona_id,)
                 and "event_admin" not in rs.user.roles
@@ -931,7 +931,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         with Atomizer(rs):
             query = glue("SELECT queries FROM core.quota WHERE persona_id = %s",
                          "AND qdate = %s")
@@ -966,7 +966,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_ML_FIELDS)
         if any(not e['is_ml_realm'] for e in ret.values()):
             raise RuntimeError("Not an ml user.")
@@ -981,7 +981,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_ASSEMBLY_FIELDS)
         if any(not e['is_assembly_realm'] for e in ret.values()):
             raise RuntimeError("Not an assembly user.")
@@ -999,7 +999,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         if ids != (rs.user.persona_id,) and not self.is_admin(rs):
             raise PrivilegeError("Must be privileged.")
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
@@ -1132,7 +1132,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: bool
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         if ids == (rs.user.persona_id,):
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE id = ANY(%s)"
@@ -1165,7 +1165,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: dict mapping id to realm
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         roles = self.get_roles_multi(rs, ids)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
@@ -1182,7 +1182,7 @@ class CoreBackend(AbstractBackend):
         :rtype: [int]
         :returns: All ids which successfully validated.
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         required_roles = required_roles or tuple()
         required_roles = set(affirm_array("str", required_roles))
         roles = self.get_roles_multi(rs, ids)
@@ -1318,7 +1318,7 @@ class CoreBackend(AbstractBackend):
         :rtype: (bool, str)
         :returns: see :py:meth:`modify_password`
         """
-        persona_id = affirm("int", persona_id)
+        persona_id = affirm("id", persona_id)
         old_password = affirm("str", old_password)
         new_password = affirm("str", new_password)
         if rs.user.persona_id == persona_id or self.is_admin(rs):
@@ -1439,7 +1439,7 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        case_id = affirm("int", case_id)
+        case_id = affirm("id", case_id)
         query = glue("UPDATE core.genesis_cases SET case_status = %s",
                      "WHERE id = %s AND case_status = %s")
         params = (const.GenesisStati.to_review, case_id,
@@ -1464,7 +1464,7 @@ class CoreBackend(AbstractBackend):
         """
         realm = affirm("str_or_None", realm)
         stati = stati or set()
-        stati = affirm_array("int", stati)
+        stati = affirm_array("enum_genesisstati", stati)
         if "{}_admin".format(realm or "core") not in rs.user.roles:
             raise PrivilegeError("Not privileged.")
         query = glue("SELECT id, ctime, username, given_names, family_name,",
@@ -1493,7 +1493,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: the requested data or None if wrong secret
         """
-        case_id = affirm("int", case_id)
+        case_id = affirm("id", case_id)
         secret = affirm("str", secret)
         data = self.sql_select_one(rs, "core.genesis_cases",
                                    GENESIS_CASE_FIELDS, case_id)
@@ -1512,7 +1512,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: dict mapping ids to the requested data
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
                                ids)
         if ("core_admin" not in rs.user.roles
@@ -1564,7 +1564,7 @@ class CoreBackend(AbstractBackend):
         :type realm: str
         :rtype: bool
         """
-        case_id = affirm("int", case_id)
+        case_id = affirm("id", case_id)
         secret = affirm("str", secret)
         realm = affirm("str", realm)
         case = self.sql_select_one(rs, "core.genesis_cases",
@@ -1591,7 +1591,7 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: The id of the newly created persona.
         """
-        case_id = affirm("int", case_id)
+        case_id = affirm("id", case_id)
         secret = affirm("str", secret)
         realm = affirm("str", realm)
         ACCESS_BITS = {

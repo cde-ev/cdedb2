@@ -45,7 +45,7 @@ class MlBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {int}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(
             rs, "ml.moderators", ("persona_id", "mailinglist_id"), ids,
             entity_key="persona_id")
@@ -98,7 +98,7 @@ class MlBackend(AbstractBackend):
         :type stop: int or None
         :rtype: [{str: object}]
         """
-        mailinglist_id = affirm("int_or_None", mailinglist_id)
+        mailinglist_id = affirm("id_or_None", mailinglist_id)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         return self.generic_retrieve_log(
@@ -167,7 +167,7 @@ class MlBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
                                    ids)
@@ -296,7 +296,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        mailinglist_id = affirm("int", mailinglist_id)
+        mailinglist_id = affirm("id", mailinglist_id)
         cascade = affirm("bool", cascade)
         with Atomizer(rs):
             data = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
@@ -322,7 +322,7 @@ class MlBackend(AbstractBackend):
         :returns: A dict mapping ids of subscribers to their subscribed
           email addresses.
         """
-        mailinglist_id = affirm("int", mailinglist_id)
+        mailinglist_id = affirm("id", mailinglist_id)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         event_list_query = glue(
@@ -405,8 +405,8 @@ class MlBackend(AbstractBackend):
           persona is subscribed with or None, if no explicit address was
           given, meaning the username is used.
         """
-        persona_id = affirm("int", persona_id)
-        lists = affirm_array("int", lists, allow_None=True)
+        persona_id = affirm("id", persona_id)
+        lists = affirm_array("id", lists, allow_None=True)
         if (persona_id != rs.user.persona_id
                 and not self.is_admin(rs)
                 and not all(self.is_moderator(rs, anid) for anid in lists)):
@@ -510,8 +510,8 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        mailinglist_id = affirm("int", mailinglist_id)
-        persona_id = affirm("int", persona_id)
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         subscribe = affirm("bool", subscribe)
         address = affirm("email_or_None", address)
         if (persona_id != rs.user.persona_id
@@ -568,7 +568,7 @@ class MlBackend(AbstractBackend):
         :rtype: [int]
         :returns: personas waiting for subscription
         """
-        mailinglist_id = affirm("int", mailinglist_id)
+        mailinglist_id = affirm("id", mailinglist_id)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
 
@@ -588,8 +588,8 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        mailinglist_id = affirm("int", mailinglist_id)
-        persona_id = affirm("int", persona_id)
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
         ack = affirm("bool", ack)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
@@ -627,7 +627,7 @@ class MlBackend(AbstractBackend):
         :rtype: {int: [int]}
         :returns: A dict mapping list ids to offending personas.
         """
-        mailinglist_ids = affirm_array("int", mailinglist_ids)
+        mailinglist_ids = affirm_array("id", mailinglist_ids)
 
         mailinglists = self.get_mailinglists(rs, mailinglist_ids)
         sql_tests = {

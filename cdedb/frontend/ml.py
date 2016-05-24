@@ -215,7 +215,7 @@ class MlFrontend(AbstractUserFrontend):
             'mailinglist_id': new_id})
 
     @access("ml_admin")
-    @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "int_or_None"),
+    @REQUESTdata(("codes", "[int]"), ("mailinglist_id", "id_or_None"),
                  ("start", "int_or_None"), ("stop", "int_or_None"))
     def view_log(self, rs, codes, mailinglist_id, start, stop):
         """View activities."""
@@ -359,7 +359,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("moderator_id", "int"))
+    @REQUESTdata(("moderator_id", "id"))
     @mailinglist_guard()
     def remove_moderator(self, rs, mailinglist_id, moderator_id):
         """Demote persona from moderator status."""
@@ -408,7 +408,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("persona_id", "int"), ("ack", "bool"))
+    @REQUESTdata(("persona_id", "id"), ("ack", "bool"))
     @mailinglist_guard()
     def decide_request(self, rs, mailinglist_id, persona_id, ack):
         """Evaluate whether to admit subscribers."""
@@ -431,7 +431,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("subscriber_id", "int"))
+    @REQUESTdata(("subscriber_id", "id"))
     @mailinglist_guard()
     def remove_subscriber(self, rs, mailinglist_id, subscriber_id):
         """Administratively unsubscribe somebody."""

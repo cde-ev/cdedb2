@@ -105,10 +105,10 @@ class EventBackend(AbstractBackend):
         if event_id is not None and course_id is not None:
             raise ValueError("Too many inputs specified.")
         if event_id is not None:
-            anid = affirm("int", event_id)
+            anid = affirm("id", event_id)
             query = "SELECT offline_lock FROM event.events WHERE id = %s"
         if course_id is not None:
-            anid = affirm("int", course_id)
+            anid = affirm("id", course_id)
             query = glue(
                 "SELECT offline_lock FROM event.events AS e",
                 "LEFT OUTER JOIN event.courses AS c ON c.event_id = e.id",
@@ -141,7 +141,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {int}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "event.orgas", ("persona_id", "event_id"),
                                ids, entity_key="persona_id")
         ret = {}
@@ -159,7 +159,7 @@ class EventBackend(AbstractBackend):
         :rtype: {int: [dict]}
         :returns: Keys are the ids and items are the event lists.
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         query = glue(
             "SELECT p.persona_id, p.pevent_id, e.title AS event_name,",
             "e.tempus, p.pcourse_id, c.title AS course_name, p.is_instructor,",
@@ -216,7 +216,7 @@ class EventBackend(AbstractBackend):
         :type stop: int or None
         :rtype: [{str: object}]
         """
-        event_id = affirm("int_or_None", event_id)
+        event_id = affirm("id_or_None", event_id)
         if (not (event_id and self.is_orga(rs, event_id=event_id))
                 and not self.is_admin(rs)):
             raise PrivilegeError("Not privileged.")
@@ -341,7 +341,7 @@ class EventBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: Mapping of course ids to titles.
         """
-        event_id = affirm("int", event_id)
+        event_id = affirm("id", event_id)
         if past:
             table = "past_event.courses"
             key = "pevent_id"
@@ -366,7 +366,7 @@ class EventBackend(AbstractBackend):
         query = affirm("query", query)
         view = None
         if query.scope == "qview_registration":
-            event_id = affirm("int", event_id)
+            event_id = affirm("id", event_id)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
@@ -391,7 +391,7 @@ class EventBackend(AbstractBackend):
                     for e in event_data['fields'].values()))))
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
-            query.spec['event_id'] = "int"
+            query.spec['event_id'] = "id"
         elif query.scope == "qview_event_user":
             if not self.is_admin(rs):
                 raise PrivilegeError("Admin only.")
@@ -426,7 +426,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "event.institutions", INSTITUTION_FIELDS,
                                ids)
         return {e['id']: e for e in data}
@@ -471,7 +471,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
 
@@ -491,7 +491,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.events", EVENT_FIELDS, ids)
             ret = {e['id']: e for e in data}
@@ -721,7 +721,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
                                ids)
         return {e['id']: e for e in data}
@@ -738,7 +738,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.courses", COURSE_FIELDS, ids)
             ret = {e['id']: e for e in data}
@@ -886,7 +886,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        pcourse_id = affirm("int", pcourse_id)
+        pcourse_id = affirm("id", pcourse_id)
         current = self.sql_select_one(rs, "past_event.courses",
                                       ("pevent_id", "title"), pcourse_id)
         with Atomizer(rs):
@@ -921,9 +921,9 @@ class EventBackend(AbstractBackend):
         :returns: default return code
         """
         data = {}
-        data['persona_id'] = affirm("int", persona_id)
-        data['pevent_id'] = affirm("int", pevent_id)
-        data['pcourse_id'] = affirm("int_or_None", pcourse_id)
+        data['persona_id'] = affirm("id", persona_id)
+        data['pevent_id'] = affirm("id", pevent_id)
+        data['pcourse_id'] = affirm("id_or_None", pcourse_id)
         data['is_instructor'] = affirm("bool", is_instructor)
         data['is_orga'] = affirm("bool", is_orga)
         ret = self.sql_insert(rs, "past_event.participants", data)
@@ -947,9 +947,9 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        pevent_id = affirm("int", pevent_id)
-        pcourse_id = affirm("int_or_None", pcourse_id)
-        persona_id = affirm("int", persona_id)
+        pevent_id = affirm("id", pevent_id)
+        pcourse_id = affirm("id_or_None", pcourse_id)
+        persona_id = affirm("id", persona_id)
         query = glue("DELETE FROM past_event.participants WHERE pevent_id = %s",
                      "AND persona_id = %s AND pcourse_id {} %s")
         query = query.format("IS" if pcourse_id is None else "=")
@@ -975,10 +975,10 @@ class EventBackend(AbstractBackend):
         if pevent_id is not None and pcourse_id is not None:
             raise ValueError("Too many inputs specified.")
         if pevent_id is not None:
-            anid = affirm("int", pevent_id)
+            anid = affirm("id", pevent_id)
             entity_key = "pevent_id"
         if pcourse_id is not None:
-            anid = affirm("int", pcourse_id)
+            anid = affirm("id", pcourse_id)
             entity_key = "pcourse_id"
 
         data = self.sql_select(
@@ -997,8 +997,8 @@ class EventBackend(AbstractBackend):
         :param persona_id: If passed restrict to registrations by this persona.
         :rtype: {int: {str: object}}
         """
-        event_id = affirm("int", event_id)
-        persona_id = affirm("int_or_None", persona_id)
+        event_id = affirm("id", event_id)
+        persona_id = affirm("id_or_None", persona_id)
         if (persona_id != rs.user.persona_id
                 and not self.is_orga(rs, event_id=event_id)
                 and not self.is_admin(rs)):
@@ -1028,7 +1028,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         if not ids:
             return {}
         with Atomizer(rs):
@@ -1229,7 +1229,7 @@ class EventBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: dict mapping ids to names
         """
-        event_id = affirm("int", event_id)
+        event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         data = self.sql_select(rs, "event.lodgements", ("id", "moniker"),
@@ -1247,7 +1247,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("int", ids)
+        ids = affirm_array("id", ids)
         if not ids:
             return {}
         with Atomizer(rs):
@@ -1319,7 +1319,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        lodgement_id = affirm("int", lodgement_id)
+        lodgement_id = affirm("id", lodgement_id)
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "event.lodgements", ("event_id", "moniker"), lodgement_id)
@@ -1343,7 +1343,7 @@ class EventBackend(AbstractBackend):
         :rtype: [{str: object}]
         :returns: list of questionnaire row entries
         """
-        event_id = affirm("int", event_id)
+        event_id = affirm("id", event_id)
         data = self.sql_select(
             rs, "event.questionnaire_rows",
             ("field_id", "pos", "title", "info", "input_size", "readonly"),
@@ -1362,7 +1362,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        event_id = affirm("int", event_id)
+        event_id = affirm("id", event_id)
         data = affirm("questionnaire_data", data)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
@@ -1427,7 +1427,7 @@ class EventBackend(AbstractBackend):
         :returns: The id of the past course or None if there were errors.
         """
         moniker = affirm("str_or_None", moniker)
-        pevent_id = affirm("int", pevent_id)
+        pevent_id = affirm("id", pevent_id)
         pattern = "\\s*{}\\s*".format(moniker)
         query = glue("SELECT id FROM past_event.courses",
                      "WHERE title ~* %s AND pevent_id = %s")
@@ -1455,7 +1455,7 @@ class EventBackend(AbstractBackend):
           there were complications. In the latter case the second entry is
           an error message.
         """
-        event_id = affirm("int", event_id)
+        event_id = affirm("id", event_id)
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
             event_data = unwrap(self.get_event_data(rs, (event_id,)))
@@ -1516,7 +1516,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: standard return code
         """
-        event_id = affirm("int", event_id)
+        event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
@@ -1539,7 +1539,7 @@ class EventBackend(AbstractBackend):
         :rtype: dict
         :returns: dict holding all data of the exported event
         """
-        event_id = affirm("int", event_id)
+        event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         with Atomizer(rs):

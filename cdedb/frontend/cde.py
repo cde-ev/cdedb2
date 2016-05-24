@@ -504,7 +504,7 @@ class CdEFrontend(AbstractUserFrontend):
         return sepapain_file
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("lastschrift_id", "int_or_None"))
+    @REQUESTdata(("lastschrift_id", "id_or_None"))
     def lastschrift_generate_transactions(self, rs, lastschrift_id):
         """Issue direct debit transactions.
 
@@ -583,7 +583,7 @@ class CdEFrontend(AbstractUserFrontend):
                               filename=self.i18n("sepa.cdd", rs.lang))
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("persona_id", "int_or_None"))
+    @REQUESTdata(("persona_id", "id_or_None"))
     def lastschrift_skip(self, rs, lastschrift_id, persona_id):
         """Do not do a direct debit transaction for this year.
 
@@ -606,7 +606,7 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("status", "enum_lastschrifttransactionstati"),
-                 ("persona_id", "int_or_None"))
+                 ("persona_id", "id_or_None"))
     def lastschrift_finalize_transaction(self, rs, lastschrift_id,
                                          transaction_id, status, persona_id):
         """Process a transaction and store the outcome.
@@ -630,7 +630,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.redirect(rs, "cde/lastschrift_index")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("persona_id", "int_or_None"))
+    @REQUESTdata(("persona_id", "id_or_None"))
     def lastschrift_rollback_transaction(self, rs, lastschrift_id,
                                          transaction_id, persona_id):
         """Revert a successful transaction.
