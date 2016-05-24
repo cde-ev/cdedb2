@@ -25,7 +25,6 @@
         </div>
     </div>
     
-    <h2>Nutzer suchen</h2>
     <h3>Standardabfragen</h3>
     {% with TITLES = {} %}
         <div>
@@ -33,7 +32,6 @@
         </div>
     {% endwith %}
 
-    <h3>Suchmaske</h3>
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 
     {% if values['is_search'] %}

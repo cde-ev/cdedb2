@@ -17,6 +17,14 @@ body{
     color: #a94442;
 }
 
+.table-slim {
+    width: auto;
+}
+.table-superdense>tbody>tr>td, .table-superdense>tbody>tr>th, .table-superdense>tfoot>tr>td,
+.table-superdense>tfoot>tr>th, .table-superdense>thead>tr>td, .table-superdense>thead>tr>th {
+    padding: 3px;
+}
+
 /* Main navbar */
 .navbar {
     border-radius: 0;
@@ -95,11 +103,7 @@ h1.title {
         margin-left: 0;
     }
 }
-p.textbox {
-    padding: 4px 6px;
-    border: dashed 1px #888;
-    font-style: italic;
-}
+
 
 /* Extra styling */
 .heading-underline {
@@ -108,4 +112,9 @@ p.textbox {
 }
 .profilepic {
     max-width: 150px;
+}
+p.textbox {
+    padding: 4px 6px;
+    border: dashed 1px #888;
+    font-style: italic;
 }

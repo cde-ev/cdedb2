@@ -513,7 +513,6 @@
         </div>
     {% endwith %}
 
-    <h3>Suchmaske</h3>
     {{ user_search_mask(realm) }}
 
     {% if values['is_search'] %}
@@ -524,6 +523,7 @@
 
 
 {% macro user_search_mask(realm, selection_blacklist=[]) %}
+    {{ util.box_filter_begin("Suchmaske") }}
     {% with TITLES = {
         "fulltext": "Volltext",
         "personas.id": "ID",
@@ -570,38 +570,11 @@
         {% else %}
             <form action="{{ cdedblink('{}/user_search'.format(realm))|e }}" method="GET" id="usersearchform">
         {% endif %}
-            <div>
-                {{ util.input_hidden(name="is_search", value=True) }}
-                {{ util.form_input_submit(value="Suchen") }}
-                {{ util.form_input_submit(value="CSV-Datei", name="CSV") }}
-                {{ util.format_query(spec, TITLES, choices, selection_blacklist=selection_blacklist) }}
-                {{ util.form_input_submit(value="Suchen") }}
-                {{ util.form_input_submit(value="CSV-Datei", name="CSV") }}
-            </div>
+            {{ util.format_query(spec, TITLES, choices, selection_blacklist=selection_blacklist) }}
         </form>
 
     {% endwith %}
-
-    <h3>Aktionen</h3>
-    <p>
-        <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
-        <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
-        <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
-    </p>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $("#action_select_all").click(function (){
-                 $(".outputSelector").prop('checked', true);
-                 });
-            $("#action_select_none").click(function (){
-                 $(".outputSelector").prop('checked', false);
-                 });
-            $("#action_select_invert").click(function (){
-                 $(".outputSelector").each(function (){
-                     $(this).prop('checked', !$(this).prop('checked'));
-                 })});
-        });
-    </script>
+    {{ util.box_filter_end() }}
 {% endmacro %}
 
 {% macro user_search_result(result, realm) %}
