@@ -36,6 +36,7 @@ _ops = QueryOperators
 VALID_QUERY_OPERATORS = {
     "str": (_ops.similar, _ops.equal, _ops.containsall, _ops.oneof,
             _ops.regex, _ops.empty, _ops.nonempty),
+    "id": (_ops.equal, _ops.oneof, _ops.empty, _ops.nonempty),
     "int": (_ops.equal, _ops.oneof, _ops.less, _ops.lessequal, _ops.between,
             _ops.greaterequal, _ops.greater, _ops.empty, _ops.nonempty),
     "float": (_ops.less, _ops.between, _ops.greater, _ops.empty, _ops.nonempty),
@@ -112,13 +113,13 @@ QUERY_SPECS = {
         ("country,country2", "str"),
         ("weblink,specialisation,affiliation,timeline,interests,free_form",
          "str"),
-        ("pevent_id", "int"),
-        ("pcourse_id", "int"),
+        ("pevent_id", "id"),
+        ("pcourse_id", "id"),
         ]),
     "qview_cde_user" :
     collections.OrderedDict([
         ("fulltext", "str"),
-        ("personas.id", "int"),
+        ("personas.id", "id"),
         ("username", "str"),
         ("is_admin", "bool"),
         ("is_core_admin", "bool"),
@@ -160,8 +161,8 @@ QUERY_SPECS = {
         ("timeline", "str"),
         ("interests", "str"),
         ("free_form", "str"),
-        ("pevent_id", "int"),
-        ("pcourse_id", "int"),
+        ("pevent_id", "id"),
+        ("pcourse_id", "id"),
         ("balance", "float"),
         ("decided_search", "bool"),
         ("trial_member", "bool"),
@@ -170,20 +171,20 @@ QUERY_SPECS = {
         ]),
     "qview_archived_persona" :
     collections.OrderedDict([
-        ("personas.id", "int"),
+        ("personas.id", "id"),
         ("family_name", "str"),
         ("birth_name", "str"),
         ("given_names", "str"),
         ("display_name", "str"),
         ("gender", "int"),
         ("birthday", "date"),
-        ("pevent_id", "int"),
+        ("pevent_id", "id"),
         ("notes", "str"),
         ]),
     "qview_event_user" :
     collections.OrderedDict([
         ("fulltext", "str"),
-        ("personas.id", "int"),
+        ("personas.id", "id"),
         ("username", "str"),
         ("is_admin", "bool"),
         ("is_core_admin", "bool"),
@@ -213,13 +214,13 @@ QUERY_SPECS = {
         ("postal_code", "str"),
         ("location", "str"),
         ("country", "str"),
-        ("pevent_id", "int"),
-        ("pcourse_id", "int"),
+        ("pevent_id", "id"),
+        ("pcourse_id", "id"),
         ("notes", "str"),
         ]),
     "qview_registration" :
     collections.OrderedDict([
-        ("reg.id", "int"),
+        ("reg.id", "id"),
         ("reg.notes", "str"),
         ("reg.orga_notes", "str"),
         ("reg.payment", "date"),
@@ -248,7 +249,7 @@ QUERY_SPECS = {
     "qview_core_user" :
     collections.OrderedDict([
         ("fulltext", "str"),
-        ("personas.id", "int"),
+        ("personas.id", "id"),
         ("username", "str"),
         ("is_admin", "bool"),
         ("is_core_admin", "bool"),
@@ -267,13 +268,13 @@ QUERY_SPECS = {
         ("family_name", "str"),
         ("given_names", "str"),
         ("display_name", "str"),
-        ("pevent_id", "int"),
+        ("pevent_id", "id"),
         ("notes", "str"),
         ]),
     "qview_persona" :
     collections.OrderedDict([
         ("fulltext", "str"),
-        ("id", "int"),
+        ("id", "id"),
         ("username", "str"),
         ("is_admin", "bool"),
         ("is_core_admin", "bool"),

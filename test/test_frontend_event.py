@@ -60,7 +60,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['usersearchform']
         f['qval_username'] = 'a@'
         for field in f.fields:
-            if field.startswith('qsel_'):
+            if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsnutzersuche")
@@ -663,7 +663,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         f = self.response.forms['registrationqueryform']
         for field in f.fields:
-            if field.startswith('qsel_'):
+            if field and field.startswith('qsel_'):
                 f[field].checked = True
         f['qval_persona.family_name'] = 'e'
         f['qord_primary'] = 'reg.id'

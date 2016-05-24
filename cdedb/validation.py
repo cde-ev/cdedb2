@@ -205,6 +205,22 @@ def _int(val, argname=None, *, _convert=True):
     return val, []
 
 @_addvalidator
+def _id(val, argname=None, *, _convert=True):
+    """A numeric ID as in a database key.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (int or None, [(str or None, exception)])
+    """
+    val, errs = _int(val, argname, _convert=_convert)
+    if not errs:
+        if val <= 0:
+            val = None
+            errs.append((argname, ValueError("Must be positive.")))
+    return val, errs
+
+@_addvalidator
 def _float(val, argname=None, *, _convert=True):
     """
     :type val: object
@@ -372,7 +388,7 @@ def _cdedbid(val, argname=None, *, _convert=True):
         return None, [(argname, ValueError("Wrong formatting."))]
     value = mo.group(1)
     checkdigit = mo.group(2)
-    value, errs = _int(value, argname, _convert=True)
+    value, errs = _id(value, argname, _convert=True)
     if not errs and compute_checkdigit(value) != checkdigit:
         errs.append((argname, ValueError("Checksum failure.")))
     return value, errs
@@ -765,13 +781,13 @@ def _persona(val, argname=None, *, creation=False, transition=False,
             'is_ml_realm': {},
             'is_assembly_realm': {},
         }
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         for key, checkers in realm_checks.items():
             if val.get(key):
                 mandatory_fields.update(checkers)
         optional_fields = {key: _bool for key in realm_checks}
     else:
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = _PERSONA_COMMON_FIELDS()
     val, errs = _examine_dictionary_fields(val, mandatory_fields,
                                            optional_fields, _convert=_convert)
@@ -1003,7 +1019,7 @@ _GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
     'realm': _str,
     'case_status': _enum_genesisstati,
     'secret': _str,
-    'reviewer': _int,
+    'reviewer': _id,
 }
 @_addvalidator
 def _genesis_case(val, argname=None, *, creation=False, _convert=True):
@@ -1024,7 +1040,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _GENESIS_CASE_COMMON_FIELDS()
         optional_fields = _GENESIS_CASE_OPTIONAL_FIELDS()
     else:
-        mandatory_fields = {'id': _int,}
+        mandatory_fields = {'id': _id,}
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
                                **_GENESIS_CASE_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
@@ -1115,14 +1131,14 @@ def _period(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     optional_fields = {
-        'billing_state': _int_or_None,
+        'billing_state': _id_or_None,
         'billing_done': _datetime,
-        'ejection_state': _int_or_None,
+        'ejection_state': _id_or_None,
         'ejection_done': _datetime,
-        'balance_state': _int_or_None,
+        'balance_state': _id_or_None,
         'balance_done': _datetime,
     }
-    return _examine_dictionary_fields(val, {'id': _int}, optional_fields,
+    return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
                                       _convert=_convert)
 
 @_addvalidator
@@ -1138,10 +1154,10 @@ def _expuls(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     optional_fields = {
-        'addresscheck_state': _int_or_None,
+        'addresscheck_state': _id_or_None,
         'addresscheck_done': _datetime,
     }
-    return _examine_dictionary_fields(val, {'id': _int}, optional_fields,
+    return _examine_dictionary_fields(val, {'id': _id}, optional_fields,
                                       _convert=_convert)
 
 _LASTSCHRIFT_COMMON_FIELDS = lambda: {
@@ -1172,10 +1188,10 @@ def _lastschrift_data(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(), persona_id=_int)
+        mandatory_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(), persona_id=_id)
         optional_fields = _LASTSCHRIFT_OPTIONAL_FIELDS()
     else:
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_LASTSCHRIFT_COMMON_FIELDS(),
                                **_LASTSCHRIFT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
@@ -1184,7 +1200,7 @@ def _lastschrift_data(val, argname=None, *, creation=False, _convert=True):
 
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
     'amount': _decimal,
-    'status': _int,
+    'status': _enum_lastschrifttransactionstati,
     'issued_at': _datetime,
     'processed_at': _datetime_or_None,
     'tally': _decimal_or_None,
@@ -1207,12 +1223,12 @@ def _lastschrift_transaction(val, argname=None, *, creation=False,
         return val, errs
     if creation:
         mandatory_fields = {
-            'lastschrift_id': _int,
-            'period_id': _int,
+            'lastschrift_id': _id,
+            'period_id': _id,
         }
         optional_fields = _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS()
     else:
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_LASTSCHRIFT_TRANSACTION_COMMON_FIELDS,
                                **_LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
@@ -1221,8 +1237,8 @@ def _lastschrift_transaction(val, argname=None, *, creation=False,
 
 _SEPA_DATA_FIELDS = {
     'issued_at': _datetime,
-    'lastschrift_id': _int,
-    'period_id': _int,
+    'lastschrift_id': _id,
+    'period_id': _id,
     'mandate_reference': _str,
     'amount': _decimal,
     'iban': _str,
@@ -1407,7 +1423,7 @@ def _institution(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _INSTITUTION_COMMON_FIELDS()
         optional_fields = {}
     else:
-        mandatory_fields = {'id': _int,}
+        mandatory_fields = {'id': _id,}
         optional_fields = _INSTITUTION_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
@@ -1415,7 +1431,7 @@ def _institution(val, argname=None, *, creation=False, _convert=True):
 _PAST_EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
     'shortname': _str,
-    'institution': _int,
+    'institution': _id,
     'tempus': _date,
     'description': _str_or_None,
 }
@@ -1438,14 +1454,14 @@ def _past_event_data(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _PAST_EVENT_COMMON_FIELDS()
         optional_fields = {}
     else:
-        mandatory_fields = {'id': _int,}
+        mandatory_fields = {'id': _id,}
         optional_fields = _PAST_EVENT_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
 
 _EVENT_COMMON_FIELDS = lambda: {
     'title': _str,
-    'institution': _int,
+    'institution': _id,
     'description': _str_or_None,
     'shortname': _identifier,
     'registration_start': _date_or_None,
@@ -1481,7 +1497,7 @@ def _event_data(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _EVENT_COMMON_FIELDS()
         optional_fields = _EVENT_OPTIONAL_FIELDS
     else:
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_EVENT_COMMON_FIELDS(),
                                **_EVENT_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
@@ -1495,7 +1511,7 @@ def _event_data(val, argname=None, *, creation=False, _convert=True):
         else:
             orgas = set()
             for anid in oldorgas:
-                v, e = _int(anid, 'orgas', _convert=_convert)
+                v, e = _id(anid, 'orgas', _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
@@ -1655,11 +1671,11 @@ def _past_course_data(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), pevent_id=_int)
+        mandatory_fields = dict(_PAST_COURSE_COMMON_FIELDS(), pevent_id=_id)
         optional_fields = {}
     else:
         ## no pevent_id, since the associated event should be fixed
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = _PAST_COURSE_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
@@ -1691,11 +1707,11 @@ def _course_data(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_COURSE_COMMON_FIELDS(), event_id=_int)
+        mandatory_fields = dict(_COURSE_COMMON_FIELDS(), event_id=_id)
         optional_fields = _COURSE_OPTIONAL_FIELDS
     else:
         ## no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_COURSE_COMMON_FIELDS(),
                                **_COURSE_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
@@ -1709,7 +1725,7 @@ def _course_data(val, argname=None, *, creation=False, _convert=True):
         else:
             parts = set()
             for anid in oldparts:
-                v, e = _int(anid, 'parts', _convert=_convert)
+                v, e = _id(anid, 'parts', _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
@@ -1725,7 +1741,7 @@ _REGISTRATION_COMMON_FIELDS = lambda: {
 }
 _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'parental_agreement': _bool_or_None,
-    'real_persona_id': _int_or_None,
+    'real_persona_id': _id_or_None,
     'choices': _any,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
@@ -1750,11 +1766,11 @@ def _registration_data(val, argname=None, *, creation=False, _convert=True):
     if creation:
         ## creation does not allow field_data for sake of simplicity
         mandatory_fields = dict(_REGISTRATION_COMMON_FIELDS(),
-                                persona_id=_int, event_id=_int)
+                                persona_id=_id, event_id=_id)
         optional_fields = _REGISTRATION_OPTIONAL_FIELDS()
     else:
         ## no event_id/persona_id, since associations should be fixed
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_REGISTRATION_COMMON_FIELDS(),
                                field_data=_any,
                                **_REGISTRATION_OPTIONAL_FIELDS())
@@ -1769,7 +1785,7 @@ def _registration_data(val, argname=None, *, creation=False, _convert=True):
         else:
             newparts = {}
             for anid, part in oldparts.items():
-                anid, e = _int(anid, 'parts', _convert=_convert)
+                anid, e = _id(anid, 'parts', _convert=_convert)
                 part, ee = _registration_part_data_or_None(part, 'parts',
                                                            _convert=_convert)
                 if e or ee:
@@ -1785,7 +1801,7 @@ def _registration_data(val, argname=None, *, creation=False, _convert=True):
         else:
             newchoices = {}
             for part_id, choice_list in oldchoices.items():
-                part_id, e = _int(part_id, 'choices', _convert=_convert)
+                part_id, e = _id(part_id, 'choices', _convert=_convert)
                 choice_list, ee = _iterable(choice_list, 'choices',
                                             _convert=_convert)
                 if e or ee:
@@ -1794,7 +1810,7 @@ def _registration_data(val, argname=None, *, creation=False, _convert=True):
                 else:
                     new_list = []
                     for choice in choice_list:
-                        choice, e = _int(choice, 'choices', _convert=_convert)
+                        choice, e = _id(choice, 'choices', _convert=_convert)
                         if e:
                             errs.extend(e)
                             break
@@ -1823,10 +1839,10 @@ def _registration_part_data(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     optional_fields = {
-        'course_id': _int_or_None,
+        'course_id': _id_or_None,
         'status': _enum_registrationpartstati,
-        'lodgement_id': _int_or_None,
-        'course_instructor': _int_or_None
+        'lodgement_id': _id_or_None,
+        'course_instructor': _id_or_None
     }
     return _examine_dictionary_fields(val, {}, optional_fields,
                                       _convert=_convert)
@@ -1884,11 +1900,11 @@ def _lodgement_data(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_LODGEMENT_COMMON_FIELDS(), event_id=_int)
+        mandatory_fields = dict(_LODGEMENT_COMMON_FIELDS(), event_id=_id)
         optional_fields = {}
     else:
         ## no event_id, since the associated event should be fixed
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = _LODGEMENT_COMMON_FIELDS()
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
@@ -1912,7 +1928,7 @@ def _questionnaire_data(val, argname=None, *, _convert=True):
             errs.extend(e)
         else:
             mandatory_fields = {
-                'field_id': _int_or_None,
+                'field_id': _id_or_None,
                 'title': _str_or_None,
                 'info': _str_or_None,
                 'input_size': _int_or_None,
@@ -1959,7 +1975,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
         return val, errs
     mandatory_fields = {
         'CDEDB_EXPORT_EVENT_VERSION': _int,
-        'id': _int,
+        'id': _id,
         'timestamp': _datetime,
         'event.events': _iterable,
         'event.event_parts': _iterable,
@@ -1984,29 +2000,29 @@ def _serialized_event(val, argname=None, *, _convert=True):
     table_validators = {
         'event.events': _event_data,
         'event.event_parts': _augment_dict_validator(
-            _event_part_data, {'id': _int, 'event_id': _int}),
+            _event_part_data, {'id': _id, 'event_id': _id}),
         'event.courses': _augment_dict_validator(
-            _course_data, {'event_id': _int}),
+            _course_data, {'event_id': _id}),
         'event.course_parts': _augment_dict_validator(
-            _empty_dict, {'id': _int, 'course_id': _int, 'part_id': _int}),
+            _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id}),
         'event.orgas': _augment_dict_validator(
-            _empty_dict, {'id': _int, 'event_id': _int, 'persona_id': _int}),
+            _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
         'event.field_definitions': _augment_dict_validator(
-            _event_field_data, {'id': _int, 'event_id': _int,
+            _event_field_data, {'id': _id, 'event_id': _id,
                                 'field_name': _restrictive_identifier}),
         'event.lodgements': _augment_dict_validator(
-            _lodgement_data, {'event_id': _int}),
+            _lodgement_data, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
-            _registration_data, {'event_id': _int, 'persona_id': _int}),
+            _registration_data, {'event_id': _id, 'persona_id': _id}),
         'event.registration_parts': _augment_dict_validator(
-            _registration_part_data, {'id': _int, 'part_id': _int,
-                                      'registration_id': _int}),
+            _registration_part_data, {'id': _id, 'part_id': _id,
+                                      'registration_id': _id}),
         'event.course_choices': _augment_dict_validator(
-            _empty_dict, {'id': _int, 'course_id': _int, 'part_id':
-                          _int, 'registration_id': _int, 'rank': _int}),
+            _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id,
+                          'registration_id': _id, 'rank': _int}),
         'event.questionnaire_rows': _augment_dict_validator(
-            _empty_dict, {'id': _int, 'event_id': _int, 'pos': _int,
-                          'field_id': _int_or_None, 'title': _str_or_None,
+            _empty_dict, {'id': _id, 'event_id': _id, 'pos': _int,
+                          'field_id': _id_or_None, 'title': _str_or_None,
                           'info': _str_or_None, 'input_size': _int_or_None,
                           'readonly': _bool_or_None,}),
     }
@@ -2047,10 +2063,10 @@ _MAILINGLIST_COMMON_FIELDS = lambda: {
     'subject_prefix': _str_or_None,
     'maxsize': _int_or_None,
     'is_active': _bool,
-    'gateway': _int_or_None,
-    'event_id': _int_or_None,
+    'gateway': _id_or_None,
+    'event_id': _id_or_None,
     'registration_stati': _any,
-    'assembly_id': _int_or_None,
+    'assembly_id': _id_or_None,
     'notes': _str_or_None,
 }
 _MAILINGLIST_OPTIONAL_FIELDS = {
@@ -2076,7 +2092,7 @@ def _mailinglist_data(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _MAILINGLIST_COMMON_FIELDS()
         optional_fields = _MAILINGLIST_OPTIONAL_FIELDS
     else:
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_MAILINGLIST_COMMON_FIELDS(),
                                **_MAILINGLIST_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
@@ -2084,7 +2100,7 @@ def _mailinglist_data(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     for key, validator in (('registration_stati', _enum_registrationpartstati),
-                           ('moderators', _int), ('whitelist', _email)):
+                           ('moderators', _id), ('whitelist', _email)):
         if key in val:
             oldarray, e = _iterable(val[key], key, _convert=_convert)
             if e:
@@ -2128,7 +2144,7 @@ def _assembly_data(val, argname=None, *, creation=False, _convert=True):
         mandatory_fields = _ASSEMBLY_COMMON_FIELDS()
         optional_fields = _ASSEMBLY_OPTIONAL_FIELDS
     else:
-        mandatory_fields = {'id': _int,}
+        mandatory_fields = {'id': _id,}
         optional_fields = dict(_ASSEMBLY_COMMON_FIELDS(),
                                **_ASSEMBLY_OPTIONAL_FIELDS)
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
@@ -2166,10 +2182,10 @@ def _ballot_data(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_BALLOT_COMMON_FIELDS(), assembly_id=_int)
+        mandatory_fields = dict(_BALLOT_COMMON_FIELDS(), assembly_id=_id)
         optional_fields = _BALLOT_OPTIONAL_FIELDS()
     else:
-        mandatory_fields = {'id': _int}
+        mandatory_fields = {'id': _id}
         optional_fields = dict(_BALLOT_COMMON_FIELDS(),
                                **_BALLOT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
@@ -2232,8 +2248,8 @@ _ASSEMBLY_ATTACHMENT_COMMON_FIELDS = {
     "filename": _identifier,
 }
 _ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS = {
-    "assembly_id": _int,
-    "ballot_id": _int,
+    "assembly_id": _id,
+    "ballot_id": _id,
 }
 @_addvalidator
 def _assembly_attachment_data(val, argname=None, *, _convert=True):

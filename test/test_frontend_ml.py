@@ -57,7 +57,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['usersearchform']
         f['qval_username'] = 's@'
         for field in f.fields:
-            if field.startswith('qsel_'):
+            if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Mailinglistennutzersuche")

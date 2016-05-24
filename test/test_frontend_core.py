@@ -243,7 +243,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usersearchform']
         f['qval_username'] = 'n'
         for field in f.fields:
-            if field.startswith('qsel_'):
+            if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
@@ -257,7 +257,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usersearchform']
         f['qval_given_names'] = 'des'
         for field in f.fields:
-            if field.startswith('qsel_'):
+            if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Archivnutzersuche")
@@ -272,7 +272,7 @@ class TestCoreFrontend(FrontendTest):
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
         for field in f.fields:
-            if field.startswith('qsel_'):
+            if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Archivnutzersuche")
