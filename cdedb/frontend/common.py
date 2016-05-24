@@ -47,9 +47,9 @@ from cdedb.common import (
     RequestState)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
-from cdedb.query import VALID_QUERY_OPERATORS
 import cdedb.validation as validate
 import cdedb.database.constants as const
+import cdedb.query as query_mod
 
 _LOGGER = logging.getLogger(__name__)
 _BASICCONF = BasicConfig()
@@ -520,7 +520,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'staticurl': staticurl,
             'user': rs.user,
             'values': rs.values,
-            'VALID_QUERY_OPERATORS': VALID_QUERY_OPERATORS,
+            'query_mod': query_mod,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
         }
         ## check that default values are not overridden

@@ -825,7 +825,7 @@ class TestEventBackend(BackendTest):
                "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
                "birthday", "part1.lodgement_id1", "part3.status3",
                "fields.brings_balls", "fields.transportation"),
-            constraints=[("reg.id", QueryOperators.greater, 0),
+            constraints=[("reg.id", QueryOperators.nonempty, None),
                            ("persona.given_names", QueryOperators.regex, '[aeiou]'),
                            ("part2.status2", QueryOperators.nonempty, None),
                            ("fields.transportation", QueryOperators.oneof, ['pedes', 'etc'])],

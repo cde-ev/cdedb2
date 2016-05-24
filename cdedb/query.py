@@ -48,13 +48,16 @@ VALID_QUERY_OPERATORS = {
     "bool": (_ops.equal, _ops.empty, _ops.nonempty),
 }
 
+#: Some operators are useful if there is only a finite set of possible values.
+#: The rest (which is missing here) is not useful in that case.
+SELECTION_VALUE_OPERATORS = (_ops.empty, _ops.nonempty, _ops.equal, _ops.oneof)
+
 #: Some operators expect several operands (that is a space delimited list of
 #: operands) and thus need to be treated differently.
-MULTI_VALUE_OPERATORS = {QueryOperators.oneof, QueryOperators.containsall,
-                         QueryOperators.between}
+MULTI_VALUE_OPERATORS = {_ops.oneof, _ops.containsall, _ops.between}
 
 #: Some operators expect no operands need some special-casing.
-NO_VALUE_OPERATORS = {QueryOperators.empty, QueryOperators.nonempty}
+NO_VALUE_OPERATORS = {_ops.empty, _ops.nonempty}
 
 class Query:
     """General purpose abstraction for an SQL query.
