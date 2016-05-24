@@ -37,18 +37,21 @@
 {%- endmacro %}
 
 {% macro output_errors(name, displayerrors=True) %}
-    {% if displayerrors %}
-        {% for error in errors.get(name, []) %}
-            {% if error %}
-                {{ i18n(error|string)|e }}<br>
-            {% endif %}
-        {% endfor %}
+    {% if displayerrors and name in errors %}
+        <div class="input-error-block">
+            {% for error in errors.get(name, []) %}
+                {% if error %}
+                    {{ i18n(error|string)|e }}<br />
+                {% endif %}
+            {% endfor %}
+        </div>
     {% endif %}
 {% endmacro %}
 
-{% macro info_hover(info, anid='', aclass='') %}
-    <span class="glyphicon glyphicon-question-sign {{ aclass|e }}" title="{{ info|e }}"
-      {% if anid %} id="{{ anid|e }}"{% endif %}></span>
+{% macro output_info(info) %}
+    {% if info %}
+        <p class="help-block"><span class="glyphicon glyphicon-info-sign"></span> {{ info|e }}</p>
+    {% endif %}
 {% endmacro %}
 
 {% macro persona_anchor(persona_data, verbose=False) %}
@@ -90,14 +93,12 @@
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         <label{% if anid %} for="{{ anid|e }}"{% endif %}
                 class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
-            {% if info %}{{ info_hover(info) }}{% endif %}
             {{ label|e }}
         </label>
         <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
             {{ input_code }}
-            {% if name in errors %}
-                <div class="input-error-block">{{ output_errors(name, displayerrors) }}</div>
-            {% endif %}
+            {{ output_errors(name, displayerrors) }}
+            {{ output_info(info) }}
         </div>
     </div>
 {% endmacro %}
@@ -155,8 +156,7 @@
     {% endif %}
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name|e }}" value="{{ value|e }}"
             {# TODO checkboxes don't support defaultvalues yet #}
-            {% if not radio and value|stringIn(values.getlist(name))
-                    or radio and values.get(name, defaultvalue)|string == value|string %}
+            {% if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue)  %}
                 checked="checked"
             {% endif %}
             {% if readonly %} disabled="disabled" {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
@@ -180,14 +180,12 @@
         anid='') %}
     {# This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
-        {% if info %}{{ info_hover(info) }}{% endif %}
         <div class="{% if small %}col-sm-6 col-sm-offset-2{% else %}col-sm-8 col-sm-offset-4{% endif %}">
             <div class="checkbox {% if readonly %}disabled{% endif %}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, anid) }}
             </div>
-            {% if name in errors %}
-                <div class="input-error-block">{{ output_errors(name, displayerrors) }}</div>
-            {% endif %}
+            {{ output_errors(name, displayerrors) }}
+            {{ output_info(info) }}
         </div>
     </div>
 {% endmacro %}
@@ -247,6 +245,25 @@
                 &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default") }}
             {% endif %}
             {% if info %}<div class="control-label">{{ info_hover(info) }}</div>{% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True) %}
+    <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
+        <label class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+            {{ label|e }}
+        </label>
+        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+            <div class="input-group">
+                <span class="input-group-addon">von</span>
+                {{ input_text(name=name1, type=type) }}
+                <span class="input-group-addon">bis</span>
+                {{ input_text(name=name2, type=type) }}
+            </div>
+            {{ output_errors('start', displayerrors) }}
+            {{ output_errors('stop', displayerrors) }}
+            {{ output_info(info) }}
         </div>
     </div>
 {% endmacro %}

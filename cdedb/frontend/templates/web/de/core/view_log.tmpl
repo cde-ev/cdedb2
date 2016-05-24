@@ -57,27 +57,8 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
                                      entries=myentries, small=True) }}
             {{ util.form_input_text(name="persona_id", label="Account", small=True) }}
             
-            <div class="form-group {% if 'start' in errors or 'stop' in errors %}has-error{% endif %}">
-                <label class="col-sm-2 control-label">
-                    Einträge
-                </label>
-                <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
-                    <div class="input-group">
-                        <span class="input-group-addon">von</span>
-                        {{ util.input_text(name="start", type="number") }}
-                        <span class="input-group-addon">bis</span>
-                        {{ util.input_text(name="stop", type="number") }}
-                    </div>
-                    {% if 'start' in errors or 'stop' in errors %}
-                        <div class="input-error-block">
-                            {{ util.output_errors('start', True) }}
-                            {{ util.output_errors('stop', True) }}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-                {{ util.form_input_submit(value="Anzeigen", small=True) }}
-            </div>
+            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
+            {{ util.form_input_submit(value="Anzeigen", small=True) }}
         </form>
     {{ util.box_filter_end() }}
 {% endblock %}
