@@ -1,17 +1,9 @@
 {% set sidenav_active='event_course_choices' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Kurswahlen -- Übersicht ({{ event_data['title']|e }}){% endblock %}
+{% block title %}Kurse -- Übersicht ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/course_choices')|e }}" method="GET" id="choiceform">
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [("", "Gesamtübersicht", None)] %}
-        {% for course_id, cdata in course_data|dictsort %}
-            {{ myentries.append((course_id, cdata['title'], None))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="course_id", label="Auswahl", entries=myentries) }}
-        {{ util.form_input_submit(value="Aktualisieren") }}
-    </form>
+    TODO: Links, Infos ueber Teile in denen der Kurs stattfindet, ...
     <table>
         <tr>
             <th>Kurs</th>

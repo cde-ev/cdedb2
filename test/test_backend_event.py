@@ -395,12 +395,9 @@ class TestEventBackend(BackendTest):
         self.assertIn(new_id, new_courses)
 
     @as_users("anton", "garcia")
-    def test_sidebar_events(self, user):
-        expectation = {1: {'registration_id': 1 if user['id'] == 1 else 3,
-                           'title': 'Große Testakademie 2222',
-                           'use_questionnaire': False,
-                           'locked': False}}
-        self.assertEqual(expectation, self.event.sidebar_events(self.key))
+    def test_open_events(self, user):
+        expectation = {1: 'Große Testakademie 2222'}
+        self.assertEqual(expectation, self.event.list_open_events(self.key))
 
     @as_users("emilia")
     def test_registration_participant(self, user):

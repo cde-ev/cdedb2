@@ -1,0 +1,64 @@
+{% set sidenav_active='event_config' %}
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block title %}{{ data['title']|e }} Details{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/field_summary"), "Felder konfigurieren", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
+{% block content %}
+    <h2>Datenfelder</h2>
+    <ul>
+        {% for anid, entry in data['fields']|dictsort %}
+            <li>
+                <p>
+                    {{ entry['field_name']|e }} ({{ entry['kind']|e }})
+                </p>
+                {% if entry['entries'] %}
+                    <p>
+                        Auswahlmöglichkeiten
+                        <table>
+                            <tr>
+                                <th>Möglichkeit</th>
+                                <th>Beschreibung</th>
+                            </tr>
+                            {% for value, description in entry['entries'] %}
+                                <tr>
+                                    <td>{{ value|e }}</td>
+                                    <td>{{ description|e }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </p>
+                {% endif %}
+                {{ util.href(cdedblink('event/change_field_form', {'field_id': anid}), "bearbeiten", readonly=locked) }}
+                <form action="{{ cdedblink('event/remove_field', {'field_id': anid})|e }}" method="POST"
+                 id="removefieldform{{ anid|e }}">
+                    <div>
+                        {{ util.input_hidden(name="field_id", value=anid) }}
+                        {{ util.form_input_submit(value="Feld löschen", readonly=locked) }}
+                    </div>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h3>Feld hinzufügen</h3>
+    <form action="{{ cdedblink('event/add_field')|e }}" method="POST" id="addfieldform">
+        <table>
+            {{ util.form_input_text(name="field_name", label="Name") }}
+            {{ util.form_input_select(name="kind", label="Typ", entries=(
+                ("str", "String", None), ("bool", "Ja/Nein", None), ("int", "Zahl", None), ("date", "Datum", None),
+                ("datetime", "Datum mit Uhrzeit", None))) }}
+            {{ util.form_input_textarea(name="entries", label="Auswahlmöglichkeiten",
+                                       info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
+        </table>
+        <div>
+            {{ util.form_input_submit(value="Feld hinzufügen", readonly=locked) }}
+        </div>
+    </form>
+{% endblock %}

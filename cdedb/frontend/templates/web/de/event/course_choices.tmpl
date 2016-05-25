@@ -1,0 +1,37 @@
+{% set sidenav_active='event_course_choices' %}
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}
+Kurswahlen ({{ event_data['title']|e }})
+{% endblock %}
+{% block content %}
+    <table>
+        <tr>
+            <th>Teilnehmer</th>
+            {% for part_id, pdata in event_data['parts']|dictsort %}
+                <th>Erstwahl ({{ pdata['title']|e }})</th>
+                <th>Zweitwahl ({{ pdata['title']|e }})</th>
+                <th>Drittwahl ({{ pdata['title']|e }})</th>
+            {% endfor %}
+        </tr>
+        {% for reg_id, reg_datum in registration_data|dictsort %}
+            <tr>
+                <td>
+                    {% with pd = persona_data[reg_datum['persona_id']] %}
+                        {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
+                                     "{} {}".format(pd['given_names'], pd['family_name'])) }}
+                    {% endwith %}
+                </td>
+                {% for part_id, pdata in event_data['parts']|dictsort %}
+                     {% for j in range(3) %}
+                         <td>
+                             {% if reg_datum['choices'][part_id]|length > j %}
+                                {{ course_data[reg_datum['choices'][part_id][j]]['shortname']|e }}
+                             {% endif %}
+                         </td>
+                     {% endfor %}
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}

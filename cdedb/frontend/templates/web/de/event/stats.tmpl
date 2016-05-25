@@ -1,4 +1,4 @@
-{% set sidenav_active='event_summary' %}
+{% set sidenav_active='event_stats' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Teilnehmer-Übersicht {{ event_data['title']|e }}{% endblock %}
@@ -6,7 +6,7 @@
 {{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/summary"), "Teilnehmer-Übersicht", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/stats"), "Teilnehmer-Übersicht", active=True) }}
 {{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}

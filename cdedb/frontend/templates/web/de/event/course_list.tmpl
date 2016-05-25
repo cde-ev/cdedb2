@@ -1,0 +1,36 @@
+{% set sidenav_active='event_show' %}
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Kursliste {{ event_data['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/course_list"), "Kursliste", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}n
+{% block content %}
+    {% if course_data %}
+        <h2>Kurse</h2>
+        <ul>
+            {% for anid, entry in course_data|dictsort %}
+                <li>
+                    {{ util.href(cdedblink('event/show_course', {'course_id' : anid}),
+                                 "{} -- {}".format(entry['nr'], entry['title'])) }}
+                    {% if event_data['id'] in user.orga or is_admin %}
+                        {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), "Bearbeiten",
+                                     readonly=True) }}
+                    {% endif %}
+                    <p>Kursleiter: {{ entry['instructors']|e }}</p>
+                    <p>{{ entry['description']|e }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Diese Veranstaltung hat keine Kurse.</p>
+    {% endif %}
+    {% if event_data['id'] in user.orga or is_admin %}
+        <h2>Kurs hinzufügen</h2>
+        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=locked) }}
+    {% endif %}
+{% endblock %}

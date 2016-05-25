@@ -50,7 +50,13 @@
                 {% for part_id in event_data['parts']|sort %}
                     <td>{{ inhabitants[(lodgement_id, part_id)]|length|e }}</td>
                 {% endfor %}
-                <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}), "Details") }}</td>
+                <td>
+                    {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}), "Details") }}
+                    {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}), "bearbeiten",
+                                 readonly=locked) }}
+                    {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}), "Belegung",
+                                 readonly=locked) }}
+                </td>
             </tr>
         {% endfor %}
     </table>

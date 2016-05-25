@@ -266,11 +266,20 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("PfingstAkademie 2014")
 
     @as_users("anton", "berta", "emilia")
-    def test_show_event_course(self, user):
+    def test_show_event(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Everybody come!")
+        # TODO
+
+    @as_users("anton", "berta", "emilia")
+    def test_course_list(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/list'})
+        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Everybody come!")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
         self.traverse({'href': '/event/event/1/course/1/show'})
@@ -416,7 +425,6 @@ class TestEventFrontend(FrontendTest):
     def test_change_event(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'},
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 bearbeiten")
         ## basic event data
@@ -431,7 +439,7 @@ class TestEventFrontend(FrontendTest):
         text"""
         f['use_questionnaire'].checked = True
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Universale Akademie")
         self.assertNonPresence("2000-10-30")
         self.assertPresence("2001-10-30")
         ## orgas
@@ -439,12 +447,18 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['addorgaform']
         f['orga_id'] = "DB-2-H"
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Universale Akademie")
         self.assertPresence("Bertålotta")
         f = self.response.forms['removeorgaform2']
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Universale Akademie")
         self.assertNonPresence("Bertålotta")
+
+    @as_users("anton", "garcia")
+    def test_change_event_parts(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/part/summary'})
         ## parts
         self.assertPresence("Warmup")
         self.assertNonPresence("Cooldown")
@@ -454,17 +468,23 @@ class TestEventFrontend(FrontendTest):
         f['part_end'] = "2233-6-7"
         f['fee'] = "23456.78"
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Große Testakademie 2222 Details")
         self.assertPresence("Cooldown")
         self.traverse({'href': '/event/event/1/part/3/change'})
-        self.assertTitle("Zweite Hälfte (Universale Akademie) bearbeiten")
+        self.assertTitle("Zweite Hälfte (Große Testakademie 2222) bearbeiten")
         f = self.response.forms['changepartform']
         f['title'] = "Größere Hälfte"
         f['fee'] = "99.99"
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Große Testakademie 2222 Details")
         self.assertNonPresence("Zweite Hälfte")
         self.assertPresence("Größere Hälfte")
+
+    @as_users("anton", "garcia")
+    def test_change_event_fields(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/field/summary'})
         ## fields
         self.assertPresence("transportation")
         self.assertNonPresence("food_stuff")
@@ -475,10 +495,10 @@ class TestEventFrontend(FrontendTest):
         vegetarian;no meat
         vegan;plants only"""
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Große Testakademie 2222 Details")
         self.assertPresence("food_stuff")
         self.traverse({'href': '/event/event/1/field/2/change'})
-        self.assertTitle("\nDatenfeld transportation (Universale Akademie) bearbeiten\n")
+        self.assertTitle("\nDatenfeld transportation (Große Testakademie 2222) bearbeiten\n")
         self.assertPresence("own car available")
         self.assertNonPresence("broom")
         f = self.response.forms['changefieldform']
@@ -486,20 +506,19 @@ class TestEventFrontend(FrontendTest):
         broom;flying implements
         etc;anything else"""
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Große Testakademie 2222 Details")
         self.assertNonPresence("own car available")
         self.assertPresence("broom")
         f = self.response.forms['removefieldform8']
         self.submit(f)
-        self.assertTitle("Universale Akademie Details")
+        self.assertTitle("Große Testakademie 2222 Details")
         self.assertNonPresence("food_stuff")
 
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'})
-        self.assertTitle("Große Testakademie 2222 Details")
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
         f = self.response.forms['changeminorformform']
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:
             data = datafile.read()
@@ -525,7 +544,6 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertPresence("Mit Co und Coco.")
-        self.traverse({'href': '/event/event/2/config'})
         self.assertPresence("Bertålotta")
         self.assertPresence("Garcia")
 
@@ -533,6 +551,7 @@ class TestEventFrontend(FrontendTest):
     def test_change_course(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/list'},
                       {'href': '/event/event/1/course/1/change'})
         self.assertTitle("Planetenretten für Anfänger (Große Testakademie 2222) bearbeiten")
         self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_1').checked)
@@ -554,8 +573,9 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_create_course(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'})
-        self.assertTitle("Große Testakademie 2222")
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/list'})
+        self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertPresence("Planetenretten für Anfänger")
         self.assertNonPresence("Abstract Nonsense")
         self.traverse({'href': '/event/event/1/course/create'})
@@ -632,7 +652,6 @@ class TestEventFrontend(FrontendTest):
     def test_questionnaire(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'},
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 bearbeiten")
         f = self.response.forms['changeeventform']
@@ -862,26 +881,31 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("Test\nmit\nLeerzeilen", f['input4'].value)
 
     @as_users("garcia")
-    def test_summary(self, user):
+    def test_stats(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/summary'},)
+                      {'href': '/event/event/1/stats'},)
         self.assertTitle("Teilnehmer-Übersicht Große Testakademie 2222")
         self.assertPresence("Zweite Hälfte -- 1")
+
+    @as_users("garcia")
+    def test_course_stats(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/stats'},)
+        self.assertTitle("Kurse -- Übersicht (Große Testakademie 2222)")
+        self.assertPresence("Planetenretten für Anfänger")
+        self.assertIn("<td> 2 </td>", self.response.text)
+        # TODO add
 
     @as_users("garcia")
     def test_course_choices(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/coursechoices'},)
-        self.assertTitle("Kurswahlen -- Übersicht (Große Testakademie 2222)")
-        self.assertPresence("Planetenretten für Anfänger")
-        self.assertIn("<td> 2 </td>", self.response.text)
-        f = self.response.forms['choiceform']
-        f['course_id'] = 1
-        self.submit(f)
-        self.assertTitle("\nKurswahlen -- Planetenretten für Anfänger (Große Testakademie 2222)\n")
-        self.assertPresence("Emilia E.")
+                      {'href': '/event/event/1/course/choices'},)
+        self.assertTitle("Kurswahlen (Große Testakademie 2222)")
+        self.assertPresence("Heldentum")
+        # TODO add
 
     @as_users("garcia")
     def test_downloads(self, user):
@@ -964,7 +988,6 @@ class TestEventFrontend(FrontendTest):
     def test_questionnaire_manipulation(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'},
                       {'href': '/event/event/1/change'})
         self.assertTitle("Große Testakademie 2222 bearbeiten")
         f = self.response.forms['changeeventform']
@@ -975,7 +998,7 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['questionnaireform']
         self.assertIn("brings_balls", f.fields)
         self.assertNotIn("may_reserve", f.fields)
-        self.traverse({'href': '/event/event/1/config'},
+        self.traverse({'href': '/event/event/1/questionnaire/summary'},
                       {'href': '/event/event/1/questionnaire/change'},)
         self.assertTitle("Fragebogen bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changequestionnaireform']
@@ -1031,7 +1054,7 @@ class TestEventFrontend(FrontendTest):
     def test_questionnaire_reorder(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'},
+                      {'href': '/event/event/1/questionnaire/summary'},
                       {'href': '/event/event/1/questionnaire/reorder'})
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
@@ -1060,6 +1083,7 @@ class TestEventFrontend(FrontendTest):
     def test_manage_attendees(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/list'},
                       {'href': '/event/event/1/course/1/show'},
                       {'href': '/event/event/1/course/1/manage'})
         self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger verwalten (Große Testakademie 2222)\n")
@@ -1094,21 +1118,19 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton", "garcia")
     def test_lock_event(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'})
-        self.assertTitle("Große Testakademie 2222 Details")
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
         f = self.response.forms["lockform"]
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
+        self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
 
     @as_users("anton")
     def test_unlock_event(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'})
-        self.assertTitle("Große Testakademie 2222 Details")
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
         f = self.response.forms["lockform"]
         self.submit(f)
         self.traverse({'href': '/event/event/1/show'},
@@ -1121,30 +1143,30 @@ class TestEventFrontend(FrontendTest):
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
         self.response = saved
-        self.traverse({'href': '/event/event/1/config'})
-        self.assertTitle("Große Testakademie 2222 Details")
+        self.traverse({'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
         f = self.response.forms['unlockform']
         f['json_data'] = webtest.Upload("event_export.json", data,
                                         "application/octet-stream")
         self.submit(f)
-        self.assertTitle("Mittelgroße Testakademie 2222 Details")
+        self.assertTitle("Mittelgroße Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")
 
     @as_users("anton")
     def test_archive(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/config'})
-        self.assertTitle("Große Testakademie 2222 Details")
+                      {'href': '/event/event/1/show'})
+        self.assertTitle("Große Testakademie 2222")
         ## prepare dates
         self.traverse({'href': '/event/event/1/change'})
         f = self.response.forms["changeeventform"]
         f['registration_soft_limit'] = "2001-10-30"
         f['registration_hard_limit'] = "2001-10-30"
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.traverse({'href': '/event/event/1/part/1/change'})
+        self.assertTitle("Große Testakademie 2222")
+        self.traverse({'href': '/event/event/1/part/summary'},
+                      {'href': '/event/event/1/part/1/change'})
         f = self.response.forms["changepartform"]
         f['part_begin'] = "2003-02-02"
         f['part_end'] = "2003-02-02"
@@ -1163,6 +1185,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Große Testakademie 2222 Details")
         ## do it
+        self.traverse({'href': '/event/event/1/show'})
         f = self.response.forms["archiveeventform"]
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")

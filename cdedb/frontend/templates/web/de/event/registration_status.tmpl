@@ -10,7 +10,7 @@
 {{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
-    {% if event_data['registration_soft_limit'] >= today %}
+    {% if event_data['registration_soft_limit'] >= now().date() %}
         <p>
             Änderungen sind bis zum Anmeldeschluss ({{ event_data['registration_soft_limit']|date|e }}) möglich.
         </p>
@@ -104,7 +104,7 @@
             {% endif %}
         {% endfor %}
     </table>
-    {% if event_data['registration_soft_limit'] >= today %}
+    {% if event_data['registration_soft_limit'] >= now().date() %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), "Ändern") }}
         </p>

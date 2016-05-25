@@ -1,0 +1,63 @@
+{% set sidenav_active='event_config' %}
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block title %}{{ data['title']|e }} Details{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_begin() }}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), "Fragebogen konfigurieren", active=True) }}
+{{ util.breadcrumb_end() }}
+{% endblock %}
+{% block content %}
+    <h2>Fragebogen</h2>
+    {% with INPUT_SIZE_LABELS = {0: "einzeilig",
+                                 2: "mehrzeilig",
+                                 3: "mehrzeilig+",
+                                 4: "mehrzeilig++",}%}
+        <ul>
+            {% for entry in questionnaire %}
+                <li>
+                    {% if entry['field_id'] %}
+                        Abfrage: {{ data['fields'][entry['field_id']]['field_name']|e }}<br>
+                        Label: {{ entry['title']|e }}<br>
+                        Hilfstext: {{ entry['info']|e }}<br>
+                        Eingabefeldgröße: {{ INPUT_SIZE_LABELS.get(entry['input_size'])|e }}<br>
+                        Schreibgeschützt: {{ util.deko_checkbox(entry['readonly']) }}
+                    {% else %}
+                        Überschrift: {{ entry['title']|e }}<br>
+                        Text: {{ entry['info']|e }}
+                    {% endif %}
+                    <form action="{{ cdedblink('event/remove_questionnaire_row', {'num': loop.index0})|e }}"
+                     method="POST" id="removequestionnairerowform{{ loop.index0|e }}">
+                        {{ util.form_input_submit(value="Zeile löschen", readonly=locked) }}
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+        {{ util.href(cdedblink('event/change_questionnaire_form'), "bearbeiten", readonly=locked) }}
+        {{ util.href(cdedblink('event/reorder_questionnaire_form'), "umordnen", readonly=locked) }}
+        <h3>Zeile anfügen</h3>
+        <form action="{{ cdedblink('event/add_questionnaire_row')|e }}" method="POST" id="addquestionnairerowform">
+            <table>
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [("", "nur Text", None)] %}
+                {% for field_id, fdata in data['fields']|dictsort %}
+                    {{ myentries.append((field_id, fdata['field_name'], None))|e }}
+                {% endfor %}
+                {{ util.form_input_select("row_field_id", label="Abfrage", entries=myentries) }}
+                {{ util.form_input_text(name="row_title", label="Label/Überschrift") }}
+                {{ util.form_input_textarea(name="row_info", label="Text") }}
+                {{ util.form_input_select("row_input_size", label="Eingabefeldgröße",
+                                         entries=((0, INPUT_SIZE_LABELS[0], None), (2, INPUT_SIZE_LABELS[2], None),
+                                                  (3, INPUT_SIZE_LABELS[3], None), (4, INPUT_SIZE_LABELS[4], None))) }}
+                {{ util.form_input_checkbox("row_readonly", label="Schreibgeschützt") }}
+            </table>
+            <div>
+                {{ util.form_input_submit(value="Zeile anfügen", readonly=locked) }}
+            </div>
+        </form>
+    {% endwith %}
+{% endblock %}

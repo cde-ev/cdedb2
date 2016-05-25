@@ -291,42 +291,26 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("persona")
-    def sidebar_events(self, rs):
-        """List all events which appear in the sidebar.
-
-        That is all which are currently under way and furthermore all which
-        are orga'd by this persona.
+    def list_open_events(self, rs):
+        """List all events which are open.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: {int: {str: object}}
         :returns: Mapping of event ids to infos (title and registration status).
         """
         with Atomizer(rs):
-            ## outer join, so we catch all events orga'd
             query = glue(
-                "SELECT e.id, e.registration_start, e.use_questionnaire,",
-                "e.title, e.offline_lock, MAX(p.part_end) AS event_end",
-                "FROM event.events AS e LEFT OUTER JOIN event.event_parts AS p",
+                "SELECT e.id, e.registration_start, e.title,",
+                "MAX(p.part_end) AS event_end",
+                "FROM event.events AS e JOIN event.event_parts AS p",
                 "ON p.event_id = e.id WHERE registration_start IS NOT NULL",
                 "GROUP BY e.id")
             data = self.query_all(rs, query, tuple())
             today = now().date()
-            ret = {e['id']: {"title": e['title'],
-                             "use_questionnaire": e["use_questionnaire"],
-                             "locked": (e['offline_lock']
-                                        != self.conf.CDEDB_OFFLINE_DEPLOYMENT)}
-                   for e in data if (e['id'] in rs.user.orga
-                                     or (e['registration_start'] <= today
+            ret = {e['id']: e['title']
+                   for e in data if (e['registration_start'] <= today
                                          and e['event_end'] is not None
-                                         and e['event_end'] >= today))}
-            query = glue(
-                "SELECT id, event_id FROM event.registrations",
-                "WHERE event_id = ANY(%s) AND persona_id = %s")
-            data = self.query_all(rs, query, (tuple(ret.keys()),
-                                              rs.user.persona_id))
-            registered = {e['event_id']: e['id'] for e in data}
-            for event_id in ret:
-                ret[event_id]["registration_id"] = registered.get(event_id)
+                                         and e['event_end'] >= today)}
             return ret
 
     @access("persona")

@@ -1,7 +1,7 @@
 {% set sidenav_active='event_show' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ event_data['title']|e }}{% endblock %}
+{% block title %}{{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -9,35 +9,127 @@
 {{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
-    {% if event_data['is_archived'] %}
+    {% if ambience['event']['is_archived'] %}
         <p>Diese Veranstaltung ist bereits abgeschlossen.</p>
     {% endif %}
-    {% if event_data['id'] in user.orga or is_admin %}
-        {{ util.href(cdedblink('event/event_config'), "Konfiguration") }}
+    {% if ambience['event']['id'] in user.orga or is_admin %}
+        {{ util.href(cdedblink('event/change_event'), "Konfiguration") }}
         {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=True) }}
     {% endif %}
-    <p>{{ event_data['description']|e }}</p>
-    {% if event_data['is_open'] %}
+    <p>{{ ambience['event']['description']|e }}</p>
+    {% if ambience['event']['is_open'] %}
         {{ util.href(cdedblink("event/register"), "Zur Anmeldung", readonly=True) }}
     {% endif %}
-    {% if course_data %}
-        <h2>Kurse</h2>
+    <h2>Rahmendaten</h2>
+    TODO
+    {% if values['event_id'] in user.orga or is_admin %}
+        <h2>Konfiguration</h2>
+        <table>
+            <tr>
+                <td>Titel</td>
+                <td>{{ ambience['event']['title']|e }}</td>
+            </tr>
+            <tr>
+                <td>Organisator</td>
+                <td>{{ institutions[ambience['event']['institution']]|e }}</td>
+            </tr>
+            <tr>
+                <td>Beschreibung</td>
+                <td>{{ ambience['event']['description']|rst }}</td>
+            </tr>
+            <tr>
+                <td>Kürzel</td>
+                <td>{{ ambience['event']['shortname']|e }}</td>
+            </tr>
+            <tr>
+                <td>Anmeldebeginn</td>
+                <td>{{ ambience['event']['registration_start']|date|e }}</td>
+            </tr>
+            <tr>
+                <td>offizieller Anmeldeschluss</td>
+                <td>{{ ambience['event']['registration_soft_limit']|date|e }}</td>
+            </tr>
+            <tr>
+                <td>tatsächlicher Anmeldeschluss</td>
+                <td>{{ ambience['event']['registration_hard_limit']|date|e }}</td>
+            </tr>
+            <tr>
+                <td>CdE-Konto IBAN</td>
+                <td>{{ ambience['event']['iban']|e }}</td>
+            </tr>
+            <tr>
+                <td>Fragebogeneinsatz</td>
+                <td>{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire']) }}</td>
+            </tr>
+            <tr>
+                <td>Notizen</td>
+                <td>{{ ambience['event']['notes']|rst }}</td>
+            </tr>
+        </table>
+        {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", readonly=locked) }}
+        <h2>Minderjährigenformular</h2>
+        {% if minor_form_present %}
+            {{ util.href(cdedblink('event/get_minor_form'), "aktuelles Formular") }}
+        {% else %}
+            <strong>Kein Formular vorhanden -- Minderjährige können sich nicht anmelden.</strong>
+        {% endif %}
+        <form action="{{ cdedblink('event/change_minor_form')|e }}" method="POST" enctype="multipart/form-data"
+         id="changeminorformform">
+            <div>
+                {{ util.form_input_file(name="minor_form", accept="application/pdf", info="Eine pdf-Datei.") }}
+                {{ util.form_input_submit(value="Hochladen", readonly=locked) }}
+            </div>
+        </form>
+        <h2>Orgas</h2>
         <ul>
-            {% for anid, entry in course_data|dictsort %}
+            {% for anid, entry in orgas|dictsort %}
                 <li>
-                    {{ util.href(cdedblink('event/show_course', {'course_id' : anid}),
-                                 "{} -- {}".format(entry['nr'], entry['title'])) }}
-                    {% if event_data['id'] in user.orga or is_admin %}
-                        {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), "Bearbeiten",
-                                     readonly=True) }}
-                    {% endif %}
-                    <p>Kursleiter: {{ entry['instructors']|e }}</p>
-                    <p>{{ entry['description']|e }}</p>
+                    {{ entry['given_names']|e }} {{ entry['family_name']|e }} ({{ anid|cdedbid|e }})
+                    <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST" id="removeorgaform{{ anid|e }}">
+                        <div>
+                            {{ util.input_hidden(name="orga_id", value=anid) }}
+                            {{ util.form_input_submit(value="Orga löschen", readonly=locked) }}
+                        </div>
+                    </form>
                 </li>
             {% endfor %}
         </ul>
-    {% endif %}
-    {% if event_data['is_open'] %}
-        {{ util.href(cdedblink("event/register"), "Zur Anmeldung", readonly=True) }}
+        <h3>Orga hinzufügen</h3>
+        <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform">
+            <div>
+                {{ util.form_input_text(name="orga_id", label="ID") }}
+                {{ util.form_input_submit(value="Orga hinzufügen", readonly=locked) }}
+            </div>
+        </form>
+        <h2>Offline Nutzung</h2>
+        {% if ambience['event']['offline_lock'] %}
+            {% if  CDEDB_OFFLINE_DEPLOYMENT %}
+                Die Veranstaltung befindet sich im Offline-Modus.
+            {% else %}
+                Die Veranstaltung ist zur Offline-Nutzung gesperrt.
+                <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data"
+                  id="unlockform">
+                    <div>
+                        {{ util.form_input_file(name="json_data", accept="text/json") }}
+                        {{ util.form_input_submit(value="Entsperren") }}
+                    </div>
+                </form>
+            {% endif %}
+        {% else %}
+            Die Veranstaltung ist nicht gesperrt.
+            <form action="{{ cdedblink('event/lock_event')|e }}" method="POST" id="lockform">
+                <div>
+                    {{ util.form_input_submit(value="Sperren") }}
+                </div>
+            </form>
+        {% endif %}
+        {% if is_admin and not ambience['event']['is_archived'] %}
+            <h2>Archivierung</h2>
+            <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed" id="archiveeventform">
+                <div>
+                    {{ util.form_input_submit(value="Archivieren", readonly=locked) }}
+                </div>
+            </form>
+        {% endif %}
     {% endif %}
 {% endblock %}

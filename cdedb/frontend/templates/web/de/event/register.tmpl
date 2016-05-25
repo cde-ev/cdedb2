@@ -12,7 +12,7 @@
 {% block content %}
     {{ util.href(cdedblink("event/index"), "Abbrechen") }}
     <p>
-        {% if event_data['registration_soft_limit'] >= today %}
+        {% if event_data['registration_soft_limit'] >= now().date() %}
             Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss
             ({{ event_data['registration_soft_limit']|date|e }}) geändert werden.
         {% else %}

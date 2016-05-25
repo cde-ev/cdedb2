@@ -47,10 +47,9 @@ class EventFrontend(AbstractUserFrontend):
 
     def render(self, rs, templatename, params=None):
         params = params or {}
-        if 'sidebar_events' not in params and "event" in rs.user.roles:
-            params['sidebar_events'] = self.eventproxy.sidebar_events(rs)
-        if 'today' not in params:
-            params['today'] = now().date()
+        if 'event' in rs.ambience and rs.user.persona_id:
+            params['is_registered'] = bool(self.eventproxy.list_registrations(
+                    rs, rs.ambience['event']['id'], rs.user.persona_id))
         return super().render(rs, templatename, params=params)
 
     @classmethod
@@ -96,7 +95,10 @@ class EventFrontend(AbstractUserFrontend):
     @access("persona")
     def index(self, rs):
         """Render start page."""
-        return self.render(rs, "index")
+        open_events = self.eventproxy.list_open_events(rs)
+        orga_events = self.eventproxy.get_event_data(rs, rs.user.orga)
+        return self.render(rs, "index", {
+            'open_events': open_events, 'orga_events': orga_events})
 
     @access("event")
     @REQUESTdata(("confirm_id", "#int"))
@@ -452,6 +454,19 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
+        rs.ambience['event']['is_open'] = self.is_open(rs.ambience['event'])
+        params = {'locked': self.is_locked(rs.ambience['event'])}
+        if event_id in rs.user.orga or self.is_admin(rs):
+            params['orgas'] = self.coreproxy.get_personas(
+                rs, rs.ambience['event']['orgas'])
+            params['institutions'] = self.eventproxy.list_institutions(rs)
+            params['minor_form_present'] = os.path.isfile(os.path.join(
+                self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
+        return self.render(rs, "show_event", params)
+
+    @access("event")
+    def course_list(self, rs, event_id):
+        """List courses from an event."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         event_data['is_open'] = self.is_open(event_data)
         courses = self.eventproxy.list_courses(rs, event_id, past=False)
@@ -459,15 +474,15 @@ class EventFrontend(AbstractUserFrontend):
             course_data = self.eventproxy.get_course_data(rs, courses.keys())
         else:
             course_data = None
-        institutions = self.eventproxy.list_institutions(rs)
-        return self.render(rs, "show_event", {
+        return self.render(rs, "course_list", {
             'event_data': event_data, 'course_data': course_data,
-            'locked': self.is_locked(event_data), 'institutions': institutions})
+            'locked': self.is_locked(event_data)})
 
     @access("event")
     @event_guard()
-    def event_config(self, rs, event_id):
+    def part_summary_form(self, rs, event_id):
         """Overview of properties of an event organized via DB."""
+        # TODO implement
         data = self.eventproxy.get_event_data_one(rs, event_id)
         merge_dicts(rs.values, data)
         orgas = self.coreproxy.get_personas(rs, data['orgas'])
@@ -475,11 +490,68 @@ class EventFrontend(AbstractUserFrontend):
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         minor_form_present = os.path.isfile(os.path.join(
             self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
-        return self.render(rs, "event_config", {
+        return self.render(rs, "part_summary", {
             'data': data, 'orgas': orgas, 'locked': self.is_locked(data),
             'questionnaire': questionnaire,
             'minor_form_present': minor_form_present,
             'institutions': institutions})
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def part_summary(self, rs, event_id):
+        """Overview of properties of an event organized via DB."""
+        # TODO implement
+        pass
+
+    @access("event")
+    @event_guard()
+    def field_summary_form(self, rs, event_id):
+        """Overview of properties of an event organized via DB."""
+        # TODO implement
+        data = self.eventproxy.get_event_data_one(rs, event_id)
+        merge_dicts(rs.values, data)
+        orgas = self.coreproxy.get_personas(rs, data['orgas'])
+        institutions = self.eventproxy.list_institutions(rs)
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        minor_form_present = os.path.isfile(os.path.join(
+            self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
+        return self.render(rs, "field_summary", {
+            'data': data, 'orgas': orgas, 'locked': self.is_locked(data),
+            'questionnaire': questionnaire,
+            'minor_form_present': minor_form_present,
+            'institutions': institutions})
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def field_summary(self, rs, event_id):
+        """Overview of properties of an event organized via DB."""
+        # TODO implement
+        pass
+
+    @access("event")
+    @event_guard()
+    def questionnaire_summary_form(self, rs, event_id):
+        """Overview of properties of an event organized via DB."""
+        # TODO implement
+        data = self.eventproxy.get_event_data_one(rs, event_id)
+        merge_dicts(rs.values, data)
+        orgas = self.coreproxy.get_personas(rs, data['orgas'])
+        institutions = self.eventproxy.list_institutions(rs)
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        minor_form_present = os.path.isfile(os.path.join(
+            self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
+        return self.render(rs, "questionnaire_summary", {
+            'data': data, 'orgas': orgas, 'locked': self.is_locked(data),
+            'questionnaire': questionnaire,
+            'minor_form_present': minor_form_present,
+            'institutions': institutions})
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def questionnaire_summary(self, rs, event_id):
+        """Overview of properties of an event organized via DB."""
+        # TODO implement
+        pass
 
     @access("event")
     @event_guard(check_offline=True)
@@ -505,7 +577,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.change_event_form(rs, event_id)
         code = self.eventproxy.set_event_data(rs, data)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/show_event")
 
     @access("event")
     def get_minor_form(self, rs, event_id):
@@ -526,13 +598,13 @@ class EventFrontend(AbstractUserFrontend):
         """
         minor_form = check(rs, 'pdffile', minor_form, "minor_form")
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.show_event(rs, event_id)
         blob = minor_form.read()
         path = os.path.join(self.conf.STORAGE_DIR, 'minor_form', str(event_id))
         with open(path, 'wb') as f:
             f.write(blob)
         rs.notify("success", "Form updated.")
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
     @REQUESTdata(("orga_id", "cdedbid"))
@@ -540,7 +612,7 @@ class EventFrontend(AbstractUserFrontend):
     def add_orga(self, rs, event_id, orga_id):
         """Make an additional persona become orga."""
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.show_event(rs, event_id)
         data = self.eventproxy.get_event_data_one(rs, event_id)
         newdata = {
             'id': event_id,
@@ -548,7 +620,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event_data(rs, newdata)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
     @REQUESTdata(("orga_id", "id"))
@@ -559,7 +631,7 @@ class EventFrontend(AbstractUserFrontend):
         This can drop your own orga role.
         """
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.show_event(rs, event_id)
         data = self.eventproxy.get_event_data_one(rs, event_id)
         newdata = {
             'id': event_id,
@@ -567,7 +639,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event_data(rs, newdata)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/show_event")
 
     @access("event")
     @event_guard(check_offline=True)
@@ -595,7 +667,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event_data(rs, newdata)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/part_summary_form")
 
     @access("event", modi={"POST"})
     @REQUESTdatadict("part_title", "part_begin", "part_end", "fee")
@@ -607,7 +679,7 @@ class EventFrontend(AbstractUserFrontend):
         del data['part_title']
         data = check(rs, "event_part_data", data)
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.part_summary_form(rs, event_id)
         newdata = {
             'id': event_id,
             'parts': {
@@ -616,7 +688,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event_data(rs, newdata)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/part_summary_form")
 
     @access("event")
     @event_guard(check_offline=True)
@@ -649,7 +721,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event_data(rs, newdata)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/field_summary_form")
 
     @access("event", modi={"POST"})
     @REQUESTdatadict("field_name", "kind", "entries")
@@ -658,7 +730,7 @@ class EventFrontend(AbstractUserFrontend):
         """Create a new field to attach information to a registration."""
         data = check(rs, "event_field_data", data, creation=True)
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.field_summary_form(rs, event_id)
         newdata = {
             'id': event_id,
             'fields': {
@@ -667,7 +739,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event_data(rs, newdata)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/field_summary_form")
 
     @access("event", modi={"POST"})
     @REQUESTdata(("field_id", "id"))
@@ -679,7 +751,7 @@ class EventFrontend(AbstractUserFrontend):
         submitted, but makes it inaccessible.
         """
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.field_summary_form(rs, event_id)
         data = {
             'id': event_id,
             'fields': {
@@ -688,7 +760,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_event_data(rs, data)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/field_summary_form")
 
     @access("event_admin")
     def create_event_form(self, rs):
@@ -799,7 +871,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def summary(self, rs, event_id):
+    def stats(self, rs, event_id):
         """Present an overview of the basic stats."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         registrations = self.eventproxy.list_registrations(rs, event_id)
@@ -921,12 +993,50 @@ class EventFrontend(AbstractUserFrontend):
             }
             for key, test in tests2.items()
         }
-        return self.render(rs, "summary", {
+        return self.render(rs, "stats", {
             'event_data': event_data, 'registration_data': registration_data,
             'user_data': user_data, 'courses': courses,
             'statistics': statistics, 'listings': listings})
 
     @access("event")
+    @REQUESTdata(("course_id", "id_or_None"))
+    @event_guard()
+    def course_choices_form(self, rs, event_id, course_id):
+        """List course choices.
+
+        If course_id is not provided an overview of the number of choices
+        for all courses is presented. Otherwise all votes for a specific
+        course are listed.
+        """
+        # TODO implement
+        event_data = self.eventproxy.get_event_data_one(rs, event_id)
+        registrations = self.eventproxy.list_registrations(rs, event_id)
+        registration_data = self.eventproxy.get_registrations(rs, registrations)
+        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        course_data = self.eventproxy.get_course_data(rs, courses)
+        persona_data = self.coreproxy.get_personas(rs, tuple(
+            rdata['persona_id'] for rdata in registration_data.values()))
+        sorter = lambda registration_id: name_key(
+            persona_data[registration_data[registration_id]['persona_id']])
+        candidates = {
+            (part_id, i): sorted(
+                (registration_id
+                 for registration_id, rdata in registration_data.items()
+                 if (len(rdata['choices'][part_id]) > i
+                     # and rdata['choices'][part_id][i] == course_id
+                     and (rdata['parts'][part_id]['status']
+                          == const.RegistrationPartStati.participant)
+                     and rdata['persona_id'] not in event_data['orgas'])),
+                key=sorter)
+            for part_id in event_data['parts']
+            for i in range(3)
+        }
+        return self.render(rs, "course_choices", {
+            'event_data': event_data, 'course_data': course_data,
+            'candidates': candidates, 'persona_data': persona_data,
+            'registration_data': registration_data,})
+
+    @access("event", modi={"POST"})
     @REQUESTdata(("course_id", "id_or_None"))
     @event_guard()
     def course_choices(self, rs, event_id, course_id):
@@ -936,52 +1046,41 @@ class EventFrontend(AbstractUserFrontend):
         for all courses is presented. Otherwise all votes for a specific
         course are listed.
         """
+        # TODO implement
+        pass
+
+    @access("event")
+    @event_guard()
+    def course_stats(self, rs, event_id):
+        """List course choices.
+
+        If course_id is not provided an overview of the number of choices
+        for all courses is presented. Otherwise all votes for a specific
+        course are listed.
+        """
+        # TODO implement
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
         courses = self.eventproxy.list_courses(rs, event_id, past=False)
         course_data = self.eventproxy.get_course_data(rs, courses)
-        ## this if handles validation errors
-        if course_id not in courses:
-            counts = {
-                course_id: {
-                    (part_id, i): sum(
-                        1 for rdata in registration_data.values()
-                        if (len(rdata['choices'][part_id]) > i
-                            and rdata['choices'][part_id][i] == course_id
-                            and (rdata['parts'][part_id]['status']
-                                 == const.RegistrationPartStati.participant)
-                            and rdata['persona_id'] not in event_data['orgas']))
-                    for part_id in event_data['parts']
-                    for i in range(3)
-                }
-                for course_id in courses
-            }
-            return self.render(rs, "course_choices_overview", {
-                'event_data': event_data, 'course_data': course_data,
-                'counts': counts})
-        else:
-            persona_data = self.coreproxy.get_personas(rs, tuple(
-                rdata['persona_id'] for rdata in registration_data.values()))
-            sorter = lambda registration_id: name_key(
-                persona_data[registration_data[registration_id]['persona_id']])
-            candidates = {
-                (part_id, i): sorted(
-                    (registration_id
-                     for registration_id, rdata in registration_data.items()
-                     if (len(rdata['choices'][part_id]) > i
-                         and rdata['choices'][part_id][i] == course_id
-                         and (rdata['parts'][part_id]['status']
-                              == const.RegistrationPartStati.participant)
-                         and rdata['persona_id'] not in event_data['orgas'])),
-                    key=sorter)
+        counts = {
+            course_id: {
+                (part_id, i): sum(
+                    1 for rdata in registration_data.values()
+                    if (len(rdata['choices'][part_id]) > i
+                        and rdata['choices'][part_id][i] == course_id
+                        and (rdata['parts'][part_id]['status']
+                             == const.RegistrationPartStati.participant)
+                        and rdata['persona_id'] not in event_data['orgas']))
                 for part_id in event_data['parts']
                 for i in range(3)
             }
-            return self.render(rs, "course_choices_single", {
-                'event_data': event_data, 'course_data': course_data,
-                'candidates': candidates, 'persona_data': persona_data,
-                'registration_data': registration_data,})
+            for course_id in courses
+        }
+        return self.render(rs, "course_stats", {
+            'event_data': event_data, 'course_data': course_data,
+            'counts': counts})
 
     @access("event")
     @event_guard()
@@ -1595,7 +1694,7 @@ class EventFrontend(AbstractUserFrontend):
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  new_questionnaire)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/questionnaire_summary_form")
 
     @staticmethod
     def _sanitize_questionnaire_row(row):
@@ -1639,7 +1738,7 @@ class EventFrontend(AbstractUserFrontend):
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  new_questionnaire)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/questionnaire_summary_form")
 
     @access("event", modi={"POST"})
     @REQUESTdatadict('row_field_id', 'row_title', 'row_info', 'row_input_size',
@@ -1653,14 +1752,14 @@ class EventFrontend(AbstractUserFrontend):
                              'readonly',)},)
         data = check(rs, "questionnaire_data", data)
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.questionnaire_summary_form(rs, event_id)
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         new_questionnaire = tuple(self._sanitize_questionnaire_row(row)
                                   for row in questionnaire) + tuple(data)
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  new_questionnaire)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/questionnaire_summary_form")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -1673,7 +1772,7 @@ class EventFrontend(AbstractUserFrontend):
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  new_questionnaire)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/questionnaire_summary_form")
 
 
     @access("event")
@@ -2016,6 +2115,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
+        # FIXME obsolete
         lodgement_data = self.eventproxy.get_lodgement(rs, lodgement_id)
         if lodgement_data['event_id'] != event_id:
             return werkzeug.exceptions.NotFound("Wrong associated event.")
@@ -2620,7 +2720,7 @@ class EventFrontend(AbstractUserFrontend):
         """Lock an event for offline usage."""
         code = self.eventproxy.lock_event(rs, event_id)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
     @REQUESTfile("json_data")
@@ -2629,21 +2729,21 @@ class EventFrontend(AbstractUserFrontend):
         changes."""
         data = check(rs, "serialized_event_upload", json_data)
         if rs.errors:
-            return self.event_config(rs, event_id)
+            return self.show_event(rs, event_id)
         if event_id != data['id']:
             rs.notify("error", "Data from wrong event.")
-            return self.event_config(rs, event_id)
+            return self.show_event(rs, event_id)
         ## Check for unmigrated personas
         current = self.eventproxy.export_event(rs, event_id)
         claimed = {e['persona_id'] for e in data['event.registrations']
                    if not e['real_persona_id']}
         if claimed - {e['id'] for e in current['core.personas']}:
             rs.notify("error", "There exist unmigrated personas.")
-            return self.event_config(rs, event_id)
+            return self.show_event(rs, event_id)
 
         code = self.eventproxy.unlock_import_event(rs, data)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/event_config")
+        return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)

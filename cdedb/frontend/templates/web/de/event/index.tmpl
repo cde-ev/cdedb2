@@ -3,13 +3,23 @@
 {% block content %}
     Hier findest Du Akademien und andere Veranstaltungen.
 
-    TODO Liste der sidebarevents solange die sidebar noch nicht existiert
+    <h3>Aktuelle Veranstaltungen</h3>
     <ul>
-        {% for event_id, entry in sidebar_events|dictsort|reverse %}
+        {% for event_id, title in open_events|dictsort|reverse %}
             <li>
-                {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
+                {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), title) }}
             </li>
         {% endfor %}
     </ul>
-    
+
+    {% if orga_events %}
+        <h3>Organisierte Veranstaltungen</h3>
+        <ul>
+            {% for event_id, entry in orga_events|dictsort|reverse %}
+                <li>
+                    {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 {% endblock %}
