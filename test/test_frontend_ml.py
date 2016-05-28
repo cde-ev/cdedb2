@@ -149,16 +149,15 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("berta", "janis")
     def test_show_mailinglist(self, user):
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'})
-        self.assertTitle("Mailinglisten Übersicht")
+        self.traverse({'href': '/ml/$'},)
+        self.assertTitle("Mailinglisten")
         self.traverse({'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
 
     @as_users("anton")
     def test_list_all_mailinglist(self, user):
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list/all'})
+                      {'href': '/ml/mailinglist/list'})
         self.assertTitle("Mailinglisten Komplettübersicht")
         self.traverse({'href': '/ml/mailinglist/6'})
         self.assertTitle("Aktivenforum 2000")
@@ -166,7 +165,6 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton", "berta")
     def test_mailinglist_management(self, user):
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'})
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
@@ -204,9 +202,8 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_mailinglist(self, user):
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'})
-        self.assertTitle("Mailinglisten Übersicht")
+        self.traverse({'href': '/ml/$'})
+        self.assertTitle("Mailinglisten")
         self.assertNonPresence("Munkelwand")
         self.traverse({'href': '/ml/mailinglist/create$'})
         self.assertTitle("Mailingliste anlegen")
@@ -249,15 +246,13 @@ class TestMlFrontend(FrontendTest):
         self.assertEqual("munkelwand@example.cde", f['address'].value)
         self.assertEqual("2", f['sub_policy'].value)
         self.assertFalse(f['is_active'].checked)
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'})
-        self.assertTitle("Mailinglisten Übersicht")
+        self.traverse({'href': '/ml/$'})
+        self.assertTitle("Mailinglisten")
         self.assertNonPresence("Munkelwand")
 
     def test_subscription_request(self):
         self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribeform']
@@ -265,7 +260,6 @@ class TestMlFrontend(FrontendTest):
         self.logout()
         self.login(USER_DICT['berta'])
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/management'},)
         self.assertTitle("Klatsch und Tratsch -- Verwalten")
@@ -276,14 +270,12 @@ class TestMlFrontend(FrontendTest):
         self.logout()
         self.login(USER_DICT['inga'])
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},)
         self.assertIn('unsubscribeform', self.response.forms)
 
     @as_users("charly", "inga")
     def test_subscribe_unsubscribe(self, user):
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/3'},)
         self.assertTitle("Witz des Tages")
         f = self.response.forms['subscribeform']
@@ -297,7 +289,6 @@ class TestMlFrontend(FrontendTest):
     @as_users("janis")
     def test_change_sub_address(self, user):
         self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},)
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['changeaddressform']

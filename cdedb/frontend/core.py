@@ -158,7 +158,7 @@ class CoreFrontend(AbstractFrontend):
             for c in constants[f]:
                 del history_log[f][c]
         formatter = lambda gen, val: (
-            gen, "{}: {}".format(gen, val if val is not None else ""), None)
+            gen, "{}: {}".format(gen, val if val is not None else ""))
         entries = {f: tuple(formatter(gen, history_log[f][gen])
                             for gen in sorted(history_log[f])) for f in fields}
         return self.render(rs, "show_history", {'entries': entries,

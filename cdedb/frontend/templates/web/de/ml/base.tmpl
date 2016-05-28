@@ -26,13 +26,11 @@
         <p>
             {{ util.href(cdedblink("ml/index"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
         </p>
-        
+
         <h4><span class="glyphicon glyphicon-envelope"></span> {{ ambience['mailinglist']['title'] }}</h4>
         {{ ml_inner_navigation(ambience['mailinglist']) }}
     {% else %}
         <div class="list-group">
-            {{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten-Übersicht",
-                    aclass="list-group-item", icon="list", active=(sidenav_active == 'ml_list')) }}
             {% if is_admin %}
                 {# TODO #}
                 {{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}
@@ -40,7 +38,7 @@
                         icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {{ util.href(cdedblink("ml/view_log"), "Log", icon="list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'ml_log')) }}
-                {{ util.href(cdedblink("ml/list_all_mailinglists"), "Mailinglisten verwalten", icon="cog",
+                {{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten verwalten", icon="cog",
                         aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
                 {# TODO #}
                 {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen") }}

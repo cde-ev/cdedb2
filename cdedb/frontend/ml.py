@@ -60,7 +60,15 @@ class MlFrontend(AbstractUserFrontend):
     @access("persona")
     def index(self, rs):
         """Render start page."""
-        return self.render(rs, "index")
+        policies = const.AudiencePolicy.applicable(rs.user.roles)
+        mailinglists = self.mlproxy.list_mailinglists(
+            rs, audience_policies=policies)
+        mailinglist_data = self.mlproxy.get_mailinglists(rs, mailinglists)
+        subscriptions = self.mlproxy.subscriptions(
+            rs, rs.user.persona_id, lists=mailinglists.keys())
+        return self.render(rs, "index", {
+            'mailinglists': mailinglists, 'subscriptions': subscriptions,
+            'mailinglist_data': mailinglist_data})
 
     @access("ml")
     @REQUESTdata(("confirm_id", "#int"))
@@ -158,34 +166,16 @@ class MlFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
 
-    def list_some_mailinglists(self, rs, mailinglists, complete):
-        """Code deduplication helper displaying lists.
-
-        :type rs: :py:class:`FrontendRequestState`
-        :type mailinglists: {int: str}
-        :type complete: bool
-        :rtype: :py:class:`werkzeug.wrappers.Response` or None
-        """
+    @access("ml_admin")
+    def list_mailinglists(self, rs):
+        """Show all mailinglists."""
+        mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
         mailinglist_data = self.mlproxy.get_mailinglists(rs, mailinglists)
         subscriptions = self.mlproxy.subscriptions(
             rs, rs.user.persona_id, lists=mailinglists.keys())
         return self.render(rs, "list_mailinglists", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
-            'mailinglist_data': mailinglist_data, 'complete': complete})
-
-    @access("ml")
-    def list_mailinglists(self, rs):
-        """Show all mailinglists of interest for the user."""
-        policies = const.AudiencePolicy.applicable(rs.user.roles)
-        mailinglists = self.mlproxy.list_mailinglists(
-            rs, audience_policies=policies)
-        return self.list_some_mailinglists(rs, mailinglists, complete=False)
-
-    @access("ml_admin")
-    def list_all_mailinglists(self, rs):
-        """Show all mailinglists."""
-        mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
-        return self.list_some_mailinglists(rs, mailinglists, complete=True)
+            'mailinglist_data': mailinglist_data})
 
     @access("ml_admin")
     def create_mailinglist_form(self, rs):
