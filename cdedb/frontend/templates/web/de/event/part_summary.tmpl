@@ -1,7 +1,7 @@
 {% set sidenav_active='event_config' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}{{ ambience['event']['title']|e }} Teile konfigurieren{% endblock %}
 {% block breadcrumb %}

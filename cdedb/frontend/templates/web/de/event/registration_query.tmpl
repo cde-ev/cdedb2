@@ -1,7 +1,6 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block jquery %}{{ util.jquery_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}Anmeldungen ({{ event_data['title']|e }}){% endblock %}
 {% block breadcrumb %}
