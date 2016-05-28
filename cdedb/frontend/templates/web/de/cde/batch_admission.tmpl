@@ -1,8 +1,8 @@
-{% extends "web/de/core/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Accounts anlegen{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('core/batch_admission')|e }}" method="POST" id="admissionform">
+    <form action="{{ cdedblink('cde/batch_admission')|e }}" method="POST" id="admissionform">
         {{ util.input_hidden("finalized") }}
         {{ util.form_input_checkbox("membership", label="CdE-Mitgliedschaft eintragen") }}
         {{ util.form_input_checkbox("trial_membership", label="Probemitgliedschaft gutschreiben") }}
