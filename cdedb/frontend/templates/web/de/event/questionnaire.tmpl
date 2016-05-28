@@ -13,7 +13,7 @@
                             {# jinja does not support list comprehension ... #}
                             {% set myentries = [] %}
                             {% for value, description in FIELD['entries'] %}
-                                {{ myentries.append((value, description, None))|e }}
+                                {{ myentries.append((value, description))|e }}
                             {% endfor %}
                             {{ util.form_input_select(name=FIELD['field_name'], entries=myentries, label=entry['title'],
                                                      info=entry['info'], readonly=(entry['readonly'] or locked)) }}

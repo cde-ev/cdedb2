@@ -43,16 +43,16 @@
         <form action="{{ cdedblink('event/add_questionnaire_row')|e }}" method="POST" id="addquestionnairerowform">
             <table>
                 {# jinja does not support list comprehension ... #}
-                {% set myentries = [("", "nur Text", None)] %}
+                {% set myentries = [("", "nur Text")] %}
                 {% for field_id, fdata in data['fields']|dictsort %}
-                    {{ myentries.append((field_id, fdata['field_name'], None))|e }}
+                    {{ myentries.append((field_id, fdata['field_name']))|e }}
                 {% endfor %}
                 {{ util.form_input_select("row_field_id", label="Abfrage", entries=myentries) }}
                 {{ util.form_input_text(name="row_title", label="Label/Überschrift") }}
                 {{ util.form_input_textarea(name="row_info", label="Text") }}
                 {{ util.form_input_select("row_input_size", label="Eingabefeldgröße",
-                                         entries=((0, INPUT_SIZE_LABELS[0], None), (2, INPUT_SIZE_LABELS[2], None),
-                                                  (3, INPUT_SIZE_LABELS[3], None), (4, INPUT_SIZE_LABELS[4], None))) }}
+                                         entries=((0, INPUT_SIZE_LABELS[0]), (2, INPUT_SIZE_LABELS[2]),
+                                                  (3, INPUT_SIZE_LABELS[3]), (4, INPUT_SIZE_LABELS[4]))) }}
                 {{ util.form_input_checkbox("row_readonly", label="Schreibgeschützt") }}
             </table>
             <div>

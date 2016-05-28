@@ -24,7 +24,7 @@
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for part_id, pdata in event_data['parts']|dictsort %}
-                {{ myentries.append((part_id, pdata['title'], "manipulator_checkbox_{}".format(part_id)))|e }}
+                {{ myentries.append((part_id, pdata['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
             {% if not age.may_mix() %}
@@ -43,8 +43,8 @@
                     {% set mix_info = "" %}
                 {% endif %}
                 {{ util.form_input_select(name="mixed_lodging", entries=(
-                    (True, "Ich bin mit gemischter Unterbringung einverstanden.", None),
-                    (False, "Ich will geschlechter-getrennt untergebracht werden.", None)),
+                    (True, "Ich bin mit gemischter Unterbringung einverstanden."),
+                    (False, "Ich will geschlechter-getrennt untergebracht werden.")),
                     label="Gemischte Unterbringung", info=mix_info) }}
             {% endif %}
             {{ util.form_input_checkbox(name="foto_consent", label=glue(
@@ -59,7 +59,7 @@
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
                     {% for course_id in course_list %}
-                        {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
+                        {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
                                              label="Erstwahl") }}
@@ -68,9 +68,9 @@
                     {{ util.form_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
                                              label="Drittwahl") }}
                     {# jinja does not support list comprehension ... #}
-                    {% set myentries = [("", "Ich bin kein Kursleiter.", None)] %}
+                    {% set myentries = [("", "Ich bin kein Kursleiter.")] %}
                     {% for course_id in course_list %}
-                        {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
+                        {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_instructor{}".format(part_id), entries=myentries,
                                              label="Kursleiter") }}

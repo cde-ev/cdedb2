@@ -21,8 +21,8 @@
             {{ util.form_input_text(name="family_name", label="Nachname", small=True) }}
             {{ util.form_input_text(name="username", label="Emailadresse", small=True) }}
             {{ util.form_input_select(name="realm", small=True, entries=(
-                ("event", "CdE-Veranstaltung", None),
-                ("ml", "CdE-Mailingliste", None)),
+                ("event", "CdE-Veranstaltung"),
+                ("ml", "CdE-Mailingliste")),
                 label="Grund") }}
             {{ util.form_input_textarea(name="notes", label="Begründung (max. 200 Zeichen)", small=True, maxlength=200) }}
             {{ util.form_input_submit(value="Antrag abschicken", small=True) }}

@@ -496,7 +496,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "{}/show_user".format(realm),
                     "confirm_id", persona_id, timeout=None)},)
         default_selections = {
-            'gender': tuple((k, v, None) for k, v in
+            'gender': tuple((k, v) for k, v in
                             self.enum_choice(rs, const.Genders).items()),
         }
         errorsdict = {}

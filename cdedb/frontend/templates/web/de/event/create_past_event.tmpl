@@ -9,7 +9,7 @@
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for value, title in institutions|dictsort %}
-                {{ myentries.append((value, title, None))|e }}
+                {{ myentries.append((value, title))|e }}
             {% endfor %}
             {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
             {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}

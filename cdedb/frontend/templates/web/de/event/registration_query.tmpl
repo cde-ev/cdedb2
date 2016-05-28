@@ -146,7 +146,7 @@
                         {% set myentries = [] %}
                         {% for field in spec %}
                             {% if field not in BLACKLIST and ',' not in field %}
-                                {{ myentries.append((field, titles[field], None))|e }}
+                                {{ myentries.append((field, titles[field]))|e }}
                             {% endif %}
                         {% endfor %}
                         {{ util.form_input_select(name="column", label="", entries=myentries, anid="column_selector",

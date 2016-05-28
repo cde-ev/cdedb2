@@ -33,8 +33,8 @@
                         {{ util.input_hidden(name="case_status", value=const.GenesisStati.approved.value) }}
                         <div class="input-group">
                         {{ util.input_select(name="realm", aclass="form-control input-sm", entries=(
-                           ("event", "Veranstaltungsteilnehmer", None),
-                           ("ml", "Mailinglistennutzer", None))) }}
+                           ("event", "Veranstaltungsteilnehmer"),
+                           ("ml", "Mailinglistennutzer"))) }}
                             <span class="input-group-btn">
                                 <button type="submit" class="btn btn-success btn-sm">
                                     <span class="glyphicon glyphicon-ok"></span> Genehmigen

@@ -554,10 +554,10 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/course/list'},
                       {'href': '/event/event/1/course/1/change'})
         self.assertTitle("Planetenretten für Anfänger (Große Testakademie 2222) bearbeiten")
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_1').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_2').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_3').checked)
         f = self.response.forms['changecourseform']
+        self.assertEqual("1", f.get('parts', index=0).value)
+        self.assertEqual(None, f.get('parts', index=1).value)
+        self.assertEqual("3", f.get('parts', index=2).value)
         f['title'] = "Planetenretten für Fortgeschrittene"
         f['nr'] = "ω"
         f['parts'] = ['2', '3']
@@ -566,9 +566,9 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/event/1/course/1/change'})
         f = self.response.forms['changecourseform']
         self.assertEqual(f['nr'].value, "ω")
-        self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_1').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_2').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_3').checked)
+        self.assertEqual(None, f.get('parts', index=0).value)
+        self.assertEqual("2", f.get('parts', index=1).value)
+        self.assertEqual("3", f.get('parts', index=2).value)
 
     @as_users("anton")
     def test_create_course(self, user):
@@ -580,10 +580,10 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Abstract Nonsense")
         self.traverse({'href': '/event/event/1/course/create'})
         self.assertTitle("DB-Kurs hinzufügen (Große Testakademie 2222)")
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_1').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_2').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_3').checked)
         f = self.response.forms['createcourseform']
+        self.assertEqual("1", f.get('parts', index=0).value)
+        self.assertEqual("2", f.get('parts', index=1).value)
+        self.assertEqual("3", f.get('parts', index=2).value)
         f['title'] = "Abstract Nonsense"
         f['description'] = "Lots of arrows."
         f['nr'] = "ω"
@@ -597,9 +597,10 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Alexander Grothendieck")
         self.traverse({'href': '/event/event/1/course/6/change'})
         self.assertTitle("Abstract Nonsense (Große Testakademie 2222) bearbeiten")
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_1').checked)
-        self.assertFalse(self.response.lxml.get_element_by_id('manipulator_checkbox_2').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('manipulator_checkbox_3').checked)
+        f = self.response.forms['changecourseform']
+        self.assertEqual("1", f.get('parts', index=0).value)
+        self.assertEqual(None, f.get('parts', index=1).value)
+        self.assertEqual("3", f.get('parts', index=2).value)
 
     @as_users("berta")
     def test_register(self, user):

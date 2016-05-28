@@ -69,14 +69,14 @@
 {# ################### #
  # (Form) input macros #
  # ################### #}
- 
+
 {# The input_* macro generates a blank input field of the given type. Note that some input types don't have an own macro
    but can be produced by passing an additional parameter to another macro:
-   
+
    * password: input_text(..., type="password")
    * date etc.: input_text(..., type="date")
    * radio: input_checkbox(..., radio=True)
-   
+
    The form_input_* wraps the specific input macro and adds some divs, label and error output. These macros are meant to
    be used inside an form.form-horizontal.
 #}
@@ -117,7 +117,7 @@
     {{ form_input_general(
             input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder),
             label, anid, small, info, displayerrors) }}
-{% endmacro %}
+{% endmacro %}
 
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='') %}
@@ -139,7 +139,6 @@
             {% if anid %} id="{{ anid|e }}"{% endif %} name="{{ name|e }}"
             {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {% if readonly %}disabled="disabled"{% endif %}>{{ values.get(name, defaultvalue)|e }}</textarea>
-            
 {% endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
@@ -167,12 +166,11 @@
 {% endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False) %}
-    {% for entry_value, entry_label, entry_id in entries %}
+    {% for entry_value, entry_label in entries %}
         {% if not inline %}
             <div class="{% if radio %}radio{% else %}checkbox{% endif %} {% if readonly %}disabled{% endif %}">
         {% endif %}
-            {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, entry_id, inline=inline,
-                    radio=radio) }}
+            {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio) }}
         {% if not inline %}</div>{% endif %}
     {% endfor %}
 {% endmacro %}
@@ -194,7 +192,7 @@
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
         small=False, radio=False) %}
     {# This is the version for multiple checkboxes as opposed to input_checkbox().
-       entries is of type [(str, str, str)]. #}
+       entries is of type [(str, str)]. #}
     {{ form_input_general(
             input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio),
             label, '', small, info, displayerrors) }}
@@ -208,10 +206,9 @@
         {% if nulloption %}
              <option value=""> </option>
         {% endif %}
-        {% for value, label, entry_id in entries %}
+        {% for value, label in entries %}
             <option value="{{ value|e }}"
-              {% if values.get(name, defaultvalue)|string == value|string %} selected="selected" {% endif %}
-              {% if entry_id %} id="{{ entry_id|e }}" {% endif %}>
+              {% if values.get(name, defaultvalue)|string == value|string %} selected="selected" {% endif %}>
                 {{ label|e }}
             </option>
         {% endfor %}
@@ -325,7 +322,7 @@
                                12: "zwischen",
                                13: "größergleich",
                                14: "größer",} %}
-                               
+
         {{ input_hidden(name="is_search", value=True) }}
         <p>
             <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
@@ -366,7 +363,7 @@
                                         {% set myentries = [] %}
                                         {% for op in query_mod.VALID_QUERY_OPERATORS[spec[field]] %}
                                             {% if field not in choices or op in query_mod.SELECTION_VALUE_OPERATORS %}
-                                                {{ myentries.append((op.value, OPERATOR_LABELS[op.value], None))|e }}
+                                                {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
                                             {% endif %}
                                         {% endfor %}
                                         {{ input_select(name, entries=myentries, aclass='form-control input-sm',
@@ -388,7 +385,7 @@
                                         filter operators. So we can provide a select box for none-javascript users. #}
                                     {{ input_select("qval_{}".format(field), anid="qinput_{}".format(field),
                                             aclass='form-control input-sm',
-                                            entries=(('','',None),(True, 'ja',None),(False, 'nein',None))) }}
+                                            entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
                                 {% else %}
                                     {{ input_text("qval_{}".format(field), anid="qinput_{}".format(field),
                                             aclass='form-control input-sm') }}
@@ -414,14 +411,14 @@
                                 {% set myentries = [] %}
                                 {% for field in spec %}
                                     {% if ',' not in field %}
-                                        {{ myentries.append((field, titles.get(field,field), None))|e }}
+                                        {{ myentries.append((field, titles.get(field,field)))|e }}
                                     {% endif %}
                                 {% endfor %}
                                 {{ input_select(name, entries=myentries, nulloption=True, aclass="form-control input-sm" )}}
                             </td>
                             <td>
                                 {{ input_select(name + "_ascending", defaultvalue=True, aclass="form-control input-sm",
-                                                entries=((True, "A→Z", None), (False, "Z→A", None))) }}
+                                                entries=((True, "A→Z"), (False, "Z→A"))) }}
                             </td>
                         </tr>
                     {% endfor %}
@@ -512,7 +509,7 @@
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for value, description in field_data['entries'] %}
-            {{ myentries.append((value, description, None))|e }}
+            {{ myentries.append((value, description))|e }}
         {% endfor %}
         {{ form_input_select(name=name, title=label, entries=myentries, nulloption=True,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
@@ -541,7 +538,7 @@
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for value, description in field_data['entries'] %}
-            {{ myentries.append((value, description, None))|e }}
+            {{ myentries.append((value, description))|e }}
         {% endfor %}
         {{ form_input_select(name=name, label=label, entries=myentries, nulloption=True,
                             readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}

@@ -13,7 +13,7 @@
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
-                {{ myentries.append((cdata['moniker'], cdata['moniker'], None))|e }}
+                {{ myentries.append((cdata['moniker'], cdata['moniker']))|e }}
             {% endfor %}
             {{ util.form_input_select(name="bar", entries=myentries, label="Schwellwertoption", nulloption=True) }}
             {{ util.form_input_text(name="vote_extension_end", label="Ende der Verlängerung") }}

@@ -19,7 +19,7 @@
                     {% for realm, description in (('cde', 'CdE'), ('event', 'Veranstaltung'), ('ml', 'Mailinglisten'),
                                                   ('assembly', 'Versammlung')) %}
                         {% if not p['is_{}_realm'.format(realm)] %}
-                            {{ myentries.append((realm, description, None))|e }}
+                            {{ myentries.append((realm, description))|e }}
                         {% endif %}
                     {% endfor %}
                     {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label="Zielbereich", radio=True) }}

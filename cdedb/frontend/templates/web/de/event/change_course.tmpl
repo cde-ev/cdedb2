@@ -14,7 +14,7 @@
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for part_id, pdata in event_data['parts']|dictsort %}
-                {{ myentries.append((part_id, pdata['title'], "manipulator_checkbox_{}".format(part_id)))|e }}
+                {{ myentries.append((part_id, pdata['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
         </table>

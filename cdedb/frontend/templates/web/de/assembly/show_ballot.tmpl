@@ -75,10 +75,10 @@
                 <div>
                     {% if ballot_data['votes'] == 1 %}
                         {# jinja does not support list comprehension ... #}
-                        {% set myentries = [("special: none", "keiner der Kandidaten", None)] %}
+                        {% set myentries = [("special: none", "keiner der Kandidaten")] %}
                         {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
                             {% if candidate_id != ballot_data['bar'] %}
-                                {{ myentries.append((cdata['moniker'], cdata['description'], None))|e }}
+                                {{ myentries.append((cdata['moniker'], cdata['description']))|e }}
                             {% endif %}
                         {% endfor %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, radio=True) }}
@@ -87,7 +87,7 @@
                         {% set myentries = [] %}
                         {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
                             {% if candidate_id != ballot_data['bar'] %}
-                                {{ myentries.append((cdata[ 'moniker'], cdata['description'], None))|e }}
+                                {{ myentries.append((cdata[ 'moniker'], cdata['description']))|e }}
                             {% endif %}
                         {% endfor %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries) }}

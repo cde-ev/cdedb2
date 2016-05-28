@@ -42,7 +42,7 @@
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in const.EventLogCodes %}
-                {{ myentries.append((code.value, i18n(code|string), None))|e }}
+                {{ myentries.append((code.value, i18n(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                                      entries=myentries) }}

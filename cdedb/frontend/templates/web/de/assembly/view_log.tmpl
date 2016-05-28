@@ -50,14 +50,14 @@ Versammlung -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in const.AssemblyLogCodes %}
-                {{ myentries.append((code.value, i18n(code|string), None))|e }}
+                {{ myentries.append((code.value, i18n(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                                      entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for assembly_id, adata in assemblies|dictsort %}
-                {{ myentries.append((assembly_id, adata['title'], None))|e }}
+                {{ myentries.append((assembly_id, adata['title']))|e }}
             {% endfor %}
             {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}
             {{ util.form_input_text(name="start", label="Anfang") }}

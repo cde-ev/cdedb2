@@ -29,8 +29,8 @@
                     {% set mix_info = "" %}
                 {% endif %}
                 {{ util.form_input_select(name="mixed_lodging", entries=(
-                    (True, "Ich bin mit einer gemischten Unterbringung einverstanden.", None),
-                    (False, "Ich will geschlechter-getrennt untergebracht werden.", None)),
+                    (True, "Ich bin mit einer gemischten Unterbringung einverstanden."),
+                    (False, "Ich will geschlechter-getrennt untergebracht werden.")),
                     label="Gemischte Unterbringung", info=mix_info, readonly=readonly) }}
             {% endif %}
             {{ util.form_input_checkbox(name="foto_consent", readonly=readonly, label=glue(
@@ -46,7 +46,7 @@
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
                     {% for course_id in course_list %}
-                        {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
+                        {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
                                              label="Erstwahl", readonly=readonly) }}
@@ -55,9 +55,9 @@
                     {{ util.form_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
                                              label="Drittwahl", readonly=readonly) }}
                     {# jinja does not support list comprehension ... #}
-                    {% set myentries = [("", "Ich bin kein Kursleiter.", None)] %}
+                    {% set myentries = [("", "Ich bin kein Kursleiter.")] %}
                     {% for course_id in course_list %}
-                        {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
+                        {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_instructor{}".format(part_id), entries=myentries,
                                              label="Kursleiter", readonly=readonly) }}

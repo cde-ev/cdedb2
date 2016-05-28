@@ -30,13 +30,13 @@
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for s in const.RegistrationPartStati %}
-                    {{ myentries.append((s.value, i18n(s|string), None))|e }}
+                    {{ myentries.append((s.value, i18n(s|string)))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_choices[part_id] %}
-                    {{ myentries.append((course_id, course_data[course_id]['title'], None))|e }}
+                    {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
                                          nulloption=True) }}
@@ -51,7 +51,7 @@
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for lodgement_id, ldata in lodgement_data|dictsort %}
-                    {{ myentries.append((lodgement_id, ldata['moniker'], None))|e }}
+                    {{ myentries.append((lodgement_id, ldata['moniker']))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                          entries=myentries, nulloption=True) }}

@@ -30,7 +30,7 @@
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for resolution in LineResolutions %}
-                    {{ myentries.append((resolution.value, i18n(resolution|string), None))|e }}
+                    {{ myentries.append((resolution.value, i18n(resolution|string)))|e }}
                 {% endfor %}
                 {{ util.form_input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, label="Aktion",
                         radio=True) }}
@@ -38,13 +38,13 @@
                     Die folgenden Accounts sind diesem ähnlich. Wähle einen
                     aus, um ihn mit der passenden Aktion zu modifizieren.
                     {# jinja does not support list comprehension ... #}
-                    {% set myentries = [('', '--', None)] %}
+                    {% set myentries = [('', '--')] %}
                     {% for key, value in dataset['doppelgangers']|dictsort %}
                         {% with description = "{} {} ({}), {}, geb. am {}, ID {} ({})".format(
                                 value['given_names'], value['family_name'], value['birth_name'] or value['family_name'],
                                 value['username'], value['birthday'], key|cdedbid,
                                 'Mitglied' if value['is_member'] else 'kein Mitglied') %}
-                            {{ myentries.append((key, description, None))|e }}
+                            {{ myentries.append((key, description))|e }}
                         {% endwith %}
                     {% endfor %}
                     {{ util.form_input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1), myentries,

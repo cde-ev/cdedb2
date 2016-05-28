@@ -10,8 +10,8 @@ Datenfeld {{ data['fields'][values['field_id']]['field_name']|e }} ({{ data['tit
         <table>
             {{ util.form_input_text(name="field_name", label="Name", readonly=True) }}
             {{ util.form_input_select(name="kind", label="Typ", entries=(
-                ("str", "String", None), ("bool", "Ja/Nein", None), ("int", "Zahl", None), ("float", "Kommazahl", None),
-                ("date", "Datum", None), ("datetime", "Datum mit Uhrzeit", None))) }}
+                ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
+                ("date", "Datum"), ("datetime", "Datum mit Uhrzeit"))) }}
             {{ util.form_input_textarea(name="entries", label="Auswahlmöglichkeiten",
                                        info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
         </table>

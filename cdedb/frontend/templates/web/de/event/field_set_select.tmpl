@@ -9,7 +9,7 @@
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for field_id, fdata in event_data['fields']|dictsort %}
-                {{ myentries.append((field_id, fdata['field_name'], None))|e }}
+                {{ myentries.append((field_id, fdata['field_name']))|e }}
             {% endfor %}
             {{ util.form_input_select("field_id", entries=myentries) }}
             {{ util.form_input_submit(value="Anzeigen") }}

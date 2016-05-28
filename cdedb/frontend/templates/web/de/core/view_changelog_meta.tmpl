@@ -64,7 +64,7 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for status in const.MemberChangeStati %}
-                {{ myentries.append((status.value, i18n(status|string), None))|e }}
+                {{ myentries.append((status.value, i18n(status|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("stati", label="Status", info="Keine Auswahl entspricht allem.",
                                      entries=myentries, small=True) }}
