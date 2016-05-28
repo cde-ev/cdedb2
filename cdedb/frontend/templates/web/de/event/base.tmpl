@@ -5,7 +5,7 @@
 {% macro one_event_links(data) %}
     <div class="list-group">
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
-                    readonly=data['locked'], aclass="list-group-item", icon="triangle-right",
+                    readonly=is_locked, aclass="list-group-item", icon="triangle-right",
                     active=(sidenav_active == 'event_show')) }}
         {# TODO #}
         {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), "Kursliste") }}
@@ -18,7 +18,7 @@
             {% endif %}
         {% else %}
             {{ util.href(cdedblink("event/register_form", {"event_id": data['id']}), "Anmelden",
-                    readonly=data['locked'], aclass="list-group-item", icon="log-in",
+                    readonly=is_locked, aclass="list-group-item", icon="log-in",
                     active=(sidenav_active == 'event_register')) }}
         {% endif %}
     </div>
@@ -32,26 +32,26 @@
 
             {# TODO #}
             {{ util.href(cdedblink("event/add_registration_form", {"event_id": data['id']}), "Neuer Teilnehmer",
-                     readonly=data['locked']) }}
+                     readonly=is_locked) }}
 
             {{ util.href(cdedblink("event/lodgements", {"event_id": data['id']}), "Unterkunft",
                     aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
 
             {# TODO #}
             {{ util.href(cdedblink("event/field_set_select", {"event_id": data['id']}), "Datenfeld setzen",
-                     readonly=data['locked']) }}
+                     readonly=is_locked) }}
             {# TODO #}
             {{ util.href(cdedblink("event/part_summary", {"event_id": data['id']}), "Teile konfigurieren",
-                     readonly=data['locked']) }}
+                     readonly=is_locked) }}
             {# TODO #}
             {{ util.href(cdedblink("event/field_summary", {"event_id": data['id']}), "Datenfelder konfigurieren",
-                     readonly=data['locked']) }}
+                     readonly=is_locked) }}
             {# TODO #}
             {{ util.href(cdedblink("event/questionnaire_summary", {"event_id": data['id']}), "Fragebogen konfigurieren",
-                     readonly=data['locked']) }}
+                     readonly=is_locked) }}
             {# TODO #}
             {{ util.href(cdedblink("event/course_stats", {"event_id": data['id']}), "Kurse",
-                     readonly=data['locked']) }}
+                     readonly=is_locked) }}
 
             {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), "Kurswahlen",
                     aclass="list-group-item", icon="briefcase", active=(sidenav_active == 'event_lodgements')) }}
@@ -64,7 +64,7 @@
 
         <div class="list-group">
             {{ util.href(cdedblink("event/checkin_form", {"event_id": data['id']}), "Checkin",
-                    readonly=data['locked'], aclass="list-group-item", icon="check",
+                    readonly=is_locked, aclass="list-group-item", icon="check",
                     active=(sidenav_active == 'event_checkin')) }}
         </div>
     {% endif %}

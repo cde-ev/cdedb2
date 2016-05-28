@@ -3,8 +3,8 @@
 {% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}){% endblock %}
 {% block content %}
     {% if event_data['id'] in user.orga or is_admin %}
-        {{ util.href(cdedblink('event/change_course_form'), "Bearbeiten", readonly=locked) }}
-        {{ util.href(cdedblink('event/manage_attendees_form'), "Kursteilnehmer verwalten", readonly=locked) }}
+        {{ util.href(cdedblink('event/change_course_form'), "Bearbeiten", readonly=is_locked) }}
+        {{ util.href(cdedblink('event/manage_attendees_form'), "Kursteilnehmer verwalten", readonly=is_locked) }}
     {% endif %}
     <p>Kursleiter: {{ course_data['instructors']|e }}</p>
     <p>{{ course_data['description']|e }}</p>

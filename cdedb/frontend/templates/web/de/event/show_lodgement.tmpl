@@ -25,12 +25,12 @@
         </ul>
     {% endif %}
     <h2>Aktionen</h2>
-    {{ util.href(cdedblink("event/change_lodgement_form"), "bearbeiten", readonly=locked) }}
+    {{ util.href(cdedblink("event/change_lodgement_form"), "bearbeiten", readonly=is_locked) }}
     <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" class="jsConfirmed"
      id="deletelodgementform">
-        {{ util.form_input_submit("Löschen", readonly=locked) }}
+        {{ util.form_input_submit("Löschen", readonly=is_locked) }}
     </form>
-    {{ util.href(cdedblink("event/manage_inhabitants_form"), "Belegung ändern", readonly=locked) }}
+    {{ util.href(cdedblink("event/manage_inhabitants_form"), "Belegung ändern", readonly=is_locked) }}
     <h2>Allgemeine Angaben</h2>
     <table>
         <tr>

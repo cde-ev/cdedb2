@@ -36,12 +36,12 @@
                         </table>
                     </p>
                 {% endif %}
-                {{ util.href(cdedblink('event/change_field_form', {'field_id': anid}), "bearbeiten", readonly=locked) }}
+                {{ util.href(cdedblink('event/change_field_form', {'field_id': anid}), "bearbeiten", readonly=is_locked) }}
                 <form action="{{ cdedblink('event/remove_field', {'field_id': anid})|e }}" method="POST"
                  id="removefieldform{{ anid|e }}">
                     <div>
                         {{ util.input_hidden(name="field_id", value=anid) }}
-                        {{ util.form_input_submit(value="Feld löschen", readonly=locked) }}
+                        {{ util.form_input_submit(value="Feld löschen", readonly=is_locked) }}
                     </div>
                 </form>
             </li>
@@ -58,7 +58,7 @@
                                        info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
         </table>
         <div>
-            {{ util.form_input_submit(value="Feld hinzufügen", readonly=locked) }}
+            {{ util.form_input_submit(value="Feld hinzufügen", readonly=is_locked) }}
         </div>
     </form>
 {% endblock %}

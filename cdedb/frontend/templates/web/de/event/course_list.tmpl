@@ -31,6 +31,6 @@
     {% endif %}
     {% if event_data['id'] in user.orga or is_admin %}
         <h2>Kurs hinzufügen</h2>
-        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=locked) }}
+        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=is_locked) }}
     {% endif %}
 {% endblock %}

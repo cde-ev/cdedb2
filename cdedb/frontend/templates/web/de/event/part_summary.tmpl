@@ -18,7 +18,7 @@
             <li>
                 {{ entry['title']|e }}
                 ({{ entry['part_begin']|date|e }}--{{ entry['part_end']|date|e }}; {{ entry['fee']|e }}€)
-                {{ util.href(cdedblink('event/change_part_form', {'part_id': anid}), "bearbeiten", readonly=locked) }}
+                {{ util.href(cdedblink('event/change_part_form', {'part_id': anid}), "bearbeiten", readonly=is_locked) }}
             </li>
         {% endfor %}
     </ul>
@@ -31,7 +31,7 @@
             {{ util.form_input_text(name="fee", label="Teilnehmerbeitrag") }}
         </table>
         <div>
-            {{ util.form_input_submit(value="Teil hinzufügen", readonly=locked) }}
+            {{ util.form_input_submit(value="Teil hinzufügen", readonly=is_locked) }}
         </div>
     </form>
 {% endblock %}

@@ -150,14 +150,14 @@
                             {% endif %}
                         {% endfor %}
                         {{ util.form_input_select(name="column", label="", entries=myentries, anid="column_selector",
-                                             readonly=locked) }}
+                                             readonly=is_locked) }}
                     {% endwith %}
                     <span id="value_span">
-                        {{ util.form_input_text(name="value", anid="value_input", readonly=locked) }}
+                        {{ util.form_input_text(name="value", anid="value_input", readonly=is_locked) }}
                     </span>
                     {{ util.input_hidden(name="num_rows", value=result|length) }}
                     {% if "reg.id" in query.fields_of_interest %}
-                        {{ util.form_input_submit(value="Ändern", anid="value_input", readonly=locked) }}
+                        {{ util.form_input_submit(value="Ändern", anid="value_input", readonly=is_locked) }}
                     {% else %}
                         Für Änderungsoperation muss die Spalte ID ausgewählt sein.
                     {% endif %}

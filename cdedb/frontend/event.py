@@ -47,9 +47,12 @@ class EventFrontend(AbstractUserFrontend):
 
     def render(self, rs, templatename, params=None):
         params = params or {}
-        if 'event' in rs.ambience and rs.user.persona_id:
-            params['is_registered'] = bool(self.eventproxy.list_registrations(
-                    rs, rs.ambience['event']['id'], rs.user.persona_id))
+        if 'event' in rs.ambience:
+            params['is_locked'] = self.is_locked(rs.ambience['event'])
+            if rs.user.persona_id:
+                params['is_registered'] = bool(
+                    self.eventproxy.list_registrations(
+                        rs, rs.ambience['event']['id'], rs.user.persona_id))
         return super().render(rs, templatename, params=params)
 
     @classmethod
@@ -455,7 +458,6 @@ class EventFrontend(AbstractUserFrontend):
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
         rs.ambience['event']['is_open'] = self.is_open(rs.ambience['event'])
-        params = {'locked': self.is_locked(rs.ambience['event'])}
         if event_id in rs.user.orga or self.is_admin(rs):
             params['orgas'] = self.coreproxy.get_personas(
                 rs, rs.ambience['event']['orgas'])
@@ -475,8 +477,7 @@ class EventFrontend(AbstractUserFrontend):
         else:
             course_data = None
         return self.render(rs, "course_list", {
-            'event_data': event_data, 'course_data': course_data,
-            'locked': self.is_locked(event_data)})
+            'event_data': event_data, 'course_data': course_data,})
 
     @access("event")
     @event_guard()
@@ -491,7 +492,7 @@ class EventFrontend(AbstractUserFrontend):
         minor_form_present = os.path.isfile(os.path.join(
             self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
         return self.render(rs, "part_summary", {
-            'data': data, 'orgas': orgas, 'locked': self.is_locked(data),
+            'data': data, 'orgas': orgas,
             'questionnaire': questionnaire,
             'minor_form_present': minor_form_present,
             'institutions': institutions})
@@ -516,7 +517,7 @@ class EventFrontend(AbstractUserFrontend):
         minor_form_present = os.path.isfile(os.path.join(
             self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
         return self.render(rs, "field_summary", {
-            'data': data, 'orgas': orgas, 'locked': self.is_locked(data),
+            'data': data, 'orgas': orgas,
             'questionnaire': questionnaire,
             'minor_form_present': minor_form_present,
             'institutions': institutions})
@@ -793,8 +794,7 @@ class EventFrontend(AbstractUserFrontend):
         """Display course associated to event organized via DB."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         course_data = self.eventproxy.get_course_data_one(rs, course_id)
-        params = {'event_data': event_data, 'course_data': course_data,
-                  'locked': self.is_locked(event_data)}
+        params = {'event_data': event_data, 'course_data': course_data,}
         if event_id in rs.user.orga or self.is_admin(rs):
             registrations = self.eventproxy.list_registrations(rs, event_id)
             registration_data = {
@@ -1592,8 +1592,7 @@ class EventFrontend(AbstractUserFrontend):
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         merge_dicts(rs.values, registration_data['field_data'])
         return self.render(rs, "questionnaire", {
-            'event_data': event_data, 'questionnaire': questionnaire,
-            'locked': self.is_locked(event_data)})
+            'event_data': event_data, 'questionnaire': questionnaire,})
 
     @access("event", modi={"POST"})
     def questionnaire(self, rs, event_id):
@@ -1796,8 +1795,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_registration", {
             'registration_data': registration_data, 'event_data': event_data,
             'user_data': user_data, 'age': age, 'course_data': course_data,
-            'lodgement_data': lodgement_data,
-            'locked': self.is_locked(event_data)})
+            'lodgement_data': lodgement_data,})
 
     @access("event")
     @event_guard(check_offline=True)
@@ -2108,8 +2106,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "lodgements", {
             'event_data': event_data, 'lodgement_data': lodgement_data,
             'registration_data': registration_data, 'user_data': user_data,
-            'inhabitants': inhabitants, 'problems': problems,
-            'locked': self.is_locked(event_data)})
+            'inhabitants': inhabitants, 'problems': problems,})
 
     @access("event")
     @event_guard()
@@ -2140,8 +2137,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "show_lodgement", {
             'event_data': event_data, 'lodgement_data': lodgement_data,
             'registration_data': registration_data, 'user_data': user_data,
-            'inhabitants': inhabitants, 'problems': problems,
-            'locked': self.is_locked(event_data)})
+            'inhabitants': inhabitants, 'problems': problems,})
 
     @access("event")
     @event_guard(check_offline=True)
@@ -2524,8 +2520,7 @@ class EventFrontend(AbstractUserFrontend):
         params = {
             'spec': spec, 'choices': choices, 'queryops': QueryOperators,
             'default_queries': default_queries, 'titles': titles,
-            'event_data': event_data, 'query': query,
-            'locked': self.is_locked(event_data)}
+            'event_data': event_data, 'query': query,}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_registration"

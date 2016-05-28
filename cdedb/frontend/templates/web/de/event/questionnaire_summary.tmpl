@@ -32,13 +32,13 @@
                     {% endif %}
                     <form action="{{ cdedblink('event/remove_questionnaire_row', {'num': loop.index0})|e }}"
                      method="POST" id="removequestionnairerowform{{ loop.index0|e }}">
-                        {{ util.form_input_submit(value="Zeile löschen", readonly=locked) }}
+                        {{ util.form_input_submit(value="Zeile löschen", readonly=is_locked) }}
                     </form>
                 </li>
             {% endfor %}
         </ul>
-        {{ util.href(cdedblink('event/change_questionnaire_form'), "bearbeiten", readonly=locked) }}
-        {{ util.href(cdedblink('event/reorder_questionnaire_form'), "umordnen", readonly=locked) }}
+        {{ util.href(cdedblink('event/change_questionnaire_form'), "bearbeiten", readonly=is_locked) }}
+        {{ util.href(cdedblink('event/reorder_questionnaire_form'), "umordnen", readonly=is_locked) }}
         <h3>Zeile anfügen</h3>
         <form action="{{ cdedblink('event/add_questionnaire_row')|e }}" method="POST" id="addquestionnairerowform">
             <table>
@@ -56,7 +56,7 @@
                 {{ util.form_input_checkbox("row_readonly", label="Schreibgeschützt") }}
             </table>
             <div>
-                {{ util.form_input_submit(value="Zeile anfügen", readonly=locked) }}
+                {{ util.form_input_submit(value="Zeile anfügen", readonly=is_locked) }}
             </div>
         </form>
     {% endwith %}

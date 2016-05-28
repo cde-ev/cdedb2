@@ -30,7 +30,7 @@
         </ul>
     {% endif %}
     <h2>Neue Unterkunft anlegen</h2>
-    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", readonly=locked) }}
+    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", readonly=is_locked) }}
     <h2>Alle Unterkünfte</h2>
     <table class="checkeredTable">
         <tr>
@@ -53,9 +53,9 @@
                 <td>
                     {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}), "Details") }}
                     {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}), "bearbeiten",
-                                 readonly=locked) }}
+                                 readonly=is_locked) }}
                     {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}), "Belegung",
-                                 readonly=locked) }}
+                                 readonly=is_locked) }}
                 </td>
             </tr>
         {% endfor %}

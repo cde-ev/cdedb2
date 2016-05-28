@@ -66,7 +66,7 @@
                 <td>{{ ambience['event']['notes']|rst }}</td>
             </tr>
         </table>
-        {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", readonly=locked) }}
+        {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", readonly=is_locked) }}
         <h2>Minderjährigenformular</h2>
         {% if minor_form_present %}
             {{ util.href(cdedblink('event/get_minor_form'), "aktuelles Formular") }}
@@ -77,7 +77,7 @@
          id="changeminorformform">
             <div>
                 {{ util.form_input_file(name="minor_form", accept="application/pdf", info="Eine pdf-Datei.") }}
-                {{ util.form_input_submit(value="Hochladen", readonly=locked) }}
+                {{ util.form_input_submit(value="Hochladen", readonly=is_locked) }}
             </div>
         </form>
         <h2>Orgas</h2>
@@ -88,7 +88,7 @@
                     <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST" id="removeorgaform{{ anid|e }}">
                         <div>
                             {{ util.input_hidden(name="orga_id", value=anid) }}
-                            {{ util.form_input_submit(value="Orga löschen", readonly=locked) }}
+                            {{ util.form_input_submit(value="Orga löschen", readonly=is_locked) }}
                         </div>
                     </form>
                 </li>
@@ -98,7 +98,7 @@
         <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform">
             <div>
                 {{ util.form_input_text(name="orga_id", label="ID") }}
-                {{ util.form_input_submit(value="Orga hinzufügen", readonly=locked) }}
+                {{ util.form_input_submit(value="Orga hinzufügen", readonly=is_locked) }}
             </div>
         </form>
         <h2>Offline Nutzung</h2>
@@ -127,7 +127,7 @@
             <h2>Archivierung</h2>
             <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed" id="archiveeventform">
                 <div>
-                    {{ util.form_input_submit(value="Archivieren", readonly=locked) }}
+                    {{ util.form_input_submit(value="Archivieren", readonly=is_locked) }}
                 </div>
             </form>
         {% endif %}
