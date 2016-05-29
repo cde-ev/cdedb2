@@ -1,19 +1,23 @@
 {% set sidenav_active='event_course_choices' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Kurse -- Übersicht ({{ event_data['title']|e }}){% endblock %}
+{% block title %}Kurse -- Übersicht ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
-    TODO: Links, Infos ueber Teile in denen der Kurs stattfindet, ...
     <table>
         <tr>
+            <th>Nummer</th>
             <th>Kurs</th>
-            {% for part_id, pdata in event_data['parts']|dictsort %}
-                <th colspan="3">{{ pdata['title']|e }}</th>
+            <th>Kurzname</th>
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
+                <th colspan="4">{{ pdata['title']|e }}</th>
             {% endfor %}
         </tr>
         <tr>
             <th></th>
-            {% for part_id, pdata in event_data['parts']|dictsort %}
+            <th></th>
+            <th></th>
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
+                <th>zugewiesen</th>
                 <th>Erstwahl</th>
                 <th>Zweitwahl</th>
                 <th>Drittwahl</th>
@@ -21,10 +25,13 @@
         </tr>
         {% for course_id, cdata in course_data|dictsort %}
             <tr>
+                <td>{{ cdata['nr']|e }}</td>
                 <td>{{ cdata['title']|e }}</td>
-                {% for part_id, pdata in event_data['parts']|dictsort %}
+                <td>{{ cdata['shortname']|e }}</td>
+                {% for part_id, pdata in ambience['event']['parts']|dictsort %}
+                     <td> {{ assign_counts[course_id][part_id]|e }} </td>
                      {% for i in range(3) %}
-                         <td> {{ counts[course_id][(part_id, i)]|e }} </td>
+                         <td> {{ choice_counts[course_id][(part_id, i)]|e }} </td>
                      {% endfor %}
                 {% endfor %}
             </tr>

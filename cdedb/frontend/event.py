@@ -1028,19 +1028,16 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     def course_stats(self, rs, event_id):
-        """List course choices.
+        """List courses.
 
-        If course_id is not provided an overview of the number of choices
-        for all courses is presented. Otherwise all votes for a specific
-        course are listed.
+        Provide an overview of the number of choices and assignments for
+        all courses.
         """
-        # TODO implement
-        event_data = self.eventproxy.get_event_data_one(rs, event_id)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
         courses = self.eventproxy.list_courses(rs, event_id, past=False)
         course_data = self.eventproxy.get_course_data(rs, courses)
-        counts = {
+        choice_counts = {
             course_id: {
                 (part_id, i): sum(
                     1 for rdata in registration_data.values()
@@ -1048,15 +1045,27 @@ class EventFrontend(AbstractUserFrontend):
                         and rdata['choices'][part_id][i] == course_id
                         and (rdata['parts'][part_id]['status']
                              == const.RegistrationPartStati.participant)
-                        and rdata['persona_id'] not in event_data['orgas']))
-                for part_id in event_data['parts']
+                        and rdata['persona_id'] not in rs.ambience['event']['orgas']))
+                for part_id in rs.ambience['event']['parts']
                 for i in range(3)
             }
             for course_id in courses
         }
+        assign_counts = {
+            course_id: {
+                part_id: sum(
+                    1 for rdata in registration_data.values()
+                    if (rdata['parts'][part_id]['course_id'] == course_id
+                        and (rdata['parts'][part_id]['status']
+                             == const.RegistrationPartStati.participant)
+                        and rdata['persona_id'] not in rs.ambience['event']['orgas']))
+                for part_id in rs.ambience['event']['parts']
+            }
+            for course_id in courses
+        }
         return self.render(rs, "course_stats", {
-            'event_data': event_data, 'course_data': course_data,
-            'counts': counts})
+            'course_data': course_data, 'choice_counts': choice_counts,
+            'assign_counts': assign_counts})
 
     @access("event")
     @event_guard()
