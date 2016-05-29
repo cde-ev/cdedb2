@@ -455,30 +455,35 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Bertålotta")
 
     @as_users("anton", "garcia")
-    def test_change_event_parts(self, user):
+    def test_part_summary(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/part/summary'})
         ## parts
-        self.assertPresence("Warmup")
-        self.assertNonPresence("Cooldown")
-        f = self.response.forms['addpartform']
-        f['part_title'] = "Cooldown"
-        f['part_begin'] = "2233-4-5"
-        f['part_end'] = "2233-6-7"
-        f['fee'] = "23456.78"
+        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertEqual("Warmup", f['title_1'].value)
+        self.assertNotIn('title_4', f.fields)
+        f['create_-1'].checked = True
+        f['title_-1'] = "Cooldown"
+        f['part_begin_-1'] = "2233-4-5"
+        f['part_end_-1'] = "2233-6-7"
+        f['fee_-1'] = "23456.78"
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.assertPresence("Cooldown")
-        self.traverse({'href': '/event/event/1/part/3/change'})
-        self.assertTitle("Zweite Hälfte (Große Testakademie 2222) bearbeiten")
-        f = self.response.forms['changepartform']
-        f['title'] = "Größere Hälfte"
-        f['fee'] = "99.99"
+        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertEqual("Cooldown", f['title_4'].value)
+        f['title_3'] = "Größere Hälfte"
+        f['fee_3'] = "99.99"
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.assertNonPresence("Zweite Hälfte")
-        self.assertPresence("Größere Hälfte")
+        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertEqual("Größere Hälfte", f['title_3'].value)
+        f['delete_4'].checked = True
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertNotIn('title_4', f.fields)
 
     @as_users("anton", "garcia")
     def test_change_event_fields(self, user):
@@ -1155,25 +1160,16 @@ class TestEventFrontend(FrontendTest):
         f['registration_hard_limit'] = "2001-10-30"
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
-        self.traverse({'href': '/event/event/1/part/summary'},
-                      {'href': '/event/event/1/part/1/change'})
-        f = self.response.forms["changepartform"]
-        f['part_begin'] = "2003-02-02"
-        f['part_end'] = "2003-02-02"
+        self.traverse({'href': '/event/event/1/part/summary'})
+        f = self.response.forms["partsummaryform"]
+        f['part_begin_1'] = "2003-02-02"
+        f['part_end_1'] = "2003-02-02"
+        f['part_begin_2'] = "2003-11-01"
+        f['part_end_2'] = "2003-11-11"
+        f['part_begin_3'] = "2003-11-11"
+        f['part_end_3'] = "2003-11-30"
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.traverse({'href': '/event/event/1/part/2/change'})
-        f = self.response.forms["changepartform"]
-        f['part_begin'] = "2003-11-01"
-        f['part_end'] = "2003-11-11"
-        self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.traverse({'href': '/event/event/1/part/3/change'})
-        f = self.response.forms["changepartform"]
-        f['part_begin'] = "2003-11-11"
-        f['part_end'] = "2003-11-30"
-        self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
+        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
         ## do it
         self.traverse({'href': '/event/event/1/show'})
         f = self.response.forms["archiveeventform"]

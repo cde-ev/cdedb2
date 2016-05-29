@@ -482,31 +482,6 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
-    def part_summary_form(self, rs, event_id):
-        """Overview of properties of an event organized via DB."""
-        # TODO implement
-        data = self.eventproxy.get_event_data_one(rs, event_id)
-        merge_dicts(rs.values, data)
-        orgas = self.coreproxy.get_personas(rs, data['orgas'])
-        institutions = self.eventproxy.list_institutions(rs)
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        minor_form_present = os.path.isfile(os.path.join(
-            self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
-        return self.render(rs, "part_summary", {
-            'data': data, 'orgas': orgas,
-            'questionnaire': questionnaire,
-            'minor_form_present': minor_form_present,
-            'institutions': institutions})
-
-    @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
-    def part_summary(self, rs, event_id):
-        """Overview of properties of an event organized via DB."""
-        # TODO implement
-        pass
-
-    @access("event")
-    @event_guard()
     def field_summary_form(self, rs, event_id):
         """Overview of properties of an event organized via DB."""
         # TODO implement
@@ -619,51 +594,76 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event")
-    @event_guard(check_offline=True)
-    def change_part_form(self, rs, event_id, part_id):
+    @event_guard()
+    def part_summary_form(self, rs, event_id):
         """Render form."""
-        data = self.eventproxy.get_event_data_one(rs, event_id)
-        if part_id not in data['parts']:
-            return werkzeug.exceptions.NotFound("Wrong associated event.")
-        merge_dicts(rs.values, data['parts'][part_id])
-        return self.render(rs, "change_part", {'data': data})
+        current = {
+            "{}_{}".format(key, part_id): value
+            for part_id, part in rs.ambience['event']['parts'].items()
+            for key, value in part.items() if key != 'id'}
+        merge_dicts(rs.values, current)
+        return self.render(rs, "part_summary")
 
-    @access("event", modi={"POST"})
-    @REQUESTdatadict("title", "part_begin", "part_end", "fee")
-    @event_guard(check_offline=True)
-    def change_part(self, rs, event_id, part_id, data):
-        """Update an event part."""
-        data = check(rs, "event_part_data", data)
-        if rs.errors:
-            return self.change_part_form(rs, event_id, part_id)
-        newdata = {
-            'id': event_id,
-            'parts': {
-                part_id: data
-            }
+    @staticmethod
+    def process_part_input(rs, parts):
+        """This handles input to configure the parts.
+
+        Since this covers a variable number of rows, we cannot do this
+        statically. This takes care of validation too.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type parts: [int]
+        :param parts: ids of parts
+        :rtype: {int: {str: object}}
+        """
+        delete_flags = request_data_extractor(
+            rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
+        deletes = {part_id for part_id in parts
+                   if delete_flags['delete_{}'.format(part_id)]}
+        spec = {
+            'title': "str",
+            'part_begin': "date",
+            'part_end': "date",
+            'fee': "decimal",
         }
-        code = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/part_summary_form")
+        params = tuple(("{}_{}".format(key, part_id), value)
+                       for part_id in parts if part_id not in deletes
+                       for key, value in spec.items())
+        data = request_data_extractor(rs, params)
+        ret  = {
+            part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
+            for part_id in parts if part_id not in deletes
+        }
+        for part_id in deletes:
+            ret[part_id] = None
+        marker = 1
+        while marker < 2**10:
+            check = unwrap(request_data_extractor(
+                rs, (("create_-{}".format(marker), "bool"),)))
+            if check:
+                params = tuple(("{}_-{}".format(key, marker), value)
+                               for key, value in spec.items())
+                data = request_data_extractor(rs, params)
+                ret[-marker] = {key: data["{}_-{}".format(key, marker)]
+                                for key in spec}
+            else:
+                break
+            marker += 1
+        return ret
 
     @access("event", modi={"POST"})
-    @REQUESTdatadict("part_title", "part_begin", "part_end", "fee")
     @event_guard(check_offline=True)
-    def add_part(self, rs, event_id, data):
-        """Create a new event part."""
-        ## fix up name collision
-        data['title'] = data['part_title']
-        del data['part_title']
-        data = check(rs, "event_part_data", data)
+    def part_summary(self, rs, event_id):
+        """Manipulate the parts of an event."""
+        parts = self.process_part_input(
+            rs, rs.ambience['event']['parts'].keys())
         if rs.errors:
             return self.part_summary_form(rs, event_id)
-        newdata = {
+        event = {
             'id': event_id,
-            'parts': {
-                -1: data
-            }
+            'parts': parts
         }
-        code = self.eventproxy.set_event_data(rs, newdata)
+        code = self.eventproxy.set_event_data(rs, event)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/part_summary_form")
 
@@ -1691,7 +1691,6 @@ class EventFrontend(AbstractUserFrontend):
                                                  new_questionnaire)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/questionnaire_summary_form")
-
 
     @staticmethod
     def _sanitize_questionnaire_row(row):

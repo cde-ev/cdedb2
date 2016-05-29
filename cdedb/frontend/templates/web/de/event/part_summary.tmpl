@@ -3,7 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block jquery %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}{{ data['title']|e }} Details{% endblock %}
+{% block title %}{{ ambience['event']['title']|e }} Teile konfigurieren{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -12,26 +12,29 @@
 {{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
-    <h2>Teile</h2>
-    <ul>
-        {% for anid, entry in data['parts']|dictsort %}
+    <form action="{{ cdedblink('event/part_summary')|e }}" method="POST" id="partsummaryform">
+        <ul>
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                <li>
+                    <table>
+                        {{ util.form_input_checkbox("delete_{}".format(part_id), label="Löschen (TODO nur falls leer)") }}
+                        {{ util.form_input_text(name="title_{}".format(part_id), label="Name") }}
+                        {{ util.form_input_text(name="part_begin_{}".format(part_id), label="Beginn") }}
+                        {{ util.form_input_text(name="part_end_{}".format(part_id), label="Ende") }}
+                        {{ util.form_input_text(name="fee_{}".format(part_id), label="Teilnehmerbeitrag") }}
+                    </table>
+                </li>
+            {% endfor %}
             <li>
-                {{ entry['title']|e }}
-                ({{ entry['part_begin']|date|e }}--{{ entry['part_end']|date|e }}; {{ entry['fee']|e }}€)
-                {{ util.href(cdedblink('event/change_part_form', {'part_id': anid}), "bearbeiten", readonly=is_locked) }}
+                {{ util.form_input_checkbox("create_-1", label="Hinzufügen") }}
+                {{ util.form_input_text(name="title_-1", label="Name") }}
+                {{ util.form_input_text(name="part_begin_-1", label="Beginn") }}
+                {{ util.form_input_text(name="part_end_-1", label="Ende") }}
+                {{ util.form_input_text(name="fee_-1", label="Teilnehmerbeitrag") }}
             </li>
-        {% endfor %}
-    </ul>
-    <h3>Teil hinzufügen</h3>
-    <form action="{{ cdedblink('event/add_part')|e }}" method="POST" id="addpartform">
-        <table>
-            {{ util.form_input_text(name="part_title", label="Name") }}
-            {{ util.form_input_text(name="part_begin", label="Beginn") }}
-            {{ util.form_input_text(name="part_end", label="Ende") }}
-            {{ util.form_input_text(name="fee", label="Teilnehmerbeitrag") }}
-        </table>
+        </ul>
         <div>
-            {{ util.form_input_submit(value="Teil hinzufügen", readonly=is_locked) }}
+            {{ util.form_input_submit(value="Ändern", readonly=is_locked) }}
         </div>
     </form>
 {% endblock %}
