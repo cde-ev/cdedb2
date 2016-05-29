@@ -458,6 +458,7 @@ class EventFrontend(AbstractUserFrontend):
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
         rs.ambience['event']['is_open'] = self.is_open(rs.ambience['event'])
+        params = {}
         if event_id in rs.user.orga or self.is_admin(rs):
             params['orgas'] = self.coreproxy.get_personas(
                 rs, rs.ambience['event']['orgas'])
@@ -525,31 +526,6 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def field_summary(self, rs, event_id):
-        """Overview of properties of an event organized via DB."""
-        # TODO implement
-        pass
-
-    @access("event")
-    @event_guard()
-    def questionnaire_summary_form(self, rs, event_id):
-        """Overview of properties of an event organized via DB."""
-        # TODO implement
-        data = self.eventproxy.get_event_data_one(rs, event_id)
-        merge_dicts(rs.values, data)
-        orgas = self.coreproxy.get_personas(rs, data['orgas'])
-        institutions = self.eventproxy.list_institutions(rs)
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        minor_form_present = os.path.isfile(os.path.join(
-            self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
-        return self.render(rs, "questionnaire_summary", {
-            'data': data, 'orgas': orgas, 'locked': self.is_locked(data),
-            'questionnaire': questionnaire,
-            'minor_form_present': minor_form_present,
-            'institutions': institutions})
-
-    @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
-    def questionnaire_summary(self, rs, event_id):
         """Overview of properties of an event organized via DB."""
         # TODO implement
         pass
@@ -1632,18 +1608,17 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/questionnaire_form")
 
     @access("event")
-    @event_guard(check_offline=True)
-    def change_questionnaire_form(self, rs, event_id):
+    @event_guard()
+    def questionnaire_summary_form(self, rs, event_id):
         """Render form."""
-        event_data = self.eventproxy.get_event_data_one(rs, event_id)
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         current = {
             "{}_{}".format(key, i): value
             for i, entry in enumerate(questionnaire)
             for key, value in entry.items()}
         merge_dicts(rs.values, current)
-        return self.render(rs, "change_questionnaire", {
-            'event_data': event_data, 'questionnaire': questionnaire})
+        return self.render(rs, "questionnaire_summary", {
+            'questionnaire': questionnaire,})
 
     @staticmethod
     def process_questionnaire_input(rs, num):
@@ -1657,6 +1632,9 @@ class EventFrontend(AbstractUserFrontend):
         :param num: number of rows to expect
         :rtype: [{str: object}]
         """
+        delete_flags = request_data_extractor(
+            rs, (("delete_{}".format(i), "bool") for i in range(num)))
+        deletes = {i for i in range(num) if delete_flags['delete_{}'.format(i)]}
         spec = {
             'field_id': "id_or_None",
             'title': "str_or_None",
@@ -1664,36 +1642,47 @@ class EventFrontend(AbstractUserFrontend):
             'input_size': "int_or_None",
             'readonly': "bool_or_None",
         }
-        params = tuple(x
-                       for i in range(num)
-                       for x in (("{}_{}".format(key, i), value)
-                                 for key, value in spec.items()))
+        params = tuple(("{}_{}".format(key, i), value)
+                       for i in range(num) if i not in deletes
+                       for key, value in spec.items())
         data = request_data_extractor(rs, params)
         questionnaire = tuple(
             {key: data["{}_{}".format(key, i)] for key in spec}
-            for i in range(num)
+            for i in range(num) if i not in deletes
         )
+        marker = 1
+        while marker < 2**10:
+            check = unwrap(request_data_extractor(
+                rs, (("create_-{}".format(marker), "bool"),)))
+            if check:
+                params = tuple(("{}_-{}".format(key, marker), value)
+                               for key, value in spec.items())
+                data = request_data_extractor(rs, params)
+                questionnaire += ({key: data["{}_-{}".format(key, marker)]
+                                   for key in spec},)
+            else:
+                break
+            marker += 1
         return questionnaire
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
-    def change_questionnaire(self, rs, event_id):
-        """Configure the questionnaire.
+    def questionnaire_summary(self, rs, event_id):
+        """Manipulate the questionnaire form.
 
         This allows the orgas to design a form without interaction with an
-        administrator. This assumes, that the number of rows stays constant
-        and only the attributes of the rows are changed. For more/less rows
-        there are seperate functions.
+        administrator.
         """
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         new_questionnaire = self.process_questionnaire_input(
             rs, len(questionnaire))
         if rs.errors:
-            return self.change_questionnaire_form(rs, event_id)
+            return self.questionnaire_summary_form(rs, event_id)
         code = self.eventproxy.set_questionnaire(rs, event_id,
                                                  new_questionnaire)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/questionnaire_summary_form")
+
 
     @staticmethod
     def _sanitize_questionnaire_row(row):
@@ -1738,41 +1727,6 @@ class EventFrontend(AbstractUserFrontend):
                                                  new_questionnaire)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/questionnaire_summary_form")
-
-    @access("event", modi={"POST"})
-    @REQUESTdatadict('row_field_id', 'row_title', 'row_info', 'row_input_size',
-                     'row_readonly',)
-    @event_guard(check_offline=True)
-    def add_questionnaire_row(self, rs, event_id, data):
-        """Append a row to the orga designed form."""
-        ## fix up name collision
-        data = ({key: data["row_{}".format(key)]
-                 for key in ('field_id', 'title', 'info', 'input_size',
-                             'readonly',)},)
-        data = check(rs, "questionnaire_data", data)
-        if rs.errors:
-            return self.questionnaire_summary_form(rs, event_id)
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        new_questionnaire = tuple(self._sanitize_questionnaire_row(row)
-                                  for row in questionnaire) + tuple(data)
-        code = self.eventproxy.set_questionnaire(rs, event_id,
-                                                 new_questionnaire)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/questionnaire_summary_form")
-
-    @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
-    def remove_questionnaire_row(self, rs, event_id, num):
-        """Zap a row from the orga designed form."""
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        new_questionnaire = tuple(
-            self._sanitize_questionnaire_row(row)
-            for i, row in enumerate(questionnaire) if i != num)
-        code = self.eventproxy.set_questionnaire(rs, event_id,
-                                                 new_questionnaire)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/questionnaire_summary_form")
-
 
     @access("event")
     @event_guard()
