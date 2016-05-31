@@ -19,7 +19,7 @@ help:
 	@echo "         (TESTPATTERN specifies files, e.g. 'test_common.py')"
 	@echo "single-check -- run a single test from the test suite"
 	@echo "                (specified via TESTPATTERN, e.g."
-	@echo "                 'test.test_common.TestCommon.test_realm_extraction')"
+	@echo "                 'test.test_common.TestCommon.test_extract_roles')"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
 PYTHONBIN ?= "python3"
