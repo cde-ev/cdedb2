@@ -29,8 +29,7 @@ Running
 
 If ``cdedb.qcow2`` is the downloaded image, then the VM can be started with
 QEMU via the following command (note that the name of the binary may differ
-from ``kvm``, also note that ``cache=writethrough`` may be replaced by
-``cache=writeback`` for increased performance at the risk of data loss)::
+from ``kvm``)::
 
   kvm -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443 -drive file=cdedb.qcow2,if=virtio,cache=writethrough
 
@@ -66,6 +65,21 @@ accounts). Source controle is done via git. Upon login with ssh a short
 summary of useful commands is displayed -- this is reproduced below.
 
 .. literalinclude:: motd.txt
+
+Performance
+-----------
+
+To increase performance two things are very effective, but can cause serious
+data loss. So they are only recomended when working with test data.
+
+* Replace ``cache=writethrough`` by ``cache=writeback`` when running the VM.
+
+* In the file `/etc/postgresql/9.4/main/postgresql.conf` in the VM set the
+  following options::
+
+    fsync = off
+    synchronous_commit = off
+
 
 Offline Usage
 -------------
