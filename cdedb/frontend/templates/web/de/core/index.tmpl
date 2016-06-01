@@ -14,6 +14,11 @@
             <p>
                 {{ util.form_input_text(name="username", label="E-Mail:", type="email", small=True, anid="login_name") }}
                 {{ util.form_input_text(name="password", label="Passwort:", small=True, anid="login_password", type="password") }}
+                <script type="text/javascript">
+                    $(function() {
+                        $('#login_name').focus();
+                    });
+                </script>
                 
                 {{ util.input_hidden(name="wants") }}
 
