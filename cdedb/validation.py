@@ -2418,10 +2418,11 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                 value.append(vv)
             if not value:
                 continue
-            if operator == QueryOperators.between and len(value) != 2:
+            if (operator in (QueryOperators.between, QueryOperators.outside)
+                    and len(value) != 2):
                 errs.append((field, ValueError("Two endpoints required.")))
                 continue
-        elif operator == QueryOperators.regex:
+        elif operator in (QueryOperators.regex, QueryOperators.notregex):
             value, e = _regex_or_None(value, field, _convert=_convert)
             errs.extend(e)
             if e or not value:

@@ -455,6 +455,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                                           select, view)
         params = []
         constraints = []
+        _ops = QueryOperators
         for field, operator, value in query.constraints:
             lowercase = (query.spec[field] == "str")
             if lowercase:
@@ -466,11 +467,12 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 sql_param_str = "{}"
                 caser = lambda x: x
             columns = field.split(',')
-            ## Treat containsall special since it wants to find each value in
-            ## any column, without caring that the columns are the same. All
-            ## other operators want to find one column fulfilling their
-            ## constraint.
-            if operator == QueryOperators.containsall:
+            ## Treat containsall and friends special since they want to find
+            ## each value in any column, without caring that the columns are
+            ## the same. All other operators want to find one column
+            ## fulfilling their constraint.
+            if operator in (_ops.containsall, _ops.containsnone,
+                            _ops.containssome):
                 values = tuple("%{}%".format(self.diacritic_patterns(x.lower()))
                                for x in value)
                 subphrase = "lower({0}) SIMILAR TO %s"
@@ -478,49 +480,60 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     subphrase.format(c) for c in columns))
                 for v in values:
                     params.extend([v]*len(columns))
-                constraints.append(" AND ".join(phrase
-                                                for _ in range(len(values))))
+                connector = " AND " if operator == _ops.containsall else " OR "
+                constraint = connector.join(phrase for _ in range(len(values)))
+                if operator == _ops.containsnone:
+                    constraint = "NOT ( {} )".format(constraint)
+                constraints.append(constraint)
                 continue ## skip constraints.append below
-            if operator == QueryOperators.empty:
+            if operator == _ops.empty:
                 phrase = "( {0} IS NULL OR {0} = '' )"
-            elif operator == QueryOperators.nonempty:
+            elif operator == _ops.nonempty:
                 if query.spec[field] == "str":
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
                 else:
                     phrase = "( {0} IS NOT NULL )"
-            elif operator == QueryOperators.equal:
-                phrase = "{} = %s".format(sql_param_str)
+            elif operator in (_ops.equal, _ops.unequal):
+                if operator == _ops.equal:
+                    phrase = "{} = %s".format(sql_param_str)
+                else:
+                    phrase = "{} != %s".format(sql_param_str)
                 params.extend((caser(value),)*len(columns))
-            elif operator == QueryOperators.oneof:
-                phrase = "{} = ANY(%s)".format(sql_param_str)
+            elif operator in (_ops.oneof, _ops.otherthan):
+                if operator == _ops.oneof:
+                    phrase = "{} = ANY(%s)".format(sql_param_str)
+                else:
+                    phrase = "{} != ANY(%s)".format(sql_param_str)
                 params.extend((tuple(caser(x) for x in value),)*len(columns))
-            elif operator == QueryOperators.similar:
-                phrase = "lower({}) SIMILAR TO %s"
+            elif operator in (_ops.similar, _ops.dissimilar):
+                if operator == _ops.similar:
+                    phrase = "lower({}) SIMILAR TO %s"
+                else:
+                    phrase = "lower({}) NOT SIMILAR TO %s"
                 value = "%{}%".format(self.diacritic_patterns(value.lower()))
                 params.extend((value,)*len(columns))
-            elif operator == QueryOperators.regex:
-                phrase = "{} ~* %s"
+            elif operator in (_ops.regex, _ops.notregex):
+                if operator == _ops.regex:
+                    phrase = "{} ~* %s"
+                else:
+                    phrase = "{} !~* %s"
                 params.extend((value,)*len(columns))
-            elif operator == QueryOperators.containsall:
-                values = tuple("%{}%".format(self.diacritic_patterns(x.lower()))
-                               for x in value)
-                subphrase = "lower({0}) SIMILAR TO %s"
-                phrase = "( {} )".format(" ) AND ( ".join(
-                    subphrase for _ in range(len(values))))
-                params.extend(values*len(columns))
-            elif operator == QueryOperators.less:
+            elif operator == _ops.less:
                 phrase = "{} < %s"
                 params.extend((value,)*len(columns))
-            elif operator == QueryOperators.lessequal:
+            elif operator == _ops.lessequal:
                 phrase = "{} <= %s"
                 params.extend((value,)*len(columns))
-            elif operator == QueryOperators.between:
-                phrase = "(%s <= {0} AND {0} <= %s)"
+            elif operator in (_ops.between, _ops.outside):
+                if operator == _ops.between:
+                    phrase = "(%s <= {0} AND {0} <= %s)"
+                else:
+                    phrase = "(%s >= {0} OR {0} >= %s)"
                 params.extend((value[0], value[1])*len(columns))
-            elif operator == QueryOperators.greaterequal:
+            elif operator == _ops.greaterequal:
                 phrase = "{} >= %s"
                 params.extend((value,)*len(columns))
-            elif operator == QueryOperators.greater:
+            elif operator == _ops.greater:
                 phrase = "{} > %s"
                 params.extend((value,)*len(columns))
             else:

@@ -241,6 +241,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/search/user'})
         self.assertTitle("Allgemeine Nutzerverwaltung")
         f = self.response.forms['usersearchform']
+        f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 'n'
         for field in f.fields:
             if field and field.startswith('qsel_'):
@@ -255,6 +256,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/search/archiveduser'})
         self.assertTitle("Archivnutzersuche")
         f = self.response.forms['usersearchform']
+        f['qop_given_names'] = QueryOperators.similar.value
         f['qval_given_names'] = 'des'
         for field in f.fields:
             if field and field.startswith('qsel_'):

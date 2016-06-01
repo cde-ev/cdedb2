@@ -6,6 +6,8 @@ import quopri
 import webtest
 from test.common import as_users, USER_DICT, FrontendTest, nearly_now
 
+from cdedb.query import QueryOperators
+
 class TestEventFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia")
     def test_index(self, user):
@@ -58,6 +60,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/$'}, {'href': '/event/search/user'})
         self.assertTitle("Veranstaltungsnutzersuche")
         f = self.response.forms['usersearchform']
+        f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 'a@'
         for field in f.fields:
             if field and field.startswith('qsel_'):
@@ -690,6 +693,7 @@ class TestEventFrontend(FrontendTest):
         for field in f.fields:
             if field and field.startswith('qsel_'):
                 f[field].checked = True
+        f['qop_persona.family_name'] = QueryOperators.similar.value
         f['qval_persona.family_name'] = 'e'
         f['qord_primary'] = 'reg.id'
         self.submit(f)

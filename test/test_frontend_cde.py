@@ -134,6 +134,20 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
+        f['qval_fulltext'] = "876,@example.cde"
+        self.submit(f)
+        self.assertTitle("\nMitgliedersuche -- 2 Mitglieder gefunden\n")
+        self.assertPresence("Anton")
+        self.assertPresence("Bertålotta")
+
+    @as_users("anton", "berta")
+    @unittest.expectedFailure
+    def test_member_search_fulltext_nocsv(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/member'})
+        self.assertTitle("Mitgliedersuche")
+        f = self.response.forms['membersearchform']
+        ## Splitting at space has to somehow be added back
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
         self.assertTitle("\nMitgliedersuche -- 2 Mitglieder gefunden\n")
@@ -145,6 +159,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
         self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
+        f['qop_address'] = QueryOperators.similar.value
         f['qval_address'] = 'Garten'
         for field in f.fields:
             if field and field.startswith('qsel_'):
@@ -159,6 +174,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
         self.assertTitle("CdE Nutzersuche")
         f = self.response.forms['usersearchform']
+        f['qop_address'] = QueryOperators.regex.value
         f['qval_address'] = 'a[rm]'
         f['qsel_personas.id'].checked = True
         f['qsel_birthday'].checked = True
@@ -263,6 +279,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
         f = self.response.forms['membersearchform']
+        f['qop_family_name,birth_name'] = QueryOperators.similar.value
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")

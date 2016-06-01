@@ -6,6 +6,8 @@ import webtest
 import email.parser
 from test.common import as_users, USER_DICT, FrontendTest
 
+from cdedb.query import QueryOperators
+
 class TestAssemblyFrontend(FrontendTest):
     @as_users("anton", "berta", "kalif")
     def test_index(self, user):
@@ -56,6 +58,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'})
         self.assertTitle("Versammlungsnutzersuche")
         f = self.response.forms['usersearchform']
+        f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 'f@'
         for field in f.fields:
             if field and field.startswith('qsel_'):

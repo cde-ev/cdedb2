@@ -5,6 +5,8 @@ import quopri
 import webtest
 from test.common import as_users, USER_DICT, FrontendTest
 
+from cdedb.query import QueryOperators
+
 class TestMlFrontend(FrontendTest):
     @as_users("anton", "berta", "emilia", "janis")
     def test_index(self, user):
@@ -55,6 +57,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
         self.assertTitle("Mailinglistennutzersuche")
         f = self.response.forms['usersearchform']
+        f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 's@'
         for field in f.fields:
             if field and field.startswith('qsel_'):
