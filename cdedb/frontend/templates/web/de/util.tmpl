@@ -359,7 +359,7 @@
                                             {% endif %}
                                         {% endfor %}
                                         {{ input_select(name, entries=myentries, aclass='form-control input-sm',
-                                                        defaultvalue=myentries[0][0], anid=theid) }}
+                                                        anid=theid, nulloption=True) }}
                                         <!--<script type="text/javascript">
                                             $(document).ready(function(){
                                                 $("#{{ theid.replace('.', '\\\\.')|e }}").change(function (){

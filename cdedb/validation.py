@@ -2371,34 +2371,44 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     fields_of_interest = []
     constraints = []
     order = []
-    SEPERATOR = ' '
+    SEPERATOR = ','
+    ESCAPESIGN = '\\'
     for field, validator in spec.items():
-        ## First the selection
+        ## First the selection of fields of interest
         selected, e = _bool(val.get("qsel_{}".format(field), "False"), field,
                             _convert=_convert)
         errs.extend(e)
         if selected:
             fields_of_interest.append(field)
-        ## Second the constraints
+            
+        ## Second the constraints (filters)
+        ## Get operator
         operator, e = _enum_queryoperators_or_None(
             val.get("qop_{}".format(field)), field, _convert=_convert)
         errs.extend(e)
         if e or not operator:
+            ## Skip if invalid or empty operator
             continue
         if operator not in VALID_QUERY_OPERATORS[validator]:
-            errs.append((field, ValueError("Invalid operator.")))
+            errs.append((field, ValueError("Invalid operator for this field.")))
             continue
         if operator in NO_VALUE_OPERATORS:
             constraints.append((field, operator, None))
             continue
+            
+        ## Get value
         value = val.get("qval_{}".format(field))
         if value is None or value == "":
             ## No value supplied means no constraint
+            ## TODO: make empty string a valid constraint
             continue
+            
         if operator in MULTI_VALUE_OPERATORS:
             values = value.split(SEPERATOR)
             value = []
             for v in values:
+                v = v.replace(ESCAPESIGN+SEPERATOR,SEPERATOR).replace(ESCAPESIGN*2,ESCAPESIGN)
+                ## Validate every single value
                 vv, e = getattr(current_module,
                                 "_{}_or_None".format(validator))(
                                     v, field, _convert=_convert)
@@ -2426,6 +2436,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             constraints.append((field, operator, value))
     if not fields_of_interest and not allow_empty:
         errs.append((argname, ValueError("Selection may not be empty.")))
+    
     ## Third the ordering
     for postfix in ("primary", "secondary", "tertiary"):
         if "qord_" + postfix not in val:
