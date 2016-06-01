@@ -148,6 +148,26 @@ def _augment_dict_validator(validator, augmentation, strict=True):
             ret = None
         return ret, errs
     return new_validator
+    
+# Helper function for anvanced list splitting
+# Basend on http://stackoverflow.com/a/18092547
+def escaped_split(s, delim, escape='\\'):
+    ret = []
+    current = []
+    itr = iter(s)
+    for ch in itr:
+        if ch == escape:
+            try:
+                current.append(next(itr))
+            except StopIteration:
+                pass
+        elif ch == delim:
+            ret.append(''.join(current))
+            current = []
+        else:
+            current.append(ch)
+    ret.append(''.join(current))
+    return ret
 
 ##
 ## Below is the real stuff
@@ -2404,7 +2424,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             continue
             
         if operator in MULTI_VALUE_OPERATORS:
-            values = value.split(SEPERATOR)
+            values = escaped_split(value, SEPERATOR, ESCAPESIGN)
             value = []
             for v in values:
                 v = v.replace(ESCAPESIGN+SEPERATOR,SEPERATOR).replace(ESCAPESIGN*2,ESCAPESIGN)
