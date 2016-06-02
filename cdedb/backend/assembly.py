@@ -34,7 +34,7 @@ import string
 
 from cdedb.backend.common import (
     access, internal_access, affirm_validation as affirm,
-    affirm_array_validation as affirm_array,
+    affirm_array_validation as affirm_array, Silencer,
     singularize, AbstractBackend)
 from cdedb.common import (
     glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS,
@@ -113,6 +113,8 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
+        if rs.is_quiet:
+            return 0
         ## do not use sql_insert since it throws an error for selecting the id
         query = glue(
             "INSERT INTO assembly.log",
@@ -323,15 +325,16 @@ class AssemblyBackend(AbstractBackend):
         candidate ids to the respective data sets can contain an arbitrary
         number of entities, absent entities are not modified.
 
-        Any valid candidate id that is present has to map to a (partial or
-        complete) data set or ``None``. In the first case the candidate is
-        updated, in the second case it is deleted.
+        Any valid candidate id that is present has to map to a (partial
+        or complete) data set or ``None``. In the first case the
+        candidate is updated, in the second case it is deleted (this is
+        always possible).
 
         Any invalid candidate id (that is negative integer) has to map to a
         complete data set which will be used to create a new candidate.
 
         .. note:: It is forbidden to modify a ballot after voting has
-                  started.
+        started.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
@@ -439,37 +442,51 @@ class AssemblyBackend(AbstractBackend):
         return new_id
 
     @access("assembly_admin")
-    def delete_ballot(self, rs, ballot_id):
+    def delete_ballot(self, rs, ballot_id, cascade=False):
         """Remove a ballot.
 
-        .. note:: This also removes all associated data (candidates,
-          attachments, voter register). As with modification of ballots
-          this is forbidden after voting has started.
+        .. note:: As with modification of ballots this is forbidden
+          after voting has started.
+
+        .. note:: As with :py:func:`remove_attachment` the frontend has to take
+          care of the actual file manipulation for attachments.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ballot_id: int
+        :type cascade: bool
+        :param cascade: If True we remove all associated data (candidates,
+          attachments, voter register).
         :rtype: int
         :returns: default return code
         """
         ballot_id = affirm("id", ballot_id)
+        cascade = affirm("bool", cascade)
         ret = 1
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (ballot_id,)))
             if now() > current['vote_begin']:
                 raise ValueError("Unable to remove active ballot.")
-            if current['bar']:
-                deletor = {
-                    'id': ballot_id,
-                    'bar': None,
-                }
-                ret *= self.set_ballot(rs, deletor)
-            if current['candidates']:
-                ret *= self.sql_delete(rs, "assembly.candidates",
-                                       current['candidates'].keys())
-            self.sql_delete_one(rs, "assembly.voter_register", ballot_id,
-                                entity_key="ballot_id")
-            self.sql_delete_one(rs, "assembly.attachments", ballot_id,
-                                entity_key="ballot_id")
+            if cascade:
+                with Silencer(rs):
+                    if current['bar']:
+                        deletor = {
+                            'id': ballot_id,
+                            'bar': None,
+                        }
+                        ret *= self.set_ballot(rs, deletor)
+                    if current['candidates']:
+                        deletor = {
+                            'id': ballot_id,
+                            'candidates': {cid: None
+                                           for cid in current['candidates']},
+                        }
+                        ret *= self.set_ballot(rs, deletor)
+                    attachments = self.list_attachments(rs, ballot_id=ballot_id)
+                    for aid in attachments:
+                        self.remove_attachment(rs, aid)
+                ## Manually delete entries which are not otherwise accessible
+                self.sql_delete_one(rs, "assembly.voter_register", ballot_id,
+                                    entity_key="ballot_id")
             ret *= self.sql_delete_one(rs, "assembly.ballots", ballot_id)
             self.assembly_log(
                 rs, const.AssemblyLogCodes.ballot_deleted,

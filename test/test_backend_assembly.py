@@ -246,7 +246,7 @@ class TestAssemblyBackend(BackendTest):
         })
         self.assertEqual(data, self.assembly.get_ballot(self.key, new_id))
 
-        self.assertLess(0, self.assembly.delete_ballot(self.key, 2))
+        self.assertLess(0, self.assembly.delete_ballot(self.key, 2, cascade=True))
         expectation = {
             1: 'Antwort auf die letzte aller Fragen',
             3: 'Bester Hof',
@@ -419,12 +419,6 @@ class TestAssemblyBackend(BackendTest):
             {'additional_info': 'Farbe des Logos',
              'assembly_id': 1,
              'code': 12,
-             'ctime': nearly_now(),
-             'persona_id': None,
-             'submitted_by': 1},
-            {'additional_info': 'Farbe des Logos',
-             'assembly_id': 1,
-             'code': 11,
              'ctime': nearly_now(),
              'persona_id': None,
              'submitted_by': 1},

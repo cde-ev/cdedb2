@@ -50,6 +50,8 @@ class CdEBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
+        if rs.is_quiet:
+            return 0
         data = {
             "code": code,
             "submitted_by": rs.user.persona_id,

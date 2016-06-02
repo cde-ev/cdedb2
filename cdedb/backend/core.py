@@ -131,6 +131,8 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
          """
+        if rs.is_quiet:
+            return 0
         ## do not use sql_insert since it throws an error for selecting the id
         query = glue(
             "INSERT INTO core.log",
@@ -162,6 +164,9 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
+        if rs.is_quiet:
+            self.logger.warning("Finance log was suppressed.")
+            return 0
         data = {
             "code": code,
             "submitted_by": rs.user.persona_id,

@@ -82,6 +82,8 @@ class RequestState:
         ## Private version of the database connection, only visible in the
         ## backends (mediated by the ProxyShim)
         self._conn = None
+        ## Toggle to disable logging
+        self.is_quiet = False
 
     def notify(self, ntype, message):
         """Store a notification for later delivery to the user.

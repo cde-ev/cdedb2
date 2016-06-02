@@ -11,7 +11,7 @@ import datetime
 import psycopg2.extras
 
 from cdedb.backend.common import (
-    access, internal_access, affirm_validation as affirm,
+    access, internal_access, affirm_validation as affirm, Silencer,
     affirm_array_validation as affirm_array, singularize, PYTHON_TO_SQL_MAP,
     AbstractBackend)
 from cdedb.backend.cde import CdEBackend
@@ -192,6 +192,8 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
+        if rs.is_quiet:
+            return 0
         data = {
             "code": code,
             "event_id": event_id,
@@ -243,6 +245,8 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
+        if rs.is_quiet:
+            return 0
         data = {
             "code": code,
             "pevent_id": pevent_id,
@@ -533,7 +537,9 @@ class EventBackend(AbstractBackend):
 
           Any valid entity id that is present has to map to a (partial or
           complete) data set or ``None``. In the first case the entity is
-          updated, in the second case it is deleted.
+          updated, in the second case it is deleted. Deletion depends on
+          the entity being nowhere referenced, otherwise an error is
+          raised.
 
           Any invalid entity id (that is negative integer) has to map to a
           complete data set which will be used to create a new entity.
@@ -871,14 +877,17 @@ class EventBackend(AbstractBackend):
         :returns: default return code
         """
         pcourse_id = affirm("id", pcourse_id)
+        cascade = affirm("bool", cascade)
         current = self.sql_select_one(rs, "past_event.courses",
                                       ("pevent_id", "title"), pcourse_id)
         with Atomizer(rs):
             if cascade and self.list_participants(rs, pcourse_id=pcourse_id):
                 cdata = self.get_past_course_data_one(rs, pcourse_id)
-                for pid in self.list_participants(rs, pcourse_id=pcourse_id):
-                    self.delete_participant(rs, cdata['pevent_id'], pcourse_id,
-                                            pid)
+                with Silencer(rs):
+                    for pid in self.list_participants(rs,
+                                                      pcourse_id=pcourse_id):
+                        self.remove_participant(rs, cdata['pevent_id'],
+                                                pcourse_id, pid)
             ret = self.sql_delete_one(rs, "past_event.courses", pcourse_id)
             self.past_event_log(
                 rs, const.PastEventLogCodes.course_deleted,
@@ -1292,18 +1301,21 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def delete_lodgement(self, rs, lodgement_id):
+    def delete_lodgement(self, rs, lodgement_id, cascade=False):
         """Make a new lodgement.
-
-        The lodgement has to be empty otherwise there will be an
-        integrity exception.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type lodgement_id: int
+        :type cascade: bool
+        :param cascade: Must currently be False. No removal of dependent data
+          is supported.
         :rtype: int
         :returns: default return code
         """
         lodgement_id = affirm("id", lodgement_id)
+        cascade = affirm("bool", cascade)
+        if cascade:
+            raise NotImplementedError("Not available.")
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "event.lodgements", ("event_id", "moniker"), lodgement_id)

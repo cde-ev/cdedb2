@@ -9,7 +9,7 @@ if it has moderator privileges for all lists.
 """
 
 from cdedb.backend.common import (
-    access, internal_access, affirm_validation as affirm,
+    access, internal_access, affirm_validation as affirm, Silencer,
     affirm_array_validation as affirm_array, singularize, AbstractBackend)
 from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
 from cdedb.query import QueryOperators
@@ -73,6 +73,8 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
+        if rs.is_quiet:
+            return 0
         new_log = {
             "code": code,
             "mailinglist_id": mailinglist_id,
@@ -298,15 +300,26 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id", mailinglist_id)
         cascade = affirm("bool", cascade)
+        ret = 1
         with Atomizer(rs):
             data = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             if cascade:
-                tables = ("ml.subscription_states", "ml.subscription_requests",
-                          "ml.whitelist", "ml.moderators", "ml.log")
-                for table in tables:
+                with Silencer(rs):
+                    deletor = {
+                        'id': mailinglist_id,
+                        'moderators': tuple(),
+                        'whitelist': tuple(),
+                    }
+                    ret *= self.set_mailinglist(rs, deletor)
+                    requests = self.list_requests(rs, mailinglist_id)
+                    for persona_id in requests:
+                        ret *= self.decide_request(rs, mailinglist_id,
+                                                   persona_id, ack=False)
+                ## Manually delete entries which are not otherwise accessible
+                for table in ("ml.subscription_states", "ml.log"):
                     self.sql_delete_one(rs, table, mailinglist_id,
                                         entity_key="mailinglist_id")
-            ret = self.sql_delete_one(rs, "ml.mailinglists", mailinglist_id)
+            ret *= self.sql_delete_one(rs, "ml.mailinglists", mailinglist_id)
             self.ml_log(rs, const.MlLogCodes.list_deleted, mailinglist_id=None,
                         additional_info="{} ({})".format(
                             data['title'], data['address']))

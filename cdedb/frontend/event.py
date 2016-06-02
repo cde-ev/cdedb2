@@ -616,6 +616,7 @@ class EventFrontend(AbstractUserFrontend):
         :param parts: ids of parts
         :rtype: {int: {str: object}}
         """
+        # TODO check whether we are able to delete
         delete_flags = request_data_extractor(
             rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
         deletes = {part_id for part_id in parts
@@ -727,6 +728,7 @@ class EventFrontend(AbstractUserFrontend):
         This does not delete the associated information already
         submitted, but makes it inaccessible.
         """
+        # TODO: this raises an error if the field is in use
         if rs.errors:
             return self.field_summary_form(rs, event_id)
         data = {
@@ -2075,6 +2077,7 @@ class EventFrontend(AbstractUserFrontend):
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
         # FIXME obsolete
+        # TODO check whether this is deletable
         lodgement_data = self.eventproxy.get_lodgement(rs, lodgement_id)
         if lodgement_data['event_id'] != event_id:
             return werkzeug.exceptions.NotFound("Wrong associated event.")
@@ -2161,7 +2164,7 @@ class EventFrontend(AbstractUserFrontend):
     def delete_lodgement(self, rs, event_id, lodgement_id):
         """Remove a lodgement.
 
-        For this the lodgement has to be empty, otherwise we errer out.
+        For this the lodgement has to be empty, otherwise we error out.
         """
         lodgement_data = self.eventproxy.get_lodgement(rs, lodgement_id)
         if lodgement_data['event_id'] != event_id:

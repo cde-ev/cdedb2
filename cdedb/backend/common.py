@@ -624,6 +624,30 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                              table=table, condition=condition)
         return self.query_all(rs, query, params)
 
+class Silencer:
+    """Helper to temporarily dissable logging.
+
+    This is intended to be used as a context::
+
+        with Silencer(rs):
+            ## do lots of stuff
+        ## log what you did
+
+    Note that the logs which were silenced should always be substituted with
+    a different higher level log message.
+    """
+    def __init__(self, rs):
+        """
+        :type rs: :py:class:`cdedb.common.RequestState`
+        """
+        self.rs = rs
+
+    def __enter__(self):
+        self.rs.is_quiet = True
+
+    def __exit__(self, atype, value, tb):
+        self.rs.is_quiet = False
+
 def affirm_validation(assertion, value, **kwargs):
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
