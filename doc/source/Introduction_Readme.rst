@@ -111,3 +111,7 @@ it right away.
   and a negative number if the change is waiting for further actions
   (i.e. review). Especially many functions return the number of affected
   rows in the database, thus if no rows are affected an error is signalled.
+* Backend functions to expunge data are separated into two classes. First
+  those named remove_foo are always feasible. Second those name delete_foo
+  are dependent on the foo not being referenced anywhere. They may provide a
+  cascade parameter which allows to automatically remove all references.
