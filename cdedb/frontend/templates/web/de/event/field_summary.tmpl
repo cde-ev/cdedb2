@@ -3,7 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}{{ data['title']|e }} Details{% endblock %}
+{% block title %}Datenfelder konfigurieren ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -12,53 +12,31 @@
 {{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
-    <h2>Datenfelder</h2>
-    <ul>
-        {% for anid, entry in data['fields']|dictsort %}
+    <form action="{{ cdedblink('event/field_summary')|e }}" method="POST" id="fieldsummaryform">
+        <ul>
+            {% for anid, entry in ambience['event']['fields']|dictsort %}
+                <li>
+                    {{ util.form_input_checkbox("delete_{}".format(anid), label="Löschen (TODO nur falls leer)") }}
+                    {{ util.form_input_text(name="field_name_{}".format(anid), label="Name", readonly=True) }}
+                    {{ util.form_input_select(name="kind_{}".format(anid), label="Typ", entries=(
+                        ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
+                        ("date", "Datum"), ("datetime", "Datum mit Uhrzeit"))) }}
+                    {{ util.form_input_textarea(name="entries_{}".format(anid), label="Auswahlmöglichkeiten",
+                                                info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
+                </li>
+            {% endfor %}
             <li>
-                <p>
-                    {{ entry['field_name']|e }} ({{ entry['kind']|e }})
-                </p>
-                {% if entry['entries'] %}
-                    <p>
-                        Auswahlmöglichkeiten
-                        <table>
-                            <tr>
-                                <th>Möglichkeit</th>
-                                <th>Beschreibung</th>
-                            </tr>
-                            {% for value, description in entry['entries'] %}
-                                <tr>
-                                    <td>{{ value|e }}</td>
-                                    <td>{{ description|e }}</td>
-                                </tr>
-                            {% endfor %}
-                        </table>
-                    </p>
-                {% endif %}
-                {{ util.href(cdedblink('event/change_field_form', {'field_id': anid}), "bearbeiten", readonly=is_locked) }}
-                <form action="{{ cdedblink('event/remove_field', {'field_id': anid})|e }}" method="POST"
-                 id="removefieldform{{ anid|e }}">
-                    <div>
-                        {{ util.input_hidden(name="field_id", value=anid) }}
-                        {{ util.form_input_submit(value="Feld löschen", readonly=is_locked) }}
-                    </div>
-                </form>
+                {{ util.form_input_checkbox("create_-1", label="Anlegen") }}
+                {{ util.form_input_text(name="field_name_-1", label="Name") }}
+                {{ util.form_input_select(name="kind_-1", label="Typ", entries=(
+                    ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
+                    ("date", "Datum"), ("datetime", "Datum mit Uhrzeit"))) }}
+                {{ util.form_input_textarea(name="entries_-1", label="Auswahlmöglichkeiten",
+                                            info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
             </li>
-        {% endfor %}
-    </ul>
-    <h3>Feld hinzufügen</h3>
-    <form action="{{ cdedblink('event/add_field')|e }}" method="POST" id="addfieldform">
-        <table>
-            {{ util.form_input_text(name="field_name", label="Name") }}
-            {{ util.form_input_select(name="kind", label="Typ", entries=(
-                ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("date", "Datum"),
-                ("datetime", "Datum mit Uhrzeit"))) }}
-            {{ util.form_input_textarea(name="entries", label="Auswahlmöglichkeiten",
-                                       info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
-        </table>
+        </ul>
         <div>
-            {{ util.form_input_submit(value="Feld hinzufügen", readonly=is_locked) }}
+            {{ util.form_input_submit(value="Abschicken", readonly=is_locked) }}
         </div>
     </form>
 {% endblock %}

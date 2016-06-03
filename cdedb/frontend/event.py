@@ -481,31 +481,6 @@ class EventFrontend(AbstractUserFrontend):
             'event_data': event_data, 'course_data': course_data,})
 
     @access("event")
-    @event_guard()
-    def field_summary_form(self, rs, event_id):
-        """Overview of properties of an event organized via DB."""
-        # TODO implement
-        data = self.eventproxy.get_event_data_one(rs, event_id)
-        merge_dicts(rs.values, data)
-        orgas = self.coreproxy.get_personas(rs, data['orgas'])
-        institutions = self.eventproxy.list_institutions(rs)
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        minor_form_present = os.path.isfile(os.path.join(
-            self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
-        return self.render(rs, "field_summary", {
-            'data': data, 'orgas': orgas,
-            'questionnaire': questionnaire,
-            'minor_form_present': minor_form_present,
-            'institutions': institutions})
-
-    @access("event", modi={"POST"})
-    @event_guard(check_offline=True)
-    def field_summary(self, rs, event_id):
-        """Overview of properties of an event organized via DB."""
-        # TODO implement
-        pass
-
-    @access("event")
     @event_guard(check_offline=True)
     def change_event_form(self, rs, event_id):
         """Render form."""
@@ -639,9 +614,9 @@ class EventFrontend(AbstractUserFrontend):
             ret[part_id] = None
         marker = 1
         while marker < 2**10:
-            check = unwrap(request_data_extractor(
+            will_create = unwrap(request_data_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
-            if check:
+            if will_create:
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
                 data = request_data_extractor(rs, params)
@@ -669,75 +644,81 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/part_summary_form")
 
     @access("event")
-    @event_guard(check_offline=True)
-    def change_field_form(self, rs, event_id, field_id):
+    @event_guard()
+    def field_summary_form(self, rs, event_id):
         """Render form."""
-        data = self.eventproxy.get_event_data_one(rs, event_id)
-        if field_id not in data['fields']:
-            return werkzeug.exceptions.NotFound("Wrong associated event.")
-        field_data = data['fields'][field_id]
-        if 'entries' not in rs.values and field_data['entries']:
-            ## format the entries value
-            rs.values['entries'] = "\n".join(";".join(x for x in e)
-                                             for e in field_data['entries'])
-        merge_dicts(rs.values, field_data)
-        return self.render(rs, "change_field", {'data': data})
+        current = {
+            "{}_{}".format(key, field_id): value if key != 'entries' or not value else '\n'.join(';'.join(line) for line in value)
+            for field_id, field in rs.ambience['event']['fields'].items()
+            for key, value in field.items() if key != 'id'}
+        merge_dicts(rs.values, current)
+        return self.render(rs, "field_summary")
 
-    @access("event", modi={"POST"})
-    @REQUESTdatadict("kind", "entries")
-    @event_guard(check_offline=True)
-    def change_field(self, rs, event_id, field_id, data):
-        """Update an event data field (for questionnaire etc.)."""
-        data = check(rs, "event_field_data", data)
-        if rs.errors:
-            return self.change_field_form(rs, event_id, field_id)
-        newdata = {
-            'id': event_id,
-            'fields': {
-                field_id: data
-            }
-        }
-        code = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/field_summary_form")
+    @staticmethod
+    def process_field_input(rs, fields):
+        """This handles input to configure the fields.
 
-    @access("event", modi={"POST"})
-    @REQUESTdatadict("field_name", "kind", "entries")
-    @event_guard(check_offline=True)
-    def add_field(self, rs, event_id, data):
-        """Create a new field to attach information to a registration."""
-        data = check(rs, "event_field_data", data, creation=True)
-        if rs.errors:
-            return self.field_summary_form(rs, event_id)
-        newdata = {
-            'id': event_id,
-            'fields': {
-                -1: data
-            }
-        }
-        code = self.eventproxy.set_event_data(rs, newdata)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/field_summary_form")
+        Since this covers a variable number of rows, we cannot do this
+        statically. This takes care of validation too.
 
-    @access("event", modi={"POST"})
-    @REQUESTdata(("field_id", "id"))
-    @event_guard(check_offline=True)
-    def remove_field(self, rs, event_id, field_id):
-        """Delete a field.
-
-        This does not delete the associated information already
-        submitted, but makes it inaccessible.
+        :type rs: :py:class:`FrontendRequestState`
+        :type fields: [int]
+        :param fields: ids of fields
+        :rtype: {int: {str: object}}
         """
-        # TODO: this raises an error if the field is in use
+        # TODO check whether we are able to delete
+        delete_flags = request_data_extractor(
+            rs, (("delete_{}".format(field_id), "bool") for field_id in fields))
+        deletes = {field_id for field_id in fields
+                   if delete_flags['delete_{}'.format(field_id)]}
+        ret = {}
+        params = lambda anid: (("kind_{}".format(anid), "str"),
+                               ("entries_{}".format(anid), "str_or_None"))
+        for field_id in fields:
+            if field_id not in deletes:
+                tmp = request_data_extractor(rs, params(field_id))
+                temp = {}
+                temp['kind'] = tmp["kind_{}".format(field_id)]
+                temp['entries'] = tmp["entries_{}".format(field_id)]
+                temp = check(rs, "event_field_data", temp)
+                if temp:
+                    ret[field_id] = temp
+        for field_id in deletes:
+            ret[field_id] = None
+        marker = 1
+        params = lambda anid: (("field_name_-{}".format(anid), "str"),
+                               ("kind_-{}".format(anid), "str"),
+                               ("entries_-{}".format(anid), "str_or_None"))
+        while marker < 2**10:
+            will_create = unwrap(request_data_extractor(
+                rs, (("create_-{}".format(marker), "bool"),)))
+            if will_create:
+                tmp = request_data_extractor(rs, params(marker))
+                temp = {}
+                temp['field_name'] = tmp["field_name_-{}".format(marker)]
+                temp['kind'] = tmp["kind_-{}".format(marker)]
+                temp['entries'] = tmp["entries_-{}".format(marker)]
+                temp = check(rs, "event_field_data", temp, creation=True)
+                if temp:
+                    ret[-marker] = temp
+            else:
+                break
+            marker += 1
+        return ret
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def field_summary(self, rs, event_id):
+        """Manipulate the fields of an event."""
+        fields = self.process_field_input(
+            rs, rs.ambience['event']['fields'].keys())
         if rs.errors:
             return self.field_summary_form(rs, event_id)
-        data = {
+        event = {
             'id': event_id,
-            'fields': {
-                field_id: None
-            }
+            'fields': fields
         }
-        code = self.eventproxy.set_event_data(rs, data)
+        code = self.eventproxy.set_event_data(rs, event)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/field_summary_form")
 
@@ -1663,9 +1644,9 @@ class EventFrontend(AbstractUserFrontend):
         )
         marker = 1
         while marker < 2**10:
-            check = unwrap(request_data_extractor(
+            will_create = unwrap(request_data_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
-            if check:
+            if will_create:
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
                 data = request_data_extractor(rs, params)
@@ -2076,7 +2057,6 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
-        # FIXME obsolete
         # TODO check whether this is deletable
         lodgement_data = self.eventproxy.get_lodgement(rs, lodgement_id)
         if lodgement_data['event_id'] != event_id:

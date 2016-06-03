@@ -494,33 +494,36 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/field/summary'})
         ## fields
-        self.assertPresence("transportation")
-        self.assertNonPresence("food_stuff")
-        f = self.response.forms['addfieldform']
-        f['field_name'] = "food_stuff"
-        f['kind'] = "str"
-        f['entries'] = """all;everything goes
+        f = self.response.forms['fieldsummaryform']
+        self.assertEqual('transportation', f['field_name_2'].value)
+        self.assertNotIn('field_name_8', f.fields)
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "food_stuff"
+        f['kind_-1'] = "str"
+        f['entries_-1'] = """all;everything goes
         vegetarian;no meat
         vegan;plants only"""
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.assertPresence("food_stuff")
-        self.traverse({'href': '/event/event/1/field/2/change'})
-        self.assertTitle("\nDatenfeld transportation (Große Testakademie 2222) bearbeiten\n")
-        self.assertPresence("own car available")
-        self.assertNonPresence("broom")
-        f = self.response.forms['changefieldform']
-        f['entries'] = """pedes;by feet
+        self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
+        f = self.response.forms['fieldsummaryform']
+        self.assertEqual('food_stuff', f['field_name_8'].value)
+        self.assertEqual("""pedes;by feet
+car;own car available
+etc;anything else""", f['entries_2'].value)
+        f['entries_2'] = """pedes;by feet
         broom;flying implements
         etc;anything else"""
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.assertNonPresence("own car available")
-        self.assertPresence("broom")
-        f = self.response.forms['removefieldform8']
+        self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
+        f = self.response.forms['fieldsummaryform']
+        self.assertEqual("""pedes;by feet
+broom;flying implements
+etc;anything else""", f['entries_2'].value)
+        f['delete_8'].checked = True
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Details")
-        self.assertNonPresence("food_stuff")
+        self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
+        f = self.response.forms['fieldsummaryform']
+        self.assertNotIn('field_name_8', f.fields)
 
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):
