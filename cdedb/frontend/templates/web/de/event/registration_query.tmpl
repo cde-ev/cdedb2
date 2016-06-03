@@ -49,9 +49,7 @@
                 "user_data.location": "Ort",
                 "user_data.country": "Land",})|e }}
 
-            <form action="{{ cdedblink('event/registration_query')|e }}" method="GET" id="registrationqueryform">
-                {{ util.format_query(spec, titles, choices) }}
-            </form>
+        {{ util.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
     {{ util.box_filter_end() }}
 
     <h3>Aktionen</h3>

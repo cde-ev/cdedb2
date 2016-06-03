@@ -9,6 +9,12 @@
     <link rel="stylesheet" type="text/css" href="{{ staticurl("jquery-ui/jquery-ui.css")|e }}">
 {% endmacro %}
 
+{% macro cdedb_script(script) %}
+    {% if script == 'queryform' %}
+        <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js")|e }}"></script>
+    {% endif %}
+{% endmacro %}
+
 {% macro javascript_hint() %}
     <noscript>
         <div class="jsDeleted">
@@ -259,171 +265,160 @@
 {% endmacro %}
 
 
-
-{% macro format_query(spec, titles, choices, output_selection=True, selection_blacklist=[]) %}
-    <!--<script type="text/javascript">
-        // adjust input element to the selected operator
-        // this should be called from the corresponding change trigger
-        function update_choices(field, choices, validator) {
-            var esc_field = field.replace(".", "\\.") // escape dot for selectors
-            var previous = $("#qinput_" + esc_field).val();
-            $("#qinput_" + esc_field).remove();
-            // NOTE cdedb.query.QueryOperator values are embedded
-            if ($('#qop_' + esc_field).val() == "0" || $('#qop_' + esc_field).val() == "1") {
-                // do nothing
-            } else if ($('#qop_' + esc_field).val() == "2") {
-                if (!$.isEmptyObject(choices)) {
-                    $("#qspan_" + esc_field).append($("<select>", {"name": "qval_" + field, "id": "qinput_" + field}));
-                    $("#qinput_" + esc_field).append($("<option>", {"value": ""}));
-                    for (var key in choices) {
-                        if (choices.hasOwnProperty(key)) {
-                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": choices[key],
-                                                                            "selected": (String(key) == previous)}));
-                        }
-                    }
-                } else {
-                    if (validator == "bool") {
-                        $("#qspan_" + esc_field).append($("<select>", {"name": "qval_" + field,
-                                                                       "id": "qinput_" + field}));
-                        $("#qinput_" + esc_field).append($("<option>", {"value": ""}));
-                        var bool_choices = {"True": "wahr", "False": "falsch"};
-                        for (var key in bool_choices) {
-                            $("#qinput_" + esc_field).append($("<option>", {"value": key, "html": bool_choices[key],
-                                                                            "selected": (key == previous)}));
-                        }
-                    } else {
-                        $("#qspan_" + esc_field).append($("<input>", {
-                            "name": "qval_" + field, "id": "qinput_" + field, "type": "text", "value": previous}));
-                    }
-                }
-            } else {
-                $("#qspan_" + esc_field).append($("<input>", {"name": "qval_" + field, "id": "qinput_" + field,
-                                                              "type": "text", "value": previous}));
-            }
-        }
-    </script>-->
-    {% with OPERATOR_LABELS = {0: "leer",
-                               1: "nichtleer",
-                               2: "gleich",
-                               3: "eines aus",
-                               4: "ähnlich",
-                               5: "regex",
-                               6: "enthält alle",
-                               10: "kleiner",
-                               11: "kleinergleich",
-                               12: "zwischen",
-                               13: "größergleich",
-                               14: "größer",} %}
-
-        {{ input_hidden(name="is_search", value=True) }}
-        <p>
-            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
-            <button type="submit" class="btn btn-default" name="CSV">
-                <span class="glyphicon glyphicon-download"></span> CSV-Datei
-            </button>
-        </p>
-        <div class="row">
-            <div class="col-lg-7">
-                <table class="query-form-cols table table-superdense">
-                    <thead>
-                        <tr>
-                            <th><span class="glyphicon glyphicon-eye-open"></span></th>
-                            <th>Felder</th>
-                            <th colspan="2">Filter</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for field in spec %}
-                        <tr class="query_field {% if field in errors %}errorInput{% endif %}" data-type="{{ spec[field]|e }}">
-                            <td>
-                                {# multi-fields are not reliably selectable, so we disable selection #}
-                                {% if ',' not in field and field not in selection_blacklist %}
-                                    {% with name = "qsel_{}".format(field) %}
-                                        {% if output_selection %}
-                                            {{ input_checkbox(name, aclass='outputSelector', value=True) }}
-                                        {% else %}
-                                            {{ input_hidden(name, value=True) }}
-                                        {% endif %}
-                                    {% endwith %}
-                                {% endif %}
-                            </td>
-                            <td class="name">{{ titles.get(field, field)|e }}</td>
-                            <td>
-                                {% with name = "qop_{}".format(field) %}
-                                    {% with theid = "qop_{}".format(field) %}
-                                        {# jinja does not support list comprehension ... #}
-                                        {% set myentries = [] %}
-                                        {% for op in query_mod.VALID_QUERY_OPERATORS[spec[field]] %}
-                                            {% if field not in choices or op in query_mod.SELECTION_VALUE_OPERATORS %}
-                                                {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
+{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[]) %}
+    {% with OPERATOR_LABELS = {0: "ist leer",
+                               1: "ist nicht leer",
+                               2: "ist gleich",
+                               3: "ist eines aus",
+                               4: "ist ähnlich zu",
+                               5: "passt auf RegEx",
+                               6: "enthält alle aus",
+                               10: "ist kleiner",
+                               11: "ist kleinergleich",
+                               12: "liegt zwischen",
+                               13: "ist größergleich",
+                               14: "ist größer",} %}
+        <script type="text/javascript">
+            $(function() {
+                $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});
+            });
+        </script>
+        <form action="{{ target|e }}" method="GET" id="queryform">
+            {{ input_hidden(name="is_search", value=True) }}
+            
+            <!-- Non-JS form -->
+            <p class="queryform-nojs">
+                <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
+                <button type="submit" class="btn btn-default" name="CSV">
+                    <span class="glyphicon glyphicon-download"></span> CSV-Datei
+                </button>
+            </p>
+            <div class="row queryform-nojs">
+                <div class="col-lg-7">
+                    <table class="query-form-cols table table-superdense">
+                        <thead>
+                            <tr>
+                                <th><span class="glyphicon glyphicon-eye-open"></span></th>
+                                <th>Felder</th>
+                                <th colspan="2">Filter</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for field in spec %}
+                            <tr class="query_field {% if field in errors %}errorInput{% endif %}"
+                                    data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
+                                <td>
+                                    {# multi-fields are not reliably selectable, so we disable selection #}
+                                    {% if ',' not in field and field not in selection_blacklist %}
+                                        {% with name = "qsel_{}".format(field) %}
+                                            {% if output_selection %}
+                                                {{ input_checkbox(name, aclass='outputSelector', value=True) }}
+                                            {% else %}
+                                                {{ input_hidden(name, value=True) }}
                                             {% endif %}
-                                        {% endfor %}
-                                        {{ input_select(name, entries=myentries, aclass='form-control input-sm',
-                                                        anid=theid, nulloption=True) }}
-                                        <!--<script type="text/javascript">
-                                            $(document).ready(function(){
-                                                $("#{{ theid.replace('.', '\\\\.')|e }}").change(function (){
-                                                    update_choices("{{ field|e }}", {{ choices.get(field, '')|json }},
-                                                                   "{{ spec[field]|e }}") });
-                                                $("#{{ theid.replace('.', '\\\\.')|e }}").trigger('change');
-                                            });
-                                        </script>-->
-                                    {% endwith %}
-                                {% endwith %}
-                            </td>
-                            <td>
-                                {% if spec[field] == 'bool' %}
-                                    {# Boolean fields are the only ones that don't need a text input field, for none of their
-                                        filter operators. So we can provide a select box for none-javascript users. #}
-                                    {{ input_select("qval_{}".format(field), anid="qinput_{}".format(field),
-                                            aclass='form-control input-sm',
-                                            entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
-                                {% else %}
-                                    {{ input_text("qval_{}".format(field), anid="qinput_{}".format(field),
-                                            aclass='form-control input-sm') }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-lg-5">
-                <table class="query-form-sort table table-superdense">
-                    <thead>
-                        <tr><th colspan="3">Sortierung</th></tr>
-                    </thead>
-                    <tbody>
-                    {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
-                                           ("3.", "qord_tertiary"))%}
-                        <tr>
-                            <td> {{ title|e }} </td>
-                            <td>
-                                {# jinja does not support list comprehension ... #}
-                                {% set myentries = [] %}
-                                {% for field in spec %}
-                                    {% if ',' not in field %}
-                                        {{ myentries.append((field, titles.get(field,field)))|e }}
+                                        {% endwith %}
                                     {% endif %}
-                                {% endfor %}
-                                {{ input_select(name, entries=myentries, nulloption=True, aclass="form-control input-sm" )}}
-                            </td>
-                            <td>
-                                {{ input_select(name + "_ascending", defaultvalue=True, aclass="form-control input-sm",
-                                                entries=((True, "A→Z"), (False, "Z→A"))) }}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                                </td>
+                                <td class="name">{{ titles.get(field, field)|e }}</td>
+                                <td>
+                                    {% with name = "qop_{}".format(field) %}
+                                        {% with theid = "qop_{}".format(field) %}
+                                            {# jinja does not support list comprehension ... #}
+                                            {% set myentries = [] %}
+                                            {% for op in query_mod.VALID_QUERY_OPERATORS[spec[field]] %}
+                                                {% if field not in choices or op in query_mod.SELECTION_VALUE_OPERATORS %}
+                                                    {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {{ input_select(name, entries=myentries, aclass='form-control input-sm filter-op',
+                                                            nulloption=True, anid=theid) }}
+                                        {% endwith %}
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    {% if spec[field] == 'bool' %}
+                                        {# Boolean fields are the only ones that don't need a text input field, for none of their
+                                            filter operators. So we can provide a select box for none-javascript users. #}
+                                        {{ input_select("qval_{}".format(field), anid="qinput_{}".format(field),
+                                                aclass='form-control input-sm filter-value',
+                                                entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
+                                    {% else %}
+                                        {{ input_text("qval_{}".format(field), anid="qinput_{}".format(field),
+                                                aclass='form-control input-sm filter-value') }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-lg-5">
+                    <table class="query-form-sort table table-superdense">
+                        <thead>
+                            <tr><th colspan="3">Sortierung</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
+                                               ("3.", "qord_tertiary"))%}
+                            <tr>
+                                <td> {{ title|e }} </td>
+                                <td>
+                                    {# jinja does not support list comprehension ... #}
+                                    {% set myentries = [] %}
+                                    {% for field in spec %}
+                                        {% if ',' not in field %}
+                                            {{ myentries.append((field, titles.get(field,field)))|e }}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ input_select(name, entries=myentries, nulloption=True, aclass="form-control input-sm" )}}
+                                </td>
+                                <td>
+                                    {{ input_select(name + "_ascending", defaultvalue=True, aclass="form-control input-sm",
+                                                    entries=((True, "A→Z"), (False, "Z→A"))) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-        <p>
-            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
-            <button type="submit" class="btn btn-default" name="CSV">
-                <span class="glyphicon glyphicon-download"></span> CSV-Datei
-            </button>
-        </p>
+            
+            
+            <!-- JS Form -->
+            <div class="queryform-js">
+                <h4 class="filter-title nosp"><span class="glyphicon glyphicon-filter"></span> Filter</h4>
+                <ul class="list-group list-group-condensed list-group-hover filterfield-list">
+                    <li class="list-group-item insertpoint">
+                        <div class="input-group has-success">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
+                            <select class="form-control input-sm input-slim addfilter"><select>
+                        </div>
+                    </li>
+                </ul>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h4 class="filter-title"><span class="glyphicon glyphicon-eye-open"></span> Angezeigte Felder</h4>
+                        <p class="viewfield-list"></p>
+                        <p>
+                            <div class="input-group has-success">
+                                <span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
+                                <select class="form-control input-sm addviewfield"><select>
+                            </div>
+                        </p>
+                    </div>
+                    <div class="col-sm-6">
+                        <h4 class="filter-title"><span class="glyphicon glyphicon-sort-by-alphabet"></span> Sortierung</h4>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-right nosp">
+                <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
+                <button type="submit" class="btn btn-default" name="CSV">
+                    <span class="glyphicon glyphicon-download"></span> CSV-Datei
+                </button>
+            </p>
+        </form>
     {% endwith %}
 {% endmacro %}
 

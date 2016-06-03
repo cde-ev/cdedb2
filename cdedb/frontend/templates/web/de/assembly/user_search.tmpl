@@ -3,6 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
 {% block title %}Versammlungsnutzersuche{% endblock %}
 {% block content %}
     {{ generic.user_search('assembly') }}

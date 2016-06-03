@@ -566,11 +566,11 @@
         "notes": "Notizen",} %}
 
         {% if realm == "archived" %}
-            <form action="{{ cdedblink('core/archived_user_search')|e }}" method="GET" id="usersearchform">
+            {% set target=cdedblink('core/archived_user_search') %}
         {% else %}
-            <form action="{{ cdedblink('{}/user_search'.format(realm))|e }}" method="GET" id="usersearchform">
+            {% set target=cdedblink('{}/user_search'.format(realm)) %}
         {% endif %}
-            {{ util.format_query(spec, TITLES, choices, selection_blacklist=selection_blacklist) }}
+            {{ util.format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist) }}
         </form>
 
     {% endwith %}
