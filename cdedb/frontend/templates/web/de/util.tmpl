@@ -269,15 +269,22 @@
     {% with OPERATOR_LABELS = {0: "ist leer",
                                1: "ist nicht leer",
                                2: "ist gleich",
-                               3: "ist eines aus",
-                               4: "ist ähnlich zu",
-                               5: "passt auf RegEx",
-                               6: "enthält alle aus",
-                               10: "ist kleiner",
-                               11: "ist kleinergleich",
-                               12: "liegt zwischen",
-                               13: "ist größergleich",
-                               14: "ist größer",} %}
+                               3: "ist ungleich",
+                               4: "ist eines aus",
+                               5: "ist keines aus",
+                               10: "ist ähnlich zu",
+                               11: "ist nicht ähnlich zu",
+                               12: "passt auf RegEx",
+                               13: "passt nicht auf RegEx",
+                               14: "enthält alle aus",
+                               15: "enthält keines aus",
+                               16: "enthält min. eines aus",                               
+                               20: "ist kleiner",
+                               21: "ist kleinergleich",
+                               22: "liegt zwischen",
+                               23: "liegt nicht zwischen",
+                               24: "ist größergleich",
+                               25: "ist größer",} %}
         <script type="text/javascript">
             $(function() {
                 $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});

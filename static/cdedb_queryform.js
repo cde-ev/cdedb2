@@ -147,12 +147,15 @@
                 break;
             
             case 2: //equal
-            case 4: //similar
-            case 5: //regex
-            case 10: //less
-            case 11: //lessequal
-            case 13: //greaterequal
-            case 14: //equal
+            case 3: //unequal
+            case 10: //similar
+            case 11: //dissimilar
+            case 12: //regex
+            case 13: //notregex
+            case 20: //less
+            case 21: //lessequal
+            case 24: //greaterequal
+            case 25: //equal
                 if (f.type == 'bool' || f.type == 'list') {
                     var $s = $('<select>',{class : "form-control input-sm input-slim", type: inputTypes[f.type]})
                             .change(function() { f.input_filter_value.val($(this).val()); })
@@ -183,7 +186,8 @@
                 }
                 break;
                 
-            case 12: //between
+            case 22: //between
+            case 23: //outside
                 var escape = function(v) {
                     return v.replace(settings.escapechar,settings.escapechar+settings.escapechar)
                             .replace(settings.separator,settings.escapechar+settings.separator);
@@ -219,8 +223,11 @@
                 $fieldbox.append($i1).append('&ensp;und&ensp;').append($i2);
             
                 break;
-            case 3: //oneof
-            case 6: //containsall
+            case 4: //oneof
+            case 5: //otherthan
+            case 14: //containsall
+            case 15: //containsnone
+            case 16: //containssome
                 var placeholders = {
                     'date' : 'YYYY-MM-DD,YYYY-MM-DD,…',
                     'datetime' : 'YYYY-MM-DDThh:mm,YYYY-MM-DDThh:mm,…',
