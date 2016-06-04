@@ -367,7 +367,7 @@
                         <tbody>
                         {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
                                                ("3.", "qord_tertiary"))%}
-                            <tr>
+                            <tr class="query_sort">
                                 <td> {{ title|e }} </td>
                                 <td>
                                     {# jinja does not support list comprehension ... #}
@@ -377,10 +377,10 @@
                                             {{ myentries.append((field, titles.get(field,field)))|e }}
                                         {% endif %}
                                     {% endfor %}
-                                    {{ input_select(name, entries=myentries, nulloption=True, aclass="form-control input-sm" )}}
+                                    {{ input_select(name, entries=myentries, nulloption=True, aclass="form-control input-sm sort-field" )}}
                                 </td>
                                 <td>
-                                    {{ input_select(name + "_ascending", defaultvalue=True, aclass="form-control input-sm",
+                                    {{ input_select(name + "_ascending", defaultvalue=True, aclass="form-control input-sm sort-order",
                                                     entries=((True, "A→Z"), (False, "Z→A"))) }}
                                 </td>
                             </tr>
@@ -394,27 +394,27 @@
             <!-- JS Form -->
             <div class="queryform-js">
                 <h4 class="filter-title nosp"><span class="glyphicon glyphicon-filter"></span> Filter</h4>
-                <ul class="list-group list-group-condensed list-group-hover filterfield-list">
-                    <li class="list-group-item insertpoint">
-                        <div class="input-group has-success">
-                            <span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
-                            <select class="form-control input-sm input-slim addfilter"><select>
-                        </div>
-                    </li>
-                </ul>
+                <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
+                <div class="input-group has-success queryform-add">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
+                    <select class="form-control input-sm input-slim addfilter"><select>
+                </div>
                 <div class="row">
                     <div class="col-sm-6">
                         <h4 class="filter-title"><span class="glyphicon glyphicon-eye-open"></span> Angezeigte Felder</h4>
                         <p class="viewfield-list"></p>
-                        <p>
-                            <div class="input-group has-success">
-                                <span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
-                                <select class="form-control input-sm addviewfield"><select>
-                            </div>
-                        </p>
+                        <div class="input-group has-success">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
+                            <select class="form-control input-sm addviewfield"><select>
+                        </div>
                     </div>
                     <div class="col-sm-6">
                         <h4 class="filter-title"><span class="glyphicon glyphicon-sort-by-alphabet"></span> Sortierung</h4>
+                        <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
+                        <div class="input-group has-success queryform-add">
+                            <span class="input-group-addon"><span class="glyphicon glyphicon-plus"></span></span>
+                            <select class="form-control input-sm addsortfield"><select>
+                        </div>
                     </div>
                 </div>
             </div>

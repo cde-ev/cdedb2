@@ -162,3 +162,6 @@ p.textbox {
 .queryform-fieldbox .btn:last-child {
     margin: 0 -8px 0 6px;
 }
+.queryform-add {
+    margin: -10px 0 10px 0;
+}

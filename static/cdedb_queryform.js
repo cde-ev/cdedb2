@@ -1,6 +1,6 @@
 /**
  * Extended javascript functionality for query forms in the cdedb2.
- * This jQuery method should be applied to the query form dom object onload.
+ * The jQuery method defined at the end of this file should be applied to the query form dom object onload.
  */
 (function($) {
     var QueryForm = function(element,options) {
@@ -8,21 +8,28 @@
         var $element = $(element);
         var obj = this;
         var settings = $.extend({
-            choices : {},
+            choices : {},            
             separator : ',',
             escapechar : '\\\\', //double escaped backslash for usage in regex
         }, options || {});
         /**
          * List of all data fields listed in the query form. Each element has the following attributes:
-         * id: database id (string),
+         * id: database id of this field (string),
          * type: data type (string: bool, int, string, list, date, datetime, float)
          * name: human readable name of the field
          * choices: List of choices if type==list. Each choice has the format {'id' : 'name'}
+         * sortable: Can this field be used for sorting? (bool) 
          * input_select: jQuery DOM object of the non-js field select checkbox
          * input_filter_op: jQuery DOM object of the non-js filter operator select box
          * input_filter: jQuery DOM object of the non-js filter value field
          */
         var fieldList = [];
+        /**
+         * List of the sort/ordering selects. Each element has the following attributes:
+         * input_field: jQuery DOM object of the field select box for this order
+         * input_order: jQuery DOM object of the order (asc/desc) select box
+         */
+        var sortInputs = [];
         
         /* Scan formular rows and initialize field list */
         $element.find('.query_field').each(function() {
@@ -34,13 +41,30 @@
                 type: settings.choices[id] ? 'list' : $(this).attr('data-type'),//TODO list type
                 name: $(this).find('.name').text(),
                 choices: settings.choices[id] ? settings.choices[id] : null,
+                sortable : false,
                 input_select: input_select.length ? input_select : null,
                 input_filter_op: $(this).find('.filter-op'),
                 input_filter_value: $(this).find('.filter-value'),
             });
         });
         
-        console.log(fieldList);
+        /* Find formular sort fields */
+        $element.find('.query_sort').each(function() {
+            sortInputs.push({
+                input_field : $(this).find('.sort-field'),
+                input_order : $(this).find('.sort-order')
+            });
+        });
+        
+        /* Scan sort field options and mark sortable fields */
+        sortInputs[0].input_field.children('option').each(function() {
+            for (i in fieldList) {
+                if (fieldList[i].id == $(this).attr('value')) {
+                    fieldList[i].sortable = true;
+                    break;
+                }
+            }
+        });
         
         /* Member functions */
         /**
@@ -50,11 +74,11 @@
          * Enables Event handlers for select boxes.
          */
         this.init = function() {
-            // Hide non-js form
+            // Hide non-js form, show js form
             $element.find('.queryform-nojs').hide();
             $element.find('.queryform-js').show();
             
-            // Add currently selected fields to dynamic lists
+            // Add currently selected and filtered fields to dynamic lists
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 
@@ -63,6 +87,24 @@
                 
                 if (f.input_select && f.input_select.prop('checked'))
                     this.addViewRow(i);
+            }
+            // Add current sort fields
+            for (var i=0; i < sortInputs.length; i++) {
+                if (sortInputs[i].input_field.val() !== '') {
+                    //Search field in fieldList
+                    var field = -1;
+                    for (j in fieldList) {
+                        if (fieldList[j].id == sortInputs[i].input_field.val()) {
+                            field = j;
+                            break;
+                        }
+                    }
+                    if (field == -1)
+                        continue;
+                        
+                    // Add field to sort list
+                    this.addSortRow(field, sortInputs[i].input_order.val());
+                }
             }
             
             // Eventhandler and list update for add*field select boxes
@@ -77,6 +119,13 @@
                 obj.refreshFilterFieldSelect();
             });
             this.refreshFilterFieldSelect();
+            
+            $('.addsortfield').change(function() {
+                obj.addSortRow($(this).val(),'True');
+                obj.updateSortInputs();
+                obj.refreshSortFieldSelect();
+            });
+            this.refreshSortFieldSelect();
         };
         
         /**
@@ -116,7 +165,7 @@
                     .append($fieldbox)
                     .append($button);
             
-            $element.find('.filterfield-list>.insertpoint').before($item);
+            $element.find('.filterfield-list').append($item);
             $opselector.focus();
             
             this.updateFilterValueInput(number, $opselector.val(), $fieldbox)
@@ -233,6 +282,7 @@
                     'datetime' : 'YYYY-MM-DDThh:mm,YYYY-MM-DDThh:mm,…',
                     'int' : '<wert>,<wert>,…',
                     'id' : '<id>,<id>,…',
+                    'list' : '<id>,<id>,…',
                     'str' : '<wert>,<wert>,…',
                     'float' : '<wert>,<wert>,…'};
                     
@@ -278,6 +328,49 @@
             this.refreshViewFieldSelect();
             $element.find('.viewfield-list').append($box);
         };
+        
+        /**
+         * Add a row to the list of sort fields of the dynamic formular.
+         * 
+         * @param number (int) Id of the field in fieldList
+         * @param sorting (string) predefined value of the order (asc/desc) select box
+         */
+        this.addSortRow = function(number, sorting) {
+            var f = fieldList[number];
+            
+            var inputTypes = {
+                    'bool' : ['✘→✔','✔→✘'],
+                    'date' : ['0→9','9→0'],
+                    'datetime' : ['0→9','9→0'],
+                    'int' : ['0→9','9→0'],
+                    'id' : ['0→9','9→0'],
+                    'str' : ['A→Z','Z→A'],
+                    'list' : ['A→Z','Z→A'],
+                    'float' : ['0→9','9→0']};
+            
+            var $button = $('<button></button>', {'class':"btn btn-sm btn-danger pull-right",'type':"button"})
+                    .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
+                    .click(function() {
+                        $(this).parent().detach();
+                        obj.updateSortInputs();
+                        obj.refreshSortFieldSelect();
+                    });
+            var $sortselector = $('<select></select>', {'class':"form-control input-sm input-slim order"})
+                    .append(new Option(inputTypes[f.type][0],'True'))
+                    .append(new Option(inputTypes[f.type][1],'False'))
+                    .val(sorting)
+                    .change(function() {
+                        obj.updateSortInputs();
+                    });
+            var $item = $('<li></li>',{'class':"list-group-item queryform-filterbox",'data-id':number})
+                    .append($('<span></span>',{'class':'num label label-default'})).append('&ensp;')
+                    .append(f.name).append('&ensp;')
+                    .append($sortselector).append('&ensp;')
+                    .append($button);
+            
+            $element.find('.sortfield-list').append($item);
+        };
+
 
         /**
          * Refresh the list of options in the .addfilter select box.
@@ -324,8 +417,61 @@
             }
             $box.val('');
         }
+        
+        /**
+         * Refresh the list of options in the .addsortfield select box.
+         */
+        this.refreshSortFieldSelect = function() {
+            // Check currently listed fields
+            var currentFields = new Array(fieldList.length);
+            var numSortFields=0;
+            $element.find('.sortfield-list .queryform-filterbox').each(function() {
+                currentFields[$(this).attr('data-id')] = true;
+                numSortFields++;
+            });
+            
+            // Add all valid and not listed fields to selectbox
+            var $box = $element.find('.addsortfield');
+            
+            if (numSortFields >= sortInputs.length)
+                $box.parent().hide();
+            else
+                $box.parent().show();
+            
+            $box.empty();
+            $box.append(new Option('— Sortierung hinzufügen —',''));
+            for (var i=0; i < fieldList.length; i++) {
+                var f = fieldList[i];
+                if (f.sortable && !currentFields[i]) {
+                    $box.append(new Option(f.name, i));
+                }
+            }
+            $box.val('');
+        }
+        
+        /**
+         * Write back the sort selection and ordering into the input fields of the non-js form.
+         * Also updates the displayed numbers in the dynamic sort list.
+         */
+        this.updateSortInputs = function() {
+            var i=0;
+            $element.find('.sortfield-list .queryform-filterbox').each(function() {
+                $(this).children('.num').text(i+1);
+                sortInputs[i].input_field.val(fieldList[$(this).attr('data-id')].id);
+                sortInputs[i].input_order.val($(this).children('.order').val());
+                i++;
+            });
+            for (;i<sortInputs.length;i++) {
+                sortInputs[i].input_field.val('');
+            }
+        }
     };
     
+    
+    /**
+     * The actual "jQuery plugin" - a function to be used on the jQuery object of the query form.
+     * It constructs and initializes the above defined object which does everything neccessary for the fancy js form.
+     */
     $.fn.cdedbQueryForm = function(options) {
         if ($(this).data('cdedbQueryForm'))
             return;
