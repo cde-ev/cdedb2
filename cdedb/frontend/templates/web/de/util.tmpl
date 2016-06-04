@@ -23,9 +23,12 @@
     </noscript>
 {% endmacro %}
 
-{% macro deko_checkbox(checked, anid='', aclass='') %}
-    <input type="checkbox" {% if checked %} checked="checked"{% endif %} disabled="disabled"{% if anid %}
-        id="{{ anid|e }}"{% endif %}{% if aclass %} class="{{ aclass|e }}"{% endif %} />
+{% macro deko_checkbox(checked, anid='') %}
+    {% if checked %}
+        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"></span>
+    {% else %}
+        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %}  data-checked="false"></span>
+    {% endif %}
 {% endmacro %}
 
 {# FIXME does the readonly parameted actually do something?? I see no effect. #}
@@ -448,15 +451,18 @@
         Keine Ergebnisse!
     {% else %}
         {# TODO add fancy js to table #}
-        <table class="checkeredTable">
-            <tr>
-                <th></th>
-                {% for csvfield in query.fields_of_interest %}
-                    {% for field in csvfield.split(',') %}
-                        <th>{{ titles.get(field, field)|e }}</th>
+        <table class="table table-condensed table-hover">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for csvfield in query.fields_of_interest %}
+                        {% for field in csvfield.split(',') %}
+                            <th>{{ titles.get(field, field)|e }}</th>
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-            </tr>
+                </tr>
+            </thead>
+            <tbody>
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
                 <tr>
@@ -471,7 +477,7 @@
                             {% with afield = field.split('.')[-1] %}
                                 <td>
                                     {% if field == "personas.id" %}
-                                        {{ href(show_user_link(row[afield]), row[afield]|cdedbid) }}
+                                        {{ href(show_user_link(row[afield]), row[afield]|cdedbid, aclass='nowrap') }}
                                     {% elif field == "reg.id" %}
                                         {# This should occur only if the context allows the following link. #}
                                         {{ href(cdedblink("event/show_registration", {'registration_id': row[afield]}),
@@ -490,6 +496,7 @@
                     {% endfor %}
                 </tr>
             {% endfor %}
+            </tbody>
         </table>
     {% endif %}
 {% endmacro %}

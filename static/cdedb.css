@@ -165,3 +165,10 @@ p.textbox {
 .queryform-add {
     margin: -10px 0 10px 0;
 }
+
+/* ************** *
+ * Helper classes *
+ * ************** */
+.nowrap {
+    white-space: nowrap;
+}

@@ -48,12 +48,12 @@ class TestEventFrontend(FrontendTest):
         self.admin_view_profile('emilia', realm="event")
         self.assertEqual(
             True,
-            self.response.lxml.get_element_by_id('activity_checkbox').checked)
+            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
         f = self.response.forms['activitytoggleform']
         self.submit(f)
         self.assertEqual(
             False,
-            self.response.lxml.get_element_by_id('activity_checkbox').checked)
+            self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
 
     @as_users("anton")
     def test_user_search(self, user):

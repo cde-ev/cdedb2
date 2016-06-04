@@ -194,26 +194,26 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_toggle_activity(self, user):
         self.admin_view_profile('berta', realm="cde")
-        self.assertTrue(self.response.lxml.get_element_by_id('activity_checkbox').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
         f = self.response.forms['activitytoggleform']
         self.submit(f)
-        self.assertFalse(self.response.lxml.get_element_by_id('activity_checkbox').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
 
     @as_users("anton")
     def test_modify_membership(self, user):
         self.admin_view_profile('berta', realm="cde")
-        self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').get('data-checked') == 'True')
         self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
         self.traverse({'href': '/membership/change'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertFalse(self.response.lxml.get_element_by_id('membership_checkbox').checked)
+        self.assertFalse(self.response.lxml.get_element_by_id('membership_checkbox').get('data-checked') == 'True')
         self.traverse({'href': '/membership/change'})
         f = self.response.forms['modifymembershipform']
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
-        self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').checked)
+        self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').get('data-checked') == 'True')
         self.assertPresence("Daten sind nicht sichtbar.")
 
     @as_users("anton")
