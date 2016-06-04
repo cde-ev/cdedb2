@@ -134,20 +134,6 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/cde/search/member'})
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
-        f['qval_fulltext'] = "876,@example.cde"
-        self.submit(f)
-        self.assertTitle("\nMitgliedersuche -- 2 Mitglieder gefunden\n")
-        self.assertPresence("Anton")
-        self.assertPresence("Bertålotta")
-
-    @as_users("anton", "berta")
-    @unittest.expectedFailure
-    def test_member_search_fulltext_nocsv(self, user):
-        self.traverse({'href': '/cde/$'},
-                      {'href': '/cde/search/member'})
-        self.assertTitle("Mitgliedersuche")
-        f = self.response.forms['membersearchform']
-        ## Splitting at space has to somehow be added back
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
         self.assertTitle("\nMitgliedersuche -- 2 Mitglieder gefunden\n")

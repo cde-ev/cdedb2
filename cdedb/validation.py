@@ -148,25 +148,35 @@ def _augment_dict_validator(validator, augmentation, strict=True):
             ret = None
         return ret, errs
     return new_validator
-    
-# Helper function for anvanced list splitting
-# Basend on http://stackoverflow.com/a/18092547
+
 def escaped_split(s, delim, escape='\\'):
+    """Helper function for anvanced list splitting.
+
+    Split the list at every delimiter, except if it is escaped (and
+    allow the escape char to be escaped itself).
+
+    Basend on http://stackoverflow.com/a/18092547
+
+    :type s: str
+    :type delim: char
+    :type escape: char
+    :rtype: [str]
+    """
     ret = []
-    current = []
+    current = ''
     itr = iter(s)
     for ch in itr:
         if ch == escape:
             try:
-                current.append(next(itr))
+                current += next(itr)
             except StopIteration:
                 pass
         elif ch == delim:
-            ret.append(''.join(current))
-            current = []
+            ret.append(current)
+            current = ''
         else:
-            current.append(ch)
-    ret.append(''.join(current))
+            current += ch
+    ret.append(current)
     return ret
 
 ##
@@ -2365,7 +2375,7 @@ def _regex(val, argname=None, *, _convert=True):
 
 @_addvalidator
 def _query_input(val, argname=None, *, spec=None, allow_empty=False,
-                 _convert=True):
+                 _convert=True, separator=',', escape='\\'):
     """This is for the queries coming from the web.
 
     It is not usable with decorators since the spec is often only known at
@@ -2383,6 +2393,11 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     :type allow_empty: bool
     :param allow_empty: Toggles whether no selected output fields is an error.
     :type _convert: bool
+    :type separator: char
+    :param separator: Defines separator for multi-value-inputs.
+    :type escape: char
+    :param escape: Defines escape character so that the input may contain a
+      separator for multi-value-inputs.
     :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
     if spec is None:
@@ -2391,8 +2406,6 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     fields_of_interest = []
     constraints = []
     order = []
-    SEPERATOR = ','
-    ESCAPESIGN = '\\'
     for field, validator in spec.items():
         ## First the selection of fields of interest
         selected, e = _bool(val.get("qsel_{}".format(field), "False"), field,
@@ -2400,7 +2413,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
         errs.extend(e)
         if selected:
             fields_of_interest.append(field)
-            
+
         ## Second the constraints (filters)
         ## Get operator
         operator, e = _enum_queryoperators_or_None(
@@ -2415,19 +2428,18 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
         if operator in NO_VALUE_OPERATORS:
             constraints.append((field, operator, None))
             continue
-            
+
         ## Get value
         value = val.get("qval_{}".format(field))
         if value is None or value == "":
             ## No value supplied means no constraint
             ## TODO: make empty string a valid constraint
             continue
-            
+
         if operator in MULTI_VALUE_OPERATORS:
-            values = escaped_split(value, SEPERATOR, ESCAPESIGN)
+            values = escaped_split(value, separator, escape)
             value = []
             for v in values:
-                v = v.replace(ESCAPESIGN+SEPERATOR,SEPERATOR).replace(ESCAPESIGN*2,ESCAPESIGN)
                 ## Validate every single value
                 vv, e = getattr(current_module,
                                 "_{}_or_None".format(validator))(
@@ -2457,7 +2469,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             constraints.append((field, operator, value))
     if not fields_of_interest and not allow_empty:
         errs.append((argname, ValueError("Selection may not be empty.")))
-    
+
     ## Third the ordering
     for postfix in ("primary", "secondary", "tertiary"):
         if "qord_" + postfix not in val:

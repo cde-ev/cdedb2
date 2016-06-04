@@ -186,7 +186,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         spec = QUERY_SPECS['qview_cde_member']
         query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=not submitform)
+                      spec=spec, allow_empty=not submitform, separator=' ')
         if not submitform or rs.errors:
             events = {k: v for k, v in self.eventproxy.list_events(
                 rs, past=True).items()}
