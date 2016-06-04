@@ -158,7 +158,7 @@ class TestCdEFrontend(FrontendTest):
     def test_user_search(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
         self.assertTitle("CdE Nutzersuche")
-        f = self.response.forms['usersearchform']
+        f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.similar.value
         f['qval_address'] = 'Garten'
         for field in f.fields:
@@ -173,7 +173,7 @@ class TestCdEFrontend(FrontendTest):
     def test_user_search_csv(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
         self.assertTitle("CdE Nutzersuche")
-        f = self.response.forms['usersearchform']
+        f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.regex.value
         f['qval_address'] = 'a[rm]'
         f['qsel_personas.id'].checked = True

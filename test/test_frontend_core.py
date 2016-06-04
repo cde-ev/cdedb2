@@ -240,7 +240,7 @@ class TestCoreFrontend(FrontendTest):
     def test_user_search(self,  user):
         self.traverse({'href': '/core/search/user'})
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        f = self.response.forms['usersearchform']
+        f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 'n'
         for field in f.fields:
@@ -255,7 +255,7 @@ class TestCoreFrontend(FrontendTest):
     def test_archived_user_search(self,  user):
         self.traverse({'href': '/core/search/archiveduser'})
         self.assertTitle("Archivnutzersuche")
-        f = self.response.forms['usersearchform']
+        f = self.response.forms['queryform']
         f['qop_given_names'] = QueryOperators.similar.value
         f['qval_given_names'] = 'des'
         for field in f.fields:
@@ -270,7 +270,7 @@ class TestCoreFrontend(FrontendTest):
     def test_archived_user_search2(self, user):
         self.traverse({'href': '/core/search/archiveduser'})
         self.assertTitle("Archivnutzersuche")
-        f = self.response.forms['usersearchform']
+        f = self.response.forms['queryform']
         f['qval_birthday'] = '31.12.2000'
         f['qop_birthday'] = QueryOperators.less.value
         for field in f.fields:

@@ -57,7 +57,7 @@ class TestAssemblyFrontend(FrontendTest):
     def test_user_search(self, user):
         self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'})
         self.assertTitle("Versammlungsnutzersuche")
-        f = self.response.forms['usersearchform']
+        f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 'f@'
         for field in f.fields:

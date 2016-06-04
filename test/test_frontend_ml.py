@@ -56,7 +56,7 @@ class TestMlFrontend(FrontendTest):
     def test_user_search(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
         self.assertTitle("Mailinglistennutzersuche")
-        f = self.response.forms['usersearchform']
+        f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 's@'
         for field in f.fields:
