@@ -31,11 +31,11 @@
     {% endif %}
 {% endmacro %}
 
-{# FIXME does the readonly parameted actually do something?? I see no effect. #}
 {% macro href(ref, label, readonly=False, icon="", aclass='', active=False) -%}
-<a href="{{ ref|e }}" {% if readonly %}disabled="disabled"{% endif %}
-{% if aclass or active %}class="{{ aclass }}{% if active %} active{% endif %}"{% endif %}>
-{%- if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}</a>
+{% if readonly %}<span {%- else -%}<a href="{{ ref|e }}"{% endif %}
+{% if aclass or active or readonly %}class="{{ aclass }}{% if active %} active{% endif %}{% if readonly %} link-disabled{% endif %}"{% endif %}>
+{%- if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ label|e }}
+{%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
 {% macro output_errors(name, displayerrors=True) %}
@@ -299,7 +299,7 @@
             <!-- Non-JS form -->
             <p class="queryform-nojs">
                 <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
-                <button type="submit" class="btn btn-default" name="CSV">
+                <button type="submit" class="btn btn-default" name="CSV" value="True">
                     <span class="glyphicon glyphicon-download"></span> CSV-Datei
                 </button>
             </p>
@@ -427,7 +427,7 @@
             
             <p class="text-right nosp">
                 <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
-                <button type="submit" class="btn btn-default" name="CSV">
+                <button type="submit" class="btn btn-default" name="CSV" value="True">
                     <span class="glyphicon glyphicon-download"></span> CSV-Datei
                 </button>
             </p>

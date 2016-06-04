@@ -172,3 +172,7 @@ p.textbox {
 .nowrap {
     white-space: nowrap;
 }
+.link-disabled {
+    color: #777;
+    cursor: not-allowed;
+}
