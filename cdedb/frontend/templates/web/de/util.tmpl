@@ -343,16 +343,19 @@
                                     {% endwith %}
                                 </td>
                                 <td>
-                                    {% if spec[field] == 'bool' %}
-                                        {# Boolean fields are the only ones that don't need a text input field, for none of their
-                                            filter operators. So we can provide a select box for none-javascript users. #}
-                                        {{ input_select("qval_{}".format(field), anid="qinput_{}".format(field),
-                                                aclass='form-control input-sm filter-value',
-                                                entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
-                                    {% else %}
-                                        {{ input_text("qval_{}".format(field), anid="qinput_{}".format(field),
-                                                aclass='form-control input-sm filter-value') }}
-                                    {% endif %}
+                                    {% with name = "qval_{}".format(field) %}
+                                        {% if spec[field] == 'bool' %}
+                                            {# Boolean fields are the only ones that don't need a text input field, for none of their
+                                                filter operators. So we can provide a select box for none-javascript users. #}
+                                            {{ input_select(name, anid="qinput_{}".format(field),
+                                                    aclass='form-control input-sm filter-value',
+                                                    entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
+                                        {% else %}
+                                            {{ input_text(name, anid="qinput_{}".format(field),
+                                                    aclass='form-control input-sm filter-value') }}
+                                        {% endif %}
+                                        {{ output_errors(field, True) }}
+                                    {% endwith %}
                                 </td>
                             </tr>
                         {% endfor %}

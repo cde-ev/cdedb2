@@ -22,6 +22,7 @@
          * input_select: jQuery DOM object of the non-js field select checkbox
          * input_filter_op: jQuery DOM object of the non-js filter operator select box
          * input_filter: jQuery DOM object of the non-js filter value field
+         * error: Validation error message in case of validation error for this field (html string)
          */
         var fieldList = [];
         /**
@@ -35,6 +36,7 @@
         $element.find('.query_field').each(function() {
             var id = $(this).attr('data-id');
             var input_select = $(this).find('.outputSelector');
+            var error_block = $(this).find('.input-error-block');
             
             fieldList.push({
                 id: id,
@@ -45,6 +47,7 @@
                 input_select: input_select.length ? input_select : null,
                 input_filter_op: $(this).find('.filter-op'),
                 input_filter_value: $(this).find('.filter-value'),
+                error: error_block.length ? error_block.html() : null,
             });
         });
         
@@ -125,6 +128,7 @@
                 obj.updateSortInputs();
                 obj.refreshSortFieldSelect();
             });
+            this.updateSortInputs();
             this.refreshSortFieldSelect();
         };
         
@@ -150,6 +154,8 @@
                     .append(f.input_filter_op.children('option').slice(1).clone())
                     .change(function() {
                         f.input_filter_op.val($(this).val());
+                        f.error = null;
+                        $(this).siblings('.input-error-block').detach();
                         obj.updateFilterValueInput(number,$(this).val(),$fieldbox);
                     });
             // Initially sync operator select
@@ -164,6 +170,8 @@
                     .append($opselector).append('&ensp;')
                     .append($fieldbox)
                     .append($button);
+            if (f.error)
+                $item.append($('<div></div>',{'class':'input-error-block'}).html(f.error));
             
             $element.find('.filterfield-list').append($item);
             $opselector.focus();
@@ -205,9 +213,15 @@
             case 21: //lessequal
             case 24: //greaterequal
             case 25: //equal
+                var changeFunction = function() {
+                    f.input_filter_value.val($(this).val());
+                    f.error = null;
+                    $fieldbox.siblings('.input-error-block').detach();
+                };
+                
                 if (f.type == 'bool' || f.type == 'list') {
                     var $s = $('<select>',{class : "form-control input-sm input-slim", type: inputTypes[f.type]})
-                            .change(function() { f.input_filter_value.val($(this).val()); })
+                            .change(changeFunction)
                     if (f.type == 'list') {
                         for (var i in f.choices)
                             $s.append($('<option>',{'value' : i}).text(f.choices[i]))
@@ -225,7 +239,7 @@
                     // TODO select2 if list
                 } else {
                     $i = $('<input>',{'class':"form-control input-sm input-slim", 'type': inputTypes[f.type]})
-                            .change(function() { f.input_filter_value.val($(this).val()); })
+                            .change(changeFunction)
                             .val(f.input_filter_value.val());
                     if (f.type == 'date')
                         $i.attr('placeholder','YYYY-MM-DD');
