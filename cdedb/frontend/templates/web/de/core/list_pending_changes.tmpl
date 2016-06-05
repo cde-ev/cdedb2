@@ -2,6 +2,10 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Änderungen (zurzeit {{ pending|length|e }} zu begutachten){% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), "Änderungen prüfen", active="True") }}
+{% endblock %}
 {% block content %}
    <ul>
         {% for persona_id, entry in pending|dictsort %}

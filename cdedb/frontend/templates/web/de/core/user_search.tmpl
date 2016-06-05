@@ -5,6 +5,10 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
 {% block title %}Allgemeine Nutzerverwaltung{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/user_search"), "Nutzer verwalten", active="True") }}
+{% endblock %}
 {% block content %}
     {# TODO make abstract template for action area #}
     <div class="panel panel-default">

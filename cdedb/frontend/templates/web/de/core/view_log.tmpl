@@ -4,6 +4,10 @@
 {% block title %}
 Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/view_log"), "Account-Log", active="True") }}
+{% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">
         <thead>

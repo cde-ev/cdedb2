@@ -1,8 +1,13 @@
+{% set sidenav_active='core_meta' %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Allgemeine Metainformationen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/meta_info_form"), "Metadaten", active="True") }}
+{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('core/change_meta_info')|e }}" method="POST" id="changeinfoform">
+    <form action="{{ cdedblink('core/change_meta_info')|e }}" method="POST" id="changeinfoform" class="form-horizontal">
         {% for key in keys %}
             {{ util.form_input_text(name=key, label=key) }}
         {% endfor %}

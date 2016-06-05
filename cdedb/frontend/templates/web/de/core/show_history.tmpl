@@ -2,6 +2,12 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Geschichte von {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ util.breadcrumb_link(show_user_link(current['id']), current['given_names'] + " " + current['family_name'],
+            icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_history"), "Geschichte", active=True) }}
+{% endblock %}
 {% block content %}
     <div class="float-along">
         {% if not current['is_active'] %}

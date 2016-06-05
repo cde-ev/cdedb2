@@ -2,6 +2,10 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Accountanfragen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen", active="True") }}
+{% endblock %}
 {% block heading %}<h1 class="title">Accountanfragen <span class="badge">{{ to_review|length|e }}</span></h1>{% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">

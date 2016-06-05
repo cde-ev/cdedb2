@@ -3,6 +3,11 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/meta_info_form"), data['given_names'] + " " + data['family_name'],
+        icon="user", active="True") }}
+{% endblock %}
 {% block content %}
     {{ generic.show_user(data, "core") }}
 {% endblock %}

@@ -2,6 +2,12 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}{{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
+            icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), "Daten bearbeiten", active=True) }}
+{% endblock %}
 {% block content %}
     {{ generic.admin_change_user("core") }}
 {% endblock %}

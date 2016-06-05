@@ -3,8 +3,12 @@
 {% block title %}
 E-Mail-Adresse ändern für {{ data['given_names']|e }} {{ data['family_name']|e }}
 {% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ util.breadcrumb_link(show_user_link(data['id']), data['given_names'] + " " + data['family_name'], icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/admin_username_change_form"), "E-Mail-Adresse bearbeiten", active=True) }}
+{% endblock %}
 {% block content %}
-
     <form action="{{ cdedblink('core/admin_username_change')|e }}" method="POST" id="usernamechangeform"
             class="form-horizontal">
         {{ util.form_input_static(label="Benutzer", value=(data['given_names']|e +" "+ data['family_name']|e)) }}

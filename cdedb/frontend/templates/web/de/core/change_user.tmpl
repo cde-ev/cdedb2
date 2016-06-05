@@ -2,6 +2,12 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Eigene Daten bearbeiten{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
+            icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/change_user_form"), "Daten bearbeiten", active=True) }}
+{% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/change_user')|e }}" method="POST" id="changedataform" class="form-horizontal">
         {{ util.input_hidden(name="generation") }}

@@ -2,6 +2,9 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}CdE Datenbank{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start", active="True") }}
+{% endblock %}
 {% block content %}
     <h2>Willkommen!</h2>
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
