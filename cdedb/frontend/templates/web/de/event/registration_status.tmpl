@@ -3,11 +3,9 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Status der Anmeldung zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_status"), "Anmeldung", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     {% if event_data['registration_soft_limit'] >= now().date() %}

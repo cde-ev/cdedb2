@@ -5,11 +5,9 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}{{ ambience['event']['title']|e }} Fragebogenkonfiguration{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), "Fragebogen konfigurieren", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     {# jinja does not support list comprehension ... #}

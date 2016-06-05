@@ -3,11 +3,9 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Kursliste {{ event_data['title']|e }}{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), "Kursliste", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}n
 {% block content %}
     {% if course_data %}

@@ -4,11 +4,9 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}Anmeldungen ({{ event_data['title']|e }}){% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     <h3>Standardabfragen</h3>

@@ -94,7 +94,9 @@
                     {% endblock %}
                 </div>
                 <div class="col-md-9 col-wide-auto" role="main">
-                    {% block breadcrumb %}{% endblock %}
+                    {% if self.breadcrumb %}
+                        <ol class="breadcrumb breadcrumb-small">{% block breadcrumb %}{% endblock %}</ol>
+                    {% endif %}
                     {% block heading %}
                         <h1 class="title">{{ self.title() }}</h1>
                     {% endblock %}

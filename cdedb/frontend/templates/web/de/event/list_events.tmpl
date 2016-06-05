@@ -3,9 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Alle DB-Veranstaltungen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen", active="True") }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     <h2>Aktuelle Veranstaltungen</h2>

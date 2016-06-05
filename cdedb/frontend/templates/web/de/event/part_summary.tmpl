@@ -5,11 +5,9 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}{{ ambience['event']['title']|e }} Teile konfigurieren{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/part_summary"), "Teile konfigurieren", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/part_summary')|e }}" method="POST" id="partsummaryform">

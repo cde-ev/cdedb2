@@ -3,12 +3,10 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Anmeldung zur Veranstaltung {{ event_data['title']|e }} aktualisieren{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/register"), "Anmeldung") }}
 {{ util.breadcrumb_link(cdedblink("event/amend_registration"), "Ändern", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/amend_registration')|e }}" method="POST" id="amendregistrationform">

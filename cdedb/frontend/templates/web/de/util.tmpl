@@ -577,14 +577,6 @@
 {% endfor -%}
 {% endmacro %}
 
-{% macro breadcrumb_begin() %}
-<ol class="breadcrumb breadcrumb-small">
-{% endmacro %}
-
-{% macro breadcrumb_end() %}
-</ol>
-{% endmacro %}
-
 {% macro breadcrumb_link(ref, label, icon="", active=False) %}
 	{% if active %}
 		<li class="active">

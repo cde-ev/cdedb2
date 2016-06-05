@@ -2,11 +2,9 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Unterkunftsübersicht ({{ event_data['title']|e }}){% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     {% if problems %}

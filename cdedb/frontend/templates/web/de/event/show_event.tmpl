@@ -3,10 +3,8 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_begin() }}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard", active=True) }}
-{{ util.breadcrumb_end() }}
 {% endblock %}
 {% block content %}
     {% if ambience['event']['is_archived'] %}
