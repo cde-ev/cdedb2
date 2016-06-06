@@ -10,30 +10,33 @@
 {{ util.breadcrumb_link(cdedblink("core/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}
-    {# TODO make abstract template for action area #}
-    <div class="panel panel-default">
-        <div class="panel-heading"><h3 class="panel-title">Aktionen</h3></div>
-        <div class="panel-body">
-            <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform" style="display: inline-block; width:150px; vertical-align:middle;">
-                <input type="hidden" name="realm" value="core" />
-                <div class="input-group">
-                    <input type="text" name="id_to_show" class="form-control" placeholder="DB-XXXX-X" />
-                    <span class="input-group-btn">
-                        <button type="submit" class="btn btn-primary" title="Suchen">
-                            <span class="glyphicon glyphicon-search"></span>
-                        </button>
-                    </span>
+    <div class="row">
+        <div class="col-md-8">
+            {% with TITLES = {} %}
+            <div>
+                {{ util.place_default_queries("core/user_search", default_queries, TITLES) }}
+            </div>
+            {% endwith %}
+        </div>
+        <div class="col-md-4">
+            <div class="panel panel-warning">
+                <div class="panel-heading"><h3 class="panel-title">Aktionen</h3></div>
+                <div class="panel-body">
+                    <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform" style="display: inline-block; width:150px; vertical-align:middle;">
+                        <input type="hidden" name="realm" value="core" />
+                        <div class="input-group">
+                            <input type="text" name="id_to_show" class="form-control" placeholder="DB-XXXX-X" />
+                            <span class="input-group-btn">
+                                <button type="submit" class="btn btn-primary" title="Suchen">
+                                    <span class="glyphicon glyphicon-search"></span>
+                                </button>
+                            </span>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
-    
-    <h3>Standardabfragen</h3>
-    {% with TITLES = {} %}
-        <div>
-            {{ util.place_default_queries("core/user_search", default_queries, TITLES) }}
-        </div>
-    {% endwith %}
 
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 

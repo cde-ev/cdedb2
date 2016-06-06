@@ -5,14 +5,25 @@
 {% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
 {% block title %}CdE Nutzersuche{% endblock %}
 {% block content %}
-    <h3>Standardabfragen</h3>
-    {% with TITLES = {
-        "trial members": "Probemitglieder",} %}
-
-        <div>
-            {{ util.place_default_queries("cde/user_search", default_queries, TITLES) }}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="panel panel-warning">
+                <div class="panel-heading"><h3 class="panel-title">Aktionen</h3></div>
+                <div class="panel-body">
+                    {{ util.href(cdedblink('cde/create_user'), "Nutzer anlegen", icon="plus", aclass="btn btn-success") }}
+                    {{ util.href(cdedblink('cde/batch_admission'), "Massenaufnahme", icon="import", aclass="btn btn-default") }}
+                </div>
+            </div>
         </div>
-    {% endwith %}
+        <div class="col-md-8">
+            {% with TITLES = {
+                    "trial members": "Probemitglieder",} %}
+                <div>
+                    {{ util.place_default_queries("cde/user_search", default_queries, TITLES) }}
+                </div>
+            {% endwith %}
+        </div>
+    </div>
 
     {{ generic.user_search_mask("cde", ("pevent_id", "pcourse_id")) }}
 
