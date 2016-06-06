@@ -15,7 +15,8 @@
             {% for part_id, part in ambience['event']['parts']|dictsort %}
                 <li>
                     <table>
-                        {{ util.form_input_checkbox("delete_{}".format(part_id), label="Löschen (TODO nur falls leer)") }}
+                        {{ util.form_input_checkbox("delete_{}".format(part_id), label="Löschen",
+                                                    readonly=part_id in is_referenced) }}
                         {{ util.form_input_text(name="title_{}".format(part_id), label="Name") }}
                         {{ util.form_input_text(name="part_begin_{}".format(part_id), label="Beginn") }}
                         {{ util.form_input_text(name="part_end_{}".format(part_id), label="Ende") }}

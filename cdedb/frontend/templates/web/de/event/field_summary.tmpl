@@ -14,7 +14,8 @@
         <ul>
             {% for anid, entry in ambience['event']['fields']|dictsort %}
                 <li>
-                    {{ util.form_input_checkbox("delete_{}".format(anid), label="Löschen (TODO nur falls leer)") }}
+                    {{ util.form_input_checkbox("delete_{}".format(anid), label="Löschen",
+                                                readonly=anid in is_referenced) }}
                     {{ util.form_input_text(name="field_name_{}".format(anid), label="Name", readonly=True) }}
                     {{ util.form_input_select(name="kind_{}".format(anid), label="Typ", entries=(
                         ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),

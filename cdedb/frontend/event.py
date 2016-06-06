@@ -576,7 +576,17 @@ class EventFrontend(AbstractUserFrontend):
             for part_id, part in rs.ambience['event']['parts'].items()
             for key, value in part.items() if key != 'id'}
         merge_dicts(rs.values, current)
-        return self.render(rs, "part_summary")
+        is_referenced = set()
+        reg_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, reg_ids)
+        for registration in registrations.values():
+            is_referenced = is_referenced.union(registration['parts'].keys())
+            is_referenced = is_referenced.union(registration['choices'].keys())
+        course_ids = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.get_course_data(rs, course_ids)
+        for course in courses.values():
+            is_referenced = is_referenced.union(course['parts'])
+        return self.render(rs, "part_summary", {'is_referenced': is_referenced})
 
     @staticmethod
     def process_part_input(rs, parts):
@@ -590,7 +600,6 @@ class EventFrontend(AbstractUserFrontend):
         :param parts: ids of parts
         :rtype: {int: {str: object}}
         """
-        # TODO check whether we are able to delete
         delete_flags = request_data_extractor(
             rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
         deletes = {part_id for part_id in parts
@@ -646,12 +655,20 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def field_summary_form(self, rs, event_id):
         """Render form."""
+        formatter = lambda k, v: (v if k != 'entries' or not v else
+                                  '\n'.join(';'.join(line) for line in v))
         current = {
-            "{}_{}".format(key, field_id): value if key != 'entries' or not value else '\n'.join(';'.join(line) for line in value)
+            "{}_{}".format(key, field_id): formatter(key, value)
             for field_id, field in rs.ambience['event']['fields'].items()
             for key, value in field.items() if key != 'id'}
         merge_dicts(rs.values, current)
-        return self.render(rs, "field_summary")
+        is_referenced = set()
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        for row in questionnaire:
+            if row['field_id']:
+                is_referenced.add(row['field_id'])
+        return self.render(rs, "field_summary", {
+            'is_referenced': is_referenced})
 
     @staticmethod
     def process_field_input(rs, fields):
@@ -665,7 +682,6 @@ class EventFrontend(AbstractUserFrontend):
         :param fields: ids of fields
         :rtype: {int: {str: object}}
         """
-        # TODO check whether we are able to delete
         delete_flags = request_data_extractor(
             rs, (("delete_{}".format(field_id), "bool") for field_id in fields))
         deletes = {field_id for field_id in fields
