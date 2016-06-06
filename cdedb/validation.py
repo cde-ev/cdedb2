@@ -1088,12 +1088,14 @@ def _input_file(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :rtype: (:py:class:`werkzeug.datastructures.FileStorage` or None,
-        [(str or None, exception)])
+    :rtype: (bytes or None, [(str or None, exception)])
     """
     if not isinstance(val, werkzeug.datastructures.FileStorage):
         return None, [(argname, TypeError("Not a FileStorage."))]
-    return val, []
+    blob = val.read()
+    if not blob:
+        return None, [(argname, ValueError("Empty FileStorage."))]
+    return blob, []
 
 @_addvalidator
 def _profilepic(val, argname=None, *, _convert=True):
@@ -1101,25 +1103,22 @@ def _profilepic(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :rtype: (:py:class:`werkzeug.datastructures.FileStorage` or None,
-        [(str or None, exception)])
+    :rtype: (bytes or None, [(str or None, exception)])
     """
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    blob = val.read()
-    val.seek(0)
-    if len(blob) < 1000:
+    if len(val) < 1000:
         errs.append((argname, ValueError("Too small.")))
-    if len(blob) > 100000:
+    if len(val) > 100000:
         errs.append((argname, ValueError("Too big.")))
-    mime = magic.from_buffer(blob, mime=True)
+    mime = magic.from_buffer(val, mime=True)
     mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime not in ("image/jgp", "image/png"):
         errs.append((argname, ValueError("Only jpg and png allowed.")))
     if errs:
         return None, errs
-    image = PIL.Image.open(io.BytesIO(blob))
+    image = PIL.Image.open(io.BytesIO(val))
     width, height = image.size
     if width / height < 0.9 or height / width < 0.9:
         errs.append((argname, ValueError("Not square enough.")))
@@ -1133,15 +1132,12 @@ def _pdffile(val, argname=None, *, _convert=True):
     :type val: object
     :type argname: str or None
     :type _convert: bool
-    :rtype: (:py:class:`werkzeug.datastructures.FileStorage` or None,
-        [(str or None, exception)])
+    :rtype: (bytes or None, [(str or None, exception)])
     """
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    blob = val.read()
-    val.seek(0)
-    mime = magic.from_buffer(blob, mime=True)
+    mime = magic.from_buffer(val, mime=True)
     mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime != "application/pdf":
         errs.append((argname, ValueError("Only pdf allowed.")))
@@ -1985,8 +1981,7 @@ def _serialized_event_upload(val, argname=None, *, _convert=True):
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    blob = val.read()
-    data = json.loads(blob.decode("ascii"))
+    data = json.loads(val.decode("ascii"))
     return _serialized_event(data, argname, _convert=_convert)
 
 @_addvalidator

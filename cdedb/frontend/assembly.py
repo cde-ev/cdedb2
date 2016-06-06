@@ -373,11 +373,10 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot_id:
             data['ballot_id'] = ballot_id
         attachment_id = self.assemblyproxy.add_attachment(rs, data)
-        blob = attachment.read()
         path = os.path.join(self.conf.STORAGE_DIR, 'assembly_attachment',
                             str(attachment_id))
         with open(path, 'wb') as f:
-            f.write(blob)
+            f.write(attachment)
         self.notify_return_code(rs, attachment_id, success="Attachment added.")
         if assembly_id:
             return self.redirect(rs, "assembly/show_assembly",

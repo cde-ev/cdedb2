@@ -120,13 +120,12 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.set_foto_form(rs, persona_id)
         previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
-        blob = foto.read()
         myhash = hashlib.sha512()
-        myhash.update(blob)
+        myhash.update(foto)
         path = os.path.join(self.conf.STORAGE_DIR, 'foto', myhash.hexdigest())
         if not os.path.isfile(path):
             with open(path, 'wb') as f:
-                f.write(blob)
+                f.write(foto)
         code = self.coreproxy.change_foto(rs, persona_id,
                                           foto=myhash.hexdigest())
         if previous:

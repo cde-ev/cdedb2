@@ -526,10 +526,9 @@ class EventFrontend(AbstractUserFrontend):
         minor_form = check(rs, 'pdffile', minor_form, "minor_form")
         if rs.errors:
             return self.show_event(rs, event_id)
-        blob = minor_form.read()
         path = os.path.join(self.conf.STORAGE_DIR, 'minor_form', str(event_id))
         with open(path, 'wb') as f:
-            f.write(blob)
+            f.write(minor_form)
         rs.notify("success", "Form updated.")
         return self.redirect(rs, "event/show_event")
 
