@@ -5,8 +5,7 @@
 {% macro one_event_links(data) %}
     <div class="list-group">
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
-                    readonly=is_locked, aclass="list-group-item", icon="triangle-right",
-                    active=(sidenav_active == 'event_show')) }}
+                    aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_show')) }}
         {# TODO #}
         {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), "Kursliste") }}
         {% if is_registered %}

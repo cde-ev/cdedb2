@@ -17,7 +17,7 @@
                                  "{} -- {}".format(entry['nr'], entry['title'])) }}
                     {% if event_data['id'] in user.orga or is_admin %}
                         {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), "Bearbeiten",
-                                     readonly=True) }}
+                                     readonly=is_locked) }}
                     {% endif %}
                     <p>Kursleiter: {{ entry['instructors']|e }}</p>
                     <p>{{ entry['description']|e }}</p>
