@@ -2,6 +2,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
 {% block title %}Anmeldungen ({{ event_data['title']|e }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -9,7 +10,6 @@
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen", active=True) }}
 {% endblock %}
 {% block content %}
-    <h3>Standardabfragen</h3>
     {% with TITLES = {
         "all": "Alle Anmeldungen",
         "minors": "Minderjährige",} %}
@@ -20,35 +20,33 @@
     {% endwith %}
 
     
-    {{ util.box_filter_begin("Suchmaske") }}
-        {{ titles.update({
-                "reg.id": "ID",
-                "reg.notes": "Anmerkungen",
-                "reg.orga_notes": "Orga-Notizen",
-                "reg.payment": "Teilnehmerbeitrag",
-                "reg.parental_agreement": "Einverständniserklärung",
-                "reg.mixed_lodging": "Gemischte Unterbringung",
-                "reg.checkin": "Checkin",
-                "reg.foto_consent": "Foto-Einwilligung",
-                "membership.is_member": "CdE-Mitglied",
-                "persona.username": "Email",
-                "persona.family_name": "Nachname",
-                "persona.given_names": "Vorname",
-                "persona.display_name": "Rufname",
-                "user_data.title": "Titel",
-                "user_data.name_supplement": "Namenszusatz",
-                "user_data.gender": "Geschlecht",
-                "user_data.birthday": "Geburtstag",
-                "user_data.telephone": "Telefon",
-                "user_data.mobile": "Mobilfunk",
-                "user_data.address": "Anschrift",
-                "user_data.address_supplement": "Adresszusatz",
-                "user_data.postal_code": "PLZ",
-                "user_data.location": "Ort",
-                "user_data.country": "Land",})|e }}
+    {{ titles.update({
+            "reg.id": "ID",
+            "reg.notes": "Anmerkungen",
+            "reg.orga_notes": "Orga-Notizen",
+            "reg.payment": "Teilnehmerbeitrag",
+            "reg.parental_agreement": "Einverständniserklärung",
+            "reg.mixed_lodging": "Gemischte Unterbringung",
+            "reg.checkin": "Checkin",
+            "reg.foto_consent": "Foto-Einwilligung",
+            "membership.is_member": "CdE-Mitglied",
+            "persona.username": "Email",
+            "persona.family_name": "Nachname",
+            "persona.given_names": "Vorname",
+            "persona.display_name": "Rufname",
+            "user_data.title": "Titel",
+            "user_data.name_supplement": "Namenszusatz",
+            "user_data.gender": "Geschlecht",
+            "user_data.birthday": "Geburtstag",
+            "user_data.telephone": "Telefon",
+            "user_data.mobile": "Mobilfunk",
+            "user_data.address": "Anschrift",
+            "user_data.address_supplement": "Adresszusatz",
+            "user_data.postal_code": "PLZ",
+            "user_data.location": "Ort",
+            "user_data.country": "Land",})|e }}
 
-        {{ util.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
-    {{ util.box_filter_end() }}
+    {{ util.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
 
     <h3>Aktionen</h3>
     <p>

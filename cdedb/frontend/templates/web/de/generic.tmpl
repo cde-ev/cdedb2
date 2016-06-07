@@ -534,7 +534,6 @@
 
 
 {% macro user_search_mask(realm, selection_blacklist=[]) %}
-    {{ util.box_filter_begin("Suchmaske") }}
     {% with TITLES = {
         "fulltext": "Volltext",
         "personas.id": "ID",
@@ -585,7 +584,6 @@
         </form>
 
     {% endwith %}
-    {{ util.box_filter_end() }}
 {% endmacro %}
 
 {% macro user_search_result(result, realm) %}

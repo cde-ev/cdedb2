@@ -268,7 +268,8 @@
 {% endmacro %}
 
 
-{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[]) %}
+{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[], heading='Suchmaske') %}
+    {{ box_filter_begin(heading) }}
     {% with OPERATOR_LABELS = {0: "ist leer",
                                1: "ist nicht leer",
                                2: "ist gleich",
@@ -433,6 +434,7 @@
             </p>
         </form>
     {% endwith %}
+    {{ box_filter_end() }}
 {% endmacro %}
 
 {% macro place_default_queries(target, queries, titles, title="Standardabfragen") %}
