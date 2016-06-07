@@ -343,6 +343,19 @@ QUERY_VIEWS = {
         "ON personas.id = participants.persona_id"),
 }
 
+#: This is the primary key for the query and allows access to the
+#: corresponding data set. We always select this key to avoid any
+#: pathologies.
+QUERY_PRIMARIES = {
+    "qview_cde_member": "personas.id",
+    "qview_cde_user": "personas.id",
+    "qview_event_user": "personas.id",
+    "qview_registration": "reg.id",
+    "qview_core_user": "personas.id",
+    "qview_persona": "personas.id",
+    "qview_archived_persona": "personas.id",
+}
+
 def mangle_query_input(rs, spec):
     """This is to be used in conjunction with the ``query_input`` validator,
     which is exceptional since it is not used via a decorator. To take

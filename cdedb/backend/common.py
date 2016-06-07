@@ -13,7 +13,7 @@ import logging
 
 from cdedb.common import (
     glue, make_root_logger, ProxyShim, unwrap)
-from cdedb.query import QueryOperators, QUERY_VIEWS
+from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
 import cdedb.validation as validate
 
@@ -453,6 +453,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         if query.order:
             orders = ", ".join(entry.split(',')[0] for entry, _ in query.order)
             select = glue(select, ',', orders)
+        select = glue(select, ',', QUERY_PRIMARIES[query.scope])
         view = view or QUERY_VIEWS[query.scope]
         q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
                                           select, view)
