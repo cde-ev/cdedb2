@@ -2094,6 +2094,9 @@ class EventFrontend(AbstractUserFrontend):
             event_data, plural_data, registration_data, user_data,
             inhabitants)
 
+        if not any(l for l in inhabitants.values()):
+            merge_dicts(rs.values, {'ack_delete': True})
+
         return self.render(rs, "show_lodgement", {
             'event_data': event_data, 'lodgement_data': lodgement_data,
             'registration_data': registration_data, 'user_data': user_data,
@@ -2155,27 +2158,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_lodgement")
 
     @access("event", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
-    def delete_lodgement(self, rs, event_id, lodgement_id):
-        """Remove a lodgement.
-
-        For this the lodgement has to be empty, otherwise we error out.
-        """
-        lodgement_data = self.eventproxy.get_lodgement(rs, lodgement_id)
-        if lodgement_data['event_id'] != event_id:
-            return werkzeug.exceptions.NotFound("Wrong associated event.")
-        registrations = self.eventproxy.list_registrations(rs, event_id)
-        registration_data = self.eventproxy.get_registrations(rs, registrations)
-        if any(pdata['lodgement_id'] == lodgement_id
-               for rdata in registration_data.values()
-               for pdata in rdata['parts'].values()):
-            ## In contrast to calculate_groups this also takes rejected
-            ## and cancelled entries into account.
-            rs.notify("error",
-                      "Lodgement not empty (includes non-participants!).")
+    def delete_lodgement(self, rs, event_id, lodgement_id, ack_delete):
+        """Remove a lodgement."""
+        if not ack_delete:
+            rs.notify("error", "Not deleting a non-empty lodgement.")
             return self.redirect(rs, "event/show_lodgement")
-
-        code = self.eventproxy.delete_lodgement(rs, lodgement_id)
+        code = self.eventproxy.delete_lodgement(rs, lodgement_id, cascade=True)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgements")
 

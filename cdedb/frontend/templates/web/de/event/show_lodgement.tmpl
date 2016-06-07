@@ -28,6 +28,7 @@
     {{ util.href(cdedblink("event/change_lodgement_form"), "bearbeiten", readonly=is_locked) }}
     <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" class="jsConfirmed"
      id="deletelodgementform">
+        {{ util.form_input_checkbox(name="ack_delete", label="Ich bin mir sicher", readonly=is_locked) }}
         {{ util.form_input_submit("Löschen", readonly=is_locked) }}
     </form>
     {{ util.href(cdedblink("event/manage_inhabitants_form"), "Belegung ändern", readonly=is_locked) }}

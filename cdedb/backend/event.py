@@ -1307,15 +1307,14 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type lodgement_id: int
         :type cascade: bool
-        :param cascade: Must currently be False. No removal of dependent data
-          is supported.
+        :param cascade: If False this function has the precondition, that no
+          dependent entities exist. If True these dependent entities are
+          excised as well.
         :rtype: int
         :returns: default return code
         """
         lodgement_id = affirm("id", lodgement_id)
         cascade = affirm("bool", cascade)
-        if cascade:
-            raise NotImplementedError("Not available.")
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "event.lodgements", ("event_id", "moniker"), lodgement_id)
@@ -1324,6 +1323,20 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
             self.assert_offline_lock(rs, event_id=event_id)
+            if cascade:
+                reg_ids = self.list_registrations(rs, event_id)
+                registrations = self.get_registrations(rs, reg_ids)
+                for registration_id, registration in registrations.items():
+                    update = {}
+                    for part_id, part in registration['parts'].items():
+                        if part['lodgement_id'] == lodgement_id:
+                            update[part_id] = {'lodgement_id': None}
+                    if update:
+                        new_registration = {
+                            'id': registration_id,
+                            'parts': update
+                        }
+                        self.set_registration(rs, new_registration)
             ret = self.sql_delete_one(rs, "event.lodgements", lodgement_id)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_deleted, event_id,

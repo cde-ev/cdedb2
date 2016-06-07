@@ -31,6 +31,7 @@
             <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST"
              class="jsConfirmed" id="deleteballotform">
                 <div>
+                    {{ util.form_input_checkbox(name="ack_delete", label="Ich bin mir sicher") }}
                     {{ util.form_input_submit(value="Löschen") }}
                 </div>
             </form>

@@ -531,8 +531,12 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly_admin", modi={"POST"})
-    def delete_ballot(self, rs, assembly_id, ballot_id):
+    @REQUESTdata(("ack_delete", "bool"))
+    def delete_ballot(self, rs, assembly_id, ballot_id, ack_delete):
         """Remove a ballot."""
+        if not ack_delete:
+            rs.notify("error", "Deletion not confirmed.")
+            return self.redirect(rs, "assembly/show_ballot")
         code = self.assemblyproxy.delete_ballot(rs, ballot_id, cascade=True)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/list_ballots")

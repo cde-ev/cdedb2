@@ -212,6 +212,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/1/ballot/6/show'},)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
         f = self.response.forms['deleteballotform']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.traverse({'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
