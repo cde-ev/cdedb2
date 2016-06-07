@@ -2476,10 +2476,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
         ascending, e = _bool(val.get(tmp, "True"), tmp, _convert=_convert)
         errs.extend(e)
         if value:
-            if value in fields_of_interest:
-                order.append((value, ascending))
-            else:
-                errs.append(("qord_" + postfix, KeyError("Must be selected.")))
+            order.append((value, ascending))
     if errs:
         return None, errs
     return Query(None, spec, fields_of_interest, constraints, order), errs

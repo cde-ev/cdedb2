@@ -450,6 +450,9 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         self.logger.debug("Performing general query {}.".format(query))
         select = ", ".join(column for field in query.fields_of_interest
                            for column in field.split(','))
+        if query.order:
+            orders = ", ".join(entry.split(',')[0] for entry, _ in query.order)
+            select = glue(select, ',', orders)
         view = view or QUERY_VIEWS[query.scope]
         q = "SELECT {} {} FROM {}".format("DISTINCT" if distinct else "",
                                           select, view)
