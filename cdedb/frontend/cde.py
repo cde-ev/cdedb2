@@ -30,6 +30,28 @@ from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 from cdedb.backend.event import EventBackend
 from cdedb.backend.cde import CdEBackend
 
+MEMBERSEARCH_DEFAULTS = {
+    'qop_fulltext': QueryOperators.containsall,
+    'qsel_family_name,birth_name': True,
+    'qop_family_name,birth_name': QueryOperators.similar,
+    'qsel_given_names,display_name': True,
+    'qop_given_names,display_name': QueryOperators.similar,
+    'qsel_username': True,
+    'qop_username': QueryOperators.similar,
+    'qop_telephone,mobile': QueryOperators.similar,
+    'qop_address,address_supplement,address2,address_supplement2':
+        QueryOperators.similar,
+    'qop_postal_code,postal_code2': QueryOperators.similar,
+    'qop_location,location2': QueryOperators.similar,
+    'qop_country,country2': QueryOperators.similar,
+    'qop_weblink,specialisation,affiliation,timeline,interests,free_form':
+        QueryOperators.similar,
+    'qop_pevent_id': QueryOperators.equal,
+    'qop_pcourse_id': QueryOperators.equal,
+    'qord_primary': 'family_name,birth_name',
+    'qord_primary_ascending': True,
+}
+
 class CdEFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
@@ -175,34 +197,29 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "core/index")
 
     @access("searchable")
-    @REQUESTdata(("submitform", "bool"))
-    def member_search(self, rs, submitform):
-        """Render form and do search queries. This has a double meaning so
-        that we are able to update the course selection upon request.
-
-        ``submitform`` is present in the request data if the corresponding
-        button was pressed and absent otherwise.
-        """
+    @REQUESTdata(("is_search", "bool"))
+    def member_search(self, rs, is_search):
+        """Search for members."""
         spec = QUERY_SPECS['qview_cde_member']
-        query = check(rs, "query_input", mangle_query_input(rs, spec), "query",
-                      spec=spec, allow_empty=not submitform, separator=' ')
-        if not submitform or rs.errors:
-            events = {k: v for k, v in self.eventproxy.list_events(
-                rs, past=True).items()}
-            pevent_id = None
-            if query:
-                for field, _, value in query.constraints:
-                    if field == "pevent_id" and value:
-                        pevent_id = value
-            courses = tuple()
-            if pevent_id:
-                courses = {k: v for k, v in self.eventproxy.list_courses(
-                    rs, pevent_id, past=True).items()}
-            choices = {"pevent_id": events, 'pcourse_id': courses}
-            return self.render(rs, "member_search",
-                               {'spec': spec, 'choices': choices,
-                                'queryops': QueryOperators,})
-        else:
+        query = check(
+            rs, "query_input",
+            mangle_query_input(rs, spec, MEMBERSEARCH_DEFAULTS), "query",
+            spec=spec, allow_empty=not is_search, separator=' ')
+        events = {k: v for k, v in self.eventproxy.list_events(
+            rs, past=True).items()}
+        pevent_id = None
+        if rs.values.get('qval_pevent_id'):
+            try:
+                pevent_id = int(rs.values.get('qval_pevent_id'))
+            except ValueError:
+                pass
+        courses = tuple()
+        if pevent_id:
+            courses = {k: v for k, v in self.eventproxy.list_courses(
+                rs, pevent_id, past=True).items()}
+        choices = {"pevent_id": events, 'pcourse_id': courses}
+        result = None
+        if is_search and not rs.errors:
             query.scope = "qview_cde_member"
             query.fields_of_interest.append('personas.id')
             result = self.cdeproxy.submit_general_query(rs, query)
@@ -213,7 +230,9 @@ class CdEFrontend(AbstractUserFrontend):
                     and not self.is_admin(rs)):
                 result = result[:self.conf.MAX_QUERY_RESULTS]
                 rs.notify("info", "Too many query results.")
-            return self.render(rs, "member_search_result", {'result': result})
+        return self.render(rs, "member_search", {
+            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'result': result})
 
     @access("cde_admin")
     @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))

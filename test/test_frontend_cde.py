@@ -122,9 +122,6 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Mitgliedersuche")
         f = self.response.forms['membersearchform']
         f['qval_pevent_id'] = 1
-        self.submit(f, button="updateform")
-        f = self.response.forms['membersearchform']
-        f['qval_username'] = "@example"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
 
@@ -136,7 +133,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
-        self.assertTitle("\nMitgliedersuche -- 2 Mitglieder gefunden\n")
+        self.assertTitle("Mitgliedersuche")
+        self.assertPresence("2 Mitglieder gefunden")
         self.assertPresence("Anton")
         self.assertPresence("Bertålotta")
 
@@ -265,7 +263,6 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
         f = self.response.forms['membersearchform']
-        f['qop_family_name,birth_name'] = QueryOperators.similar.value
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")

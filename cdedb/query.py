@@ -356,7 +356,7 @@ QUERY_PRIMARIES = {
     "qview_archived_persona": "personas.id",
 }
 
-def mangle_query_input(rs, spec):
+def mangle_query_input(rs, spec, defaults=None):
     """This is to be used in conjunction with the ``query_input`` validator,
     which is exceptional since it is not used via a decorator. To take
     care of the differences this function exists.
@@ -367,10 +367,14 @@ def mangle_query_input(rs, spec):
     :type rs: :py:class:`cdedb.common.RequestState`
     :type spec: {str: str}
     :param spec: one of :py:data:`QUERY_SPECS`
+    :type defaults: {str: str}
+    :param defaults: Default values which appear like they have been submitted,
+      if nothing has been submitted for this paramater.
     :rtype: {str: str}
     :returns: The raw data associated to the query described by the spec
         extracted from the request data saved in the request state.
     """
+    defaults = defaults or {}
     params = {}
     for field in spec:
         for prefix in ("qval_", "qsel_", "qop_"):
@@ -384,4 +388,7 @@ def mangle_query_input(rs, spec):
         name = "qord_" + postfix + "_ascending"
         if name in rs.request.values:
             params[name] = rs.values[name] = rs.request.values[name]
+    for key, value in defaults.items():
+        if key not in params:
+            params[key] = rs.values[key] = value
     return params

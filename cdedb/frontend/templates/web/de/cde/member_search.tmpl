@@ -3,99 +3,62 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Mitgliedersuche{% endblock %}
 {% block content %}
+    <h3>Suchmaske</h3>
     <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform">
         {# This is mostly an inlined version of util.format_query(...) but customized for this special query page. #}
         <table>
             <tr {% if "fulltext" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_fulltext" value="True"  > </td>
                 <td> Volltext </td>
-                <td> <input type="hidden" name="qop_fulltext" value="{{ queryops.containsall.value|e }}"  > </td>
                 <td> <input type="text" name="qval_fulltext", value="" > </td>
             </tr>
             <tr {% if "family_name,birth_name" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_family_name,birth_name" value="True"  > </td>
                 <td> Nachname </td>
-                <td>
-                    <input type="hidden" name="qop_family_name,birth_name" value="{{ queryops.similar.value|e }}">
-                </td>
                 <td> <input type="text" name="qval_family_name,birth_name", value="" > </td>
             </tr>
             <tr {% if "given_names,display_name" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_given_names,display_name" value="True"  > </td>
                 <td> Vorname </td>
-                <td>
-                    <input type="hidden" name="qop_given_names,display_name" value="{{ queryops.similar.value|e }}">
-                </td>
                 <td> <input type="text" name="qval_given_names,display_name", value="" > </td>
             </tr>
             <tr {% if "username" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_username" value="True"  > </td>
                 <td> Email </td>
-                <td> <input type="hidden" name="qop_username" value="{{ queryops.similar.value|e }}"  > </td>
                 <td> <input type="text" name="qval_username", value="" > </td>
             </tr>
             <tr {% if "telephone,mobile" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_telephone,mobile" value="True"  > </td>
                 <td> Telefon </td>
-                <td> <input type="hidden" name="qop_telephone,mobile" value="{{ queryops.similar.value|e }}"  > </td>
                 <td> <input type="text" name="qval_telephone,mobile", value="" > </td>
             </tr>
             <tr {% if "address,address_supplement,address2,address_supplement2" in errors %}
                     class="errorInput" {% endif %}>
 
-                <td>
-                    <input type="hidden" name="qsel_address,address_supplement,address2,address_supplement2"
-                     value="True">
-                </td>
                 <td> Adresse </td>
-                <td>
-                    <input type="hidden" name="qop_address,address_supplement,address2,address_supplement2"
-                     value="{{ queryops.similar.value|e }}">
-                </td>
                 <td>
                     <input type="text" name="qval_address,address_supplement,address2,address_supplement2", value="">
                 </td>
             </tr>
             <tr {% if "postal_code,postal_code2" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_postal_code,postal_code2" value="True"  > </td>
                 <td> PLZ </td>
-                <td>
-                    <input type="hidden" name="qop_postal_code,postal_code2" value="{{ queryops.similar.value|e }}">
-                </td>
                 <td> <input type="text" name="qval_postal_code,postal_code2", value="" > </td>
             </tr>
             <tr {% if "location,location2" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_location,location2" value="True"  > </td>
                 <td> Ort </td>
-                <td> <input type="hidden" name="qop_location,location2" value="{{ queryops.similar.value|e }}"  > </td>
                 <td> <input type="text" name="qval_location,location2", value="" > </td>
             </tr>
             <tr {% if "country,country2" in errors %} class="errorInput" {% endif %} >
 
-                <td> <input type="hidden" name="qsel_country,country2" value="True"  > </td>
                 <td> Land </td>
-                <td> <input type="hidden" name="qop_country,country2" value="{{ queryops.similar.value|e }}"  > </td>
                 <td> <input type="text" name="qval_country,country2", value="" > </td>
             </tr>
             <tr {% if "weblink,specialisation,affiliation,timeline,interests,free_form" in errors %}
                     class="errorInput" {% endif %} >
 
-                <td>
-                    <input type="hidden" name="qsel_weblink,specialisation,affiliation,timeline,interests,free_form"
-                     value="True">
-                </td>
                 <td> Interessen, Werdegang, ... </td>
-                <td>
-                    <input type="hidden" name="qop_weblink,specialisation,affiliation,timeline,interests,free_form"
-                     value="{{ queryops.similar.value|e }}">
-                </td>
                 <td>
                     <input type="text" name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
                      value="">
@@ -103,9 +66,7 @@
             </tr>
             <tr>
 
-                <td> <input type="hidden" name="qsel_pevent_id" value="True"  > </td>
                 <td> Akademie </td>
-                <td> <input type="hidden" name="qop_pevent_id" value="{{ queryops.equal.value|e }}"  > </td>
                 <td>
                     <select name="qval_pevent_id" >
                         <option value="" > </option>
@@ -116,13 +77,10 @@
                             </option>
                         {% endfor %}
                     </select>
-                    {{ util.form_input_submit(value="Kursauswahl aktualisieren", name="updateform") }}
                 </td>
             </tr>
             <tr>
-                <td> <input type="hidden" name="qsel_pcourse_id" value="True"  > </td>
                 <td> Kurs </td>
-                <td> <input type="hidden" name="qop_pcourse_id" value="{{ queryops.equal.value|e }}"  > </td>
                 <td>
                     <select name="qval_pcourse_id" >
                         <option value="" > </option>
@@ -137,9 +95,17 @@
             </tr>
         </table>
         <div>
-            <input type="hidden" name="qord_primary" value="family_name,birth_name" >
-            <input type="hidden" name="qord_primary_ascending" value="True" >
+            {{ util.input_hidden(name="is_search", value=True) }}
             {{ util.form_input_submit(value="Suchen") }}
         </div>
     </form>
+    {% if values['is_search'] %}
+        <h3>Ergebnis -- {{ result|length|e }} {{ result|length|numerus("Mitglied", "Mitglieder")|e }} gefunden</h3>
+        {% for dataset in result %}
+            <p>
+                {{ util.href(show_user_link(dataset['id']),
+                             "{} {}".format(dataset['family_name'], dataset['given_names'])) }}
+            </p>
+        {% endfor %}
+    {% endif %}
 {% endblock %}
