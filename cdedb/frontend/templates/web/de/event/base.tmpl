@@ -81,7 +81,7 @@
     {% else %}
         {% if is_admin %}
             <div class="list-group">
-                {{ util.href(cdedblink("event/list_events"), "DB-Veranstaltungen verwalten", aclass="list-group-item",
+                {{ util.href(cdedblink("event/list_db_events"), "DB-Veranstaltungen verwalten", aclass="list-group-item",
                         icon="cog", active=(sidenav_active == 'event_list')) }}
                 {# TODO #}
                 {{ util.href(cdedblink("event/list_institutions"), "Organisationen verwalten") }}

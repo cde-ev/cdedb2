@@ -181,7 +181,7 @@ class MlFrontend(AbstractUserFrontend):
     def create_mailinglist_form(self, rs):
         """Render form."""
         mailinglists = self.mlproxy.list_mailinglists(rs)
-        events = self.eventproxy.list_events(rs, past=False)
+        events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         return self.render(rs, "create_mailinglist", {
             "mailinglists": mailinglists, "events": events,
@@ -269,7 +269,7 @@ class MlFrontend(AbstractUserFrontend):
         """Render form."""
         mailinglist_data = self.mlproxy.get_mailinglist(rs, mailinglist_id)
         mailinglists = self.mlproxy.list_mailinglists(rs)
-        events = self.eventproxy.list_events(rs, past=False)
+        events = self.eventproxy.list_db_events(rs)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         merge_dicts(rs.values, mailinglist_data)
         return self.render(rs, "change_mailinglist", {

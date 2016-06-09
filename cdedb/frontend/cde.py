@@ -205,8 +205,8 @@ class CdEFrontend(AbstractUserFrontend):
             rs, "query_input",
             mangle_query_input(rs, spec, MEMBERSEARCH_DEFAULTS), "query",
             spec=spec, allow_empty=not is_search, separator=' ')
-        events = {k: v for k, v in self.eventproxy.list_events(
-            rs, past=True).items()}
+        events = {k: v for k, v in self.eventproxy.list_past_events(
+            rs).items()}
         pevent_id = None
         if rs.values.get('qval_pevent_id'):
             try:
@@ -246,7 +246,7 @@ class CdEFrontend(AbstractUserFrontend):
                           spec=spec, allow_empty=False)
         else:
             query = None
-        events = self.eventproxy.list_events(rs, past=True)
+        events = self.eventproxy.list_past_events(rs)
         choices = {'pevent_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']

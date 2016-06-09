@@ -121,7 +121,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("anton")
     def test_entity_past_event(self, user):
-        old_events = self.event.list_events(self.key, past=True)
+        old_events = self.event.list_past_events(self.key)
         data = {
             'title': "New Link Academy",
             'shortname': "link",
@@ -141,7 +141,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_past_event_data_one(self.key, new_id))
         self.assertNotIn(new_id, old_events)
-        new_events = self.event.list_events(self.key, past=True)
+        new_events = self.event.list_past_events(self.key)
         self.assertIn(new_id, new_events)
 
     @as_users("anton")
@@ -206,7 +206,7 @@ class TestEventBackend(BackendTest):
     def test_entity_event(self, user):
         ## need administrator to create event
         self.login(USER_DICT["anton"])
-        old_events = self.event.list_events(self.key, past=False)
+        old_events = self.event.list_db_events(self.key)
         data = {
             'title': "New Link Academy",
             'institution': 1,
@@ -344,7 +344,7 @@ class TestEventBackend(BackendTest):
                          self.event.get_event_data_one(self.key, new_id))
 
         self.assertNotIn(new_id, old_events)
-        new_events = self.event.list_events(self.key, past=False)
+        new_events = self.event.list_db_events(self.key)
         self.assertIn(new_id, new_events)
 
         cdata = {

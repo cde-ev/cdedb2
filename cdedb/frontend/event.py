@@ -181,7 +181,7 @@ class EventFrontend(AbstractUserFrontend):
                           allow_empty=False)
         else:
             query = None
-        events = self.eventproxy.list_events(rs, past=True)
+        events = self.eventproxy.list_past_events(rs)
         choices = {'event_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
@@ -302,7 +302,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin")
     def list_past_events(self, rs):
         """List all concluded events."""
-        events = self.eventproxy.list_events(rs, past=True)
+        events = self.eventproxy.list_past_events(rs)
         return self.render(rs, "list_past_events", {'events': events})
 
     @access("event_admin")
@@ -450,7 +450,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin")
     def list_events(self, rs):
         """List all events organized via DB."""
-        events = self.eventproxy.list_events(rs, past=False)
+        events = self.eventproxy.list_db_events(rs)
         data = self.eventproxy.get_event_data(rs, events.keys())
         return self.render(rs, "list_events", {'data': data})
 
@@ -2721,7 +2721,7 @@ class EventFrontend(AbstractUserFrontend):
         persona_data = self.coreproxy.get_personas(rs, personas)
         events = {entry['event_id'] for entry in log if entry['event_id']}
         event_data = self.eventproxy.get_event_data(rs, events)
-        events = self.eventproxy.list_events(rs, past=False)
+        events = self.eventproxy.list_db_events(rs)
         return self.render(rs, "view_log", {
             'log': log, 'persona_data': persona_data, 'event_data': event_data,
             'events': events})
@@ -2743,7 +2743,7 @@ class EventFrontend(AbstractUserFrontend):
         persona_data = self.coreproxy.get_personas(rs, personas)
         events = {entry['pevent_id'] for entry in log if entry['pevent_id']}
         event_data = self.eventproxy.get_past_event_data(rs, events)
-        events = self.eventproxy.list_events(rs, past=True)
+        events = self.eventproxy.list_past_events(rs)
         return self.render(rs, "view_past_log", {
             'log': log, 'persona_data': persona_data, 'event_data': event_data,
             'events': events})

@@ -276,6 +276,25 @@ class EventBackend(AbstractBackend):
             pevent_id, start, stop)
 
     @access("persona")
+    def list_past_events(self, rs):
+        """List all concluded events
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {int: str}
+        :returns: Mapping of event ids to titles.
+        """
+        return self.list_events(rs, True)
+
+    @access("persona")
+    def list_db_events(self, rs):
+        """List all events organized via DB.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {int: str}
+        :returns: Mapping of event ids to titles.
+        """
+        return self.list_events(rs, False)
+
     def list_events(self, rs, past):
         """List all events, either concluded or organized via DB.
 
