@@ -318,6 +318,27 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("persona")
+    def list_past_courses(self, rs, event_id):
+        """List all courses of a concluded event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: {int: str}
+        :returns: Mapping of course ids to titles.
+        """
+        return self.list_courses(rs, event_id, True)
+
+    @access("persona")
+    def list_db_courses(self, rs, event_id):
+        """List all courses organized via DB.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: {int: str}
+        :returns: Mapping of course ids to titles.
+        """
+        return self.list_courses(rs, event_id, False)
+
     def list_courses(self, rs, event_id, past):
         """List all courses of an event either concluded or organized via DB.
 
@@ -1479,7 +1500,7 @@ class EventBackend(AbstractBackend):
                 event_data['parts'].values()))['part_begin']
             del pevent['id']
             new_id = self.create_past_event(rs, pevent)
-            courses = self.list_courses(rs, event_id, past=False)
+            courses = self.list_db_courses(rs, event_id)
             course_data = self.get_course_data(rs, courses.keys())
             course_map = {}
             for course_id, cdata in course_data.items():

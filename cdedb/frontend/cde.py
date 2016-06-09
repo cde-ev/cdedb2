@@ -215,8 +215,8 @@ class CdEFrontend(AbstractUserFrontend):
                 pass
         courses = tuple()
         if pevent_id:
-            courses = {k: v for k, v in self.eventproxy.list_courses(
-                rs, pevent_id, past=True).items()}
+            courses = {k: v for k, v in self.eventproxy.list_past_courses(
+                rs, pevent_id).items()}
         choices = {"pevent_id": events, 'pcourse_id': courses}
         result = None
         if is_search and not rs.errors:

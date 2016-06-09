@@ -242,7 +242,7 @@ class EventFrontend(AbstractUserFrontend):
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
         event_data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
-        courses = self.eventproxy.list_courses(rs, pevent_id, past=True)
+        courses = self.eventproxy.list_past_courses(rs, pevent_id)
         participants = self.eventproxy.list_participants(rs,
                                                          pevent_id=pevent_id)
         institutions = self.eventproxy.list_institutions(rs)
@@ -472,7 +472,7 @@ class EventFrontend(AbstractUserFrontend):
         """List courses from an event."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         event_data['is_open'] = self.is_open(event_data)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         if courses:
             course_data = self.eventproxy.get_course_data(rs, courses.keys())
         else:
@@ -582,7 +582,7 @@ class EventFrontend(AbstractUserFrontend):
         for registration in registrations.values():
             is_referenced = is_referenced.union(registration['parts'].keys())
             is_referenced = is_referenced.union(registration['choices'].keys())
-        course_ids = self.eventproxy.list_courses(rs, event_id, past=False)
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_course_data(rs, course_ids)
         for course in courses.values():
             is_referenced = is_referenced.union(course['parts'])
@@ -850,7 +850,7 @@ class EventFrontend(AbstractUserFrontend):
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         user_data = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registration_data.values()))
         stati = const.RegistrationPartStati
@@ -986,7 +986,7 @@ class EventFrontend(AbstractUserFrontend):
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses)
         persona_data = self.coreproxy.get_personas(rs, tuple(
             rdata['persona_id'] for rdata in registration_data.values()))
@@ -1033,7 +1033,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses)
         choice_counts = {
             course_id: {
@@ -1089,7 +1089,7 @@ class EventFrontend(AbstractUserFrontend):
             rdata['age'] = determine_age_class(
                 user_data[rdata['persona_id']]['birthday'],
                 min(p['part_begin'] for p in event_data['parts'].values()))
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses)
         lodgements = self.eventproxy.list_lodgements(rs, event_id)
         lodgement_data = self.eventproxy.get_lodgements(rs, lodgements)
@@ -1125,7 +1125,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_data = self.eventproxy.get_registrations(rs, registrations)
         persona_data = self.coreproxy.get_personas(rs, tuple(
             rdata['persona_id'] for rdata in registration_data.values()))
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses)
         counts = {
             course_id: {
@@ -1184,7 +1184,7 @@ class EventFrontend(AbstractUserFrontend):
     def download_course_lists(self, rs, event_id, runs):
         """Create lists to post to course rooms."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = self.eventproxy.get_registrations(rs, registrations)
@@ -1246,7 +1246,7 @@ class EventFrontend(AbstractUserFrontend):
     def download_participant_list(self, rs, event_id, runs):
         """Create list to send to all participants."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses)
         registrations = self.eventproxy.list_registrations(rs, event_id)
         registration_data = {
@@ -1272,7 +1272,7 @@ class EventFrontend(AbstractUserFrontend):
     def download_expuls(self, rs, event_id):
         """Create TeX-snippet for announcement in the ExPuls."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses)
         tex = self.fill_template(rs, "tex", "expuls", {
             'event_data': event_data, 'course_data': course_data})
@@ -1313,7 +1313,7 @@ class EventFrontend(AbstractUserFrontend):
         if not minor_form_present and age.is_minor():
             rs.notify("info", "No minors may register.")
             return self.redirect(rs, "event/show_event")
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         course_choices = {
             part_id: sorted(course_id for course_id in course_data
@@ -1417,7 +1417,7 @@ class EventFrontend(AbstractUserFrontend):
         if self.is_locked(event_data):
             rs.notify("error", "Event locked.")
             return self.redirect(rs, "event/show_event")
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         registration_data = self.process_registration_input(rs, event_data,
                                                             course_data)
@@ -1464,7 +1464,7 @@ class EventFrontend(AbstractUserFrontend):
         age = determine_age_class(
             user_data['birthday'],
             min(p['part_begin'] for p in event_data['parts'].values()))
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         fee = sum(event_data['parts'][part_id]['fee']
                   for part_id, entry in registration_data['parts'].items()
@@ -1496,7 +1496,7 @@ class EventFrontend(AbstractUserFrontend):
         age = determine_age_class(
             user_data['birthday'],
             min(p['part_begin'] for p in event_data['parts'].values()))
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         course_choices = {
             part_id: sorted(course_id for course_id in course_data
@@ -1537,7 +1537,7 @@ class EventFrontend(AbstractUserFrontend):
         if self.is_locked(event_data):
             rs.notify("error", "Event locked.")
             return self.redirect(rs, "event/registration_status")
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         stored_data = self.eventproxy.get_registration(rs, registration_id)
         registration_data = self.process_registration_input(
@@ -1748,7 +1748,7 @@ class EventFrontend(AbstractUserFrontend):
         age = determine_age_class(
             user_data['birthday'],
             min(p['part_begin'] for p in event_data['parts'].values()))
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         lodgements = self.eventproxy.list_lodgements(rs, event_id)
         lodgement_data = self.eventproxy.get_lodgements(rs, lodgements)
@@ -1768,7 +1768,7 @@ class EventFrontend(AbstractUserFrontend):
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         persona_data = self.coreproxy.get_persona(
             rs, registration_data['persona_id'])
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         course_choices = {
             part_id: sorted(course_id for course_id in course_data
@@ -1891,7 +1891,7 @@ class EventFrontend(AbstractUserFrontend):
     def add_registration_form(self, rs, event_id):
         """Render form."""
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         course_choices = {
             part_id: sorted(course_id for course_id in course_data
@@ -2448,7 +2448,7 @@ class EventFrontend(AbstractUserFrontend):
         else:
             query = None
 
-        courses = self.eventproxy.list_courses(rs, event_id, past=False)
+        courses = self.eventproxy.list_db_courses(rs, event_id)
         course_data = self.eventproxy.get_course_data(rs, courses.keys())
         lodgements = self.eventproxy.list_lodgements(rs, event_id)
         lodgement_data = self.eventproxy.get_lodgements(rs, lodgements)
