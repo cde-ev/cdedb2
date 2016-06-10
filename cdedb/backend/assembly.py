@@ -334,7 +334,7 @@ class AssemblyBackend(AbstractBackend):
         complete data set which will be used to create a new candidate.
 
         .. note:: It is forbidden to modify a ballot after voting has
-        started.
+          started.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
