@@ -283,7 +283,7 @@ class EventBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
-        query = "SELECT id, title FROM {}.events".format("past_event")
+        query = "SELECT id, title FROM past_event.events"
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
@@ -295,7 +295,7 @@ class EventBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
-        query = "SELECT id, title FROM {}.events".format("event")
+        query = "SELECT id, title FROM event.events"
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
