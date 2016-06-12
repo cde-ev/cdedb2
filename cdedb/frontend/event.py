@@ -452,7 +452,7 @@ class EventFrontend(AbstractUserFrontend):
         """List all events organized via DB."""
         events = self.eventproxy.list_db_events(rs)
         data = self.eventproxy.get_event_data(rs, events.keys())
-        return self.render(rs, "list_events", {'data': data})
+        return self.render(rs, "list_db_events", {'data': data})
 
     @access("event")
     def show_event(self, rs, event_id):
