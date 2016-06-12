@@ -277,13 +277,15 @@ class EventBackend(AbstractBackend):
 
     @access("persona")
     def list_past_events(self, rs):
-        """List all concluded events
+        """List all concluded events.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
-        return self.list_events(rs, True)
+        query = "SELECT id, title FROM {}.events".format("past_event")
+        data = self.query_all(rs, query, tuple())
+        return {e['id']: e['title'] for e in data}
 
     @access("persona")
     def list_db_events(self, rs):
@@ -293,23 +295,7 @@ class EventBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
-        return self.list_events(rs, False)
-
-    def list_events(self, rs, past):
-        """List all events, either concluded or organized via DB.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type past: bool
-        :param past: Select whether to list past events or those organized via
-          DB.
-        :rtype: {int: str}
-        :returns: Mapping of event ids to titles.
-        """
-        if past:
-            schema = "past_event"
-        else:
-            schema = "event"
-        query = "SELECT id, title FROM {}.events".format(schema)
+        query = "SELECT id, title FROM {}.events".format("event")
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
