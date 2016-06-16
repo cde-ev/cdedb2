@@ -448,7 +448,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_past_event")
 
     @access("event_admin")
-    def list_events(self, rs):
+    def list_db_events(self, rs):
         """List all events organized via DB."""
         events = self.eventproxy.list_db_events(rs)
         data = self.eventproxy.get_event_data(rs, events.keys())

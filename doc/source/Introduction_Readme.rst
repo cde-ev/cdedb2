@@ -24,7 +24,7 @@ Here is a list of best practices to follow, so the code stays nice.
 * Always use named constants (mostly from cdedb.database.constants) for
   numeric constants. Generally avoid hard-coded values.
 * Document stuff, but avoid redundant spam -- less is sometimes
-  more. Especially avoid annotating 'bar(foo)' with "bar's a foo" (think of
+  more. Especially avoid annotating 'bar(foo)' with "bars a foo" (think of
   it like playing Tabu).
 * Exactly those HTTP-requests which change data must be POST-requests. Upon
   a POST a redirect should happen so that refresh (F5) works without
