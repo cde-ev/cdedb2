@@ -1,7 +1,7 @@
 Readme
 ======
 
-This section provides practical knowlegde for development.
+This section provides practical knowledge for development.
 
 Coding Guidelines
 -----------------
@@ -20,7 +20,7 @@ Here is a list of best practices to follow, so the code stays nice.
   calls) use the :py:class:`cdedb.database.connection.Atomizer`.
 * All functions with an ``@access`` decorator may only use the
   session-specific database connections/resources. All uses of elevated
-  priviliges must be encapsulated into their own functions.
+  privileges must be encapsulated into their own functions.
 * Always use named constants (mostly from cdedb.database.constants) for
   numeric constants. Generally avoid hard-coded values.
 * Document stuff, but avoid redundant spam -- less is sometimes
@@ -35,7 +35,7 @@ Here is a list of best practices to follow, so the code stays nice.
   cdedb.database.constants.SEARCHMEMBER_STATI and not against the direct
   values like cdedb.database.constants.PersonaStati.searchmember.
 * As general pattern: return tuple ``(bool, str)`` where the bool signals
-  succes, and the str is the either error message or return value
+  success, and the str is the either error message or return value
 * The test-suite should visit all functionality at least once.
 
 .. _sample-data:
@@ -77,12 +77,12 @@ it right away.
   before being handed to the templates.
 * Use encode_parameter/decode_parameter to authenticate actions. This
   removes the need for storing challenges in the database.
-* Strings to internationalize should have peridos at the end where
+* Strings to internationalize should have periods at the end where
   applicable (so all error messages should have them).
 * Behaviour should be defined once.
 * Values should be configurable and not be hard coded
 * Use tuples instead of lists where feasible.
-* unittests were sensible, high level testing otherwise.
+* Unittests where sensible, high level testing otherwise.
 * Use fail2ban for preventing brute force.
 * All time stamps must have a time zone associated to them. For everything
   used internally this time zone has to be UTC.

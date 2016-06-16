@@ -3,7 +3,7 @@ Getting Started
 
 This describes the steps necessary to get the project running on a
 machine. This is somewhat complicated and it is advised to use the virtual
-machine in most cases. Instructions for obtianing and using the image can be
+machine in most cases. Instructions for obtaining and using the image can be
 found at :doc:`Introduction_VM`. Below may be some Gentoo-specific bits, for
 Debian-specific stuff look at the setup scripts in ``related/auto-build``.
 
@@ -66,7 +66,7 @@ to the real document.
 Prepare environment
 -------------------
 
-Now we set up all auxillary stuff. We assume, that postgres is configured
+Now we set up all auxiliary stuff. We assume, that postgres is configured
 for peer authentication (i.e. the system user xy has access to the postgres
 user xy). First execute as user with enough permissions (that is the ability
 to run ``sudo -u postgres ...`` and ``sudo -u cdb ...``) and with running

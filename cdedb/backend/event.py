@@ -276,21 +276,26 @@ class EventBackend(AbstractBackend):
             pevent_id, start, stop)
 
     @access("persona")
-    def list_events(self, rs, past):
-        """List all events, either concluded or organized via DB.
+    def list_past_events(self, rs):
+        """List all concluded events.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type past: bool
-        :param past: Select whether to list past events or those organized via
-          DB.
         :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
-        if past:
-            schema = "past_event"
-        else:
-            schema = "event"
-        query = "SELECT id, title FROM {}.events".format(schema)
+        query = "SELECT id, title FROM past_event.events"
+        data = self.query_all(rs, query, tuple())
+        return {e['id']: e['title'] for e in data}
+
+    @access("persona")
+    def list_db_events(self, rs):
+        """List all events organized via DB.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {int: str}
+        :returns: Mapping of event ids to titles.
+        """
+        query = "SELECT id, title FROM event.events"
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
@@ -318,26 +323,31 @@ class EventBackend(AbstractBackend):
             return ret
 
     @access("persona")
-    def list_courses(self, rs, event_id, past):
-        """List all courses of an event either concluded or organized via DB.
+    def list_past_courses(self, rs, event_id):
+        """List all courses of a concluded event.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
-        :type past: bool
-        :param past: Select whether to list past events or those organized via
-          DB.
         :rtype: {int: str}
         :returns: Mapping of course ids to titles.
         """
         event_id = affirm("id", event_id)
-        if past:
-            table = "past_event.courses"
-            key = "pevent_id"
-        else:
-            table = "event.courses"
-            key = "event_id"
-        data = self.sql_select(rs, table, ("id", "title"), (event_id,),
-                               entity_key=key)
+        data = self.sql_select(rs, "past_event.courses", ("id", "title"),
+                               (event_id,), entity_key="pevent_id")
+        return {e['id']: e['title'] for e in data}
+
+    @access("persona")
+    def list_db_courses(self, rs, event_id):
+        """List all courses organized via DB.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: {int: str}
+        :returns: Mapping of course ids to titles.
+        """
+        event_id = affirm("id", event_id)
+        data = self.sql_select(rs, "event.courses", ("id", "title"),
+                               (event_id,), entity_key="event_id")
         return {e['id']: e['title'] for e in data}
 
     @access("event")
@@ -1479,7 +1489,7 @@ class EventBackend(AbstractBackend):
                 event_data['parts'].values()))['part_begin']
             del pevent['id']
             new_id = self.create_past_event(rs, pevent)
-            courses = self.list_courses(rs, event_id, past=False)
+            courses = self.list_db_courses(rs, event_id)
             course_data = self.get_course_data(rs, courses.keys())
             course_map = {}
             for course_id, cdata in course_data.items():

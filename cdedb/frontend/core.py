@@ -230,7 +230,7 @@ class CoreFrontend(AbstractFrontend):
                           spec=spec, allow_empty=False)
         else:
             query = None
-        events = self.eventproxy.list_events(rs, past=True)
+        events = self.eventproxy.list_past_events(rs)
         choices = {'pevent_id': events}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
         params = {
@@ -265,7 +265,7 @@ class CoreFrontend(AbstractFrontend):
                           allow_empty=False)
         else:
             query = None
-        events = self.eventproxy.list_events(rs, past=True)
+        events = self.eventproxy.list_past_events(rs)
         choices = {'pevent_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_archived_persona']
