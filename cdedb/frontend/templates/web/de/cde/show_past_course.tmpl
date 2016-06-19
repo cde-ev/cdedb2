@@ -1,35 +1,35 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}){% endblock %}
+{% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}){% endblock %}
 {% block content %}
     {% if is_admin %}
-        {{ util.href(cdedblink('event/change_past_course_form'), "Bearbeiten") }}
-        <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
+        {{ util.href(cdedblink('cde/change_past_course_form'), "Bearbeiten") }}
+        <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
             {{ util.form_input_text(name="persona_id", label="ID") }}
             {{ util.form_input_checkbox(name="is_instructor", label="Kursleiter") }}
             {{ util.form_input_checkbox(name="is_orga", label="Orga") }}
             {{ util.form_input_submit(value="Teilnehmer hinzufügen") }}
         </form>
-        <form action="{{ cdedblink('event/delete_past_course')|e }}" method="POST" class="jsConfirmed"
+        <form action="{{ cdedblink('cde/delete_past_course')|e }}" method="POST" class="jsConfirmed"
          id="deletecourseform">
             {{ util.form_input_submit(value="Gesamten Kurs löschen") }}
         </form>
     {% endif %}
-    <p>{{ course_data['description']|e }}</p>
+    <p>{{ ambience['pcourse']['description']|e }}</p>
     {% if participants %}
         <h2>Teilnehmer</h2>
         <ul>
-            {% for anid, pdata in participants|dictsort %}
+            {% for anid, pdata in participants.items() %} {# This dict is already sorted. #}
                 <li>
                     {% if pdata['is_instructor'] %}
                         <strong>
                     {% endif %}
-                    {{ participant_data[anid]['given_names']|e }} {{ participant_data[anid]['family_name']|e }}
+                    {{ participants[anid]['given_names']|e }} {{ participants[anid]['family_name']|e }}
                     {% if is_admin %}
-                        <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST"
+                        <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}

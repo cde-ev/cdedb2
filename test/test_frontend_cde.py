@@ -789,6 +789,206 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("ExPuls trägt die Nummer 44")
         self.assertIn('addresscheckform', self.response.forms)
 
+    @as_users("anton")
+    def test_institutions(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/institution/list'})
+        self.assertTitle("Alle Organisationen")
+        self.assertPresence("Club der Ehemaligen")
+        self.assertNonPresence("Bildung und Begabung")
+        f = self.response.forms['createinstitutionform']
+        f['title'] = "Bildung und Begabung"
+        f['moniker'] = "BuB"
+        self.submit(f)
+        self.assertTitle("Alle Organisationen")
+        self.assertPresence("Club der Ehemaligen")
+        self.assertPresence("Bildung und Begabung")
+        self.traverse({'href': '/past/institution/2/change'})
+        self.assertTitle("Bildung und Begabung bearbeiten")
+        f = self.response.forms['changeinstitutionform']
+        f['title'] = "Monster Academy"
+        f['moniker'] = "MA"
+        self.submit(f)
+        self.assertTitle("Alle Organisationen")
+        self.assertPresence("Monster Academy")
+        self.assertNonPresence("Bildung und Begabung")
+
+    @as_users("anton")
+    def test_list_past_events(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.assertTitle("Alle abgeschlossenen Veranstaltungen")
+        self.assertPresence("PfingstAkademie")
+
+    @as_users("anton")
+    def test_show_past_event_course(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.assertTitle("Alle abgeschlossenen Veranstaltungen")
+        self.assertPresence("PfingstAkademie")
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertPresence("Great event!")
+        self.traverse({'href': '/past/event/1/course/1/show'})
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertPresence("Ringelpiez")
+
+    @as_users("anton")
+    def test_change_past_event(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/list'},
+                      {'href': '/past/event/1/show'},
+                      {'href': '/past/event/1/change'},)
+        self.assertTitle("PfingstAkademie 2014 bearbeiten")
+        f = self.response.forms['changeeventform']
+        f['title'] = "Link Academy"
+        f['institution'] = 1
+        f['description'] = "Ganz ohne Minderjährige."
+        self.submit(f)
+        self.assertTitle("Link Academy")
+        self.assertPresence("Club der Ehemaligen")
+        self.assertPresence("Ganz ohne Minderjährige.")
+
+    @as_users("anton")
+    def test_create_past_event(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/create'})
+        self.assertTitle("Veranstaltung anlegen")
+        f = self.response.forms['createeventform']
+        f['title'] = "Link Academy II"
+        f['shortname'] = "link"
+        f['institution'] = 1
+        f['description'] = "Ganz ohne Minderjährige."
+        f['tempus'] = "1.1.2000"
+        self.submit(f)
+        self.assertTitle("Link Academy II")
+        self.assertPresence("Club der Ehemaligen")
+        self.assertPresence("Ganz ohne Minderjährige.")
+
+    @as_users("anton")
+    def test_create_past_event_with_courses(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/create'})
+        self.assertTitle("Veranstaltung anlegen")
+        f = self.response.forms['createeventform']
+        f['title'] = "Link Academy II"
+        f['shortname'] = "link"
+        f['institution'] = 1
+        f['description'] = "Ganz ohne Minderjährige."
+        f['tempus'] = "1.1.2000"
+        f['courses'] = '''"Hoola Hoop";"Spaß mit dem Reifen"
+"Abseilen";"Von ganz oben"
+"Tretbootfahren";""
+'''
+        self.submit(f)
+        self.assertTitle("Link Academy II")
+        self.assertPresence("Club der Ehemaligen")
+        self.assertPresence("Ganz ohne Minderjährige.")
+        self.assertPresence("Hoola Hoop")
+        self.assertPresence("Abseilen")
+        self.assertPresence("Tretbootfahren")
+
+    @as_users("anton")
+    def test_change_past_course(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/list'},
+                      {'href': '/past/event/1/show'},
+                      {'href': '/past/event/1/course/1/show'},
+                      {'href': '/past/event/1/course/1/change'})
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014) bearbeiten")
+        f = self.response.forms['changecourseform']
+        f['title'] = "Omph"
+        f['description'] = "Loud and proud."
+        self.submit(f)
+        self.assertTitle("Omph (PfingstAkademie 2014)")
+        self.assertPresence("Loud and proud.")
+
+    @as_users("anton")
+    def test_create_past_course(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/list'},
+                      {'href': '/past/event/1/show'},
+                      {'href': '/past/event/1/course/create'},)
+        self.assertTitle("Kurs hinzufügen (PfingstAkademie 2014)")
+        f = self.response.forms['createcourseform']
+        f['title'] = "Abstract Nonsense"
+        f['description'] = "Lots of arrows."
+        self.submit(f)
+        self.assertTitle("Abstract Nonsense (PfingstAkademie 2014)")
+        self.assertPresence("Lots of arrows.")
+
+    @as_users("anton")
+    def test_delete_past_course(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/list'},
+                      {'href': '/past/event/1/show'},
+                      {'href': '/past/event/1/course/create'},)
+        self.assertTitle("Kurs hinzufügen (PfingstAkademie 2014)")
+        f = self.response.forms['createcourseform']
+        f['title'] = "Abstract Nonsense"
+        self.submit(f)
+        self.assertTitle("Abstract Nonsense (PfingstAkademie 2014)")
+        f = self.response.forms['deletecourseform']
+        self.submit(f)
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertNonPresence("Abstract Nonsense")
+
+    @as_users("anton")
+    def test_participant_manipulation(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/list'},
+                      {'href': '/past/event/1/show'},
+                      {'href': '/past/event/1/course/1/show'},)
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertNonPresence("Emilia")
+        f = self.response.forms['addparticipantform']
+        f['persona_id'] = "DB-5-B"
+        f['is_orga'].checked = True
+        f['is_instructor'].checked = True
+        self.submit(f)
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertPresence("Emilia")
+        f = self.response.forms['removeparticipantform5']
+        self.submit(f)
+        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertNonPresence("Emilia")
+
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/event/list'},
+                      {'href': '/past/event/1/show'})
+        f = self.response.forms['addparticipantform']
+        f['persona_id'] = "DB-5-B"
+        f['is_orga'].checked = True
+        self.submit(f)
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertPresence("Emilia")
+        f = self.response.forms['removeparticipantform5']
+        self.submit(f)
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertNonPresence("Emilia")
+
+    def test_past_log(self):
+        ## First: generate data
+        self.test_participant_manipulation()
+        self.logout()
+        self.test_change_past_course()
+        self.logout()
+        self.test_create_past_course()
+        self.logout()
+        self.test_change_past_event()
+        self.logout()
+        self.test_create_past_event()
+        self.logout()
+
+        ## Now check it
+        self.login(USER_DICT['anton'])
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/past/log'})
+        self.assertTitle("\nAbgeschlossene Veranstaltungen -- Logs (0--8)\n")
+        f = self.response.forms['logshowform']
+        f['codes'] = [0, 10, 21]
+        f['start'] = 1
+        f['stop'] = 10
+        self.submit(f)
+        self.assertTitle("\nAbgeschlossene Veranstaltungen -- Logs (1--4)\n")
+
     def test_cde_log(self):
         ## First: generate data
         self.test_set_foto()

@@ -1,11 +1,11 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ event_data['title']|e }}{% endblock %}
+{% block title %}{{ ambience['pevent']['title']|e }}{% endblock %}
 {% block content %}
     {% if is_admin %}
-        {{ util.href(cdedblink('event/change_past_event_form'), "Bearbeiten") }}
-        {{ util.href(cdedblink('event/create_past_course_form'), "Kurs hinzufügen") }}
-        <form action="{{ cdedblink('event/add_participant')|e }}" method="POST" id="addparticipantform">
+        {{ util.href(cdedblink('cde/change_past_event_form'), "Bearbeiten") }}
+        {{ util.href(cdedblink('cde/create_past_course_form'), "Kurs hinzufügen") }}
+        <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
             {{ util.form_input_text(name="persona_id", label="ID") }}
             {{ util.input_hidden(name="pcourse_id", value="") }}
             {{ util.input_hidden(name="is_instructor", value=False) }}
@@ -13,32 +13,32 @@
             {{ util.form_input_submit(value="Teilnehmer (ohne Kurs) hinzufügen") }}
         </form>
     {% endif %}
-    <p>Kürzel: {{ event_data['shortname']|e }}</p>
-    <p>Organisation: {{ institutions[event_data['institution']]|e }}</p>
-    <p>{{ event_data['description']|e }}</p>
+    <p>Kürzel: {{ ambience['pevent']['shortname']|e }}</p>
+    <p>Organisation: {{ institutions[ambience['pevent']['institution']]|e }}</p>
+    <p>{{ ambience['pevent']['description']|e }}</p>
     {% if courses %}
         <h2>Kurse</h2>
         <ul>
             {% for anid, title in courses|dictsort %}
-                <li>{{ util.href(cdedblink('event/show_past_course', {'pcourse_id' : anid}), title) }}</li>
+                <li>{{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), title) }}</li>
             {% endfor %}
         </ul>
     {% endif %}
     {% if participants %}
         <h2>Teilnehmer</h2>
         <ul>
-            {% for anid, pdata in participants|dictsort %}
+            {% for anid, pdata in participants.items() %} {# This dict is already sorted. #}
                 <li>
                     {% if pdata['is_orga'] %}
                         <strong>
                     {% endif %}
-                    {{ participant_data[anid]['given_names']|e }} {{ participant_data[anid]['family_name']|e }}
+                    {{ personas[anid]['given_names']|e }} {{ personas[anid]['family_name']|e }}
                     {% if pdata['is_orga'] %}
                         </strong>
                     {% endif %}
                     {# only allow removal of participants without a course #}
                     {% if is_admin and pdata['pcourse_id'] is none %}
-                        <form action="{{ cdedblink('event/remove_participant')|e }}" method="POST"
+                        <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=pdata['pcourse_id']) }}

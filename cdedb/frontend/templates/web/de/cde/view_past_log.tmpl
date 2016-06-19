@@ -1,4 +1,4 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
 Abgeschlossene Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
@@ -19,23 +19,23 @@ Abgeschlossene Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values[
                 <td>{{ i18n(const.PastEventLogCodes(entry['code'])|string)|e }}</td>
                 <td>
                     {% if entry['submitted_by'] %}
-                        {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                        {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                        {{ personas[entry['submitted_by']]['given_names']|e }}
+                        {{ personas[entry['submitted_by']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['pevent_id'] %}
-                        {{ event_data[entry['pevent_id']]['title']|e }}
+                        {{ pevents[entry['pevent_id']]['title']|e }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['persona_id'] %}
-                        {{ persona_data[entry['persona_id']]['given_names']|e }}
-                        {{ persona_data[entry['persona_id']]['family_name']|e }}
+                        {{ personas[entry['persona_id']]['given_names']|e }}
+                        {{ personas[entry['persona_id']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
@@ -44,7 +44,7 @@ Abgeschlossene Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values[
             </tr>
         {% endfor %}
     </table>
-    <form action="{{ cdedblink('event/view_past_log')|e }}" method="GET" id="logshowform">
+    <form action="{{ cdedblink('cde/view_past_log')|e }}" method="GET" id="logshowform">
         <div>
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
@@ -55,7 +55,7 @@ Abgeschlossene Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values[
                                      entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for pevent_id, title in events|dictsort %}
+            {% for pevent_id, title in pevents|dictsort %}
                 {{ myentries.append((pevent_id, title))|e }}
             {% endfor %}
             {{ util.form_input_select(name="pevent_id", label="Veranstaltung", nulloption=True, entries=myentries) }}

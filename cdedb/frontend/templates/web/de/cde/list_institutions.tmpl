@@ -1,4 +1,4 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Alle Organisationen{% endblock %}
 {% block content %}
@@ -6,12 +6,12 @@
         {% for institution_id, title in institutions|dictsort|reverse %}
             <li>
                 {{ title|e }}
-                {{ util.href(cdedblink("event/change_institution", {"institution_id": institution_id}), "Bearbeiten") }}
+                {{ util.href(cdedblink("cde/change_institution", {"institution_id": institution_id}), "Bearbeiten") }}
             </li>
         {% endfor %}
     </ul>
     <h2>Neue Organisation anlegen</h2>
-    <form action="{{ cdedblink('event/create_institution')|e }}" method="POST" id="createinstitutionform">
+    <form action="{{ cdedblink('cde/create_institution')|e }}" method="POST" id="createinstitutionform">
         <table>
             {{ util.form_input_text(name="title", label="Titel") }}
             {{ util.form_input_text(name="moniker", label="Kürzel") }}

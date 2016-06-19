@@ -1,8 +1,8 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Veranstaltung anlegen{% endblock %}
+{% block title %}{{ ambience['pevent']['title']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/create_past_event')|e }}" method="POST" id="createeventform">
+    <form action="{{ cdedblink('cde/change_past_event')|e }}" method="POST" id="changeeventform">
         <table>
             {{ util.form_input_text(name="title", label="Titel") }}
             {{ util.form_input_text(name="shortname", label="Kürzel") }}
@@ -14,11 +14,10 @@
             {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
             {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
             {{ util.form_input_text(name="tempus", label="Stichtag") }}
-            {{ util.form_input_textarea(name="courses", label="Kurse",
-                                   info='Hier einen Kurs pro Zeile im Format "Titel";"Beschreibung" eingeben.') }}
         </table>
         <div>
-            {{ util.form_input_submit(value="Anlegen") }}
+            {{ util.form_input_submit(value="Speichern") }}
+            {{ util.href(cdedblink("cde/show_past_event"), "Abbrechen") }}
         </div>
     </form>
 {% endblock %}

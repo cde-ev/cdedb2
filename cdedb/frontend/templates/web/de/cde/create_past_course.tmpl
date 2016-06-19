@@ -1,8 +1,8 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Kurs hinzufügen ({{ event_data['title'] }}){% endblock %}
+{% block title %}Kurs hinzufügen ({{ ambience['pevent']['title'] }}){% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/create_past_course')|e }}" method="POST" id="createcourseform">
+    <form action="{{ cdedblink('cde/create_past_course')|e }}" method="POST" id="createcourseform">
         <table>
             {{ util.form_input_text(name="title", label="Titel") }}
             {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}

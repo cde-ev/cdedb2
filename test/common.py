@@ -20,6 +20,7 @@ from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.event import EventBackend
+from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.database import DATABASE_ROLES
@@ -114,6 +115,7 @@ class BackendUsingTest(unittest.TestCase):
             "session": SessionBackend,
             "cde": CdEBackend,
             "event": EventBackend,
+            "pastevent": PastEventBackend,
             "ml": MlBackend,
             "assembly": AssemblyBackend,
         }

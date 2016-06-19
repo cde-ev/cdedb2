@@ -994,17 +994,17 @@ def reconnoitre_ambience(obj, rs):
               'transaction_id', 'transaction',
               ((lambda a: myAssert(a['transaction']['lastschrift_id']
                                    == a['lastschrift']['id'])),)),
-        Scout(lambda anid: obj.eventproxy.get_institution(rs, anid),
+        Scout(lambda anid: obj.pasteventproxy.get_institution(rs, anid),
               'institution_id', 'institution', t),
         Scout(lambda anid: obj.eventproxy.get_event_data_one(rs, anid),
               'event_id', 'event', t),
-        Scout(lambda anid: obj.eventproxy.get_past_event_data_one(rs, anid),
+        Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
               'pevent_id', 'pevent', t),
         Scout(lambda anid: obj.eventproxy.get_course_data_one(rs, anid),
               'course_id', 'course',
               ((lambda a: myAssert(a['course']['event_id']
                                    == a['event']['id'])),)),
-        Scout(lambda anid: obj.eventproxy.get_past_course_data_one(rs, anid),
+        Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
               ((lambda a: myAssert(a['pcourse']['pevent_id']
                                    == a['pevent']['id'])),)),

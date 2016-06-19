@@ -27,5 +27,17 @@
             {{ util.href(cdedblink("cde/show_semester"), "Semesterverwaltung") }}
             {{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log", aclass="list-group-item", icon="list-alt") }}
         </div>
+        <h4>abgeschlossene Veranstaltungen</h4>
+        <div class="list-group">
+            {{ util.href(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten", icon="cog",
+                    aclass="list-group-item") }}
+
+            {# TODO #}
+            {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen") }}
+
+            {{ util.href(cdedblink("cde/view_past_log"), "Log", icon="list-alt", aclass="list-group-item") }}
+            {# TODO #}
+            {{ util.href(cdedblink("cde/list_institutions"), "Organisationen verwalten") }}
+        </div>
     {% endif %}
 {% endblock %}

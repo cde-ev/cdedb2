@@ -1462,7 +1462,7 @@ _PAST_EVENT_COMMON_FIELDS = lambda: {
     'description': _str_or_None,
 }
 @_addvalidator
-def _past_event_data(val, argname=None, *, creation=False, _convert=True):
+def _past_event(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1472,7 +1472,7 @@ def _past_event_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "past_event_data"
+    argname = argname or "past_event"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1682,7 +1682,7 @@ _PAST_COURSE_COMMON_FIELDS = lambda: {
     'description': _str_or_None,
 }
 @_addvalidator
-def _past_course_data(val, argname=None, *, creation=False, _convert=True):
+def _past_course(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1692,7 +1692,7 @@ def _past_course_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "past_course_data"
+    argname = argname or "past_course"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs

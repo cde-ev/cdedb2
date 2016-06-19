@@ -421,6 +421,85 @@ GRANT SELECT, INSERT ON cde.log TO cdb_persona;
 GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_persona;
 
 ---
+--- SCHEMA past_event
+---
+--- This is a variation of the schema event (to be found below) which
+--- concerns itself with concluded events.
+---
+DROP SCHEMA IF EXISTS past_event;
+CREATE SCHEMA past_event;
+GRANT USAGE ON SCHEMA past_event TO cdb_persona;
+
+CREATE TABLE past_event.institutions (
+        id                      serial PRIMARY KEY,
+        title                   varchar NOT NULL,
+        moniker                 varchar NOT NULL
+);
+GRANT SELECT, UPDATE ON past_event.institutions TO cdb_persona;
+GRANT INSERT ON past_event.institutions TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
+
+CREATE TABLE past_event.events (
+        id                      serial PRIMARY KEY,
+        title                   varchar NOT NULL UNIQUE,
+        shortname               varchar NOT NULL UNIQUE,
+        -- BuB,  JGW, CdE, ...
+        institution               integer NOT NULL REFERENCES past_event.institutions(id),
+        description             varchar,
+        -- any day of the event, used for ordering and determining the first
+        -- event a persona participated in
+        --
+        -- Note, that this is not present in event.events.
+        tempus                  date NOT NULL
+);
+GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
+GRANT INSERT ON past_event.events TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
+
+CREATE TABLE past_event.courses (
+        id                      serial PRIMARY KEY,
+        pevent_id               integer NOT NULL REFERENCES past_event.events(id),
+        title                   varchar NOT NULL,
+        description             varchar
+);
+CREATE INDEX idx_courses_pevent_id ON past_event.courses(pevent_id);
+GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
+GRANT DELETE ON past_event.courses TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
+
+CREATE TABLE past_event.participants (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        pevent_id               integer NOT NULL REFERENCES past_event.events(id),
+        pcourse_id              integer REFERENCES past_event.courses(id),
+        is_instructor           boolean NOT NULL,
+        is_orga                 boolean NOT NULL
+);
+CREATE INDEX idx_participants_persona_id ON past_event.participants(persona_id);
+CREATE INDEX idx_participants_event_id ON past_event.participants(pevent_id);
+CREATE INDEX idx_participants_course_id ON past_event.participants(pcourse_id);
+CREATE UNIQUE INDEX idx_participants_constraint ON past_event.participants(persona_id, pevent_id, pcourse_id);
+GRANT SELECT ON past_event.participants TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
+
+CREATE TABLE past_event.log (
+        id                      bigserial PRIMARY KEY,
+        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
+        -- see cdedb.database.constants.PastEventLogCodes
+        code                    integer NOT NULL,
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        pevent_id               integer REFERENCES past_event.events(id),
+        -- affected user
+        persona_id              integer REFERENCES core.personas(id),
+        additional_info         varchar
+);
+CREATE INDEX idx_past_event_log_code ON past_event.log(code);
+CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
+GRANT SELECT, INSERT ON past_event.log TO cdb_persona;
+GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_persona;
+
+---
 --- SCHEMA event
 ---
 --- Later on you will find the schema past_event for concluded events.
@@ -429,21 +508,12 @@ DROP SCHEMA IF EXISTS event;
 CREATE SCHEMA event;
 GRANT USAGE ON SCHEMA event TO cdb_persona;
 
-CREATE TABLE event.institutions (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL,
-        moniker                 varchar NOT NULL
-);
-GRANT SELECT, UPDATE ON event.institutions TO cdb_persona;
-GRANT INSERT ON event.institutions TO cdb_admin;
-GRANT SELECT, UPDATE ON event.institutions_id_seq TO cdb_admin;
-
 CREATE TABLE event.events (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL UNIQUE,
         shortname               varchar NOT NULL,
         -- BuB,  JGW, CdE, ...
-        institution             integer NOT NULL REFERENCES event.institutions(id),
+        institution             integer NOT NULL REFERENCES past_event.institutions(id),
         description             varchar,
         --
         -- cut for past_event.events (modulo column tempus)
@@ -633,77 +703,6 @@ CREATE INDEX idx_event_log_code ON event.log(code);
 CREATE INDEX idx_event_log_event_id ON event.log(event_id);
 GRANT SELECT, INSERT ON event.log TO cdb_persona;
 GRANT SELECT, UPDATE ON event.log_id_seq TO cdb_persona;
-
----
---- SCHEMA past_event
----
---- This is a variation of the schema event which concerns itself with
---- concluded events.
----
-DROP SCHEMA IF EXISTS past_event;
-CREATE SCHEMA past_event;
-GRANT USAGE ON SCHEMA past_event TO cdb_persona;
-
-CREATE TABLE past_event.events (
-        id                      serial PRIMARY KEY,
-        title                   varchar NOT NULL UNIQUE,
-        shortname               varchar NOT NULL UNIQUE,
-        -- BuB,  JGW, CdE, ...
-        institution               integer NOT NULL REFERENCES event.institutions(id),
-        description             varchar,
-        -- any day of the event, used for ordering and determining the first
-        -- event a persona participated in
-        --
-        -- Note, that this is not present in event.events.
-        tempus                  date NOT NULL
-);
-GRANT SELECT, UPDATE ON past_event.events TO cdb_persona;
-GRANT INSERT ON past_event.events TO cdb_admin;
-GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
-
-CREATE TABLE past_event.courses (
-        id                      serial PRIMARY KEY,
-        pevent_id               integer NOT NULL REFERENCES past_event.events(id),
-        title                   varchar NOT NULL,
-        description             varchar
-);
--- name not according to pattern to avoid collision
-CREATE INDEX idx_past_courses_event_id ON past_event.courses(pevent_id);
-GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
-GRANT DELETE ON past_event.courses TO cdb_admin;
-GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
-
-CREATE TABLE past_event.participants (
-        id                      serial PRIMARY KEY,
-        persona_id              integer NOT NULL REFERENCES core.personas(id),
-        pevent_id               integer NOT NULL REFERENCES past_event.events(id),
-        pcourse_id              integer REFERENCES past_event.courses(id),
-        is_instructor           boolean NOT NULL,
-        is_orga                 boolean NOT NULL
-);
-CREATE INDEX idx_participants_persona_id ON past_event.participants(persona_id);
-CREATE INDEX idx_participants_event_id ON past_event.participants(pevent_id);
-CREATE INDEX idx_participants_course_id ON past_event.participants(pcourse_id);
-CREATE UNIQUE INDEX idx_participants_constraint ON past_event.participants(persona_id, pevent_id, pcourse_id);
-GRANT SELECT ON past_event.participants TO cdb_persona;
-GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
-GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
-
-CREATE TABLE past_event.log (
-        id                      bigserial PRIMARY KEY,
-        ctime                   timestamp WITH TIME ZONE DEFAULT now(),
-        -- see cdedb.database.constants.PastEventLogCodes
-        code                    integer NOT NULL,
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
-        pevent_id               integer REFERENCES past_event.events(id),
-        -- affected user
-        persona_id              integer REFERENCES core.personas(id),
-        additional_info         varchar
-);
-CREATE INDEX idx_past_event_log_code ON past_event.log(code);
-CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
-GRANT SELECT, INSERT ON past_event.log TO cdb_persona;
-GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_persona;
 
 ---
 --- SCHEMA assembly

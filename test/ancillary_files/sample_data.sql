@@ -70,7 +70,7 @@ INSERT INTO cde.finance_log (code, submitted_by, persona_id, delta, new_balance,
 --
 -- past_events
 --
-INSERT INTO event.institutions(id, title, moniker) VALUES
+INSERT INTO past_event.institutions(id, title, moniker) VALUES
     (1, 'Club der Ehemaligen', 'CdE');
 INSERT INTO past_event.events (id, title, shortname, institution, tempus, description) VALUES
     (1, 'PfingstAkademie 2014', 'pa14', 1, date '2014-05-25', 'Great event!');
@@ -322,7 +322,7 @@ SELECT setval('core.personas_id_seq', 12);
 SELECT setval('cde.lastschrift_id_seq', 2);
 SELECT setval('past_event.events_id_seq', 1);
 SELECT setval('past_event.courses_id_seq', 1);
-SELECT setval('event.institutions_id_seq', 1);
+SELECT setval('past_event.institutions_id_seq', 1);
 SELECT setval('event.events_id_seq', 1);
 SELECT setval('event.event_parts_id_seq', 3);
 SELECT setval('event.courses_id_seq', 5);

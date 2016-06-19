@@ -207,8 +207,17 @@ _DEFAULTS = {
     ## event server configuration
     "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
 
+    ### past event stuff
+
+    ## event server configuration
+    "PAST_EVENT_BACKEND_LOG": "/tmp/cdedb-backend-past-event.log",
+
+    ### ml stuff
+
     ## ml server configuration
     "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
+
+    ### assembly stuff
 
     ## assembly server configuration
     "ASSEMBLY_BACKEND_LOG": "/tmp/cdedb-backend-assembly.log",

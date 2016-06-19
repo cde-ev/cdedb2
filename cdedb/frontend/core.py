@@ -16,7 +16,7 @@ from cdedb.frontend.common import (
 from cdedb.common import (
     ProxyShim, glue, pairwise)
 from cdedb.backend.core import CoreBackend
-from cdedb.backend.event import EventBackend
+from cdedb.backend.past_event import PastEventBackend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
@@ -36,7 +36,7 @@ class CoreFrontend(AbstractFrontend):
         """
         super().__init__(configpath)
         self.coreproxy = ProxyShim(CoreBackend(configpath))
-        self.eventproxy = ProxyShim(EventBackend(configpath))
+        self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
     def finalize_session(self, rs):
         super().finalize_session(rs)
@@ -230,7 +230,7 @@ class CoreFrontend(AbstractFrontend):
                           spec=spec, allow_empty=False)
         else:
             query = None
-        events = self.eventproxy.list_past_events(rs)
+        events = self.pasteventproxy.list_past_events(rs)
         choices = {'pevent_id': events}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
         params = {
@@ -265,7 +265,7 @@ class CoreFrontend(AbstractFrontend):
                           allow_empty=False)
         else:
             query = None
-        events = self.eventproxy.list_past_events(rs)
+        events = self.pasteventproxy.list_past_events(rs)
         choices = {'pevent_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_archived_persona']

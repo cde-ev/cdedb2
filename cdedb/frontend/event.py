@@ -25,6 +25,7 @@ from cdedb.common import (
     name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize)
 from cdedb.backend.event import EventBackend
+from cdedb.backend.past_event import PastEventBackend
 import cdedb.database.constants as const
 from cdedb.database.connection import Atomizer
 
@@ -39,6 +40,7 @@ class EventFrontend(AbstractUserFrontend):
     def __init__(self, configpath):
         super().__init__(configpath)
         self.eventproxy = ProxyShim(EventBackend(configpath))
+        self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
     def finalize_session(self, rs):
         super().finalize_session(rs)
@@ -181,8 +183,8 @@ class EventFrontend(AbstractUserFrontend):
                           allow_empty=False)
         else:
             query = None
-        events = self.eventproxy.list_past_events(rs)
-        choices = {'event_id': events,
+        events = self.pasteventproxy.list_past_events(rs)
+        choices = {'pevent_id': events,
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
         params = {
@@ -202,252 +204,6 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "user_search", params)
 
     @access("event_admin")
-    def list_institutions(self, rs):
-        """Display all organizing bodies."""
-        institutions = self.eventproxy.list_institutions(rs)
-        return self.render(rs, "list_institutions", {
-            'institutions': institutions})
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdatadict("title", "moniker")
-    def create_institution(self, rs, data):
-        """Make a new institution."""
-        data = check(rs, "institution", data, creation=True)
-        if rs.errors:
-            return self.list_institutions(rs)
-        new_id = self.eventproxy.create_institution(rs, data)
-        self.notify_return_code(rs, new_id, success="Institution created.")
-        return self.redirect(rs, "event/list_institutions")
-
-    @access("event_admin")
-    def change_institution_form(self, rs, institution_id):
-        """Render form."""
-        data = self.eventproxy.get_institution(rs, institution_id)
-        merge_dicts(rs.values, data)
-        return self.render(rs, "change_institution", {'data': data})
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdatadict("title", "moniker")
-    def change_institution(self, rs, institution_id, data):
-        """Modify an institution."""
-        data['id'] = institution_id
-        data = check(rs, "institution", data)
-        if rs.errors:
-            return self.change_institution_form(rs, institution_id)
-        code = self.eventproxy.set_institution(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/list_institutions")
-
-    @access("event")
-    def show_past_event(self, rs, pevent_id):
-        """Display concluded event."""
-        event_data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
-        courses = self.eventproxy.list_past_courses(rs, pevent_id)
-        participants = self.eventproxy.list_participants(rs,
-                                                         pevent_id=pevent_id)
-        institutions = self.eventproxy.list_institutions(rs)
-        if not (rs.user.persona_id in participants or self.is_admin(rs)):
-            ## make list of participants only visible to other participants
-            participants = participant_data = None
-        else:
-            ## fix up participants, so we only see each persona once
-            persona_ids = {x['persona_id'] for x in participants.values()}
-            tmp = {}
-            for persona_id in persona_ids:
-                base_set = tuple(x for x in participants.values()
-                                 if x['persona_id'] == persona_id)
-                entry = {
-                    'pevent_id': pevent_id,
-                    'persona_id': persona_id,
-                    'is_orga': any(x['is_orga'] for x in base_set),
-                    'is_instructor': False,
-                    }
-                if any(x['pcourse_id'] is None for x in base_set):
-                    entry['pcourse_id'] = None
-                else:
-                    entry['pcourse_id'] = min(x['pcourse_id'] for x in base_set)
-                tmp[persona_id] = entry
-            participants = tmp
-
-            pd = participant_data = self.coreproxy.get_personas(
-                rs, participants.keys())
-            participants = OrderedDict(sorted(
-                participants.items(), key=lambda x: name_key(pd[x[0]])))
-        return self.render(rs, "show_past_event", {
-            'event_data': event_data, 'courses': courses,
-            'participants': participants, 'participant_data': participant_data,
-            'institutions': institutions})
-
-    @access("event")
-    def show_past_course(self, rs, pevent_id, pcourse_id):
-        """Display concluded course."""
-        event_data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
-        course_data = self.eventproxy.get_past_course_data_one(rs, pcourse_id)
-        if course_data['pevent_id'] != pevent_id:
-            return werkzeug.exceptions.NotFound("Wrong associated event.")
-        participants = self.eventproxy.list_participants(rs,
-                                                         pcourse_id=pcourse_id)
-        if not (rs.user.persona_id in participants or self.is_admin(rs)):
-            ## make list of participants only visible to other participants
-            participants = participant_data = None
-        else:
-            pd = participant_data = self.coreproxy.get_personas(
-                rs, participants.keys())
-            participants = OrderedDict(sorted(
-                participants.items(), key=lambda x: name_key(pd[x[0]])))
-        return self.render(rs, "show_past_course", {
-            'event_data': event_data, 'course_data': course_data,
-            'participants': participants, 'participant_data': participant_data})
-
-    @access("event_admin")
-    def list_past_events(self, rs):
-        """List all concluded events."""
-        events = self.eventproxy.list_past_events(rs)
-        return self.render(rs, "list_past_events", {'events': events})
-
-    @access("event_admin")
-    def change_past_event_form(self, rs, pevent_id):
-        """Render form."""
-        data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
-        institutions = self.eventproxy.list_institutions(rs)
-        merge_dicts(rs.values, data)
-        return self.render(rs, "change_past_event", {
-            'data': data, 'institutions': institutions})
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdatadict("title", "shortname", "institution", "description", "tempus")
-    def change_past_event(self, rs, pevent_id, data):
-        """Modify a concluded event."""
-        data['id'] = pevent_id
-        data = check(rs, "past_event_data", data)
-        if rs.errors:
-            return self.change_past_event_form(rs, pevent_id)
-        code = self.eventproxy.set_past_event_data(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/show_past_event")
-
-    @access("event_admin")
-    def create_past_event_form(self, rs):
-        """Render form."""
-        institutions = self.eventproxy.list_institutions(rs)
-        return self.render(rs, "create_past_event", {'institutions': institutions})
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdata(("courses", "str_or_None"))
-    @REQUESTdatadict("title", "shortname", "institution", "description", "tempus")
-    def create_past_event(self, rs, courses, data):
-        """Add new concluded event."""
-        data = check(rs, "past_event_data", data, creation=True)
-        thecourses = []
-        if courses:
-            courselines = courses.split('\n')
-            reader = csv.DictReader(
-                courselines, fieldnames=("title", "description"), delimiter=';',
-                quoting=csv.QUOTE_ALL, doublequote=True, quotechar='"')
-            lineno = 0
-            for entry in reader:
-                lineno += 1
-                entry['pevent_id'] = 1
-                entry = check(rs, "past_course_data", entry, creation=True)
-                if entry:
-                    thecourses.append(entry)
-                else:
-                    rs.notify("warning", "Line {} is faulty.".format(lineno))
-        if rs.errors:
-            return self.create_past_event_form(rs)
-        with Atomizer(rs):
-            new_id = self.eventproxy.create_past_event(rs, data)
-            for cdata in thecourses:
-                cdata['pevent_id'] = new_id
-                self.eventproxy.create_past_course(rs, cdata)
-        self.notify_return_code(rs, new_id, success="Event created.")
-        return self.redirect(rs, "event/show_past_event", {'pevent_id': new_id})
-
-    @access("event_admin")
-    def change_past_course_form(self, rs, pevent_id, pcourse_id):
-        """Render form."""
-        event_data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
-        course_data = self.eventproxy.get_past_course_data_one(rs, pcourse_id)
-        if course_data['pevent_id'] != pevent_id:
-            return werkzeug.exceptions.NotFound("Wrong associated event.")
-        merge_dicts(rs.values, course_data)
-        return self.render(rs, "change_past_course", {
-            'event_data': event_data, 'course_data': course_data})
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description")
-    def change_past_course(self, rs, pevent_id, pcourse_id, data):
-        """Modify a concluded course."""
-        data['id'] = pcourse_id
-        data = check(rs, "past_course_data", data)
-        if rs.errors:
-            return self.change_past_course_form(rs, pevent_id, pcourse_id)
-        code = self.eventproxy.set_past_course_data(rs, data)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/show_past_course")
-
-    @access("event_admin")
-    def create_past_course_form(self, rs, pevent_id):
-        """Render form."""
-        event_data = self.eventproxy.get_past_event_data_one(rs, pevent_id)
-        return self.render(rs, "create_past_course", {'event_data': event_data})
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description")
-    def create_past_course(self, rs, pevent_id, data):
-        """Add new concluded course."""
-        data['pevent_id'] = pevent_id
-        data = check(rs, "past_course_data", data, creation=True)
-        if rs.errors:
-            return self.create_past_course_form(rs, pevent_id)
-        new_id = self.eventproxy.create_past_course(rs, data)
-        self.notify_return_code(rs, new_id, success="Course created.")
-        return self.redirect(rs, "event/show_past_course",
-                             {'pcourse_id': new_id})
-
-    @access("event_admin", modi={"POST"})
-    def delete_past_course(self, rs, pevent_id, pcourse_id):
-        """Delete a concluded course.
-
-        This also deletes all participation information w.r.t. this course.
-        """
-        code = self.eventproxy.delete_past_course(rs, pcourse_id, cascade=True)
-        self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/show_past_event")
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdata(("pcourse_id", "id_or_None"), ("persona_id", "cdedbid"),
-                 ("is_instructor", "bool"), ("is_orga", "bool"))
-    def add_participant(self, rs, pevent_id, pcourse_id, persona_id,
-                        is_instructor, is_orga):
-        """Add participant to concluded event."""
-        if rs.errors:
-            return self.show_past_course(rs, pevent_id, pcourse_id)
-        code = self.eventproxy.add_participant(
-            rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
-        self.notify_return_code(rs, code)
-        if pcourse_id:
-            return self.redirect(rs, "event/show_past_course",
-                                 {'pcourse_id': pcourse_id})
-        else:
-            return self.redirect(rs, "event/show_past_event")
-
-    @access("event_admin", modi={"POST"})
-    @REQUESTdata(("persona_id", "id"), ("pcourse_id", "id_or_None"))
-    def remove_participant(self, rs, pevent_id, persona_id, pcourse_id):
-        """Remove participant."""
-        if rs.errors:
-            return self.show_event(rs, pevent_id)
-        code = self.eventproxy.remove_participant(
-            rs, pevent_id, pcourse_id, persona_id)
-        self.notify_return_code(rs, code)
-        if pcourse_id:
-            return self.redirect(rs, "event/show_past_course", {
-                'pcourse_id': pcourse_id})
-        else:
-            return self.redirect(rs, "event/show_past_event")
-
-    @access("event_admin")
     def list_db_events(self, rs):
         """List all events organized via DB."""
         events = self.eventproxy.list_db_events(rs)
@@ -462,7 +218,7 @@ class EventFrontend(AbstractUserFrontend):
         if event_id in rs.user.orga or self.is_admin(rs):
             params['orgas'] = self.coreproxy.get_personas(
                 rs, rs.ambience['event']['orgas'])
-            params['institutions'] = self.eventproxy.list_institutions(rs)
+            params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = os.path.isfile(os.path.join(
                 self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
         return self.render(rs, "show_event", params)
@@ -485,7 +241,7 @@ class EventFrontend(AbstractUserFrontend):
     def change_event_form(self, rs, event_id):
         """Render form."""
         data = self.eventproxy.get_event_data_one(rs, event_id)
-        institutions = self.eventproxy.list_institutions(rs)
+        institutions = self.pasteventproxy.list_institutions(rs)
         merge_dicts(rs.values, data)
         return self.render(rs, "change_event", {
             'data': data, 'institutions': institutions})
@@ -740,7 +496,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin")
     def create_event_form(self, rs):
         """Render form."""
-        institutions = self.eventproxy.list_institutions(rs)
+        institutions = self.pasteventproxy.list_institutions(rs)
         return self.render(rs, "create_event", {'institutions': institutions})
 
     @access("event_admin", modi={"POST"})
@@ -2693,17 +2449,21 @@ class EventFrontend(AbstractUserFrontend):
     @access("event_admin", modi={"POST"})
     @event_guard(check_offline=True)
     def archive_event(self, rs, event_id):
-        """Make a past_event from an event."""
+        """Make a past_event from an event.
+
+        This is at the boundary between event and cde frontend, since
+        the past-event stuff generally resides in the cde realm.
+        """
         event_data = self.eventproxy.get_event_data_one(rs, event_id)
         if event_data['is_archived']:
             rs.notify("warning", "Event already archived.")
             return self.redirect(rs, "event/show_event")
-        new_id, message = self.eventproxy.archive_event(rs, event_id)
+        new_id, message = self.pasteventproxy.archive_event(rs, event_id)
         if not new_id:
             rs.notify("warning", message)
             return self.redirect(rs, "event/show_event")
         rs.notify("success", "Event archived.")
-        return self.redirect(rs, "event/show_past_event", {'pevent_id': new_id})
+        return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),
@@ -2723,28 +2483,6 @@ class EventFrontend(AbstractUserFrontend):
         event_data = self.eventproxy.get_event_data(rs, events)
         events = self.eventproxy.list_db_events(rs)
         return self.render(rs, "view_log", {
-            'log': log, 'persona_data': persona_data, 'event_data': event_data,
-            'events': events})
-
-    @access("event_admin")
-    @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
-    def view_past_log(self, rs, codes, pevent_id, start, stop):
-        """View activities concerning concluded events."""
-        start = start or 0
-        stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
-        log = self.eventproxy.retrieve_past_log(rs, codes, pevent_id, start,
-                                                stop)
-        personas = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_personas(rs, personas)
-        events = {entry['pevent_id'] for entry in log if entry['pevent_id']}
-        event_data = self.eventproxy.get_past_event_data(rs, events)
-        events = self.eventproxy.list_past_events(rs)
-        return self.render(rs, "view_past_log", {
             'log': log, 'persona_data': persona_data, 'event_data': event_data,
             'events': events})
 

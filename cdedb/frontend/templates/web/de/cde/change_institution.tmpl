@@ -1,15 +1,15 @@
-{% extends "web/de/event/base.tmpl" %}
+{% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ data['title']|e }} bearbeiten{% endblock %}
+{% block title %}{{ ambience['institution']['title']|e }} bearbeiten{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/change_institution')|e }}" method="POST" id="changeinstitutionform">
+    <form action="{{ cdedblink('cde/change_institution')|e }}" method="POST" id="changeinstitutionform">
         <table>
             {{ util.form_input_text(name="title", label="Titel") }}
             {{ util.form_input_text(name="moniker", label="Kürzel") }}
         </table>
         <div>
             {{ util.form_input_submit(value="Speichern") }}
-            {{ util.href(cdedblink("event/list_institutions"), "Abbrechen") }}
+            {{ util.href(cdedblink("cde/list_institutions"), "Abbrechen") }}
         </div>
     </form>
 {% endblock %}
