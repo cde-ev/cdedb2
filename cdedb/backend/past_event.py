@@ -166,6 +166,33 @@ class PastEventBackend(AbstractBackend):
                             pevent_id=None, additional_info=data['title'])
         return ret
 
+    @access("cde_admin", "event_admin")
+    def delete_institution(self, rs, institution_id, cascade=False):
+        """Remove an institution
+
+        The institution may not be referenced.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type institution_id: int
+        :type cascade: bool
+        :param cascade: Must be False.
+        :rtype: int
+        :returns: default return code
+        """
+        institution_id = affirm("id", institution_id)
+        cascade = affirm("bool", cascade)
+        if cascade:
+            raise NotImplementedError("Not available.")
+
+        current = unwrap(self.get_institutions(rs, (institution_id,)))
+        with Atomizer(rs):
+            ret = self.sql_delete_one(rs, "past_event.institutions",
+                                      institution_id)
+            self.past_event_log(
+                rs, const.PastEventLogCodes.institution_deleted,
+                pevent_id=None, additional_info=current['title'])
+        return ret
+
     @access("persona")
     def list_past_events(self, rs):
         """List all concluded events.
@@ -301,8 +328,7 @@ class PastEventBackend(AbstractBackend):
         """
         pcourse_id = affirm("id", pcourse_id)
         cascade = affirm("bool", cascade)
-        current = self.sql_select_one(rs, "past_event.courses",
-                                      ("pevent_id", "title"), pcourse_id)
+        current = unwrap(self.get_past_courses(rs, (pcourse_id,)))
         with Atomizer(rs):
             if cascade and self.list_participants(rs, pcourse_id=pcourse_id):
                 cdata = unwrap(self.get_past_courses(rs, (pcourse_id,)))

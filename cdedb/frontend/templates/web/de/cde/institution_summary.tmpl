@@ -1,0 +1,27 @@
+{% extends "web/de/cde/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Alle Organisationen{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('cde/institution_summary')|e }}" method="POST" id="institutionsummaryform">
+        <ul>
+            {% for institution_id, institution in institutions|dictsort %}
+                <li>
+                    <table>
+                        {{ util.form_input_checkbox("delete_{}".format(institution_id), label="Löschen",
+                                                    readonly=institution_id in is_referenced) }}
+                        {{ util.form_input_text(name="title_{}".format(institution_id), label="Titel") }}
+                        {{ util.form_input_text(name="moniker_{}".format(institution_id), label="Kürzel") }}
+                    </table>
+                </li>
+            {% endfor %}
+            <li>
+                {{ util.form_input_checkbox("create_-1", label="Hinzufügen") }}
+                {{ util.form_input_text(name="title_-1", label="Titel") }}
+                {{ util.form_input_text(name="moniker_-1", label="Kürzel") }}
+            </li>
+        </ul>
+        <div>
+            {{ util.form_input_submit(value="Ändern", readonly=is_locked) }}
+        </div>
+    </form>
+{% endblock %}

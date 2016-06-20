@@ -287,6 +287,7 @@ class PastEventLogCodes(enum.IntEnum):
     participant_removed = 21 #:
     institution_created = 30 #:
     institution_changed = 31 #:
+    institution_deleted = 32 #:
 
 @enum.unique
 class AssemblyLogCodes(enum.IntEnum):

@@ -28,6 +28,7 @@ from cdedb.frontend.common import (
     make_postal_address, make_transaction_subject)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
+from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.backend.cde import CdEBackend
 
@@ -65,6 +66,7 @@ class CdEFrontend(AbstractUserFrontend):
     def __init__(self, configpath):
         super().__init__(configpath)
         self.cdeproxy = ProxyShim(CdEBackend(configpath))
+        self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
     def finalize_session(self, rs):
@@ -1305,45 +1307,99 @@ class CdEFrontend(AbstractUserFrontend):
         rs.notify("success", "New expuls started.")
         return self.redirect(rs, "cde/show_semester")
 
-    #
-    # XXX
-    #
-
     @access("cde_admin")
-    def list_institutions(self, rs):
-        """Display all organizing bodies."""
-        institutions = self.pasteventproxy.list_institutions(rs)
-        return self.render(rs, "list_institutions", {
-            'institutions': institutions})
-
-    @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("title", "moniker")
-    def create_institution(self, rs, data):
-        """Make a new institution."""
-        data = check(rs, "institution", data, creation=True)
-        if rs.errors:
-            return self.list_institutions(rs)
-        new_id = self.pasteventproxy.create_institution(rs, data)
-        self.notify_return_code(rs, new_id, success="Institution created.")
-        return self.redirect(rs, "cde/list_institutions")
-
-    @access("cde_admin")
-    def change_institution_form(self, rs, institution_id):
+    def institution_summary_form(self, rs):
         """Render form."""
-        merge_dicts(rs.values, rs.ambience['institution'])
-        return self.render(rs, "change_institution")
+        institution_ids = self.pasteventproxy.list_institutions(rs)
+        institutions = self.pasteventproxy.get_institutions(
+            rs, institution_ids.keys())
+        current = {
+            "{}_{}".format(key, institution_id): value
+            for institution_id, institution in institutions.items()
+            for key, value in institution.items() if key != 'id'}
+        merge_dicts(rs.values, current)
+        is_referenced = set()
+        event_ids = self.eventproxy.list_db_events(rs)
+        events = self.eventproxy.get_event_data(rs, event_ids.keys())
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())
+        for event in events.values():
+            is_referenced.add(event['institution'])
+        for pevent in pevents.values():
+            is_referenced.add(pevent['institution'])
+        return self.render(rs, "institution_summary", {
+            'institutions': institutions, 'is_referenced': is_referenced})
+
+    @staticmethod
+    def process_institution_input(rs, institutions):
+        """This handles input to configure the institutions.
+
+        Since this covers a variable number of rows, we cannot do this
+        statically. This takes care of validation too.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type institutions: [int]
+        :param institutions: ids of existing institutions
+        :rtype: {int: {str: object} or None}
+        """
+        delete_flags = request_data_extractor(
+            rs, (("delete_{}".format(institution_id), "bool")
+                 for institution_id in institutions))
+        deletes = {institution_id for institution_id in institutions
+                   if delete_flags['delete_{}'.format(institution_id)]}
+        spec = {
+            'title': "str",
+            'moniker': "str",
+        }
+        params = tuple(("{}_{}".format(key, institution_id), value)
+                       for institution_id in institutions
+                       if institution_id not in deletes
+                       for key, value in spec.items())
+        data = request_data_extractor(rs, params)
+        ret  = {
+            institution_id: {key: data["{}_{}".format(key, institution_id)]
+                             for key in spec}
+            for institution_id in institutions if institution_id not in deletes
+        }
+        for institution_id in institutions:
+            if institution_id in deletes:
+                ret[institution_id] = None
+            else:
+                ret[institution_id]['id'] = institution_id
+        marker = 1
+        while marker < 2**10:
+            will_create = unwrap(request_data_extractor(
+                rs, (("create_-{}".format(marker), "bool"),)))
+            if will_create:
+                params = tuple(("{}_-{}".format(key, marker), value)
+                               for key, value in spec.items())
+                data = request_data_extractor(rs, params)
+                ret[-marker] = {key: data["{}_-{}".format(key, marker)]
+                                for key in spec}
+            else:
+                break
+            marker += 1
+        return ret
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("title", "moniker")
-    def change_institution(self, rs, institution_id, data):
-        """Modify an institution."""
-        data['id'] = institution_id
-        data = check(rs, "institution", data)
+    def institution_summary(self, rs):
+        """Manipulate organisations which are behind events."""
+        institution_ids = self.pasteventproxy.list_institutions(rs)
+        institutions = self.process_institution_input(
+            rs, institution_ids.keys())
         if rs.errors:
-            return self.change_institution_form(rs, institution_id)
-        code = self.pasteventproxy.set_institution(rs, data)
+            return self.institution_summary_form(rs)
+        code = 1
+        for institution_id, institution in institutions.items():
+            if institution is None:
+                code *= self.pasteventproxy.delete_institution(
+                    rs, institution_id)
+            elif institution_id < 0:
+                code *= self.pasteventproxy.create_institution(rs, institution)
+            else:
+                code *= self.pasteventproxy.set_institution(rs, institution)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "cde/list_institutions")
+        return self.redirect(rs, "cde/institution_summary_form")
 
     @access("cde")
     def show_past_event(self, rs, pevent_id):

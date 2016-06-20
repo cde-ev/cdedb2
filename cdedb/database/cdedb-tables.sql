@@ -436,7 +436,7 @@ CREATE TABLE past_event.institutions (
         moniker                 varchar NOT NULL
 );
 GRANT SELECT, UPDATE ON past_event.institutions TO cdb_persona;
-GRANT INSERT ON past_event.institutions TO cdb_admin;
+GRANT INSERT, DELETE ON past_event.institutions TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.institutions_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.events (

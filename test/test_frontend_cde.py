@@ -791,26 +791,32 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_institutions(self, user):
-        self.traverse({'href': '/cde/$'}, {'href': '/past/institution/list'})
+        self.traverse({'href': '/cde/$'}, {'href': '/past/institution/summary'})
         self.assertTitle("Alle Organisationen")
-        self.assertPresence("Club der Ehemaligen")
-        self.assertNonPresence("Bildung und Begabung")
-        f = self.response.forms['createinstitutionform']
-        f['title'] = "Bildung und Begabung"
-        f['moniker'] = "BuB"
+        f = self.response.forms['institutionsummaryform']
+        self.assertEqual("Club der Ehemaligen", f['title_1'].value)
+        self.assertNotIn("title_2", f.fields)
+        f['create_-1'].checked = True
+        f['title_-1'] = "Bildung und Begabung"
+        f['moniker_-1'] = "BuB"
         self.submit(f)
         self.assertTitle("Alle Organisationen")
-        self.assertPresence("Club der Ehemaligen")
-        self.assertPresence("Bildung und Begabung")
-        self.traverse({'href': '/past/institution/2/change'})
-        self.assertTitle("Bildung und Begabung bearbeiten")
-        f = self.response.forms['changeinstitutionform']
-        f['title'] = "Monster Academy"
-        f['moniker'] = "MA"
+        f = self.response.forms['institutionsummaryform']
+        self.assertEqual("Club der Ehemaligen", f['title_1'].value)
+        self.assertEqual("Bildung und Begabung", f['title_2'].value)
+        f['title_1'] = "Monster Academy"
+        f['moniker_1'] = "MA"
         self.submit(f)
         self.assertTitle("Alle Organisationen")
-        self.assertPresence("Monster Academy")
-        self.assertNonPresence("Bildung und Begabung")
+        f = self.response.forms['institutionsummaryform']
+        self.assertEqual("Monster Academy", f['title_1'].value)
+        self.assertEqual("Bildung und Begabung", f['title_2'].value)
+        f['delete_2'].checked = True
+        self.submit(f)
+        self.assertTitle("Alle Organisationen")
+        f = self.response.forms['institutionsummaryform']
+        self.assertEqual("Monster Academy", f['title_1'].value)
+        self.assertNotIn("title_2", f.fields)
 
     @as_users("anton")
     def test_list_past_events(self, user):
