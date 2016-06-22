@@ -399,6 +399,10 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event']['parts'].keys())
         if rs.errors:
             return self.part_summary_form(rs, event_id)
+        for part_id, part in rs.ambience['event']['parts'].items():
+            if parts.get(part_id) == part:
+                ## remove unchanged
+                del parts[part_id]
         event = {
             'id': event_id,
             'parts': parts
@@ -485,6 +489,10 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event']['fields'].keys())
         if rs.errors:
             return self.field_summary_form(rs, event_id)
+        for field_id, field in rs.ambience['event']['fields'].items():
+            if fields.get(field_id) == field:
+                ## remove unchanged
+                del fields[field_id]
         event = {
             'id': event_id,
             'fields': fields
