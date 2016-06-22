@@ -454,7 +454,7 @@
                     </td>
                 </tr>
             {% endif %}
-            {% if is_admin %}
+            {% if 'notes' in data and is_admin %}
                 <tr>
                     <td>Notizen</td>
                     <td>{{ data['notes']|rst }}</td>

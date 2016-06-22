@@ -39,7 +39,6 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
-        self.assertPresence("Blowing in the wind.")
 
     @as_users("anton")
     def test_toggleactivity(self, user):
@@ -84,7 +83,6 @@ class TestAssemblyFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("some fancy talk")
 
     @as_users("anton")
     def test_change_assembly(self, user):

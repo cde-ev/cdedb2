@@ -38,7 +38,6 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Janis Jalapeño")
-        self.assertPresence("Blowing in the wind.")
 
     @as_users("anton")
     def test_toggleactivity(self, user):
@@ -83,7 +82,6 @@ class TestMlFrontend(FrontendTest):
             f.set(key, value)
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("some fancy talk")
 
     def test_genesis(self):
         user = USER_DICT['anton']

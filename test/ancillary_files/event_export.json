@@ -580,7 +580,6 @@
             "cloud_account": true,
             "is_cde_admin": true,
             "is_ml_realm": true,
-            "notes": null,
             "is_assembly_realm": true
         },
         {
@@ -614,7 +613,6 @@
             "cloud_account": false,
             "is_cde_admin": false,
             "is_ml_realm": true,
-            "notes": null,
             "is_assembly_realm": true
         },
         {
@@ -648,7 +646,6 @@
             "cloud_account": true,
             "is_cde_admin": false,
             "is_ml_realm": true,
-            "notes": null,
             "is_assembly_realm": true
         },
         {
@@ -682,7 +679,6 @@
             "cloud_account": true,
             "is_cde_admin": false,
             "is_ml_realm": true,
-            "notes": null,
             "is_assembly_realm": true
         }
     ],

@@ -960,7 +960,7 @@ PERSONA_STATUS_FIELDS = (
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
     "id", "username", "display_name", "family_name", "given_names",
-    "cloud_account", "notes")
+    "cloud_account")
 
 #: Names of columns associated to a cde (formor)member
 PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
@@ -986,7 +986,7 @@ PERSONA_ASSEMBLY_FIELDS = PERSONA_CORE_FIELDS
 
 #: Names of all columns associated to an abstract persona.
 #: This does not include the ``password_hash`` for security reasons.
-PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS
+PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (

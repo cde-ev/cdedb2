@@ -14,8 +14,9 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_data_extractor)
 from cdedb.common import (
-    ProxyShim, glue, pairwise)
+    ProxyShim, glue, pairwise, extract_roles, privilege_tier)
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
 from cdedb.database.connection import Atomizer
@@ -36,6 +37,7 @@ class CoreFrontend(AbstractFrontend):
         """
         super().__init__(configpath)
         self.coreproxy = ProxyShim(CoreBackend(configpath))
+        self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
     def finalize_session(self, rs):
@@ -126,19 +128,91 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
-    @REQUESTdata(("confirm_id", "#int"))
-    def show_user(self, rs, persona_id, confirm_id):
+    @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"))
+    def show_user(self, rs, persona_id, confirm_id, quote_me):
         """Display user details.
 
         This has an additional encoded parameter to make links to this
-        target ephemeral. Thus it is more difficult to algorithmically
+        target unguessable. Thus it is more difficult to algorithmically
         extract user data from the web frontend.
+
+        The quote_me parameter controls access to member datasets by
+        other members. Since there is a quota you only want to retrieve
+        them if explicitly asked for.
         """
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/index")
-        data = self.coreproxy.get_total_persona(rs, persona_id)
-        return self.render(rs, "show_user", {'data': data})
+
+        roles = extract_roles(rs.ambience['persona'])
+        may_admin_edit = bool(rs.user.roles & privilege_tier(roles))
+        is_archived = rs.ambience['persona']['is_archived']
+        if is_archived and "core_admin" not in rs.user.roles:
+            raise PrivilegeError("Only admins may view archived datasets.")
+
+        ALL_ACCESS_LEVELS = {
+            "persona", "ml", "assembly", "event", "cde", "core", "admin"}
+        access_levels = {"persona"}
+        ## Let users see themselves
+        if persona_id == rs.user.persona_id:
+            access_levels.update(rs.user.roles)
+            access_levels.add("core")
+        ## Core admins see everything
+        if "core_admin" in rs.user.roles:
+            access_levels.update(ALL_ACCESS_LEVELS)
+        ## Other admins see their realm
+        for realm in ("ml", "assembly", "event", "cde"):
+            if "{}_admin" in rs.user.roles:
+                access_levels.add(realm)
+        ## Members see other members (modulo quota)
+        if "cde" in rs.user.roles and quote_me:
+            access_levels.add("cde")
+        ## Orgas see their participants
+        if "event" not in access_levels:
+            for event_id in self.eventproxy.orga_info(rs, rs.user.persona_id):
+                if self.eventproxy.list_registrations(rs, event_id, persona_id):
+                    access_levels.add("event")
+                    break
+        ## Mailinglist moderators get no special treatment since this wouldn't
+        ## gain them anything
+        pass
+
+        ## Retrieve data
+        data = self.coreproxy.get_persona(rs, persona_id)
+        if "ml" in access_levels and "ml" in roles:
+            data.update(self.coreproxy.get_ml_user(rs, persona_id))
+        if "assembly" in access_levels and "assembly" in roles:
+            data.update(self.coreproxy.get_assembly_user(rs, persona_id))
+        if "event" in access_levels and "event" in roles:
+            data.update(self.coreproxy.get_event_user(rs, persona_id))
+        if "cde" in access_levels and "cde" in roles:
+            data.update(self.coreproxy.get_cde_user(rs, persona_id))
+        if "admin" in access_levels:
+            data.update(self.coreproxy.get_total_persona(rs, persona_id))
+
+        ## Cull unwanted data
+        if not "core" in access_levels:
+            masks = (
+                "is_active", "is_admin", "is_core_admin", "is_cde_admin",
+                "is_event_admin", "is_ml_admin", "is_assembly_admin",
+                "is_cde_realm", "is_event_realm", "is_ml_realm",
+                "is_assembly_realm", "is_member", "is_searchable",
+                "cloud_account", "is_archived",)
+            for key in masks:
+                if key in data:
+                    del data[key]
+        if "admin" not in access_levels and "notes" in data:
+            del data['notes']
+
+        ## Add participation info
+        participation_info = None
+        if {"event", "cde"} & access_levels and {"event", "cde"} & roles:
+            participation_info = self.pasteventproxy.participation_info(
+                rs, persona_id)
+
+        return self.render(rs, "show_user", {
+            'data': data, 'participation_info': participation_info,
+            'is_archived': is_archived, 'may_admin_edit': may_admin_edit})
 
     @access("core_admin")
     def show_history(self, rs, persona_id):

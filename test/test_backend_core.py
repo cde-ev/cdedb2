@@ -506,7 +506,6 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_ml_realm': True,
             'is_searchable': True,
-            'notes': None,
             'username': 'berta@example.cde'}
         self.assertEqual(expectation, self.core.get_persona(self.key, 2))
         self.assertEqual(expectation, self.core.get_ml_user(self.key, 2))
@@ -547,6 +546,7 @@ class TestCoreBackend(BackendTest):
             'username': 'berta@example.cde',
             'weblink': 'https://www.bundestag.cde'})
         self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
+        expectation['notes'] = None
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("anton")

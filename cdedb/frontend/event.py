@@ -336,12 +336,12 @@ class EventFrontend(AbstractUserFrontend):
         reg_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, reg_ids)
         for registration in registrations.values():
-            is_referenced = is_referenced.union(registration['parts'].keys())
-            is_referenced = is_referenced.union(registration['choices'].keys())
+            is_referenced.update(registration['parts'].keys())
+            is_referenced.update(registration['choices'].keys())
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_course_data(rs, course_ids)
         for course in courses.values():
-            is_referenced = is_referenced.union(course['parts'])
+            is_referenced.update(course['parts'])
         return self.render(rs, "part_summary", {'is_referenced': is_referenced})
 
     @staticmethod

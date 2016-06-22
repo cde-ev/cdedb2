@@ -110,7 +110,6 @@ class TestCdEBackend(BackendTest):
                 'location2': 'Hintertupfingen',
                 'mobile': None,
                 'name_supplement': None,
-                'notes': None,
                 'postal_code': '03205',
                 'postal_code2': '22335',
                 'specialisation': None,
@@ -160,7 +159,6 @@ class TestCdEBackend(BackendTest):
                 'location2': 'Foreign City',
                 'mobile': '0163/123456789',
                 'name_supplement': 'MdB',
-                'notes': None,
                 'postal_code': '34576',
                 'postal_code2': '8XA 45-$',
                 'specialisation': 'Alles\nUnd noch mehr',
@@ -202,7 +200,6 @@ class TestCdEBackend(BackendTest):
                     'location': 'Musterstadt',
                     'mobile': None,
                     'name_supplement': None,
-                    'notes': None,
                     'postal_code': '03205',
                     'telephone': '+49 (234) 98765',
                     'title': None,
@@ -235,7 +232,6 @@ class TestCdEBackend(BackendTest):
                     'location': 'Utopia',
                     'mobile': '0163/123456789',
                     'name_supplement': 'MdB',
-                    'notes': None,
                     'postal_code': '34576',
                     'telephone': '+49 (5432) 987654321',
                     'title': 'Dr.',
@@ -262,7 +258,6 @@ class TestCdEBackend(BackendTest):
                 'is_ml_admin': True,
                 'is_ml_realm': True,
                 'is_searchable': True,
-                'notes': None,
                 'username': 'anton@example.cde'},
             2: {
                 'cloud_account': True,
@@ -284,7 +279,6 @@ class TestCdEBackend(BackendTest):
                 'is_ml_admin': False,
                 'is_ml_realm': True,
                 'is_searchable': True,
-                'notes': None,
                 'username': 'berta@example.cde'}}
         data = self.core.get_personas(self.key, (1, 2))
         self.assertEqual(expectation, data)
