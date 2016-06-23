@@ -29,17 +29,17 @@
     \clearpage
     <<% for registration_id, rdata in registration_data|dictsort %>>
         <<% for part_id, pdata in event_data['parts']|dictsort %>>
-            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present() %>>
+            <<% if enums['RegistrationPartStati'](rdata['parts'][part_id]['status']).is_present() %>>
                 \participant{<<< user_data[rdata['persona_id']]['given_names']|te >>>
                              <<< user_data[rdata['persona_id']]['family_name']|te >>>}%
                     {<<< pdata['title']|te >>>%
-                     <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.guest -%>>
+                     <<% if rdata['parts'][part_id]['status'] == enums['RegistrationPartStati'].guest -%>>
                         ~[Gast]
                      <<%- endif %>>; <<< user_data[rdata['persona_id']]['birthday'].year|te >>>}%
                     {<<% if not rdata['mixed_lodging'] %>>getrennt<<% endif %>>}%
-                    {<<% if rdata['age'] == AgeClasses.u16 %>>U18<<% endif -%>>
-                     <<% if rdata['age'] == AgeClasses.u16 %>>U16<<% endif -%>>
-                     <<% if rdata['age'] == AgeClasses.u14 %>>U14<<% endif -%>>}%
+                    {<<% if rdata['age'] == enums['AgeClasses'].u16 %>>U18<<% endif -%>>
+                     <<% if rdata['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
+                     <<% if rdata['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
                     {<<% if may_reserve_present and rdata['field_data'].get('may_reserve') -%>>
                         Reserveplatz
                      <<%- endif %>>}%

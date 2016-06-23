@@ -29,7 +29,7 @@
     <<% for registration_id, rdata in registration_data|dictsort %>>
         <<% if rdata['persona_id'] not in event_data['orgas'] %>>
             <<% for part_id, pdata in event_data['parts']|dictsort %>>
-                <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.participant %>>
+                <<% if rdata['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %>>
                     \participant{<<< persona_data[rdata['persona_id']]['given_names']|te >>>
                                  <<< persona_data[rdata['persona_id']]['family_name']|te >>>}%
                                 {<<< pdata['title']|te >>>}%

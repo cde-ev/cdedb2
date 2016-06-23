@@ -57,7 +57,7 @@
                     <div>
                         {{ util.form_input_submit(value="Erfolg!") }}
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
-                        {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.success.value) }}
+                        {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].success.value) }}
                     </div>
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
@@ -67,7 +67,7 @@
                     <div>
                         {{ util.form_input_submit(value="Abbruch") }}
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
-                        {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.cancelled.value) }}
+                        {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].cancelled.value) }}
                     </div>
                 </form>
                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
@@ -77,7 +77,7 @@
                     <div>
                         {{ util.form_input_submit(value="Geplatzt!") }}
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
-                        {{ util.input_hidden(name="status", value=const.LastschriftTransactionStati.failure.value) }}
+                        {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
                     </div>
                 </form>
            </li>

@@ -188,7 +188,7 @@ class EventFrontend(AbstractUserFrontend):
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
         params = {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'spec': spec, 'choices': choices,
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
@@ -737,55 +737,95 @@ class EventFrontend(AbstractUserFrontend):
             'statistics': statistics, 'listings': listings})
 
     @access("event")
-    @REQUESTdata(("course_id", "id_or_None"))
+    @REQUESTdata(("course_id", "id_or_None"), ("part_id", "id_or_None"),
+                 ("position", "enum_coursefilterpositions_or_None"))
     @event_guard()
-    def course_choices_form(self, rs, event_id, course_id):
-        """List course choices.
+    def course_choices_form(self, rs, event_id, course_id, part_id, position):
+        """Provide an overview of course choices.
 
-        If course_id is not provided an overview of the number of choices
-        for all courses is presented. Otherwise all votes for a specific
-        course are listed.
+        This allows flexible filtering of the displayed registrations.
         """
-        # TODO implement
-        event_data = self.eventproxy.get_event_data_one(rs, event_id)
-        registrations = self.eventproxy.list_registrations(rs, event_id)
-        registration_data = self.eventproxy.get_registrations(rs, registrations)
-        courses = self.eventproxy.list_db_courses(rs, event_id)
-        course_data = self.eventproxy.get_course_data(rs, courses)
-        persona_data = self.coreproxy.get_personas(rs, tuple(
-            rdata['persona_id'] for rdata in registration_data.values()))
-        sorter = lambda registration_id: name_key(
-            persona_data[registration_data[registration_id]['persona_id']])
-        candidates = {
-            (part_id, i): sorted(
-                (registration_id
-                 for registration_id, rdata in registration_data.items()
-                 if (len(rdata['choices'][part_id]) > i
-                     # and rdata['choices'][part_id][i] == course_id
-                     and (rdata['parts'][part_id]['status']
-                          == const.RegistrationPartStati.participant)
-                     and rdata['persona_id'] not in event_data['orgas'])),
-                key=sorter)
-            for part_id in event_data['parts']
-            for i in range(3)
-        }
+        if rs.errors:
+            return self.show_event(rs, event_id)
+        registration_ids = self.eventproxy.registrations_by_course(
+            rs, event_id, course_id, part_id, position)
+        registrations = self.eventproxy.get_registrations(
+            rs, registration_ids.keys())
+        personas = self.coreproxy.get_personas(rs, registration_ids.values())
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_course_data(rs, course_ids)
+
+        all_reg_ids = self.eventproxy.list_registrations(rs, event_id)
+        all_regs = self.eventproxy.get_registrations(rs, all_reg_ids)
+        course_infos = {}
+        stati = const.RegistrationPartStati
+        for course_id, course in courses.items():
+            for part_id in rs.ambience['event']['parts']:
+                assigned = sum(1
+                    for reg in all_regs.values()
+                    if reg['parts'][part_id]['status'] == stati.participant
+                    and reg['parts'][part_id]['course_id'] == course_id)
+                all_instructors = sum(1
+                    for reg in all_regs.values()
+                    if reg['parts'][part_id]['course_instructor'] == course_id)
+                assigned_instructors = sum(1
+                    for reg in all_regs.values()
+                    if reg['parts'][part_id]['status'] == stati.participant
+                    and reg['parts'][part_id]['course_id'] == course_id
+                    and reg['parts'][part_id]['course_instructor'] == course_id)
+                course_infos[(course_id, part_id)] = {
+                    'assigned': assigned,
+                    'all_instructors': all_instructors,
+                    'assigned_instructors': assigned_instructors,
+                    'is_happening': part_id in course['parts'],
+                }
         return self.render(rs, "course_choices", {
-            'event_data': event_data, 'course_data': course_data,
-            'candidates': candidates, 'persona_data': persona_data,
-            'registration_data': registration_data,})
+            'courses': courses, 'personas': personas,
+            'registrations': registrations, 'course_infos': course_infos})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("course_id", "id_or_None"))
-    @event_guard()
-    def course_choices(self, rs, event_id, course_id):
-        """List course choices.
+    @REQUESTdata(("registration_ids", "[int]"), ("part_ids", "[int]"),
+                 ("action", "int"), ("course_id", "id_or_None"))
+    @event_guard(check_offline=True)
+    def course_choices(self, rs, event_id, registration_ids, part_ids, action,
+                       course_id):
+        """Manipulate course choices.
 
-        If course_id is not provided an overview of the number of choices
-        for all courses is presented. Otherwise all votes for a specific
-        course are listed.
+        Allow assignment of multiple people in multiple parts to one of
+        their choices or a specific course.
         """
-        # TODO implement
-        pass
+        if rs.errors:
+            return self.course_choices_form(rs, event_id)
+
+        registrations = None
+        if action >= 0:
+            registrations = self.eventproxy.get_registrations(
+                rs, registration_ids)
+        elif action == -1:
+            pass
+        else:
+            rs.notify("warning", "No action taken.")
+
+        code = 1
+        for registration_id in registration_ids:
+            tmp = {
+                'id': registration_id,
+                'parts': {}
+            }
+            for part_id in part_ids:
+                if action >= 0:
+                    choices = registrations[registration_id]['choices']
+                    try:
+                        choice = choices[part_id][action]
+                    except IndexError:
+                        rs.notify("error", "No choice available.")
+                    else:
+                        tmp['parts'][part_id] = {'course_id': choice}
+                elif action == -1:
+                    tmp['parts'][part_id] = {'course_id': course_id}
+            code *= self.eventproxy.set_registration(rs, tmp)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/course_choices_form")
 
     @access("event")
     @event_guard()
@@ -938,7 +978,7 @@ class EventFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'event_data': event_data, 'lodgement_data': lodgement_data,
             'registration_data': registration_data, 'user_data': user_data,
-            'lodge_present': lodge_present, 'AgeClasses': AgeClasses, 
+            'lodge_present': lodge_present,
             'may_reserve_present': may_reserve_present})
         return self.serve_latex_document(rs, tex, "lodgement_puzzle", runs)
 
@@ -2232,7 +2272,7 @@ class EventFrontend(AbstractUserFrontend):
               deduct_years(now().date(), 18)),),
             (("user_data.birthday", True), ("reg.id", True)),)
         params = {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'spec': spec, 'choices': choices,
             'default_queries': default_queries, 'titles': titles,
             'event_data': event_data, 'query': query,}
         ## Tricky logic: In case of no validation errors we perform a query

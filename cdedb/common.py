@@ -753,6 +753,22 @@ class LineResolutions(enum.IntEnum):
                         LineResolutions.update,
                         LineResolutions.renew_and_update}
 
+@enum.unique
+class CourseFilterPositions(enum.IntEnum):
+    """Selection possibilities for the course assignment tool.
+
+    We want to find registrations which have a specific course as choice
+    or something else. Where exactly we search for the course is
+    specified via this enum.
+    """
+    instructor = 0 #: Being a course instructor for the course in question.
+    first_choice = 1 #:
+    second_choice = 2 #:
+    third_choice = 3 #:
+    any_choice = 4 #:
+    assigned = 5 #: Being in this course either as participant or as instructor.
+    anywhere = 6 #:
+
 def asciificator(s):
     """Pacify a string.
 

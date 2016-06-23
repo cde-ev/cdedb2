@@ -72,7 +72,7 @@
 <<% block content %>>
     <<% for part_id, pdata in event_data['parts']|dictsort -%>>
         <<% for registration_id, rdata in registration_data|dictsort -%>>
-            <<% if const.RegistrationPartStati(rdata['parts'][part_id]['status']).is_present() -%>>
+            <<% if enums['RegistrationPartStati'](rdata['parts'][part_id]['status']).is_present() -%>>
                 \nametag{<<< user_data[rdata['persona_id']]['given_names']|te >>>}%
                     {<<< user_data[rdata['persona_id']]['family_name']|te >>>}{
                         <<%- if rdata['parts'][part_id]['course_id'] -%>>

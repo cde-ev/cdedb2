@@ -39,7 +39,7 @@
             {{ util.form_input_textarea(name="notes", label="Anmerkungen", rows="5", readonly=readonly) }}
             {% for part_id, course_list in course_choices|dictsort %}
                 {% if (course_list and part_id in parts
-                       and const.RegistrationPartStati(parts[part_id]['status']).is_involved()) %}
+                       and enums['RegistrationPartStati'](parts[part_id]['status']).is_involved()) %}
                     <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}

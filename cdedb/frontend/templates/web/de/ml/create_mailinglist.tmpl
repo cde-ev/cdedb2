@@ -10,25 +10,25 @@
             {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for policy in const.SubscriptionPolicy %}
+            {% for policy in enums['SubscriptionPolicy'] %}
                 {{ myentries.append((policy.value, i18n(policy|string)))|e }}
             {% endfor %}
             {{ util.form_input_select(name="sub_policy", label="Einschreibung", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for policy in const.ModerationPolicy %}
+            {% for policy in enums['ModerationPolicy'] %}
                 {{ myentries.append((policy.value, i18n(policy|string)))|e }}
             {% endfor %}
             {{ util.form_input_select(name="mod_policy", label="Moderation", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for policy in const.AttachmentPolicy %}
+            {% for policy in enums['AttachmentPolicy'] %}
                 {{ myentries.append((policy.value, i18n(policy|string)))|e }}
             {% endfor %}
             {{ util.form_input_select(name="attachment_policy", label="Anhänge", entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for policy in const.AudiencePolicy %}
+            {% for policy in enums['AudiencePolicy'] %}
                 {{ myentries.append((policy.value, i18n(policy|string)))|e }}
             {% endfor %}
             {{ util.form_input_select(name="audience_policy", label="Empfängerkreis", entries=myentries) }}
@@ -51,7 +51,7 @@
             {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for status in const.RegistrationPartStati %}
+            {% for status in enums['RegistrationPartStati'] %}
                 {{ myentries.append((status.value, i18n(status|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="registration_stati", label="Veranstaltungsempfänger",

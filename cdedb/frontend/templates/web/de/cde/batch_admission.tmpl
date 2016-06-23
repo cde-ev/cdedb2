@@ -29,7 +29,7 @@
                 {% endif %}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for resolution in LineResolutions %}
+                {% for resolution in enums['LineResolutions'] %}
                     {{ myentries.append((resolution.value, i18n(resolution|string)))|e }}
                 {% endfor %}
                 {{ util.form_input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, label="Aktion",

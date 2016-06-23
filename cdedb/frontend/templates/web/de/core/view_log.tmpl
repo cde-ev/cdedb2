@@ -23,7 +23,7 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
             {% for entry in log %}
                 <tr>
                     <td>{{ entry['ctime']|datetime|e }}</td>
-                    <td>{{ i18n(const.CoreLogCodes(entry['code'])|string)|e }}</td>
+                    <td>{{ i18n(enums['CoreLogCodes'](entry['code'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.href(show_user_link(entry['submitted_by']),
@@ -54,7 +54,7 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
         <form action="{{ cdedblink('core/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for code in const.CoreLogCodes %}
+            {% for code in enums['CoreLogCodes'] %}
                 {{ myentries.append((code.value, i18n(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",

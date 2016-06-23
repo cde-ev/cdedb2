@@ -8,6 +8,7 @@ import pytz
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators, Query
 from cdedb.common import PERSONA_EVENT_FIELDS
+from cdedb.enums import ENUMS_DICT
 import cdedb.database.constants as const
 
 
@@ -574,6 +575,20 @@ class TestEventBackend(BackendTest):
                          self.event.get_registration(self.key, new_id))
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, new_id: 2},
                          self.event.list_registrations(self.key, event_id))
+
+    @as_users("anton", "garcia")
+    def test_course_filtering(self, user):
+        event_id = 1
+        expectation={1: 1, 2: 5, 3: 7, 4: 9}
+        self.assertEqual(expectation, self.event.registrations_by_course(self.key, event_id))
+        self.assertEqual(expectation, self.event.registrations_by_course(
+            self.key, event_id, part_id=3))
+        expectation={1: 1, 2: 5, 3: 7, 4: 9}
+        self.assertEqual(expectation, self.event.registrations_by_course(
+            self.key, event_id, course_id=1))
+        expectation={2: 5, 4: 9}
+        self.assertEqual(expectation, self.event.registrations_by_course(
+            self.key, event_id, course_id=1, position=ENUMS_DICT['CourseFilterPositions'].assigned))
 
     @as_users("anton", "garcia")
     def test_entity_lodgement(self, user):

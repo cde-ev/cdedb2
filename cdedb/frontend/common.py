@@ -47,6 +47,7 @@ from cdedb.common import (
     RequestState)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.enums import ENUMS_DICT
 import cdedb.validation as validate
 import cdedb.database.constants as const
 import cdedb.query as query_mod
@@ -506,7 +507,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
-            'const': const,
             'default_selections': default_selections,
             'encode_parameter': self.encode_parameter,
             'errors': errorsdict,
@@ -521,6 +521,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'user': rs.user,
             'values': rs.values,
             'query_mod': query_mod,
+            'enums': ENUMS_DICT,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
         }
         ## check that default values are not overridden

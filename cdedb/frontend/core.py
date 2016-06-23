@@ -309,8 +309,8 @@ class CoreFrontend(AbstractFrontend):
         choices = {'pevent_id': events}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
         params = {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
-            'default_queries': default_queries, 'query': query}
+            'spec': spec, 'choices': choices, 'default_queries': default_queries,
+            'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_core_user"
@@ -345,7 +345,7 @@ class CoreFrontend(AbstractFrontend):
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_archived_persona']
         params = {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'spec': spec, 'choices': choices,
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:

@@ -53,7 +53,7 @@
             &
             <<< user_data[rdata['persona_id']]['mobile']|te >>> &
             <<% for part_id in event_data['parts']|sort -%>>
-                <<% if rdata['parts'][part_id]['status'] == const.RegistrationPartStati.participant -%>>
+                <<% if rdata['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%>>
                     <<% if rdata['parts'][part_id]['course_id'] -%>>
                         <<% if rdata['parts'][part_id]['course_instructor'] == rdata['parts'][part_id]['course_id'] -%>>
                             \emph{%

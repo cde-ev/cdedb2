@@ -2,36 +2,101 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Kurswahlen ({{ event_data['title']|e }})
+Kurswahlen ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
-    <table>
-        <tr>
-            <th>Teilnehmer</th>
-            {% for part_id, pdata in event_data['parts']|dictsort %}
-                <th>Erstwahl ({{ pdata['title']|e }})</th>
-                <th>Zweitwahl ({{ pdata['title']|e }})</th>
-                <th>Drittwahl ({{ pdata['title']|e }})</th>
-            {% endfor %}
-        </tr>
-        {% for reg_id, reg_datum in registration_data|dictsort %}
+    <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for part_id, part in ambience['event']['parts']|dictsort %}
+            {{ myentries.append((part_id, part['title']))|e }}
+        {% endfor %}
+        {{ util.form_input_select(name="part_id", label="Teil", entries=myentries, nulloption=True) }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for course_id, course in courses|dictsort %}
+            {{ myentries.append((course_id, course['title']))|e }}
+        {% endfor %}
+        {{ util.form_input_select(name="course_id", label="Kurs", entries=myentries, nulloption=True) }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for pos in enums.CourseFilterPositions %}
+            {{ myentries.append((pos.value, i18n(pos|string)))|e }}
+        {% endfor %}
+        {{ util.form_input_select(name="position", label="Position", entries=myentries, nulloption=True) }}
+        {{ util.form_input_submit(value="Suchen") }}
+    </form>
+    ~
+    <form action="{{ cdedblink('event/course_choices')|e }}" method="POST" id="choiceactionform">
+        <table>
             <tr>
-                <td>
-                    {% with pd = persona_data[reg_datum['persona_id']] %}
-                        {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
-                                     "{} {}".format(pd['given_names'], pd['family_name'])) }}
-                    {% endwith %}
-                </td>
-                {% for part_id, pdata in event_data['parts']|dictsort %}
-                     {% for j in range(3) %}
-                         <td>
-                             {% if reg_datum['choices'][part_id]|length > j %}
-                                {{ course_data[reg_datum['choices'][part_id][j]]['shortname']|e }}
-                             {% endif %}
-                         </td>
-                     {% endfor %}
+                <th></th>
+                <th>Teilnehmer</th>
+                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                    <th>Kurs ({{ part['title']|e }})</th>
+                    <th>Leiter ({{ part['title']|e }})</th>
+                    <th>Erstwahl ({{ part['title']|e }})</th>
+                    <th>Zweitwahl ({{ part['title']|e }})</th>
+                    <th>Drittwahl ({{ part['title']|e }})</th>
                 {% endfor %}
             </tr>
+            {% for reg_id, registration in registrations|dictsort %}
+                <tr>
+                    <td>
+                        {{ util.form_input_checkbox("registration_ids", value=reg_id) }}
+                    </td>
+                    <td>
+                        {% with persona = personas[registration['persona_id']] %}
+                            {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
+                                         "{} {}".format(persona['given_names'], persona['family_name'])) }}
+                        {% endwith %}
+                    </td>
+                    {% for part_id, part in ambience['event']['parts']|dictsort %}
+                        {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %}
+                            <td>
+                               {% if registration['parts'][part_id]['course_id'] %}
+                                   {{ courses[registration['parts'][part_id]['course_id']]['shortname']|e }}
+                               {% endif %}
+                            </td>
+                            <td>
+                               {% if registration['parts'][part_id]['course_instructor'] %}
+                                   {{ courses[registration['parts'][part_id]['course_instructor']]['shortname']|e }}
+                               {% endif %}
+                            </td>
+                            {% for j in range(3) %}
+                                <td>
+                                    {% if registration['choices'][part_id]|length > j %}
+                                       {{ courses[registration['choices'][part_id][j]]['shortname']|e }}
+                                    {% endif %}
+                                </td>
+                            {% endfor %}
+                        {% else %}
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+        Kurszuteilung ändern für markierte Personen in den Teilen
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for part_id, part in ambience['event']['parts']|dictsort %}
+            {{ myentries.append((part_id, part['title']))|e }}
         {% endfor %}
-    </table>
+        {{ util.form_input_checkboxes(name="part_ids", entries=myentries) }}
+        nach
+        {{ util.form_input_checkboxes(name="action", label="Kurs", radio=True, entries=(
+            (0, "Erstwahl"), (1, "Zweitwahl"), (2, "Drittwahl"), (-1, "Kurs aus Liste"))) }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for course_id, course in courses|dictsort %}
+            {{ myentries.append((course_id, course['title']))|e }}
+        {% endfor %}
+        {{ util.form_input_select(name="course_id", label="Kurs", entries=myentries, nulloption=True) }}
+        {{ util.form_input_submit(value="Zuweisen") }}
+    </form>
 {% endblock %}

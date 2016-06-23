@@ -40,7 +40,7 @@
         {% for part_id, pdata in registration_data['parts']|dictsort %}
             <tr>
                 <td>{{ event_data['parts'][part_id]['title']|e }}</td>
-                <td>{{ i18n(pdata['status']|enum(const.RegistrationPartStati))|e }}</td>
+                <td>{{ i18n(pdata['status']|enum(enums['RegistrationPartStati']))|e }}</td>
             </tr>
         {% endfor %}
         <tr><th colspan="2">Sonstige Angaben</th></tr>
@@ -80,7 +80,7 @@
             </td>
         </tr>
         {% for part_id, pdata in registration_data['parts']|dictsort %}
-            {% if const.RegistrationPartStati(pdata['status']).is_involved()
+            {% if enums['RegistrationPartStati'](pdata['status']).is_involved()
                   and registration_data['choices'].get(part_id) %}
                 <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
                 {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}

@@ -29,7 +29,7 @@ Anmeldung von {{ persona_data['given_names']|e }} {{ persona_data['family_name']
                 <tr><th colspan="2">{{ pdata['title']|e }}</th></tr>
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for s in const.RegistrationPartStati %}
+                {% for s in enums['RegistrationPartStati'] %}
                     {{ myentries.append((s.value, i18n(s|string)))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}

@@ -733,8 +733,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/course/stats'},)
         self.assertTitle("Kurse -- Übersicht (Große Testakademie 2222)")
         self.assertPresence("Planetenretten für Anfänger")
-        self.assertIn("<td> 2 </td>", self.response.text)
-        # TODO add
+        self.assertPresence("1")
+        self.assertPresence("δ")
 
     @as_users("garcia")
     def test_course_choices(self, user):
@@ -743,7 +743,96 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/course/choices'},)
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
         self.assertPresence("Heldentum")
-        # TODO add
+        self.assertPresence("Anton Armin")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['part_id'] = 3
+        self.submit(f)
+        self.assertPresence("Anton Armin")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['part_id'] = 1
+        self.submit(f)
+        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertNonPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['part_id'] = ''
+        f['course_id'] = 2
+        self.submit(f)
+        self.assertNonPresence("Anton Armin")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = 4
+        f['position'] = 3
+        self.submit(f)
+        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = 4
+        f['position'] = 3
+        f['part_id'] = 3
+        self.submit(f)
+        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Emilia")
+        self.assertNonPresence("Garcia")
+        self.assertPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = ''
+        f['position'] = ''
+        f['part_id'] = ''
+        self.submit(f)
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [1, 2]
+        f['part_ids'] = [3]
+        f['action'] = 0
+        self.submit(f)
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = 1
+        f['position'] = 5
+        f['part_id'] = 3
+        self.submit(f)
+        self.assertPresence("Anton Armin")
+        self.assertNonPresence("Emilia")
+        self.assertNonPresence("Garcia")
+        self.assertPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = 4
+        f['position'] = 5
+        f['part_id'] = 3
+        self.submit(f)
+        self.assertNonPresence("Anton Armin")
+        self.assertPresence("Emilia")
+        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Inga")
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = ''
+        f['position'] = ''
+        f['part_id'] = ''
+        self.submit(f)
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [3]
+        f['part_ids'] = [2, 3]
+        f['action'] = -1
+        f['course_id'] = 5
+        self.submit(f)
+        f = self.response.forms['choicefilterform']
+        f['course_id'] = 5
+        f['position'] = 5
+        self.submit(f)
+        self.assertNonPresence("Anton Armin")
+        self.assertNonPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertNonPresence("Inga")
 
     @as_users("garcia")
     def test_downloads(self, user):

@@ -19,7 +19,7 @@ from cdedb.common import (
     glue, PrivilegeError,
     EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap, now, ProxyShim,
-    PERSONA_EVENT_FIELDS, INSTITUTION_FIELDS)
+    PERSONA_EVENT_FIELDS, INSTITUTION_FIELDS, CourseFilterPositions)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -629,7 +629,7 @@ class EventBackend(AbstractBackend):
         :type event_id: int
         :type persona_id: int or None
         :param persona_id: If passed restrict to registrations by this persona.
-        :rtype: {int: {str: object}}
+        :rtype: {int: int}
         """
         event_id = affirm("id", event_id)
         persona_id = affirm("id_or_None", persona_id)
@@ -643,6 +643,69 @@ class EventBackend(AbstractBackend):
         if persona_id:
             query = glue(query, "AND persona_id = %s")
             params += (persona_id,)
+        data = self.query_all(rs, query, params)
+        return {e['id']: e['persona_id'] for e in data}
+
+    @access("event")
+    def registrations_by_course(self, rs, event_id, course_id=None,
+                                part_id=None, position=None):
+        """List registrations of an pertaining to a certain course.
+
+        This is a filter function, mainly for the course assignment tool.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :type part_id: int or None
+        :type course_id: int or None
+        :type position: :py:class:`cdedb.common.CourseFilterPositions`
+        :rtype: {int: int}
+        """
+        event_id = affirm("id", event_id)
+        part_id = affirm("id_or_None", part_id)
+        course_id = affirm("id_or_None", course_id)
+        position = affirm("enum_coursefilterpositions_or_None", position)
+        if (not self.is_admin(rs)
+                and not self.is_orga(rs, event_id=event_id)):
+            raise PrivilegeError("Not privileged.")
+        query = glue(
+            "SELECT DISTINCT regs.id, regs.persona_id",
+            "FROM event.registrations AS regs",
+            "LEFT OUTER JOIN event.registration_parts AS parts",
+            "ON parts.registration_id = regs.id",
+            "LEFT OUTER JOIN event.course_choices AS choices",
+            "ON choices.registration_id = regs.id",
+            "AND choices.part_id = parts.part_id",
+            "WHERE regs.event_id = %s AND parts.status = %s")
+        params = (event_id, const.RegistrationPartStati.participant)
+        if part_id:
+            query = glue(query, "AND parts.part_id = %s")
+            params += (part_id,)
+        if course_id:
+            cfp = CourseFilterPositions
+            if position is None:
+                position = cfp.anywhere
+            conditions = []
+            if position in (cfp.instructor, cfp.anywhere):
+                conditions.append("parts.course_instructor = %s")
+                params += (course_id,)
+            if position in (cfp.any_choice, cfp.anywhere):
+                conditions.append("choices.course_id = %s")
+                params += (course_id,)
+            elif position in (cfp.first_choice, cfp.second_choice,
+                              cfp.third_choice):
+                conditions.append(
+                    "(choices.course_id = %s AND choices.rank = %s)")
+                if position == cfp.first_choice:
+                    params += (course_id, 0)
+                elif position == cfp.second_choice:
+                    params += (course_id, 1)
+                elif position == cfp.third_choice:
+                    params += (course_id, 2)
+            if position in (cfp.assigned, cfp.anywhere):
+                conditions.append("parts.course_id = %s")
+                params += (course_id,)
+            condition = " OR ".join(conditions)
+            query = glue(query, "AND (", condition, ")")
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 

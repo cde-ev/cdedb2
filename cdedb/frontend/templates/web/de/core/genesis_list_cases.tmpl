@@ -23,7 +23,7 @@
                     <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                      id="genesisrejectionform{{ loop.index|e }}">
                         {{ util.input_hidden(name="case_id", value=case_id) }}
-                        {{ util.input_hidden(name="case_status", value=const.GenesisStati.rejected.value) }}
+                        {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
                         <button type="submit" class="btn btn-danger btn-sm">
                             <span class="glyphicon glyphicon-remove"></span> Ablehnen
                         </button>
@@ -33,7 +33,7 @@
                     <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                      id="genesisapprovalform{{ loop.index|e }}">
                         {{ util.input_hidden(name="case_id", value=case_id) }}
-                        {{ util.input_hidden(name="case_status", value=const.GenesisStati.approved.value) }}
+                        {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
                         <div class="input-group">
                         {{ util.input_select(name="realm", aclass="form-control input-sm", entries=(
                            ("event", "Veranstaltungsteilnehmer"),

@@ -199,6 +199,7 @@
                     'float' : 'text'};
             
             switch (parseInt(operator)) {
+            // The constants arise from cdedb.query.QueryOperators.
             case 0: //emtpy
             case 1: //nonempty
                 break;

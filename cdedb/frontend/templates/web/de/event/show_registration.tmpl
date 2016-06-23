@@ -33,7 +33,7 @@ Anmeldung von {{ user_data['given_names']|e }} {{ user_data['family_name']|e }} 
         </tr>
         <tr>
             <td>Mitglied</td>
-            <td>{{ util.deko_checkbox(checked=(user_data['status'] in const.MEMBER_STATI)) }}</td>
+            <td>{{ util.deko_checkbox(checked=(user_data['is_member'])) }}</td>
         </tr>
         <tr>
             <td>Geburtstag/Altersklasse</td>
@@ -123,7 +123,7 @@ Anmeldung von {{ user_data['given_names']|e }} {{ user_data['family_name']|e }} 
             <tr>
                 <td>Status</td>
                 <td>
-                    {{ i18n(registration_data['parts'][part_id]['status']|enum(const.RegistrationPartStati))|e }}
+                    {{ i18n(registration_data['parts'][part_id]['status']|enum(enums['RegistrationPartStati']))|e }}
                 </td>
             </tr>
             <tr>

@@ -133,8 +133,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             query = None
         default_queries = self.conf.DEFAULT_QUERIES['qview_persona']
         params = {
-            'spec': spec, 'queryops': QueryOperators,
-            'default_queries': default_queries, 'choices': {}, 'query': query}
+            'spec': spec, 'default_queries': default_queries, 'choices': {},
+            'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_persona"

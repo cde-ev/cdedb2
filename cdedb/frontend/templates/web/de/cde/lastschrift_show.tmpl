@@ -97,13 +97,13 @@
                     <td>{{ transaction['issued_at']|datetime|e }}</td>
                     <td>{{ transaction['processed_at']|datetime|e }}</td>
                     <td>{{ transaction['period_id']|e }}</td>
-                    <td>{{ transaction['status']|enum(const.LastschriftTransactionStati)|e }}</td>
+                    <td>{{ transaction['status']|enum(enums['LastschriftTransactionStati'])|e }}</td>
                     <td>{{ transaction['amount']|e }}€</td>
                     <td>{{ transaction['tally']|e }}€</td>
                     <td>{{ "{} {}".format(persona_data[transaction['submitted_by']]['given_names'],
 			                  persona_data[transaction['submitted_by']]['family_name'])|e }}</td>
                     <td>
-                        {% if transaction['status'] == const.LastschriftTransactionStati.issued %}
+                        {% if transaction['status'] == enums['LastschriftTransactionStati'].issued %}
 			    {% if is_admin %}
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
 							   {'lastschrift_id': transaction['lastschrift_id'],
@@ -114,7 +114,7 @@
 					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
 					{{ util.input_hidden(name="status",
-							     value=const.LastschriftTransactionStati.success.value) }}
+							     value=enums['LastschriftTransactionStati'].success.value) }}
 				    </div>
 				</form>
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
@@ -126,7 +126,7 @@
 					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
 					{{ util.input_hidden(name="status",
-							     value=const.LastschriftTransactionStati.cancelled.value) }}
+							     value=enums['LastschriftTransactionStati'].cancelled.value) }}
 				    </div>
 				</form>
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
@@ -138,11 +138,11 @@
 					{{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                         {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
 					{{ util.input_hidden(name="status",
-							     value=const.LastschriftTransactionStati.failure.value) }}
+							     value=enums['LastschriftTransactionStati'].failure.value) }}
 				    </div>
 				</form>
 			    {% endif %}
-                        {% elif transaction['status'] == const.LastschriftTransactionStati.success %}
+                        {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
 			    {% if is_admin %}
                                 <form action="{{ cdedblink('cde/lastschrift_receipt',
                                                            {'lastschrift_id': transaction['lastschrift_id'],

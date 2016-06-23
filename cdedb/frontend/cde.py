@@ -235,8 +235,7 @@ class CdEFrontend(AbstractUserFrontend):
                 result = result[:self.conf.MAX_QUERY_RESULTS]
                 rs.notify("info", "Too many query results.")
         return self.render(rs, "member_search", {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
-            'result': result})
+            'spec': spec, 'choices': choices, 'result': result})
 
     @access("cde_admin")
     @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
@@ -255,7 +254,7 @@ class CdEFrontend(AbstractUserFrontend):
                    'gender': self.enum_choice(rs, const.Genders)}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
         params = {
-            'spec': spec, 'choices': choices, 'queryops': QueryOperators,
+            'spec': spec, 'choices': choices,
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
@@ -341,8 +340,7 @@ class CdEFrontend(AbstractUserFrontend):
         }
         merge_dicts(rs.values, defaults)
         data = data or {}
-        return self.render(rs, "batch_admission", {
-            'data': data, 'LineResolutions': LineResolutions,})
+        return self.render(rs, "batch_admission", {'data': data,})
 
     def examine_for_admission(self, rs, datum):
         """Check one line of batch admission.
