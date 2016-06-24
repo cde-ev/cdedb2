@@ -1,21 +1,18 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title -%}
-   Neue Einzugsermächtigung anlegen ({{ "{} {}".format(persona_data['given_names'], persona_data['family_name'])|e }})
+   Neue Einzugsermächtigung ({{ "{} {}".format(persona_data['given_names'], persona_data['family_name'])|e }})
 {%- endblock %}
 {% block content %}
-    {{ util.href(cdedblink("cde/lastschrift_index"), "Abbrechen") }}
-    <form action="{{ cdedblink('cde/lastschrift_create')|e }}" method="POST" id="createlastschriftform">
-        <table>
-            {{ util.form_input_text(name="amount", label="Betrag") }}
-            {{ util.form_input_text(name="iban", label="IBAN") }}
-            {{ util.form_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
-            {{ util.form_input_textarea(name="account_address", label="Adresse (falls abweichend)") }}
-            {{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
-            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Anlegen") }}
-        </div>
+    <form action="{{ cdedblink('cde/lastschrift_create')|e }}" method="POST" id="createlastschriftform"
+            class="form-horizontal">
+        {# TODO: number input for amount #}
+        {{ util.form_input_text(name="amount", label="Betrag") }}
+        {{ util.form_input_text(name="iban", label="IBAN") }}
+        {{ util.form_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
+        {{ util.form_input_textarea(name="account_address", label="Adresse (falls abweichend)") }}
+        {{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("cde/lastschrift_index")) }}
     </form>
 {% endblock %}

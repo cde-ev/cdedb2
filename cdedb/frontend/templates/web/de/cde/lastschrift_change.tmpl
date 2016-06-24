@@ -2,22 +2,18 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Einzugsermächtigung bearbeiten{% endblock %}
 {% block content %}
-    {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': lastschrift_data['persona_id']}), "Abbrechen") }}
-    <form action="{{ cdedblink('cde/lastschrift_change')|e }}" method="POST" id="changelastschriftform">
-        <table>
-	    <tr>
-		<td>Person</td>
-		<td>{{ "{} {}".format(persona_data['given_names'], persona_data['family_name'])|e }}</td>
-	    </tr>
-            {{ util.form_input_text(name="amount", label="Betrag") }}
-            {{ util.form_input_text(name="iban", label="IBAN") }}
-            {{ util.form_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
-            {{ util.form_input_textarea(name="account_address", label="Adresse (falls abweichend)") }}
-            {{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
-            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Ändern") }}
-        </div>
+    <form action="{{ cdedblink('cde/lastschrift_change')|e }}" method="POST" id="changelastschriftform"
+	    class="form-horizontal">
+	{{ util.form_input_static(label="Mitglied",
+		value="{} {}".format(persona_data['given_names'], persona_data['family_name'])) }}
+	{{ util.form_input_text(name="amount", label="Betrag") }}
+	{{ util.form_input_text(name="iban", label="IBAN") }}
+	{{ util.form_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
+	{{ util.form_input_textarea(name="account_address", label="Adresse (falls abweichend)") }}
+	{{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
+	{{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+	
+	{{ util.form_input_submit(value="Ändern",
+		cancellink=cdedblink("cde/lastschrift_show", {'persona_id': lastschrift_data['persona_id']})) }}
     </form>
 {% endblock %}

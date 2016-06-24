@@ -17,7 +17,7 @@
     {% if is_admin %}
         <div class="list-group">
             {{ util.href(cdedblink("cde/user_search"), "Nutzer verwalten", aclass="list-group-item", icon="user") }}
-            {{ util.href(cdedblink("cde/lastschrift_index"), "Einzugserächtigungen", aclass="list-group-item",
+            {{ util.href(cdedblink("cde/lastschrift_index"), "Einzugsermächtigungen", aclass="list-group-item",
                     icon="euro", active=(sidenav_active=='cde_consent_form')) }}
             {# TODO #}
             {{ util.href(cdedblink("cde/show_semester"), "Semesterverwaltung") }}
