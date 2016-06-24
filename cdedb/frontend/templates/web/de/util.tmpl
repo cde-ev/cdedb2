@@ -91,13 +91,13 @@
     {% endif %}
 {% endmacro %}
 
-{% macro form_input_general(input_code, label='', anid='', small=False, info='', displayerrors=True) %}
+{% macro form_input_general(input_code, label='', anid='', small=False, info='', displayerrors=True, horizontal=True) %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         <label{% if anid %} for="{{ anid|e }}"{% endif %}
-                class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+                class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
             {{ label|e }}
         </label>
-        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+        <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             {{ input_code }}
             {{ output_errors(name, displayerrors) }}
             {{ output_info(info) }}
@@ -114,10 +114,10 @@
             name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=0, type='text', placeholder='', small=False) %}
+    maxlength=0, type='text', placeholder='', small=False, horizontal=True) %}
     {{ form_input_general(
             input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder),
-            label, anid, small, info, displayerrors) }}
+            label, anid, small, info, displayerrors, horizontal) }}
 {% endmacro %}
 
 
@@ -129,10 +129,10 @@
 {% endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
-        small=False) %}
+        small=False, horizontal=True) %}
     {{ form_input_general(
             input_file(name, readonly, defaultvalue, anid, accept=accept),
-            label, anid, small, info, displayerrors) }}
+            label, anid, small, info, displayerrors, horizontal) }}
 {% endmacro %}
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3) %}
@@ -143,10 +143,10 @@
 {% endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-        small=False, maxlength=0, rows=3) %}
+        small=False, maxlength=0, rows=3, horizontal=True) %}
     {{ form_input_general(
             input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows),
-            label, anid, small, info, displayerrors) }}
+            label, anid, small, info, displayerrors, horizontal) }}
 {% endmacro %}
 
 
@@ -177,10 +177,11 @@
 {% endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
-        anid='') %}
+        anid='', horizontal=True) %}
     {# This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
-        <div class="{% if small %}col-sm-6 col-sm-offset-2{% else %}col-sm-8 col-sm-offset-4{% endif %}">
+        <div {% if horizontal %}class="{% if small %}col-sm-6 col-sm-offset-2{% else -%}
+                col-sm-8 col-sm-offset-4{% endif %}"{% endif %}>
             <div class="checkbox {% if readonly %}disabled{% endif %}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, anid) }}
             </div>
@@ -191,12 +192,12 @@
 {% endmacro %}
 
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False) %}
+        small=False, radio=False, horizontal=True) %}
     {# This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
     {{ form_input_general(
             input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio),
-            label, '', small, info, displayerrors) }}
+            label, '', small, info, displayerrors, horizontal) }}
 {% endmacro %}
 
 
@@ -217,26 +218,27 @@
 {% endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=False, anid='', small=False) %}
+        nulloption=False, anid='', small=False, horizontal=True) %}
     {{ form_input_general(
             input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption),
-            label, anid, small, info, displayerrors) }}
+            label, anid, small, info, displayerrors, horizontal) }}
 {% endmacro%}
 
 {% macro input_static(value) %}
     <p class="form-control-static">{{ value|e }}</p>
 {% endmacro %}
-{% macro form_input_static(label="", info='', value='', small=False) %}
+{% macro form_input_static(label="", info='', value='', small=False, horizontal=True) %}
     {{ form_input_general(
         input_static(value),
-        label, '', small, info) }}
+        label, '', small, info, horizontal) }}
 {% endmacro %}
 
 {% macro form_input_submit(value='Speichern', name="submitform", info='', readonly=False, anid='',
         aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue='Abbrechen',
-        small=False) %}
+        small=False, horizontal=True) %}
     <div class="form-group">
-        <div class="{% if small %}col-sm-offset-2 col-sm-10{% else %}col-sm-offset-4 col-sm-8{% endif %}">
+        <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
+                col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
             <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
             id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>
             {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ value|e }}</button>
@@ -248,12 +250,13 @@
     </div>
 {% endmacro %}
 
-{% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True) %}
+{% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
+        horizontal=True) %}
     <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
-        <label class="{% if small %}col-sm-2{% else %}col-sm-4{% endif %} control-label">
+        <label class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
             {{ label|e }}
         </label>
-        <div class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}">
+        <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             <div class="input-group">
                 <span class="input-group-addon">von</span>
                 {{ input_text(name=name1, type=type) }}
