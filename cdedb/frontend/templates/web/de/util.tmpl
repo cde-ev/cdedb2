@@ -114,9 +114,10 @@
             name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=0, type='text', placeholder='', small=False, horizontal=True) %}
+    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="") %}
     {{ form_input_general(
-            input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder),
+            input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
+                    aclass="form-control " + aclass),
             label, anid, small, info, displayerrors, horizontal) }}
 {% endmacro %}
 
@@ -218,9 +219,10 @@
 {% endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=False, anid='', small=False, horizontal=True) %}
+        nulloption=False, anid='', small=False, horizontal=True, aclass="") %}
     {{ form_input_general(
-            input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption),
+            input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
+                    aclass="form-control " + aclass),
             label, anid, small, info, displayerrors, horizontal) }}
 {% endmacro%}
 
