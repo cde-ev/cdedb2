@@ -1,3 +1,6 @@
+/* *********** *
+ * Page layout *
+ * *********** */
 body{
     margin: 0px;
 }
@@ -175,4 +178,10 @@ p.textbox {
 .link-disabled {
     color: #777;
     cursor: not-allowed;
+}
+.button-par .btn {
+    margin-bottom: 8px;
+}
+.button-par {
+    margin-bottom: -8px;
 }

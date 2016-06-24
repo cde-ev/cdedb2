@@ -141,7 +141,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_user_search(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
-        self.assertTitle("CdE Nutzersuche")
+        self.assertTitle("CdE Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.similar.value
         f['qval_address'] = 'Garten'
@@ -149,14 +149,14 @@ class TestCdEFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("CdE Nutzersuche")
+        self.assertTitle("CdE Nutzerverwaltung")
         self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
         self.assertIn('"row_0_id" value="2"', self.response.text)
 
     @as_users("anton")
     def test_user_search_csv(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
-        self.assertTitle("CdE Nutzersuche")
+        self.assertTitle("CdE Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.regex.value
         f['qval_address'] = 'a[rm]'
