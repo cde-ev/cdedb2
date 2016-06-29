@@ -365,7 +365,9 @@ def rst_filter(val):
         return None
     defaults = {'file_insertion_enabled': 0,
                 'raw_enabled': 0,
-                'id_prefix': "CDEDB_RST_"}
+                'id_prefix': "CDEDB_RST_",
+                'initial_header_level': 4,
+                'doctitle_xform': False,}
     ret = docutils.core.publish_parts(val, writer_name='html',
                                       settings_overrides=defaults)
     return ret['html_body']
