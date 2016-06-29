@@ -58,6 +58,7 @@ echo ""
 echo "Setting up the database..."
 echo "--------------------------------------------"
 
+cp /cdedb2/related/auto-build/files/stage3/postgresql.conf /etc/postgresql/9.4/main/
 cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/9.4/main/
 /etc/init.d/postgresql restart
 sleep 3
