@@ -1,5 +1,46 @@
+{% set sidenav_active='cde_index' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% block title %}CdE-Bereich{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE", active="True") }}
+{% endblock %}
 {% block content %}
-    Hier findest Du CdE-spezifische Funktionalität.
+    <div class="row">
+        <div class="col-md-6">
+            <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform" class="form-horizontal">
+                {{ util.input_hidden(name="is_search", value=True) }}
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h4 class="panel-title"><span class="glyphicon glyphicon-search"></span> Mitgliedersuche</h4>
+                    </div>
+                    <div class="panel-body">
+                        <p>
+                            {{ util.input_text(name="qval_fulltext") }}
+                        </p>
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>            
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title"><span class="glyphicon glyphicon-euro"></span> Initiative 25+</h4>
+                </div>
+                <div class="panel-body">
+                    <p>
+                        Du möchtest den CdE und die „Idee Schülerakademie“ finanziell unterstützen? Sofern Du die Erlaubnis
+                        dazu erteilst, zieht der CdE in Zukunft jährlich 25 € oder einen beliebigen höheren Betrag als
+                        Lastschrift von Deinem Konto ein: 25+ eben.
+                    </p>
+                    <p>
+                        {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }} dazu oder direkt zum
+                        {{ util.href(cdedblink("cde/lastschrift_subscription_form"), "Lastschrift-Formular") }}.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

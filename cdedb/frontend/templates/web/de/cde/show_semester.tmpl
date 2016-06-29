@@ -1,6 +1,11 @@
+{% set sidenav_active='cde_semester' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Semesterverwaltung{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/show_semester"), "Semesterverwaltung", active="True") }}
+{% endblock %}
 {% block content %}
     <p>
         Die auf dieser Seite enthaltenen Aktionen betreffen alle

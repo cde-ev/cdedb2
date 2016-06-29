@@ -1,7 +1,11 @@
+{% set sidenav_active='cde_log' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}
-CdE allgemein -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+{% block title %}Log: CdE allgemein [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/view_cde_log"), "CdE-Log", active="True") }}
 {% endblock %}
 {% block content %}
     <table>

@@ -4,6 +4,8 @@
 {% block navigation %}
     <h2>Navigation</h2>
     <div class="list-group">
+        {{ util.href(cdedblink("cde/index"), "Start", aclass="list-group-item",
+                icon="triangle-right", active=(sidenav_active=='cde_index')) }}
         {% if "searchable" in user.roles %}
             {{ util.href(cdedblink("cde/member_search"), "CdE-Mitglied suchen", aclass="list-group-item", icon="search",
                     active=(sidenav_active=='cde_member_search')) }}
@@ -11,29 +13,26 @@
             {{ util.href(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung", aclass="list-group-item",
                     icon="check", active=(sidenav_active=='cde_consent_decision')) }}
         {% endif %}
-        {# TODO #}
-        {{ util.href(cdedblink("cde/i25p_index"), "Initiative 25+") }}
     </div>
     {% if is_admin %}
         <div class="list-group">
-            {{ util.href(cdedblink("cde/user_search"), "Nutzer verwalten", aclass="list-group-item", icon="user") }}
+            {{ util.href(cdedblink("cde/user_search"), "Nutzer verwalten", aclass="list-group-item", icon="user",
+                    active=(sidenav_active=='cde_manage_users')) }}
             {{ util.href(cdedblink("cde/lastschrift_index"), "Einzugsermächtigungen", aclass="list-group-item",
-                    icon="euro", active=(sidenav_active=='cde_consent_form')) }}
-            {# TODO #}
-            {{ util.href(cdedblink("cde/show_semester"), "Semesterverwaltung") }}
-            {{ util.href(cdedblink("cde/view_cde_log"), "Allgemeines Log", aclass="list-group-item", icon="list-alt") }}
+                    icon="euro", active=(sidenav_active=='cde_lastschrift')) }}
+            {{ util.href(cdedblink("cde/show_semester"), "Semesterverwaltung", aclass="list-group-item",
+                    icon="hourglass", active=(sidenav_active=='cde_semester')) }}
+            {{ util.href(cdedblink("cde/view_cde_log"), "CdE-Log", aclass="list-group-item", icon="list-alt",
+                    active=(sidenav_active=='cde_log')) }}
         </div>
-        <h4>abgeschlossene Veranstaltungen</h4>
+        
         <div class="list-group">
-            {{ util.href(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten", icon="cog",
-                    aclass="list-group-item") }}
-
-            {# TODO #}
-            {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen") }}
-
-            {{ util.href(cdedblink("cde/view_past_log"), "Log", icon="list-alt", aclass="list-group-item") }}
-            {# TODO #}
-            {{ util.href(cdedblink("cde/institution_summary"), "Organisationen verwalten") }}
+            {{ util.href(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten", icon="calendar",
+                    aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
+            {{ util.href(cdedblink("cde/institution_summary"), "Organisationen verwalten", icon="briefcase",
+                    aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
+            {{ util.href(cdedblink("cde/view_past_log"), "Log (abg. Veranstaltungen)", icon="list-alt",
+                    aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
         </div>
     {% endif %}
 {% endblock %}

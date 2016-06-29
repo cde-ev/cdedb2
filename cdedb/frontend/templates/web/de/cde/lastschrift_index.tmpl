@@ -1,6 +1,11 @@
+{% set sidenav_active='cde_lastschrift' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Übersicht Einzugsermächtigungen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), "Einzugsermächtigungen", active="True") }}
+{% endblock %}
 {% block content %}
     <h2>Offene Einzugsermächtigungen</h2>
     <p>

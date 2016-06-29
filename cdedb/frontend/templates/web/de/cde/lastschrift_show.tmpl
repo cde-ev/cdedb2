@@ -1,9 +1,18 @@
+{% set sidenav_active='cde_lastschrift' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title -%}
    Einzugsermächtigung {{ "{} {}".format(persona_data[values['persona_id']]['given_names'],
                                             persona_data[values['persona_id']]['family_name'])|e }}
 {%- endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), "Einzugsermächtigungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
+	"{} {}".format(persona_data[values['persona_id']]['given_names'],
+		       persona_data[values['persona_id']]['family_name'])|e,
+	active=True, icon="euro") }}
+{% endblock %}
 {% block content %}
     {% if active_permit %}
         {{ util.href(cdedblink('cde/lastschrift_change_form', {'lastschrift_id': active_permit}), "Bearbeiten",
