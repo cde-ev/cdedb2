@@ -235,15 +235,19 @@
         label, '', small, info, horizontal) }}
 {% endmacro %}
 
+{% macro input_submit(value='Speichern', name="submitform", anid='', aclass='btn btn-primary', icon="ok") %}
+    <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
+            id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>
+            {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ value|e }}</button>
+{% endmacro %}
+
 {% macro form_input_submit(value='Speichern', name="submitform", info='', readonly=False, anid='',
         aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue='Abbrechen',
         small=False, horizontal=True) %}
     <div class="form-group">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
-            <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
-            id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>
-            {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ value|e }}</button>
+            {{ input_submit(value, name, anid, aclass, icon) }}
             {% if cancellink %}
                 &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default") }}
             {% endif %}

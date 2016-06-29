@@ -9,47 +9,53 @@ Log: Abgeschlossene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['s
 {{ util.breadcrumb_link(cdedblink("cde/view_past_log"), "Log (abg. Veranstaltungen)", active=True) }}
 {% endblock %}
 {% block content %}
-    <table>
-        <tr>
-            <th>Zeitstempel</th>
-            <th>Code</th>
-            <th>Verantwortlich</th>
-            <th>Veranstaltung</th>
-            <th>Betroffen</th>
-            <th>Zusatz</th>
-        </tr>
-        {% for entry in log %}
+    <table class="table table-condensed table-hover">
+        <thead>
             <tr>
-                <td>{{ entry['ctime']|datetime|e }}</td>
-                <td>{{ i18n(enums['PastEventLogCodes'](entry['code'])|string)|e }}</td>
-                <td>
-                    {% if entry['submitted_by'] %}
-                        {{ personas[entry['submitted_by']]['given_names']|e }}
-                        {{ personas[entry['submitted_by']]['family_name']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if entry['pevent_id'] %}
-                        {{ pevents[entry['pevent_id']]['title']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if entry['persona_id'] %}
-                        {{ personas[entry['persona_id']]['given_names']|e }}
-                        {{ personas[entry['persona_id']]['family_name']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ entry['additional_info']|e }}</td>
+                <th>Zeitstempel</th>
+                <th>Code</th>
+                <th>Verantwortlich</th>
+                <th>Veranstaltung</th>
+                <th>Betroffen</th>
+                <th>Zusatz</th>
             </tr>
-        {% endfor %}
+        </thead>
+        <tbody>
+            {% for entry in log %}
+                <tr>
+                    <td>{{ entry['ctime']|datetime|e }}</td>
+                    <td>{{ i18n(enums['PastEventLogCodes'](entry['code'])|string)|e }}</td>
+                    <td>
+                        {% if entry['submitted_by'] %}
+                            {{ personas[entry['submitted_by']]['given_names']|e }}
+                            {{ personas[entry['submitted_by']]['family_name']|e }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry['pevent_id'] %}
+                            {{ pevents[entry['pevent_id']]['title']|e }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry['persona_id'] %}
+                            {{ personas[entry['persona_id']]['given_names']|e }}
+                            {{ personas[entry['persona_id']]['family_name']|e }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ entry['additional_info']|e }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
-    <form action="{{ cdedblink('cde/view_past_log')|e }}" method="GET" id="logshowform">
+    
+    {{ util.box_filter_begin() }}    
+    <form action="{{ cdedblink('cde/view_past_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
         <div>
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
@@ -57,16 +63,17 @@ Log: Abgeschlossene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['s
                 {{ myentries.append((code.value, i18n(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                                     entries=myentries) }}
+                     entries=myentries, small=True) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for pevent_id, title in pevents|dictsort %}
                 {{ myentries.append((pevent_id, title))|e }}
             {% endfor %}
-            {{ util.form_input_select(name="pevent_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
-            {{ util.form_input_text(name="start", label="Anfang") }}
-            {{ util.form_input_text(name="stop", label="Ende") }}
-            {{ util.form_input_submit(value="Anzeigen") }}
+            {{ util.form_input_select(name="pevent_id", label="Veranstaltung", nulloption=True, entries=myentries,
+                    small=True) }}
+            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
+            {{ util.form_input_submit(value="Anzeigen",small=True) }}
         </div>
     </form>
+    {{ util.box_filter_end() }}
 {% endblock %}
