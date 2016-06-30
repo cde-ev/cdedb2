@@ -150,7 +150,8 @@
                         </form>
                         <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="noaddresscheckform">
                             {{ util.input_hidden("skip", value=True) }}
-                            {{ util.input_submit(value="Als erledigt markieren", aclass="btn btn-warning") }}
+                            {{ util.input_submit(value="Als erledigt markieren", aclass="btn btn-warning",
+                                    icon="check")}}
                         </form>
                     {% endif %}
                 </div>

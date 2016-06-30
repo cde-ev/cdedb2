@@ -1,6 +1,12 @@
+{% set sidenav_active='cde_past_events' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Veranstaltung anlegen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten") }}
+{{ util.breadcrumb_link(cdedblink("cde/create_past_event"), "abg. Veranstaltung anlegen", active=True) }}
+{% endblock %}
 {% block content %}
     <form action="{{ cdedblink('cde/create_past_event')|e }}" method="POST" id="createeventform">
         <table>

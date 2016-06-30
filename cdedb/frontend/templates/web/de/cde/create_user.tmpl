@@ -1,7 +1,13 @@
+{% set sidenav_active='cde_manage_users' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Neues Mitglied anlegen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten") }}
+{{ util.breadcrumb_link(cdedblink("cde/create_user"), "Nutzer anlegen", active=True) }}
+{% endblock %}
 {% block content %}
     {{ generic.create_user("cde") }}
 {% endblock %}

@@ -25,18 +25,16 @@
                     <td>{{ i18n(enums['CdeLogCodes'](entry['code'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
-                            {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                            {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                            {{ util.persona_anchor(persona_data[entry['submitted_by']]) }}
                         {% else %}
-                            -
+                            –
                         {% endif %}
                     </td>
                     <td>
                         {% if entry['persona_id'] %}
-                            {{ persona_data[entry['persona_id']]['given_names']|e }}
-                            {{ persona_data[entry['persona_id']]['family_name']|e }}
+                            {{ util.persona_anchor(persona_data[entry['persona_id']]) }}
                         {% else %}
-                            -
+                            –
                         {% endif %}
                     </td>
                     <td>{{ entry['additional_info']|e }}</td>

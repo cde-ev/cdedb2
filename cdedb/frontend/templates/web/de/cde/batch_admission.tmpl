@@ -1,6 +1,12 @@
+{% set sidenav_active='cde_manage_users' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Accounts anlegen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten") }}
+{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), "Massenaufnahme", active=True) }}
+{% endblock %}
 {% block content %}
     <form action="{{ cdedblink('cde/batch_admission')|e }}" method="POST" id="admissionform">
         {{ util.input_hidden("finalized") }}
