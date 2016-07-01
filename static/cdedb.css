@@ -169,9 +169,20 @@ p.textbox {
     margin: -10px 0 10px 0;
 }
 
+/* dynamic row js */
+tr.drow-new>td {
+    background-color: #dff0d8;
+}
+tr.drow-delete>td {
+    background-color: #f2dede;
+}
+
 /* ************** *
  * Helper classes *
  * ************** */
+.softhide {
+    display: none;
+}
 .nowrap {
     white-space: nowrap;
 }

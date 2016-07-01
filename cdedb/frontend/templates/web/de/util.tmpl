@@ -12,6 +12,8 @@
 {% macro cdedb_script(script) %}
     {% if script == 'queryform' %}
         <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js")|e }}"></script>
+    {% elif script == 'dynamicrow' %}
+        <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js")|e }}"></script>
     {% endif %}
 {% endmacro %}
 
@@ -106,12 +108,12 @@
 {% endmacro %}
 
 {% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, type='text',
-        placeholder='') %}
+        placeholder='', attributes='') %}
     <input type="{{ type|e }}" {% if aclass %} class="{{ aclass|e }}"{% endif %}
             {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {% if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
             {% if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"
-            name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
+            name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} {{ attributes }} />
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
     maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="") %}
@@ -152,7 +154,7 @@
 
 
 {% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
-        radio=False) %}
+        radio=False, attributes='') %}
     {% if label %}
         <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
     {% endif %}
@@ -162,7 +164,7 @@
                 checked="checked"
             {% endif %}
             {% if readonly %} disabled="disabled" {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
-            {% if aclass %} class="{{ aclass|e }}"{% endif %} />
+            {% if aclass %} class="{{ aclass|e }}"{% endif %} {{ attributes }} />
         {{ label|e }}
     {% if label %}</label>{% endif %}
 {% endmacro %}
@@ -235,7 +237,8 @@
         label, '', small, info, horizontal) }}
 {% endmacro %}
 
-{% macro input_submit(value='Speichern', name="submitform", anid='', aclass='btn btn-primary', icon="ok") %}
+{% macro input_submit(value='Speichern', name="submitform", anid='', aclass='btn btn-primary', icon="ok",
+        readonly=False) %}
     <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
             id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}>
             {% if icon %}<span class="glyphicon glyphicon-{{ icon|e }}"></span> {% endif %}{{ value|e }}</button>
@@ -247,7 +250,7 @@
     <div class="form-group">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
-            {{ input_submit(value, name, anid, aclass, icon) }}
+            {{ input_submit(value, name, anid, aclass, icon, readonly) }}
             {% if cancellink %}
                 &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default") }}
             {% endif %}

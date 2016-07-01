@@ -1,32 +1,94 @@
 {% set sidenav_active='cde_past_events_org' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
 {% block title %}Organisationen der abg. Veranstaltungen verwalten{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
 {{ util.breadcrumb_link(cdedblink("cde/institution_summary"), "Organisationen verwalten", active="True") }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#drow-table').cdedbDynamicRow({addButton: $('#drow-addbutton')});
+        });
+    </script>
     <form action="{{ cdedblink('cde/institution_summary')|e }}" method="POST" id="institutionsummaryform">
-        <ul>
-            {% for institution_id, institution in institutions|dictsort %}
-                <li>
-                    <table>
-                        {{ util.form_input_checkbox("delete_{}".format(institution_id), label="Löschen",
-                                                    readonly=institution_id in is_referenced) }}
-                        {{ util.form_input_text(name="title_{}".format(institution_id), label="Titel") }}
-                        {{ util.form_input_text(name="moniker_{}".format(institution_id), label="Kürzel") }}
-                    </table>
-                </li>
-            {% endfor %}
-            <li>
-                {{ util.form_input_checkbox("create_-1", label="Hinzufügen") }}
-                {{ util.form_input_text(name="title_-1", label="Titel") }}
-                {{ util.form_input_text(name="moniker_-1", label="Kürzel") }}
-            </li>
-        </ul>
-        <div>
-            {{ util.form_input_submit(value="Ändern", readonly=is_locked) }}
-        </div>
+        <table class="table table-border table-condensed" id="drow-table">
+            <thead>
+                <tr><th>Name</th><th>Kürzel</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for institution_id, institution in institutions|dictsort %}
+                    <tr class="drow-row">
+                        <td>
+                            {{ util.input_text(name="title_{}".format(institution_id)) }}
+                            {{ util.output_errors("title_{}".format(institution_id)) }}
+                        </td>
+                        <td>
+                            {{ util.input_text(name="moniker_{}".format(institution_id)) }}
+                            {{ util.output_errors("moniker_{}".format(institution_id)) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {{ util.input_checkbox("delete_{}".format(institution_id),
+                                        readonly=institution_id in is_referenced, aclass="drow-indicator") }}
+                                Löschen
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+                {# Now add rows that were added by user in previous Submit but failed validation #}
+                {# TODO #}
+                {% for i in range(1, 1) %}
+                    <tr class="drow-new">
+                        <td>
+                            {{ util.input_text('title_-{}'.format(i), aclass='drow-input form-control',
+                                    attributes='data-basename="title_-"') }}
+                            {{ util.output_errors('title_-{}'.format(i)) }}
+                        </td>
+                        <td>
+                            {{ util.input_text('moniker_-{}'.format(i), aclass='drow-input form-control',
+                                    attributes='data-basename="moniker_-"') }}
+                            {{ util.output_errors('moniker_-{}'.format(i)) }}
+                        </td>
+                        <td>
+                            <span class="drow-buttonspace">
+                                {{ util.input_checkbox("create_{}".format(i), aclass="drow-indicator",
+                                        attributes='data-basename="create_-"') }}
+                                Hinzufügen
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+                <tr class="drow-prototype">
+                    <td>
+                        {# TODO #}
+                        {{ util.input_text('title_-{}'.format(1), aclass='drow-input form-control',
+                                attributes='data-basename="title_-"') }}
+                    </td>
+                    <td>
+                        {# TODO #}
+                        {{ util.input_text('moniker_-{}'.format(1), aclass='drow-input form-control',
+                                attributes='data-basename="moniker_-"') }}
+                    </td>
+                    <td>
+                        <span class="drow-buttonspace">
+                            {# TODO #}
+                            {{ util.input_checkbox("create_{}".format(1), aclass="drow-indicator",
+                                    attributes='data-basename="create_-"') }}
+                            Hinzufügen
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                <span class="glyphicon glyphicon-plus"></span> Organisation hinzufügen
+            </button>
+        </p>
+        {{ util.input_submit(value="Speichern", readonly=is_locked) }}
     </form>
 {% endblock %}
