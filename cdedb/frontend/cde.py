@@ -79,7 +79,11 @@ class CdEFrontend(AbstractUserFrontend):
     @access("persona")
     def index(self, rs):
         """Render start page."""
-        return self.render(rs, "index")
+        user_lastschrift = self.cdeproxy.list_lastschrift(
+            rs, persona_ids=[rs.user.persona_id], active=True)
+        
+        return self.render(rs, "index", {
+            'has_lastschrift': (len(user_lastschrift) > 0)})
 
     @access("cde")
     @REQUESTdata(("confirm_id", "#int"))

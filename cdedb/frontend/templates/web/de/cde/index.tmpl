@@ -7,7 +7,8 @@
 {% block content %}
     <div class="row">
         <div class="col-md-6">
-            <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform" class="form-horizontal">
+            <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform"
+                    class="form-horizontal">
                 {{ util.input_hidden(name="is_search", value=True) }}
                 <div class="panel panel-primary">
                     <div class="panel-heading">
@@ -18,7 +19,9 @@
                             {{ util.input_text(name="qval_fulltext") }}
                         </p>
                         <div class="text-right">
-                            <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>            
+                            <button type="submit" class="btn btn-primary">
+                                <span class="glyphicon glyphicon-search"></span> Suche
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -31,14 +34,23 @@
                 </div>
                 <div class="panel-body">
                     <p>
-                        Du möchtest den CdE und die „Idee Schülerakademie“ finanziell unterstützen? Sofern Du die Erlaubnis
-                        dazu erteilst, zieht der CdE in Zukunft jährlich 25 € oder einen beliebigen höheren Betrag als
-                        Lastschrift von Deinem Konto ein: 25+ eben.
+                        Du möchtest den CdE und die „Idee Schülerakademie“ finanziell unterstützen? Sofern Du die
+                        Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich 25 € oder einen beliebigen höheren
+                        Betrag als Lastschrift von Deinem Konto ein: 25+ eben.
                     </p>
-                    <p>
-                        {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }} dazu oder direkt zum
-                        {{ util.href(cdedblink("cde/lastschrift_subscription_form"), "Lastschrift-Formular") }}.
-                    </p>
+                    {% if has_lastschrift %}
+                        <p>
+                            {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }} dazu oder Deine
+                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
+                                    "bestehende Einzugsermächtigung") }}
+                            ansehen.
+                        </p>
+                    {% else %}
+                        <p>
+                            {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }} dazu oder direkt zum
+                            {{ util.href(cdedblink("cde/lastschrift_subscription_form"), "Lastschrift-Formular") }}.
+                        </p>
+                    {% endif %}
                 </div>
             </div>
         </div>
