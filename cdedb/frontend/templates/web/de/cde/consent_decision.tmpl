@@ -1,14 +1,16 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Einwilligung zur Mitgliedersuche{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung", active="True") }}
+{% endblock %}
 {% block content %}
     <p>Die CdE-Datenbank stellt verschiedene Möglichkeiten bereit, eine
     davon ist ein elektronisches Mitgliederverzeichnis. Du hast Dich noch
     nicht entschieden ob Du in diesem sichtbar sein möchtest.
 
-    <form action="{{ cdedblink("core/index")|e }}" method="GET" id="toplaterform">
-        <p>{{ util.form_input_submit(value="Später entscheiden") }}</p>
-    </form>
+    <p>{{ util.href(cdedblink("core/index"), "Später entscheiden", icon="time", aclass="btn btn-default") }}</p>
 
     <h1>Einwilligung</h1>
 
@@ -16,37 +18,32 @@
     Du die folgende Einwilligung erteilst, können andere Deine Daten
     aufrufen und Du die Daten anderer suchen und aufrufen.</p>
 
-    <p>"Ich erkläre mich damit einverstanden, dass meine Daten per Post an
-    andere CdEler verschickt werden können.</p>
+    <div class="well">
+        <p>Ich erkläre mich damit einverstanden, dass meine Daten per Post an
+        andere CdEler verschickt werden können.</p>
 
-    <p>Ich bin damit einverstanden, dass meine persönlichen Daten auch im
-    Internet von anderen CdElern eingesehen werden können. (Die Daten sind
-    passwortgeschützt und werden verschlüsselt übertragen.  Nur bei
-    Einverständnis mit der Speicherung kann Dir der CdE Mails mit wichtigen
-    Informationen und Erinnerungen an zu zahlende Beiträge schicken.)</p>
+        <p>Ich bin damit einverstanden, dass meine persönlichen Daten auch im
+        Internet von anderen CdElern eingesehen werden können. (Die Daten sind
+        passwortgeschützt und werden verschlüsselt übertragen.  Nur bei
+        Einverständnis mit der Speicherung kann Dir der CdE Mails mit wichtigen
+        Informationen und Erinnerungen an zu zahlende Beiträge schicken.)</p>
 
-    <p>Ich erkläre, dass ich Daten anderer CdEler nicht an Dritte
-    weitergeben oder zu Zwecken benutzen werde, die nicht Sinn und Aufgabe
-    des CdE sind."</p>
+        <p>Ich erkläre, dass ich Daten anderer CdEler nicht an Dritte
+        weitergeben oder zu Zwecken benutzen werde, die nicht Sinn und Aufgabe
+        des CdE sind.</p>
+    </div>
 
-    <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="ackconsentform">
-        <div>
+    <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="ackconsentform" style="display: inline;">
             {{ util.input_hidden(name="ack", value="True") }}
-            {{ util.form_input_submit(value="Einwilligung erteilen") }}
-        </div>
+            {{ util.input_submit(value="Einwilligung erteilen", aclass="btn btn-success") }}
     </form>
 
-    <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="nackconsentform">
-        <div>
+    <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="nackconsentform"
+            style="display: inline;">
             {{ util.input_hidden(name="ack", value="False") }}
-            {{ util.form_input_submit(value="Einwilligung verweigern") }}
-        </div>
+            {{ util.input_submit(value="Einwilligung verweigern", icon="remove", aclass="btn btn-danger") }}
     </form>
 
-    <form action="{{ cdedblink("core/index")|e }}" method="GET" id="bottomlaterform">
-        <div>
-            {{ util.form_input_submit(value="Später entscheiden") }}
-        </div>
-    </form>
+    {{ util.href(cdedblink("core/index"), "Später entscheiden", icon="time", aclass="btn btn-default") }}
 
 {% endblock %}
