@@ -3,15 +3,15 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block navigation %}
     {% if "persona" in user.roles %}
-    <h2>Navigation</h2>
-    <div class="list-group">
+    <h2 class="heading-responsive">Navigation</h2>
+    <div class="list-group tear-down">
         {{ util.href(cdedblink("core/index"), "Start", aclass="list-group-item",
                 icon="triangle-right", active=(sidenav_active=='core_index')) }}
         {{ util.href(cdedblink("core/mydata"), "Meine Daten", aclass="list-group-item",
                 icon="user", active=(sidenav_active=='core_mydata')) }}
     </div>
         {% if is_admin %}
-            <div class="list-group">
+            <div class="list-group tear-down">
             {{ util.href(cdedblink("core/user_search"), "Nutzer verwalten", aclass="list-group-item",
                     icon="user", active=(sidenav_active=='core_manage_users')) }}
             {{ util.href(cdedblink("core/archived_user_search"), "Archivsuche", aclass="list-group-item",
@@ -25,10 +25,11 @@
             {{ util.href(cdedblink("core/view_changelog_meta"), "Nutzerdaten-Log", aclass="list-group-item",
                     icon="list-alt", active=(sidenav_active=='core_change_log')) }}
             </div>
-            <div class="list-group">
+            <div class="list-group tear-down">
             {{ util.href(cdedblink("core/meta_info_form"), "Metadaten", aclass="list-group-item",
                     icon="tags", active=(sidenav_active=='core_meta')) }}
             </div>
         {% endif %}
     {% endif %}
+    <hr class="strong visible-xs visible-sm" />
 {% endblock %}

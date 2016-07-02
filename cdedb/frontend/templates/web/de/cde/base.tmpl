@@ -2,8 +2,8 @@
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block navigation %}
-    <h2>Navigation</h2>
-    <div class="list-group">
+    <h2 class="heading-responsive">Navigation</h2>
+    <div class="list-group tear-down">
         {{ util.href(cdedblink("cde/index"), "Start", aclass="list-group-item",
                 icon="triangle-right", active=(sidenav_active=='cde_index')) }}
         {% if "searchable" in user.roles %}
@@ -15,7 +15,7 @@
         {% endif %}
     </div>
     {% if is_admin %}
-        <div class="list-group">
+        <div class="list-group tear-down">
             {{ util.href(cdedblink("cde/user_search"), "Nutzer verwalten", aclass="list-group-item", icon="user",
                     active=(sidenav_active=='cde_manage_users')) }}
             {{ util.href(cdedblink("cde/lastschrift_index"), "Einzugsermächtigungen", aclass="list-group-item",
@@ -26,7 +26,7 @@
                     active=(sidenav_active=='cde_log')) }}
         </div>
         
-        <div class="list-group">
+        <div class="list-group tear-down">
             {{ util.href(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten", icon="calendar",
                     aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
             {{ util.href(cdedblink("cde/institution_summary"), "Organisationen verwalten", icon="briefcase",
@@ -35,4 +35,5 @@
                     aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
         </div>
     {% endif %}
+    <hr class="strong visible-xs visible-sm" />
 {% endblock %}

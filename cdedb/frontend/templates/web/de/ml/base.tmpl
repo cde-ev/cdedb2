@@ -3,7 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro ml_inner_navigation(data) %}
-        <div class="list-group">
+        <div class="list-group tear-down">
             {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': data['id']}), "Übersicht",
                     icon="triangle-right", aclass="list-group-item", active=(sidenav_active == 'ml_show')) }}
             {% if data['id'] in user.moderator or is_admin %}
@@ -21,7 +21,7 @@
 {% endmacro %}
 
 {% block navigation %}
-    <h2>Navigation</h2>
+    <h2 class="heading-responsive">Navigation</h2>
     {% if ambience['mailinglist'] %}
         <p>
             {{ util.href(cdedblink("ml/index"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
@@ -30,7 +30,7 @@
         <h4><span class="glyphicon glyphicon-envelope"></span> {{ ambience['mailinglist']['title'] }}</h4>
         {{ ml_inner_navigation(ambience['mailinglist']) }}
     {% else %}
-        <div class="list-group">
+        <div class="list-group tear-down">
             {% if is_admin %}
                 {# TODO #}
                 {{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}
@@ -45,4 +45,5 @@
             {% endif %}
         </div>
     {% endif %}
+    <hr class="strong visible-xs visible-sm" />
 {% endblock %}

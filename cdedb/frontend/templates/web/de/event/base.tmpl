@@ -3,7 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro one_event_links(data) %}
-    <div class="list-group">
+    <div class="list-group tear-down">
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
                     aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_show')) }}
         {# TODO #}
@@ -23,7 +23,7 @@
     </div>
 
     {% if data['id'] in user.orga or is_admin %}
-        <div class="list-group">
+        <div class="list-group tear-down">
             {{ util.href(cdedblink("event/registration_query", {"event_id": data['id']}), "Anmeldungen",
                     aclass="list-group-item", icon="list", active=(sidenav_active == 'event_registration')) }}
             {{ util.href(cdedblink("event/stats", {"event_id": data['id']}), "Teilnehmer-Übersicht",
@@ -61,7 +61,7 @@
                     icon="list-alt", active=(sidenav_active == 'event_event_log')) }}
         </div>
 
-        <div class="list-group">
+        <div class="list-group tear-down">
             {{ util.href(cdedblink("event/checkin_form", {"event_id": data['id']}), "Checkin",
                     readonly=is_locked, aclass="list-group-item", icon="check",
                     active=(sidenav_active == 'event_checkin')) }}
@@ -70,7 +70,7 @@
 {% endmacro %}
 
 {% block navigation %}
-    <h2>Navigation</h2>
+    <h2 class="heading-responsive">Navigation</h2>
     {% if ambience['event'] %}
         <p>
             {{ util.href(cdedblink("event/index"), "Zur Veranstaltungs-Übersicht", icon="circle-arrow-up") }}
@@ -80,7 +80,7 @@
         {{ one_event_links(ambience['event']) }}
     {% else %}
         {% if is_admin %}
-            <div class="list-group">
+            <div class="list-group tear-down">
                 {{ util.href(cdedblink("event/list_db_events"), "DB-Veranstaltungen verwalten", aclass="list-group-item",
                         icon="cog", active=(sidenav_active == 'event_list')) }}
                 {# TODO #}
@@ -94,4 +94,5 @@
             </div>
         {% endif %}
     {% endif %}
+    <hr class="strong visible-xs visible-sm" />
 {% endblock %}
