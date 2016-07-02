@@ -8,23 +8,20 @@
 {{ util.breadcrumb_link(cdedblink("cde/create_past_event"), "abg. Veranstaltung anlegen", active=True) }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('cde/create_past_event')|e }}" method="POST" id="createeventform">
-        <table>
-            {{ util.form_input_text(name="title", label="Titel") }}
-            {{ util.form_input_text(name="shortname", label="Kürzel") }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for value, title in institutions|dictsort %}
-                {{ myentries.append((value, title))|e }}
-            {% endfor %}
-            {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
-            {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
-            {{ util.form_input_text(name="tempus", label="Stichtag") }}
-            {{ util.form_input_textarea(name="courses", label="Kurse",
-                                   info='Hier einen Kurs pro Zeile im Format "Titel";"Beschreibung" eingeben.') }}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Anlegen") }}
-        </div>
+    <form action="{{ cdedblink('cde/create_past_event')|e }}" method="POST" id="createeventform"
+        class="form-horizontal">
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_text(name="shortname", label="Kürzel") }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for value, title in institutions|dictsort %}
+            {{ myentries.append((value, title))|e }}
+        {% endfor %}
+        {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_text(name="tempus", label="Stichtag", type="date", placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_textarea(name="courses", label="Kurse",
+                               info='Hier einen Kurs pro Zeile im Format "Titel";"Beschreibung" eingeben.') }}
+        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("cde/list_past_events")) }}
     </form>
 {% endblock %}

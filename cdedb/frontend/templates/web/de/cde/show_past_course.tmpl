@@ -14,36 +14,66 @@
 {% endblock %}
 {% block content %}
     {% if is_admin %}
-        {{ util.href(cdedblink('cde/change_past_course_form'), "Bearbeiten") }}
-        <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
-            {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
-            {{ util.form_input_text(name="persona_id", label="ID") }}
-            {{ util.form_input_checkbox(name="is_instructor", label="Kursleiter") }}
-            {{ util.form_input_checkbox(name="is_orga", label="Orga") }}
-            {{ util.form_input_submit(value="Teilnehmer hinzufügen") }}
-        </form>
-        <form action="{{ cdedblink('cde/delete_past_course')|e }}" method="POST" class="jsConfirmed"
-         id="deletecourseform">
-            {{ util.form_input_submit(value="Gesamten Kurs löschen") }}
-        </form>
+        <div class="p">
+            {{ util.href(cdedblink('cde/change_past_course_form'), "Bearbeiten", icon="pencil",
+                    aclass="btn btn-warning btn-sm") }}
+            <form action="{{ cdedblink('cde/delete_past_course')|e }}" method="POST"
+                    id="deletecourseform" style="display: inline;">
+                {{ util.input_submit(value="Gesamten Kurs löschen", icon="trash", aclass="btn btn-danger btn-sm") }}
+            </form>
+        </div>
     {% endif %}
-    <p>{{ ambience['pcourse']['description']|e }}</p>
+    {{ ambience['pcourse']['description']|e }}
+    
+    <h2>Teilnehmer</h2>
+    {% if is_admin %}
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <h4 class="panel-title">Teilnehmer zu diesem Kurs hinzufügen</h4>
+            </div>
+            <div class="panel-body">
+                <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
+                    {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
+                    {{ util.input_hidden(name="is_instructor", value=False) }}
+                    <div class="row">
+                        <div class="col-sm-5">
+                            {# TODO select2 here #}
+                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X") }}
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="checkbox">
+                                {{ util.input_checkbox(name="is_instructor", label="Kursleiter") }}
+                            </div>
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="checkbox">
+                                {{ util.input_checkbox(name="is_orga", label="Orga") }}
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            {{ util.input_submit(value="hinzufügen", icon="plus") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
     {% if participants %}
-        <h2>Teilnehmer</h2>
         <ul>
             {% for anid, pdata in participants.items() %} {# This dict is already sorted. #}
                 <li>
                     {% if pdata['is_instructor'] %}
                         <strong>
                     {% endif %}
-                    {{ participants[anid]['given_names']|e }} {{ participants[anid]['family_name']|e }}
+                    {{ util.persona_anchor(participants[anid]) }}
                     {% if is_admin %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
-                         id="removeparticipantform{{ anid|e }}">
+                         id="removeparticipantform{{ anid|e }}" style="display: inline;">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
-                            {{ util.form_input_submit(value="entfernen") }}
+                            {{ util.input_submit(title='entfernen', icon="trash", aclass="btn btn-xs btn-danger",
+                                    value="") }}
                         </form>
                     {% endif %}
                     {% if pdata['is_instructor'] %}
@@ -52,5 +82,9 @@
                 </li>
             {% endfor %}
         </ul>
+    {% else %}
+        <p>
+            <i>Keine Teilnehmer eingetragen.</i>
+        </p>
     {% endif %}
 {% endblock %}

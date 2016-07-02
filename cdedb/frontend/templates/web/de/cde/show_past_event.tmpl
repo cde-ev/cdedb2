@@ -2,6 +2,9 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ ambience['pevent']['title']|e }}{% endblock %}
+{% block heading %}
+    <h1 class="title">{{ ambience['pevent']['title']|e }} <small>({{ ambience['pevent']['shortname']|e }})</small></h1>
+{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten") }}
@@ -10,51 +13,85 @@
 {% endblock %}
 {% block content %}
     {% if is_admin %}
-        {{ util.href(cdedblink('cde/change_past_event_form'), "Bearbeiten") }}
-        {{ util.href(cdedblink('cde/create_past_course_form'), "Kurs hinzufügen") }}
-        <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
-            {{ util.form_input_text(name="persona_id", label="ID") }}
-            {{ util.input_hidden(name="pcourse_id", value="") }}
-            {{ util.input_hidden(name="is_instructor", value=False) }}
-            {{ util.form_input_checkbox(name="is_orga", label="Orga") }}
-            {{ util.form_input_submit(value="Teilnehmer (ohne Kurs) hinzufügen") }}
-        </form>
+        <div class="p">
+        {{ util.href(cdedblink('cde/change_past_event_form'), "Bearbeiten", icon="pencil",
+                aclass="btn btn-warning btn-sm") }}
+        </div>
     {% endif %}
-    <p>Kürzel: {{ ambience['pevent']['shortname']|e }}</p>
-    <p>Organisation: {{ institutions[ambience['pevent']['institution']]|e }}</p>
-    <p>{{ ambience['pevent']['description']|e }}</p>
+    <p><strong>Organisation</strong>: {{ institutions[ambience['pevent']['institution']]|e }}</p>
+    {{ ambience['pevent']['description']|rst }}
+    
+    <h2>Kurse</h2>
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink('cde/create_past_course_form'), "Kurs hinzufügen", icon="plus",
+                    aclass="btn btn-success btn-sm") }}
+        </div>
+    {% endif %}
     {% if courses %}
-        <h2>Kurse</h2>
         <ul>
             {% for anid, title in courses|dictsort %}
                 <li>{{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), title) }}</li>
             {% endfor %}
         </ul>
     {% endif %}
+    
+    <h2>Teilnehmer</h2>
+    {% if is_admin %}
+        <div class="panel panel-success">
+            <div class="panel-heading">
+                <h4 class="panel-title">Teilnehmer ohne Kurs hinzufügen</h4>
+            </div>
+            <div class="panel-body">
+                <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
+                    {{ util.input_hidden(name="pcourse_id", value="") }}
+                    {{ util.input_hidden(name="is_instructor", value=False) }}
+                    <div class="row">
+                        <div class="col-sm-7">
+                            {# TODO select2 here #}
+                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X") }}
+                        </div>
+                        <div class="col-sm-2">
+                            <div class="checkbox">
+                                {{ util.input_checkbox(name="is_orga", label="Orga") }}
+                            </div>
+                        </div>
+                        <div class="col-sm-3">
+                            {{ util.input_submit(value="hinzufügen", icon="plus") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endif %}
     {% if participants %}
-        <h2>Teilnehmer</h2>
         <ul>
             {% for anid, pdata in participants.items() %} {# This dict is already sorted. #}
                 <li>
                     {% if pdata['is_orga'] %}
                         <strong>
                     {% endif %}
-                    {{ personas[anid]['given_names']|e }} {{ personas[anid]['family_name']|e }}
+                    {{ util.persona_anchor(personas[anid]) }}
                     {% if pdata['is_orga'] %}
                         </strong>
                     {% endif %}
                     {# only allow removal of participants without a course #}
                     {% if is_admin and pdata['pcourse_id'] is none %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
-                         id="removeparticipantform{{ anid|e }}">
+                         id="removeparticipantform{{ anid|e }}" style="display: inline;">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=pdata['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
-                            {{ util.form_input_submit(value="entfernen") }}
+                            {{ util.input_submit(title='entfernen', icon="trash", aclass="btn btn-xs btn-danger",
+                                    value="") }}
                         </form>
                     {% endif %}
                 </li>
             {% endfor %}
         </ul>
+    {% else %}
+        <p>
+            <i>Keine Teilnehmer eingetragen.</i>
+        </p>
     {% endif %}
 {% endblock %}
