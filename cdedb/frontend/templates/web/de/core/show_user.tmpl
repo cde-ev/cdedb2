@@ -9,5 +9,313 @@
         icon="user", active="True") }}
 {% endblock %}
 {% block content %}
-    {{ generic.show_user(data, "core") }}
+    {% if data['id'] == user.persona_id or is_admin %}
+        <div class="p">
+            {% if is_admin %}
+                {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten",
+                        aclass="btn btn-warning btn-sm", icon="pencil") }}
+            {% else %}
+                {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten",
+                        aclass="btn btn-warning btn-sm", icon="pencil") }}
+            {% endif %}
+            {% if data['id'] == user.persona_id %}
+                {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern", aclass="btn btn-warning btn-sm",
+                        icon="edit") }}
+            {% else %}
+                <form action="{{ cdedblink('core/admin_password_reset')|e }}" method="POST"
+                        id="adminpasswordresetform" style="display: inline;">
+                    {{ util.input_submit(value="Passwort zurücksetzen", icon="share",
+                            aclass="btn btn-warning btn-sm") }}
+                </form>
+                {% if data['is_active'] %}
+                    <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
+                     id="activitytoggleform" style="display: inline;">
+                        {{ util.input_submit(value="Account deaktivieren", icon="ban-circle",
+                                aclass="btn btn-danger btn-sm") }}
+                    </form>
+                {% else %}
+                    <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
+                     id="activitytoggleform" style="display: inline;">
+                        {{ util.input_submit(value="Account aktivieren", icon="ok-circle",
+                                aclass="btn btn-success btn-sm") }}
+                    </form>
+                {% endif %}
+            {% endif %}
+            {% if is_admin %}
+                {{ util.href(cdedblink("core/show_history"), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
+            {% endif %}
+        </div>
+    {% endif %}
+    <div class="pull-right-responsive">
+        {% if data['is_cde_realm'] %}
+            <p>
+                {% if data['foto'] %}
+                    <img src="{{ cdedblink('cde/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
+                      class="profilepic img-thumbnail">
+                {% else %}
+                    <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
+                      class="profilepic img-thumbnail">
+                {% endif %}
+                {% if data['id'] == user.persona_id or is_admin %}
+                    <br />
+                    {{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern", aclass="btn btn-xs btn-warning",
+                            icon="pencil") }}
+                {% endif %}
+            </p>
+        {% endif %}
+    </div>
+
+    <div class="float-along">
+        {% if not data['is_active'] %}
+            <p class="text-danger">
+                Der Benutzer ist deaktiviert.
+            </p>
+        {% endif %}
+        {% if data['is_archived'] %}
+            <p class="text-danger">
+                Der Benutzer ist archiviert.
+            </p>
+        {% endif %}
+
+        <h4 class="heading-underline">Person</h4>
+        <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd>
+                {{ data['title']|e }} {{ data['given_names']|e }}
+                {% if data['display_name'] and data['display_name'] != data['given_names'] %}
+                    ({{ data['display_name']|e }})
+                {% endif %}
+                {{ data['family_name']|e }} {{ data['name_supplement']|e }}
+            </dd>
+            {% if data['birth_name'] %}
+                <dt>Geburtsname</dt>
+                <dd>{{ data['birth_name']|e }}</dd>
+            {% endif %}
+            {% if data['birthday'] %}
+                <dt>Geburtstag</dt>
+                <dd>{{ data['birthday']|date|e }}</dd>
+            {% endif %}
+            {% if data['gender'] %}
+                <dt>Geschlecht</dt>
+                <dd>{{ data['gender']|gender|e }}</dd>
+            {% endif %}
+        </dl>
+        
+        
+        {% if data['id'] == user.persona_id or is_admin %}
+            <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
+            <dl class="dl-horizontal">
+                <dt>CdEDB-ID</dt>
+                <dd>{{ data['id']|cdedbid|e }}</dd>
+                {% if is_admin %}
+                    <dt>Account aktiv</td>
+                    <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}</dd>
+                {% endif %}
+            </dl>
+            
+            <dl class="dl-horizontal">
+                <dt>Bereiche</dt>
+                <dd>
+                        {% for bit, desc, icon in (("is_cde_realm", "CdE", "education"),
+                                                   ("is_event_realm", "Veranstaltungen", "blackboard"),
+                                                   ("is_ml_realm", "Mailinglisten", "envelope"),
+                                                   ("is_assembly_realm", "Versammlungen", "stats"),)%}
+                            {% if data[bit] %}
+                                {{ util.make_icon(icon) }} {{ desc|e }},
+                            {% endif %}
+                        {% endfor %}
+                    {% if 'core_admin' in user.roles%}
+                        {{ util.href(cdedblink("core/promote_user_form"), "Bereich hinzufügen", icon="pencil",
+                                aclass="btn btn-xs btn-warning") }}
+                    {% endif %}
+                </dd>
+                
+                <dt>Admin-Privilegien</dt>
+                <dd>
+                        {% set vars = {'any_privilege': False} %}
+                        {% for bit, desc, icon in (("is_admin", "Super", "wrench"),
+                                                  ("is_core_admin", "Core", "user"),
+                                                  ("is_cde_admin", "CdE", "education"),
+                                                  ("is_event_admin", "Veranstaltungs", "blackboard"),
+                                                  ("is_ml_admin", "Mailinglisten", "envelope"),
+                                                  ("is_assembly_admin", "Versammlungs", "stats"),)%}
+                            {% if data[bit] %}
+                                {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
+                                {# Dirty hack to workaround Jinjas set drawbacks #}
+                                {% if vars.update({'any_privilege': True}) %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}
+                    {% if 'admin' in user.roles %}
+                        {{ util.href(cdedblink("core/change_privileges_form"), "bearbeiten", icon="pencil",
+                                aclass="btn btn-xs btn-warning") }}
+                    {% endif %}
+                </dd>
+                
+                {% if data['notes'] and is_admin %}
+                    <dt>Notizen</dt>
+                    <dd>{{ data['notes']|rst }}</dd>
+                {% endif %}
+            </dl>
+            
+            {% if data['is_cde_realm'] %}
+                <dl class="dl-horizontal">
+                    <dt>Mitgliedschaft</dt>
+                    <dd>
+                        {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
+                        {% if data['is_member'] %}CdE-Mitglied{% endif %}
+                        {% if data['trial_member'] %}
+                            (Probemitgliedschaft)
+                        {% endif %}
+                        {% if is_admin %}
+                            {{ util.href(cdedblink('cde/modify_membership_form'), "Status ändern", icon="pencil",
+                                    aclass="btn btn-xs btn-warning") }}
+                        {% endif %}
+                    </dd>
+                    
+                    <dt>Guthaben</dt>
+                    <dd>{{ data['balance']|e }}€</dd>
+                    
+                    {% if data['is_member'] %}
+                        <dt>Sichtbarkeit</dt>
+                        <dd>
+                            {{ util.deko_checkbox(checked=data['is_searchable']) }}
+                            {% if data['is_searchable'] %}
+                                <td>Daten sind für andere Mitglieder sichtbar.</td>
+                            {% else %}
+                                {% if not data['decided_search'] %}
+                                    Noch nicht entschieden. (Daten sind nicht sichtbar)
+                                    {% if data['id'] == user.persona_id %}
+                                        {{ util.href(cdedblink('cde/consent_decision'), "Entscheiden", icon="hand-right",
+                                                aclass="btn btn-xs btn-primary") }}
+                                    {% endif %}
+                                {% else %}
+                                    Daten sind nicht sichtbar.
+                                {% endif %}
+                            {% endif %}
+                        </dd>
+                        
+                        <dt>Datenzugriff für BuB</dt>
+                        <dd>
+                            {{ util.deko_checkbox(checked=data['bub_search']) }}
+                            {% if data['bub_search'] %}aktiv{% endif %}
+                        </dd>
+                    {% endif %}
+                    
+                    <dt>CdE-Wolke</dt>
+                    <dd>
+                        {{ util.deko_checkbox(checked=data['cloud_account']) }}
+                        {% if data['cloud_account'] %}Zugriff aktiv{% endif %}
+                    </dd>
+                </dl>
+            {% endif %}
+        {% endif %}
+
+        <h4 class="heading-underline">Kontakt</h4>
+        <dl class="dl-horizontal">
+            <dt>Email</dt>
+            <dd>
+                {{ data['username']|e }}
+                {% if is_admin %}
+                    {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
+                                 aclass="btn btn-xs btn-warning", icon="pencil") }}
+                {% elif data['id'] == user.persona_id %}
+                    {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten",
+                                 aclass="btn btn-xs btn-warning", icon="pencil") }}
+                {% endif %}
+            </dd>
+            {% if data['telephone'] %}
+                <dt>Telefon</dt>
+                <dd>{{ data['telephone']|e }}</dd>
+            {% endif %}
+            {% if data['mobile'] %}
+                <dt>Mobiltelefon</dt>
+                <dd>{{ data['mobile']|e }}</dd>
+            {% endif %}
+            {% if data['weblink'] %}
+                <dt>WWW</dt>
+                {# TODO maybe add links or so - must be validated before! #}
+                <dd>{{ data['weblink']|e }}</dd>
+            {% endif %}
+        </dl>
+
+        {% if (data['is_cde_realm'] or data['is_event_realm']) %}
+            <h4 class="heading-underline">Adresse</h4>
+            <dl class="dl-horizontal">
+                <dt>Adresse</dt>
+                <dd>
+                    {{ data['address']|e }}{% if data['address'] %}<br />{% endif %}
+                    {{ data['address_supplement']|e }}{% if data['address_supplement'] %}<br />{% endif %}
+                    {{ data['postal_code']|e }} {{ data['location']|e }}{% if data['location'] %}<br />{% endif %}
+                    {{ data['country']|e }}
+                </dd>
+            </dl>
+
+            {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
+                    or data['location2'] or data['country2']) %}
+                <dl class="dl-horizontal">
+                    <dt>Zweitadresse</dt>
+                    <dd>
+                        {{ data['address2']|e }}{% if data['address2'] %}<br />{% endif %}
+                        {{ data['address_supplement2']|e }}{% if data['address_supplement2'] %}<br />{% endif %}
+                        {{ data['postal_code2']|e }} {{ data['location2']|e }}
+                        {% if data['location2'] %}<br />{% endif %}
+                        {{ data['country2']|e }}
+                    </dd>
+                </dl>
+            {% endif %}
+        {% endif %}
+        
+        {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests'] %}
+            <h4 class="heading-underline">Lebenslauf</h4>
+            <dl class="dl-horizontal">
+                {% if data['specialisation'] %}
+                    <dt>Fachgebiet</dt>
+                    <dd>{{ data['specialisation']|rst }}</dd>
+                {% endif %}
+                {% if data['affiliation'] %}
+                    <dt>Schule, Uni, …</dt>
+                    <dd>{{ data['affiliation']|rst }}</dd>
+                {% endif %}
+                {% if data['timeline'] %}
+                    <dt>Jahrgang, Matrikel, …</dt>
+                    <dd>{{ data['timeline']|rst }}</dd>
+                {% endif %}
+                {% if data['interests'] %}
+                    <dt>Interessen</dt>
+                    <dd>{{ data['interests']|rst }}</dd>
+                {% endif %}
+            </dl>
+        {% endif %}
+
+        {% if participation_info %}
+            <h4 class="heading-underline">Veranstaltungen</h4>
+            <ul>
+            {% for info in participation_info|sort(attribute="tempus") %}
+                <li>
+                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": info['pevent_id']}),
+                                 info['event_name']) -}}
+                    {% if info['is_orga'] %}
+                        (Orga)
+                    {% else -%}
+                        {% if info['course_name'] -%}
+                            :
+                            {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": info['pevent_id'],
+                                                                            "pcourse_id": info['pcourse_id']}),
+                                         info['course_name']) }}
+                            {% if info['is_instructor'] %}
+                                (Kursleiter)
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+        
+        {% if data['free_form'] %}
+            <h4 class="heading-underline">Sonstiges …</h4>
+            {{ data['free_form']|rst }}
+        {% endif %}
+    </div>
 {% endblock %}
