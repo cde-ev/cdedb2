@@ -225,9 +225,21 @@ tr.drow-delete>td {
     border: solid 1px #ddd;
     border-style: solid none;
     margin-top: -1px;
+    position: relative;
 }
 .history-row:nth-child(odd) {
     background-color: #eee;
+}
+.history-row .collapse-button {
+    position: absolute;
+    right: 30px;
+    top: -15px;
+}
+.history-row.more {
+    text-align: center;
+    background: #aaa;
+    color: #fff;
+    cursor: pointer;
 }
 
 /* ************** *

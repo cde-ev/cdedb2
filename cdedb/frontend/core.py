@@ -229,14 +229,8 @@ class CoreFrontend(AbstractFrontend):
         constants = {f: tuple(y for x, y in pairwise(sorted(history.keys()))
                               if history[x][f] == history[y][f])
                      for f in fields}
-        for f in fields:
-            for c in constants[f]:
-                del history_log[f][c]
-        formatter = lambda gen, val: (
-            gen, "{}: {}".format(gen, val if val is not None else ""))
-        entries = {f: tuple(formatter(gen, history_log[f][gen])
-                            for gen in sorted(history_log[f])) for f in fields}
-        return self.render(rs, "show_history", {'entries': entries,
+        return self.render(rs, "show_history", {'entries': history_log,
+                                                'constants': constants,
                                                 'current': current})
 
     @access("core_admin")

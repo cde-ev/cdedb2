@@ -1,6 +1,7 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
+{% block scripts %}{{ util.cdedb_script('historycollapse') }}{% endblock %}
 {% block title %}Geschichte von {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
@@ -8,6 +9,35 @@
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), "Geschichte", active=True) }}
 {% endblock %}
+{% macro print_history(f) %}
+    {% for c in entries[f] %}
+        {% if c not in constants[f] or loop.first %}
+            <div class="row history-row">
+                <div class="col-xs-3">Gen {{ c }}</div>
+                <div class="col-xs-9">
+                    {% if caller %}{{ caller(c) }}{% else %}{{ entries[f][c]|e }}{% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+{% macro print_multifield_history(fields=[]) %}
+    {% for c in entries[fields[0]] %}
+        {% set vars = {'has_nonconstant' : False} %}
+        {% for f in fields %}
+            {% if c not in constants[f] %}{% set tmp = vars.update({'has_nonconstant' : True}) %}{% endif %}
+        {% endfor %}
+        {% if vars['has_nonconstant'] or loop.first %}
+            <div class="row history-row">
+                <div class="col-xs-3">Gen {{ c }}</div>
+                <div class="col-xs-9">
+                    {% if caller %}{{ caller(c) }}{% endif %}
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
 {% block content %}
     <div class="float-along">
         {% if not current['is_active'] %}
@@ -21,64 +51,189 @@
             </p>
         {% endif %}
 
-        <h4 class="heading-underline">Geschichte</h4>
-        <dl class="dl-horizontal">
-            {% with TITLES = {
-                "fulltext": "Volltext",
-                "personas.id": "ID",
-                "username": "Email",
-                "is_active": "Aktiv",
-                "db_privileges": "DB-Rechte",
-                "cloud_account": "Cloud Zugriff",
-                "family_name": "Nachname",
-                "birth_name": "Geburtsname",
-                "given_names": "Vorname",
-                "display_name": "Rufname",
-                "title": "Titel",
-                "name_supplement": "Namenszusatz",
-                "gender": "Geschlecht",
-                "birthday": "Geburtstag",
-                "telephone": "Telefon",
-                "mobile": "Mobilfunk",
-                "address": "Anschrift",
-                "address_supplement": "Adresszusatz",
-                "postal_code": "PLZ",
-                "location": "Ort",
-                "country": "Land",
-                "address2": "Anschrift (Zweitadresse)",
-                "address_supplement2": "Adresszusatz (Zweitadresse)",
-                "postal_code2": "PLZ (Zweitadresse)",
-                "location2": "Ort (Zweitadresse)",
-                "country2": "Land (Zweitadresse)",
-                "weblink": "WWW",
-                "specialisation": "Fachgebiet",
-                "affiliation": "Schule, Uni, ...",
-                "timeline": "Jahrgang, Matrikel, ...",
-                "interests": "Interessen",
-                "free_form": "Sonstige Angaben",
-                "pevent_id": "Veranstaltung",
-                "pcourse_id": "Kurs",
-                "balance": "Guthaben",
-                "decided_search": "Sichtbarkeit entschieden",
-                "trial_member": "Probemitgliedschaft",
-                "bub_search": "Sichtbarkeit BuB",
-                "notes": "Notizen",} %}
+        <script type="text/javascript">
+            $(function() {
+                $('.history-container').cdedbHistoryCollapse();
+            });
+        </script>
 
-                {% for field in ('title', 'given_names', 'family_name', 'name_supplement', 'display_name',
-                                 'birth_name', 'birthday', 'gender', 'specialisation', 'affiliation', 'timeline',
-                                 'interests', 'free_form', 'username', 'telephone', 'mobile', 'weblink', 'address',
-                                 'address_supplement', 'postal_code', 'location', 'country', 'address2',
-                                 'address_supplement2', 'postal_code2', 'location', 'country2', 'is_member',
-                                 'trial_member', 'is_active', 'cloud_account', 'is_searchable', 'decided_search',
-                                 'bub_search', 'balance', 'is_cde_realm', 'is_event_realm', 'is_ml_realm',
-                                 'is_assembly_realm', 'is_cde_admin', 'is_event_admin', 'is_ml_admin',
-                                 'is_assembly_admin', 'notes') %}
-                    <dt>{{ TITLES[field]|e }}</dt>
-                    <dd>
-                        {{ util.form_input_select(field, entries[field], defaultvalue=entries[field][-1][0]) }}
-                    </dd>
-                {% endfor %}
-            {% endwith %}
+        <div class="form-horizontal">
+            <h4 class="heading-underline">Person</h4>
+            <div class="form-group">
+                <label class="col-sm-3">Name</label>
+                <div class="col-sm-9 history-container">
+                    {% call(c) print_multifield_history(
+                            ['title','given_names', 'display_name', 'family_name', 'name_supplement']) %}
+                        {{ entries['title'][c]|e }}
+                        {{ util.output_given_displayname(entries['given_names'][c], entries['display_name'][c]) }}
+                        {{ entries['family_name'][c]|e }} {{ entries['name_supplement'][c]|e }}
+                    {% endcall %}
+                </div>
+            </div>
+            
+            {% for name, field in (("Geburtsname", 'birth_name'),
+                                   ("Geburtstag", 'birthday'),
+                                   ("Geschlecht", 'gender')) %}
+                <div class="form-group">
+                    <label class="col-sm-3">{{ name|e }}</label>
+                    <div class="col-sm-9 history-container">
+                        {{ print_history(field) }}
+                    </div>
+                </div>
+            {% endfor %}
+        
+            <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
+            
+            <div class="form-group">
+                <label class="col-sm-3">Aktiv</label>
+                <div class="col-sm-9 history-container">
+                    {{ print_history('is_active') }}
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-sm-3">Bereiche</label>
+                <div class="col-sm-9 history-container">
+                    {% call(c) print_multifield_history(
+                            ['is_cde_realm','is_event_realm', 'is_ml_realm', 'is_assembly_realm']) %}
+                        {% for bit, desc, icon in (("is_cde_realm", "CdE", "education"),
+                                                   ("is_event_realm", "Veranstaltungen", "blackboard"),
+                                                   ("is_ml_realm", "Mailinglisten", "envelope"),
+                                                   ("is_assembly_realm", "Versammlungen", "stats"),)%}
+                            {% if entries[bit][c] %}
+                                {{ util.make_icon(icon) }} {{ desc|e }},
+                            {% endif %}
+                        {% endfor %}
+                    {% endcall %}    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-sm-3">Admin-Privilegien</label>
+                <div class="col-sm-9 history-container">
+                    {% call(c) print_multifield_history(['is_admin','is_core_admin','is_cde_admin','is_event_admin',
+                                                         'is_ml_admin', 'is_assembly_admin']) %}
+                        {% set vars = {'any_privilege': False} %}
+                        {% for bit, desc, icon in (("is_admin", "Super", "wrench"),
+                                                  ("is_core_admin", "Core", "user"),
+                                                  ("is_cde_admin", "CdE", "education"),
+                                                  ("is_event_admin", "Veranstaltungs", "blackboard"),
+                                                  ("is_ml_admin", "Mailinglisten", "envelope"),
+                                                  ("is_assembly_admin", "Versammlungs", "stats"),)%}
+                            {% if entries[bit][c] %}
+                                {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
+                                {# Dirty hack to workaround Jinjas set drawbacks #}
+                                {% set tmp = vars.update({'any_privilege': True}) %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}
+                    {% endcall %}    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-sm-3">CdE-Mitgliedschaft</label>
+                <div class="col-sm-9 history-container">
+                    {% call(c) print_multifield_history(['is_member', 'trial_member']) %}
+                        {% if entries['is_member'][c] %}
+                            {% if entries['trial_member'][c] %}
+                                Probemitgliedschaft
+                            {% else %}
+                                Mitglied
+                            {% endif %}
+                        {% else %}
+                            Kein Mitglied
+                        {% endif %}
+                    {% endcall %}    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-sm-3">Sichtbarkeit</label>
+                <div class="col-sm-9 history-container">
+                    {% call(c) print_multifield_history(['is_searchable', 'decided_search']) %}
+                        {% if entries['decided_search'][c] %}
+                            {% if entries['is_searchable'][c] %}
+                                sichtbar
+                            {% else %}
+                                nicht sichtbar
+                            {% endif %}
+                        {% else %}
+                            (unentschieden)
+                        {% endif %}
+                    {% endcall %}    
+                </div>
+            </div>
+            
+            {% for name, field in (("Guthaben", 'balance'),
+                                   ("Sichtbar für BuB", 'bub_search'),
+                                   ("Wolken-Zugriff", 'cloud_account'),
+                                   ("Notizen", 'notes')) %}
+                <div class="form-group">
+                    <label class="col-sm-3">{{ name|e }}</label>
+                    <div class="col-sm-9 history-container">
+                        {{ print_history(field) }}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <h4 class="heading-underline">Kontakt</h4>
+            
+            {% for name, field in (("E-Mail", 'username'),
+                                   ("Telefon", 'telephone'),
+                                   ("Mobiltelefon", 'mobile'),
+                                   ("WWW", 'weblink')) %}
+                <div class="form-group">
+                    <label class="col-sm-3">{{ name|e }}</label>
+                    <div class="col-sm-9 history-container">
+                        {{ print_history(field) }}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <div class="form-group">
+                <label class="col-sm-3">Adresse</label>
+                <div class="col-sm-9 history-container">
+                    {% call(c) print_multifield_history(
+                            ['address','address_supplement', 'postal_code', 'location', 'country']) %}
+                        {{ entries['address'][c] }}{% if entries['address'][c] %}<br />{% endif %}
+                        {{ entries['address_supplement'][c] }}{% if entries['address_supplement'][c] %}<br />{% endif %}
+                        {{ entries['postal_code'][c] }} {{ entries['location'][c] }}
+                        {% if entries['location'][c] %}<br />{% endif %}
+                        {{ entries['country'][c] }}
+                    {% endcall %}    
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="col-sm-3">Zweitadresse</label>
+                <div class="col-sm-9 history-container">
+                    {% call(c) print_multifield_history(
+                            ['address2','address_supplement2', 'postal_code2', 'location2', 'country2']) %}
+                        {{ entries['address2'][c] }}{% if entries['address2'][c] %}<br />{% endif %}
+                        {{ entries['address_supplement2'][c] }}{% if entries['address_supplement2'][c] %}<br />{% endif %}
+                        {{ entries['postal_code2'][c] }} {{ entries['location2'][c] }}
+                        {% if entries['location2'][c] %}<br />{% endif %}
+                        {{ entries['country2'][c] }}
+                    {% endcall %}    
+                </div>
+            </div>
+        
+            <h4 class="heading-underline">Lebenslauf</h4>
+            
+            {% for name, field in (("Fachgebiet", 'specialisation'),
+                                   ("Schule, Uni, …", 'affiliation'),
+                                   ("Jahrgang, Matrikel, …", 'timeline'),
+                                   ("Interessen", 'interests'),
+                                   ("Sonstiges …", 'free_form')) %}
+                <div class="form-group">
+                    <label class="col-sm-3">{{ name|e }}</label>
+                    <div class="col-sm-9 history-container">
+                        {{ print_history(field) }}
+                    </div>
+                </div>
+            {% endfor %}
+            
         </dl>
     </div>
 {% endblock %}
