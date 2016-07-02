@@ -50,6 +50,26 @@ hr.strong {
     }
 }
 
+/* Better definition lists */
+dd {
+    margin-left: 20px;
+}
+@media (min-width: 500px) {
+    .dl-horizontal dd {
+        margin-left: 180px;
+    }
+    .dl-horizontal dt {
+        float: left;
+        width: 160px;
+        overflow: hidden;
+        clear: left;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+
 /* List group responsive tear down */
 @media (max-width: 991px) {
     .list-group.tear-down {
@@ -198,6 +218,16 @@ tr.drow-new>td {
 }
 tr.drow-delete>td {
     background-color: #f2dede;
+}
+
+/* Profile history */
+.history-row {
+    border: solid 1px #ddd;
+    border-style: solid none;
+    margin-top: -1px;
+}
+.history-row:nth-child(odd) {
+    background-color: #eee;
 }
 
 /* ************** *
