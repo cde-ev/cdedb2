@@ -93,13 +93,16 @@
      * It constructs and initializes the above defined object which does everything neccessary for the fancy js form.
      */
     $.fn.cdedbDynamicRow = function(options) {
-        if ($(this).data('cdedbDynamicRow'))
-            return;
-        
-        var obj = new DynamicRow(this, options);
-        $(this).data('cdedbDynamicRow',obj);
-        
-        
-        obj.init();
+        $(this).each(function() {
+            if ($(this).data('cdedbDynamicRow'))
+                return;
+            
+            var obj = new DynamicRow(this, options);
+            $(this).data('cdedbDynamicRow',obj);
+            
+            
+            obj.init();
+        });
+        return this;
     };
 })(jQuery);

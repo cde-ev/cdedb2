@@ -489,49 +489,52 @@
      * It also attaches a special submit-handler to the query form to shorten query URLs.
      */
     $.fn.cdedbQueryForm = function(options) {
-        if ($(this).data('cdedbQueryForm'))
-            return;
-        
-        var obj = new QueryForm(this,options);
-        $(this).data('cdedbQueryForm',obj);
-        
-        // Custom submit handler
-        // Inspired by http://stackoverflow.com/a/5169572 and http://www.billerickson.net/code/hide-empty-fields-get-form/
-        $(this).submit(function(e) {
-            //Prevent default handler
-            e.preventDefault();
-            //Gather input fields that will be disabled in a jQuery object
-            var $toDisable = $();
-            $(this).find('.query_field').each(function() {
-                var input_op = $(this).find('.filter-op');
-                if (input_op.val() === '') {
-                    $toDisable = $toDisable
-                        .add(input_op)
-                        .add($(this).find('.filter-value'));
-                }
+        $(this).each(function() {
+            if ($(this).data('cdedbQueryForm'))
+                return;
+            
+            var obj = new QueryForm(this,options);
+            $(this).data('cdedbQueryForm',obj);
+            
+            // Custom submit handler
+            // Inspired by http://stackoverflow.com/a/5169572 and http://www.billerickson.net/code/hide-empty-fields-get-form/
+            $(this).submit(function(e) {
+                //Prevent default handler
+                e.preventDefault();
+                //Gather input fields that will be disabled in a jQuery object
+                var $toDisable = $();
+                $(this).find('.query_field').each(function() {
+                    var input_op = $(this).find('.filter-op');
+                    if (input_op.val() === '') {
+                        $toDisable = $toDisable
+                            .add(input_op)
+                            .add($(this).find('.filter-value'));
+                    }
+                });
+                $(this).find('.query_sort').each(function() {
+                    var input_field = $(this).find('.sort-field');
+                    if (input_field.val() === '') {
+                        $toDisable = $toDisable
+                            .add(input_field)
+                            .add($(this).find('.sort-order'));
+                    }
+                });
+                
+                // Disable them
+                $toDisable.attr("disabled", "disabled");
+                
+                // Now submit the form
+                // Important: We're using the DOM object's handler to prevent calling our jQuery handler recursively
+                this.submit();
+                
+                // And reenable fields after some milliseconds (in case user submitted CSV-Form or navigates back)
+                setTimeout(function(){
+                    $toDisable.removeAttr("disabled");
+                },100);
             });
-            $(this).find('.query_sort').each(function() {
-                var input_field = $(this).find('.sort-field');
-                if (input_field.val() === '') {
-                    $toDisable = $toDisable
-                        .add(input_field)
-                        .add($(this).find('.sort-order'));
-                }
-            });
             
-            // Disable them
-            $toDisable.attr("disabled", "disabled");
-            
-            // Now submit the form
-            // Important: We're using the DOM object's handler to prevent calling our jQuery handler recursively
-            this.submit();
-            
-            // And reenable fields after some milliseconds (in case user submitted CSV-Form or navigates back)
-            setTimeout(function(){
-                $toDisable.removeAttr("disabled");
-            },100);
+            obj.init();
         });
-        
-        obj.init();
+        return this;
     };
 })(jQuery);

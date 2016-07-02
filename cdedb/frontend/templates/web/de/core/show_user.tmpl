@@ -139,7 +139,7 @@
                             {% if data[bit] %}
                                 {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
                                 {# Dirty hack to workaround Jinjas set drawbacks #}
-                                {% if vars.update({'any_privilege': True}) %}{% endif %}
+                                {% set tmp = vars.update({'any_privilege': True}) %}
                             {% endif %}
                         {% endfor %}
                         {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}
@@ -236,7 +236,8 @@
             {% endif %}
         </dl>
 
-        {% if (data['is_cde_realm'] or data['is_event_realm']) %}
+        {% if (data['address'] or data['address_supplement'] or data['postal_code']
+                    or data['location'] or data['country']) %}
             <h4 class="heading-underline">Adresse</h4>
             <dl class="dl-horizontal">
                 <dt>Adresse</dt>
@@ -247,20 +248,20 @@
                     {{ data['country']|e }}
                 </dd>
             </dl>
+        {% endif %}
 
-            {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
-                    or data['location2'] or data['country2']) %}
-                <dl class="dl-horizontal">
-                    <dt>Zweitadresse</dt>
-                    <dd>
-                        {{ data['address2']|e }}{% if data['address2'] %}<br />{% endif %}
-                        {{ data['address_supplement2']|e }}{% if data['address_supplement2'] %}<br />{% endif %}
-                        {{ data['postal_code2']|e }} {{ data['location2']|e }}
-                        {% if data['location2'] %}<br />{% endif %}
-                        {{ data['country2']|e }}
-                    </dd>
-                </dl>
-            {% endif %}
+        {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
+                or data['location2'] or data['country2']) %}
+            <dl class="dl-horizontal">
+                <dt>Zweitadresse</dt>
+                <dd>
+                    {{ data['address2']|e }}{% if data['address2'] %}<br />{% endif %}
+                    {{ data['address_supplement2']|e }}{% if data['address_supplement2'] %}<br />{% endif %}
+                    {{ data['postal_code2']|e }} {{ data['location2']|e }}
+                    {% if data['location2'] %}<br />{% endif %}
+                    {{ data['country2']|e }}
+                </dd>
+            </dl>
         {% endif %}
         
         {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests'] %}
