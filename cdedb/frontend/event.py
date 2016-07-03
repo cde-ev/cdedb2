@@ -389,6 +389,7 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 break
             marker += 1
+        rs.values['create_last_index'] = marker
         return ret
 
     @access("event", modi={"POST"})
@@ -479,6 +480,7 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 break
             marker += 1
+        rs.values['create_last_index'] = marker
         return ret
 
     @access("event", modi={"POST"})
@@ -1474,6 +1476,7 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 break
             marker += 1
+        rs.values['create_last_index'] = marker
         return questionnaire
 
     @access("event", modi={"POST"})
