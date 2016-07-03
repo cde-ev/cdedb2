@@ -1473,8 +1473,17 @@ class CdEFrontend(AbstractUserFrontend):
         """List all concluded events."""
         events = self.pasteventproxy.list_past_events(rs)
         stats = self.pasteventproxy.past_event_stats(rs)
+        # Generate reverse sorted list of tuples (id, tempus)
+        stats_sorted = sorted(((id,stats[id]['tempus']) for id in stats),
+                              key=lambda x: x[1], reverse=True)
+        # Generate OrderedDict of years
+        # Using idea from http://stackoverflow.com/a/8983196
+        years = OrderedDict()
+        for id, tempus in stats_sorted:
+            years.setdefault(tempus.year, []).append(id)
         return self.render(rs, "list_past_events", {'events': events,
-                                                    'stats': stats})
+                                                    'stats': stats,
+                                                    'years': years})
 
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):

@@ -7,13 +7,24 @@
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten", active="True") }}
 {% endblock %}
 {% block content %}
-    {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen", aclass="btn btn-success",
-            icon="plus") }}
-    <ul>
-        {% for pevent_id, title in events|dictsort|reverse %}
-            <li>
-                {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), title) }}
-            </li>
-        {% endfor %}
-    </ul>
+    <div class="p">
+        {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen",
+                aclass="btn btn-success btn-sm", icon="plus") }}
+    </div>
+    
+    {% for year, year_events in years.items() %}
+        <h4 class="heading-underline">{{ year }}</h4>
+        <ul>
+            {% for pevent_id in year_events %}
+                <li>
+                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
+                    ({{ stats[pevent_id]['institution_moniker'] }})&emsp;
+                    <small class="text-muted nowrap">
+                        {{ stats[pevent_id]['courses'] }} Kurs{% if stats[pevent_id]['courses'] != 1 %}e{% endif %},
+                        {{ stats[pevent_id]['participants'] }} Teilnehmer
+                    </small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
 {% endblock %}
