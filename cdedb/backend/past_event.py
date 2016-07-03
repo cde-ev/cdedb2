@@ -231,6 +231,16 @@ class PastEventBackend(AbstractBackend):
         for e in data:
             ret[e['id']]['courses'] = e['courses']
         query = glue(
+            "SELECT events.id AS event_id, institutions.id AS institution_id,",
+                "institutions.moniker",
+            "FROM past_event.events",
+            "LEFT JOIN past_event.institutions",
+            "ON institutions.id = events.institution")
+        data = self.query_all(rs, query, tuple())
+        for e in data:
+            ret[e['event_id']]['institution_id'] = e['institution_id']
+            ret[e['event_id']]['institution_moniker'] = e['moniker']
+        query = glue(
             "SELECT subquery.id, COUNT(*) AS participants FROM",
             "(SELECT DISTINCT events.id, participants.persona_id",
             "FROM past_event.events JOIN past_event.participants",
