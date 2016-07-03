@@ -217,11 +217,17 @@ class PastEventBackend(AbstractBackend):
         :rtype: {int: {str: int}}
         :returns: Mapping of event ids to stats.
         """
-        query = "SELECT id, tempus FROM past_event.events"
+        query = glue(
+            "SELECT events.id AS pevent_id, tempus,",
+            "institutions.id AS institution_id, institutions.moniker",
+            "FROM past_event.events LEFT JOIN past_event.institutions",
+            "ON institutions.id = events.institution")
         data = self.query_all(rs, query, tuple())
-        ret =  {e['id']: {'tempus': e['tempus'],
-                          'courses': 0,
-                          'participants': 0}
+        ret =  {e['pevent_id']: {'tempus': e['tempus'],
+                                 'institution_id': e['institution_id'],
+                                 'institution_moniker': e['moniker'],
+                                 'courses': 0,
+                                 'participants': 0,}
                 for e in data}
         query = glue(
             "SELECT events.id, COUNT(*) AS courses FROM past_event.events",
@@ -230,16 +236,6 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         for e in data:
             ret[e['id']]['courses'] = e['courses']
-        query = glue(
-            "SELECT events.id AS event_id, institutions.id AS institution_id,",
-                "institutions.moniker",
-            "FROM past_event.events",
-            "LEFT JOIN past_event.institutions",
-            "ON institutions.id = events.institution")
-        data = self.query_all(rs, query, tuple())
-        for e in data:
-            ret[e['event_id']]['institution_id'] = e['institution_id']
-            ret[e['event_id']]['institution_moniker'] = e['moniker']
         query = glue(
             "SELECT subquery.id, COUNT(*) AS participants FROM",
             "(SELECT DISTINCT events.id, participants.persona_id",
