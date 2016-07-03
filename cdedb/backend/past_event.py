@@ -217,12 +217,19 @@ class PastEventBackend(AbstractBackend):
         :rtype: {int: {str: int}}
         :returns: Mapping of event ids to stats.
         """
+        query = "SELECT id, tempus FROM past_event.events"
+        data = self.query_all(rs, query, tuple())
+        ret =  {e['id']: {'tempus': e['tempus'],
+                          'courses': 0,
+                          'participants': 0}
+                for e in data}
         query = glue(
             "SELECT events.id, COUNT(*) AS courses FROM past_event.events",
             "JOIN past_event.courses ON courses.pevent_id = events.id",
             "GROUP BY events.id")
         data = self.query_all(rs, query, tuple())
-        ret =  {e['id']: {'courses': e['courses']} for e in data}
+        for e in data:
+            ret[e['id']]['courses'] = e['courses']
         query = glue(
             "SELECT subquery.id, COUNT(*) AS participants FROM",
             "(SELECT DISTINCT events.id, participants.persona_id",
@@ -232,10 +239,6 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         for e in data:
             ret[e['id']]['participants'] = e['participants']
-        query = "SELECT id, tempus FROM past_event.events"
-        data = self.query_all(rs, query, tuple())
-        for e in data:
-            ret[e['id']]['tempus'] = e['tempus']
         return ret
 
     @access("cde", "event")
