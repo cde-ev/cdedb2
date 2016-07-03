@@ -207,7 +207,11 @@ class PastEventBackend(AbstractBackend):
 
     @access("persona")
     def past_event_stats(self, rs):
-        """Counts for concluded events.
+        """Additional information about concluded events.
+
+        This is mostly an extended version of the listing function which
+        provides aggregate data without the need to shuttle the complete
+        table to the frontend.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: {int: {str: int}}
@@ -228,6 +232,10 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         for e in data:
             ret[e['id']]['participants'] = e['participants']
+        query = "SELECT id, tempus FROM past_event.events"
+        data = self.query_all(rs, query, tuple())
+        for e in data:
+            ret[e['id']]['tempus'] = e['tempus']
         return ret
 
     @access("cde", "event")
