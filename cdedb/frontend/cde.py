@@ -1419,7 +1419,8 @@ class CdEFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.list_institutions(rs)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        participants = None
+        participants = {}
+        personas = {}
         extra_participants = 0
         ## Make the list of participants visible to other participants.
         ##
@@ -1455,6 +1456,13 @@ class CdEFrontend(AbstractUserFrontend):
                 if not persona['is_searchable'] or not persona['is_member']:
                     del participants[anid]
                     extra_participants += 1
+        for anid in participants:
+            participants[anid]['viewable'] = (self.is_admin(rs)
+                                              or anid == rs.user.persona_id)
+        if "searchable" in rs.user.roles:
+            for anid in participants:
+                if personas[anid]['is_searchable']:
+                    participants[anid]['viewable'] = True
         return self.render(rs, "show_past_event", {
             'courses': courses, 'participants': participants,
             'personas': personas, 'institutions': institutions,
@@ -1467,7 +1475,8 @@ class CdEFrontend(AbstractUserFrontend):
             rs, pcourse_id=pcourse_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        participants = None
+        participants = {}
+        personas = {}
         extra_participants = 0
         ## Make the list of participants visible to other participants.
         ##
@@ -1479,12 +1488,19 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, tuple(anid for anid, _ in participant_infos.keys()))
             participants = OrderedDict(sorted(
                 participants.items(), key=lambda x: name_key(x[1])))
-        if participants and not (is_participant or self.is_admin(rs)):
             personas = self.coreproxy.get_personas(rs, participants.keys())
+        if participants and not (is_participant or self.is_admin(rs)):
             for anid, persona in personas.items():
                 if not persona['is_searchable'] or not persona['is_member']:
                     del participants[anid]
                     extra_participants += 1
+        for anid in participants:
+            participants[anid]['viewable'] = (self.is_admin(rs)
+                                              or anid == rs.user.persona_id)
+        if "searchable" in rs.user.roles:
+            for anid in participants:
+                if personas[anid]['is_searchable']:
+                    participants[anid]['viewable'] = True
         return self.render(rs, "show_past_course", {
             'participants': participants,
             'extra_participants': extra_participants})

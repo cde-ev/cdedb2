@@ -71,7 +71,11 @@
                     {% if pdata['is_orga'] %}
                         <strong>
                     {% endif %}
-                    {{ util.persona_anchor(personas[anid]) }}
+                    {% if pdata['viewable'] %}
+                        {{ util.persona_anchor(personas[anid]) }}
+                    {% else %}
+                        {{ pdata['given_names']|e }} {{ pdata['family_name']|e }}
+                    {% endif %}
                     {% if pdata['is_orga'] %}
                         </strong>
                     {% endif %}

@@ -65,7 +65,11 @@
                     {% if pdata['is_instructor'] %}
                         <strong>
                     {% endif %}
-                    {{ util.persona_anchor(participants[anid]) }}
+                    {% if pdata['viewable'] %}
+                        {{ util.persona_anchor(pdata) }}
+                    {% else %}
+                        {{ pdata['given_names']|e }} {{ pdata['family_name']|e }}
+                    {% endif %}
                     {% if is_admin %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}" style="display: inline;">
