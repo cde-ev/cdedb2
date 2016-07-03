@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_semester' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Semesterverwaltung{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
@@ -19,6 +20,21 @@
     <p>
         Derzeit befinden wir uns in Semester Nummer <span class="label label-default">{{ period['id']|e }}</span>.
     </p>
+    
+    <script type="text/javascript">
+        $(function() {
+            $('#billform').cdedbProtectAction(null, function() {
+                    return $(this).find('[name="testrun"]').prop('checked');
+                });
+            $('#ejectform').cdedbProtectAction();
+            $('#balanceform').cdedbProtectAction();
+            $('#proceedform').cdedbProtectAction();
+            $('#addresscheckform').cdedbProtectAction(null, function() {
+                    return $(this).find('[name="testrun"]').prop('checked');
+                });
+            $('#proceedexpulsform').cdedbProtectAction();
+        });
+    </script>
     
     <div class="row">
             <div class="col-md-6">

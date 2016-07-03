@@ -207,6 +207,11 @@
                         {{ util.deko_checkbox(checked=data['cloud_account']) }}
                         {% if data['cloud_account'] %}Zugriff aktiv{% endif %}
                     </dd>
+                    
+                    <dd>
+                        {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                "Einzugsermächtigung …", icon="euro") }}
+                    </dd>
                 </dl>
             {% endif %}
         {% endif %}

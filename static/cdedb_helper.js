@@ -16,7 +16,6 @@
             .show();
     };
     
-    
     /**
      * jQuery plugin to prevent users from accidentally leave forms without saving.
      */
@@ -54,5 +53,18 @@
                 return message;
             }
         };
+    };
+    
+    /**
+     * jQuery plugin to prevent users from accidentally doing irreversible actions.
+     */
+    $.fn.cdedbProtectAction = function(message, is_safe_callback) {
+        message = message || "Diese Aktion kann nicht rückgängig gemacht werden.";
+        is_safe_callback = is_safe_callback || function(){ return false; };
+        
+        // Submit handler
+        $(this).submit(function() {
+            return ((is_safe_callback.bind(this))() || confirm(message));
+        });
     };
 })(jQuery);

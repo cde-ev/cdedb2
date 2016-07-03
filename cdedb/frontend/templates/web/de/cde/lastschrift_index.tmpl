@@ -1,18 +1,28 @@
 {% set sidenav_active='cde_lastschrift' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Übersicht Einzugsermächtigungen{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), "Einzugsermächtigungen", active="True") }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('.skip-form').cdedbProtectAction();
+            $('.failure-form').cdedbProtectAction();
+            $('.success-form').cdedbProtectAction();
+        });
+    </script>
+    
     <h2>Offene Einzugsermächtigungen</h2>
     <p>
         Im Laufe dieses Semesters – und dabei möglichst früh, aber erst nach der Zahlungsinformation – sind noch
         folgende Lastschriften auszuführen. Dazu eine dtx-Datei generieren und in die Online-Banking-Software
         importieren.
     </p>
+    
     <table class="table table-condensed">
         <thead>
             <tr><th>Mitglied</th><th></th><th></th></tr>
@@ -37,7 +47,7 @@
                     </td>
                     <td>
                         <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id})|e }}"
-                                method="POST" id="skiptransactionform{{ lastschrift_id|e }}">
+                                method="POST" id="skiptransactionform{{ lastschrift_id|e }}" class="skip-form">
                             {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
                             <button type="submit" class="btn btn-xs btn-warning">
                                 <span class="glyphicon glyphicon-pause"></span> Pausieren
@@ -79,7 +89,7 @@
                     <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
                                                {'lastschrift_id': transaction['lastschrift_id'], 
                                                 'transaction_id': transaction_id})|e }}" method="POST"
-                            id="transactionsuccessform{{ transaction_id|e }}">
+                            id="transactionsuccessform{{ transaction_id|e }}" class="success-form">
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                         {{ util.input_hidden(name="status",
                                 value=enums['LastschriftTransactionStati'].success.value) }}
@@ -102,7 +112,7 @@
                     <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
                                                {'lastschrift_id': transaction['lastschrift_id'], 
                                                 'transaction_id': transaction_id})|e }}" method="POST"
-                            id="transactionfailureform{{ transaction_id|e }}">
+                            id="transactionfailureform{{ transaction_id|e }}" class="failure-form">
                         {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                         {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
                         <button type="submit" class="btn btn-xs btn-danger">

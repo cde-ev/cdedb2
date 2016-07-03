@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_lastschrift' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title -%}
    Einzugsermächtigung {{ "{} {}".format(ambience['persona']['given_names'], ambience['persona']['family_name'])|e }}
 {%- endblock %}
@@ -20,34 +21,38 @@
 {% block content %}
     {% if active_permit %}
         {% if is_admin %}
-	    {{ util.href(cdedblink('cde/lastschrift_change_form', {'lastschrift_id': active_permit}), "Bearbeiten",
-		    icon="pencil", aclass="btn btn-warning btn-sm") }}
-            <form action="{{ cdedblink('cde/lastschrift_revoke', {'lastschrift_id': active_permit})|e }}" method="POST"
-		    id="revokeform" style="display: inline;">
-		<button type="submit" class="btn btn-sm btn-danger">
-		    <span class="glyphicon glyphicon-remove"></span> Lastschrift widerrufen
-		</button>
-            </form>
-            {% if active_open %}
-                <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
-			id="generatetransactionform" style="display: inline;">
-                    <div>
-                        {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
-			<button type="submit" class="btn btn-sm btn-default">
-			    <span class="glyphicon glyphicon-download"></span> Einzel-Datei
-			</button>
-                    </div>
-                </form>
-                <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit})|e }}"
-			method="POST" id="skiptransactionform" style="display: inline;">
-                    <div>
-                        {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
-			<button type="submit" class="btn btn-sm btn-warning">
-			    <span class="glyphicon glyphicon-pause"></span> Pausieren
-			</button>
-                    </div>
-                </form>
-            {% endif %}
+	    <script type="text/javascript">
+		$(function() {
+		    $('#revokeform').cdedbProtectAction();
+		    $('#skiptransactionform').cdedbProtectAction();
+		    $('.failure-form').cdedbProtectAction();
+		    $('.success-form').cdedbProtectAction();
+		});
+	    </script>
+	
+	    <div class="p">
+		{{ util.href(cdedblink('cde/lastschrift_change_form', {'lastschrift_id': active_permit}), "Bearbeiten",
+			icon="pencil", aclass="btn btn-warning btn-sm") }}
+		<form action="{{ cdedblink('cde/lastschrift_revoke', {'lastschrift_id': active_permit})|e }}"
+			method="POST" id="revokeform" style="display: inline;">
+		    {{ util.input_submit(value="Lastschrift widerrufen", icon="remove", aclass="btn btn-sm btn-danger")
+			    }}
+		</form>
+		{% if active_open %}
+		    <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
+			    id="generatetransactionform" style="display: inline;">
+			{{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
+			{{ util.input_submit(value="Einzeildatei", icon="download",
+				aclass="btn btn-sm btn-default") }}
+		    </form>
+		    <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': active_permit})|e }}"
+			    method="POST" id="skiptransactionform" style="display: inline;">
+			{{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
+			{{ util.input_submit(value="Pausieren", icon="pause",
+				aclass="btn btn-sm btn-warning") }}
+		    </form>
+		{% endif %}
+	    </div>
         {% endif %}
 
         <h2>Aktive Einzugsermächtigung</h2>
@@ -119,7 +124,8 @@
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
 							   {'lastschrift_id': transaction['lastschrift_id'],
 							    'transaction_id': transaction_id})|e }}" method="POST"
-					id="transactionsuccessform{{ transaction_id|e }}" style="display: inline;">
+					id="transactionsuccessform{{ transaction_id|e }}" style="display: inline;"
+					class="success-form">
 				    {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
 				    {{ util.input_hidden(name="status",
 					    value=enums['LastschriftTransactionStati'].success.value) }}
@@ -138,7 +144,8 @@
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
 							   {'lastschrift_id': transaction['lastschrift_id'],
 							    'transaction_id': transaction_id})|e }}" method="POST"
-					id="transactionfailureform{{ transaction_id|e }}" style="display: inline;">
+					id="transactionfailureform{{ transaction_id|e }}" style="display: inline;"
+					class="failure-form">
 				    {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
 				    {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
 				    <button type="submit" class="btn btn-xs btn-danger">
@@ -151,7 +158,8 @@
                                 <form action="{{ cdedblink('cde/lastschrift_receipt',
                                                            {'lastschrift_id': transaction['lastschrift_id'],
                                                             'transaction_id': transaction_id})|e }}"
-					method="GET" id="receiptform{{ transaction_id|e }}">
+					method="GET" id="receiptform{{ transaction_id|e }}"
+					class="rollback-form">
 				    <button type="submit" class="btn btn-xs btn-default">
 					<span class="glyphicon glyphicon-download"></span> Spendenbescheinigung
 				    </button>
