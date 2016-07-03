@@ -146,8 +146,8 @@ class CoreFrontend(AbstractFrontend):
 
         roles = extract_roles(rs.ambience['persona'])
         may_admin_edit = bool(rs.user.roles & privilege_tier(roles))
-        is_archived = rs.ambience['persona']['is_archived']
-        if is_archived and "core_admin" not in rs.user.roles:
+        if (rs.ambience['persona']['is_archived']
+                and "core_admin" not in rs.user.roles):
             raise PrivilegeError("Only admins may view archived datasets.")
 
         ALL_ACCESS_LEVELS = {
@@ -165,7 +165,9 @@ class CoreFrontend(AbstractFrontend):
             if "{}_admin" in rs.user.roles:
                 access_levels.add(realm)
         ## Members see other members (modulo quota)
-        if "cde" in rs.user.roles and quote_me:
+        if "searchable" in rs.user.roles and quote_me:
+            if not rs.ambience['persona']['is_searchable']:
+                raise PrivilegeError("Access to non-searchable member data.")
             access_levels.add("cde")
         ## Orgas see their participants
         if "event" not in access_levels:
@@ -213,7 +215,7 @@ class CoreFrontend(AbstractFrontend):
 
         return self.render(rs, "show_user", {
             'data': data, 'participation_info': participation_info,
-            'is_archived': is_archived, 'may_admin_edit': may_admin_edit})
+            'may_admin_edit': may_admin_edit})
 
     @access("core_admin")
     def show_history(self, rs, persona_id):
