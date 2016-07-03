@@ -704,26 +704,27 @@ class CdEFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None)
-        lastschrift_data = self.cdeproxy.get_lastschrift(rs,
-                                                         lastschrift_ids.keys())
-        transaction_ids = self.cdeproxy.list_lastschrift_transactions(
-            rs, lastschrift_ids=lastschrift_ids.keys())
-        transaction_data = self.cdeproxy.get_lastschrift_transactions(
-            rs, transaction_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrift(rs, lastschrift_ids.keys())
+        transactions = {}
+        if lastschrifts:
+            transaction_ids = self.cdeproxy.list_lastschrift_transactions(
+                rs, lastschrift_ids=lastschrift_ids.keys())
+            transactions = self.cdeproxy.get_lastschrift_transactions(
+                rs, transaction_ids.keys())
         persona_ids = {persona_id}.union({
-            x['submitted_by'] for x in lastschrift_data.values()}).union({
-                x['submitted_by'] for x in transaction_data.values()})
-        persona_data = self.coreproxy.get_personas(rs, persona_ids)
+            x['submitted_by'] for x in lastschrifts.values()}).union({
+                x['submitted_by'] for x in transactions.values()})
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         active_permit = None
-        for lastschrift in lastschrift_data.values():
+        for lastschrift in lastschrifts.values():
             if not lastschrift['revoked_at']:
                 active_permit = lastschrift['id']
         active_open = bool(
             active_permit and self.determine_open_permits(rs, (active_permit,)))
         return self.render(rs, "lastschrift_show", {
-            'lastschrift_data': lastschrift_data,
+            'lastschrifts': lastschrifts,
             'active_permit': active_permit, 'active_open': active_open,
-            'persona_data': persona_data, 'transaction_data': transaction_data,
+            'personas': personas, 'transactions': transactions,
             })
 
     @access("cde_admin")
