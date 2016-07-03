@@ -11,6 +11,50 @@
             addButton : $(),
         }, options || {});
 
+
+        /**
+         * Private to generate delete button with appropriate onclick handler and append to a given row.
+         * Also corrects the visual delete state of the row.
+         * 
+         * @param $row jQuery object of row.
+         * @param newrow boolean, indicating if this is a new row. In this case the delete button will detach the row
+         *               instead of toggling the indicator.
+         */
+        var addDeleteButton = function($row, newrow) {
+            var $deleteButton = $('<button />', {'type': 'button',
+                                                 'title': 'Löschen',
+                                                 'class': 'btn btn-danger btn-sm' })
+                    .append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}))
+                    
+            if (newrow) {
+                $deleteButton.click(function() {
+                    $row.detach();
+                    obj.refreshInputNames();
+                });
+            } else {
+                var $indicator = $row.find('.drow-indicator');
+                if ($indicator.prop('disabled'))
+                    return;
+                    
+                if ($indicator.prop("checked")) {
+                    $row.addClass('drow-delete');
+                    $deleteButton.removeClass('active');
+                }
+                    
+                $deleteButton.click(function() {
+                    var check = $indicator.prop("checked");
+                    $indicator.prop("checked", !check);
+                    if (check) {
+                        $row.removeClass('drow-delete');
+                        $(this).removeClass('active');
+                    } else {
+                        $row.addClass('drow-delete');
+                        $(this).addClass('active');
+                    }
+                });
+            }
+            $row.find('.drow-buttonspace').after($deleteButton);
+        }
         
         /**
          * Init function.
@@ -30,21 +74,11 @@
             
             $element.find('.drow-row').each(function() {
                 var $row = $(this);
-                var $indicator = $row.find('.drow-indicator');
-                if (!$indicator.prop('disabled')) {
-                    var $deleteButton = $('<button />', {'type': 'button',
-                                                         'title': 'Löschen',
-                                                         'class': 'btn btn-danger btn-sm' })
-                            .append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}))
-                            .click(function() {
-                                var check = $row.hasClass('drow-delete');
-                                $row.find('.drow-indicator').prop("checked", !check);
-                                $row.toggleClass('drow-delete');
-                                $(this).toggleClass('active');
-                            });
-                    
-                    $(this).find('.drow-buttonspace').after($deleteButton);
-                }
+                addDeleteButton($row, false);
+            });
+            $element.find('.drow-new').each(function() {
+                var $row = $(this);
+                addDeleteButton($row, true);
             });
         };
         
@@ -58,16 +92,7 @@
                 .removeClass('drow-prototype');
             $row.find('.drow-indicator').prop("checked", true);
             
-            var $deleteButton = $('<button />', {'type': 'button',
-                                                 'title': 'Löschen',
-                                                 'class': 'btn btn-danger btn-sm' })
-                    .append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}))
-                    .click(function() {
-                        $row.detach();
-                        obj.refreshInputNames();
-                    });
-            
-            $row.find('.drow-buttonspace').after($deleteButton);
+            addDeleteButton($row, true);            
             $row.show();
             $prototype.before($row);
             $row.find('.drow-input').first().focus();

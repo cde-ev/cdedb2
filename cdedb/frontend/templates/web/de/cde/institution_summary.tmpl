@@ -41,8 +41,7 @@
                     </tr>
                 {% endfor %}
                 {# Now add rows that were added by user in previous Submit but failed validation #}
-                {# TODO #}
-                {% for i in range(1, 1) %}
+                {% for i in range(1, values.get('create_last_index', 0) + 1) %}
                     <tr class="drow-new">
                         <td>
                             {{ util.input_text('title_-{}'.format(i), aclass='drow-input form-control',
@@ -56,8 +55,8 @@
                         </td>
                         <td>
                             <span class="drow-buttonspace">
-                                {{ util.input_checkbox("create_{}".format(i), aclass="drow-indicator",
-                                        attributes='data-basename="create_-"', defaultvalue=True) }}
+                                {{ util.input_checkbox("create_-{}".format(i), aclass="drow-indicator",
+                                        attributes='data-basename="create_-"') }}
                                 Hinzufügen
                             </span>
                         </td>
@@ -65,20 +64,17 @@
                 {% endfor %}
                 <tr class="drow-prototype">
                     <td>
-                        {# TODO #}
-                        {{ util.input_text('title_-{}'.format(1), aclass='drow-input form-control',
-                                attributes='data-basename="title_-"') }}
+                        {{ util.input_text('title_-{}'.format(values.get('create_last_index', 0) + 1),
+                                aclass='drow-input form-control', attributes='data-basename="title_-"') }}
                     </td>
                     <td>
-                        {# TODO #}
-                        {{ util.input_text('moniker_-{}'.format(1), aclass='drow-input form-control',
-                                attributes='data-basename="moniker_-"') }}
+                        {{ util.input_text('moniker_-{}'.format(values.get('create_last_index', 0) + 1),
+                                aclass='drow-input form-control', attributes='data-basename="moniker_-"') }}
                     </td>
                     <td>
                         <span class="drow-buttonspace">
-                            {# TODO #}
-                            {{ util.input_checkbox("create_{}".format(1), aclass="drow-indicator",
-                                    attributes='data-basename="create_-"') }}
+                            {{ util.input_checkbox("create_-{}".format(values.get('create_last_index', 0) + 1),
+                                    aclass="drow-indicator", attributes='data-basename="create_-"') }}
                             Hinzufügen
                         </span>
                     </td>

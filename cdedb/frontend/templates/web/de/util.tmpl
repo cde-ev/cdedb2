@@ -160,14 +160,13 @@
             label, anid, small, info, displayerrors, horizontal) }}
 {% endmacro %}
 
-
+{# list as default value is not supported yet #}
 {% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
         radio=False, attributes='') %}
     {% if label %}
         <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
     {% endif %}
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name|e }}" value="{{ value|e }}"
-            {# TODO checkboxes don't support defaultvalues yet #}
             {% if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue)  %}
                 checked="checked"
             {% endif %}
