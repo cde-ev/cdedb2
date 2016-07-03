@@ -205,6 +205,31 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
+    @access("persona")
+    def past_event_stats(self, rs):
+        """Counts for concluded events.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {int: {str: int}}
+        :returns: Mapping of event ids to stats.
+        """
+        query = glue(
+            "SELECT events.id, COUNT(*) AS courses FROM past_event.events",
+            "JOIN past_event.courses ON courses.pevent_id = events.id",
+            "GROUP BY events.id")
+        data = self.query_all(rs, query, tuple())
+        ret =  {e['id']: {'courses': e['courses']} for e in data}
+        query = glue(
+            "SELECT subquery.id, COUNT(*) AS participants FROM",
+            "(SELECT DISTINCT events.id, participants.persona_id",
+            "FROM past_event.events JOIN past_event.participants",
+            "ON participants.pevent_id = events.id) AS subquery",
+            "GROUP BY subquery.id")
+        data = self.query_all(rs, query, tuple())
+        for e in data:
+            ret[e['id']]['participants'] = e['participants']
+        return ret
+
     @access("cde", "event")
     @singularize("get_past_event")
     def get_past_events(self, rs, ids):

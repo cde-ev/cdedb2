@@ -1471,7 +1471,9 @@ class CdEFrontend(AbstractUserFrontend):
     def list_past_events(self, rs):
         """List all concluded events."""
         events = self.pasteventproxy.list_past_events(rs)
-        return self.render(rs, "list_past_events", {'events': events})
+        stats = self.pasteventproxy.past_event_stats(rs)
+        return self.render(rs, "list_past_events", {'events': events,
+                                                    'stats': stats})
 
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):
