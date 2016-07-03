@@ -1,4 +1,4 @@
+// Onload handlers
 $(function() {
-    //Initialize Bootstrap Tooltips
-    $('[title]').tooltip();
+    
 });

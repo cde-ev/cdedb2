@@ -3,6 +3,11 @@
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro admin_change_user(realm) %}
+    <script type="text/javascript">
+        $(function() {
+            $('#changedataform').cdedbProtectChanges();
+        });
+    </script>
     <form action="{{ cdedblink('{}/admin_change_user'.format(realm))|e }}" method="POST" id="changedataform"
         class="form-horizontal">
         {{ util.input_hidden(name="generation") }}

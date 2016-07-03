@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Kurs hinzufügen ({{ ambience['pevent']['title'] }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
@@ -11,6 +12,11 @@
         "Kurs hinzufügen", active=True) }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#createcourseform').cdedbProtectChanges();
+        });
+    </script>
     <form action="{{ cdedblink('cde/create_past_course')|e }}" method="POST" id="createcourseform"
             class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}

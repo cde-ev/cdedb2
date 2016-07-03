@@ -261,7 +261,7 @@
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
             {{ input_submit(value, name, anid, aclass, icon, readonly) }}
             {% if cancellink %}
-                &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default") }}
+                &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default cancel") }}
             {% endif %}
             {% if info %}<div class="control-label">{{ info_hover(info) }}</div>{% endif %}
         </div>

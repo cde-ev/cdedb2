@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}) bearbeiten{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
@@ -13,6 +14,11 @@
         "Bearbeiten", active=True) }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#changecourseform').cdedbProtectChanges();
+        });
+    </script>
     <form action="{{ cdedblink('cde/change_past_course')|e }}" method="POST" id="changecourseform"
             class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}

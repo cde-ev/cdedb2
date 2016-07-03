@@ -1,5 +1,7 @@
+{% set sidenav_active='cde_lastschrift' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Einzugsermächtigung bearbeiten{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
@@ -11,6 +13,11 @@
 	active=True) }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#changelastschriftform').cdedbProtectChanges();
+        });
+    </script>
     <form action="{{ cdedblink('cde/lastschrift_change')|e }}" method="POST" id="changelastschriftform"
 	    class="form-horizontal">
 	{{ util.form_input_static(label="Mitglied",

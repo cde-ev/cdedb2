@@ -1,6 +1,7 @@
 {% set sidenav_active='core_mydata'%}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Eigene Daten bearbeiten{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
@@ -9,6 +10,11 @@
     {{ util.breadcrumb_link(cdedblink("core/change_user_form"), "Bearbeiten", active=True) }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#changedataform').cdedbProtectChanges();
+        });
+    </script>
     <form action="{{ cdedblink('core/change_user')|e }}" method="POST" id="changedataform" class="form-horizontal">
         {{ util.input_hidden(name="generation") }}
         
