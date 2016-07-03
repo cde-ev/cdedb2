@@ -5,7 +5,7 @@
 {% block title %}Kurs hinzufügen ({{ ambience['pevent']['title'] }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen verwalten") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
         ambience['pevent']['title']|e, icon="calendar") }}
 {{ util.breadcrumb_link(cdedblink("cde/create_past_course", {"pevent_id": ambience['pevent']['id']}),
