@@ -46,9 +46,9 @@
             {% endif %}
         </div>
     {% endif %}
-    <div class="pull-right-responsive">
-        {% if data['is_cde_realm'] %}
-            <p>
+    {% if data['is_cde_realm'] %}
+        <div class="pull-right-responsive">
+            <p class="text-right">
                 {% if data['foto'] %}
                     <img src="{{ cdedblink('cde/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
                       class="profilepic img-thumbnail">
@@ -62,8 +62,8 @@
                             icon="pencil") }}
                 {% endif %}
             </p>
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
 
     <div class="float-along">
         {% if not data['is_active'] %}
@@ -113,15 +113,18 @@
             <dl class="dl-horizontal">
                 <dt>Bereiche</dt>
                 <dd>
-                        {% for bit, desc, icon in (("is_cde_realm", "CdE", "education"),
-                                                   ("is_event_realm", "Veranstaltungen", "blackboard"),
-                                                   ("is_ml_realm", "Mailinglisten", "envelope"),
-                                                   ("is_assembly_realm", "Versammlungen", "stats"),)%}
-                            {% if data[bit] %}
-                                {{ util.make_icon(icon) }} {{ desc|e }},
-                            {% endif %}
-                        {% endfor %}
-                    {% if 'core_admin' in user.roles%}
+                    {% set vars = {'any_realm_not': False} %}
+                    {% for bit, desc, icon in (("is_cde_realm", "CdE", "education"),
+                                               ("is_event_realm", "Veranstaltungen", "blackboard"),
+                                               ("is_ml_realm", "Mailinglisten", "envelope"),
+                                               ("is_assembly_realm", "Versammlungen", "stats"),)%}
+                        {% if data[bit] %}
+                            {{ util.make_icon(icon) }} {{ desc|e }},
+                        {% else %}
+                            {% set tmp = vars.update({'any_realm_not': True}) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if 'core_admin' in user.roles and vars['any_realm_not'] %}
                         {{ util.href(cdedblink("core/promote_user_form"), "Bereich hinzufügen", icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
@@ -129,20 +132,20 @@
                 
                 <dt>Admin-Privilegien</dt>
                 <dd>
-                        {% set vars = {'any_privilege': False} %}
-                        {% for bit, desc, icon in (("is_admin", "Super", "wrench"),
-                                                  ("is_core_admin", "Core", "user"),
-                                                  ("is_cde_admin", "CdE", "education"),
-                                                  ("is_event_admin", "Veranstaltungs", "blackboard"),
-                                                  ("is_ml_admin", "Mailinglisten", "envelope"),
-                                                  ("is_assembly_admin", "Versammlungs", "stats"),)%}
-                            {% if data[bit] %}
-                                {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
-                                {# Dirty hack to workaround Jinjas set drawbacks #}
-                                {% set tmp = vars.update({'any_privilege': True}) %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}
+                    {% set vars = {'any_privilege': False} %}
+                    {% for bit, desc, icon in (("is_admin", "Super", "wrench"),
+                                              ("is_core_admin", "Core", "user"),
+                                              ("is_cde_admin", "CdE", "education"),
+                                              ("is_event_admin", "Veranstaltungs", "blackboard"),
+                                              ("is_ml_admin", "Mailinglisten", "envelope"),
+                                              ("is_assembly_admin", "Versammlungs", "stats"),)%}
+                        {% if data[bit] %}
+                            {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
+                            {# Dirty hack to workaround Jinjas set drawbacks #}
+                            {% set tmp = vars.update({'any_privilege': True}) %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}
                     {% if 'admin' in user.roles %}
                         {{ util.href(cdedblink("core/change_privileges_form"), "bearbeiten", icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
