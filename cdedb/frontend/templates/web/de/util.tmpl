@@ -29,8 +29,8 @@
     </noscript>
 {% endmacro %}
 
-{% macro make_icon(icon, aclass='') %}
-    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}"></span>
+{% macro make_icon(icon, aclass='', title='') %}
+    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}" {% if title %}title="{{ title|e }}"{% endif %}></span>
 {% endmacro %}
 
 {% macro deko_checkbox(checked, anid='') %}

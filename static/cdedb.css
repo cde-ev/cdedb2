@@ -91,6 +91,15 @@ p.nosp {
 h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
     margin-top: 0;
 }
+label.nosp {
+    margin-bottom: 0;
+}
+.strip-space>.radio:first-child {
+    margin-top: 0;
+}
+.strip-space>.radio:last-child {
+    margin-bottom: 0;
+}
 
 /* Main navbar */
 .navbar {
@@ -253,6 +262,13 @@ tr.drow-delete>td {
     .diff-view label.col-sm-3 {
         margin-top: 5px;
     }
+}
+
+/* Batch import */
+.batch-line-body {
+    padding-left: 20px;
+    margin-bottom: 20px;
+    border-left: solid 4px #ddd;
 }
 
 /* ************** *

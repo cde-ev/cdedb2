@@ -20,11 +20,10 @@
                 {{ util.form_input_checkbox("sendmail", label="Willkommensmail verschicken", horizontal=False) }}
             </div>
         </div>
-        {{ util.form_input_textarea(name="accounts", label="Daten",
-                info='Hier einen Datensatz pro Zeile eingeben.', horizontal=False, rows=8) }}
+        {{ util.form_input_textarea(name="accounts", label="Daten", horizontal=False, rows=8) }}
                                
         <p class="help-block">
-            <span class="glyphicon glyphicon-info-sign"></span> Das Format ist
+            <span class="glyphicon glyphicon-info-sign"></span> Bitte einen Datensatz pro Zeile einfügen. Das Format ist
         </p>
         <pre>&quot;Akademie&quot;;&quot;Kurs&quot;;&quot;Nachname&quot;;&quot;Vorname&quot;;&quot;Titel&quot;;<!--
 -->&quot;Namenszusatz&quot;;&quot;Geburtsname&quot;;&quot;Geschlecht&quot;;&quot;Adresszusatz&quot;;<!--
@@ -33,54 +32,73 @@
         <p class="help-block">
             Bei Geschlecht 0 für weiblich, 1 für männlich und 2 für alles andere eintragen.
         </p>
-        {% for dataset in data %}
-            <div>
+        
+        {% if data %}
+            <h2>Validierungsergebnisse</h2>
+            {% for dataset in data %}
                 {{ util.input_hidden("hash{}".format(dataset['lineno'] - 1)) }}
-                Zeile {{ dataset['lineno']|e }} für Eintrag {{ dataset['raw']['given_names']|e }}
-                {{ dataset['raw']['family_name']|e }}, {{ dataset['raw']['username']|e }},
-                geb. am {{ dataset['raw']['birthday']|e }}.<br>
-                {% if dataset['problems'] or dataset['warnings'] %}
-                    Die folgenden Probleme sind in dieser Zeile aufgetreten.
-                    <ul>
-                        {% for key, problem in dataset['problems'] %}
-                            <li>Problem{% if key %} bei {{ key|e }}{% endif %}: {{ i18n(problem|string)|e }}</li>
+                <strong>
+                    Zeile {{ dataset['lineno']|e }}: {{ dataset['raw']['given_names']|e }}
+                    {{ dataset['raw']['family_name']|e }} &lt;{{ dataset['raw']['username']|e }}&gt;
+                    (geb. am {{ dataset['raw']['birthday']|e }})
+                </strong>
+                <div class="batch-line-body">
+                    {% if dataset['problems'] or dataset['warnings'] %}
+                        <ul class="list-unstyled"">
+                            {% for key, problem in dataset['problems'] %}
+                                <li class="text-danger">
+                                    {{ util.make_icon('exclamation-sign', title="Fehler") }}
+                                    {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                    {{ i18n(problem|string)|e }}
+                                </li>
+                            {% endfor %}
+                            {% for key, warning in dataset['warnings'] %}
+                                <li class="text-warning">
+                                    {{ util.make_icon('warning-sign', title="Warnung") }}
+                                    {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                    {{ i18n(warning|string)|e }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    
+                    <label>Aktion</label>
+                    <div class="p">
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for resolution in enums['LineResolutions'] %}
+                            {{ myentries.append((resolution.value, i18n(resolution|string)))|e }}
                         {% endfor %}
-                        {% for key, warning in dataset['warnings'] %}
-                            <li>Warnung{% if key %} bei {{ key|e }}{% endif %}: {{ i18n(warning|string)|e }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for resolution in enums['LineResolutions'] %}
-                    {{ myentries.append((resolution.value, i18n(resolution|string)))|e }}
-                {% endfor %}
-                {{ util.form_input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, label="Aktion",
-                        radio=True) }}
-                {% if dataset['doppelgangers'] %}
-                    Die folgenden Accounts sind diesem ähnlich. Wähle einen
-                    aus, um ihn mit der passenden Aktion zu modifizieren.
-                    {# jinja does not support list comprehension ... #}
-                    {% set myentries = [('', '--')] %}
-                    {% for key, value in dataset['doppelgangers']|dictsort %}
-                        {% with description = "{} {} ({}), {}, geb. am {}, ID {} ({})".format(
-                                value['given_names'], value['family_name'], value['birth_name'] or value['family_name'],
-                                value['username'], value['birthday'], key|cdedbid,
-                                'Mitglied' if value['is_member'] else 'kein Mitglied') %}
-                            {{ myentries.append((key, description))|e }}
-                        {% endwith %}
-                    {% endfor %}
-                    {{ util.form_input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1), myentries,
-                            label="Mögliche Duplikate", info='Accounts die dem gegebenen ähnlich sehen', radio=True) }}
-                {% endif %}
-            </div>
-        {% endfor %}
-        <div>
-            {% if values['finalized'] %}
-                {{ util.form_input_submit(value="Anlegen", horizontal=False) }}
-            {% else %}
-                {{ util.form_input_submit(value="Validieren", horizontal=False) }}
-            {% endif %}
-        </div>
+                        {{ util.input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, radio=True,
+                                inline=True) }}
+                    </div>
+                    
+                    {% if dataset['doppelgangers'] %}
+                        <label>Zusammenführen mit Account</label>
+                        <div class="p strip-space">
+                            {# jinja does not support list comprehension ... #}
+                            {% set myentries = [('', '–')] %}
+                            {% for key, value in dataset['doppelgangers']|dictsort %}
+                                {% with description = "{} {} ({}) <{}> (geb. am {}), {}{}".format(
+                                        value['given_names'], value['family_name'],
+                                        value['birth_name'] or value['family_name'],
+                                        value['username'], value['birthday'], key|cdedbid,
+                                        '' if value['is_member'] else ' (kein Mitglied)') %}
+                                    {{ myentries.append((key, description))|e }}
+                                {% endwith %}
+                            {% endfor %}
+                            {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1), myentries,
+                                    radio=True) }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if values['finalized'] %}
+            {{ util.form_input_submit(value="Anlegen", horizontal=False) }}
+        {% else %}
+            {{ util.form_input_submit(value="Validieren", horizontal=False) }}
+        {% endif %}
     </form>
 {% endblock %}
