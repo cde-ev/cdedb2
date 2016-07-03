@@ -399,6 +399,7 @@ class CoreFrontend(AbstractFrontend):
                 del data[attr]
         data = check(rs, "persona", data)
         if rs.errors:
+            rs.notify("error", "Failed validation.")
             return self.admin_change_user_form(rs, persona_id)
         code = self.coreproxy.change_persona(rs, data, generation=generation,
                                              change_note=change_note)
