@@ -1419,10 +1419,14 @@ class CdEFrontend(AbstractUserFrontend):
         institutions = self.pasteventproxy.list_institutions(rs)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        if not (is_participant or self.is_admin(rs)):
-            ## make list of participants only visible to other participants
-            participant_infos = participants = None
-        else:
+        participants = None
+        extra_participants = 0
+        ## Make the list of participants visible to other participants.
+        ##
+        ## If the user is a search-member she may view the participants, which
+        ## are search-members.
+        if (is_participant or ("searchable" in rs.user.roles)
+                or self.is_admin(rs)):
             ## fix up participants, so we only see each persona once
             persona_ids = {persona_id
                            for persona_id, _ in participant_infos.keys()}
@@ -1446,9 +1450,15 @@ class CdEFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_personas(rs, participants.keys())
             participants = OrderedDict(sorted(
                 participants.items(), key=lambda x: name_key(personas[x[0]])))
+        if participants and not (is_participant or self.is_admin(rs)):
+            for anid, persona in personas.items():
+                if not persona['is_searchable'] or not persona['is_member']:
+                    del participants[anid]
+                    extra_participants += 1
         return self.render(rs, "show_past_event", {
             'courses': courses, 'participants': participants,
-            'personas': personas, 'institutions': institutions})
+            'personas': personas, 'institutions': institutions,
+            'extra_participants': extra_participants})
 
     @access("cde")
     def show_past_course(self, rs, pevent_id, pcourse_id):
@@ -1457,33 +1467,43 @@ class CdEFrontend(AbstractUserFrontend):
             rs, pcourse_id=pcourse_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
-        if not (is_participant or self.is_admin(rs)):
-            ## make list of participants only visible to other participants
-            participant_infos = participants = None
-        else:
+        participants = None
+        extra_participants = 0
+        ## Make the list of participants visible to other participants.
+        ##
+        ## If the user is a search-member she may view the participants, which
+        ## are search-members.
+        if (is_participant or ("searchable" in rs.user.roles)
+                or self.is_admin(rs)):
             participants = self.coreproxy.get_personas(
                 rs, tuple(anid for anid, _ in participant_infos.keys()))
             participants = OrderedDict(sorted(
                 participants.items(), key=lambda x: name_key(x[1])))
+        if participants and not (is_participant or self.is_admin(rs)):
+            personas = self.coreproxy.get_personas(rs, participants.keys())
+            for anid, persona in personas.items():
+                if not persona['is_searchable'] or not persona['is_member']:
+                    del participants[anid]
+                    extra_participants += 1
         return self.render(rs, "show_past_course", {
-            'participants': participants})
+            'participants': participants,
+            'extra_participants': extra_participants})
 
-    @access("cde_admin")
+    @access("cde")
     def list_past_events(self, rs):
         """List all concluded events."""
         events = self.pasteventproxy.list_past_events(rs)
         stats = self.pasteventproxy.past_event_stats(rs)
-        # Generate reverse sorted list of tuples (id, tempus)
-        stats_sorted = sorted(((id,stats[id]['tempus']) for id in stats),
-                              key=lambda x: x[1], reverse=True)
-        # Generate OrderedDict of years
+        # Generate (reverse) chronologically sorted list of past event ids
+        stats_sorter = sorted(
+            stats.keys(), key=lambda x: stats[x]['tempus'], reverse=True)
+        # Bunch past events by years
         # Using idea from http://stackoverflow.com/a/8983196
-        years = OrderedDict()
-        for id, tempus in stats_sorted:
-            years.setdefault(tempus.year, []).append(id)
-        return self.render(rs, "list_past_events", {'events': events,
-                                                    'stats': stats,
-                                                    'years': years})
+        years = {}
+        for anid in stats_sorter:
+            years.setdefault(stats[anid]['tempus'].year, []).append(anid)
+        return self.render(rs, "list_past_events", {
+            'events': events, 'stats': stats, 'years': years})
 
     @access("cde_admin")
     def change_past_event_form(self, rs, pevent_id):

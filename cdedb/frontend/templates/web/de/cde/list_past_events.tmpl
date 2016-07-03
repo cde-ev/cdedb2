@@ -12,7 +12,7 @@
                 aclass="btn btn-success btn-sm", icon="plus") }}
     </div>
     
-    {% for year, year_events in years.items() %}
+    {% for year, year_events in years|dictsort|reverse %}
         <h4 class="heading-underline">{{ year }}</h4>
         <ul>
             {% for pevent_id in year_events %}

@@ -205,7 +205,7 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
-    @access("persona")
+    @access("cde")
     def past_event_stats(self, rs):
         """Additional information about concluded events.
 
