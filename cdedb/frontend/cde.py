@@ -1381,7 +1381,7 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 break
             marker += 1
-        rs.values['create_last_index'] = marker
+        rs.values['create_last_index'] = marker - 1
         return ret
 
     @access("cde_admin", modi={"POST"})
