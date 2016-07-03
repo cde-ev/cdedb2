@@ -14,7 +14,7 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_data_extractor)
 from cdedb.common import (
-    ProxyShim, glue, pairwise, extract_roles, privilege_tier)
+    ProxyShim, glue, pairwise, extract_roles, privilege_tier, unwrap)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -247,9 +247,11 @@ class CoreFrontend(AbstractFrontend):
     @access("persona")
     def change_user_form(self, rs):
         """Render form."""
-        data = self.coreproxy.get_total_persona(rs, rs.user.persona_id)
-        data['generation'] = self.coreproxy.changelog_get_generation(
+        generation = self.coreproxy.changelog_get_generation(
             rs, rs.user.persona_id)
+        data = unwrap(self.coreproxy.changelog_get_history(
+            rs, rs.user.persona_id, (generation,)))
+        del data['change_note']
         merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username': data['username']})
 
@@ -357,9 +359,11 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
-        data = self.coreproxy.get_total_persona(rs, persona_id)
-        data['generation'] = self.coreproxy.changelog_get_generation(
+        generation = self.coreproxy.changelog_get_generation(
             rs, persona_id)
+        data = unwrap(self.coreproxy.changelog_get_history(
+            rs, persona_id, (generation,)))
+        del data['change_note']
         merge_dicts(rs.values, data)
         return self.render(rs, "admin_change_user")
 

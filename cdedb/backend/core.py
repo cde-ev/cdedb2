@@ -275,25 +275,28 @@ class CoreBackend(AbstractBackend):
                 rs, data['id'], generations=(current_generation,))
             current_data = history[current_generation]
 
-            ## stash pending change if we may not wait
+            ## handle pending changes
             diff = None
-            if (current_data['change_status']
-                    == const.MemberChangeStati.pending and not may_wait):
-                old_data = unwrap(self.get_total_personas(
+            if current_data['change_status'] == const.MemberChangeStati.pending:
+                committed_data = unwrap(self.get_total_personas(
                     rs, (data['id'],)))
-                diff = {key: current_data[key] for key in old_data
-                        if old_data[key] != current_data[key]}
-                current_data = old_data
-                query = glue("UPDATE core.changelog SET change_status = %s",
-                             "WHERE persona_id = %s AND change_status = %s")
-                self.query_exec(rs, query, (
-                    const.MemberChangeStati.displaced, data['id'],
-                    const.MemberChangeStati.pending))
+                ## stash pending change if we may not wait
+                if not may_wait:
+                    diff = {key: current_data[key] for key in committed_data
+                            if committed_data[key] != current_data[key]}
+                    current_data = committed_data
+                    query = glue("UPDATE core.changelog SET change_status = %s",
+                                 "WHERE persona_id = %s AND change_status = %s")
+                    self.query_exec(rs, query, (
+                        const.MemberChangeStati.displaced, data['id'],
+                        const.MemberChangeStati.pending))
+            else:
+                committed_data = current_data
 
             ## determine if something changed
-            changed_fields = {key for key, value in data.items()
-                              if value != current_data[key]}
-            if not changed_fields:
+            newly_changed_fields = {key for key, value in data.items()
+                                    if value != current_data[key]}
+            if not newly_changed_fields:
                 if diff:
                     ## reenable old change if we were going to displace it
                     query = glue("UPDATE core.changelog SET change_status = %s",
@@ -304,8 +307,12 @@ class CoreBackend(AbstractBackend):
 
             ## Determine if something requiring a review changed.
             fields_requiring_review = {'birthday', 'family_name', 'given_names'}
+            all_changed_fields = {key for key, value in data.items()
+                                  if value != committed_data[key]}
             requires_review = (
-                changed_fields & fields_requiring_review
+                (all_changed_fields & fields_requiring_review
+                 or current_data['change_status']
+                     == const.MemberChangeStati.pending)
                 and current_data['is_cde_realm']
                 and not ({"core_admin", "cde_admin"} & rs.user.roles))
 
@@ -347,7 +354,7 @@ class CoreBackend(AbstractBackend):
 
             ## pop the stashed change
             if diff:
-                if set(diff) & changed_fields:
+                if set(diff) & newly_changed_fields:
                     raise RuntimeError("Conflicting pending change.")
                 insert = copy.deepcopy(current_data)
                 insert.update(data)
@@ -408,8 +415,7 @@ class CoreBackend(AbstractBackend):
             self.query_exec(rs, query, params)
 
             ## determine changed fields
-            old_data = unwrap(self.retrieve_personas(rs, (persona_id,),
-                                                     PERSONA_ALL_FIELDS))
+            old_data = unwrap(self.get_total_personas(rs, (persona_id,)))
             relevant_keys = tuple(key for key in old_data
                                   if data[key] != old_data[key])
             relevant_keys += ('id',)
