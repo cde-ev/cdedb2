@@ -34,7 +34,8 @@
                         {% if period['billing_state'] %}
                             Bereits bis ID {{ period['billing_state']|cdedbid }} abgearbeitet.
                         {% endif %}
-                        <form action="{{ cdedblink('cde/semester_bill')|e }}" method="POST" id="billform">
+                        <form action="{{ cdedblink('cde/semester_bill')|e }}" method="POST" id="billform"
+                                class="strip-space">
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
                             </div>
@@ -140,7 +141,8 @@
                         {% if expuls['addresscheck_state'] %}
                             Bereits bis ID {{ expuls['addresscheck_state']|cdedbid }} abgearbeitet.
                         {% endif %}
-                        <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="addresscheckform">
+                        <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="addresscheckform"
+                                class="strip-space">
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
                             </div>

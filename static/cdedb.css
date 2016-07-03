@@ -94,10 +94,10 @@ h1.nosp,h2.nosp,h3.nosp,h4.nosp,h5.nosp {
 label.nosp {
     margin-bottom: 0;
 }
-.strip-space>.radio:first-child {
+.strip-space>.radio:first-child, .strip-space>.checkbox:first-child  {
     margin-top: 0;
 }
-.strip-space>.radio:last-child {
+.strip-space>.radio:last-child, .strip-space>.checkbox:last-child {
     margin-bottom: 0;
 }
 

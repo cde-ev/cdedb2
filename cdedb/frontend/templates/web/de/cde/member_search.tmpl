@@ -35,8 +35,8 @@
                             {% for i in choices['pcourse_id']|sort %}
                                 {{ myentries.append((i, choices['pcourse_id'][i])) }}
                             {% endfor %}
-                            {{ util.form_input_select(name="qval_pevent_id", entries=myentries, nulloption=True,
-                                    label="Kurs", aclass="input-sm") }}
+                            {{ util.form_input_select(name="qval_pcourse_id", entries=myentries, nulloption=True,
+                                    label="Kurs", aclass="input-sm", defaultvalue='') }}
                         {% endif %}
                     </div>
                     <div class="col-sm-6">
