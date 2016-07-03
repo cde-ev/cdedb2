@@ -153,11 +153,11 @@
         {{ util.input_hidden(name="secret") }}
         
         <h4 class="heading-underline">Person</h4>
-        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_text(name="title", label="Titel", info="z.B. Prof. Dr.") }}
         {{ util.form_input_static(label="Vorname(n)", value=case['given_names']) }}
         {{ util.form_input_static(label="Nachname", value=case['family_name']) }}
         {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
-        {{ util.form_input_text(name="display_name", label="Rufname") }}
+        {{ util.form_input_text(name="display_name", label="Rufname", info="Wie wirst Du genannt?") }}
         {% if realm == "event" %}
             {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
             {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
@@ -166,8 +166,8 @@
         <h4 class="heading-underline">Kontakt</h4>
         {{ util.form_input_static(label="E-Mail-Adresse", value=case['username']) }}
         {% if realm == "event" %}
-            {{ util.form_input_text(name="telephone", label="Telefon") }}
-            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.form_input_text(name="telephone", label="Telefon", placeholder="+49 (0000) 000000") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon", placeholder="+49 (000) 0000000") }}
             
             <h4 class="heading-underline">Adresse</h4>
             {{ util.form_input_text(name="address", label="Straße") }}
