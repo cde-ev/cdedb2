@@ -23,7 +23,7 @@
         {{ util.form_input_text(name="display_name", label="Rufname") }}
         {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
             {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-            {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD") }}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date") }}
         {% endif %}
         
         <h4 class="heading-underline">Account</h4>
@@ -91,7 +91,7 @@
         {% endif %}
         {% if realm in ("cde", "event") %}
             {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
-            {{ util.form_input_text(name="birthday", label="Geburtstag") }}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
         {% endif %}
         
         <h4 class="heading-underline">Kontakt</h4>
@@ -141,8 +141,12 @@
 {% endmacro %}
 
 {% macro genesis(realm) %}
-    Gib unten Deine Daten ein, um den Account anzulegen. Abschließend kannst
-    Du Dir ein Passwort zugeschicken lassen.
+    <p>Hallo {{ case['given_names'] }},</p>
+    
+    <p>
+        Um Dein Konto für die CdE Datenbank anzulegen, trage bitte in das folgende Formular Deine Daten ein. Sobald Du
+        dieses Formluar bestätigt hast, kannst Du ein Passwort einrichten und Dein Zugang wird freigeschaltet.
+    </p>
 
     <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform" class="form-horizontal">
         {{ util.input_hidden(name="case_id") }}
@@ -155,7 +159,7 @@
         {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
         {{ util.form_input_text(name="display_name", label="Rufname") }}
         {% if realm == "event" %}
-            {{ util.form_input_text(name="birthday", label="Geburtstag") }}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
             {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
         {% endif %}
         
