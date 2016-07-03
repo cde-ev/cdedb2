@@ -251,6 +251,8 @@ class CoreFrontend(AbstractFrontend):
             rs, rs.user.persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
             rs, rs.user.persona_id, (generation,)))
+        if data['change_status'] == const.MemberChangeStati.pending:
+            rs.notify("info", "Change pending.")
         del data['change_note']
         merge_dicts(rs.values, data)
         return self.render(rs, "change_user", {'username': data['username']})
