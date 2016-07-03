@@ -1,164 +1,105 @@
+{% set sidenav_active='core_pending_changes' %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% macro mangle_string(name) %}
-   {% if name in diff %}
-       <span class="changedValue">{{ pending[name]|e }} (war: {{ current[name]|e }})</span>
-   {% else %}
-       <span>{{ pending[name]|e }}</span>
-   {% endif %}
-{% endmacro %}
-{% macro mangle_date(name) %}
-   {% if name in diff %}
-       <span class="changedValue">{{ pending[name]|date|e }} (war: {{ current[name]|date|e }})</span>
-   {% else %}
-       <span>{{ pending[name]|date|e }}</span>
-   {% endif %}
-{% endmacro %}
-{% macro mangle_gender(name) %}
-   {% if name in diff %}
-       <span class="changedValue">{{ pending[name]|gender|e }} (war: {{ current[name]|gender|e }})</span>
-   {% else %}
-       <span>{{ pending[name]|gender|e }}</span>
-   {% endif %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}Offene Änderung für {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), "Änderungen prüfen") }}
+{{ util.breadcrumb_link(cdedblink('core/inspect_change', {'persona_id': pending['id']}),
+        "{} {}".format(current['given_names'], current['family_name']), icon="user", active="True") }}
+{% endblock %}
+
+{% macro show_diff(name, title, important=False) %}
+    <div class="row {% if name not in diff and not important %}unimportant{% endif %}">
+        <label class="col-sm-3">
+            {{ title }}
+        </label>
+        {% if name in diff %}
+            <div class="col-sm-4 bg-danger">
+                {% if caller %}{{ caller(False) }}{% else %}{{ current[name]|e }}{% endif %}
+            </div>
+            <div class="col-sm-4 bg-success">
+                {% if caller %}{{ caller(True) }}{% else %}{{ pending[name]|e }}{% endif %}
+            </div>
+        {% else %}
+            <div class="col-sm-4">
+                {% if caller %}{{ caller(False) }}{% else %}{{ current[name]|e }}{% endif %}
+            </div>
+        {% endif %}
+    </div>
 {% endmacro %}
 
-{% block title %}offene Änderung für {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
 {% block content %}
-    <table>
-        <tr> <th colspan="2">Person</th> </tr>
-        <tr>
-            <td>Titel</td>
-            <td>{{ mangle_string('title') }}</td>
-        </tr>
-        <tr>
-            <td>Vornamen</td>
-            <td>{{ mangle_string('given_names') }}</td>
-        </tr>
-        <tr>
-            <td>Nachname</td>
-            <td>{{ mangle_string('family_name') }}</td>
-        </tr>
-        <tr>
-            <td>Namenszusatz</td>
-            <td>{{ mangle_string('name_supplement') }}</td>
-        </tr>
-        <tr>
-            <td>Rufname</td>
-            <td>{{ mangle_string('display_name') }}</td>
-        </tr>
-        <tr>
-            <td>Geburtsname</td>
-            <td>{{ mangle_string('birth_name') }}</td>
-        </tr>
-        <tr>
-            <td>Geburtstag</td>
-            <td>{{ mangle_date('birthday') }}</td>
-        </tr>
-        <tr>
-            <td>Geschlecht</td>
-            <td>{{ mangle_gender('gender') }}</td>
-        </tr>
-        <tr>
-            <td>Fachgebiet</td>
-            <td>{{ mangle_string('specialisation') }}</td>
-        </tr>
-        <tr>
-            <td>Schule, Uni, ...</td>
-            <td>{{ mangle_string('affiliation') }}</td>
-        </tr>
-        <tr>
-            <td>Jahrgang, Matrikel, ...</td>
-            <td>{{ mangle_string('timeline') }}</td>
-        </tr>
-        <tr>
-            <td>Interessen</td>
-            <td>{{ mangle_string('interests') }}</td>
-        </tr>
-        <tr>
-            <td>Sonstiges</td>
-            <td>{{ mangle_string('free_form') }}</td>
-        </tr>
-        <tr> <th colspan="2">Kontakt</th> </tr>
-        <tr>
-            <td>Email</td>
-            <td>{{ mangle_string('username') }}</td>
-        </tr>
-        <tr>
-            <td>Telefon</td>
-            <td>{{ mangle_string('telephone') }}</td>
-        </tr>
-        <tr>
-            <td>Mobiltelefon</td>
-            <td>{{ mangle_string('mobile') }}</td>
-        </tr>
-        <tr>
-            <td>WWW</td>
-            <td>{{ mangle_string('weblink') }}</td>
-        </tr>
-        <tr> <th colspan="2">Adresse</th> </tr>
-        <tr>
-            <td>Straße</td>
-            <td>{{ mangle_string('address') }}</td>
-        </tr>
-        <tr>
-            <td>Adresszusatz</td>
-            <td>{{ mangle_string('address_supplement') }}</td>
-        </tr>
-        <tr>
-            <td>PLZ</td>
-            <td>{{ mangle_string('postal_code') }}</td>
-        </tr>
-        <tr>
-            <td>Ort</td>
-            <td>{{ mangle_string('location') }}</td>
-        </tr>
-        <tr>
-            <td>Land</td>
-            <td>{{ mangle_string('country') }}</td>
-        </tr>
-        <tr> <th colspan="2">Zweitadresse</th> </tr>
-        <tr>
-            <td>Straße</td>
-            <td>{{ mangle_string('address2') }}</td>
-        </tr>
-        <tr>
-            <td>Adresszusatz</td>
-            <td>{{ mangle_string('address_supplement2') }}</td>
-        </tr>
-        <tr>
-            <td>PLZ</td>
-            <td>{{ mangle_string('postal_code2') }}</td>
-        </tr>
-        <tr>
-            <td>Ort</td>
-            <td>{{ mangle_string('location2') }}</td>
-        </tr>
-        <tr>
-            <td>Land</td>
-            <td>{{ mangle_string('country2') }}</td>
-        </tr>
-        <tr> <th colspan="2">Mitgliedschaft</th> </tr>
-        <tr>
-            <td>CdEDB-ID</td>
-            <td>{{ pending['id']|cdedbid|e }}</td>
-        </tr>
-        <tr>
-            <td>Guthaben</td>
-            <td>{{ mangle_string('balance') }}</td>
-        </tr>
-    </table>
-    <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="ackchangeform">
-        <div>
-            {{ util.input_hidden(name="ack", value="True") }}<br>
-            {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
-            {{ util.form_input_submit(value="Änderung bestätigen") }}
-        </div>
+    <button type="button" class="btn btn-default btn-sm softhide" id="unhide-button">
+        {{ util.make_icon('eye-close') }} Alle Felder anzeigen
+    </button>
+    {{ util.href(show_user_link(pending['id']), "Profil anzeigen", icon="share-alt", aclass="btn btn-sm btn-info") }}
+    <script type="text/javascript">
+        $(function() {
+            $('#diff-view').cdedbHideUnimportant($('#unhide-button'));
+        });
+    </script>
+    <div class="diff-view" id="diff-view">
+        <h4 class="heading-underline">Person</h4>
+        {{ show_diff('title', "Titel", True) }}
+        {{ show_diff('given_names', "Vornamen", True) }}
+        {{ show_diff('family_name', "Nachname", True) }}
+        {{ show_diff('name_supplement', "Namenszusatz", True) }}
+        {{ show_diff('display_name', "Rufname") }}
+        {{ show_diff('birth_name', "Geburtsname") }}
+        {% call(next) show_diff('birthday', "Geburtstag", True) %}
+            {% if next %}{{ pending['birthday']|date|e }}{% else %}{{ current['birthday']|date|e }}{% endif %}
+        {% endcall %}
+        {% call(next) show_diff('gender', "Geschlecht", True) %}
+            {% if next %}{{ pending['gender']|gender|e }}{% else %}{{ current['gender']|gender|e }}{% endif %}
+        {% endcall %}
+        
+        <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
+        {% call(next) show_diff('id', "CdeDB-ID", True) %}
+            {{ util.href(show_user_link(pending['id']), pending['id']|cdedbid|e, aclass='nowrap') }}
+        {% endcall %}
+        {{ show_diff('is_member', "CdE-Mitgliedschaft", True) }}
+        {{ show_diff('balance', "Guthaben") }}
+        {{ show_diff('bub_search', "Sichtbar für BuB") }}
+        
+        <h4 class="heading-underline">Kontakt</h4>
+        {{ show_diff('username', "Email", True) }}
+        {{ show_diff('telephone', "Telefon") }}
+        {{ show_diff('mobile', "Mobiltelefon") }}
+        {{ show_diff('weblink', "WWW") }}
+        
+        <h4 class="heading-underline">Adresse</h4>
+        {{ show_diff('address', "Straße") }}
+        {{ show_diff('address_supplement', "Adresszusatz") }}
+        {{ show_diff('postal_code', "PLZ") }}
+        {{ show_diff('location', "Ort") }}
+        {{ show_diff('country', "Land") }}
+        
+        <h4 class="heading-underline">Zweitadresse</h4>
+        {{ show_diff('address2', "Straße") }}
+        {{ show_diff('address_supplement2', "Adresszusatz") }}
+        {{ show_diff('postal_code2', "PLZ") }}
+        {{ show_diff('location2', "Ort") }}
+        {{ show_diff('country2', "Land") }}
+        
+        <h4 class="heading-underline">Lebenslauf</h4>
+        {{ show_diff('specialisation', "Fachgebiet") }}
+        {{ show_diff('affiliation', "Schule, Uni, ...") }}
+        {{ show_diff('timeline', "Jahrgang, Matrikel, ...") }}
+        {{ show_diff('interests', "Interessen") }}
+        {{ show_diff('free_form', "Sonstiges") }}
+    </div>
+        
+    <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="ackchangeform" style="display: inline;">
+        {{ util.input_hidden(name="ack", value="True") }}
+        {{ util.input_hidden(name="generation", value=pending['generation']) }}
+        {{ util.input_submit(value="Änderung bestätigen", aclass="btn btn-success") }}
     </form>
-    <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="nackchangeform">
-        <div>
-            {{ util.input_hidden(name="ack", value="False") }}<br>
-            {{ util.input_hidden(name="generation", value=pending['generation']) }}<br>
-            {{ util.form_input_submit(value="Änderung verwerfen") }}
-        </div>
+    <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="nackchangeform" style="display: inline;">
+        {{ util.input_hidden(name="ack", value="False") }}
+        {{ util.input_hidden(name="generation", value=pending['generation']) }}
+        {{ util.input_submit(value="Änderung verwerfen", aclass="btn btn-danger", icon="ban-circle") }}
     </form>
+    {{ util.href(cdedblink('core/list_pending_changes'), "Abbrechen", icon="remove", aclass="btn btn-default") }}
 {% endblock %}

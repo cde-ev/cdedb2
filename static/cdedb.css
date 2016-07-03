@@ -242,6 +242,19 @@ tr.drow-delete>td {
     cursor: pointer;
 }
 
+/* Pending change view */
+.diff-view {
+    margin-bottom: 10px;
+}
+.diff-view label {
+    margin-bottom: 0;
+}
+@media (max-width: 767px) {
+    .diff-view label.col-sm-3 {
+        margin-top: 5px;
+    }
+}
+
 /* ************** *
  * Helper classes *
  * ************** */
