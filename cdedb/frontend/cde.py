@@ -80,8 +80,7 @@ class CdEFrontend(AbstractUserFrontend):
     def index(self, rs):
         """Render start page."""
         user_lastschrift = self.cdeproxy.list_lastschrift(
-            rs, persona_ids=[rs.user.persona_id], active=True)
-        
+            rs, persona_ids=(rs.user.persona_id,), active=True)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0)})
 
