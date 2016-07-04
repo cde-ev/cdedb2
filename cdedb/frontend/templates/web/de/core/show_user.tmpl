@@ -12,8 +12,15 @@
     {% if data['id'] == user.persona_id or is_admin %}
         <div class="p">
             {% if is_admin %}
-                {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten",
-                        aclass="btn btn-warning btn-sm", icon="pencil") }}
+                {% if data['id'] == user.persona_id %}
+                    {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten (normal)",
+                            aclass="btn btn-warning btn-sm", icon="pencil") }}
+                    {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten (mit Adminrechten)",
+                            aclass="btn btn-warning btn-sm", icon="pencil") }}
+                {% else %}
+                    {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten",
+                            aclass="btn btn-warning btn-sm", icon="pencil") }}
+                {% endif %}
             {% else %}
                 {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten",
                         aclass="btn btn-warning btn-sm", icon="pencil") }}
@@ -22,11 +29,6 @@
                 {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern", aclass="btn btn-warning btn-sm",
                         icon="edit") }}
             {% else %}
-                <form action="{{ cdedblink('core/admin_password_reset')|e }}" method="POST"
-                        id="adminpasswordresetform" style="display: inline;">
-                    {{ util.input_submit(value="Passwort zurücksetzen", icon="share",
-                            aclass="btn btn-warning btn-sm") }}
-                </form>
                 {% if data['is_active'] %}
                     <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
                      id="activitytoggleform" style="display: inline;">
@@ -221,11 +223,11 @@
             <dt>Email</dt>
             <dd>
                 {{ data['username']|e }}
-                {% if is_admin %}
-                    {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
-                                 aclass="btn btn-xs btn-warning", icon="pencil") }}
-                {% elif data['id'] == user.persona_id %}
+                {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten",
+                                 aclass="btn btn-xs btn-warning", icon="pencil") }}
+                {% elif is_admin %}
+                    {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% endif %}
             </dd>

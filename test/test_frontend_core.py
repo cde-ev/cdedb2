@@ -3,6 +3,7 @@
 import unittest
 import copy
 import quopri
+import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.query import QueryOperators
@@ -128,7 +129,7 @@ class TestCoreFrontend(FrontendTest):
                 link = quopri.decodestring(link).decode('utf-8')
                 self.get(link)
                 self.follow()
-                self.assertTitle("Passwort zurücksetzen -- Bestätigung")
+                self.assertTitle("Neues Passwort setzen")
                 f = self.response.forms['passwordresetform']
                 f['new_password'] = new_password
                 if u in {"anton"}:
@@ -145,30 +146,6 @@ class TestCoreFrontend(FrontendTest):
                 self.login(new_user)
                 self.assertNotIn('loginform', self.response.forms)
                 self.assertLogin(user['display_name'])
-
-    def test_admin_password_reset(self):
-        anton = USER_DICT['anton']
-        self.get('/')
-        self.login(anton)
-        self.admin_view_profile('berta')
-        f = self.response.forms['adminpasswordresetform']
-        self.submit(f)
-        mail = self.fetch_mail()[0]
-        for line in mail.split('\n'):
-            if line.startswith('zur'):
-                words = line.split(' ')
-                break
-        index = words.index('nun')
-        new_password = quopri.decodestring(words[index + 1])
-        self.logout()
-        berta = USER_DICT['berta']
-        self.login(berta)
-        self.assertIn('loginform', self.response.forms)
-        new_berta = copy.deepcopy(berta)
-        new_berta['password'] = new_password
-        self.login(new_berta)
-        self.assertNotIn('loginform', self.response.forms)
-        self.assertLogin(new_berta['display_name'])
 
     @as_users("anton", "berta", "emilia")
     def test_change_username(self, user):
@@ -235,6 +212,26 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(False, f['is_admin'].checked)
         self.assertEqual(True, f['is_core_admin'].checked)
         self.assertEqual(True, f['is_cde_admin'].checked)
+
+    @as_users("anton", "berta")
+    def test_get_foto(self, user):
+        response = self.app.get('/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')
+        self.assertTrue(response.body.startswith(b"\x89PNG"))
+        self.assertTrue(len(response.body) > 10000)
+
+    @as_users("anton", "berta")
+    def test_set_foto(self, user):
+        self.traverse({'href': '/core/self/show'}, {'href': '/foto/change'})
+        f = self.response.forms['setfotoform']
+        with open("/tmp/cdedb-store/testfiles/picture.png", 'rb') as datafile:
+            data = datafile.read()
+        f['foto'] = webtest.Upload("picture.png", data, "application/octet-stream")
+        self.submit(f)
+        self.assertIn('foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', self.response.text)
+        with open('/tmp/cdedb-store/foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', 'rb') as f:
+            blob = f.read()
+        self.assertTrue(blob.startswith(b"\x89PNG"))
+        self.assertTrue(len(blob) > 10000)
 
     @as_users("anton")
     def test_user_search(self,  user):
@@ -312,11 +309,11 @@ class TestCoreFrontend(FrontendTest):
         user = USER_DICT["anton"]
         self.login(user)
         self.traverse({'href': '^/$'}, {'href': '/core/changelog/list'})
-        self.assertTitle("Änderungen (zurzeit 1 zu begutachten)")
+        self.assertTitle("Zu prüfende Profiländerungen [1]")
         self.traverse({'href': '/core/persona/2/changelog/inspect'})
         f = self.response.forms['ackchangeform']
         self.submit(f)
-        self.assertTitle("Änderungen (zurzeit 0 zu begutachten)")
+        self.assertTitle("Zu prüfende Profiländerungen [0]")
         self.logout()
         user = USER_DICT["berta"]
         self.login(user)
@@ -338,15 +335,13 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("1933-04-03")
         self.traverse({'href': '/core/persona/2/history'})
         self.assertTitle("Geschichte von Bertålotta Beispiel")
-        self.assertPresence("2: 1933-04-03")
-        self.assertPresence("1: 1981-02-11")
-        element = self.response.lxml.xpath("//select[@name='birthday']")[0]
-        self.assertEqual('2', element.value)
+        self.assertPresence(r"Gen 2\W*1933-04-03", regex=True)
+        self.assertPresence(r"Gen 1\W*1981-02-11", regex=True)
 
     @as_users("anton")
     def test_rst(self, user):
         self.admin_view_profile('inga', realm="core")
-        self.assertIn('<div class="document" id="CDEDB_RST_inga">',
+        self.assertIn('<div class="section" id="CDEDB_RST_inga">',
                       self.response.text)
 
     @as_users("anton")
@@ -358,10 +353,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotIn("event", f['target_realm'].options)
         f['target_realm'] = "cde"
         self.submit(f)
-        self.assertTitle("Emilia E. Eventis Bereich cde hinzufügen")
+        self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['promotionform']
         self.submit(f)
         self.assertTitle("Emilia E. Eventis")
+        self.assertPresence("Guthaben")
 
     @as_users("anton")
     def test_nontrivial_promotion(self, user):
@@ -371,20 +367,21 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['realmselectionform']
         f['target_realm'] = "event"
         self.submit(f)
-        self.assertTitle("Kalif ibn al-Ḥasan Karabatschi Bereich event hinzufügen")
+        self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
         f = self.response.forms['promotionform']
         f['birthday'] = "21.6.1977"
         f['gender'] = 1
         self.submit(f)
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
+        self.assertPresence("Geburtstag")
 
     def test_log(self):
         ## First: generate data
-        self.test_admin_password_reset()
+        self.test_set_foto()
         self.logout()
 
         ## Now check it
         self.login(USER_DICT['anton'])
         self.traverse({'description': 'Start', 'href': '^/d?b?/?$'},
                       {'href': '/core/log'})
-        self.assertTitle("Account-Log [0–2]")
+        self.assertTitle("Account-Log [0–1]")

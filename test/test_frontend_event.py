@@ -121,9 +121,9 @@ class TestEventFrontend(FrontendTest):
         self.follow()
         self.login(user)
         self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen")
+        self.assertTitle("Accountanfragen [1]")
         self.assertPresence("zelda@example.cde")
-        self.assertPresence("Offene bestätigte Anfragen (zurzeit 0)")
+        self.assertPresence("Offene bestätigte Anfragen [0]")
         f = self.response.forms['genesisapprovalform1']
         f['realm'] = "event"
         self.submit(f)
@@ -133,8 +133,8 @@ class TestEventFrontend(FrontendTest):
             if line.startswith('[1] '):
                 link = line[4:]
         link = quopri.decodestring(link).decode('utf-8')
-        self.assertTitle("Accountanfragen")
-        self.assertPresence("Offene bestätigte Anfragen (zurzeit 1)")
+        self.assertTitle("Accountanfragen [0]")
+        self.assertPresence("Offene bestätigte Anfragen [1]")
         self.assertPresence("zelda@example.cde")
         self.logout()
         self.get(link)
@@ -159,7 +159,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         data["given_names"] = "Zelda",
         data["family_name"] = "Zeruda-Hime",
-        self.assertTitle("Passwort zurücksetzen -- Bestätigung")
+        self.assertTitle("Neues Passwort setzen")
         new_password = "saFe_37pass"
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
@@ -199,9 +199,9 @@ class TestEventFrontend(FrontendTest):
         self.follow()
         self.login(user)
         self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen")
+        self.assertTitle("Accountanfragen [1]")
         self.assertPresence("zelda@example.cde")
-        self.assertPresence("Offene bestätigte Anfragen (zurzeit 0)")
+        self.assertPresence("Offene bestätigte Anfragen [0]")
         f = self.response.forms['genesisapprovalform1']
         f['realm'] = "event"
         self.submit(f)
@@ -211,13 +211,13 @@ class TestEventFrontend(FrontendTest):
             if line.startswith('[1] '):
                 link = line[4:]
         link = quopri.decodestring(link).decode('utf-8')
-        self.assertTitle("Accountanfragen")
-        self.assertPresence("Offene bestätigte Anfragen (zurzeit 1)")
+        self.assertTitle("Accountanfragen [0]")
+        self.assertPresence("Offene bestätigte Anfragen [1]")
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['genesistimeoutform1']
         self.submit(f)
-        self.assertTitle("Accountanfragen")
-        self.assertPresence("Offene bestätigte Anfragen (zurzeit 0)")
+        self.assertTitle("Accountanfragen [0]")
+        self.assertPresence("Offene bestätigte Anfragen [0]")
         self.assertNonPresence("zelda@example.cde")
 
     @as_users("anton")

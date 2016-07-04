@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+import re
 import unittest
 import time
-import webtest
 
 from test.common import as_users, USER_DICT, FrontendTest
 from cdedb.query import QueryOperators
@@ -14,8 +14,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton", "berta")
     def test_showuser(self, user):
-        self.traverse({'href': '/core/self/show'},
-                      {'href': '/cde/user/{}/show'.format(user['id'])})
+        self.traverse({'href': '/core/self/show'},)
         self.assertTitle("{} {}".format(user['given_names'],
                                         user['family_name']))
         if user['id'] == 2:
@@ -64,34 +63,13 @@ class TestCdEFrontend(FrontendTest):
         user = USER_DICT["garcia"]
         self.login(user)
         self.assertTitle("Einwilligung zur Mitgliedersuche")
-        f = self.response.forms['toplaterform']
-        self.submit(f)
+        self.traverse({'description': 'Start'})
         self.assertTitle("CdE Datenbank")
         self.traverse({'href': '/core/self/show'},
                       {'href': '/cde/self/consent'})
         f = self.response.forms['ackconsentform']
         self.submit(f)
         ## automatic check for success notification
-
-    @as_users("anton", "berta")
-    def test_get_foto(self, user):
-        response = self.app.get('/cde/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')
-        self.assertTrue(response.body.startswith(b"\x89PNG"))
-        self.assertTrue(len(response.body) > 10000)
-
-    @as_users("anton", "berta")
-    def test_set_foto(self, user):
-        self.traverse({'href': '/core/self/show'}, {'href': '/foto/change'})
-        f = self.response.forms['setfotoform']
-        with open("/tmp/cdedb-store/testfiles/picture.png", 'rb') as datafile:
-            data = datafile.read()
-        f['foto'] = webtest.Upload("picture.png", data, "application/octet-stream")
-        self.submit(f)
-        self.assertIn('foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', self.response.text)
-        with open('/tmp/cdedb-store/foto/58998c41853493e5d456a7e94ee2cff9d1f95e125661f01317853ebfd4d031c72b4cfe499bc51038d9602e7ffb289fcf852cec00ee3aaba4958e160a794bd63d', 'rb') as f:
-            blob = f.read()
-        self.assertTrue(blob.startswith(b"\x89PNG"))
-        self.assertTrue(len(blob) > 10000)
 
     @as_users("anton", "berta")
     def test_member_search_one(self, user):
@@ -198,11 +176,13 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').get('data-checked') == 'True')
-        self.assertPresence("Daten sind nicht sichtbar.")
+        self.assertPresence("Daten sind nicht sichtbar")
 
     @as_users("anton")
     def test_create_user(self, user):
-        self.traverse({'href': '/cde/$'}, {'href': '/cde/user/create'})
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/user'},
+                      {'href': '/cde/user/create'})
         self.assertTitle("Neues Mitglied anlegen")
         data = {
             "username": 'zelda@example.cde',
@@ -267,7 +247,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.traverse({'href': '/cde/user/2/lastschrift'})
-        self.assertTitle("Einzugsermächtigungen (Bertålotta Beispiel)")
+        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
         if user['id'] == 1:
             self.assertIn("revokeform", self.response.forms)
             self.assertIn("receiptform3", self.response.forms)
@@ -376,14 +356,14 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/user/3/lastschrift'})
         self.assertPresence("Keine aktive Einzugsermächtigung")
         self.traverse({'href': '/cde/user/3/lastschrift/create'})
-        self.assertTitle("Neue Einzugsermächtigung anlegen (Charly C. Clown)")
+        self.assertTitle("Neue Einzugsermächtigung (Charly C. Clown)")
         f = self.response.forms['createlastschriftform']
         f['amount'] = "123.45"
         f['iban'] = "DE26370205000008068900"
         f['max_dsa'] = "0.1"
         f['notes'] = "grosze Siebte: Take on me"
         self.submit(f)
-        self.assertTitle("Einzugsermächtigungen (Charly C. Clown)")
+        self.assertTitle("Einzugsermächtigung Charly C. Clown")
         self.assertIn("revokeform", self.response.forms)
         self.traverse({'href': '/cde/lastschrift/3/change'})
         f = self.response.forms['changelastschriftform']
@@ -413,7 +393,7 @@ class TestCdEFrontend(FrontendTest):
     def test_lastschrift_receipt(self, user):
         self.admin_view_profile('berta', realm="cde")
         self.traverse({'href': '/cde/user/2/lastschrift'})
-        self.assertTitle("Einzugsermächtigungen (Bertålotta Beispiel)")
+        self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
         f = self.response.forms['receiptform3']
         self.submit(f)
         self.assertTrue(self.response.body.startswith(b"%PDF"))
@@ -432,6 +412,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_batch_admission(self, user):
         self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/user'},
                       {'href': '/cde/admission$'})
         self.assertTitle("Accounts anlegen")
         f = self.response.forms['admissionform']
@@ -444,35 +425,35 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
-        _, content = content.split(" Zeile 1 ")
+        _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 15):
-            head, content = content.split(" Zeile {} ".format(i))
+            head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
-        head, _ = content.split(" Das Format ist".format(i))
+        head, _ = content.split("Validieren")
         output.append(head)
         expectation = (
-            ("Problem bei given_names: Mustn't be empty.",
-             "Problem bei pevent_id: No input supplied."),
+            (r"given_names:\W*Mustn't be empty.",
+             r"pevent_id:\W*No input supplied."),
             tuple(),
-            ("Problem: Lines 3 and 4 are the same.",),
-            ("Problem: Lines 3 and 4 are the same.",),
-            ("Warnung bei persona: Doppelgangers found.",),
-            ("Warnung bei persona: Doppelgangers found.",),
-            ("Warnung bei persona: Doppelgangers found.",),
-            ("Warnung bei course: No course available.",),
-            ("Problem bei pevent_id: No event found.",
-             "Warnung bei course: No course available.",),
-            ("Problem bei pcourse_id: No course found.",),
-            ("Problem bei birthday: day is out of range for month",
-             " Problem bei birthday: 'Mandatory key missing.'"),
-            ("Problem bei postal_code: Invalid german postal code.",),
-            ("Problem: Lines 13 and 14 are the same.",),
-            ("Problem: Lines 13 and 14 are the same.",),
+            (r"Lines 3 and 4 are the same.",),
+            (r"Lines 3 and 4 are the same.",),
+            (r"persona:\W*Doppelgangers found.",),
+            (r"persona:\W*Doppelgangers found.",),
+            (r"persona:\W*Doppelgangers found.",),
+            (r"course:\W*No course available.",),
+            (r"pevent_id:\W*No event found.",
+             r"course:\W*No course available.",),
+            (r"pcourse_id:\W*No course found.",),
+            (r"birthday:\W*day is out of range for month",
+             r"birthday:\W*Mandatory key missing."),
+            (r"postal_code:\W*Invalid german postal code.",),
+            (r"Lines 13 and 14 are the same.",),
+            (r"Lines 13 and 14 are the same.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
-                self.assertIn(piece, out)
+                self.assertTrue(re.search(piece, out))
         for i in range(14):
             if i in (1, 7):
                 expectation = '0'
@@ -503,12 +484,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
-        _, content = content.split(" Zeile 1 ")
+        _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 15):
-            head, content = content.split(" Zeile {} ".format(i))
+            head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
-        head, _ = content.split(" Das Format ist".format(i))
+        head, _ = content.split("Validieren".format(i))
         output.append(head)
         expectation = (
             tuple(),
@@ -517,18 +498,18 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            ("Problem bei doppelganger: Doppelganger not a CdE-Account.",),
+            (r"doppelganger:\W*Doppelganger not a CdE-Account.",),
             tuple(),
-            ("Warnung: Entry changed.",),
-            ("Warnung: Entry changed.",),
-            ("Warnung: Entry changed.",),
-            ("Warnung: Entry changed.",),
+            (r"Entry changed.",),
+            (r"Entry changed.",),
+            (r"Entry changed.",),
+            (r"Entry changed.",),
             tuple(),
             tuple(),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
-                self.assertIn(piece, out)
+                self.assertTrue(re.search(piece, out))
         nonexpectation = (
             tuple(),
             tuple(),
@@ -538,18 +519,18 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            ("Problem bei pevent_id: No event found.",
-             "Warnung bei course: No course available.",),
-            ("Problem bei pcourse_id: No course found.",),
-            ("Problem bei birthday: day is out of range for month",
-             " Problem bei birthday: 'Mandatory key missing.'"),
-            ("Problem bei postal_code: Invalid german postal code.",),
+            (r"pevent_id:\W*No event found.",
+             r"course:\W*No course available.",),
+            (r"pcourse_id:\W*No course found.",),
+            (r"birthday:\W*day is out of range for month",
+             r"birthday:\W*Mandatory key missing."),
+            (r"postal_code:\W*Invalid german postal code.",),
             tuple(),
             tuple(),
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
-                self.assertNotIn(piece, out)
+                self.assertFalse(re.search(piece, out))
         f['resolution6'] = 0
         f['resolution8'] = 0
         f['resolution9'] = 0
@@ -562,12 +543,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
-        _, content = content.split(" Zeile 1 ")
+        _, content = content.split(" Zeile 1:")
         output = []
         for i in range(2, 15):
-            head, content = content.split(" Zeile {} ".format(i))
+            head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
-        head, _ = content.split(" Das Format ist".format(i))
+        head, _ = content.split("Validieren".format(i))
         output.append(head)
         expectation = (
             tuple(),
@@ -576,7 +557,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            ("Problem bei doppelganger: Doppelganger choice doesn't fit resolution.",),
+            (r"doppelganger:\W*Doppelganger choice doesn't fit resolution.",),
             tuple(),
             tuple(),
             tuple(),
@@ -587,7 +568,7 @@ class TestCdEFrontend(FrontendTest):
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
-                self.assertIn(piece, out)
+                self.assertTrue(re.search(piece, out))
         nonexpectation = (
             tuple(),
             tuple(),
@@ -597,16 +578,16 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            ("Warnung: Entry changed.",),
-            ("Warnung: Entry changed.",),
-            ("Warnung: Entry changed.",),
-            ("Warnung: Entry changed.",),
+            (r"Entry changed.",),
+            (r"Entry changed.",),
+            (r"Entry changed.",),
+            (r"Entry changed.",),
             tuple(),
             tuple(),
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
-                self.assertNotIn(piece, out)
+                self.assertFalse(re.search(piece, out))
         f['resolution6'] = 1
         f['doppelganger_id6'] = ''
         self.assertEqual('', f['finalized'].value)
@@ -792,7 +773,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_institutions(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/institution/summary'})
-        self.assertTitle("Alle Organisationen")
+        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
         self.assertNotIn("title_2", f.fields)
@@ -800,20 +781,20 @@ class TestCdEFrontend(FrontendTest):
         f['title_-1'] = "Bildung und Begabung"
         f['moniker_-1'] = "BuB"
         self.submit(f)
-        self.assertTitle("Alle Organisationen")
+        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
         self.assertEqual("Bildung und Begabung", f['title_2'].value)
         f['title_1'] = "Monster Academy"
         f['moniker_1'] = "MA"
         self.submit(f)
-        self.assertTitle("Alle Organisationen")
+        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
         self.assertEqual("Bildung und Begabung", f['title_2'].value)
         f['delete_2'].checked = True
         self.submit(f)
-        self.assertTitle("Alle Organisationen")
+        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
         self.assertNotIn("title_2", f.fields)
@@ -821,13 +802,13 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_list_past_events(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Alle abgeschlossenen Veranstaltungen")
+        self.assertTitle("Abgeschlossene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
 
     @as_users("anton")
     def test_show_past_event_course(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Alle abgeschlossenen Veranstaltungen")
+        self.assertTitle("Abgeschlossene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
@@ -855,6 +836,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_create_past_event(self, user):
         self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/past/event/list'},
                       {'href': '/past/event/create'})
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
@@ -871,6 +853,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_create_past_event_with_courses(self, user):
         self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/past/event/list'},
                       {'href': '/past/event/create'})
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
@@ -987,24 +970,23 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/past/log'})
-        self.assertTitle("\nAbgeschlossene Veranstaltungen -- Logs (0--8)\n")
+        self.assertTitle("Log: Abgeschlossene Veranstaltungen [0–8]")
         f = self.response.forms['logshowform']
         f['codes'] = [0, 10, 21]
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("\nAbgeschlossene Veranstaltungen -- Logs (1--4)\n")
+        self.assertTitle("Log: Abgeschlossene Veranstaltungen [1–4]\n")
 
     def test_cde_log(self):
         ## First: generate data
-        self.test_set_foto()
-        self.logout()
+        pass
 
         ## Now check it
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/log'})
-        self.assertTitle("\nCdE allgemein -- Logs (0--0)\n")
+        self.assertTitle("Log: CdE allgemein [0–0]")
 
     @as_users("anton")
     def test_changelog_meta(self, user):

@@ -34,7 +34,6 @@
             <div class="panel-body">
                 <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
-                    {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
                         <div class="col-sm-5">
                             {# TODO select2 here #}

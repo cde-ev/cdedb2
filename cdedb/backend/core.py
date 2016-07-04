@@ -284,7 +284,7 @@ class CoreBackend(AbstractBackend):
                 if not may_wait:
                     diff = {key: current_data[key] for key in committed_data
                             if committed_data[key] != current_data[key]}
-                    current_data = committed_data
+                    current_data.update(committed_data)
                     query = glue("UPDATE core.changelog SET change_status = %s",
                                  "WHERE persona_id = %s AND change_status = %s")
                     self.query_exec(rs, query, (
@@ -311,8 +311,8 @@ class CoreBackend(AbstractBackend):
                                   if value != committed_data[key]}
             requires_review = (
                 (all_changed_fields & fields_requiring_review
-                 or current_data['change_status']
-                     == const.MemberChangeStati.pending)
+                 or (current_data['change_status']
+                     == const.MemberChangeStati.pending and not diff))
                 and current_data['is_cde_realm']
                 and not ({"core_admin", "cde_admin"} & rs.user.roles))
 

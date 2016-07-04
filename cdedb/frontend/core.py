@@ -677,28 +677,6 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.redirect(rs, "core/index")
 
-    @access("core_admin", modi={"POST"})
-    def admin_password_reset(self, rs, persona_id):
-        """Administrative password reset."""
-        if rs.ambience['persona']['is_archived']:
-            rs.notify("error", "Persona is archived.")
-            return self.redirect_show_user(rs, persona_id)
-        data = self.coreproxy.get_persona(rs, persona_id)
-        code, message = self.coreproxy.make_reset_cookie(rs, data['username'])
-        if code:
-            code, message = self.coreproxy.new_password(
-                rs, data['username'], cookie=message)
-        self.notify_return_code(rs, code, success="Password reset.",
-                                error=message)
-        if not code:
-            return self.redirect_show_user(rs, persona_id)
-        else:
-            self.do_mail(rs, "password_reset_done",
-                         {'To': (data['username'],),
-                          'Subject': 'CdEDB password reset successful'},
-                         {'password': message})
-            return self.redirect_show_user(rs, persona_id)
-
     @access("persona")
     def change_username_form(self, rs):
         """Render form."""

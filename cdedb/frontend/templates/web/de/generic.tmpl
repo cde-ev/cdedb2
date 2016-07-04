@@ -502,12 +502,6 @@
             {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten") }}
         </p>
     {% endif %}
-    {% if is_admin and realm == "core" %}
-        <form action="{{ cdedblink('core/admin_password_reset')|e }}" method="POST"
-          id="adminpasswordresetform">
-            <div>{{ util.form_input_submit(value="Passwort zurücksetzen") }}</div>
-        </form>
-    {% endif %}
 {% endmacro %}
 
 {% macro user_search(realm) %}

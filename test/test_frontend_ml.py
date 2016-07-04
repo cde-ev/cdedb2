@@ -105,9 +105,9 @@ class TestMlFrontend(FrontendTest):
         self.follow()
         self.login(user)
         self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen")
+        self.assertTitle("Accountanfragen [1]")
         self.assertPresence("zelda@example.cde")
-        self.assertPresence("Offene bestätigte Anfragen (zurzeit 0)")
+        self.assertPresence("Offene bestätigte Anfragen [0]")
         f = self.response.forms['genesisapprovalform1']
         f['realm'] = "ml"
         self.submit(f)
@@ -117,8 +117,8 @@ class TestMlFrontend(FrontendTest):
             if line.startswith('[1] '):
                 link = line[4:]
         link = quopri.decodestring(link).decode('utf-8')
-        self.assertTitle("Accountanfragen")
-        self.assertPresence("Offene bestätigte Anfragen (zurzeit 1)")
+        self.assertTitle("Accountanfragen [0]")
+        self.assertPresence("Offene bestätigte Anfragen [1]")
         self.assertPresence("zelda@example.cde")
         self.logout()
         self.get(link)
@@ -131,7 +131,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['newuserform']
         f['display_name'] = data['display_name']
         self.submit(f)
-        self.assertTitle("Passwort zurücksetzen -- Bestätigung")
+        self.assertTitle("Neues Passwort setzen")
         new_password = "saFe_37pass"
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password

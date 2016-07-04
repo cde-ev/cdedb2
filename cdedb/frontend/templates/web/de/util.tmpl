@@ -651,6 +651,6 @@
             {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e)) }}
         {% endif %}
     {% else %}
-        {{ data['given_names']|e }} ({{ data['display_name']|e }})
+        {{ given_names|e }} ({{ display_name|e }})
     {% endif %}
 {% endmacro %}

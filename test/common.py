@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
-import unittest
-import sys
-import subprocess
-import inspect
-import functools
-import os
-import time
-import os.path
-import webtest
 import datetime
+import functools
+import inspect
+import os
+import os.path
 import pytz
+import re
+import unittest
+import subprocess
+import sys
+import time
+import webtest
+
 from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.frontend.application import Application
 from cdedb.common import (
@@ -377,12 +379,17 @@ class FrontendTest(unittest.TestCase):
         components = tuple(x.strip() for x in self.response.lxml.xpath('//h1/text()'))
         self.assertIn(title.strip(), components)
 
-    def assertPresence(self, s, div="content"):
+    def assertPresence(self, s, div="content", regex=False):
         if self.response.content_type == "text/plain":
-            self.assertIn(s.strip(), self.response.text)
+            target = self.response.text
         else:
             content = self.response.lxml.xpath("//div[@id='{}']".format(div))[0]
-            self.assertIn(s.strip(), content.text_content())
+            target = content.text_content()
+        if regex:
+            self.assertTrue(re.search(s.strip(), target))
+        else:
+            self.assertIn(s.strip(), target)
+
 
     def assertNonPresence(self, s, div="content"):
         if self.response.content_type == "text/plain":
