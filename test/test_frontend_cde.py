@@ -602,6 +602,58 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Created 6 accounts.", div="notifications")
 
     @as_users("anton")
+    def test_money_transfers(self, user):
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/search/user'},
+                      {'href': '/cde/transfers$'})
+        self.assertTitle("Überweisungen eintragen")
+        f = self.response.forms['transfersform']
+        with open("/tmp/cdedb-store/testfiles/money_transfers.csv") as datafile:
+            f['transfers'] = datafile.read()
+        self.submit(f, check_notification=False)
+
+        ## first round
+        self.assertPresence("Validieren")
+        self.assertNonPresence("Abschicken")
+        f = self.response.forms['transfersform']
+        self.assertFalse(f['checksum'].value)
+        content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
+        _, content = content.split(" Zeile 1:")
+        output = []
+        for i in range(2, 7):
+            head, content = content.split(" Zeile {}:".format(i))
+            output.append(head)
+        head, _ = content.split("Validieren")
+        output.append(head)
+        expectation = (
+            (r"persona_id:\W*Mustn't be empty.",
+             r"family_name:\W*Mustn't be empty.",
+             r"given_names:\W*Mustn't be empty.",
+             r"amount:.*\W*.*decimal.",),
+            (r"persona_id:\W*Wrong formatting.",),
+            (r"family_name:\W*Family name doesn't match.",),
+            (r"persona_id:\W*Wrong formatting.",),
+            tuple(),
+            (r"lines 6 and 7",),
+            (r"lines 6 and 7",),
+            )
+        for ex, out in zip(expectation, output):
+            for piece in ex:
+                self.assertTrue(re.search(piece, out))
+        lines = f['transfers'].value.split('\n')
+        inputdata = '\n'.join(lines[4:7])
+        f['transfers'] = inputdata
+        self.submit(f, check_notification=False)
+
+        ## second round
+        self.assertPresence("Abschicken")
+        self.assertNonPresence("Validieren")
+        f = self.response.forms['transfersform']
+        self.assertTrue(f['checksum'].value)
+        self.submit(f)
+        self.assertPresence("Committed 3 transfers.", div="notifications")
+
+    @as_users("anton")
     def test_semester(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/semester/show'})

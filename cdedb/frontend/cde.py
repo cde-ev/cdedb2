@@ -10,6 +10,7 @@ import itertools
 import logging
 import os.path
 import random
+import re
 import shutil
 import string
 import tempfile
@@ -21,7 +22,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.common import (
     merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
     int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
-    ProxyShim)
+    ProxyShim, diacritic_patterns)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, Worker,
     check_validation as check, cdedbid_filter, request_data_extractor,
@@ -492,6 +493,7 @@ class CdEFrontend(AbstractUserFrontend):
         The internal parameter finalized is used to explicitly signal at
         what point account creation will happen.
         """
+        accounts = accounts or ''
         accountlines = accounts.splitlines()
         fields = (
             'event', 'course', 'family_name', 'given_names', 'title',
@@ -573,6 +575,168 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 rs.notify("error", "Unexpected error on line {}.".format(num))
             return self.batch_admission_form(rs, data=data)
+
+    @access("cde_admin")
+    def money_transfers_form(self, rs, data=None):
+        """Render form.
+
+        The ``data`` parameter contains all extra information assembled
+        during processing of a POST request.
+        """
+        defaults = {'sendmail': True,}
+        merge_dicts(rs.values, defaults)
+        data = data or {}
+        return self.render(rs, "money_transfers", {'data': data})
+
+    def examine_money_transfer(self, rs, datum):
+        """Check one line specifying a money transfer.
+
+        We test for fitness of the data itself.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type datum: {str: object}
+        :rtype: {str: object}
+        :returns: The processed input datum.
+        """
+        persona_id, problems = validate.check_cdedbid(
+            datum['raw']['persona_id'], "persona_id")
+        family_name, p = validate.check_str(
+            datum['raw']['family_name'], "family_name")
+        problems.extend(p)
+        given_names, p = validate.check_str(
+            datum['raw']['given_names'], "given_names")
+        problems.extend(p)
+        amount, p = validate.check_decimal(datum['raw']['amount'], "amount")
+        problems.extend(p)
+        note, p = validate.check_str_or_None(datum['raw']['note'], "note")
+        problems.extend(p)
+
+        persona = None
+        if persona_id:
+            persona = self.coreproxy.get_persona(rs, persona_id)
+            if not re.search(diacritic_patterns(family_name),
+                             persona['family_name'], flags=re.IGNORECASE):
+                problems.append(('family_name',
+                                 ValueError("Family name doesn't match.")))
+            if not re.search(diacritic_patterns(given_names),
+                             persona['given_names'], flags=re.IGNORECASE):
+                problems.append(('given_names',
+                                 ValueError("Given names don't match.")))
+        datum.update({
+            'persona_id': persona_id,
+            'amount': amount,
+            'note': note,
+            'warnings': [],
+            'problems': problems,})
+        return datum
+
+    def perform_money_transfers(self, rs, data, sendmail):
+        """Resolve all entries in the money transfers form.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: [{str: object}]
+        :type sendmail: bool
+        :rtype: bool, int
+        :returns: Success information and for positive outcome the
+          number of recorded transfer or for negative outcome the line
+          where an exception was triggered or None if it was a DB
+          serialization error.
+        """
+        try:
+            with Atomizer(rs):
+                count = 0
+                persona_ids = tuple(e['persona_id'] for e in data)
+                personas = self.coreproxy.get_total_personas(rs, persona_ids)
+                for index, datum in enumerate(data):
+                    new_balance = (personas[datum['persona_id']]['balance']
+                                   + datum['amount'])
+                    self.coreproxy.change_persona_balance(
+                        rs, datum['persona_id'], new_balance,
+                        const.FinanceLogCodes.increase_balance,
+                        change_note=datum['note'])
+                    count += 1
+        except psycopg2.extensions.TransactionRollbackError:
+            ## We perform a rather big transaction, so serialization errors
+            ## could happen.
+            return False, None
+        except:
+            ## This blanket catching of all exceptions is a last resort. We try
+            ## to do enough validation, so that this should never happen, but
+            ## an opaque error (as would happen without this) would be rather
+            ## frustrating for the users -- hence some extra error handling
+            ## here.
+            self.logger.error(glue(
+                ">>>\n>>>\n>>>\n>>> Exception during transfer processing",
+                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
+            self.logger.error("SECOND TRY CGITB")
+            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            return False, index
+        if sendmail:
+            for datum in data:
+                persona = personas[datum['persona_id']]
+                address = make_postal_address(persona)
+                self.do_mail(rs, "transfer_received",
+                             {'To': (persona['username'],),
+                              'Subject': 'CdE money transfer received',},
+                              {'persona': persona, 'address': address})
+        return True, count
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("sendmail", "bool"), ("transfers", "str"),
+                 ("checksum", "str_or_None"))
+    def money_transfers(self, rs, sendmail, transfers, checksum):
+        """Update member balances.
+
+        The additional parameter sendmail modifies the behaviour and can
+        be selected by the user.
+
+        The internal parameter checksum is used to guard against data
+        corruption and to explicitly signal at what point the data will
+        be committed (for the second purpose it works like a boolean).
+        """
+        transfers = transfers or ''
+        transferlines = transfers.splitlines()
+        fields = ('persona_id', 'family_name','given_names', 'amount', 'note')
+        reader = csv.DictReader(
+            transferlines, fieldnames=fields, delimiter=';',
+            quoting=csv.QUOTE_ALL, doublequote=True, quotechar='"')
+        data = []
+        lineno = 0
+        for raw_entry in reader:
+            dataset = {'raw': raw_entry}
+            lineno += 1
+            dataset['lineno'] = lineno
+            data.append(self.examine_money_transfer(rs, dataset))
+        for ds1, ds2 in itertools.combinations(data, 2):
+            if ds1['persona_id'] and ds1['persona_id'] == ds2['persona_id']:
+                warning = (None, ValueError(
+                    glue("More than one transfer for this account (lines {}",
+                         "and {}).").format(ds1['lineno'], ds2['lineno'])))
+                ds1['warnings'].append(warning)
+                ds2['warnings'].append(warning)
+        if lineno != len(transferlines):
+            rs.errors.append(("transfers", ValueError("Lines didn't match up.")))
+        open_issues = any(e['problems'] for e in data)
+        if rs.errors or not data or open_issues:
+            rs.values['checksum'] = None
+            return self.money_transfers_form(rs, data=data)
+        current_checksum = hashlib.md5(transfers.encode()).hexdigest()
+        if checksum != current_checksum:
+            rs.values['checksum'] = current_checksum
+            return self.money_transfers_form(rs, data=data)
+
+        ## Here validation is finished
+        success, num = self.perform_money_transfers(rs, data, sendmail)
+        if success:
+            rs.notify("success", "Committed {} transfers.".format(num))
+            return self.redirect(rs, "cde/index")
+        else:
+            if num is None:
+                rs.notify("warning", "DB serialization error.")
+            else:
+                rs.notify("error", "Unexpected error on line {}.".format(num))
+            return self.money_transfers_form(rs, data=data)
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),

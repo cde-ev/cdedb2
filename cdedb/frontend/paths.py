@@ -141,6 +141,10 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="batch_admission_form"),
             rule("/admission", methods=_POST,
                  endpoint="batch_admission"),
+            rule("/transfers", methods=_GET,
+                 endpoint="money_transfers_form"),
+            rule("/transfers", methods=_POST,
+                 endpoint="money_transfers"),
             sub('/self', (
                 rule("/consent", methods=_GET,
                      endpoint="consent_decision_form"),

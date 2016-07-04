@@ -12,7 +12,7 @@ import enum
 import logging
 
 from cdedb.common import (
-    glue, make_root_logger, ProxyShim, unwrap)
+    glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
 import cdedb.validation as validate
@@ -396,43 +396,6 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         query = query.format(table=table, entity_key=entity_key)
         return self.query_exec(rs, query, (entity,))
 
-    @staticmethod
-    def diacritic_patterns(string):
-        """Replace letters with a pattern matching expressions, so that
-        ommitting diacritics in the query input is possible.
-
-        This is intended for use with the sql SIMILAR TO clause.
-
-        :type string: str
-        :rtype: str
-        """
-        ## if fragile special chars are present do nothing
-        ## all special chars: '_%|*+?{}()[]'
-        special_chars = '|*+?{}()[]'
-        for char in special_chars:
-            if char in string:
-                return string
-        ## some of the diacritics in use according to wikipedia
-        umlaut_map = (
-            ("ae", "(ae|[äæ])"),
-            ("oe", "(oe|[öøœ])"),
-            ("ue", "(ue|ü)"),
-            ("ss", "(ss|ß)"),
-            ("a", "[aàáâãäåą]"),
-            ("c", "[cçčć]"),
-            ("e", "[eèéêëę]"),
-            ("i", "[iìíîï]"),
-            ("l", "[lł]"),
-            ("n", "[nñń]"),
-            ("o", "[oòóôõöøő]"),
-            ("u", "[uùúûüű]"),
-            ("y", "[yýÿ]"),
-            ("z", "[zźż]"),
-        )
-        for normal, replacement in umlaut_map:
-            string = string.replace(normal, replacement)
-        return string
-
     def general_query(self, rs, query, distinct=True, view=None):
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
         object.
@@ -477,7 +440,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
             ## fulfilling their constraint.
             if operator in (_ops.containsall, _ops.containsnone,
                             _ops.containssome):
-                values = tuple("%{}%".format(self.diacritic_patterns(x.lower()))
+                values = tuple("%{}%".format(diacritic_patterns(x.lower()))
                                for x in value)
                 subphrase = "lower({0}) SIMILAR TO %s"
                 phrase = "( ( {} ) )".format(" ) OR ( ".join(
@@ -514,7 +477,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                     phrase = "lower({}) SIMILAR TO %s"
                 else:
                     phrase = "lower({}) NOT SIMILAR TO %s"
-                value = "%{}%".format(self.diacritic_patterns(value.lower()))
+                value = "%{}%".format(diacritic_patterns(value.lower()))
                 params.extend((value,)*len(columns))
             elif operator in (_ops.regex, _ops.notregex):
                 if operator == _ops.regex:
