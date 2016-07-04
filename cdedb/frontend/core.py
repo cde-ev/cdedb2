@@ -240,15 +240,12 @@ class CoreFrontend(AbstractFrontend):
                                                 'current': current})
 
     @access("core_admin")
-    @REQUESTdata(("id_to_show", "cdedbid"), ("realm", "str"))
-    def admin_show_user(self, rs, id_to_show, realm):
-        """Allow admins to view any user data set.
-
-        The realm parameter selects which view on the data set is requested.
-        """
-        if rs.errors or not "{}_admin".format(realm) in rs.user.roles:
+    @REQUESTdata(("id_to_show", "cdedbid"))
+    def admin_show_user(self, rs, id_to_show):
+        """Allow admins to view any user data set."""
+        if rs.errors:
             return self.redirect(rs, "core/index")
-        return self.redirect_show_user(rs, id_to_show, realm)
+        return self.redirect_show_user(rs, id_to_show)
 
     @access("persona")
     def change_user_form(self, rs):

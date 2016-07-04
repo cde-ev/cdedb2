@@ -479,7 +479,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params = params or {}
             return cdedburl(rs, endpoint, params)
 
-        def _show_user_link(persona_id, realm=None):
+        def _show_user_link(persona_id):
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -487,17 +487,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             have this helper.
 
             :type persona_id: int
-            :type realm: str or None
-            :param realm: If given this is the target realm for the show user
-              page.
             :rtype: str
             """
-            realm = realm or self.realm
-            return cdedburl(rs, '{}/show_user'.format(realm), params={
+            return cdedburl(rs, 'core/show_user', params={
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
-                    "{}/show_user".format(realm),
-                    "confirm_id", persona_id, timeout=None)},)
+                    "core/show_user", "confirm_id", persona_id, timeout=None)},)
         default_selections = {
             'gender': tuple((k, v) for k, v in
                             self.enum_choice(rs, const.Genders).items()),
@@ -766,7 +761,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             msg['Subject'], msg['To']))
         return ret
 
-    def redirect_show_user(self, rs, persona_id, realm=None):
+    def redirect_show_user(self, rs, persona_id):
         """Convenience function to redirect to a user detail page.
 
         The point is, that encoding the ``confirm_id`` parameter is
@@ -776,13 +771,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type persona_id: int
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
-        realm = realm or self.realm
-        cid = self.encode_parameter("{}/show_user".format(realm),
-                                    "confirm_id", persona_id,
-                                    timeout=None)
+        cid = self.encode_parameter(
+            "core/show_user", "confirm_id", persona_id, timeout=None)
         params = {'confirm_id': cid, 'persona_id': persona_id}
-        return self.redirect(rs, '{}/show_user'.format(realm),
-                             params=params)
+        return self.redirect(rs, 'core/show_user', params=params)
 
     @classmethod
     def enum_choice(cls, rs, anenum):
