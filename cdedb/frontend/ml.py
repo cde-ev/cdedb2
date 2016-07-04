@@ -71,11 +71,6 @@ class MlFrontend(AbstractUserFrontend):
             'mailinglist_data': mailinglist_data})
 
     @access("ml")
-    @REQUESTdata(("confirm_id", "#int"))
-    def show_user(self, rs, persona_id, confirm_id):
-        return super().show_user(rs, persona_id, confirm_id)
-
-    @access("ml")
     def change_user_form(self, rs):
         return super().change_user_form(rs)
 

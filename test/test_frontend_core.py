@@ -63,7 +63,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminchangedata(self, user):
-        self.admin_view_profile('berta', realm="core")
+        self.admin_view_profile('berta')
         self.traverse({'href': '/core/persona/2/adminchange'})
         self.assertTitle("Bertålotta Beispiel bearbeiten")
         f = self.response.forms['changedataform']
@@ -76,7 +76,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminchangedata2(self, user):
-        self.admin_view_profile('anton', realm="core")
+        self.admin_view_profile('anton')
         self.traverse({'href': '/core/persona/1/adminchange'})
         self.assertTitle("Anton Armin A. Administrator bearbeiten")
         f = self.response.forms['changedataform']
@@ -280,8 +280,9 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_show_archived_user(self, user):
-        self.admin_view_profile('hades', realm="cde", check=False)
-        self.assertTitle("Archivzugriff -- Hades Hell")
+        self.admin_view_profile('hades', check=False)
+        self.assertTitle("Hades Hell")
+        self.assertPresence("Der Benutzer ist archiviert.")
 
     @as_users("anton")
     def test_meta_info(self, user):
@@ -323,7 +324,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_history(self, user):
-        self.admin_view_profile('berta', realm="core")
+        self.admin_view_profile('berta')
         self.traverse({'href': '/core/persona/2/adminchange'})
         self.assertTitle("Bertålotta Beispiel bearbeiten")
         f = self.response.forms['changedataform']
@@ -340,13 +341,13 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_rst(self, user):
-        self.admin_view_profile('inga', realm="core")
+        self.admin_view_profile('inga')
         self.assertIn('<div class="section" id="CDEDB_RST_inga">',
                       self.response.text)
 
     @as_users("anton")
     def test_trivial_promotion(self, user):
-        self.admin_view_profile('emilia', realm="core")
+        self.admin_view_profile('emilia')
         self.traverse({'href': '/core/persona/5/promote'})
         self.assertTitle("Bereichsänderung für Emilia E. Eventis")
         f = self.response.forms['realmselectionform']
@@ -361,7 +362,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_nontrivial_promotion(self, user):
-        self.admin_view_profile('kalif', realm="core")
+        self.admin_view_profile('kalif')
         self.traverse({'href': '/core/persona/11/promote'})
         self.assertTitle("Bereichsänderung für Kalif ibn al-Ḥasan Karabatschi")
         f = self.response.forms['realmselectionform']

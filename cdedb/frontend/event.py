@@ -105,11 +105,6 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "index", {
             'open_events': open_events, 'orga_events': orga_events})
 
-    @access("event")
-    @REQUESTdata(("confirm_id", "#int"))
-    def show_user(self, rs, persona_id, confirm_id):
-        return super().show_user(rs, persona_id, confirm_id)
-
     @access("event_admin")
     def admin_change_user_form(self, rs, persona_id):
         return super().admin_change_user_form(rs, persona_id)

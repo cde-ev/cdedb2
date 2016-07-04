@@ -40,22 +40,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    ## @access("user")
-    ## @REQUESTdata(("confirm_id", "#int"))
-    @abc.abstractmethod
-    def show_user(self, rs, persona_id, confirm_id):
-        """Display user details.
-
-        This has an additional encoded parameter to make links to this
-        target ephemeral. Thus it is more difficult to algorithmically
-        extract user data from the web frontend.
-        """
-        if persona_id != confirm_id or rs.errors:
-            rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/index")
-        data = self.user_management['persona_getter'](self)(rs, persona_id)
-        return self.render(rs, "show_user", {'data': data})
-
     ## @access("realm_admin")
     @abc.abstractmethod
     def admin_change_user_form(self, rs, persona_id):

@@ -56,11 +56,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "index", {'assemblies': assemblies})
 
     @access("assembly")
-    @REQUESTdata(("confirm_id", "#int"))
-    def show_user(self, rs, persona_id, confirm_id):
-        return super().show_user(rs, persona_id, confirm_id)
-
-    @access("assembly")
     def change_user_form(self, rs):
         return super().change_user_form(rs)
 

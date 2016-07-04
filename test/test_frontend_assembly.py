@@ -31,7 +31,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_adminchangeuser(self, user):
-        self.admin_view_profile('kalif', realm="assembly")
+        self.admin_view_profile('kalif')
         self.traverse({'href': '/assembly/user/11/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -42,7 +42,7 @@ class TestAssemblyFrontend(FrontendTest):
 
     @as_users("anton")
     def test_toggleactivity(self, user):
-        self.admin_view_profile('kalif', realm="assembly")
+        self.admin_view_profile('kalif')
         self.assertEqual(
             True,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')

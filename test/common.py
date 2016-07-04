@@ -356,12 +356,11 @@ class FrontendTest(unittest.TestCase):
         f = self.response.forms['logoutform']
         self.submit(f, check_notification=False)
 
-    def admin_view_profile(self, user, realm="core", check=True):
+    def admin_view_profile(self, user, check=True):
         u = USER_DICT[user]
         self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
         f = self.response.forms['adminshowuserform']
         f['id_to_show'] = u["DB-ID"]
-        f['realm'] = realm
         self.submit(f)
         if check:
             self.assertTitle("{} {}".format(u['given_names'], u['family_name']))

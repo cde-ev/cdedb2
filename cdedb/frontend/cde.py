@@ -85,28 +85,6 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0)})
 
-    @access("cde")
-    @REQUESTdata(("confirm_id", "#int"))
-    def show_user(self, rs, persona_id, confirm_id):
-        if persona_id != confirm_id or rs.errors:
-            rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/index")
-        data = self.coreproxy.get_cde_user(rs, persona_id)
-        participation_info = self.pasteventproxy.participation_info(
-            rs, persona_id)
-        params = {
-            'data': data,
-            'participation_info': participation_info,
-        }
-        if data['is_archived']:
-            if self.is_admin(rs):
-                return self.render(rs, "show_archived_user", params)
-            else:
-                rs.notify("error", "Accessing archived member impossible.")
-                return self.redirect(rs, "core/index")
-        else:
-            return self.render(rs, "show_user", params)
-
     @access("cde_admin")
     def admin_change_user_form(self, rs, persona_id):
         return super().admin_change_user_form(rs, persona_id)

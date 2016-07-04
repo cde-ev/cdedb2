@@ -217,8 +217,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/rollback", methods=_POST,
                          endpoint="lastschrift_rollback_transaction"),)),)),
             sub('/user/<int:persona_id>', (
-                rule("/show", methods=_GET,
-                     endpoint="show_user"),
                 rule("/adminchange", methods=_GET,
                      endpoint="admin_change_user_form"),
                 rule("/adminchange", methods=_POST,
@@ -269,8 +267,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
             rule("/event/log", methods=_GET,
                  endpoint="view_log"),
             sub('/user/<int:persona_id>', (
-                rule("/show", methods=_GET,
-                     endpoint="show_user"),
                 rule("/adminchange", methods=_GET,
                      endpoint="admin_change_user_form"),
                 rule("/adminchange", methods=_POST,
@@ -440,8 +436,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
             rule("/attachment/add", methods=_POST,
                  endpoint="add_attachment"),
             sub('/user/<int:persona_id>', (
-                rule("/show", methods=_GET,
-                     endpoint="show_user"),
                 rule("/adminchange", methods=_GET,
                      endpoint="admin_change_user_form"),
                 rule("/adminchange", methods=_POST,
@@ -514,8 +508,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
             rule("/log", methods=_GET,
                  endpoint="view_log"),
             sub('/user/<int:persona_id>', (
-                rule("/show", methods=_GET,
-                     endpoint="show_user"),
                 rule("/adminchange", methods=_GET,
                      endpoint="admin_change_user_form"),
                 rule("/adminchange", methods=_POST,
