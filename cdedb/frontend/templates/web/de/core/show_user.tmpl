@@ -121,7 +121,7 @@
                                                ("is_ml_realm", "Mailinglisten", "envelope"),
                                                ("is_assembly_realm", "Versammlungen", "stats"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon) }} {{ desc|e }},
+                            {{ util.make_icon(icon) }} {{ desc|e }},
                         {% else %}
                             {% set tmp = vars.update({'any_realm_not': True}) %}
                         {% endif %}
@@ -142,7 +142,7 @@
                                               ("is_ml_admin", "Mailinglisten", "envelope"),
                                               ("is_assembly_admin", "Versammlungs", "stats"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
+                            {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_privilege': True}) %}
                         {% endif %}

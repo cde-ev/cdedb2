@@ -1,7 +1,7 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}{{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}

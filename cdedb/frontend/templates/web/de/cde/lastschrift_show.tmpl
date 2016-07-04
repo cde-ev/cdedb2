@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_lastschrift' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title -%}
    Einzugsermächtigung {{ "{} {}".format(ambience['persona']['given_names'], ambience['persona']['family_name'])|e }}
 {%- endblock %}

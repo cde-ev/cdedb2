@@ -1,7 +1,7 @@
 {% set sidenav_active='core_mydata'%}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Eigene Daten bearbeiten{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
@@ -31,7 +31,7 @@
         {% endif %}
         
         <h4 class="heading-underline">Kontakt</h4>
-        {{ util.form_input_static(label="E-Mail", value=username,
+        {{ util.form_input_static(label="E-Mail", value=username,
                 info="Um Deine E-Mail-Adresse zu ändern, benutze den entsprechenden Button auf Deiner Profilseite.") }}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
             {{ util.form_input_text(name="telephone", label="Telefon") }}

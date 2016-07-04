@@ -2,7 +2,7 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
 {% block title %}Organisationen der abg. Veranstaltungen verwalten{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}

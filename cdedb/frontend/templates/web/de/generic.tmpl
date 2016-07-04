@@ -36,7 +36,7 @@
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="7") }}
 
         <h4 class="heading-underline">Kontakt</h4>
-        {{ util.form_input_static(label="E-Mail", value=values['username']) }}
+        {{ util.form_input_static(label="E-Mail", value=values['username']) }}
         {% if realm in ("core", "cde", "event") and (values['is_cde_realm'] or values['is_event_realm']) %}
             {{ util.form_input_text(name="telephone", label="Telefon") }}
             {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}

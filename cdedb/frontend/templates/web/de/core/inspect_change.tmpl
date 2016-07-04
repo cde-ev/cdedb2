@@ -1,7 +1,7 @@
 {% set sidenav_active='core_pending_changes' %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Offene Änderung für {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
@@ -34,7 +34,7 @@
     <button type="button" class="btn btn-default btn-sm softhide" id="unhide-button">
         {{ util.make_icon('eye-close') }} Alle Felder anzeigen
     </button>
-    {{ util.href(show_user_link(pending['id']), "Profil anzeigen", icon="share-alt", aclass="btn btn-sm btn-info") }}
+    {{ util.href(show_user_link(pending['id']), "Profil anzeigen", icon="share-alt", aclass="btn btn-sm btn-info") }}
     <script type="text/javascript">
         $(function() {
             $('#diff-view').cdedbHideUnimportant($('#unhide-button'));

@@ -36,7 +36,7 @@
                 if ($indicator.prop('disabled'))
                     return;
                     
-                if ($indicator.prop("checked")) {
+                if ($indicator.prop("checked")) {
                     $row.addClass('drow-delete');
                     $deleteButton.removeClass('active');
                 }

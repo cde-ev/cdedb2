@@ -11,9 +11,9 @@
             ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), "Bereich hinzufügen",
             active=(values['target_realm'] == '')) }}
-    {% if values['target_realm'] %}
+    {% if values['target_realm'] %}
         {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), "Bestätigung", active=True) }}
-    {% endif %}
+    {% endif %}
 {% endblock %}
 {% block content %}
    {% with p = ambience['persona'], 

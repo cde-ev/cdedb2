@@ -34,10 +34,10 @@
 {% endmacro %}
 
 {% macro deko_checkbox(checked, anid='') %}
-    {% if checked %}
-        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"></span>
+    {% if checked %}
+        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"></span>
     {% else %}
-        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %}  data-checked="false"></span>
+        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %}  data-checked="false"></span>
     {% endif %}
 {% endmacro %}
 
@@ -207,7 +207,7 @@
     {# This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
     {% call form_input_general(name, label, '', small, info, displayerrors, horizontal) %}
-        {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio) }}
+        {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio) }}
     {% endcall %}
 {% endmacro %}
 
@@ -260,7 +260,7 @@
     <div class="form-group">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
-            {{ input_submit(value, name, anid, aclass, icon, readonly) }}
+            {{ input_submit(value, name, anid, aclass, icon, readonly) }}
             {% if cancellink %}
                 &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default cancel") }}
             {% endif %}
@@ -339,7 +339,7 @@
                         <tbody>
                         {% for field in spec %}
                             <tr class="query_field {% if field in errors %}errorInput{% endif %}"
-                                    data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
+                                    data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
                                 <td>
                                     {# multi-fields are not reliably selectable, so we disable selection #}
                                     {% if ',' not in field and field not in selection_blacklist %}

@@ -60,7 +60,7 @@
      */
     $.fn.cdedbProtectAction = function(message, is_safe_callback) {
         message = message || "Diese Aktion kann nicht rückgängig gemacht werden.";
-        is_safe_callback = is_safe_callback || function(){ return false; };
+        is_safe_callback = is_safe_callback || function(){ return false; };
         
         // Submit handler
         $(this).submit(function() {

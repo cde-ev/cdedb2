@@ -1,7 +1,7 @@
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
-{% block scripts %}{{ util.cdedb_script('historycollapse') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('historycollapse') }}{% endblock %}
 {% block title %}Geschichte von {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
@@ -41,7 +41,7 @@
     <div class="form-group">
         <label class="col-sm-3">{{ title|e }}</label>
         <div class="col-sm-9 history-container">
-            {{ caller() }}
+            {{ caller() }}
         </div>
     </div>
 {% endmacro %}
@@ -107,7 +107,7 @@
                                                ("is_ml_realm", "Mailinglisten", "envelope"),
                                                ("is_assembly_realm", "Versammlungen", "stats"),)%}
                         {% if entries[bit][c] %}
-                            {{ util.make_icon(icon) }} {{ desc|e }},
+                            {{ util.make_icon(icon) }} {{ desc|e }},
                         {% endif %}
                     {% endfor %}
                 {% endcall %}    
@@ -124,7 +124,7 @@
                                               ("is_ml_admin", "Mailinglisten", "envelope"),
                                               ("is_assembly_admin", "Versammlungs", "stats"),)%}
                         {% if entries[bit][c] %}
-                            {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
+                            {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_privilege': True}) %}
                         {% endif %}

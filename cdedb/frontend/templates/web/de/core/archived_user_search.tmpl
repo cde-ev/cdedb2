@@ -3,7 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
 {% block title %}Archivnutzersuche{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
