@@ -1,10 +1,10 @@
-{% extends "web/de/cde/base.tmpl" %}
+{% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Mitgliedschaftsstatus von {{ data['given_names']|e }} {{ data['family_name']|e }} bearbeiten
+Mitgliedschaftsstatus von {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }} bearbeiten
 {% endblock %}
 {% block content %}
-   {% if data['is_member'] %}
+   {% if ambience['persona']['is_member'] %}
        <p>
             Der Button tut folgendes.
             <ul>
@@ -13,7 +13,7 @@ Mitgliedschaftsstatus von {{ data['given_names']|e }} {{ data['family_name']|e }
             </ul>
        </p>
 
-        <form action="{{ cdedblink('cde/modify_membership')|e }}" method="POST" id="modifymembershipform">
+        <form action="{{ cdedblink('core/modify_membership')|e }}" method="POST" id="modifymembershipform">
             <div>
                 {{ util.input_hidden(name="is_member", value=False) }}
                 {{ util.form_input_submit(value="Mitgliedschaft terminieren") }}
@@ -21,7 +21,7 @@ Mitgliedschaftsstatus von {{ data['given_names']|e }} {{ data['family_name']|e }
         </form>
    {% else %}
 
-        <form action="{{ cdedblink('cde/modify_membership')|e }}" method="POST" id="modifymembershipform">
+        <form action="{{ cdedblink('core/modify_membership')|e }}" method="POST" id="modifymembershipform">
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
                 {{ util.form_input_submit(value="zum Mitglied machen") }}

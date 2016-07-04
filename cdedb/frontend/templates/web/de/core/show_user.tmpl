@@ -50,7 +50,7 @@
         <div class="pull-right-responsive">
             <p class="text-right">
                 {% if data['foto'] %}
-                    <img src="{{ cdedblink('cde/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
+                    <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
                       class="profilepic img-thumbnail">
                 {% else %}
                     <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
@@ -58,7 +58,7 @@
                 {% endif %}
                 {% if data['id'] == user.persona_id or is_admin %}
                     <br />
-                    {{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern", aclass="btn btn-xs btn-warning",
+                    {{ util.href(cdedblink('core/set_foto_form'), "Profilbild ändern", aclass="btn btn-xs btn-warning",
                             icon="pencil") }}
                 {% endif %}
             </p>
@@ -168,7 +168,7 @@
                             (Probemitgliedschaft)
                         {% endif %}
                         {% if is_admin %}
-                            {{ util.href(cdedblink('cde/modify_membership_form'), "Status ändern", icon="pencil",
+                            {{ util.href(cdedblink('core/modify_membership_form'), "Status ändern", icon="pencil",
                                     aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                     </dd>

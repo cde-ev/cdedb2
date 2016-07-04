@@ -185,7 +185,7 @@
         {% if data['is_cde_realm'] and realm in ("core", "cde") %}
             <p>
                 {% if data['foto'] %}
-                    <img src="{{ cdedblink('cde/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
+                    <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
                       class="profilepic img-thumbnail">
                 {% else %}
                     <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
@@ -230,7 +230,7 @@
                         {% if data['id'] == user.persona_id %}
                             <li>{{ util.href(cdedblink("core/change_password_form"), "Passwort ändern") }}</li>
                         {% endif %}
-                        <li>{{ util.href(cdedblink('cde/set_foto_form'), "Profilbild ändern") }}</li>
+                        <li>{{ util.href(cdedblink('core/set_foto_form'), "Profilbild ändern") }}</li>
                         <li>{{ util.href(cdedblink('cde/lastschrift_show'), "Einzugsermächtigung") }}</li>
                         {% if "admin" in user.roles %}
                             <li>{{ util.href(cdedblink("core/change_privileges_form"), "Privilegien anpassen") }}</li>
@@ -365,7 +365,7 @@
                             (Probemitgliedschaft)
                         {% endif %}
                         {% if is_admin %}
-                            {{ util.href(cdedblink('cde/modify_membership_form'), "Mitgliedsstatus ändern") }}
+                            {{ util.href(cdedblink('core/modify_membership_form'), "Mitgliedsstatus ändern") }}
                         {% endif %}
                     </td>
                 </tr>

@@ -1,11 +1,11 @@
-{% extends "web/de/cde/base.tmpl" %}
+{% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Profilbild für {{ data['given_names']|e }} {{ data['family_name']|e }} bearbeiten{% endblock %}
+{% block title %}Profilbild für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }} bearbeiten{% endblock %}
 {% block content %}
     Bitte beachte: Das Bild muss eine annähernd quadratische jpg oder png
     Datei mit maximal 100KB Größe sein.
 
-    <form action="{{ cdedblink('cde/set_foto')|e }}" method="POST" enctype="multipart/form-data" id="setfotoform">
+    <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" enctype="multipart/form-data" id="setfotoform">
         <div>
             {{ util.form_input_file(name="foto", accept="image/*") }}
             {{ util.form_input_submit(value="Aktualisieren") }}

@@ -5,6 +5,7 @@
 import cgitb
 import hashlib
 import logging
+import os.path
 import sys
 import uuid
 
@@ -12,7 +13,7 @@ import psycopg2.extensions
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, merge_dicts, request_data_extractor)
+    check_validation as check, merge_dicts, request_data_extractor, REQUESTfile)
 from cdedb.common import (
     ProxyShim, glue, pairwise, extract_roles, privilege_tier, unwrap)
 from cdedb.backend.core import CoreBackend
@@ -509,6 +510,70 @@ class CoreFrontend(AbstractFrontend):
             return self.promote_user_form(rs, persona_id)
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
+
+    @access("cde_admin")
+    def modify_membership_form(self, rs, persona_id):
+        """Render form."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
+        return self.render(rs, "modify_membership")
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("is_member", "bool"))
+    def modify_membership(self, rs, persona_id, is_member):
+        """Change association status.
+
+        This is CdE-functionality so we require a cde_admin instead of a
+        core_admin.
+        """
+        if rs.errors:
+            return self.modify_membership_form(rs, persona_id)
+        code = self.coreproxy.change_membership(rs, persona_id, is_member)
+        self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
+
+    @access("cde")
+    def get_foto(self, rs, foto):
+        """Retrieve profile picture."""
+        path = os.path.join(self.conf.STORAGE_DIR, "foto", foto)
+        return self.send_file(rs, path=path)
+
+    @access("cde")
+    def set_foto_form(self, rs, persona_id):
+        """Render form."""
+        if rs.user.persona_id != persona_id and not self.is_admin(rs):
+            raise werkzeug.exceptions.Forbidden("Not privileged.")
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
+        return self.render(rs, "set_foto")
+
+    @access("cde", modi={"POST"})
+    @REQUESTfile("foto")
+    def set_foto(self, rs, persona_id, foto):
+        """Set profile picture."""
+        if rs.user.persona_id != persona_id and not self.is_admin(rs):
+            raise werkzeug.exceptions.Forbidden("Not privileged.")
+        foto = check(rs, 'profilepic', foto, "foto")
+        if rs.errors:
+            return self.set_foto_form(rs, persona_id)
+        previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
+        myhash = hashlib.sha512()
+        myhash.update(foto)
+        path = os.path.join(self.conf.STORAGE_DIR, 'foto', myhash.hexdigest())
+        if not os.path.isfile(path):
+            with open(path, 'wb') as f:
+                f.write(foto)
+        with Atomizer(rs):
+            code = self.coreproxy.change_foto(rs, persona_id,
+                                              foto=myhash.hexdigest())
+            if previous:
+                if not self.coreproxy.foto_usage(rs, previous):
+                    path = os.path.join(self.conf.STORAGE_DIR, 'foto', previous)
+                    os.remove(path)
+        self.notify_return_code(rs, code, success="Foto updated.")
         return self.redirect_show_user(rs, persona_id)
 
     @access("persona")
