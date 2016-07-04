@@ -220,6 +220,9 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     def show_history(self, rs, persona_id):
         """Display user history."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         history = self.coreproxy.changelog_get_history(rs, persona_id,
                                                        generations=None)
         current_generation = self.coreproxy.changelog_get_generation(
@@ -363,6 +366,9 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         generation = self.coreproxy.changelog_get_generation(
             rs, persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
@@ -413,6 +419,9 @@ class CoreFrontend(AbstractFrontend):
     @access("admin")
     def change_privileges_form(self, rs, persona_id):
         """Render form."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'])
         return self.render(rs, "change_privileges")
 
@@ -451,6 +460,9 @@ class CoreFrontend(AbstractFrontend):
         """
         if rs.errors:
             return self.index(rs)
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'])
         if (target_realm
                 and rs.ambience['persona']['is_{}_realm'.format(target_realm)]):
@@ -603,6 +615,9 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", modi={"POST"})
     def admin_password_reset(self, rs, persona_id):
         """Administrative password reset."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         data = self.coreproxy.get_persona(rs, persona_id)
         code, message = self.coreproxy.make_reset_cookie(rs, data['username'])
         if code:
@@ -673,6 +688,9 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin")
     def admin_username_change_form(self, rs, persona_id):
         """Render form."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data': data})
 
@@ -696,6 +714,9 @@ class CoreFrontend(AbstractFrontend):
     def toggle_activity(self, rs, persona_id, activity):
         """Enable/disable an account."""
         if rs.errors:
+            return self.redirect_show_user(rs, persona_id)
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
             return self.redirect_show_user(rs, persona_id)
         data = {
             'id': persona_id,

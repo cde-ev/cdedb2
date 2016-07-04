@@ -136,6 +136,9 @@ class CdEFrontend(AbstractUserFrontend):
         """Render form."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden("Not privileged.")
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "set_foto", {'data': data})
 
