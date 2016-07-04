@@ -278,6 +278,9 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def modify_membership_form(self, rs, persona_id):
         """Render form."""
+        if rs.ambience['persona']['is_archived']:
+            rs.notify("error", "Persona is archived.")
+            return self.redirect_show_user(rs, persona_id)
         data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "modify_membership", {'data': data})
 
