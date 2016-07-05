@@ -124,7 +124,11 @@ class Application(BaseApp):
                 rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
                 ## Add realm specific infos (mostly to the user object)
                 getattr(self, component).finalize_session(rs)
-                return handler(rs, **args)
+                try:
+                    return handler(rs, **args)
+                finally:
+                    rs._conn.commit()
+                    rs._conn.close()
             except werkzeug.exceptions.HTTPException:
                 ## do not log these, since they are not interesting and
                 ## reduce the signal to noise ratio
