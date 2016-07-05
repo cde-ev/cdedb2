@@ -129,6 +129,9 @@
 				    {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
 				    {{ util.input_hidden(name="status",
 					    value=enums['LastschriftTransactionStati'].success.value) }}
+                                    <button type="submit" class="btn btn-xs btn-success">
+                                        <span class="glyphicon glyphicon-ok"></span> Erfolg
+                                    </button>
 				</form>
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
 							   {'lastschrift_id': transaction['lastschrift_id'],
@@ -137,7 +140,7 @@
 				    {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
 				    {{ util.input_hidden(name="status",
 					    value=enums['LastschriftTransactionStati'].cancelled.value) }}
-				    <button type="submit" class="btn btn-xs btn-danger">
+				    <button type="submit" class="btn btn-xs btn-warning">
 					<span class="glyphicon glyphicon-remove"></span> Abbruch
 				    </button>
 				</form>
