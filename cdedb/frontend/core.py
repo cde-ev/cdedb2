@@ -153,7 +153,8 @@ class CoreFrontend(AbstractFrontend):
             raise PrivilegeError("Only admins may view archived datasets.")
 
         ALL_ACCESS_LEVELS = {
-            "persona", "ml", "assembly", "event", "cde", "core", "admin"}
+            "persona", "ml", "assembly", "event", "cde", "core", "admin",
+            "orga"}
         access_levels = {"persona"}
         ## Let users see themselves
         if persona_id == rs.user.persona_id:
@@ -176,6 +177,7 @@ class CoreFrontend(AbstractFrontend):
             for event_id in self.eventproxy.orga_info(rs, rs.user.persona_id):
                 if self.eventproxy.list_registrations(rs, event_id, persona_id):
                     access_levels.add("event")
+                    access_levels.add("orga")
                     break
         ## Mailinglist moderators get no special treatment since this wouldn't
         ## gain them anything
@@ -200,13 +202,15 @@ class CoreFrontend(AbstractFrontend):
                 "is_active", "is_admin", "is_core_admin", "is_cde_admin",
                 "is_event_admin", "is_ml_admin", "is_assembly_admin",
                 "is_cde_realm", "is_event_realm", "is_ml_realm",
-                "is_assembly_realm", "is_member", "is_searchable",
+                "is_assembly_realm", "is_searchable",
                 "cloud_account", "is_archived", "balance", "decided_search",
                 "trial_member", "bub_search")
             for key in masks:
                 if key in data:
                     del data[key]
-        if "admin" not in access_levels and "notes" in data:
+            if not "orga" in access_levels and "is_member" in data:
+                del data["is_member"]
+        if not may_admin_edit and "notes" in data:
             del data['notes']
 
         ## Add participation info
