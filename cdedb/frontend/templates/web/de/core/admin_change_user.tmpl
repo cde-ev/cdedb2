@@ -10,5 +10,74 @@
     {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), "Daten bearbeiten", active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.admin_change_user("core") }}
+    <script type="text/javascript">
+        $(function() {
+            $('#changedataform').cdedbProtectChanges();
+        });
+    </script>
+    <form action="{{ cdedblink('core/admin_change_user')|e }}" method="POST" id="changedataform"
+        class="form-horizontal">
+        {{ util.input_hidden(name="generation") }}
+        {{ util.form_input_textarea(name="change_note", label="Änderungs-Kommentar") }}
+        <h4 class="heading-underline">Person</h4>
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
+        {{ util.form_input_text(name="family_name", label="Nachname") }}
+        {% if values['is_cde_realm'] %}
+            {{ util.form_input_text(name="birth_name", label="Geburtsname") }}
+        {% endif %}
+        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+        {{ util.form_input_text(name="display_name", label="Rufname") }}
+        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date") }}
+        {% endif %}
+
+        <h4 class="heading-underline">Account</h4>
+        {% if values['is_cde_realm'] %}
+            {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
+        {% endif %}
+        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+            {{ util.form_input_checkbox(name="cloud_account", label="Cloud Account") }}
+        {% endif %}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="7") }}
+
+        <h4 class="heading-underline">Kontakt</h4>
+        {{ util.form_input_static(label="E-Mail", value=values['username']) }}
+        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+            {{ util.form_input_text(name="telephone", label="Telefon") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+        {% endif %}
+        {% if values['is_cde_realm'] %}
+            {{ util.form_input_text(name="weblink", label="WWW") }}
+        {% endif %}
+
+        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+            <h4 class="heading-underline">Adresse</h4>
+            {{ util.form_input_text(name="address", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location", label="Stadt") }}
+            {{ util.form_input_text(name="country", label="Land") }}
+        {% endif %}
+        {% if values['is_cde_realm'] %}
+            <h4 class="heading-underline">Zweitadresse</h4>
+            {{ util.form_input_text(name="address2", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location2", label="Stadt") }}
+            {{ util.form_input_text(name="country2", label="Land") }}
+        {% endif %}
+
+        {% if values['is_cde_realm'] %}
+            <h4 class="heading-underline">Lebenslauf</h4>
+            {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
+            {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
+            {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
+            {{ util.form_input_textarea(name="interests", label="Interessen") }}
+            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
+        {% endif %}
+
+        {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(values['persona_id'])) }}
+    </form>
 {% endblock %}

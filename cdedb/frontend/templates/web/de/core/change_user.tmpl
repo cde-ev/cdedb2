@@ -17,27 +17,31 @@
     </script>
     <form action="{{ cdedblink('core/change_user')|e }}" method="POST" id="changedataform" class="form-horizontal">
         {{ util.input_hidden(name="generation") }}
-        
+
         <h4 class="heading-underline">Person</h4>
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
         {{ util.form_input_text(name="family_name", label="Nachname") }}
         {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
         {{ util.form_input_text(name="display_name", label="Rufname") }}
-                            
-        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+
+        {% if values['is_cde_realm'] %}
             <h4 class="heading-underline">Account</h4>
             {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
         {% endif %}
-        
+
         <h4 class="heading-underline">Kontakt</h4>
         {{ util.form_input_static(label="E-Mail", value=username,
                 info="Um Deine E-Mail-Adresse zu ändern, benutze den entsprechenden Button auf Deiner Profilseite.") }}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
             {{ util.form_input_text(name="telephone", label="Telefon") }}
             {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+        {% endif %}
+        {% if values['is_cde_realm'] %}
             {{ util.form_input_text(name="weblink", label="WWW") }}
-            
+        {% endif %}
+
+        {% if values['is_cde_realm'] or values['is_event_realm'] %}
             <h4 class="heading-underline">Adresse</h4>
             {{ util.form_input_text(name="address", label="Straße") }}
             {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
@@ -52,7 +56,7 @@
             {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
             {{ util.form_input_text(name="location2", label="Stadt") }}
             {{ util.form_input_text(name="country2", label="Land") }}
-            
+
             <h4 class="heading-underline">Lebenslauf</h4>
             {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
             {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
@@ -60,7 +64,7 @@
             {{ util.form_input_textarea(name="interests", label="Interessen") }}
             {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
         {% endif %}
-        
+
         {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(user.persona_id)) }}
     </form>
 {% endblock %}

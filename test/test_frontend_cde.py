@@ -37,14 +37,16 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangedata(self, user):
         self.admin_view_profile('berta')
-        self.traverse({'href': '/cde/user/2/adminchange'})
+        self.traverse({'href': '/core/persona/2/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
+        f['free_form'] = "Jabberwocky for the win."
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Bertålotta Beispiel")
         self.assertPresence("1933-04-03")
+        self.assertPresence("Jabberwocky for the win.")
 
     @as_users("anton")
     def test_validation(self, user):

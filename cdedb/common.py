@@ -1013,23 +1013,23 @@ PERSONA_STATUS_FIELDS = (
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
     "id", "username", "display_name", "family_name", "given_names",
-    "cloud_account")
+    "cloud_account", "title", "name_supplement")
 
 #: Names of columns associated to a cde (formor)member
 PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (
-    "title", "name_supplement", "gender", "birthday", "telephone", "mobile",
-    "address_supplement", "address", "postal_code", "location", "country",
-    "birth_name", "address_supplement2", "address2", "postal_code2",
-    "location2", "country2", "weblink", "specialisation", "affiliation",
-    "timeline", "interests", "free_form", "balance", "decided_search",
-    "trial_member", "bub_search", "foto")
+    "gender", "birthday", "telephone", "mobile", "address_supplement",
+    "address", "postal_code", "location", "country", "birth_name",
+    "address_supplement2", "address2", "postal_code2", "location2",
+    "country2", "weblink", "specialisation", "affiliation", "timeline",
+    "interests", "free_form", "balance", "decided_search", "trial_member",
+    "bub_search", "foto")
 
 #: Names of columns associated to an event user. This should be a subset of
 #: :py:data:`PERSONA_CDE_FIELDS` to facilitate upgrading of event users to
 #: members.
 PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
-    "title", "name_supplement", "gender", "birthday", "telephone", "mobile",
-    "address_supplement", "address", "postal_code", "location", "country")
+    "gender", "birthday", "telephone", "mobile", "address_supplement",
+    "address", "postal_code", "location", "country")
 
 #: Names of columns associated to a ml user.
 PERSONA_ML_FIELDS = PERSONA_CORE_FIELDS

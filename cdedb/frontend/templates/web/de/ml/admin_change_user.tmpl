@@ -1,8 +1,0 @@
-{% extends "web/de/ml/base.tmpl" %}
-{% import "web/de/util.tmpl" as util with context %}
-{% import "web/de/generic.tmpl" as generic with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}Administration -- {{ values['given_names']|e }} {{ values['family_name']|e }} bearbeiten{% endblock %}
-{% block content %}
-    {{ generic.admin_change_user('ml') }}
-{% endblock %}

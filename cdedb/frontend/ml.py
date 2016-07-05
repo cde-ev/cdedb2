@@ -70,28 +70,6 @@ class MlFrontend(AbstractUserFrontend):
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
             'mailinglist_data': mailinglist_data})
 
-    @access("ml")
-    def change_user_form(self, rs):
-        return super().change_user_form(rs)
-
-    @access("ml", modi={"POST"})
-    @REQUESTdatadict(
-        "display_name", "family_name", "given_names")
-    def change_user(self, rs, data):
-        return super().change_user(rs, data)
-
-    @access("ml_admin")
-    def admin_change_user_form(self, rs, persona_id):
-        return super().admin_change_user_form(rs, persona_id)
-
-    @access("ml_admin", modi={"POST"})
-    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
-    @REQUESTdatadict(
-        "given_names", "family_name", "display_name", "notes")
-    def admin_change_user(self, rs, persona_id, generation, change_note, data):
-        return super().admin_change_user(rs, persona_id, generation,
-                                         change_note, data)
-
     @access("ml_admin")
     def create_user_form(self, rs):
         defaults = {

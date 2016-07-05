@@ -31,10 +31,11 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangeuser(self, user):
         self.admin_view_profile('janis')
-        self.traverse({'href': '/ml/user/10/adminchange'})
+        self.traverse({'href': '/core/persona/10/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['notes'] = "Blowing in the wind."
+        self.assertNotIn('birthday', f.fields)
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Janis Jalapeño")

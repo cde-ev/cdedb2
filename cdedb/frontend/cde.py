@@ -85,25 +85,6 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0)})
 
-    @access("cde_admin")
-    def admin_change_user_form(self, rs, persona_id):
-        return super().admin_change_user_form(rs, persona_id)
-
-
-    @access("cde_admin", modi={"POST"})
-    @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
-    @REQUESTdatadict(
-        "display_name", "family_name", "given_names", "title",
-        "name_supplement", "birth_name", "gender", "birthday", "telephone",
-        "mobile", "address_supplement", "address", "postal_code",
-        "location", "country", "address_supplement2", "address2",
-        "postal_code2", "location2", "country2", "weblink",
-        "specialisation", "affiliation", "timeline", "interests",
-        "free_form", "bub_search", "cloud_account", "notes")
-    def admin_change_user(self, rs, persona_id, generation, change_note, data):
-        return super().admin_change_user(rs, persona_id, generation,
-                                         change_note, data)
-
     @access("persona")
     def consent_decision_form(self, rs):
         """After login ask cde members for decision about searchability. Do

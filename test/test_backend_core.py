@@ -491,6 +491,8 @@ class TestCoreBackend(BackendTest):
             'display_name': 'Bertå',
             'family_name': 'Beispiel',
             'given_names': 'Bertålotta',
+            'name_supplement': 'MdB',
+            'title': 'Dr.',
             'id': 2,
             'is_active': True,
             'is_admin': False,

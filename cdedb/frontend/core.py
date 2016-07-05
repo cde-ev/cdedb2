@@ -13,7 +13,8 @@ import psycopg2.extensions
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, merge_dicts, request_data_extractor, REQUESTfile)
+    check_validation as check, merge_dicts, request_data_extractor, REQUESTfile,
+    request_data_dict_extractor)
 from cdedb.common import (
     ProxyShim, glue, pairwise, extract_roles, privilege_tier, unwrap)
 from cdedb.backend.core import CoreBackend
@@ -262,15 +263,29 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona", modi={"POST"})
     @REQUESTdata(("generation", "int"))
-    @REQUESTdatadict(
-        "display_name", "family_name", "given_names", "title",
-        "name_supplement", "telephone", "mobile", "address_supplement",
-        "address", "postal_code", "location", "country",
-        "address_supplement2", "address2", "postal_code2", "location2",
-        "country2", "weblink", "specialisation", "affiliation", "timeline",
-        "interests", "free_form", "bub_search")
-    def change_user(self, rs, generation, data):
+    def change_user(self, rs, generation):
         """Change own data set."""
+        REALM_ATTRIBUTES = {
+            'persona': {
+                "display_name", "family_name", "given_names", "title",
+                "name_supplement"},
+            'ml': set(),
+            'assembly': set(),
+            'event': {
+                "telephone", "mobile", "address_supplement", "address",
+                "postal_code", "location", "country"},
+            'cde': {
+                "telephone", "mobile", "address_supplement", "address",
+                "postal_code", "location", "country",
+                "address_supplement2", "address2", "postal_code2", "location2",
+                "country2", "weblink", "specialisation", "affiliation",
+                "timeline", "interests", "free_form", "bub_search"}
+        }
+        attributes = REALM_ATTRIBUTES['persona']
+        for realm in ('ml', 'assembly', 'event', 'cde'):
+            if realm in rs.user.roles:
+                attributes = attributes.union(REALM_ATTRIBUTES[realm])
+        data = request_data_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, "persona", data)
         if rs.errors:
@@ -361,54 +376,66 @@ class CoreFrontend(AbstractFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "archived_user_search", params)
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin")
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", "Persona is archived.")
             return self.redirect_show_user(rs, persona_id)
+        if not (privilege_tier(extract_roles(rs.ambience['persona']))
+                & rs.user.roles):
+            raise PrivilegeError("Not privileged.")
+
         generation = self.coreproxy.changelog_get_generation(
             rs, persona_id)
         data = unwrap(self.coreproxy.changelog_get_history(
             rs, persona_id, (generation,)))
-        if data['change_status'] == const.MemberChangeStati.pending:
-            rs.notify("info", "Change pending.")
         del data['change_note']
         merge_dicts(rs.values, data)
+        if data['change_status'] == const.MemberChangeStati.pending:
+            rs.notify("info", "Change pending.")
         return self.render(rs, "admin_change_user")
 
-
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin", modi={"POST"})
     @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
-    @REQUESTdatadict(
-        "display_name", "family_name", "given_names", "title",
-        "name_supplement", "birth_name", "gender", "birthday", "telephone",
-        "mobile", "address_supplement", "address", "postal_code",
-        "location", "country", "address_supplement2", "address2",
-        "postal_code2", "location2", "country2", "weblink",
-        "specialisation", "affiliation", "timeline", "interests",
-        "free_form", "bub_search", "cloud_account", "notes")
-    def admin_change_user(self, rs, persona_id, generation, change_note, data):
+    def admin_change_user(self, rs, persona_id, generation, change_note):
         """Privileged edit of data set."""
+        roles = extract_roles(rs.ambience['persona'])
+        if not privilege_tier(roles) & rs.user.roles:
+            raise PrivilegeError("Not privileged.")
+
+        REALM_ATTRIBUTES = {
+            'persona': {
+                "display_name", "family_name", "given_names", "title",
+                "name_supplement", "notes"},
+            'ml': set(),
+            'assembly': set(),
+            'event': {
+                "gender",  "birthday","telephone", "mobile",
+                "address_supplement", "address", "postal_code", "location",
+                "country"},
+            'cde': {
+                "gender",  "birthday","telephone", "mobile",
+                "address_supplement", "address", "postal_code", "location",
+                "country",
+                "birth_name", "address_supplement2", "address2", "postal_code2",
+                "location2", "country2", "weblink", "specialisation",
+                "affiliation", "timeline", "interests", "free_form",
+                "bub_search"}
+        }
+        attributes = REALM_ATTRIBUTES['persona']
+        for realm in ('ml', 'assembly', 'event', 'cde'):
+            if realm in roles:
+                attributes = attributes.union(REALM_ATTRIBUTES[realm])
+        data = request_data_dict_extractor(rs, attributes)
         data['id'] = persona_id
-        ## remove realm specific attributes if persona does not belong to the
-        ## realm
-        if not rs.ambience['persona']['is_cde_realm']:
-            for attr in ("birth_name", "address_supplement2", "address2",
-                         "postal_code2", "location2", "country2", "weblink",
-                         "specialisation", "affiliation", "timeline",
-                         "interests", "free_form", "bub_search"):
-                del data[attr]
-        if (not rs.ambience['persona']['is_cde_realm']
-                and not rs.ambience['persona']['is_event_realm']):
-            for attr in ("title", "name_supplement", "gender", "birthday",
-                         "telephone", "mobile", "address_supplement",
-                         "address", "postal_code", "location", "country"):
-                del data[attr]
         data = check(rs, "persona", data)
         if rs.errors:
             rs.notify("error", "Failed validation.")
             return self.admin_change_user_form(rs, persona_id)
+
         code = self.coreproxy.change_persona(rs, data, generation=generation,
                                              change_note=change_note)
         self.notify_return_code(rs, code)

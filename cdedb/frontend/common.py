@@ -1229,7 +1229,7 @@ def request_data_dict_extractor(rs, args):
     Like :py:meth:`request_data_extractor`.
 
     :type rs: :py:class:`RequestState`
-    :type args: [(str, str)]
+    :type args: [str]
     :param args: handed through to the decorator
     :rtype: {str: object}
     :returns: dict containing the requested values

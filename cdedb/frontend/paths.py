@@ -217,10 +217,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/rollback", methods=_POST,
                          endpoint="lastschrift_rollback_transaction"),)),)),
             sub('/user/<int:persona_id>', (
-                rule("/adminchange", methods=_GET,
-                     endpoint="admin_change_user_form"),
-                rule("/adminchange", methods=_POST,
-                     endpoint="admin_change_user"),
                 rule("/lastschrift", methods=_GET,
                      endpoint="lastschrift_show"),
                 rule("/lastschrift/create", methods=_GET,
@@ -266,11 +262,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="create_event"),
             rule("/event/log", methods=_GET,
                  endpoint="view_log"),
-            sub('/user/<int:persona_id>', (
-                rule("/adminchange", methods=_GET,
-                     endpoint="admin_change_user_form"),
-                rule("/adminchange", methods=_POST,
-                     endpoint="admin_change_user"),)),
             sub('/event/<int:event_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_event"),
@@ -435,11 +426,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="add_attachment_form"),
             rule("/attachment/add", methods=_POST,
                  endpoint="add_attachment"),
-            sub('/user/<int:persona_id>', (
-                rule("/adminchange", methods=_GET,
-                     endpoint="admin_change_user_form"),
-                rule("/adminchange", methods=_POST,
-                     endpoint="admin_change_user"),)),
             sub('/assembly/<int:assembly_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_assembly"),
@@ -507,11 +493,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="create_mailinglist"),
             rule("/log", methods=_GET,
                  endpoint="view_log"),
-            sub('/user/<int:persona_id>', (
-                rule("/adminchange", methods=_GET,
-                     endpoint="admin_change_user_form"),
-                rule("/adminchange", methods=_POST,
-                     endpoint="admin_change_user"),)),
             sub('/mailinglist/<int:mailinglist_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_mailinglist"),

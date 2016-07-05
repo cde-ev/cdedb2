@@ -42,33 +42,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     ## @access("realm_admin")
     @abc.abstractmethod
-    def admin_change_user_form(self, rs, persona_id):
-        """Render form."""
-        data = self.user_management['persona_getter'](self)(rs, persona_id)
-        data['generation'] = self.coreproxy.changelog_get_generation(
-            rs, persona_id)
-        merge_dicts(rs.values, data)
-        return self.render(rs, "admin_change_user",
-                           {'username': data['username']})
-
-    ## @access("realm_admin", modi={"POST"})
-    ## @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
-    ## @REQUESTdatadict(...)
-    @abc.abstractmethod
-    def admin_change_user(self, rs, persona_id, generation, change_note, data):
-        """Modify account details by administrator."""
-        data = data or {}
-        data['id'] = persona_id
-        data = check(rs, "persona", data)
-        if rs.errors:
-            return self.admin_change_user_form(rs, persona_id)
-        code = self.coreproxy.change_persona(rs, data, generation=generation,
-                                             change_note=change_note)
-        self.notify_return_code(rs, code)
-        return self.redirect_show_user(rs, persona_id)
-
-    ## @access("realm_admin")
-    @abc.abstractmethod
     def create_user_form(self, rs):
         """Render form."""
         return self.render(rs, "create_user")

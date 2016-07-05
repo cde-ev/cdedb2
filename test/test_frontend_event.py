@@ -34,10 +34,11 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangeuser(self, user):
         self.admin_view_profile('emilia')
-        self.traverse({'href': '/event/user/5/adminchange'})
+        self.traverse({'href': '/core/persona/5/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['birthday'] = "3.4.1933"
+        self.assertNotIn('free_form', f.fields)
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Emilia E. Eventis")

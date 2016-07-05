@@ -32,10 +32,11 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("anton")
     def test_adminchangeuser(self, user):
         self.admin_view_profile('kalif')
-        self.traverse({'href': '/assembly/user/11/adminchange'})
+        self.traverse({'href': '/core/persona/11/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
         f['notes'] = "Blowing in the wind."
+        self.assertNotIn('birthday', f.fields)
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
