@@ -453,7 +453,7 @@ class TestCoreBackend(BackendTest):
         }
         case_id = self.core.genesis_request(None, data)
         self.assertGreater(case_id, 0)
-        self.assertEqual(1, self.core.genesis_verify(None, case_id))
+        self.assertEqual((1, 'event'), self.core.genesis_verify(None, case_id))
         self.assertEqual(1, len(self.core.genesis_list_cases(
             self.key, stati=(const.GenesisStati.to_review,))))
         expectation = data

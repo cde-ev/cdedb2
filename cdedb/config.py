@@ -99,6 +99,11 @@ _DEFAULTS = {
     ## host to use for sending emails
     "MAIL_HOST": "localhost",
 
+    ## email for event account requests
+    "EVENT_ADMIN_ADDRESS": "event-admins@cde-ev.de",
+    ## email for ml account requests
+    "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
+
     ## query stuff
 
     ## dict where the values are dicts mapping titles to queries for "speed

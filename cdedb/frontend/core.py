@@ -841,18 +841,34 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             rs.notify("error", "Link expired.")
             return self.genesis_request_form(rs)
-        code = self.coreproxy.genesis_verify(rs, case_id)
+        code, realm = self.coreproxy.genesis_verify(rs, case_id)
         self.notify_return_code(rs, code, success="Email verified.",
                                 error="Verification failed.")
+        notify = None
+        if realm == "event":
+            notify = self.conf.EVENT_ADMIN_ADDRESS
+        if realm == "ml":
+            notify = self.conf.ML_ADMIN_ADDRESS
+        if notify:
+            self.do_mail(
+                rs, "genesis_request",
+                {'To': (notify,),
+                 'Subject': 'CdEDB account request',})
         if not code:
             return self.redirect(rs, "core/genesis_request_form")
         return self.redirect(rs, "core/index")
 
-    @access("core_admin")
+    @access("core_admin", "event_admin", "ml_admin")
     def genesis_list_cases(self, rs):
         """Compile a list of genesis cases to review."""
         stati = (const.GenesisStati.to_review, const.GenesisStati.approved)
-        data = self.coreproxy.genesis_list_cases(rs, stati=stati)
+        realm = None
+        relevants = {"core_admin", "event_admin", "ml_admin"}
+        if (relevants & rs.user.roles == {"event_admin"}):
+            realm = "event"
+        elif (relevants & rs.user.roles == {"ml_admin"}):
+            realm = "ml"
+        data = self.coreproxy.genesis_list_cases(rs, stati=stati, realm=realm)
         review_ids = tuple(
             k for k in data
             if data[k]['case_status'] == const.GenesisStati.to_review)

@@ -1452,15 +1452,20 @@ class CoreBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
-        :rtype: int
-        :returns: default return code
+        :rtype: (int, str or None)
+        :returns: (default return code, realm of the case if successful)
         """
         case_id = affirm("id", case_id)
         query = glue("UPDATE core.genesis_cases SET case_status = %s",
                      "WHERE id = %s AND case_status = %s")
         params = (const.GenesisStati.to_review, case_id,
                   const.GenesisStati.unconfirmed)
-        return self.query_exec(rs, query, params)
+        ret = self.query_exec(rs, query, params)
+        realm = None
+        if ret > 0:
+            realm = unwrap(self.sql_select_one(
+                rs, "core.genesis_cases", ("realm",), case_id))
+        return ret, realm
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
@@ -1537,7 +1542,8 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError("Not privileged.")
         return {e['id']: e for e in data}
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
+            "ml_admin")
     def genesis_modify_case(self, rs, data):
         """Modify a persona creation case.
 
@@ -1588,7 +1594,7 @@ class CoreBackend(AbstractBackend):
         return (bool(case)
                 and case['case_status'] == const.GenesisStati.approved
                 and case['secret'] == secret
-                and (case['realm'] == realm))
+                and case['realm'] == realm)
 
     @access("anonymous")
     def genesis(self, rs, case_id, secret, realm, data):
