@@ -697,23 +697,6 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.notify("error", "Unexpected error on line {}.".format(num))
             return self.money_transfers_form(rs, data=data)
 
-    @access("cde_admin")
-    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
-                 ("start", "int_or_None"), ("stop", "int_or_None"))
-    def view_cde_log(self, rs, codes, persona_id, start, stop):
-        """View general activity."""
-        start = start or 0
-        stop = stop or 50
-        ## no validation since the input stays valid, even if some options
-        ## are lost
-        log = self.cdeproxy.retrieve_cde_log(rs, codes, persona_id, start, stop)
-        personas = (
-            {entry['submitted_by'] for entry in log if entry['submitted_by']}
-            | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_personas(rs, personas)
-        return self.render(rs, "view_cde_log", {
-            'log': log, 'persona_data': persona_data})
-
     def determine_open_permits(self, rs, lastschrift_ids=None):
         """Find ids, which to debit this period.
 
@@ -1724,6 +1707,41 @@ class CdEFrontend(AbstractUserFrontend):
                 'pcourse_id': pcourse_id})
         else:
             return self.redirect(rs, "cde/show_past_event")
+
+    @access("cde_admin")
+    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("start", "int_or_None"), ("stop", "int_or_None"))
+    def view_cde_log(self, rs, codes, persona_id, start, stop):
+        """View general activity."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.cdeproxy.retrieve_cde_log(rs, codes, persona_id, start, stop)
+        personas = (
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        persona_data = self.coreproxy.get_personas(rs, personas)
+        return self.render(rs, "view_cde_log", {
+            'log': log, 'persona_data': persona_data})
+
+    @access("cde_admin")
+    @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
+                 ("start", "int_or_None"), ("stop", "int_or_None"))
+    def view_finance_log(self, rs, codes, persona_id, start, stop):
+        """View financial activity."""
+        start = start or 0
+        stop = stop or 50
+        ## no validation since the input stays valid, even if some options
+        ## are lost
+        log = self.cdeproxy.retrieve_finance_log(
+            rs, codes, persona_id, start, stop)
+        persona_ids = (
+            {entry['submitted_by'] for entry in log if entry['submitted_by']}
+            | {entry['persona_id'] for entry in log if entry['persona_id']})
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+        return self.render(rs, "view_finance_log", {
+            'log': log, 'personas': personas})
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("pevent_id", "id_or_None"),

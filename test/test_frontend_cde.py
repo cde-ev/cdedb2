@@ -1042,6 +1042,16 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/cde/log'})
         self.assertTitle("Log: CdE allgemein [0–0]")
 
+    def test_finance_log(self):
+        ## First: generate data
+        pass
+
+        ## Now check it
+        self.login(USER_DICT['anton'])
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/finances'})
+        self.assertTitle("Log: Finanzen [0–2]")
+
     @as_users("anton")
     def test_changelog_meta(self, user):
         self.traverse({'href': '^/$'},

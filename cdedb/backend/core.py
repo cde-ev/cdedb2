@@ -785,11 +785,12 @@ class CoreBackend(AbstractBackend):
             current = unwrap(self.retrieve_personas(rs, (persona_id,),
                                                     ("balance",)))
             if current['balance'] != balance:
-                self.finance_log(rs, log_code, persona_id,
-                                 balance - current['balance'], balance)
-                return self.set_persona(
+                ret = self.set_persona(
                     rs, update, may_wait=False, change_note=change_note,
                     allow_specials=("finance",))
+                self.finance_log(rs, log_code, persona_id,
+                                 balance - current['balance'], balance)
+                return ret
 
     @access("core_admin", "cde_admin")
     def change_membership(self, rs, persona_id, is_member):
@@ -825,10 +826,11 @@ class CoreBackend(AbstractBackend):
                 delta = None
                 new_balance = None
                 code = const.FinanceLogCodes.gain_membership
-            self.finance_log(rs, code, persona_id, delta, new_balance)
-            return self.set_persona(
+            ret = self.set_persona(
                 rs, update, may_wait=False, change_note="Membership change.",
                 allow_specials=("membership", "finance"))
+            self.finance_log(rs, code, persona_id, delta, new_balance)
+            return ret
 
     @access("core_admin")
     def archive_persona(self, rs, persona_id):
