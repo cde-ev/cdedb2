@@ -7,25 +7,33 @@
 {% block content %}
     <div class="row">
         <div class="col-md-6">
-            <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform"
-                    class="form-horizontal">
-                {{ util.input_hidden(name="is_search", value=True) }}
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <h4 class="panel-title"><span class="glyphicon glyphicon-search"></span> Mitgliedersuche</h4>
-                    </div>
-                    <div class="panel-body">
-                        <p>
-                            {{ util.input_text(name="qval_fulltext") }}
-                        </p>
-                        <div class="text-right">
-                            <button type="submit" class="btn btn-primary">
-                                <span class="glyphicon glyphicon-search"></span> Suche
-                            </button>
-                        </div>
-                    </div>
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h4 class="panel-title"><span class="glyphicon glyphicon-search"></span> Mitgliedersuche</h4>
                 </div>
-            </form>
+                <div class="panel-body">
+                    {% if "searchable" in user.roles %}
+                        <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform"
+                                class="form-horizontal">
+                            {{ util.input_hidden(name="is_search", value=True) }}
+                            <p>
+                                {{ util.input_text(name="qval_fulltext") }}
+                            </p>
+                            <div class="text-right">
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="glyphicon glyphicon-search"></span> Suche
+                                </button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <p>
+                            Um die Mitgliedersucher benutzen zu können, musst Du die
+                            {{ util.href(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung") }}
+                            Datenschutzerklärung bestätigen.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         <div class="col-md-6">
             <div class="panel panel-default">

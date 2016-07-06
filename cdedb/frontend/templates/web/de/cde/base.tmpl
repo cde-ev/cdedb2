@@ -29,15 +29,17 @@
             {{ util.href(cdedblink("cde/view_finance_log"), "Finanz-Log", aclass="list-group-item", icon="list-alt",
                     active=(sidenav_active=='finance_log')) }}
         </div>
-        
-        <div class="list-group tear-down">
-            {{ util.href(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen", icon="calendar",
-                    aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
+    {% endif %}
+
+    <div class="list-group tear-down">
+        {{ util.href(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen", icon="calendar",
+                aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
+        {% if is_admin %}
             {{ util.href(cdedblink("cde/institution_summary"), "Organisationen verwalten", icon="briefcase",
                     aclass="list-group-item", active=(sidenav_active=='cde_past_events_org')) }}
             {{ util.href(cdedblink("cde/view_past_log"), "Log (abg. Veranstaltungen)", icon="list-alt",
                     aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
     <hr class="strong visible-xs visible-sm" />
 {% endblock %}
