@@ -5,7 +5,7 @@
     $.fn.cdedbHistoryCollapse = function() {
         $(this).each(function() {
             var $element = $(this);
-            var $rows = $element.find('.history-row');
+            var $rows = $element.find('.history-row:not(.pending)');
             var $crows = $rows.slice(0, -1);
             
             if ($rows.length < 2)

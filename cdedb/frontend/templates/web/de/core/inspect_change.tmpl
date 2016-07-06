@@ -35,6 +35,7 @@
         {{ util.make_icon('eye-close') }} Alle Felder anzeigen
     </button>
     {{ util.href(show_user_link(pending['id']), "Profil anzeigen", icon="share-alt", aclass="btn btn-sm btn-info") }}
+    {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
     <script type="text/javascript">
         $(function() {
             $('#diff-view').cdedbHideUnimportant($('#unhide-button'));

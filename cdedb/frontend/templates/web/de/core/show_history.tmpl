@@ -9,27 +9,43 @@
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/show_history"), "Geschichte", active=True) }}
 {% endblock %}
+{# see constants.MemberChangeStati #}
+{% set STATUS={0: ('pending','check','ausstehend'),
+                1: ('','',''),
+                10: ('superseded', 'refresh', 'obsolet'),
+                11: ('nacked', 'ban-circle', 'abgelehnt')} %}
 {% macro print_history(f) %}
-    {% for c in entries[f] %}
+    {% for c in entries %}
         {% if c not in constants[f] or loop.first %}
-            <div class="row history-row">
-                <div class="col-xs-3">Gen {{ c }}</div>
+            <div class="row history-row {{ STATUS[entries[c]['change_status']][0] }}">
+                <div class="col-xs-3">
+                    Gen {{ c }}
+                    {% if entries[c]['change_status'] != 1 %}
+                        {{ util.make_icon(STATUS[entries[c]['change_status']][1],
+                                title=STATUS[entries[c]['change_status']][2]) }}
+                    {% endif %}
+                </div>
                 <div class="col-xs-9">
-                    {% if caller %}{{ caller(c) }}{% else %}{{ entries[f][c]|e }}{% endif %}
+                    {% if caller %}{{ caller(c) }}{% else %}{{ entries[c][f]|e }}{% endif %}
                 </div>
             </div>
         {% endif %}
     {% endfor %}
 {% endmacro %}
 {% macro print_multifield_history(fields=[]) %}
-    {% for c in entries[fields[0]] %}
+    {% for c in entries %}
         {% set vars = {'has_nonconstant' : False} %}
         {% for f in fields %}
             {% if c not in constants[f] %}{% set tmp = vars.update({'has_nonconstant' : True}) %}{% endif %}
         {% endfor %}
         {% if vars['has_nonconstant'] or loop.first %}
-            <div class="row history-row">
-                <div class="col-xs-3">Gen {{ c }}</div>
+            <div class="row history-row {{ STATUS[entries[c]['change_status']][0] }}">
+                <div class="col-xs-3">
+                    Gen {{ c }}
+                    {% if entries[c]['change_status'] != 1 %}
+                        {{ util.make_icon(STATUS[entries[c]['change_status']][1],
+                                title=STATUS[entries[c]['change_status']][2]) }}
+                    {% endif %}                </div>
                 <div class="col-xs-9">
                     {% if caller %}{{ caller(c) }}{% endif %}
                 </div>
@@ -47,7 +63,12 @@
 {% endmacro %}
 
 {% block content %}
-    <div class="float-along">
+        {% if pending|length > 0 %}
+            <p>
+                {{ util.href(cdedblink('core/inspect_change', {'persona_id': current['id']}), "Änderung prüfen",
+                        icon="check", aclass="btn btn-sm btn-info") }}
+            </p>
+        {% endif %}
         {% if not current['is_active'] %}
             <p class="text-danger">
                 Der Benutzer ist deaktiviert.
@@ -70,9 +91,9 @@
             {% call history_field('Name') %}
                 {% call(c) print_multifield_history(
                         ['title','given_names', 'display_name', 'family_name', 'name_supplement']) %}
-                    {{ entries['title'][c]|e }}
-                    {{ util.output_given_displayname(entries['given_names'][c], entries['display_name'][c]) }}
-                    {{ entries['family_name'][c]|e }} {{ entries['name_supplement'][c]|e }}
+                    {{ entries[c]['title']|e }}
+                    {{ util.output_given_displayname(entries[c]['given_names'], entries[c]['display_name']) }}
+                    {{ entries[c]['family_name']|e }} {{ entries[c]['name_supplement']|e }}
                 {% endcall %}
             {% endcall %}
             
@@ -82,13 +103,13 @@
      
             {% call history_field("Geburtstag") %}
                 {% call(c) print_history('birthday') %}
-                     {{ entries['birthday'][c]|date|e }}
+                     {{ entries[c]['birthday']|date|e }}
                 {% endcall %}
             {% endcall %}
 
             {% call history_field("Geschlecht") %}
                 {% call(c) print_history('gender') %}
-                     {{ entries['gender'][c]|gender|e }}
+                     {{ entries[c]['gender']|gender|e }}
                 {% endcall %}
             {% endcall %}
 
@@ -106,7 +127,7 @@
                                                ("is_event_realm", "Veranstaltungen", "blackboard"),
                                                ("is_ml_realm", "Mailinglisten", "envelope"),
                                                ("is_assembly_realm", "Versammlungen", "stats"),)%}
-                        {% if entries[bit][c] %}
+                        {% if entries[c][bit] %}
                             {{ util.make_icon(icon) }} {{ desc|e }},
                         {% endif %}
                     {% endfor %}
@@ -123,7 +144,7 @@
                                               ("is_event_admin", "Veranstaltungs", "blackboard"),
                                               ("is_ml_admin", "Mailinglisten", "envelope"),
                                               ("is_assembly_admin", "Versammlungs", "stats"),)%}
-                        {% if entries[bit][c] %}
+                        {% if entries[c][bit] %}
                             {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_privilege': True}) %}
@@ -135,8 +156,8 @@
             
             {% call history_field('CdE-Mitgliedschaft') %}
                 {% call(c) print_multifield_history(['is_member', 'trial_member']) %}
-                    {% if entries['is_member'][c] %}
-                        {% if entries['trial_member'][c] %}
+                    {% if entries[c]['is_member'] %}
+                        {% if entries[c]['trial_member'] %}
                             Probemitgliedschaft
                         {% else %}
                             Mitglied
@@ -149,8 +170,8 @@
             
             {% call history_field('Sichtbarkeit') %}
                 {% call(c) print_multifield_history(['is_searchable', 'decided_search']) %}
-                    {% if entries['decided_search'][c] %}
-                        {% if entries['is_searchable'][c] %}
+                    {% if entries[c]['decided_search'] %}
+                        {% if entries[c]['is_searchable'] %}
                             sichtbar
                         {% else %}
                             nicht sichtbar
@@ -184,22 +205,22 @@
             {% call history_field('Adresse') %}
                 {% call(c) print_multifield_history(
                         ['address','address_supplement', 'postal_code', 'location', 'country']) %}
-                    {{ entries['address'][c] }}{% if entries['address'][c] %}<br />{% endif %}
-                    {{ entries['address_supplement'][c] }}{% if entries['address_supplement'][c] %}<br />{% endif %}
-                    {{ entries['postal_code'][c] }} {{ entries['location'][c] }}
-                    {% if entries['location'][c] %}<br />{% endif %}
-                    {{ entries['country'][c] }}
+                    {{ entries[c]['address'] }}{% if entries[c]['address'] %}<br />{% endif %}
+                    {{ entries[c]['address_supplement'] }}{% if entries[c]['address_supplement'] %}<br />{% endif %}
+                    {{ entries[c]['postal_code'] }} {{ entries[c]['location'] }}
+                    {% if entries[c]['location'] %}<br />{% endif %}
+                    {{ entries[c]['country'] }}
                 {% endcall %}    
             {% endcall %}
             
             {% call history_field('Adresse') %}
                 {% call(c) print_multifield_history(
                         ['address2','address_supplement2', 'postal_code2', 'location2', 'country2']) %}
-                    {{ entries['address2'][c] }}{% if entries['address2'][c] %}<br />{% endif %}
-                    {{ entries['address_supplement2'][c] }}{% if entries['address_supplement2'][c] %}<br />{% endif %}
-                    {{ entries['postal_code2'][c] }} {{ entries['location2'][c] }}
-                    {% if entries['location2'][c] %}<br />{% endif %}
-                    {{ entries['country2'][c] }}
+                    {{ entries[c]['address2'] }}{% if entries[c]['address2'] %}<br />{% endif %}
+                    {{ entries[c]['address_supplement2'] }}{% if entries[c]['address_supplement2'] %}<br />{% endif %}
+                    {{ entries[c]['postal_code2'] }} {{ entries[c]['location2'] }}
+                    {% if entries[c]['location2'] %}<br />{% endif %}
+                    {{ entries[c]['country2'] }}
                 {% endcall %}    
             {% endcall %}
         
@@ -216,5 +237,4 @@
             {% endfor %}
             
         </dl>
-    </div>
 {% endblock %}

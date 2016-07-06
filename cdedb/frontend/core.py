@@ -235,12 +235,12 @@ class CoreFrontend(AbstractFrontend):
             rs, persona_id)
         current = history[current_generation]
         fields = current.keys()
-        history_log = {f: {e['generation']: e[f] for e in history.values()}
-                       for f in fields}
         constants = {f: tuple(y for x, y in pairwise(sorted(history.keys()))
                               if history[x][f] == history[y][f])
                      for f in fields}
-        return self.render(rs, "show_history", {'entries': history_log,
+        pending = {i for i in history if history[i]['change_status'] ==
+                                            const.MemberChangeStati.pending}
+        return self.render(rs, "show_history", {'entries': history,
                                                 'constants': constants,
                                                 'current': current})
 

@@ -239,6 +239,15 @@ tr.drow-delete>td {
 .history-row:nth-child(odd) {
     background-color: #eee;
 }
+.history-row.pending {
+    background-color: #d4d4ff;
+}
+.history-row.superseded {
+    background-color: #ffffd4;
+}
+.history-row.nacked {
+    background-color: #ffd4d5;
+}
 .history-row .collapse-button {
     position: absolute;
     right: 30px;
