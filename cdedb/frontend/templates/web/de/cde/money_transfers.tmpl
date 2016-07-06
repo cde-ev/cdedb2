@@ -1,19 +1,16 @@
-{# FIXME navigation and formatting #}
-{% set sidenav_active='cde_manage_users' %}
+{% set sidenav_active='cde_transfers' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Überweisungen eintragen{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten") }}
-{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), "Massenaufnahme", active=True) }}
+{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), "Überweisungen eintragen", active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('cde/money_transfers')|e }}" method="POST" id="transfersform">
         {{ util.input_hidden("checksum") }}
-        <div class="row">
-            {{ util.form_input_checkbox("sendmail", label="Benachritigung verschicken", horizontal=False) }}
-        </div>
+        {{ util.form_input_checkbox("sendmail", label="Benachritigung verschicken", horizontal=False) }}
         {{ util.form_input_textarea(name="transfers", label="Daten", horizontal=False, rows=8) }}
 
         <p class="help-block">
