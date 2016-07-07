@@ -488,7 +488,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_query_result(result, query, titles, choices) %}
+{% macro display_query_result(result, query, titles, choices, persona_id_column="persona_id") %}
     {% if not result|length %}
         Keine Ergebnisse!
     {% else %}
@@ -518,7 +518,7 @@
                                     by the query #}
                             {% with afield = field.split('.')[-1] %}
                                 <td>
-                                    {% if field == "personas.id" %}
+                                    {% if field == persona_id_column %}
                                         {{ href(show_user_link(row[afield]), row[afield]|cdedbid, aclass='nowrap') }}
                                     {% elif field == "reg.id" %}
                                         {# This should occur only if the context allows the following link. #}

@@ -237,7 +237,11 @@
         "bub_search": "Sichtbarkeit BuB",
         "notes": "Notizen",} %}
 
-        {{ util.display_query_result(result, query, TITLES, choices) }}
+        {% if realm in ("ml", "assembly") %}
+            {{ util.display_query_result(result, query, TITLES, choices, persona_id_column="id") }}
+        {% else %}
+            {{ util.display_query_result(result, query, TITLES, choices) }}
+        {% endif%}
     {% endwith %}
 
     <h3>Aktionen</h3>

@@ -120,8 +120,7 @@ _DEFAULTS = {
             "with notes": Query(
                 "qview_archived_persona",
                 QUERY_SPECS['qview_archived_persona'],
-                ("personas.id", "given_names", "family_name",
-                 "birth_name"),
+                ("personas.id", "given_names", "family_name", "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
                 (("family_name", True), ("given_names", True)),),
         },
@@ -141,9 +140,9 @@ _DEFAULTS = {
         "qview_core_user": {
             "all": Query(
                 "qview_persona", QUERY_SPECS['qview_core_user'],
-                ("id", "given_names", "family_name"),
+                ("personas.id", "given_names", "family_name"),
                 tuple(),
-                tuple(),)
+                (("personas.id", True),),)
         },
         "qview_persona": {
             "all": Query(
