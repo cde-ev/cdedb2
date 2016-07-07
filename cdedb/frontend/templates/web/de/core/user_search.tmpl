@@ -10,6 +10,30 @@
 {{ util.breadcrumb_link(cdedblink("core/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}
+    <script type="text/javascript">
+        function format_cdedbid(numeric_id) {
+            if (!(numeric_id > 0))
+                return numeric_id;
+            var digits = [];
+            var tmp = numeric_id;
+            while (tmp > 0) {
+                digits.push(tmp % 10);
+                tmp = Math.floor(tmp/10);
+            }
+            var isbn_sum = 0;
+            for (i = 0; i < digits.length; i++) {
+                isbn_sum += digits[i]*(i+2);
+            }
+            var checkdigits = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"];
+            return "DB-" + numeric_id + "-" + checkdigits[(((-isbn_sum) % 11) + 11) % 11];
+        }
+        $(function() {
+            $('.numeric_cdedbid').submit(function() {
+                var input = parseInt($('#admin_id_input').val());
+                if (!isNaN(input)) {
+                    $('#admin_id_input').val(format_cdedbid(input));
+                }})});
+    </script>
     <div class="row">
         <div class="col-md-8">
             {% with TITLES = {} %}
@@ -22,9 +46,11 @@
             <div class="panel panel-warning">
                 <div class="panel-heading"><h3 class="panel-title">Aktionen</h3></div>
                 <div class="panel-body">
-                    <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform" style="display: inline-block; width:150px; vertical-align:middle;">
+                    <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform"
+                      style="display: inline-block; width:150px; vertical-align:middle;" class="numeric_cdedbid">
                         <div class="input-group">
-                            <input type="text" name="id_to_show" class="form-control" placeholder="DB-XXXX-X" />
+                            <input type="text" name="id_to_show" class="form-control" placeholder="DB-XXXX-X"
+                              id="admin_id_input" />
                             <span class="input-group-btn">
                                 <button type="submit" class="btn btn-primary" title="Suchen">
                                     <span class="glyphicon glyphicon-search"></span>

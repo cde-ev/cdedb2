@@ -75,7 +75,7 @@
     </p>
 
     {# FIXME formatting #}
-    <form action="{{ cdedblink('cde/lastschrift_finalize_transactions') }}" method="POST" id="finalizationform">
+    <form action="{{ cdedblink('cde/lastschrift_finalize_transactions')|e }}" method="POST" id="finalizationform">
         <table class="table table-condensed">
             <thead>
                 <tr><th></th><th>Mitglied</th><th>Datum</th><th>Betrag</th></tr>
