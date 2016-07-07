@@ -643,9 +643,11 @@ class CoreFrontend(AbstractFrontend):
         if new_password != new_password2:
             rs.errors.append(("new_password", ValueError("No match.")))
             rs.errors.append(("new_password2", ValueError("No match.")))
-        new_password = check(rs, "password_strength", new_password,
-                             "new_password")
+            rs.notify("error", "Input doesn't match")
+        new_password = check(rs, "password_strength", new_password, "strength")
         if rs.errors:
+            if any(name == "strength" for name, _ in rs.errors):
+                rs.notify("error", "Password too weak.")
             return self.change_password_form(rs)
         code, message = self.coreproxy.change_password(
             rs, rs.user.persona_id, old_password, new_password)
@@ -671,8 +673,10 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous")
     @REQUESTdata(("email", "email"))
     def send_password_reset_link(self, rs, email):
-        """First send a confirmation mail, to prevent an adversary from
-        changing random passwords."""
+        """Send a confirmation mail.
+
+        To prevent an adversary from changing random passwords.
+        """
         if rs.errors:
             return self.reset_password_form(rs)
         exists = self.coreproxy.verify_existence(rs, email)
@@ -697,12 +701,14 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous")
     @REQUESTdata(("email", "#email"), ("cookie", "str"))
     def do_password_reset_form(self, rs, email, cookie):
-        """Second form. Pretty similar to first form, but now we know, that
-        the account owner actually wants the reset."""
+        """Second form.
+
+        Pretty similar to first form, but now we know, that the account
+        owner actually wants the reset.
+        """
         if rs.errors:
-            # FIXME redirect after validation error
             rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/reset_password_form")
+            return self.reset_password_form(rs)
         rs.values['email'] = self.encode_parameter(
             "core/do_password_reset", "email", email,
             timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
@@ -710,21 +716,26 @@ class CoreFrontend(AbstractFrontend):
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("email", "#email"), ("new_password", "str"),
-                 ("cookie", "str"))
-    def do_password_reset(self, rs, email, new_password, cookie):
+                 ("new_password2", "str"), ("cookie", "str"))
+    def do_password_reset(self, rs, email, new_password, new_password2, cookie):
         """Now we can reset to a new password."""
         if rs.errors:
-            # FIXME redirect after validation error
             rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/reset_password_form")
-        new_password = check(rs, "password_strength", new_password,
-                             "new_password")
+            return self.reset_password_form(rs)
+        if new_password != new_password2:
+            rs.errors.append(("new_password", ValueError("No match.")))
+            rs.errors.append(("new_password2", ValueError("No match.")))
+            rs.notify("error", "Input doesn't match.")
+        new_password = check(rs, "password_strength", new_password, "strength")
         if rs.errors:
-            rs.notify("error", "Password to weak.")
-            rs.values['email'] = self.encode_parameter(
-                "core/do_password_reset", "email", email)
-            # FIXME redirect after validation error
-            return self.redirect(rs, "core/do_password_reset")
+            if any(name == "strength" for name, _ in rs.errors):
+                rs.notify("error", "Password too weak.")
+            ## Redirect so that encoded parameter works.
+            params = {
+                'email': self.encode_parameter(
+                    "core/do_password_reset_form", "email", email),
+                'cookie': cookie}
+            return self.redirect(rs, 'core/do_password_reset_form', params)
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
         self.notify_return_code(rs, code, success="Password reset.",

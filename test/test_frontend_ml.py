@@ -136,6 +136,7 @@ class TestMlFrontend(FrontendTest):
         new_password = "saFe_37pass"
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
+        f['new_password2'] = new_password
         self.submit(f)
         new_user = {
             'id': 11,

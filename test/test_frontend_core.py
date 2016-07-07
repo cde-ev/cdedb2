@@ -132,6 +132,7 @@ class TestCoreFrontend(FrontendTest):
                 self.assertTitle("Neues Passwort setzen")
                 f = self.response.forms['passwordresetform']
                 f['new_password'] = new_password
+                f['new_password2'] = new_password
                 if u in {"anton"}:
                     self.submit(f, check_notification=False)
                     ## admins are not resettable
