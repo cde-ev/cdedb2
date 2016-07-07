@@ -86,7 +86,8 @@ class CdEFrontend(AbstractUserFrontend):
             'has_lastschrift': (len(user_lastschrift) > 0)})
 
     @access("persona")
-    def consent_decision_form(self, rs):
+    @REQUESTdata(("stay", "bool_or_None"))
+    def consent_decision_form(self, rs, stay):
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
 
@@ -96,9 +97,10 @@ class CdEFrontend(AbstractUserFrontend):
         if "member" not in rs.user.roles or "searchable" in rs.user.roles:
             return self.redirect(rs, "core/index")
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        if data['decided_search']:
+        if data['decided_search'] and not stay:
             return self.redirect(rs, "core/index")
-        return self.render(rs, "consent_decision")
+        return self.render(rs, "consent_decision", {
+            'decided_search': data['decided_search']})
 
     @access("member", modi={"POST"})
     @REQUESTdata(("ack", "bool"))

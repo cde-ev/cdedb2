@@ -7,11 +7,23 @@
 {{ util.breadcrumb_link(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung", active="True") }}
 {% endblock %}
 {% block content %}
-    <p>Die CdE-Datenbank stellt verschiedene Möglichkeiten bereit, eine
-    davon ist ein elektronisches Mitgliederverzeichnis. Du hast Dich noch
-    nicht entschieden ob Du in diesem sichtbar sein möchtest.
+    {% if decided_search %}
+        <p>
+            Die CdE-Datenbank stellt verschiedene Möglichkeiten bereit, eine
+            davon ist ein elektronisches Mitgliederverzeichnis. Du hast Dich
+            dagegen entschieden in diesem sichtbar zu sein.
+        </p>
+    {% else %}
+        <p>
+            Die CdE-Datenbank stellt verschiedene Möglichkeiten bereit, eine
+            davon ist ein elektronisches Mitgliederverzeichnis. Du hast Dich
+            noch nicht entschieden ob Du in diesem sichtbar sein möchtest.
+        </p>
+    {% endif %}
 
-    <p>{{ util.href(cdedblink("core/index"), "Später entscheiden", icon="time", aclass="btn btn-default") }}</p>
+    {% if not decided_search %}
+        <p>{{ util.href(cdedblink("core/index"), "Später entscheiden", icon="time", aclass="btn btn-default") }}</p>
+    {% endif %}
 
     <h1>Einwilligung</h1>
 
@@ -39,12 +51,16 @@
             {{ util.input_submit(value="Einwilligung erteilen", aclass="btn btn-success") }}
     </form>
 
-    <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="nackconsentform"
-            style="display: inline;">
-            {{ util.input_hidden(name="ack", value="False") }}
-            {{ util.input_submit(value="Einwilligung verweigern", icon="remove", aclass="btn btn-danger") }}
-    </form>
+    {% if not decided_search %}
+        <form action="{{ cdedblink("cde/consent_decision")|e }}" method="POST" id="nackconsentform"
+                style="display: inline;">
+                {{ util.input_hidden(name="ack", value="False") }}
+                {{ util.input_submit(value="Einwilligung verweigern", icon="remove", aclass="btn btn-danger") }}
+        </form>
 
-    {{ util.href(cdedblink("core/index"), "Später entscheiden", icon="time", aclass="btn btn-default") }}
+        {{ util.href(cdedblink("core/index"), "Später entscheiden", icon="time", aclass="btn btn-default") }}
+    {% else %}
+        {{ util.href(cdedblink("core/index"), "Nichts ändern", icon="asterisk", aclass="btn btn-default") }}
+    {% endif %}
 
 {% endblock %}
