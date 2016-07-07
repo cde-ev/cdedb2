@@ -238,11 +238,36 @@ class CoreFrontend(AbstractFrontend):
         constants = {f: tuple(y for x, y in pairwise(sorted(history.keys()))
                               if history[x][f] == history[y][f])
                      for f in fields}
-        pending = {i for i in history if history[i]['change_status'] ==
-                                            const.MemberChangeStati.pending}
-        return self.render(rs, "show_history", {'entries': history,
-                                                'constants': constants,
-                                                'current': current})
+        stati = const.MemberChangeStati
+        pending = {i for i in history
+                   if (history[i]['change_status'] == stati.pending)}
+        ## Track the omitted information whether a new value finally got
+        ## committed or not.
+        ##
+        ## This is necessary since we only show those data points, where the
+        ## data (e.g. the name) changes. This does especially not detect
+        ## meta-data changes (e.g. the change-status).
+        eventual_status = {f: {gen: entry['change_status']
+                               for gen, entry in history.items()
+                               if gen not in constants[f]}
+                           for f in fields}
+        for f in fields:
+            for gen in sorted(history):
+                if gen in constants[f]:
+                    anchor = max(g for g in eventual_status[f] if g < gen)
+                    this_status = history[gen]['change_status']
+                    if this_status == stati.committed:
+                        eventual_status[f][anchor] = stati.committed
+                    if (this_status == stati.nacked
+                            and eventual_status[f][anchor] != stati.committed):
+                        eventual_status[f][anchor] = stati.nacked
+                    if (this_status == stati.pending
+                            and (eventual_status[f][anchor]
+                                 not in (stati.committed, stati.nacked))):
+                        eventual_status[f][anchor] = stati.pending
+        return self.render(rs, "show_history", {
+            'entries': history, 'constants': constants, 'current': current,
+            'pending': pending, 'eventual_status': eventual_status})
 
     @access("core_admin")
     @REQUESTdata(("id_to_show", "cdedbid"))

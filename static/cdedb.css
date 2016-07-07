@@ -248,6 +248,12 @@ tr.drow-delete>td {
 .history-row.nacked {
     background-color: #ffd4d5;
 }
+.history-row.displaced {
+    background-color: #aaaaff;
+}
+.history-row.complicated {
+    background-color: #ff9900;
+}
 .history-row .collapse-button {
     position: absolute;
     right: 30px;
