@@ -463,9 +463,8 @@ class MlFrontend(AbstractUserFrontend):
         This is not a POST since the link is shared via email.
         """
         if rs.errors:
-            # FIXME redirect after validation error
             rs.notify("error", "Link expired.")
-            return self.redirect(rs, "ml/show_mailinglist")
+            return self.show_mailinglist(rs, mailinglist_id)
         is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
                                                    mailinglist_id)
         if not is_subscribed:

@@ -773,9 +773,8 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change_form(self, rs, new_username):
         """Email is now verified or we are admin."""
         if rs.errors:
-            # FIXME redirect after validation error
             rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/change_username_form")
+            return self.change_username_form(rs)
         rs.values['new_username'] = self.encode_parameter(
             "core/do_username_change", "new_username", new_username,
             timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
@@ -786,9 +785,8 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change(self, rs, new_username, password):
         """Now we can do the actual change."""
         if rs.errors:
-            # FIXME redirect after validation error
             rs.notify("error", "Link expired")
-            return self.redirect(rs, "core/change_username_form")
+            return self.change_username_form(rs)
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)
         self.notify_return_code(rs, code, success="Username changed.",
@@ -812,8 +810,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_username_change(self, rs, persona_id, new_username):
         """Change username without verification."""
         if rs.errors:
-            # FIXME redirect after validation error
-            return self.redirect(rs, "core/admin_username_change_form")
+            return self.admin_username_change_form(persona_id)
         code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
         self.notify_return_code(rs, code, success="Username changed.",
@@ -828,7 +825,7 @@ class CoreFrontend(AbstractFrontend):
     def toggle_activity(self, rs, persona_id, activity):
         """Enable/disable an account."""
         if rs.errors:
-            # FIXME redirect after validation error
+            # Redirect for encoded parameter
             return self.redirect_show_user(rs, persona_id)
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", "Persona is archived.")
