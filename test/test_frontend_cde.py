@@ -295,8 +295,9 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.response = saved
         self.traverse({'href': '/cde/lastschrift$'})
-        f = self.response.forms['transactionsuccessform4']
-        self.submit(f)
+        f = self.response.forms['finalizationform']
+        f['transaction_ids'] = [4]
+        self.submit(f, button="success")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
@@ -319,11 +320,13 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.response = saved
         self.traverse({'href': '/cde/lastschrift$'})
-        f = self.response.forms['transactioncancelform4']
-        self.submit(f)
+        f = self.response.forms['finalizationform']
+        f['transaction_ids'] = [4]
+        self.submit(f, button="cancelled")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn('generatetransactionform2', self.response.forms)
-        self.assertNotIn('transactionsuccessform4', self.response.forms)
+        f = self.response.forms['finalizationform']
+        self.assertNotIn('transaction_ids', f.fields)
 
     @as_users("anton")
     def test_lastschrift_transaction_failure(self, user):
@@ -335,11 +338,13 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.response = saved
         self.traverse({'href': '/cde/lastschrift$'})
-        f = self.response.forms['transactionfailureform4']
-        self.submit(f)
+        f = self.response.forms['finalizationform']
+        f['transaction_ids'] = [4]
+        self.submit(f, button="failure")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertNotIn('generatetransactionform2', self.response.forms)
-        self.assertNotIn('transactionsuccessform4', self.response.forms)
+        f = self.response.forms['finalizationform']
+        self.assertNotIn('transaction_ids', f.fields)
 
     @as_users("anton")
     def test_lastschrift_skip(self, user):

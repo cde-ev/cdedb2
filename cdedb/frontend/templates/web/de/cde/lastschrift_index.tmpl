@@ -15,14 +15,14 @@
             $('.success-form').cdedbProtectAction();
         });
     </script>
-    
+
     <h2>Offene Einzugsermächtigungen</h2>
     <p>
         Im Laufe dieses Semesters – und dabei möglichst früh, aber erst nach der Zahlungsinformation – sind noch
         folgende Lastschriften auszuführen. Dazu eine dtx-Datei generieren und in die Online-Banking-Software
         importieren.
     </p>
-    
+
     <table class="table table-condensed">
         <thead>
             <tr><th>Mitglied</th><th></th><th></th></tr>
@@ -59,74 +59,46 @@
         {% endfor %}
         </tbody>
     </table>
-    
+
     <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
       id="generatetransactionsform">
         <button type="submit" class="btn btn-primary">
             <span class="glyphicon glyphicon-download"></span> SEPA-Datei generieren
         </button>
     </form>
-    
+
     <h2>Offene Einzüge</h2>
     <p>
         Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald diese ausgeführt wurden, bitte hier eintragen, ob
         diese erfolgreich ausgeführt wurden, gar nicht ausgeführt wurden oder geplatzt sind. Im letzteren Falle wird die
         Ermächtigung als Widerrufen angesehen.
     </p>
-    <table class="table table-condensed">
-        <thead>
-            <tr><th>Mitglied</th><th>Datum</th><th>Betrag</th><th></th><th></th><th></th></tr>
-        </thead>
-        <tbody>
-        {% for transaction_id, transaction in transaction_data|xdictsort('issued_at')|reverse %}
-            <tr>
-                <td>
-                {{ util.persona_anchor(persona_data[lastschrift_data[transaction['lastschrift_id']]['persona_id']]) }}
-                </td>
-                <td>{{ transaction['issued_at']|datetime|e }}</td>
-                <td>{{ transaction['amount']|e }}€</td>
-                <td>
-                    <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
-                                               {'lastschrift_id': transaction['lastschrift_id'], 
-                                                'transaction_id': transaction_id})|e }}" method="POST"
-                            id="transactionsuccessform{{ transaction_id|e }}" class="success-form">
-                        {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
-                        {{ util.input_hidden(name="status",
-                                value=enums['LastschriftTransactionStati'].success.value) }}
-                        <button type="submit" class="btn btn-xs btn-success">
-                            <span class="glyphicon glyphicon-ok"></span> Erfolg
-                        </button>
-                    </form>
-                </td>
-                <td>
-                    <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
-                                               {'lastschrift_id': transaction['lastschrift_id'], 
-                                                'transaction_id': transaction_id})|e }}" method="POST"
-                            id="transactioncancelform{{ transaction_id|e }}">
-                        {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
-                        {{ util.input_hidden(name="status",
-                                value=enums['LastschriftTransactionStati'].cancelled.value) }}
-                        <button type="submit" class="btn btn-xs btn-warning">
-                            <span class="glyphicon glyphicon-remove"></span> Abbruch
-                        </button>
-                    </form>
-                </td>
-                <td>
-                    <form action="{{ cdedblink('cde/lastschrift_finalize_transaction', 
-                                               {'lastschrift_id': transaction['lastschrift_id'], 
-                                                'transaction_id': transaction_id})|e }}" method="POST"
-                            id="transactionfailureform{{ transaction_id|e }}" class="failure-form">
-                        {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
-                        {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
-                        <button type="submit" class="btn btn-xs btn-danger">
-                            <span class="glyphicon glyphicon-exclamation-sign"></span> Geplatzt
-                        </button>
-                    </form>
-                </td>
-           </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+
+    {# FIXME formatting #}
+    <form action="{{ cdedblink('cde/lastschrift_finalize_transactions') }}" method="POST" id="finalizationform">
+        <table class="table table-condensed">
+            <thead>
+                <tr><th></th><th>Mitglied</th><th>Datum</th><th>Betrag</th></tr>
+            </thead>
+            <tbody>
+            {% for transaction_id, transaction in transaction_data|xdictsort('issued_at') %}
+                <tr>
+                    <td>
+                        {{ util.input_checkbox(name="transaction_ids", value=transaction_id) }}
+                    </td>
+                    <td>
+                    {{ util.persona_anchor(persona_data[lastschrift_data[transaction['lastschrift_id']]['persona_id']]) }}
+                    </td>
+                    <td>{{ transaction['issued_at']|datetime|e }}</td>
+                    <td>{{ transaction['amount']|e }}€</td>
+               </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {{ util.form_input_submit(value='Erfolg', name='success') }}
+        {{ util.form_input_submit(value='Abbruch', name='cancelled') }}
+        {{ util.form_input_submit(value='Geplatzt', name='failure') }}
+    </form>
 
     <h2>Alle aktiven Einzugsermächtigungen</h2>
     <ul>

@@ -976,7 +976,7 @@ class CdEFrontend(AbstractUserFrontend):
         page.
         """
         if rs.errors:
-            return self.redirect(rs, "cde/lastschrift_index")
+            return self.lastschrift_index(rs)
         success = self.cdeproxy.lastschrift_skip(rs, lastschrift_id)
         if not success:
             rs.notify("warning", "Unable to skip transaction.")
@@ -988,30 +988,69 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
+    def lastschrift_process_transaction(self, rs, transaction_id, status):
+        """Process one transaction and store the outcome.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type transaction_id: int
+        :type status:
+          :py:class:`cdedb.database.constants.LastschriftTransactionStati`
+        :rtype: int
+        :returns: default return code
+        """
+        tally = None
+        if status == const.LastschriftTransactionStati.failure:
+            tally = -self.conf.SEPA_ROLLBACK_FEE
+        return self.cdeproxy.finalize_lastschrift_transaction(
+            rs, transaction_id, status, tally=tally)
+
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("status", "enum_lastschrifttransactionstati"),
                  ("persona_id", "id_or_None"))
     def lastschrift_finalize_transaction(self, rs, lastschrift_id,
                                          transaction_id, status, persona_id):
-        """Process a transaction and store the outcome.
+        """Finish one transaction.
 
         If persona_id is given return to the persona-specific
         lastschrift page, otherwise return to a general lastschrift
         page.
         """
         if rs.errors:
-            return self.redirect(rs, "cde/lastschrift_index")
-        tally = None
-        if status == const.LastschriftTransactionStati.failure:
-            tally = -self.conf.SEPA_ROLLBACK_FEE
-        code = self.cdeproxy.finalize_lastschrift_transaction(
-            rs, transaction_id, status, tally=tally)
+            return self.lastschrift_index(rs)
+        code = self.lastschrift_process_transaction(rs, transaction_id, status)
         self.notify_return_code(rs, code)
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
                                  {'persona_id': persona_id})
         else:
             return self.redirect(rs, "cde/lastschrift_index")
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata(("transaction_ids", "[id]"), ("success", "bool_or_None"),
+                 ("cancelled", "bool_or_None"), ("failure", "bool_or_None"))
+    def lastschrift_finalize_transactions(self, rs, transaction_ids, success,
+                                          cancelled, failure):
+        """Finish many transaction."""
+        if sum (1 for s in (success, cancelled, failure) if s) != 1:
+            rs.errors.append((None, ValueError("Wrong number of actions.")))
+        if rs.errors:
+            return self.lastschrift_index(rs)
+        if not transaction_ids:
+            rs.notify("warning", "No transactions selected.")
+            return self.redirect(rs, "cde/lastschrift_index")
+        status = None
+        if success:
+            status = const.LastschriftTransactionStati.success
+        if cancelled:
+            status = const.LastschriftTransactionStati.cancelled
+        if failure:
+            status = const.LastschriftTransactionStati.failure
+        code = 1
+        for transaction_id in transaction_ids:
+            code *= self.lastschrift_process_transaction(rs, transaction_id,
+                                                         status)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "cde/lastschrift_index")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("persona_id", "id_or_None"))
@@ -1023,7 +1062,7 @@ class CdEFrontend(AbstractUserFrontend):
         fact. So we have to deal with this possibility.
         """
         if rs.errors:
-            return self.redirect(rs, "cde/lastschrift_index")
+            return self.lastschrift_index(rs)
         tally = -self.conf.SEPA_ROLLBACK_FEE
         code = self.cdeproxy.rollback_lastschrift_transaction(
             rs, transaction_id, tally)

@@ -145,7 +145,7 @@ class CoreFrontend(AbstractFrontend):
         """
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
-            return self.redirect(rs, "core/index")
+            return self.index(rs)
 
         roles = extract_roles(rs.ambience['persona'])
         may_admin_edit = bool(rs.user.roles & privilege_tier(roles))
@@ -275,7 +275,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_show_user(self, rs, id_to_show):
         """Allow admins to view any user data set."""
         if rs.errors:
-            return self.redirect(rs, "core/index")
+            return self.index(rs)
         return self.redirect_show_user(rs, id_to_show)
 
     @access("persona")
@@ -700,6 +700,7 @@ class CoreFrontend(AbstractFrontend):
         """Second form. Pretty similar to first form, but now we know, that
         the account owner actually wants the reset."""
         if rs.errors:
+            # FIXME redirect after validation error
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/reset_password_form")
         rs.values['email'] = self.encode_parameter(
@@ -713,6 +714,7 @@ class CoreFrontend(AbstractFrontend):
     def do_password_reset(self, rs, email, new_password, cookie):
         """Now we can reset to a new password."""
         if rs.errors:
+            # FIXME redirect after validation error
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/reset_password_form")
         new_password = check(rs, "password_strength", new_password,
@@ -721,6 +723,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", "Password to weak.")
             rs.values['email'] = self.encode_parameter(
                 "core/do_password_reset", "email", email)
+            # FIXME redirect after validation error
             return self.redirect(rs, "core/do_password_reset")
         code, message = self.coreproxy.reset_password(rs, email, new_password,
                                                       cookie=cookie)
@@ -759,6 +762,7 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change_form(self, rs, new_username):
         """Email is now verified or we are admin."""
         if rs.errors:
+            # FIXME redirect after validation error
             rs.notify("error", "Link expired.")
             return self.redirect(rs, "core/change_username_form")
         rs.values['new_username'] = self.encode_parameter(
@@ -771,6 +775,7 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change(self, rs, new_username, password):
         """Now we can do the actual change."""
         if rs.errors:
+            # FIXME redirect after validation error
             rs.notify("error", "Link expired")
             return self.redirect(rs, "core/change_username_form")
         code, message = self.coreproxy.change_username(
@@ -796,6 +801,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_username_change(self, rs, persona_id, new_username):
         """Change username without verification."""
         if rs.errors:
+            # FIXME redirect after validation error
             return self.redirect(rs, "core/admin_username_change_form")
         code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
@@ -811,6 +817,7 @@ class CoreFrontend(AbstractFrontend):
     def toggle_activity(self, rs, persona_id, activity):
         """Enable/disable an account."""
         if rs.errors:
+            # FIXME redirect after validation error
             return self.redirect_show_user(rs, persona_id)
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", "Persona is archived.")

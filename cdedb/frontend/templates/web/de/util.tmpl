@@ -250,7 +250,7 @@
         readonly=False, title='') %}
     <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
             id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}
-            {% if title %} title="{{ title|e }}"{% endif %}>
+            {% if title %} title="{{ title|e }}"{% endif %} value="True">
             {% if icon %}{{ make_icon(icon) }} {% endif %}{{ value|e }}</button>
 {% endmacro %}
 
