@@ -350,7 +350,7 @@ CREATE TABLE cde.lastschrift (
         persona_id              integer REFERENCES core.personas(id) NOT NULL,
         amount                  numeric(7,2) NOT NULL,
         -- upper limit for donations to DSA
-        max_dsa                 numeric(2,2) DEFAULT 0.4 NOT NULL,
+        max_dsa                 numeric(3,2) DEFAULT 0.4 NOT NULL,
         iban                    varchar NOT NULL,
         -- if different from the paying member
         account_owner           varchar,
