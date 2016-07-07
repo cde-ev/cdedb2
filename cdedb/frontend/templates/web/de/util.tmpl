@@ -488,7 +488,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_query_result(result, query, titles, choices, persona_id_column="persona_id") %}
+{% macro display_query_result(result, query, titles, choices, persona_id_column="personas.id") %}
     {% if not result|length %}
         Keine Ergebnisse!
     {% else %}
