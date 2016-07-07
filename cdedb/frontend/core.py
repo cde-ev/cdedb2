@@ -14,7 +14,7 @@ import psycopg2.extensions
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_data_extractor, REQUESTfile,
-    request_data_dict_extractor)
+    request_data_dict_extractor, event_usage)
 from cdedb.common import (
     ProxyShim, glue, pairwise, extract_roles, privilege_tier, unwrap)
 from cdedb.backend.core import CoreBackend
@@ -42,8 +42,8 @@ class CoreFrontend(AbstractFrontend):
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
-    def finalize_session(self, rs):
-        super().finalize_session(rs)
+    def finalize_session(self, rs, auxilliary=False):
+        super().finalize_session(rs, auxilliary=auxilliary)
 
     @classmethod
     def is_admin(cls, rs):
@@ -130,6 +130,7 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("persona")
+    @event_usage
     @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"))
     def show_user(self, rs, persona_id, confirm_id, quote_me):
         """Display user details.

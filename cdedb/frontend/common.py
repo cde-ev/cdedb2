@@ -426,7 +426,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env.filters.update(filters)
 
     @abc.abstractmethod
-    def finalize_session(self, rs):
+    def finalize_session(self, rs, auxilliary=False):
         """Allow realm specific tweaking of the session.
 
         This is intended to add orga and moderator infos in the event
@@ -437,6 +437,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         part of the interface.
 
         :type rs: :py:class:`RequestState`
+        :type auxilliary: bool
+        :param auxilliary: If True this is only called to make realm specific
+          functionality available, but the actual endpoint will not lie in
+          this realm.
         :rtype: None
         """
         return
@@ -479,7 +483,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params = params or {}
             return cdedburl(rs, endpoint, params)
 
-        def _show_user_link(persona_id):
+        def _show_user_link(persona_id, quote_me=None):
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -489,10 +493,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             :type persona_id: int
             :rtype: str
             """
-            return cdedburl(rs, 'core/show_user', params={
+            params = {
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
-                    "core/show_user", "confirm_id", persona_id, timeout=None)},)
+                    "core/show_user", "confirm_id", persona_id, timeout=None)}
+            if quote_me is not None:
+                params['quote_me'] = True
+            return cdedburl(rs, 'core/show_user', params)
         default_selections = {
             'gender': tuple((k, v) for k, v in
                             self.enum_choice(rs, const.Genders).items()),
@@ -1256,6 +1263,40 @@ def REQUESTfile(*args):
             return fun(obj, rs, *args2, **kwargs)
         return new_fun
     return wrap
+
+def event_usage(fun):
+    """Indicate usage of the event realm.
+
+    This is intended as decorator to signal a call into the event
+    backend from a non-event frontend. The effect is to make the orga
+    information available which is normally only supplied if requesting
+    an endpoint in the event realm.
+
+    :type fun: callable
+    :rtype: callable
+    """
+    if hasattr(fun, 'realm_usage'):
+        fun.realm_usage.add('event')
+    else:
+        fun.realm_usage = {'event'}
+    return fun
+
+def ml_usage(fun):
+    """Indicate usage of the mailinglist realm.
+
+    This is intended as decorator to signal a call into the mailinglist
+    backend from a non-mailinglist frontend. The effect is to make the
+    moderator information available which is normally only supplied if
+    requesting an endpoint in the mailinglist realm.
+
+    :type fun: callable
+    :rtype: callable
+    """
+    if hasattr(fun, 'realm_usage'):
+        fun.realm_usage.add('ml')
+    else:
+        fun.realm_usage = {'ml'}
+    return fun
 
 def event_guard(argname="event_id", check_offline=False):
     """This decorator checks the access with respect to a specific event. The

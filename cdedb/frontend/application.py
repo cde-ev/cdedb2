@@ -124,6 +124,9 @@ class Application(BaseApp):
                 rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
                 ## Add realm specific infos (mostly to the user object)
                 getattr(self, component).finalize_session(rs)
+                for realm in getattr(handler, 'realm_usage', set()):
+                    ## Add extra information for the cases where it's necessary
+                    getattr(self, realm).finalize_session(rs, auxilliary=True)
                 try:
                     return handler(rs, **args)
                 finally:

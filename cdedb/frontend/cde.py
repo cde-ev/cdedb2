@@ -70,8 +70,8 @@ class CdEFrontend(AbstractUserFrontend):
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
-    def finalize_session(self, rs):
-        super().finalize_session(rs)
+    def finalize_session(self, rs, auxilliary=False):
+        super().finalize_session(rs, auxilliary=auxilliary)
 
     @classmethod
     def is_admin(cls, rs):

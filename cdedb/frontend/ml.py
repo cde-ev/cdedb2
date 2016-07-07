@@ -41,8 +41,8 @@ class MlFrontend(AbstractUserFrontend):
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets)
 
-    def finalize_session(self, rs):
-        super().finalize_session(rs)
+    def finalize_session(self, rs, auxilliary=False):
+        super().finalize_session(rs, auxilliary=auxilliary)
         if self.validate_scriptkey(rs.sessionkey):
             ## Special case the access of the mailing list software since
             ## it's not tied to an actual persona.

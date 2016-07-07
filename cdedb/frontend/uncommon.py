@@ -32,8 +32,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         self.coreproxy = ProxyShim(CoreBackend(configpath))
 
     @abc.abstractmethod
-    def finalize_session(self, rs):
-        super().finalize_session(rs)
+    def finalize_session(self, rs, auxilliary=False):
+        super().finalize_session(rs, auxilliary=auxilliary)
 
     @classmethod
     @abc.abstractmethod
