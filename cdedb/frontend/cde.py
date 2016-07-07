@@ -1117,7 +1117,8 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if period['billing_done']:
-            raise RuntimeError("Already done.")
+            rs.notify("error", "Billing already done.")
+            return self.redirect(rs, "show/semester")
         open_lastschrift = self.determine_open_permits(rs)
         def task(rrs, rs=None):
             """Send one billing mail and advance state."""
@@ -1178,7 +1179,8 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['billing_done'] or period['ejection_done']:
-            raise RuntimeError("Wrong timing.")
+            rs.notify("error", "Wrong timing for ejection.")
+            return self.redirect(rs, "show/semester")
         def task(rrs, rs=None):
             """Check one member for ejection and advance state."""
             with Atomizer(rrs):
@@ -1225,7 +1227,8 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['ejection_done'] or period['balance_done']:
-            raise RuntimeError("Wrong timing.")
+            rs.notify("error", "Wrong timing for balance update.")
+            return self.redirect(rs, "show/semester")
         def task(rrs, rs=None):
             """Update one members balance and advance state."""
             with Atomizer(rrs):
@@ -1276,7 +1279,8 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['balance_done']:
-            raise RuntimeError("Wrong timing.")
+            rs.notify("error", "Wrong timing for advancing the semester.")
+            return self.redirect(rs, "show/semester")
         self.cdeproxy.create_period(rs)
         rs.notify("success", "New period started.")
         return self.redirect(rs, "cde/show_semester")
@@ -1292,7 +1296,8 @@ class CdEFrontend(AbstractUserFrontend):
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if expuls['addresscheck_done']:
-            raise RuntimeError("Already done.")
+            rs.notify("error", "Addresscheck already done.")
+            return self.redirect(rs, "show/semester")
         def task(rrs, rs=None):
             """Send one address check mail and advance state."""
             with Atomizer(rrs):
@@ -1357,7 +1362,8 @@ class CdEFrontend(AbstractUserFrontend):
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if not expuls['addresscheck_done']:
-            raise RuntimeError("Wrong timing.")
+            rs.notify("error", "Addresscheck not done.")
+            return self.redirect(rs, "show/semester")
         self.cdeproxy.create_expuls(rs)
         rs.notify("success", "New expuls started.")
         return self.redirect(rs, "cde/show_semester")
