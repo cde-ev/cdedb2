@@ -303,7 +303,10 @@ class CoreBackend(AbstractBackend):
                                  "WHERE persona_id = %s AND generation = %s")
                     self.query_exec(rs, query, (const.MemberChangeStati.pending,
                                                 data['id'], current_generation))
-                return 0
+                ## We successfully made the data set match to the requested
+                ## values. It's not our fault, that we didn't have to do any
+                ## work.
+                return 1
 
             ## Determine if something requiring a review changed.
             fields_requiring_review = {'birthday', 'family_name', 'given_names'}
@@ -395,10 +398,9 @@ class CoreBackend(AbstractBackend):
                 "change_status = %s",
                 "WHERE persona_id = %s AND change_status = %s",
                 "AND generation = %s")
-            self.query_exec(rs, query, (
+            return self.query_exec(rs, query, (
                 rs.user.persona_id, const.MemberChangeStati.nacked, persona_id,
                 const.MemberChangeStati.pending, generation))
-            return 0
         with Atomizer(rs):
             ## look up changelog entry and mark as committed
             history = self.changelog_get_history(rs, persona_id,
