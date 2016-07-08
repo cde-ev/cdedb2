@@ -17,6 +17,8 @@ MKISOFS ?= genisoimage
 
 QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127.0.0.1:20022-:22,hostfwd=tcp:127.0.0.1:20443-:443
 
+QEMUCACHING ?= writethrough
+
 DEBVERSION = 8.5.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
@@ -27,6 +29,7 @@ STAGE1DEPS = $(shell [ -e ${IMAGEDIR}/stage1.qcow2 ] || echo "install-stage1")
 STAGE2DEPS = $(shell [ -e ${IMAGEDIR}/stage1.qcow2 ] || echo "install-stage2")
 STAGE3DEPS = $(shell [ -e ${IMAGEDIR}/cdedb.qcow2 ] || echo "install")
 FILES = $(shell find files -type f)
+
 
 showconf:
 	@echo "DISTDIR:    ${DISTDIR}"
@@ -105,7 +108,7 @@ build-stage1:${WORKDIR}/.done_stage1
 ${WORKDIR}/.done_stage1:${WORKDIR}/.done_cdimage
 	rm -f ${WORKDIR}/stage1.qcow2
 	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 10G
-	${QEMU} ${QEMUOPTIONS} -no-reboot -drive file=${WORKDIR}/stage1.qcow2,cache=unsafe,if=virtio -drive file=${WORKDIR}/bootstrap.iso,media=cdrom,index=2 -boot order=d
+	${QEMU} ${QEMUOPTIONS} -no-reboot -drive file=${WORKDIR}/stage1.qcow2,cache=${QEMUCACHING},if=virtio -drive file=${WORKDIR}/bootstrap.iso,media=cdrom,index=2 -boot order=d
 	touch $@
 
 ${IMAGEDIR}/stage1.qcow2: ${STAGE1DEPS}
@@ -134,7 +137,7 @@ build-stage2:${WORKDIR}/.done_stage2
 ${WORKDIR}/.done_stage2:${WORKDIR}/.done_stage2cd ${IMAGEDIR}/stage1.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stage2.qcow2
 	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage1.qcow2` -f qcow2 ${WORKDIR}/stage2.qcow2
-	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage2.qcow2,if=virtio,cache=unsafe -drive file=stage2cd.iso,media=cdrom,index=2)
+	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage2.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stage2cd.iso,media=cdrom,index=2)
 	touch $@
 
 ${IMAGEDIR}/stage2.qcow2: ${STAGE2IMAGEDEPS}
@@ -159,7 +162,7 @@ build-stage3:${WORKDIR}/.done_stage3-${PORT}
 ${WORKDIR}/.done_stage3-${PORT}:${WORKDIR}/.done_stage3cd ${IMAGEDIR}/stage2.qcow2 | ${WORKDIR}
 	rm -f ${WORKDIR}/stage3.qcow2
 	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -f qcow2 ${WORKDIR}/stage3.qcow2
-	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage3.qcow2,if=virtio,cache=unsafe -drive file=stage3cd.iso,media=cdrom,index=2)
+	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stage3.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stage3cd.iso,media=cdrom,index=2)
 	touch $@
 
 ${IMAGEDIR}/stage3.qcow2: ${STAGE3IMAGEDEPS}
@@ -188,7 +191,7 @@ run: ${WORKDIR}/.done_install-stage3
 	echo "To access the web server: https://127.0.0.1:20443/"
 	echo "To connect via ssh: ssh -p 20022 cdedb@localhost"
 	echo " - the password is 'akademie' -"
-	${QEMU} ${QEMUOPTIONS} -drive file=${WORKDIR}/cdedb-run-this.qcow2,if=virtio,cache=writethrough
+	${QEMU} ${QEMUOPTIONS} -drive file=${WORKDIR}/cdedb-run-this.qcow2,if=virtio,cache=${QEMUCACHING}
 
 makesum: ${WORKDIR}/.done_fetch
 	rm -f distinfo && touch distinfo;
