@@ -72,7 +72,8 @@ Performance
 To increase performance two things are very effective, but can cause serious
 data loss. So they are only recomended when working with test data.
 
-* Replace ``cache=writethrough`` by ``cache=writeback`` when running the VM.
+* Replace ``cache=writethrough`` by ``cache=writeback`` or even
+  ``cache=unsafe`` when running the VM.
 
 * In the file `/etc/postgresql/9.4/main/postgresql.conf` in the VM set the
   following options::
