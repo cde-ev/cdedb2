@@ -1113,7 +1113,6 @@ def _profilepic(val, argname=None, *, _convert=True):
     if len(val) > 100000:
         errs.append((argname, ValueError("Too big.")))
     mime = magic.from_buffer(val, mime=True)
-    mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime not in ("image/jgp", "image/png"):
         errs.append((argname, ValueError("Only jpg and png allowed.")))
     if errs:
@@ -1138,7 +1137,6 @@ def _pdffile(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     mime = magic.from_buffer(val, mime=True)
-    mime = mime.decode() ## python-magic is naughty and returns bytes
     if mime != "application/pdf":
         errs.append((argname, ValueError("Only pdf allowed.")))
     return val, errs

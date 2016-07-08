@@ -60,10 +60,12 @@ aptitude -y install --without-recommends                            \
     apache2 libapache2-mod-wsgi-py3 fail2ban                        \
     slapd ldap-utils                                                \
     postgresql-client postgresql pgbouncer                          \
-    texlive texlive-latex-extra                                     \
+    texlive texlive-latex-extra texlive-lang-german cm-super        \
     python3 python3-psycopg2 python3-dateutil                       \
     python3-jinja2 python3-tz python3-sphinx python3-lxml           \
-    python3-magic python3-pil
+    python3-pil
+# this is not the python-magic module, but some debian fubar
+#   python3-magic
 # newer version than packaged necessary
 #   python3-webtest python3-werkzeug python3-ldap3
 # unpackaged
@@ -74,6 +76,7 @@ pip3 install passlib
 pip3 install WebTest
 pip3 install Werkzeug
 pip3 install ldap3
+pip3 install python-magic
 
 for file in /var/cache/apt/archives/*.deb
 do
