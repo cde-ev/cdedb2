@@ -1,14 +1,32 @@
+{% if ambience['persona']['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Profilbild für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }} bearbeiten{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
+                                                                                  ambience['persona']['family_name']),
+        icon="user") }}
+{{ util.breadcrumb_link(cdedblink('core/set_foto_form'), "Profilbild ändern", active="True") }}
+{% endblock %}
 {% block content %}
-    Bitte beachte: Das Bild muss eine annähernd quadratische jpg oder png
-    Datei mit maximal 100KB Größe sein.
+    <p>
+        Bitte beachte: Das Bild muss eine annähernd quadratische JPEG- oder PNG-Datei mit maximal 100kiB Größe sein.
+    </p>
 
     <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" enctype="multipart/form-data" id="setfotoform">
-        <div>
-            {{ util.form_input_file(name="foto", accept="image/*") }}
-            {{ util.form_input_submit(value="Aktualisieren") }}
+        <div class="row">
+            <div class="form-group col-lg-8">
+                <div class="input-group">
+                    {{ util.input_file(name="foto", accept="image/*") }}
+                    <div class="input-group-btn">
+                        {{ util.input_submit(value="Hochladen") }}
+                    </div>
+                </div>
+                {{ util.output_errors('foto') }}
+            </div>
         </div>
     </form>
+    
+    {{ util.href(show_user_link(ambience['persona']['id']), "Zurück", icon="arrow-left", aclass="btn btn-default") }}
 {% endblock %}

@@ -5,8 +5,9 @@
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
-{{ util.breadcrumb_link(cdedblink("core/meta_info_form"), data['given_names'] + " " + data['family_name'],
-        icon="user", active="True") }}
+{{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
+                                                                                  ambience['persona']['family_name']),
+        icon="user", active=True) }}
 {% endblock %}
 {% block content %}
     {% if data['id'] == user.persona_id or is_admin %}
