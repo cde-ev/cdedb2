@@ -11,8 +11,8 @@
     <script type="text/javascript">
         $(function() {
             $('.skip-form').cdedbProtectAction();
-            $('.failure-form').cdedbProtectAction();
-            $('.success-form').cdedbProtectAction();
+            $('#finalizationform').cdedbProtectAction(null,
+                    function(){return $('#finalization-cancel')[0] == document.activeElement;});
         });
     </script>
 
@@ -88,6 +88,8 @@
                     </td>
                     <td>
                     {{ util.persona_anchor(persona_data[lastschrift_data[transaction['lastschrift_id']]['persona_id']]) }}
+                    ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': transaction['lastschrift_id']}),
+                                "Ermächtigung", icon="euro") }})
                     </td>
                     <td>{{ transaction['issued_at']|datetime|e }}</td>
                     <td>{{ transaction['amount']|e }}€</td>
@@ -95,9 +97,13 @@
             {% endfor %}
             </tbody>
         </table>
-        {{ util.form_input_submit(value='Erfolg', name='success') }}
-        {{ util.form_input_submit(value='Abbruch', name='cancelled') }}
-        {{ util.form_input_submit(value='Geplatzt', name='failure') }}
+        {% if transaction_data|length > 0 %}
+            Alle ausgewählten:
+            {{ util.input_submit(value='Erfolg', name='success', aclass="btn btn-success") }}
+            {{ util.input_submit(value='Abbruch', name='cancelled', aclass="btn btn-danger", icon="remove",
+                    anid="finalization-cancel") }}
+            {{ util.input_submit(value='Geplatzt', name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
+        {% endif %}
     </form>
 
     <h2>Alle aktiven Einzugsermächtigungen</h2>
