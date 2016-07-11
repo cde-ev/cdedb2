@@ -23,10 +23,16 @@
                         {{ util.input_submit(value="Hochladen") }}
                     </div>
                 </div>
-                {{ util.output_errors('foto') }}
+                {{ util.output_errors('foto') }}
             </div>
         </div>
     </form>
-    
+
+    {% if foto %}
+        <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" id="resetfotoform">
+            {{ util.input_submit(value="Foto löschen") }} {# FIXME formatting #}
+        </form>
+    {% endif %}
+
     {{ util.href(show_user_link(ambience['persona']['id']), "Zurück", icon="arrow-left", aclass="btn btn-default") }}
 {% endblock %}

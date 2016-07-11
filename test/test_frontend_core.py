@@ -234,6 +234,15 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(blob.startswith(b"\x89PNG"))
         self.assertTrue(len(blob) > 10000)
 
+    @as_users("berta")
+    def test_reset_foto(self, user):
+        self.traverse({'href': '/core/self/show'})
+        self.assertIn('foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9', self.response.text)
+        self.traverse({'href': '/foto/change'})
+        f = self.response.forms['resetfotoform']
+        self.submit(f)
+        self.assertNotIn('foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9', self.response.text)
+
     @as_users("anton")
     def test_user_search(self,  user):
         self.traverse({'href': '/core/search/user'})

@@ -602,7 +602,8 @@ class CoreFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", "Persona is archived.")
             return self.redirect_show_user(rs, persona_id)
-        return self.render(rs, "set_foto")
+        foto = self.coreproxy.get_cde_user(rs, persona_id)['foto']
+        return self.render(rs, "set_foto", {'foto': foto})
 
     @access("cde", modi={"POST"})
     @REQUESTfile("foto")
@@ -610,19 +611,21 @@ class CoreFrontend(AbstractFrontend):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden("Not privileged.")
-        foto = check(rs, 'profilepic', foto, "foto")
+        foto = check(rs, 'profilepic_or_None', foto, "foto")
         if rs.errors:
             return self.set_foto_form(rs, persona_id)
         previous = self.coreproxy.get_cde_user(rs, persona_id)['foto']
-        myhash = hashlib.sha512()
-        myhash.update(foto)
-        path = os.path.join(self.conf.STORAGE_DIR, 'foto', myhash.hexdigest())
-        if not os.path.isfile(path):
-            with open(path, 'wb') as f:
-                f.write(foto)
+        myhash = None
+        if foto:
+            myhash = hashlib.sha512()
+            myhash.update(foto)
+            myhash = myhash.hexdigest()
+            path = os.path.join(self.conf.STORAGE_DIR, 'foto', myhash)
+            if not os.path.isfile(path):
+                with open(path, 'wb') as f:
+                    f.write(foto)
         with Atomizer(rs):
-            code = self.coreproxy.change_foto(rs, persona_id,
-                                              foto=myhash.hexdigest())
+            code = self.coreproxy.change_foto(rs, persona_id, foto=myhash)
             if previous:
                 if not self.coreproxy.foto_usage(rs, previous):
                     path = os.path.join(self.conf.STORAGE_DIR, 'foto', previous)
