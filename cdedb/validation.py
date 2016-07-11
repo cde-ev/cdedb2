@@ -42,7 +42,7 @@ import dateutil.parser
 import werkzeug.datastructures
 
 from cdedb.common import (
-    EPSILON, compute_checkdigit, now, extract_roles, asciificator)
+    EPSILON, compute_checkdigit, now, extract_roles, asciificator, glue)
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (

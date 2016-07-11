@@ -161,7 +161,7 @@ class TestEventFrontend(FrontendTest):
         data["given_names"] = "Zelda",
         data["family_name"] = "Zeruda-Hime",
         self.assertTitle("Neues Passwort setzen")
-        new_password = "saFe_37pass"
+        new_password = "long_saFe_37pass"
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
         f['new_password2'] = new_password
