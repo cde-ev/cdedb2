@@ -33,9 +33,12 @@
                     {{ util.input_hidden(name="case_id", value=case_id) }}
                     {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
                     <div class="input-group">
-                    {{ util.input_select(name="realm", aclass="form-control input-sm", entries=(
-                       ("event", "Veranstaltung"),
-                       ("ml", "Mailinglisten")), defaultvalue=entry['realm']) }}
+                        {% if "core_admin" in user.roles %}
+                            {{ util.input_select(name="realm", aclass="form-control input-sm", entries=(
+                                ("event", "Veranstaltung"), ("ml", "Mailinglisten")), defaultvalue=entry['realm']) }}
+                        {% else %}
+                            <span>{{ entry['realm']|e }}</span> {# FIXME formatting #}
+                        {% endif %}
                         <span class="input-group-btn">
                             {{ util.input_submit(value="Genehmigen", aclass="btn btn-sm btn-success") }}
                         </span>

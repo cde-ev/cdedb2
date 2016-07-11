@@ -921,7 +921,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin", modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"),
-                 ("realm", "realm"))
+                 ("realm", "realm_or_None"))
     def genesis_decide(self, rs, case_id, case_status, realm):
         """Approve or decline a genensis case.
 
@@ -936,10 +936,11 @@ class CoreFrontend(AbstractFrontend):
             return self.genesis_list_cases(rs)
         data = {
             'id': case_id,
-            'realm': realm,
             'case_status': case_status,
             'reviewer': rs.user.persona_id,
         }
+        if realm:
+            data['realm'] = realm
         if case_status == const.GenesisStati.approved:
             data['secret'] = str(uuid.uuid4())
         code = self.coreproxy.genesis_modify_case(rs, data)
@@ -952,7 +953,7 @@ class CoreFrontend(AbstractFrontend):
                 rs, "genesis_approved",
                 {'To': (case['username'],),
                  'Subject': 'CdEDB account approved'},
-                {'case': case, 'realm': realm})
+                {'case': case,})
             rs.notify("success", "Case approved.")
         else:
             self.do_mail(

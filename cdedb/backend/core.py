@@ -1564,6 +1564,10 @@ class CoreBackend(AbstractBackend):
             if not ({"core_admin", "{}_admin".format(current['realm'])}
                     & rs.user.roles):
                 raise PrivilegeError("Not privileged.")
+            if ('realm' in data
+                    and not ({"core_admin", "{}_admin".format(data['realm'])}
+                             & rs.user.roles)):
+                raise PrivilegeError("Not privileged.")
             ret = self.sql_update(rs, "core.genesis_cases", data)
         if (data.get('case_status')
                 and data['case_status'] != current['case_status']):
