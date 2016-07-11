@@ -569,25 +569,50 @@ def _int_csv_list(val, argname=None, *, _convert=True):
 
 @_addvalidator
 def _password_strength(val, argname=None, *, _convert=True):
-    """
+    """Implement a password policy.
+
+    This has the strictly competing goals of security and usability. We
+    will use the results of [1] to select a hopefully good policy.
+
+    [1] https://www.ece.cmu.edu/~lbauer/papers/2016/tissec2016-password-policies.pdf
+
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :rtype: (str or None, [(str or None, exception)])
     """
     val, errors = _str(val, argname=argname, _convert=_convert)
+    LOWER = {c for c in string.ascii_lowercase}
+    UPPER = {c for c in string.ascii_uppercase}
+    DIGITS = {c for c in string.digits}
+    ## Note that the selection of an appropriate blacklist is quite
+    ## non-trivial. Currently it tries to err on the side of usability.
+    BLACKLIST = (
+        "1234",
+        "passwor",
+        "qwert",)
     if val:
-        if len(val) < 8:
+        if len(val) < 12:
             errors.append((argname,
-                           ValueError("Must be at least 8 characters.")))
-        if not any(c in "abcdefghijklmnopqrstuvwxyz" for c in val):
+                           ValueError("Must be at least 12 characters.")))
+        num_classes = 0
+        INPUT = {c for c in val}
+        if INPUT & LOWER:
+            num_classes += 1
+        if INPUT & UPPER:
+            num_classes += 1
+        if INPUT & DIGITS:
+            num_classes += 1
+        if INPUT - (LOWER | UPPER | DIGITS):
+            num_classes += 1
+        if num_classes < 3:
             errors.append((argname,
-                           ValueError("Must contain a lower case letter.")))
-        if not any(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" for c in val):
-            errors.append((argname,
-                           ValueError("Must contain a upper case letter.")))
-        if not any(c in "0123456789" for c in val):
-            errors.append((argname, ValueError("Must contain a digit.")))
+                           ValueError(glue("Must contain at least three",
+                                           "character classes."))))
+        for entry in BLACKLIST:
+            if entry in val.lower():
+                errors.append((argname,
+                               ValueError("Contains blacklisted substring.")))
     return val, errors
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
