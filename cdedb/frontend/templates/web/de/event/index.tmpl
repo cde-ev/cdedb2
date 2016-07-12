@@ -1,13 +1,14 @@
 {% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
 {% block title %}Veranstaltungen{% endblock %}
 {% block content %}
     Hier findest Du Akademien und andere Veranstaltungen.
 
     <h3>Aktuelle Veranstaltungen</h3>
     <ul>
-        {% for event_id, title in open_events|dictsort|reverse %}
+        {% for event_id, event in open_events|dictsort|reverse %}
             <li>
-                {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), title) }}
+                {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
             </li>
         {% endfor %}
     </ul>

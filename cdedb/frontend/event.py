@@ -100,10 +100,19 @@ class EventFrontend(AbstractUserFrontend):
     @access("persona")
     def index(self, rs):
         """Render start page."""
-        open_events = self.eventproxy.list_open_events(rs)
+        open_event_list = self.eventproxy.list_open_events(rs)
+        open_events = self.eventproxy.get_event_data(rs, open_event_list.keys())
         orga_events = self.eventproxy.get_event_data(rs, rs.user.orga)
+        for event in itertools.chain(open_events.values(),
+                                     orga_events.values()):
+            event['begin'] = min(
+                (p['part_begin'] for p in event['parts'].values()),
+                default=now().date())
+            event['end'] = max(
+                (p['part_end'] for p in event['parts'].values()),
+                default=now().date())
         return self.render(rs, "index", {
-            'open_events': open_events, 'orga_events': orga_events})
+            'open_events': open_events, 'orga_events': orga_events,})
 
     @access("event_admin")
     def create_user_form(self, rs):
@@ -188,6 +197,13 @@ class EventFrontend(AbstractUserFrontend):
         """List all events organized via DB."""
         events = self.eventproxy.list_db_events(rs)
         data = self.eventproxy.get_event_data(rs, events.keys())
+        for event in data.values():
+            event['begin'] = min(
+                (p['part_begin'] for p in event['parts'].values()),
+                default=now().date())
+            event['end'] = max(
+                (p['part_end'] for p in event['parts'].values()),
+                default=now().date())
         return self.render(rs, "list_db_events", {'data': data})
 
     @access("event")
