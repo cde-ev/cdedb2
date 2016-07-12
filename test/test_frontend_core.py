@@ -234,6 +234,20 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(blob.startswith(b"\x89PNG"))
         self.assertTrue(len(blob) > 10000)
 
+    @as_users("anton", "berta")
+    def test_set_foto_jpg(self, user):
+        self.traverse({'href': '/core/self/show'}, {'href': '/foto/change'})
+        f = self.response.forms['setfotoform']
+        with open("/tmp/cdedb-store/testfiles/picture.jpg", 'rb') as datafile:
+            data = datafile.read()
+        f['foto'] = webtest.Upload("picture.jpg", data, "application/octet-stream")
+        self.submit(f)
+        self.assertIn('foto/5bf9f9d6ce9cb9dbe96623076fac56b631ba129f2d47a497f9adc1b0b8531981bb171e191856ebc37249485136f214c837ae871c1389152a9e956a447b08282e', self.response.text)
+        with open('/tmp/cdedb-store/foto/5bf9f9d6ce9cb9dbe96623076fac56b631ba129f2d47a497f9adc1b0b8531981bb171e191856ebc37249485136f214c837ae871c1389152a9e956a447b08282e', 'rb') as f:
+            blob = f.read()
+        self.assertTrue(blob.startswith(b"\xff\xd8\xff"))
+        self.assertTrue(len(blob) > 10000)
+
     @as_users("berta")
     def test_reset_foto(self, user):
         self.traverse({'href': '/core/self/show'})

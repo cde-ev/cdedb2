@@ -1133,12 +1133,12 @@ def _profilepic(val, argname=None, *, _convert=True):
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    if len(val) < 1000:
+    if len(val) < 2**10:
         errs.append((argname, ValueError("Too small.")))
-    if len(val) > 100000:
+    if len(val) > 2**17:
         errs.append((argname, ValueError("Too big.")))
     mime = magic.from_buffer(val, mime=True)
-    if mime not in ("image/jgp", "image/png"):
+    if mime not in ("image/jpeg", "image/jpg", "image/png"):
         errs.append((argname, ValueError("Only jpg and png allowed.")))
     if errs:
         return None, errs
