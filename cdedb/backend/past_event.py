@@ -54,10 +54,10 @@ class PastEventBackend(AbstractBackend):
             "INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)",
             "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",
             "WHERE p.persona_id = ANY(%s)")
-        event_data = self.query_all(rs, query, (ids,))
+        pevents = self.query_all(rs, query, (ids,))
         ret = {}
         for anid in ids:
-            ret[anid] = tuple(x for x in event_data if x['persona_id'] == anid)
+            ret[anid] = tuple(x for x in pevents if x['persona_id'] == anid)
         return ret
 
     def past_event_log(self, rs, code, pevent_id, persona_id=None,
@@ -290,17 +290,17 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("persona")
-    def list_past_courses(self, rs, event_id):
+    def list_past_courses(self, rs, pevent_id):
         """List all courses of a concluded event.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type event_id: int
+        :type pevent_id: int
         :rtype: {int: str}
         :returns: Mapping of course ids to titles.
         """
-        event_id = affirm("id", event_id)
+        pevent_id = affirm("id", pevent_id)
         data = self.sql_select(rs, "past_event.courses", ("id", "title"),
-                               (event_id,), entity_key="pevent_id")
+                               (pevent_id,), entity_key="pevent_id")
         return {e['id']: e['title'] for e in data}
 
     @access("cde", "event")
@@ -361,7 +361,7 @@ class PastEventBackend(AbstractBackend):
         participants and then remove the course.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type course_id: int
+        :type pcourse_id: int
         :type cascade: bool
         :param cascade: If True participants are removed first, if False the
           operation fails if participants exist.
