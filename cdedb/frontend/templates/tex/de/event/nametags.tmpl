@@ -70,29 +70,29 @@
     }}\hskip 0pt\relax}
 <<% endblock %>>
 <<% block content %>>
-    <<% for part_id, pdata in event_data['parts']|dictsort -%>>
-        <<% for registration_id, rdata in registration_data|dictsort -%>>
+    <<% for part_id, pdata in ambience['event']['parts']|dictsort -%>>
+        <<% for registration_id, rdata in registrations|dictsort -%>>
             <<% if enums['RegistrationPartStati'](rdata['parts'][part_id]['status']).is_present() -%>>
-                \nametag{<<< user_data[rdata['persona_id']]['given_names']|te >>>}%
-                    {<<< user_data[rdata['persona_id']]['family_name']|te >>>}{
+                \nametag{<<< personas[rdata['persona_id']]['given_names']|te >>>}%
+                    {<<< personas[rdata['persona_id']]['family_name']|te >>>}{
                         <<%- if rdata['parts'][part_id]['course_id'] -%>>
                             <<%- if (rdata['parts'][part_id]['course_id']
                                      == rdata['parts'][part_id]['course_instructor']) -%>>
-                                \emph{<<< course_data[rdata['parts'][part_id]['course_id']]['title']|te >>>}
+                                \emph{<<< courses[rdata['parts'][part_id]['course_id']]['title']|te >>>}
                             <<%- else -%>>
-                                <<< course_data[rdata['parts'][part_id]['course_id']]['title']|te >>>
+                                <<< courses[rdata['parts'][part_id]['course_id']]['title']|te >>>
                             <<%- endif -%>>
-                        <<%- elif rdata['persona_id'] in event_data['orgas'] -%>>
+                        <<%- elif rdata['persona_id'] in ambience['event']['orgas'] -%>>
                             \emph{Orga}
                         <<%- endif -%>>
                     }{
                         <<%- if rdata['parts'][part_id]['lodgement_id'] -%>>
-                            <<< lodgement_data[rdata['parts'][part_id]['lodgement_id']]['moniker']|te >>>
+                            <<< lodgements[rdata['parts'][part_id]['lodgement_id']]['moniker']|te >>>
                         <<%- endif -%>>
                     }{
                         <<%- if rdata['parts'][part_id]['course_id'] -%>>
                             ./logo-<<< rdata['parts'][part_id]['course_id']|te >>>
-                        <<%- elif rdata['persona_id'] in event_data['orgas'] -%>>
+                        <<%- elif rdata['persona_id'] in ambience['event']['orgas'] -%>>
                             ./orga-logo
                         <<%- endif -%>>
                     }{

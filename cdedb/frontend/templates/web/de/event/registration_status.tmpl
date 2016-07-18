@@ -1,19 +1,19 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Status der Anmeldung zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
+{% block title %}Status der Anmeldung zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_status"), "Anmeldung", active=True) }}
 {% endblock %}
 {% block content %}
-    {% if event_data['registration_soft_limit'] >= now().date() %}
+    {% if ambience['event']['registration_soft_limit'] >= now().date() %}
         <p>
-            Änderungen sind bis zum Anmeldeschluss ({{ event_data['registration_soft_limit']|date|e }}) möglich.
+            Änderungen sind bis zum Anmeldeschluss ({{ ambience['event']['registration_soft_limit']|date|e }}) möglich.
         </p>
     {% endif %}
-    {% if not registration_data['payment'] %}
+    {% if not registration['payment'] %}
         <p>
              Beachte bitte, dass deine Anmeldung erst mit Überweisung des
              Teilnehmerbeitrags gültig wird. Überweise dazu bitte {{ fee|e}}€
@@ -23,24 +23,24 @@
         </p>
         <p>
             Kontoinhaber: CdE e.V.<br>
-            IBAN: {{ event_data['iban']|e }}<br>
+            IBAN: {{ ambience['event']['iban']|e }}<br>
             BIC:  BFSWDE33XXX (BIC = SWIFT-Code)<br>
             Bank: Bank für Sozialwirtschaft<br>
-            Verwendungszweck: {{ user_data['given_names']|e }} {{ user_data['family_name']|e }},
-                              {{ user_data['id']|cdedbid|e }}, {{ event_data['title']|e }}
+            Verwendungszweck: {{ user['given_names']|e }} {{ user['family_name']|e }},
+                              {{ user['persona_id']|cdedbid|e }}, {{ ambience['event']['title']|e }}
         </p>
     {% endif %}
-    {% if age.is_minor() and not registration_data['parental_agreement'] %}
+    {% if age.is_minor() and not registration['parental_agreement'] %}
         Du musst noch die Einverständniserklärung deiner
         Erziehungsberechtigten an die Orgas schicken. Du findest die Vorlage
         {{ util.href(cdedblink('event/get_minor_form'), "hier") }}.
     {% endif %}
     <table>
         <tr><th colspan="2">Status</th></tr>
-        {% for part_id, pdata in registration_data['parts']|dictsort %}
+        {% for part_id, part in registration['parts']|dictsort %}
             <tr>
-                <td>{{ event_data['parts'][part_id]['title']|e }}</td>
-                <td>{{ i18n(pdata['status']|enum(enums['RegistrationPartStati']))|e }}</td>
+                <td>{{ ambience['event']['parts'][part_id]['title']|e }}</td>
+                <td>{{ i18n(part['status']|enum(enums['RegistrationPartStati']))|e }}</td>
             </tr>
         {% endfor %}
         <tr><th colspan="2">Sonstige Angaben</th></tr>
@@ -50,7 +50,7 @@
                 {% if not age.may_mix() %}
                     Keine gemischte Unterbringung.
                 {% else %}
-                    {% if registration_data['mixed_lodging'] %}
+                    {% if registration['mixed_lodging'] %}
                         Ich bin mit einer gemischten Unterbringung einverstanden.
                     {% else %}
                         Ich will geschlechter-getrennt untergebracht werden.
@@ -62,7 +62,7 @@
             <td>Fotos</td>
             <td>
                 Ich bin
-                {% if not registration_data['foto_consent'] %}
+                {% if not registration['foto_consent'] %}
                     <strong>nicht</strong>
                 {% endif %}
                 damit einverstanden, dass Fotos und Aufnahmen meiner Person,
@@ -76,33 +76,33 @@
         <tr>
             <td>Anmerkungen</td>
             <td>
-                {{ registration_data['notes']|rst }}
+                {{ registration['notes']|rst }}
             </td>
         </tr>
-        {% for part_id, pdata in registration_data['parts']|dictsort %}
-            {% if enums['RegistrationPartStati'](pdata['status']).is_involved()
-                  and registration_data['choices'].get(part_id) %}
-                <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
+        {% for part_id, part in registration['parts']|dictsort %}
+            {% if enums['RegistrationPartStati'](part['status']).is_involved()
+                  and registration['choices'].get(part_id) %}
+                <tr><th colspan="2">Kurswahl {{ ambience['event']['parts'][part_id]['title']|e }}</th></tr>
                 {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}
                     <tr>
                             <td>{{ prio|e }}</td>
-                            <td>{{ course_data[registration_data['choices'][part_id][loop.index0]]['title']|e }}</td>
+                            <td>{{ courses[registration['choices'][part_id][loop.index0]]['title']|e }}</td>
                     </tr>
                 {% endfor %}
                 <tr>
                         <td>Kursleiter</td>
                         <td>
-                            {% if not pdata['instructor'] %}
+                            {% if not part['instructor'] %}
                                 Keine Kursleitung.
                             {% else %}
-                                {{ course_data[pdata['instructor']]['title']|e }}
+                                {{ courses[part['instructor']]['title']|e }}
                             {% endif %}
                         </td>
                 </tr>
             {% endif %}
         {% endfor %}
     </table>
-    {% if event_data['registration_soft_limit'] >= now().date() %}
+    {% if ambience['event']['registration_soft_limit'] >= now().date() %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), "Ändern") }}
         </p>

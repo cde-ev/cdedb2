@@ -2,13 +2,13 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}Fragebogen umordnen ({{ event_data['title']|e }}){% endblock %}
+{% block title %}Fragebogen umordnen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
     <ul id="rowlist">
         {% for entry in questionnaire %}
             <li id="{{ loop.index0|e }}">
                 {% if entry['field_id'] %}
-                    Abfrage: {{ event_data['fields'][entry['field_id']]['field_name']|e }}
+                    Abfrage: {{ ambience['event']['fields'][entry['field_id']]['field_name']|e }}
                 {% else %}
                     Überschrift: {{ entry['title']|e }}<br>
                     Text: {{ entry['info']|e }}

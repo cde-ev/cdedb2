@@ -9,7 +9,7 @@
     \pagestyle{fancy}
 
     \renewcommand{\headrulewidth}{0pt}
-    \chead{\Large\textbf{\textsf{Teilnehmerliste <<< event_data['title']|te >>>}}}
+    \chead{\Large\textbf{\textsf{Teilnehmerliste <<< ambience['event']['title']|te >>>}}}
     \cfoot{Seite \thepage{} von \pageref{LastPage}}
 
     \usepackage{longtable}
@@ -20,10 +20,10 @@
 <<% endblock %>>
 <<% block content %>>
     \taburowcolors[2] 2{white .. black!5}
-    \begin{longtabu}{ll>{\raggedright}p{.3\linewidth}l<<< ('l'*(event_data['parts']|length))|te >>>l}
+    \begin{longtabu}{ll>{\raggedright}p{.3\linewidth}l<<< ('l'*(ambience['event']['parts']|length))|te >>>l}
     \toprule
     Vorname & Nachname & Ort &
-    <<% for part_id, pdata in event_data['parts']|dictsort -%>>
+    <<% for part_id, pdata in ambience['event']['parts']|dictsort -%>>
         <<< pdata['title']|te >>> &
     <<% endfor -%>>
     Email \\
@@ -31,7 +31,7 @@
     \endfirsthead
     \midrule
     Vorname & Nachname & Ort & Handy &
-    <<% for part_id, pdata in event_data['parts']|dictsort -%>>
+    <<% for part_id, pdata in ambience['event']['parts']|dictsort -%>>
         <<< pdata['title']|te >>> &
     <<% endfor -%>>
     Email \\
@@ -42,27 +42,27 @@
     \bottomrule
     \endlastfoot
     <<% for registration_id in ordered -%>>
-        <<% with rdata = registration_data[registration_id] -%>>
-            <<< user_data[rdata['persona_id']]['given_names']|te >>> &
-            <<< user_data[rdata['persona_id']]['family_name']|te >>> &
-            <<< user_data[rdata['persona_id']]['postal_code']|te >>>
-            <<< user_data[rdata['persona_id']]['location']|te >>>
-            <<% if user_data[rdata['persona_id']]['country'] != "Deutschland" -%>>
-                <<< user_data[rdata['persona_id']]['country']|te >>>
+        <<% with rdata = registrations[registration_id] -%>>
+            <<< personas[rdata['persona_id']]['given_names']|te >>> &
+            <<< personas[rdata['persona_id']]['family_name']|te >>> &
+            <<< personas[rdata['persona_id']]['postal_code']|te >>>
+            <<< personas[rdata['persona_id']]['location']|te >>>
+            <<% if personas[rdata['persona_id']]['country'] != "Deutschland" -%>>
+                <<< personas[rdata['persona_id']]['country']|te >>>
             <<%- endif -%>>
             &
-            <<< user_data[rdata['persona_id']]['mobile']|te >>> &
-            <<% for part_id in event_data['parts']|sort -%>>
+            <<< personas[rdata['persona_id']]['mobile']|te >>> &
+            <<% for part_id in ambience['event']['parts']|sort -%>>
                 <<% if rdata['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%>>
                     <<% if rdata['parts'][part_id]['course_id'] -%>>
                         <<% if rdata['parts'][part_id]['course_instructor'] == rdata['parts'][part_id]['course_id'] -%>>
                             \emph{%
-                                <<< course_data[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
+                                <<< courses[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
                             }
                         <<% else -%>>
-                            <<< course_data[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
+                            <<< courses[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
                         <<% endif -%>>
-                    <<% elif rdata['persona_id'] in event_data['orgas'] -%>>
+                    <<% elif rdata['persona_id'] in ambience['event']['orgas'] -%>>
                         \emph{Orga}
                     <<% else -%>>
                         % nichts
@@ -72,7 +72,7 @@
                 <<% endif -%>>
                 &
             <<% endfor -%>>
-            <<< user_data[rdata['persona_id']]['username']|te >>> \\
+            <<< personas[rdata['persona_id']]['username']|te >>> \\
         <<% endwith -%>>
     <<% endfor -%>>
     \end{longtabu}

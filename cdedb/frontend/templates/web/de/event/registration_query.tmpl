@@ -3,7 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
-{% block title %}Anmeldungen ({{ event_data['title']|e }}){% endblock %}
+{% block title %}Anmeldungen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
@@ -34,17 +34,17 @@
             "persona.family_name": "Nachname",
             "persona.given_names": "Vorname",
             "persona.display_name": "Rufname",
-            "user_data.title": "Titel",
-            "user_data.name_supplement": "Namenszusatz",
-            "user_data.gender": "Geschlecht",
-            "user_data.birthday": "Geburtstag",
-            "user_data.telephone": "Telefon",
-            "user_data.mobile": "Mobilfunk",
-            "user_data.address": "Anschrift",
-            "user_data.address_supplement": "Adresszusatz",
-            "user_data.postal_code": "PLZ",
-            "user_data.location": "Ort",
-            "user_data.country": "Land",})|e }}
+            "persona.title": "Titel",
+            "persona.name_supplement": "Namenszusatz",
+            "persona.gender": "Geschlecht",
+            "persona.birthday": "Geburtstag",
+            "persona.telephone": "Telefon",
+            "persona.mobile": "Mobilfunk",
+            "persona.address": "Anschrift",
+            "persona.address_supplement": "Adresszusatz",
+            "persona.postal_code": "PLZ",
+            "persona.location": "Ort",
+            "persona.country": "Land",})|e }}
 
     {{ util.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
 
@@ -70,20 +70,20 @@
                 "reg.foto_consent": "Foto-Einwilligung",
                 "membership.is_member": "CdE-Mitglied",
                 "persona.username": "Email",
-                "user_data.family_name": "Nachname",
-                "user_data.given_names": "Vorname",
+                "persona.family_name": "Nachname",
+                "persona.given_names": "Vorname",
                 "persona.display_name": "Rufname",
-                "user_data.title": "Titel",
-                "user_data.name_supplement": "Namenszusatz",
-                "user_data.gender": "Geschlecht",
-                "user_data.birthday": "Geburtstag",
-                "user_data.telephone": "Telefon",
-                "user_data.mobile": "Mobilfunk",
-                "user_data.address": "Anschrift",
-                "user_data.address_supplement": "Adresszusatz",
-                "user_data.postal_code": "PLZ",
-                "user_data.location": "Ort",
-                "user_data.country": "Land",})|e }}
+                "persona.title": "Titel",
+                "persona.name_supplement": "Namenszusatz",
+                "persona.gender": "Geschlecht",
+                "persona.birthday": "Geburtstag",
+                "persona.telephone": "Telefon",
+                "persona.mobile": "Mobilfunk",
+                "persona.address": "Anschrift",
+                "persona.address_supplement": "Adresszusatz",
+                "persona.postal_code": "PLZ",
+                "persona.location": "Ort",
+                "persona.country": "Land",})|e }}
 
                 {{ util.display_query_result(result, query, titles, choices) }}
 
@@ -130,10 +130,10 @@
                     {# some fields are not sensibly modifyable #}
                     {% with BLACKLIST = (
                         "reg.id", "reg.notes", "reg.orga_notes", "membership.is_member", "persona.username",
-                        "user_data.family_name", "user_data.given_names", "persona.display_name", "user_data.title",
-                        "user_data.name_supplement", "user_data.gender", "user_data.birthday", "user_data.telephone",
-                        "user_data.mobile", "user_data.address", "user_data.address_supplement", "user_data.postal_code",
-                        "user_data.location", "user_data.country") %}
+                        "persona.family_name", "persona.given_names", "persona.display_name", "persona.title",
+                        "persona.name_supplement", "persona.gender", "persona.birthday", "persona.telephone",
+                        "persona.mobile", "persona.address", "persona.address_supplement", "persona.postal_code",
+                        "persona.location", "persona.country") %}
 
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}

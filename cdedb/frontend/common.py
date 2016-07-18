@@ -864,9 +864,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 rs, data=data, inline=False,
                 filename=self.i18n("{}.tex".format(filename), rs.lang))
         else:
-            pdf_data = self.latex_compile(data, runs=runs)
+            pdf = self.latex_compile(data, runs=runs)
             return self.send_file(
-                rs, mimetype="application/pdf", data=pdf_data,
+                rs, mimetype="application/pdf", data=pdf,
                 filename=self.i18n("{}.pdf".format(filename), rs.lang))
 
     def serve_complex_latex_document(self, rs, tmp_dir, work_dir_name,
@@ -998,11 +998,11 @@ def reconnoitre_ambience(obj, rs):
                                    == a['lastschrift']['id'])),)),
         Scout(lambda anid: obj.pasteventproxy.get_institution(rs, anid),
               'institution_id', 'institution', t),
-        Scout(lambda anid: obj.eventproxy.get_event_data_one(rs, anid),
+        Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
               'event_id', 'event', t),
         Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
               'pevent_id', 'pevent', t),
-        Scout(lambda anid: obj.eventproxy.get_course_data_one(rs, anid),
+        Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
               ((lambda a: myAssert(a['course']['event_id']
                                    == a['event']['id'])),)),
@@ -1494,7 +1494,7 @@ def construct_redirect(request, url):
         ret.delete_cookie("displaynote")
         return ret
 
-def make_postal_address(persona_data):
+def make_postal_address(persona):
     """Prepare address info for formatting.
 
     Addresses have some specific formatting wishes, so we are flexible
@@ -1502,25 +1502,25 @@ def make_postal_address(persona_data):
     each containing one line. The final formatting is now basically join
     on line breaks.
 
-    :type persona_data: {str: object}
+    :type persona: {str: object}
     :rtype: [str]
     """
-    pd = persona_data
-    name = "{} {}".format(pd['given_names'], pd['family_name'])
-    if pd['title']:
-        name = glue(pd['title'], name)
-    if pd['name_supplement']:
-        name = glue(name, pd['name_supplement'])
+    p = persona
+    name = "{} {}".format(p['given_names'], p['family_name'])
+    if p['title']:
+        name = glue(p['title'], name)
+    if p['name_supplement']:
+        name = glue(name, p['name_supplement'])
     ret = [name]
-    if pd['address_supplement']:
-        ret.append(pd['address_supplement'])
-    if pd['address']:
-        ret.append(pd['address'])
-    if pd['postal_code'] or pd['location']:
-        ret.append("{} {}".format(pd['postal_code'] or '',
-                                  pd['location'] or ''))
-    if pd['country']:
-        ret.append(pd['country'])
+    if p['address_supplement']:
+        ret.append(p['address_supplement'])
+    if p['address']:
+        ret.append(p['address'])
+    if p['postal_code'] or p['location']:
+        ret.append("{} {}".format(p['postal_code'] or '',
+                                  p['location'] or ''))
+    if p['country']:
+        ret.append(p['country'])
     return ret
 
 def make_transaction_subject(persona):

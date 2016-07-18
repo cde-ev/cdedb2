@@ -611,7 +611,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/add'})
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms['addregistrationform']
-        f['user_data.persona_id'] = "DB-2-H"
+        f['persona.persona_id'] = "DB-2-H"
         f['reg.orga_notes'] = "Du entkommst uns nicht."
         f['reg.mixed_lodging'].checked = True
         f['part1.status'] = 1
@@ -1065,8 +1065,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Große Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist zur Offline-Nutzung gesperrt.")
         f = self.response.forms['unlockform']
-        f['json_data'] = webtest.Upload("event_export.json", data,
-                                        "application/octet-stream")
+        f['json'] = webtest.Upload("event_export.json", data,
+                                   "application/octet-stream")
         self.submit(f)
         self.assertTitle("Mittelgroße Testakademie 2222")
         self.assertPresence("Die Veranstaltung ist nicht gesperrt.")

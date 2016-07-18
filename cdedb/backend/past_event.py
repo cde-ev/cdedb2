@@ -556,20 +556,20 @@ class PastEventBackend(AbstractBackend):
                 or "event_admin" not in rs.user.roles):
             raise PrivilegeError("Needs both admin privileges.")
         with Atomizer(rs):
-            event = unwrap(self.event.get_event_data(rs, (event_id,)))
+            event = self.event.get_event(rs, event_id)
             if any(now().date() < part['part_end']
                    for part in event['parts'].values()):
                 return None, "Event not concluded."
             if event['offline_lock']:
                 return None, "Event locked."
-            self.event.set_event_data(rs, {'id': event_id, 'is_archived': True})
+            self.event.set_event(rs, {'id': event_id, 'is_archived': True})
             pevent = {k: v for k, v in event.items() if k in PAST_EVENT_FIELDS}
             ## Use random day of the event as tempus
             pevent['tempus'] = next(iter(event['parts'].values()))['part_begin']
             del pevent['id']
             new_id = self.create_past_event(rs, pevent)
             course_ids = self.event.list_db_courses(rs, event_id)
-            courses = self.event.get_course_data(rs, course_ids.keys())
+            courses = self.event.get_courses(rs, course_ids.keys())
             course_map = {}
             for course_id, cdata in courses.items():
                 pcourse = {k: v for k, v in cdata.items()

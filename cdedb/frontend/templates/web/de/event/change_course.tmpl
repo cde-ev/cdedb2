@@ -1,6 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ course_data['title']|e }} ({{ event_data['title']|e }}) bearbeiten{% endblock %}
+{% block title %}{{ ambience['course']['title']|e }} ({{ ambience['event']['title']|e }}) bearbeiten{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/show_course"), "Abbrechen") }}
     <form action="{{ cdedblink('event/change_course')|e }}" method="POST" id="changecourseform">
@@ -13,7 +13,7 @@
             {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for part_id, pdata in event_data['parts']|dictsort %}
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
                 {{ myentries.append((part_id, pdata['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}

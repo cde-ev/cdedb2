@@ -1,7 +1,7 @@
 {% set sidenav_active='event_show' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}DB-Kurs hinzufügen ({{ data['title']|e }}){% endblock %}
+{% block title %}DB-Kurs hinzufügen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/create_course')|e }}" method="POST" id="createcourseform">
@@ -14,7 +14,7 @@
             {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for part_id, pdata in data['parts']|dictsort %}
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
                 {{ myentries.append((part_id, pdata['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}

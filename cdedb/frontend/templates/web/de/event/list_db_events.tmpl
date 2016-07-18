@@ -8,7 +8,7 @@
 {% block content %}
     <h2>Aktuelle Veranstaltungen</h2>
     <ul>
-        {% for event_id, entry in data|dictsort|reverse %}
+        {% for event_id, entry in events|dictsort|reverse %}
             {% if not entry['is_archived'] %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
@@ -18,7 +18,7 @@
     </ul>
     <h2>Archivierte Veranstaltungen</h2>
     <ul>
-        {% for event_id, entry in data|dictsort|reverse %}
+        {% for event_id, entry in events|dictsort|reverse %}
             {% if entry['is_archived'] %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}

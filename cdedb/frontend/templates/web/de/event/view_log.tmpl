@@ -20,23 +20,23 @@ Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + 
                 <td>{{ i18n(enums['EventLogCodes'](entry['code'])|string)|e }}</td>
                 <td>
                     {% if entry['submitted_by'] %}
-                        {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                        {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                        {{ personas[entry['submitted_by']]['given_names']|e }}
+                        {{ personas[entry['submitted_by']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['event_id'] %}
-                        {{ event_data[entry['event_id']]['title']|e }}
+                        {{ events[entry['event_id']]['title']|e }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['persona_id'] %}
-                        {{ persona_data[entry['persona_id']]['given_names']|e }}
-                        {{ persona_data[entry['persona_id']]['family_name']|e }}
+                        {{ personas[entry['persona_id']]['given_names']|e }}
+                        {{ personas[entry['persona_id']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
@@ -56,7 +56,7 @@ Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + 
                                      entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for event_id, title in events|dictsort %}
+            {% for event_id, title in all_events|dictsort %}
                 {{ myentries.append((event_id, title))|e }}
             {% endfor %}
             {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}

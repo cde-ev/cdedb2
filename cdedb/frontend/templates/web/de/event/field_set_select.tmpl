@@ -1,14 +1,14 @@
 {% set sidenav_active='event_config' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Feld auswählen ({{ event_data['title']|e }}){% endblock %}
+{% block title %}Feld auswählen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
     <form action="{{ cdedblink('event/field_set_select')|e }}" method="GET" id="selectfieldform">
         <div>
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for field_id, fdata in event_data['fields']|dictsort %}
+            {% for field_id, fdata in ambience['event']['fields']|dictsort %}
                 {{ myentries.append((field_id, fdata['field_name']))|e }}
             {% endfor %}
             {{ util.form_input_select("field_id", entries=myentries) }}

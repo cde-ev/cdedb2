@@ -1528,7 +1528,7 @@ _EVENT_OPTIONAL_FIELDS = {
     'fields': _any,
 }
 @_addvalidator
-def _event_data(val, argname=None, *, creation=False, _convert=True):
+def _event(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1538,7 +1538,7 @@ def _event_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "event_data"
+    argname = argname or "event"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1578,7 +1578,7 @@ def _event_data(val, argname=None, *, creation=False, _convert=True):
                     errs.extend(e)
                 else:
                     creation = (anid < 0)
-                    partdata, ee = _event_part_data_or_None(
+                    partdata, ee = _event_part_or_None(
                         partdata, 'parts', creation=creation,
                         _convert=_convert)
                     if ee:
@@ -1598,7 +1598,7 @@ def _event_data(val, argname=None, *, creation=False, _convert=True):
                     errs.extend(e)
                 else:
                     creation = (anid < 0)
-                    fielddata, ee = _event_field_data_or_None(
+                    fielddata, ee = _event_field_or_None(
                         fielddata, 'fields', creation=creation,
                         _convert=_convert)
                     if ee:
@@ -1615,7 +1615,7 @@ _EVENT_PART_COMMON_FIELDS = {
     'fee': _decimal,
 }
 @_addvalidator
-def _event_part_data(val, argname=None, *, creation=False, _convert=True):
+def _event_part(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1625,7 +1625,7 @@ def _event_part_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "event_part_data"
+    argname = argname or "event_part"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1643,7 +1643,7 @@ _EVENT_FIELD_COMMON_FIELDS = {
     'entries': _any,
 }
 @_addvalidator
-def _event_field_data(val, argname=None, *, creation=False, _convert=True):
+def _event_field(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1653,7 +1653,7 @@ def _event_field_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "event_field_data"
+    argname = argname or "event_field"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1741,7 +1741,7 @@ _COURSE_OPTIONAL_FIELDS = {
     'parts': _any,
 }
 @_addvalidator
-def _course_data(val, argname=None, *, creation=False, _convert=True):
+def _course(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1751,7 +1751,7 @@ def _course_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "course_data"
+    argname = argname or "course"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1797,7 +1797,7 @@ _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'checkin': _datetime_or_None,
 }
 @_addvalidator
-def _registration_data(val, argname=None, *, creation=False, _convert=True):
+def _registration(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1807,7 +1807,7 @@ def _registration_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "registration_data"
+    argname = argname or "registration"
 
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
@@ -1835,7 +1835,7 @@ def _registration_data(val, argname=None, *, creation=False, _convert=True):
             newparts = {}
             for anid, part in oldparts.items():
                 anid, e = _id(anid, 'parts', _convert=_convert)
-                part, ee = _registration_part_data_or_None(part, 'parts',
+                part, ee = _registration_part_or_None(part, 'parts',
                                                            _convert=_convert)
                 if e or ee:
                     errs.extend(e)
@@ -1872,7 +1872,7 @@ def _registration_data(val, argname=None, *, creation=False, _convert=True):
     return val, errs
 
 @_addvalidator
-def _registration_part_data(val, argname=None, *, _convert=True):
+def _registration_part(val, argname=None, *, _convert=True):
     """This validator has only optional fields. Normally we would have an
     creation parameter and make stuff mandatory depending on that. But
     from the data at hand it is impossible to decide when the creation
@@ -1883,7 +1883,7 @@ def _registration_part_data(val, argname=None, *, _convert=True):
     :type _convert: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "registration_part_data"
+    argname = argname or "registration_part"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1934,7 +1934,7 @@ _LODGEMENT_COMMON_FIELDS = lambda: {
     'notes': _str_or_None
 }
 @_addvalidator
-def _lodgement_data(val, argname=None, *, creation=False, _convert=True):
+def _lodgement(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1944,7 +1944,7 @@ def _lodgement_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "lodgement_data"
+    argname = argname or "lodgement"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1959,14 +1959,14 @@ def _lodgement_data(val, argname=None, *, creation=False, _convert=True):
                                       _convert=_convert)
 
 @_addvalidator
-def _questionnaire_data(val, argname=None, *, _convert=True):
+def _questionnaire(val, argname=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :rtype: ([dict] or None, [(str or None, exception)])
     """
-    argname = argname or "questionnaire_data"
+    argname = argname or "questionnaire"
     val, errs = _iterable(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -2046,24 +2046,24 @@ def _serialized_event(val, argname=None, *, _convert=True):
     ## We reuse the existing validators, but have to augment them since the
     ## data looks a bit different.
     table_validators = {
-        'event.events': _event_data,
+        'event.events': _event,
         'event.event_parts': _augment_dict_validator(
-            _event_part_data, {'id': _id, 'event_id': _id}),
+            _event_part, {'id': _id, 'event_id': _id}),
         'event.courses': _augment_dict_validator(
-            _course_data, {'event_id': _id}),
+            _course, {'event_id': _id}),
         'event.course_parts': _augment_dict_validator(
             _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id}),
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
         'event.field_definitions': _augment_dict_validator(
-            _event_field_data, {'id': _id, 'event_id': _id,
+            _event_field, {'id': _id, 'event_id': _id,
                                 'field_name': _restrictive_identifier}),
         'event.lodgements': _augment_dict_validator(
-            _lodgement_data, {'event_id': _id}),
+            _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
-            _registration_data, {'event_id': _id, 'persona_id': _id}),
+            _registration, {'event_id': _id, 'persona_id': _id}),
         'event.registration_parts': _augment_dict_validator(
-            _registration_part_data, {'id': _id, 'part_id': _id,
+            _registration_part, {'id': _id, 'part_id': _id,
                                       'registration_id': _id}),
         'event.course_choices': _augment_dict_validator(
             _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id,

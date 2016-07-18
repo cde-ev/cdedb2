@@ -23,7 +23,7 @@
                 <th>Drittwahl</th>
             {% endfor %}
         </tr>
-        {% for course_id, cdata in course_data|dictsort %}
+        {% for course_id, cdata in courses|dictsort %}
             <tr>
                 <td>{{ cdata['nr']|e }}</td>
                 <td>{{ cdata['title']|e }}</td>

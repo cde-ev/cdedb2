@@ -2,7 +2,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Feld {{ event_data['fields'][values['field_id']|int]['field_name']|e }} setzen ({{ event_data['title']|e }})
+Feld {{ ambience['event']['fields'][values['field_id']|int]['field_name']|e }} setzen ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}
@@ -10,10 +10,10 @@ Feld {{ event_data['fields'][values['field_id']|int]['field_name']|e }} setzen (
         <table>
             {% for registration_id in ordered %}
                 {{ util.tab_event_field_input(
-                    event_data['fields'][values['field_id']|int], name="input{}".format(registration_id),
+                    ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),
                     label="{} {}".format(
-                        persona_data[registration_data[registration_id]['persona_id']]['given_names'],
-                        persona_data[registration_data[registration_id]['persona_id']]['family_name'])) }}
+                        personas[registrations[registration_id]['persona_id']]['given_names'],
+                        personas[registrations[registration_id]['persona_id']]['family_name'])) }}
             {% endfor %}
         </table>
         <div>

@@ -2,14 +2,14 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Anmeldung von {{ persona_data['given_names']|e }} {{ persona_data['family_name']|e }} bearbeiten
-({{ event_data['title']|e }})
+Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bearbeiten
+({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
-{# { util.breadcrumb_link(cdedblink("event/show_registration"), user_data['given_names']|e + " " + user_data['family_name']|e, icon="user") } #}
+{# { util.breadcrumb_link(cdedblink("event/show_registration"), persona['given_names']|e + " " + persona['family_name']|e, icon="user") } #}
 {{ util.breadcrumb_link(cdedblink("event/change_registration"), "Ändern", active=True, icon="pencil") }}
 {% endblock %}
 {% block content %}
@@ -25,7 +25,7 @@ Anmeldung von {{ persona_data['given_names']|e }} {{ persona_data['family_name']
             {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
             {{ util.form_input_text(name="reg.checkin", label="Checkin") }}
             {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
-            {% for part_id, pdata in event_data['parts']|dictsort %}
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
                 <tr><th colspan="2">{{ pdata['title']|e }}</th></tr>
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
@@ -36,7 +36,7 @@ Anmeldung von {{ persona_data['given_names']|e }} {{ persona_data['family_name']
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_choices[part_id] %}
-                    {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
+                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
                                          nulloption=True) }}
@@ -50,14 +50,14 @@ Anmeldung von {{ persona_data['given_names']|e }} {{ persona_data['family_name']
                                          entries=myentries, nulloption=True) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for lodgement_id, ldata in lodgement_data|dictsort %}
+                {% for lodgement_id, ldata in lodgements|dictsort %}
                     {{ myentries.append((lodgement_id, ldata['moniker']))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                          entries=myentries, nulloption=True) }}
             {% endfor %}
             <tr><th colspan="2">Felder</th></tr>
-            {% for field_id, fdata in event_data['fields']|dictsort %}
+            {% for field_id, fdata in ambience['event']['fields']|dictsort %}
                {{ util.tab_event_field_input(fdata) }}
             {% endfor %}
         </table>

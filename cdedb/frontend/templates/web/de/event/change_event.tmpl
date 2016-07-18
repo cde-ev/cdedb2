@@ -1,7 +1,7 @@
 {% set sidenav_active='event_config' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ data['title']|e }} bearbeiten{% endblock %}
+{% block title %}{{ ambience['event']['title']|e }} bearbeiten{% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/change_event')|e }}" method="POST" id="changeeventform">
         <table>

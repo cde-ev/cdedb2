@@ -5,7 +5,7 @@
     \pagestyle{empty}
 <<% endblock %>>
 <<% block content %>>
-    <<% for course_id, cdata in course_data|dictsort %>>
+    <<% for course_id, cdata in courses|dictsort %>>
         <<% for part_id in cdata['parts']|sort %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
@@ -14,19 +14,19 @@
                 \end{center}
                 \vspace{-2\baselineskip}
             \end{wrapfigure}
-            \section*{<<< cdata['title']|te >>> (<<< event_data['parts'][part_id]['title']|te >>>)}
+            \section*{<<< cdata['title']|te >>> (<<< ambience['event']['parts'][part_id]['title']|te >>>)}
             \begin{itemize}
                 <<% for registration_id in attendees[(course_id, part_id)] %>>
                     \item
-                        <<% if (registration_data[registration_id]['parts'][part_id]['course_instructor']
+                        <<% if (registrations[registration_id]['parts'][part_id]['course_instructor']
                                 == course_id) %>>
                             \emph{%
-                                <<< persona_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
-                                <<< persona_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                                <<< personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
+                                <<< personas[registrations[registration_id]['persona_id']]['family_name']|te >>>
                             }
                         <<% else %>>
-                            <<< persona_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
-                            <<< persona_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                            <<< personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
+                            <<< personas[registrations[registration_id]['persona_id']]['family_name']|te >>>
                         <<% endif %>>
                 <<% else %>>
                     \item niemand

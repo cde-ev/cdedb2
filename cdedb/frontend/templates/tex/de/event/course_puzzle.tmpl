@@ -16,9 +16,9 @@
         #6}
 <<% endblock %>>
 <<% block content %>>
-    <<% for course_id, cdata in course_data|dictsort %>>
+    <<% for course_id, cdata in courses|dictsort %>>
         <<% for part_id in cdata['parts']|sort %>>
-            \course{<<< cdata['title']|te >>>}{<<< event_data['parts'][part_id]['title']|te >>>}%
+            \course{<<< cdata['title']|te >>>}{<<< ambience['event']['parts'][part_id]['title']|te >>>}%
                    {<<< cdata['instructors']|te >>>}{<<< cdata['notes']|te >>>}%
                    {<<< counts[course_id][(part_id, 0)] >>>/%
                     <<< counts[course_id][(part_id, 1)] >>>/%
@@ -26,22 +26,22 @@
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
-    <<% for registration_id, rdata in registration_data|dictsort %>>
-        <<% if rdata['persona_id'] not in event_data['orgas'] %>>
-            <<% for part_id, pdata in event_data['parts']|dictsort %>>
+    <<% for registration_id, rdata in registrations|dictsort %>>
+        <<% if rdata['persona_id'] not in ambience['event']['orgas'] %>>
+            <<% for part_id, pdata in ambience['event']['parts']|dictsort %>>
                 <<% if rdata['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %>>
-                    \participant{<<< persona_data[rdata['persona_id']]['given_names']|te >>>
-                                 <<< persona_data[rdata['persona_id']]['family_name']|te >>>}%
+                    \participant{<<< personas[rdata['persona_id']]['given_names']|te >>>
+                                 <<< personas[rdata['persona_id']]['family_name']|te >>>}%
                                 {<<< pdata['title']|te >>>}%
                                 {<<% if rdata['parts'][part_id]['course_instructor'] -%>>
                                     Kursleiter:
-                                    <<< course_data[rdata['parts'][part_id]['course_instructor']]['title']|te >>>
+                                    <<< courses[rdata['parts'][part_id]['course_instructor']]['title']|te >>>
                                     \par
                                 <<%- endif %>>}%
                     <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") -%>>
                                 {<<% if rdata['choices'][part_id]|length > loop.index0 -%>>
                                     <<< label|te >>>:
-                                    <<< course_data[rdata['choices'][part_id][loop.index0]]['title']|te >>>
+                                    <<< courses[rdata['choices'][part_id][loop.index0]]['title']|te >>>
                                     \par
                                  <<% endif %>>}%
                     <<% endfor %>>

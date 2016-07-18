@@ -108,7 +108,7 @@
                 <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data"
                   id="unlockform">
                     <div>
-                        {{ util.form_input_file(name="json_data", accept="text/json") }}
+                        {{ util.form_input_file(name="json", accept="text/json") }}
                         {{ util.form_input_submit(value="Entsperren") }}
                     </div>
                 </form>

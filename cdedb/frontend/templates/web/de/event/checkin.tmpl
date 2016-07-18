@@ -2,17 +2,17 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}Checkin ({{ event_data['title']|e }}){% endblock %}
+{% block title %}Checkin ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
     <div>
         Namen suchen (Groß-/Kleinschreibung!):
         <input type="text" name="selector" id="selector" class="jsEnabled" value="" disabled>
     </div>
     <ul>
-        {% for registration_id, rdata in registration_data|dictsort %}
+        {% for registration_id, rdata in registrations|dictsort %}
             <li class="selectee">
-                {{ user_data[rdata['persona_id']]['given_names']|e }}
-                {{ user_data[rdata['persona_id']]['family_name']|e }}
+                {{ personas[rdata['persona_id']]['given_names']|e }}
+                {{ personas[rdata['persona_id']]['family_name']|e }}
                 <form action="{{ cdedblink('event/checkin')|e }}" method="POST" id="checkinform{{ registration_id|e }}">
                     {{ util.input_hidden(name="registration_id", value=registration_id) }}
                     {{ util.form_input_submit(value="Checkin") }}

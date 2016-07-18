@@ -155,7 +155,7 @@ class TestEventBackend(BackendTest):
         data['offline_lock'] = False
         data['is_archived'] = False
         ## correct part and field ids
-        tmp = self.event.get_event_data_one(self.key, new_id)
+        tmp = self.event.get_event(self.key, new_id)
         part_map = {}
         for part in tmp['parts']:
             for oldpart in data['parts']:
@@ -179,7 +179,7 @@ class TestEventBackend(BackendTest):
             del data['fields'][oldfield]
 
         self.assertEqual(data,
-                         self.event.get_event_data_one(self.key, new_id))
+                         self.event.get_event(self.key, new_id))
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
         newpart = {
@@ -202,7 +202,7 @@ class TestEventBackend(BackendTest):
             'entries': [["2110-8-15", "early second coming"],
                         ["2110-8-17", "late second coming"],],
         }
-        self.event.set_event_data(self.key, {
+        self.event.set_event(self.key, {
             'id': new_id,
             'title': data['title'],
             'orgas': data['orgas'],
@@ -218,7 +218,7 @@ class TestEventBackend(BackendTest):
                 },
             })
         ## fixup parts and fields
-        tmp = self.event.get_event_data_one(self.key, new_id)
+        tmp = self.event.get_event(self.key, new_id)
         for part in tmp['parts']:
             if tmp['parts'][part]['title'] == "Third coming":
                 part_map[tmp['parts'][part]['title']] = part
@@ -242,7 +242,7 @@ class TestEventBackend(BackendTest):
         data['fields'][field_map["preferred_excursion_date"]] = changed_field
 
         self.assertEqual(data,
-                         self.event.get_event_data_one(self.key, new_id))
+                         self.event.get_event(self.key, new_id))
 
         self.assertNotIn(new_id, old_events)
         new_events = self.event.list_db_events(self.key)
@@ -262,7 +262,7 @@ class TestEventBackend(BackendTest):
         }
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
-        self.assertEqual(cdata, self.event.get_course_data_one(
+        self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
 
     @as_users("anton", "garcia")
@@ -284,13 +284,13 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
         self.assertEqual(data,
-                         self.event.get_course_data_one(self.key, new_id))
+                         self.event.get_course(self.key, new_id))
         data['title'] = "Alternate Universes"
         data['parts'] = {1, 3}
-        self.event.set_course_data(self.key, {
+        self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'parts': data['parts']})
         self.assertEqual(data,
-                         self.event.get_course_data_one(self.key, new_id))
+                         self.event.get_course(self.key, new_id))
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_db_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
@@ -775,7 +775,7 @@ class TestEventBackend(BackendTest):
     @as_users("anton", "garcia")
     def test_lock_event(self, user):
         self.assertTrue(self.event.lock_event(self.key, 1))
-        self.assertTrue(self.event.get_event_data_one(self.key, 1)['offline_lock'])
+        self.assertTrue(self.event.get_event(self.key, 1)['offline_lock'])
 
     @as_users("anton", "garcia")
     def test_export_event(self, user):
@@ -1609,7 +1609,7 @@ class TestEventBackend(BackendTest):
         }
         new_id = self.event.create_event(self.key, data)
         ## correct part and field ids
-        tmp = self.event.get_event_data_one(self.key, new_id)
+        tmp = self.event.get_event(self.key, new_id)
         part_map = {}
         for part in tmp['parts']:
             for oldpart in data['parts']:
@@ -1654,7 +1654,7 @@ class TestEventBackend(BackendTest):
             'entries': [["2110-8-15", "early second coming"],
                         ["2110-8-17", "late second coming"],],
         }
-        self.event.set_event_data(self.key, {
+        self.event.set_event(self.key, {
             'id': new_id,
             'title': data['title'],
             'orgas': data['orgas'],
@@ -1684,7 +1684,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_course(self.key, data)
         data['title'] = "Alternate Universes"
         data['parts'] = {1, 3}
-        self.event.set_course_data(self.key, {
+        self.event.set_course(self.key, {
             'id': new_id, 'title': data['title'], 'parts': data['parts']})
         new_reg = {
             'checkin': None,

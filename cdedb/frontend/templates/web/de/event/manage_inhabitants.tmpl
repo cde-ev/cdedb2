@@ -3,19 +3,19 @@
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}
-Bewohner der Unterkunft {{ lodgement_data['moniker']|e }} verwalten ({{ event_data['title']|e }})
+Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
-    {% for part_id, pdata in event_data['parts']|dictsort %}
+    {% for part_id, pdata in ambience['event']['parts']|dictsort %}
         <h2>{{ pdata['title']|e }}</h2>
         <div>
             Bewohner
             <ul id="inhabitants_{{ part_id|e }}" class="connect_{{ part_id|e }} nonVanish">
-                {% for registration_id in inhabitants[(lodgement_data['id'], part_id)] %}
+                {% for registration_id in inhabitants[(ambience['lodgement']['id'], part_id)] %}
                     <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
                      regid="{{ registration_id|e }}">
-                        {{ persona_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                        {{ persona_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                        {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
+                        {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
                     </li>
                 {% endfor %}
             </ul>
@@ -29,8 +29,8 @@ Bewohner der Unterkunft {{ lodgement_data['moniker']|e }} verwalten ({{ event_da
                 {% for registration_id in without_lodgement[part_id] %}
                     <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
                      regid="{{ registration_id|e }}">
-                        {{ persona_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                        {{ persona_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                        {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
+                        {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
                     </li>
                 {% endfor %}
             </ul>
@@ -44,8 +44,8 @@ Bewohner der Unterkunft {{ lodgement_data['moniker']|e }} verwalten ({{ event_da
                 {% for registration_id in with_lodgement[part_id] %}
                     <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
                      regid="{{ registration_id|e }}">
-                        {{ persona_data[registration_data[registration_id]['persona_id']]['given_names']|e }}
-                        {{ persona_data[registration_data[registration_id]['persona_id']]['family_name']|e }}
+                        {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
+                        {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
                     </li>
                 {% endfor %}
             </ul>
@@ -66,7 +66,7 @@ Bewohner der Unterkunft {{ lodgement_data['moniker']|e }} verwalten ({{ event_da
         </script>
     {% endfor %}
     <form action="{{ cdedblink('event/manage_inhabitants')|e }}" method="POST" id="manageinhabitantsform">
-        {% for part_id in event_data['parts']|sort %}
+        {% for part_id in ambience['event']['parts']|sort %}
             {{ util.input_hidden(name="inhabitants_{}".format(part_id), value="",
                                  anid="inhabitantsinput_{}".format(part_id)) }}
         {% endfor %}
@@ -75,7 +75,7 @@ Bewohner der Unterkunft {{ lodgement_data['moniker']|e }} verwalten ({{ event_da
     <script type="text/javascript">
         $(document).ready(function(){
             $("#manageinhabitantsform").submit(function(){
-                {% for part_id in event_data['parts']|sort %}
+                {% for part_id in ambience['event']['parts']|sort %}
                     var sorted = $("#inhabitants_{{ part_id|e }}").sortable("toArray", { attribute: "regid" })
                     $("#inhabitantsinput_{{ part_id|e }}").val(sorted.join(","))
                 {% endfor %}

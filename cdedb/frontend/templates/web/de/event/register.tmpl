@@ -1,7 +1,7 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Anmeldung zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
+{% block title %}Anmeldung zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
@@ -10,9 +10,9 @@
 {% block content %}
     {{ util.href(cdedblink("event/index"), "Abbrechen") }}
     <p>
-        {% if event_data['registration_soft_limit'] >= now().date() %}
+        {% if ambience['event']['registration_soft_limit'] >= now().date() %}
             Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss
-            ({{ event_data['registration_soft_limit']|date|e }}) geändert werden.
+            ({{ ambience['event']['registration_soft_limit']|date|e }}) geändert werden.
         {% else %}
             Der Anmeldeschluss ist bereits vorbei. Deine Anmeldung wird nach Möglichkeit berücksichtigt.
         {% endif %}
@@ -21,7 +21,7 @@
         <table>
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for part_id, pdata in event_data['parts']|dictsort %}
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
                 {{ myentries.append((part_id, pdata['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
@@ -53,11 +53,11 @@
             {{ util.form_input_textarea(name="notes", label="Anmerkungen", rows="5") }}
             {% for part_id, course_list in course_choices|dictsort %}
                 {% if course_list %}
-                    <tr><th colspan="2">Kurswahl {{ event_data['parts'][part_id]['title']|e }}</th></tr>
+                    <tr><th colspan="2">Kurswahl {{ ambience['event']['parts'][part_id]['title']|e }}</th></tr>
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
                     {% for course_id in course_list %}
-                        {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
+                        {{ myentries.append((course_id, courses[course_id]['title']))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
                                              label="Erstwahl") }}
@@ -68,7 +68,7 @@
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [("", "Ich bin kein Kursleiter.")] %}
                     {% for course_id in course_list %}
-                        {{ myentries.append((course_id, course_data[course_id]['title']))|e }}
+                        {{ myentries.append((course_id, courses[course_id]['title']))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_instructor{}".format(part_id), entries=myentries,
                                              label="Kursleiter") }}
@@ -87,47 +87,47 @@
             <tr>
                 <td>Name</td>
                 <td>
-                    {{ user_data['title']|e }}
-                    {{ user_data['given_names']|e }}
-                    {{ user_data['family_name']|e }}
-                    {{ user_data['name_supplement']|e }}
+                    {{ persona['title']|e }}
+                    {{ persona['given_names']|e }}
+                    {{ persona['family_name']|e }}
+                    {{ persona['name_supplement']|e }}
                 </td>
             </tr>
             <tr>
                 <td>Geburtstag</td>
-                <td>{{ user_data['birthday']|e }}</td>
+                <td>{{ persona['birthday']|e }}</td>
             </tr>
             <tr>
                 <td>Geschlecht</td>
-                <td>{{ user_data['gender']|gender|e }}</td>
+                <td>{{ persona['gender']|gender|e }}</td>
             </tr>
             <tr>
                 <td>Email</td>
-                <td> {{ user_data['username']|e }} </td>
+                <td> {{ persona['username']|e }} </td>
             </tr>
             <tr>
                 <td>Telefon</td>
-                <td>{{ user_data['telephone']|e }}</td>
+                <td>{{ persona['telephone']|e }}</td>
             </tr>
             <tr>
                 <td>Mobiltelefon</td>
-                <td>{{ user_data['mobile']|e }}</td>
+                <td>{{ persona['mobile']|e }}</td>
             </tr>
             <tr>
                 <td>Straße</td>
-                <td>{{ user_data['address']|e }}</td>
+                <td>{{ persona['address']|e }}</td>
             </tr>
             <tr>
                 <td>Adresszusatz</td>
-                <td>{{ user_data['address_supplement']|e }}</td>
+                <td>{{ persona['address_supplement']|e }}</td>
             </tr>
             <tr>
                 <td>Stadt</td>
-                <td>{{ user_data['postal_code']|e }} {{ user_data['location']|e }}</td>
+                <td>{{ persona['postal_code']|e }} {{ persona['location']|e }}</td>
             </tr>
             <tr>
                 <td>Land</td>
-                <td>{{ user_data['country']|e }}</td>
+                <td>{{ persona['country']|e }}</td>
             </tr>
         </table>
         <div>

@@ -1,21 +1,21 @@
 {% set sidenav_active='event_show' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Kursliste {{ event_data['title']|e }}{% endblock %}
+{% block title %}Kursliste {{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), "Kursliste", active=True) }}
 {% endblock %}n
 {% block content %}
-    {% if course_data %}
+    {% if courses %}
         <h2>Kurse</h2>
         <ul>
-            {% for anid, entry in course_data|dictsort %}
+            {% for anid, entry in courses|dictsort %}
                 <li>
                     {{ util.href(cdedblink('event/show_course', {'course_id' : anid}),
                                  "{} -- {}".format(entry['nr'], entry['title'])) }}
-                    {% if event_data['id'] in user.orga or is_admin %}
+                    {% if ambience['event']['id'] in user.orga or is_admin %}
                         {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), "Bearbeiten",
                                      readonly=is_locked) }}
                     {% endif %}
@@ -27,7 +27,7 @@
     {% else %}
         <p>Diese Veranstaltung hat keine Kurse.</p>
     {% endif %}
-    {% if event_data['id'] in user.orga or is_admin %}
+    {% if ambience['event']['id'] in user.orga or is_admin %}
         <h2>Kurs hinzufügen</h2>
         {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=is_locked) }}
     {% endif %}

@@ -1,14 +1,14 @@
 {% set sidenav_active='event_quest' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Fragebogen zur Veranstaltung {{ event_data['title']|e }}{% endblock %}
+{% block title %}Fragebogen zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/registration_status"), "Abbrechen") }}
     <form action="{{ cdedblink('event/questionnaire')|e }}" method="POST" id="questionnaireform">
         <table>
             {% for entry in questionnaire %}
                 {% if entry['field_id'] %}
-                    {% with FIELD = event_data['fields'][entry['field_id']] %}
+                    {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
                         {% if FIELD['entries'] %}
                             {# jinja does not support list comprehension ... #}
                             {% set myentries = [] %}

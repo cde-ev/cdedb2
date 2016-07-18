@@ -1,7 +1,7 @@
 {% set sidenav_active='event_stats' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Teilnehmer-Übersicht {{ event_data['title']|e }}{% endblock %}
+{% block title %}Teilnehmer-Übersicht {{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
@@ -33,7 +33,7 @@
                 <tr>
                     <th>Angabe</th>
                     <th></th>
-                    {% for part_id, pdata in event_data['parts']|dictsort %}
+                    {% for part_id, pdata in ambience['event']['parts']|dictsort %}
                         <th>{{ pdata['title']|e }}</th>
                     {% endfor %}
                 </tr>
@@ -61,14 +61,14 @@
         ('wrong choice', True, "Ungewählter Kurs zugeteilt"),) %}
         {% if not course_only or courses %}
             <h2>{{ heading|e }}</h2>
-            {% for part_id, pdata in event_data['parts']|dictsort %}
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
                 <h3>{{ pdata['title']|e }} -- {{ listings[key][part_id]|length|e }}
                     Anmeldung{{ listings[key][part_id]|length|numerus("", "en")|e }} </h3>
-                {% if 3*(listings[key][part_id]|length) < registration_data|length %}
+                {% if 3*(listings[key][part_id]|length) < registrations|length %}
                     <ul>
                         {% for registration_id in listings[key][part_id] %}
                             <li>
-                                {% with ud = user_data[registration_data[registration_id]['persona_id']] %}
+                                {% with ud = personas[registrations[registration_id]['persona_id']] %}
                                     {{ util.href(cdedblink("event/show_registration",
                                                            {'registration_id': registration_id}),
                                                  "{} {}".format(ud['given_names'], ud['family_name'])) }}

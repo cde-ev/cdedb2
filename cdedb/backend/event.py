@@ -268,7 +268,7 @@ class EventBackend(AbstractBackend):
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
-            event_data = self.get_event_data_one(rs, event_id)
+            event = self.get_event(rs, event_id)
             part_table_template = glue(
                 "LEFT OUTER JOIN (SELECT registration_id, {part_data}",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
@@ -282,11 +282,11 @@ class EventBackend(AbstractBackend):
                 part_tables=" ".join(
                     part_table_template.format(
                         part_data=part_data_gen(part_id), part_id=part_id)
-                    for part_id in event_data['parts']),
+                    for part_id in event['parts']),
                 json_fields=", ".join(("registration_id int", ", ".join(
                     "{} {}".format(e['field_name'],
                                    PYTHON_TO_SQL_MAP[e['kind']])
-                    for e in event_data['fields'].values()))))
+                    for e in event['fields'].values()))))
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
@@ -303,8 +303,8 @@ class EventBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("event")
-    @singularize("get_event_data_one")
-    def get_event_data(self, rs, ids):
+    @singularize("get_event")
+    def get_events(self, rs, ids):
         """Retrieve data for some events organized via DB.
 
         This queries quite a lot of additional tables since there is quite
@@ -346,7 +346,7 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def set_event_data(self, rs, data):
+    def set_event(self, rs, data):
         """Update some keys of an event organized via DB.
 
         The syntax for updating the associated data on orgas, parts and
@@ -373,7 +373,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("event_data", data)
+        data = affirm("event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=data['id'])
@@ -496,7 +496,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new event
         """
-        data = affirm("event_data", data, creation=True)
+        data = affirm("event", data, creation=True)
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
@@ -506,13 +506,13 @@ class EventBackend(AbstractBackend):
                         'id': new_id,
                         aspect: data[aspect],
                     }
-                    self.set_event_data(rs, adata)
+                    self.set_event(rs, adata)
         self.event_log(rs, const.EventLogCodes.event_created, new_id)
         return new_id
 
     @access("event")
-    @singularize("get_course_data_one")
-    def get_course_data(self, rs, ids):
+    @singularize("get_course")
+    def get_courses(self, rs, ids):
         """Retrieve data for some courses organized via DB.
 
         They do not need to be associated to the same event. This contains
@@ -536,7 +536,7 @@ class EventBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def set_course_data(self, rs, data):
+    def set_course(self, rs, data):
         """Update some keys of a course linked to an event organized via DB.
 
         If the 'parts' key is present you have to pass the complete list
@@ -547,7 +547,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("course_data", data)
+        data = affirm("course", data)
         if not self.is_orga(rs, course_id=data['id']) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, course_id=data['id'])
@@ -603,7 +603,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new course
         """
-        data = affirm("course_data", data, creation=True)
+        data = affirm("course", data, creation=True)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
             raise PrivilegeError("Not privileged.")
@@ -616,7 +616,7 @@ class EventBackend(AbstractBackend):
                     'id': new_id,
                     'parts': data['parts'],
                 }
-                self.set_course_data(rs, pdata)
+                self.set_course(rs, pdata)
         self.event_log(rs, const.EventLogCodes.course_created,
                        data['event_id'], additional_info=data['title'])
         return new_id
@@ -790,7 +790,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("registration_data", data)
+        data = affirm("registration", data)
         current = self.sql_select_one(
             rs, "event.registrations", ("persona_id", "event_id"), data['id'])
         persona_id, event_id = current['persona_id'], current['event_id']
@@ -800,11 +800,11 @@ class EventBackend(AbstractBackend):
                     and not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
-            event_data = self.get_event_data_one(rs, event_id)
+            event = self.get_event(rs, event_id)
             if 'field_data' in data:
                 data['field_data'] = affirm(
                     "registration_field_data", data['field_data'],
-                    fields=event_data['fields'])
+                    fields=event['fields'])
 
             ## now we get to do the actual work
             rdata = {k: v for k, v in data.items()
@@ -823,7 +823,7 @@ class EventBackend(AbstractBackend):
                 ret *= self.sql_update(rs, "event.registrations", new_data)
             if 'parts' in data:
                 parts = data['parts']
-                if not(set(event_data['parts'].keys()) >= {x for x in parts}):
+                if not(set(event['parts'].keys()) >= {x for x in parts}):
                     raise ValueError("Non-existing parts specified.")
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),
@@ -848,13 +848,13 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError("This is not useful.")
             if 'choices' in data:
                 choices = data['choices']
-                if not(set(event_data['parts'].keys()) >= {x for x in choices}):
+                if not(set(event['parts'].keys()) >= {x for x in choices}):
                     raise ValueError("Non-existing parts specified in choices.")
                 all_courses = {x for l in choices.values() for x in l}
-                course_data = self.get_course_data(rs, all_courses)
+                courses = self.get_courses(rs, all_courses)
                 for part_id in choices:
                     for course_id in choices[part_id]:
-                        if part_id not in course_data[course_id]['parts']:
+                        if part_id not in courses[course_id]['parts']:
                             raise ValueError("Wrong part for course.")
                     query = glue("DELETE FROM event.course_choices",
                                  "WHERE registration_id = %s AND part_id = %s")
@@ -885,7 +885,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new registration
         """
-        data = affirm("registration_data", data, creation=True)
+        data = affirm("registration", data, creation=True)
         if (data['persona_id'] != rs.user.persona_id
                 and not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
@@ -969,7 +969,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("lodgement_data", data)
+        data = affirm("lodgement", data)
         with Atomizer(rs):
             current = self.sql_select_one(
                 rs, "event.lodgements", ("event_id", "moniker"), data['id'])
@@ -993,7 +993,7 @@ class EventBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new lodgement
         """
-        data = affirm("lodgement_data", data, creation=True)
+        data = affirm("lodgement", data, creation=True)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
             raise PrivilegeError("Not privileged.")
@@ -1076,7 +1076,7 @@ class EventBackend(AbstractBackend):
         :returns: default return code
         """
         event_id = affirm("id", event_id)
-        data = affirm("questionnaire_data", data)
+        data = affirm("questionnaire", data)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         self.assert_offline_lock(rs, event_id=event_id)

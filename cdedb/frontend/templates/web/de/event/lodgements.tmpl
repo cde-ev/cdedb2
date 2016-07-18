@@ -1,6 +1,6 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Unterkunftsübersicht ({{ event_data['title']|e }}){% endblock %}
+{% block title %}Unterkunftsübersicht ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
@@ -12,13 +12,13 @@
         <ul>
             {% for description, lodgement_id, part_id, affected_regs in problems %}
                 <li>
-                    {{ lodgement_data[lodgement_id]['moniker']|e }}/{{ event_data['parts'][part_id]['title']|e }} --
+                    {{ lodgements[lodgement_id]['moniker']|e }}/{{ ambience['event']['parts'][part_id]['title']|e }} --
                     {{ i18n(description)|e }}
                     {% if affected_regs %}
                         (
                             {% for reg_id in affected_regs %}
-                                {{ user_data[registration_data[reg_id]['persona_id']]['given_names']|e }}
-                                {{ user_data[registration_data[reg_id]['persona_id']]['family_name']|e }}
+                                {{ personas[registrations[reg_id]['persona_id']]['given_names']|e }}
+                                {{ personas[registrations[reg_id]['persona_id']]['family_name']|e }}
                                 {% if not loop.last %} , {% endif %}
                             {% endfor%}
                         )
@@ -35,17 +35,17 @@
             <th>Unterkunft</th>
             <th>Plätze</th>
             <th>Reserveplätze</th>
-            {% for part_id, pdata in event_data['parts']|dictsort %}
+            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
                 <th>Belegung {{ pdata['title']|e }}</th>
             {% endfor %}
             <th>Aktionen</th>
         </tr>
-        {% for lodgement_id, ldata in lodgement_data|dictsort %}
+        {% for lodgement_id, ldata in lodgements|dictsort %}
             <tr>
                 <td>{{ ldata['moniker']|e }}</td>
                 <td>{{ ldata['capacity']|e }}</td>
                 <td>{{ ldata['reserve']|e }}</td>
-                {% for part_id in event_data['parts']|sort %}
+                {% for part_id in ambience['event']['parts']|sort %}
                     <td>{{ inhabitants[(lodgement_id, part_id)]|length|e }}</td>
                 {% endfor %}
                 <td>

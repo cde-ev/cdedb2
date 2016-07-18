@@ -5,8 +5,8 @@
     \pagestyle{empty}
 <<% endblock %>>
 <<% block content %>>
-    <<% for lodgement_id, ldata in lodgement_data|dictsort %>>
-        <<% for part_id, pdata in event_data['parts']|dictsort %>>
+    <<% for lodgement_id, ldata in lodgements|dictsort %>>
+        <<% for part_id, pdata in ambience['event']['parts']|dictsort %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}
@@ -18,8 +18,8 @@
             \begin{itemize}
                 <<% for registration_id in inhabitants[(lodgement_id, part_id)] %>>
                     \item
-                        <<< persona_data[registration_data[registration_id]['persona_id']]['given_names']|te >>>
-                        <<< persona_data[registration_data[registration_id]['persona_id']]['family_name']|te >>>
+                        <<< personas[registrations[registration_id]['persona_id']]['given_names']|te >>>
+                        <<< personas[registrations[registration_id]['persona_id']]['family_name']|te >>>
                 <<% else %>>
                     \item niemand
                 <<% endfor %>>
