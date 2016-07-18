@@ -1,12 +1,12 @@
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ mailinglist_data['title']|e }} -- Konsistenzcheck{% endblock %}
+{% block title %}{{ ambience['mailinglist']['title']|e }} -- Konsistenzcheck{% endblock %}
 {% block content %}
     Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe.
     <ul>
         {% for problem in problems|sort %}
             <li>
-                {{ persona_data[problem]['given_names']|e }} {{ persona_data[problem]['family_name']|e }}
+                {{ personas[problem]['given_names']|e }} {{ personas[problem]['family_name']|e }}
                 <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
                   id="removeproblemform{{ moderator|e }}">
                     <div>

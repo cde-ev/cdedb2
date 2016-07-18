@@ -1,14 +1,14 @@
 {% set sidenav_active='ml_manage' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ mailinglist_data['title']|e }} -- Verwalten{% endblock %}
+{% block title %}{{ ambience['mailinglist']['title']|e }} -- Verwalten{% endblock %}
 {% block content %}
     {{ util.href(cdedblink('ml/check_states'), "Konsistenzcheck") }}
     <h2>Moderatoren</h2>
     <ul>
-        {% for moderator in mailinglist_data['moderators']|sort %}
+        {% for moderator in ambience['mailinglist']['moderators']|sort %}
             <li>
-                {{ persona_data[moderator]['given_names']|e }} {{ persona_data[moderator]['family_name']|e }}
+                {{ personas[moderator]['given_names']|e }} {{ personas[moderator]['family_name']|e }}
                 <form action="{{ cdedblink('ml/remove_moderator')|e }}" method="POST"
                   id="removemoderatorform{{ moderator|e }}">
                     <div>
@@ -30,7 +30,7 @@
     <ul>
         {% for request in requests|sort %}
             <li>
-                {{ persona_data[request]['given_names']|e }} {{ persona_data[request]['family_name']|e }}
+                {{ personas[request]['given_names']|e }} {{ personas[request]['family_name']|e }}
                 <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST" id="ackrequestform{{ request|e }}">
                     <div>
                         {{ util.input_hidden(name="ack", value=True) }}
@@ -50,7 +50,7 @@
     </ul>
     <h2>Whitelist</h2>
     <ul>
-        {% for email in mailinglist_data['whitelist']|sort %}
+        {% for email in ambience['mailinglist']['whitelist']|sort %}
             <li>
                 {{ email|e }}
                 <form action="{{ cdedblink('ml/remove_whitelist')|e }}" method="POST"
@@ -82,7 +82,7 @@
     <ul>
         {% for anid in subscribers %} {# already sorted #}
             <li>
-                {{ persona_data[anid]['given_names']|e }} {{ persona_data[anid]['family_name']|e }}
+                {{ personas[anid]['given_names']|e }} {{ personas[anid]['family_name']|e }}
                 <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
                   id="removesubscriberform{{ anid|e }}">
                     <div>

@@ -1,7 +1,7 @@
 {% set sidenav_active='ml_change' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ mailinglist_data['title']|e }} -- Konfiguration{% endblock %}
+{% block title %}{{ ambience['mailinglist']['title']|e }} -- Konfiguration{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("ml/index"), "Abbrechen") }}
     <form action="{{ cdedblink('ml/change_mailinglist')|e }}" method="POST" id="changelistform">

@@ -205,7 +205,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("mailinglist_data", data)
+        data = affirm("mailinglist", data)
         if not self.is_moderator(rs, data['id']) and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
         ret = 1
@@ -271,7 +271,7 @@ class MlBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new mailinglist
         """
-        data = affirm("mailinglist_data", data, creation=True)
+        data = affirm("mailinglist", data, creation=True)
         with Atomizer(rs):
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
             new_id = self.sql_insert(rs, "ml.mailinglists", mdata)
@@ -345,31 +345,31 @@ class MlBackend(AbstractBackend):
             "WHERE regs.event_id = %s AND parts.status = ANY(%s)")
         ret = {}
         with Atomizer(rs):
-            ml_data = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
-            sub_data = self.sql_select(
+            ml = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            subs = self.sql_select(
                 rs, "ml.subscription_states",
                 ("persona_id", "address", "is_subscribed"), (mailinglist_id,),
                 entity_key="mailinglist_id")
             explicits = {e['persona_id']: e['address']
-                         for e in sub_data if e['is_subscribed']}
+                         for e in subs if e['is_subscribed']}
             excludes = {e['persona_id']
-                        for e in sub_data if not e['is_subscribed']}
-            if ml_data['event_id']:
-                if not ml_data['registration_stati']:
+                        for e in subs if not e['is_subscribed']}
+            if ml['event_id']:
+                if not ml['registration_stati']:
                     odata = self.sql_select(
                         rs, "event.orgas", ("persona_id",),
-                        (ml_data['event_id'],), entity_key="event_id")
+                        (ml['event_id'],), entity_key="event_id")
                     ret = {e['persona_id']: None for e in odata}
                 else:
                     rdata = self.query_all(rs, event_list_query, (
-                        ml_data['event_id'], ml_data['registration_stati']))
+                        ml['event_id'], ml['registration_stati']))
                     ret = {e['persona_id']: None for e in rdata}
-            elif ml_data['assembly_id']:
+            elif ml['assembly_id']:
                 adata = self.sql_select(
                     rs, "assembly.attendees", ("persona_id",),
-                    (ml_data['assembly_id'],), entity_key="assembly_id")
+                    (ml['assembly_id'],), entity_key="assembly_id")
                 ret = {e['persona_id']: None for e in adata}
-            elif const.SubscriptionPolicy(ml_data['sub_policy']).is_additive():
+            elif const.SubscriptionPolicy(ml['sub_policy']).is_additive():
                 ## explicits take care of everything
                 pass
             else:
@@ -378,7 +378,7 @@ class MlBackend(AbstractBackend):
                     "SELECT id FROM core.personas",
                     "WHERE {} AND is_active = True".format(
                         const.AudiencePolicy(
-                            ml_data['audience_policy']).sql_test()))
+                            ml['audience_policy']).sql_test()))
                 pdata = self.query_all(rs, query, tuple())
                 ret = {e['id']: None for e in pdata}
             ret = {k: v for k, v in ret.items() if k not in excludes}
@@ -433,18 +433,18 @@ class MlBackend(AbstractBackend):
         ret = {}
         with Atomizer(rs):
             lists = lists or self.list_mailinglists(rs)
-            ml_data = self.get_mailinglists(rs, lists)
-            sub_data = {e['mailinglist_id']: e for e in self.sql_select(
+            ml = self.get_mailinglists(rs, lists)
+            subs = {e['mailinglist_id']: e for e in self.sql_select(
                 rs, "ml.subscription_states",
                 ("persona_id", "mailinglist_id", "address", "is_subscribed"),
                 (persona_id,), entity_key="persona_id")}
-            for mailinglist_id in ml_data:
-                if mailinglist_id in sub_data:
-                    this_data = sub_data[mailinglist_id]
-                    if this_data['is_subscribed']:
-                        ret[mailinglist_id] = this_data['address']
+            for mailinglist_id in ml:
+                if mailinglist_id in subs:
+                    this_sub = subs[mailinglist_id]
+                    if this_sub['is_subscribed']:
+                        ret[mailinglist_id] = this_sub['address']
                 else:
-                    this_ml = ml_data[mailinglist_id]
+                    this_ml = ml[mailinglist_id]
                     if this_ml['event_id']:
                         if not this_ml['registration_stati']:
                             query = glue(
@@ -534,8 +534,8 @@ class MlBackend(AbstractBackend):
 
         privileged = self.is_moderator(rs, mailinglist_id) or self.is_admin(rs)
         with Atomizer(rs):
-            ml_data = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
-            if not privileged and not ml_data['is_active']:
+            ml = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            if not privileged and not ml['is_active']:
                 return 0
             if self.is_subscribed(rs, persona_id, mailinglist_id) == subscribe:
                 self.ml_log(rs, const.MlLogCodes.subscription_changed,
@@ -544,11 +544,11 @@ class MlBackend(AbstractBackend):
                 return self.write_subscription_state(
                     rs, mailinglist_id, persona_id, subscribe, address)
             gateway = False
-            if subscribe and ml_data['gateway']:
-                gateway = self.is_subscribed(rs, persona_id, ml_data['gateway'])
+            if subscribe and ml['gateway']:
+                gateway = self.is_subscribed(rs, persona_id, ml['gateway'])
             policy = const.SubscriptionPolicy
             if (subscribe and not privileged and not gateway
-                    and ml_data['sub_policy'] == policy.moderated_opt_in):
+                    and ml['sub_policy'] == policy.moderated_opt_in):
                 query = glue("SELECT id FROM ml.subscription_requests",
                              "WHERE mailinglist_id = %s AND persona_id = %s")
                 rdata = self.query_one(rs, query, (mailinglist_id, persona_id))
@@ -561,7 +561,7 @@ class MlBackend(AbstractBackend):
                     'persona_id': persona_id,
                 }
                 return -self.sql_insert(rs, "ml.subscription_requests", request)
-            if (policy(ml_data['sub_policy']).privileged_transition(subscribe)
+            if (policy(ml['sub_policy']).privileged_transition(subscribe)
                     and not privileged and not gateway):
                 raise PrivilegeError("Must be moderator.")
             if subscribe:

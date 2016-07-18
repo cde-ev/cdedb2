@@ -1,25 +1,25 @@
 {% set sidenav_active='ml_show' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ mailinglist_data['title']|e }}{% endblock %}
+{% block title %}{{ ambience['mailinglist']['title']|e }}{% endblock %}
 {% block content %}
-    {% if mailinglist_data['id'] in user.moderator or is_admin %}
+    {% if ambience['mailinglist']['id'] in user.moderator or is_admin %}
         {{ util.href(cdedblink('ml/management'), "Verwalten") }}
     {% endif %}
     {% if is_admin %}
         {{ util.href(cdedblink('ml/change_mailinglist_form'), "Konfiguration") }}
     {% endif %}
-    <p>{{ mailinglist_data['description']|e }}</p>
-    {% if mailinglist_data['gateway'] %}
-        <p>Abonennten der Liste {{ gateway_data['title']|e }} können sich in diese Liste eintragen.</p>
+    <p>{{ ambience['mailinglist']['description']|e }}</p>
+    {% if ambience['mailinglist']['gateway'] %}
+        <p>Abonennten der Liste {{ gateway['title']|e }} können sich in diese Liste eintragen.</p>
     {% endif %}
-    {% if mailinglist_data['event_id'] %}
-        <p>Diese Liste ist zur Veranstaltung {{ event_data['title']|e }} assoziiert.</p>
+    {% if ambience['mailinglist']['event_id'] %}
+        <p>Diese Liste ist zur Veranstaltung {{ event['title']|e }} assoziiert.</p>
     {% endif %}
-    {% if mailinglist_data['assembly_id'] %}
+    {% if ambience['mailinglist']['assembly_id'] %}
         <p>Diese Liste ist zur Versammlung {{ assembly['title']|e }} assoziiert.</p>
     {% endif %}
-    {% if not mailinglist_data['is_active'] %}
+    {% if not ambience['mailinglist']['is_active'] %}
         <p><strong>Diese Liste ist nicht mehr aktiv.</strong></p>
     {% else %}
         {% if is_subscribed %}

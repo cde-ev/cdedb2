@@ -2122,7 +2122,7 @@ _MAILINGLIST_OPTIONAL_FIELDS = {
     'whitelist': _any,
 }
 @_addvalidator
-def _mailinglist_data(val, argname=None, *, creation=False, _convert=True):
+def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -2132,7 +2132,7 @@ def _mailinglist_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "mailinglist_data"
+    argname = argname or "mailinglist"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs

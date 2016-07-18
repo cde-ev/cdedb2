@@ -2,7 +2,7 @@
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-{{ mailinglist_data['title']|e }} -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+{{ ambience['mailinglist']['title']|e }} -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
 {% endblock %}
 {% block content %}
     <table>
@@ -19,16 +19,16 @@
                 <td>{{ i18n(enums['MlLogCodes'](entry['code'])|string)|e }}</td>
                 <td>
                     {% if entry['submitted_by'] %}
-                        {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                        {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                        {{ personas[entry['submitted_by']]['given_names']|e }}
+                        {{ personas[entry['submitted_by']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['persona_id'] %}
-                        {{ persona_data[entry['persona_id']]['given_names']|e }}
-                        {{ persona_data[entry['persona_id']]['family_name']|e }}
+                        {{ personas[entry['persona_id']]['given_names']|e }}
+                        {{ personas[entry['persona_id']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
