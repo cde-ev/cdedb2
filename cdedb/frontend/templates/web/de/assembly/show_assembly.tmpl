@@ -1,12 +1,12 @@
 {% set sidenav_active='assembly_show' %}
 {% extends "web/de/assembly/base.tmpl" %}
-{% block title %}{{ assembly_data['title']|e }}{% endblock %}
+{% block title %}{{ ambience['assembly']['title']|e }}{% endblock %}
 {% block content %}
-    <p>{{ assembly_data['description']|rst }}</p>
-    <p>Anmeldeschluss: {{ assembly_data['signup_end']|datetime|e }}</p>
+    <p>{{ ambience['assembly']['description']|rst }}</p>
+    <p>Anmeldeschluss: {{ ambience['assembly']['signup_end']|datetime|e }}</p>
     <p>{{ util.href(cdedblink("assembly/list_attendees"), "Teilnehmerliste")}}</p>
     {% if is_admin %}
-        <p>Notizen: {{ assembly_data['notes']|rst }}</p>
+        <p>Notizen: {{ ambience['assembly']['notes']|rst }}</p>
     {% endif %}
     <p>
         Partizipationsstatus:
@@ -14,7 +14,7 @@
             anwesend
         {% else %}
             nicht anwesend
-            {% if now() < assembly_data['signup_end'] %}
+            {% if now() < ambience['assembly']['signup_end'] %}
                 <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
                     <div>
                         {{ util.form_input_submit(value="Teilnehmen") }}
@@ -23,7 +23,7 @@
             {% endif %}
         {% endif %}
     </p>
-    {% if is_admin and assembly_data['is_active'] %}
+    {% if is_admin and ambience['assembly']['is_active'] %}
         <p>
             {{ util.href(cdedblink("assembly/change_assembly"), "Bearbeiten")}}
             <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST" id="concludeassemblyform">
@@ -52,5 +52,5 @@
             {% endfor %}
         </ul>
     {% endif %}
-    {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': assembly_data['id']}), "Datei anhängen")}}
+    {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': ambience['assembly']['id']}), "Datei anhängen")}}
 {% endblock %}

@@ -222,9 +222,9 @@ class MlFrontend(AbstractUserFrontend):
         if mailinglist_data['event_id']:
             event_data = self.eventproxy.get_event_data_one(
                 rs, mailinglist_data['event_id'])
-        assembly_data = {}
+        assembly = {}
         if mailinglist_data['assembly_id']:
-            assembly_data = self.assemblyproxy.get_assembly_data_one(
+            assembly = self.assemblyproxy.get_assembly(
                 rs, mailinglist_data['assembly_id'])
         policy = const.SubscriptionPolicy(mailinglist_data['sub_policy'])
         may_toggle = not policy.privileged_transition(not is_subscribed)
@@ -234,7 +234,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.render(rs, "show_mailinglist", {
             'mailinglist_data': mailinglist_data, 'sub_address': sub_address,
             'is_subscribed': is_subscribed, 'gateway_data': gateway_data,
-            'event_data': event_data, 'assembly_data': assembly_data,
+            'event_data': event_data, 'assembly': assembly,
             'may_toggle': may_toggle})
 
     @access("ml_admin")

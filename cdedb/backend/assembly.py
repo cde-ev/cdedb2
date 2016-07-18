@@ -230,8 +230,8 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e for e in data}
 
     @access("assembly")
-    @singularize("get_assembly_data_one")
-    def get_assembly_data(self, rs, ids):
+    @singularize("get_assembly")
+    def get_assemblies(self, rs, ids):
         """Retrieve data for some assemblies.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -243,7 +243,7 @@ class AssemblyBackend(AbstractBackend):
         return {e['id']: e for e in data}
 
     @access("assembly_admin")
-    def set_assembly_data(self, rs, data):
+    def set_assembly(self, rs, data):
         """Update some keys of an assembly.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -251,8 +251,8 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("assembly_data", data)
-        assembly = unwrap(self.get_assembly_data(rs, (data['id'],)))
+        data = affirm("assembly", data)
+        assembly = unwrap(self.get_assemblies(rs, (data['id'],)))
         if not assembly['is_active']:
             raise ValueError("Assembly already concluded.")
         ret = self.sql_update(rs, "assembly.assemblies", data)
@@ -269,7 +269,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new assembly
         """
-        data = affirm("assembly_data", data, creation=True)
+        data = affirm("assembly", data, creation=True)
         new_id = self.sql_insert(rs, "assembly.assemblies", data)
         self.assembly_log(rs, const.AssemblyLogCodes.assembly_created, new_id)
         return new_id
@@ -341,7 +341,7 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: default return code
         """
-        data = affirm("ballot_data", data)
+        data = affirm("ballot", data)
 
         ret = 1
         with Atomizer(rs):
@@ -403,11 +403,11 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: the id of the new event
         """
-        data = affirm("ballot_data", data, creation=True)
+        data = affirm("ballot", data, creation=True)
 
         with Atomizer(rs):
             assembly = unwrap(
-                self.get_assembly_data(rs, (data['assembly_id'],)))
+                self.get_assemblies(rs, (data['assembly_id'],)))
             if not assembly['is_active']:
                 raise ValueError("Assembly already concluded.")
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
@@ -552,7 +552,7 @@ class AssemblyBackend(AbstractBackend):
             if self.does_attend(rs, assembly_id=assembly_id):
                 ## already signed up
                 return None
-            assembly = unwrap(self.get_assembly_data(rs, (assembly_id,)))
+            assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
             if now() > assembly['signup_end']:
                 raise ValueError("Signup already ended.")
 
@@ -749,7 +749,7 @@ class AssemblyBackend(AbstractBackend):
             ## now generate the result file
             esc = json.dumps
             assembly = unwrap(
-                self.get_assembly_data(rs, (ballot['assembly_id'],)))
+                self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = ",\n        ".join(
                 "{}: {}".format(esc(c['moniker']), esc(c['description']))
                 for c in sorted(ballot['candidates'].values(),
@@ -798,7 +798,7 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm("id", assembly_id)
 
         with Atomizer(rs):
-            assembly = unwrap(self.get_assembly_data(rs, (assembly_id,)))
+            assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
             if not assembly['is_active']:
                 raise ValueError("Assembly not active.")
             ballots = self.get_ballots(rs, self.list_ballots(rs, assembly_id))
@@ -816,7 +816,7 @@ class AssemblyBackend(AbstractBackend):
                 'id': assembly_id,
                 'is_active': False,
             }
-            ret = self.set_assembly_data(rs, update)
+            ret = self.set_assembly(rs, update)
             update = {
                 'assembly_id': assembly_id,
                 'secret': None
@@ -880,10 +880,10 @@ class AssemblyBackend(AbstractBackend):
         :rtype: int
         :returns: id of the new attachment
         """
-        data = affirm("assembly_attachment_data", data)
+        data = affirm("assembly_attachment", data)
         if data.get('ballot_id'):
-            ballot_data = unwrap(self.get_ballots(rs, (data['ballot_id'],)))
-            if now() > ballot_data['vote_begin']:
+            ballot = unwrap(self.get_ballots(rs, (data['ballot_id'],)))
+            if now() > ballot['vote_begin']:
                 raise ValueError("Unable to modify active ballot.")
         ret = self.sql_insert(rs, "assembly.attachments", data)
         assembly_id = data.get('assembly_id')
@@ -909,8 +909,8 @@ class AssemblyBackend(AbstractBackend):
         attachment_id = affirm("id", attachment_id)
         current = unwrap(self.get_attachments(rs, (attachment_id,)))
         if current['ballot_id']:
-            ballot_data = unwrap(self.get_ballots(rs, (current['ballot_id'],)))
-            if now() > ballot_data['vote_begin']:
+            ballot = unwrap(self.get_ballots(rs, (current['ballot_id'],)))
+            if now() > ballot['vote_begin']:
                 raise ValueError("Unable to modify active ballot.")
         ret = self.sql_delete_one(rs, "assembly.attachments", attachment_id)
         assembly_id = current['assembly_id']

@@ -20,23 +20,23 @@ Versammlung -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|
                 <td>{{ i18n(enums['AssemblyLogCodes'](entry['code'])|string)|e }}</td>
                 <td>
                     {% if entry['submitted_by'] %}
-                        {{ persona_data[entry['submitted_by']]['given_names']|e }}
-                        {{ persona_data[entry['submitted_by']]['family_name']|e }}
+                        {{ personas[entry['submitted_by']]['given_names']|e }}
+                        {{ personas[entry['submitted_by']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['assembly_id'] %}
-                        {{ assembly_data[entry['assembly_id']]['title']|e }}
+                        {{ assemblies[entry['assembly_id']]['title']|e }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['persona_id'] %}
-                        {{ persona_data[entry['persona_id']]['given_names']|e }}
-                        {{ persona_data[entry['persona_id']]['family_name']|e }}
+                        {{ personas[entry['persona_id']]['given_names']|e }}
+                        {{ personas[entry['persona_id']]['family_name']|e }}
                     {% else %}
                         -
                     {% endif %}
@@ -56,7 +56,7 @@ Versammlung -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|
                                      entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for assembly_id, adata in assemblies|dictsort %}
+            {% for assembly_id, adata in all_assemblies|dictsort %}
                 {{ myentries.append((assembly_id, adata['title']))|e }}
             {% endfor %}
             {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}

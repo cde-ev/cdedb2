@@ -1,7 +1,7 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ values['title']|e }} bearbeiten ({{ assembly_data['title']|e }}){% endblock %}
+{% block title %}{{ ambience['ballot']['title']|e }} bearbeiten ({{ ambience['assembly']['title']|e }}){% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/change_ballot')|e }}" method="POST" id="changeballotform">
         <table>
@@ -12,7 +12,7 @@
             {{ util.form_input_text(name="quorum", label="Quorum") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+            {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
                 {{ myentries.append((cdata['moniker'], cdata['moniker']))|e }}
             {% endfor %}
             {{ util.form_input_select(name="bar", entries=myentries, label="Schwellwertoption", nulloption=True) }}

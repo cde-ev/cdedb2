@@ -2,10 +2,10 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}{{ assembly_data['title']|e }} -- Abstimmungen{% endblock %}
+{% block title %}{{ ambience['assembly']['title']|e }} -- Abstimmungen{% endblock %}
 {% block content %}
     <ul>
-        {% for anid, bdata in ballot_data|dictsort %}
+        {% for anid, bdata in ballots|dictsort %}
             <li>
                 {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': anid}), bdata['title'])}}
                 {% if is_admin and now() < bdata['vote_begin'] %}

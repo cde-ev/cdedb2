@@ -2174,7 +2174,7 @@ _ASSEMBLY_OPTIONAL_FIELDS = {
     'is_active': _bool,
 }
 @_addvalidator
-def _assembly_data(val, argname=None, *, creation=False, _convert=True):
+def _assembly(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -2184,7 +2184,7 @@ def _assembly_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "assembly_data"
+    argname = argname or "assembly"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -2215,7 +2215,7 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'candidates': _any
 }
 @_addvalidator
-def _ballot_data(val, argname=None, *, creation=False, _convert=True):
+def _ballot(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -2225,7 +2225,7 @@ def _ballot_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "ballot_data"
+    argname = argname or "ballot"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -2253,7 +2253,7 @@ def _ballot_data(val, argname=None, *, creation=False, _convert=True):
                     errs.extend(e)
                 else:
                     creation = (anid < 0)
-                    candidate, ee = _ballot_candidate_data_or_None(
+                    candidate, ee = _ballot_candidate_or_None(
                         candidate, 'candidates', creation=creation,
                         _convert=_convert)
                     if ee:
@@ -2268,7 +2268,7 @@ _BALLOT_CANDIDATE_COMMON_FIELDS = {
     'moniker': _identifier,
 }
 @_addvalidator
-def _ballot_candidate_data(val, argname=None, *, creation=False, _convert=True):
+def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -2278,7 +2278,7 @@ def _ballot_candidate_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "ballot_candidate_data"
+    argname = argname or "ballot_candidate"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -2300,14 +2300,14 @@ _ASSEMBLY_ATTACHMENT_OPTIONAL_FIELDS = {
     "ballot_id": _id,
 }
 @_addvalidator
-def _assembly_attachment_data(val, argname=None, *, _convert=True):
+def _assembly_attachment(val, argname=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "assembly_attachment_data"
+    argname = argname or "assembly_attachment"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs

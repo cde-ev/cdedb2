@@ -1026,7 +1026,7 @@ def reconnoitre_ambience(obj, rs):
                                    in a['event']['fields'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment', (attachment_check,)),
-        Scout(lambda anid: obj.assemblyproxy.get_assembly_data_one(rs, anid),
+        Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', t),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
               'ballot_id', 'ballot',

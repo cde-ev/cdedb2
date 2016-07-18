@@ -1,7 +1,7 @@
 {% set sidenav_active='assembly_config' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}{{ values['title']|e }} bearbeiten{% endblock %}
+{% block title %}{{ ambience['assembly']['title']|e }} bearbeiten{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("assembly/show_assembly"), "Abbrechen") }}
     <form action="{{ cdedblink('assembly/change_assembly')|e }}" method="POST" id="changeassemblyform">

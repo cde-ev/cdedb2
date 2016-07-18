@@ -2,30 +2,30 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}{{ ballot_data['title']|e }} ({{ assembly_data['title']|e }}){% endblock %}
+{% block title %}{{ ambience['ballot']['title']|e }} ({{ ambience['assembly']['title']|e }}){% endblock %}
 {% block content %}
-    <p>{{ ballot_data['description']|rst }}</p>
+    <p>{{ ambience['ballot']['description']|rst }}</p>
     <p>
-        Abstimmungszeitraum: {{ ballot_data['vote_begin']|datetime|e }} bis {{ ballot_data['vote_end']|datetime|e }}<br>
-        {% if ballot_data['extended'] is none %}
-            {% if ballot_data['quorum'] %}
-                Falls das Quorum von {{ ballot_data['quorum']|e }} Stimmen nicht erreicht wird, wird die Abstimmung bis
-                {{ ballot_data['vote_extension_end']|datetime|e }} verlängert.
+        Abstimmungszeitraum: {{ ambience['ballot']['vote_begin']|datetime|e }} bis {{ ambience['ballot']['vote_end']|datetime|e }}<br>
+        {% if ambience['ballot']['extended'] is none %}
+            {% if ambience['ballot']['quorum'] %}
+                Falls das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht wird, wird die Abstimmung bis
+                {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert.
             {% endif %}
         {% else %}
-            {% if ballot_data['extended'] %}
-                Die Abstimmung hat das Quorum von {{ ballot_data['quorum']|e }} Stimmen nicht erreicht, und wurde bis
-                {{ ballot_data['vote_extension_end']|datetime|e }} verlängert.
-            {% elif ballot_data['quorum'] %}
-                Die Abstimmung hat das Quorum von {{ ballot_data['quorum']|e }} Stimmen erreicht und wurde nicht
+            {% if ambience['ballot']['extended'] %}
+                Die Abstimmung hat das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht, und wurde bis
+                {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert.
+            {% elif ambience['ballot']['quorum'] %}
+                Die Abstimmung hat das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen erreicht und wurde nicht
                 verlängert.
             {% endif %}
         {% endif %}
     </p>
     {% if is_admin %}
-        <p>Notizen: {{ ballot_data['notes']|rst }}</p>
+        <p>Notizen: {{ ambience['ballot']['notes']|rst }}</p>
     {% endif %}
-    {% if is_admin and now() < ballot_data['vote_begin']  %}
+    {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
         <p>
             {{ util.href(cdedblink("assembly/change_ballot_form"), "Bearbeiten")}}
             <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST"
@@ -46,12 +46,12 @@
             </form>
         </p>
     {% endif %}
-    {% if ballot_data['votes'] %}
+    {% if ambience['ballot']['votes'] %}
         <p>
             {% if not attends %}
                 Du nimmst nicht an der Versammlung teil.
             {% elif not values['vote'] %}
-                {% if assembly_data['is_active'] %}
+                {% if ambience['assembly']['is_active'] %}
                     Du hast noch nicht abgestimmt.
                 {% endif %}
             {% else %}
@@ -71,14 +71,14 @@
                 {% endif %}
             {% endif %}
         </p>
-        {% if ballot_data['is_voting'] %}
+        {% if ambience['ballot']['is_voting'] %}
             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform">
                 <div>
-                    {% if ballot_data['votes'] == 1 %}
+                    {% if ambience['ballot']['votes'] == 1 %}
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [("special: none", "keiner der Kandidaten")] %}
-                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
-                            {% if candidate_id != ballot_data['bar'] %}
+                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                            {% if candidate_id != ambience['ballot']['bar'] %}
                                 {{ myentries.append((cdata['moniker'], cdata['description']))|e }}
                             {% endif %}
                         {% endfor %}
@@ -86,8 +86,8 @@
                     {% else %}
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
-                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
-                            {% if candidate_id != ballot_data['bar'] %}
+                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                            {% if candidate_id != ambience['ballot']['bar'] %}
                                 {{ myentries.append((cdata[ 'moniker'], cdata['description']))|e }}
                             {% endif %}
                         {% endfor %}
@@ -96,7 +96,7 @@
                     {{ util.form_input_submit(value="Abstimmen") }}
                 </div>
             </form>
-            {% if ballot_data['votes'] > 1 %}
+            {% if ambience['ballot']['votes'] > 1 %}
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="rejectionform">
                     <div>
                         {{ util.input_hidden(name="vote", value="special: none") }}
@@ -110,13 +110,13 @@
                     {{ util.form_input_submit(value="Enthalten") }}
                 </div>
             </form>
-        {% elif ballot_data['is_tallied'] %}
+        {% elif ambience['ballot']['is_tallied'] %}
             <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen")}}</p>
-            {% if len(result['winners']) <= ballot_data['votes'] %}
+            {% if len(result['winners']) <= ambience['ballot']['votes'] %}
                 <h3>Gewählte Kandidaten</h3>
                 <p>
                     <ul>
-                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
                             {% if candidate_id in result['winners'] %}
                                 <li><strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}</li>
                             {% endif %}
@@ -126,8 +126,8 @@
                 <h3>Nicht-gewählte Kandidaten</h3>
                 <p>
                     <ul>
-                        {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
-                            {% if candidate_id not in result['winners'] and candidate_id != ballot_data['bar'] %}
+                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                            {% if candidate_id not in result['winners'] and candidate_id != ambience['ballot']['bar'] %}
                                 <li><strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}</li>
                             {% endif %}
                         {% endfor %}
@@ -140,11 +140,11 @@
             <h3>Kandidatenliste</h3>
             <p>
                 <ul>
-                    {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
-                        {% if candidate_id != ballot_data['bar'] or is_admin %}
+                    {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                        {% if candidate_id != ambience['ballot']['bar'] or is_admin %}
                             <li>
                                 <strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}
-                                {% if is_admin and now() < ballot_data['vote_begin'] %}
+                                {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                                     <form action="{{ cdedblink('assembly/remove_candidate',
                                                                {'candidate_id': candidate_id})|e }}"
                                      method="POST" id="removecandidateform{{ candidate_id|e }}">
@@ -163,10 +163,10 @@
         <h3>Kandidatenliste</h3>
         <p>
             <ul>
-                {% for candidate_id, cdata in ballot_data['candidates']|dictsort %}
+                {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
                     <li>
                         <strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}
-                        {% if is_admin and now() < ballot_data['vote_begin'] %}
+                        {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                             <form action="{{ cdedblink('assembly/remove_candidate',
                                                        {'candidate_id': candidate_id})|e }}"
                              method="POST" id="removecandidateform{{ candidate_id|e }}">
@@ -178,18 +178,18 @@
                     </li>
                 {% endfor %}
             </ul>
-            {% if ballot_data['bar'] %}
-                Die Option {{ ballot_data['candidates'][ballot_data['bar']]['moniker']|e }} ist hierbei die
+            {% if ambience['ballot']['bar'] %}
+                Die Option {{ ambience['ballot']['candidates'][ambience['ballot']['bar']]['moniker']|e }} ist hierbei die
                 Schwellwertoption.
             {% endif %}
         </p>
-        {% if ballot_data['is_voting'] %}
+        {% if ambience['ballot']['is_voting'] %}
             <p>
                 {% if not attends %}
                     Du nimmst nicht an der Versammlung teil.
                 {% elif values['vote'] %}
                     Du hast mit {{ values['vote']|e }} gestimmt.
-                {% elif assembly_data['is_active'] %}
+                {% elif ambience['assembly']['is_active'] %}
                     Du hast noch nicht abgestimmt.
                 {% endif %}
             </p>
@@ -200,18 +200,18 @@
                     {{ util.form_input_submit(value="Abstimmen") }}
                 </div>
             </form>
-        {% elif ballot_data['is_tallied'] %}
+        {% elif ambience['ballot']['is_tallied'] %}
             <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen")}}</p>
         {% endif %}
     {% endif %}
-    {% if attachment_data %}
+    {% if attachments %}
         <h2>Verfügbare Dateien</h2>
         <ul>
-            {% for attachment_id, adata in attachment_data|dictsort %}
+            {% for attachment_id, adata in attachments|dictsort %}
                 <li>
                     {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
                                            adata['title'])}}
-                    {% if is_admin and now() < ballot_data['vote_begin'] %}
+                    {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                         <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id})|e }}"
                          method="POST" id="removeattachmentform{{ attachment_id|e }}">
                             <div>
@@ -223,7 +223,7 @@
             {% endfor %}
         </ul>
     {% endif %}
-    {% if is_admin and now() < ballot_data['vote_begin'] %}
-        {{ util.href(cdedblink("assembly/add_attachment_form", {'ballot_id': ballot_data['id']}), "Datei anhängen")}}
+    {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+        {{ util.href(cdedblink("assembly/add_attachment_form", {'ballot_id': ambience['ballot']['id']}), "Datei anhängen")}}
     {% endif %}
 {% endblock %}

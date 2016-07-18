@@ -1,8 +1,8 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block inner_navigation %}{{assembly_inner_navigation(assembly_data)}}{% endblock %}
-{% block title %}Abstimmung anlegen ({{ assembly_data['title']|e }}){% endblock %}
+{% block inner_navigation %}{{assembly_inner_navigation(ambience['assembly'])}}{% endblock %}
+{% block title %}Abstimmung anlegen ({{ ambience['assembly']['title']|e }}){% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/create_ballot')|e }}" method="POST" id="createballotform">
         <table>

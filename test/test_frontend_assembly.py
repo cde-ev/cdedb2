@@ -240,7 +240,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/2/show'},
                       {'href': '/attachment/add'},)
-        self.assertTitle("Datei anhängen (Farbe des Logos)")
+        self.assertTitle("Datei anhängen (Internationaler Kongress/Farbe des Logos)")
         f = self.response.forms['addattachmentform']
         f['title'] = "Magenta wie die Telekom"
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as datafile:

@@ -46,7 +46,7 @@ class TestAssemblyBackend(BackendTest):
             'notes': None,
             'signup_end': datetime.datetime(2111, 11, 10, 23, 0, tzinfo=pytz.utc),
             'title': 'Internationaler Kongress'}
-        self.assertEqual(expectation, self.assembly.get_assembly_data_one(
+        self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 1))
         data = {
             'id': 1,
@@ -54,9 +54,9 @@ class TestAssemblyBackend(BackendTest):
             'signup_end': datetime.datetime(2111, 11, 11, 23, 0, tzinfo=pytz.utc),
             'title': "Allumfassendes Konklave",
         }
-        self.assertLess(0, self.assembly.set_assembly_data(self.key, data))
+        self.assertLess(0, self.assembly.set_assembly(self.key, data))
         expectation.update(data)
-        self.assertEqual(expectation, self.assembly.get_assembly_data_one(
+        self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 1))
         data = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
@@ -68,7 +68,7 @@ class TestAssemblyBackend(BackendTest):
         expectation = data
         expectation['id'] = 2
         expectation['is_active'] = True
-        self.assertEqual(expectation, self.assembly.get_assembly_data_one(
+        self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 2))
 
     @as_users("anton")
@@ -355,7 +355,7 @@ class TestAssemblyBackend(BackendTest):
             'id': new_id,
             'signup_end': datetime.datetime.now(pytz.utc),
         }
-        self.assembly.set_assembly_data(self.key, update)
+        self.assembly.set_assembly(self.key, update)
         self.assertEqual({1, 11}, self.assembly.list_attendees(self.key, new_id))
         self.assertLess(0, self.assembly.conclude_assembly(self.key, new_id))
 

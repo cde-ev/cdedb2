@@ -135,56 +135,53 @@ class AssemblyFrontend(AbstractUserFrontend):
         personas = (
             {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_personas(rs, personas)
+        personas = self.coreproxy.get_personas(rs, personas)
         assemblies = {entry['assembly_id']
                       for entry in log if entry['assembly_id']}
-        assembly_data = self.assemblyproxy.get_assembly_data(rs, assemblies)
-        assemblies = self.assemblyproxy.list_assemblies(rs)
+        assemblies = self.assemblyproxy.get_assemblies(rs, assemblies)
+        all_assemblies = self.assemblyproxy.list_assemblies(rs)
         return self.render(rs, "view_log", {
-            'log': log, 'persona_data': persona_data,
-            'assembly_data': assembly_data, 'assemblies': assemblies})
+            'log': log, 'personas': personas,
+            'assemblies': assemblies, 'all_assemblies': all_assemblies})
 
     @access("assembly")
     def show_assembly(self, rs, assembly_id):
         """Present an assembly."""
-        assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
-                                                                 assembly_id)
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
-        ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballot_data = self.assemblyproxy.get_ballots(rs, ballots)
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         timestamp = now()
         has_activity = False
-        if timestamp < assembly_data['signup_end']:
+        if timestamp < rs.ambience['assembly']['signup_end']:
             has_activity = True
         if any((ballot['extended'] is None
                 or timestamp < ballot['vote_end']
                 or (ballot['extended']
                     and timestamp < ballot['vote_extension_end']))
-               for ballot in ballot_data.values()):
+               for ballot in ballots.values()):
             has_activity = True
         return self.render(rs, "show_assembly", {
-            "assembly_data": assembly_data, "attachments": attachments,
-            "attends": attends, "has_activity": has_activity})
+            "attachments": attachments, "attends": attends,
+            "has_activity": has_activity})
 
     @access("assembly_admin")
     def change_assembly_form(self, rs, assembly_id):
         """Render form."""
-        data = self.assemblyproxy.get_assembly_data_one(rs, assembly_id)
-        merge_dicts(rs.values, data)
-        return self.render(rs, "change_assembly", {"data": data})
+        merge_dicts(rs.values, rs.ambience['assembly'])
+        return self.render(rs, "change_assembly")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "signup_end", "notes")
     def change_assembly(self, rs, assembly_id, data):
         """Modify an assembly."""
         data['id'] = assembly_id
-        data = check(rs, "assembly_data", data)
+        data = check(rs, "assembly", data)
         if rs.errors:
             return self.change_assembly_form(rs, assembly_id)
-        code = self.assemblyproxy.set_assembly_data(rs, data)
+        code = self.assemblyproxy.set_assembly(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
 
@@ -197,7 +194,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdatadict("title", "description", "signup_end", "notes")
     def create_assembly(self, rs, data):
         """Make a new assembly."""
-        data = check(rs, "assembly_data", data, creation=True)
+        data = check(rs, "assembly", data, creation=True)
         if rs.errors:
             return self.create_assembly_form(rs)
         new_id = self.assemblyproxy.create_assembly(rs, data)
@@ -208,12 +205,9 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly", modi={"POST"})
     def signup(self, rs, assembly_id):
         """Join an assembly."""
-        assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
-                                                                 assembly_id)
-        if now() > assembly_data['signup_end']:
+        if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", "Signup already ended.")
             return self.redirect(rs, "assembly/show_assembly")
-        user_data = self.coreproxy.get_assembly_user(rs, rs.user.persona_id)
         secret = self.assemblyproxy.signup(rs, assembly_id)
         if secret:
             rs.notify("success", "Signed up.")
@@ -226,9 +220,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 rs, "signup",
                 {'To': (rs.user.username,),
                  'Subject': 'Signed up for assembly {}'.format(
-                     assembly_data['title'])},
-                {'assembly_data': assembly_data, 'user_data': user_data,
-                 'secret': secret}, attachments=(attachment,))
+                     rs.ambience['assembly']['title'])},
+                {'secret': secret}, attachments=(attachment,))
         else:
             rs.notify("info", "Already signed up.")
         return self.redirect(rs, "assembly/show_assembly")
@@ -236,12 +229,9 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_attendees(self, rs, assembly_id):
         """Provide a list of who is/was present."""
-        assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
-                                                                 assembly_id)
-        attendees = self.assemblyproxy.list_attendees(rs, assembly_id)
-        user_data = self.coreproxy.get_assembly_users(rs, attendees)
-        return self.render(rs, "list_attendees", {
-            "assembly_data": assembly_data, "user_data": user_data})
+        attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
+        attendees = self.coreproxy.get_assembly_users(rs, attendee_ids)
+        return self.render(rs, "list_attendees", {"attendees": attendees})
 
     @access("assembly_admin", modi={"POST"})
     def conclude_assembly(self, rs, assembly_id):
@@ -256,23 +246,17 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_ballots(self, rs, assembly_id):
         """View available ballots for an assembly."""
-        assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
-                                                                 assembly_id)
-        ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
-        ballot_data = self.assemblyproxy.get_ballots(rs, ballots)
-        return self.render(rs, "list_ballots", {
-            "assembly_data": assembly_data, 'ballot_data': ballot_data})
+        ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
+        ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        return self.render(rs, "list_ballots", {'ballots': ballots})
 
     @access("assembly_admin")
     def create_ballot_form(self, rs, assembly_id):
         """Render form."""
-        assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
-                                                                 assembly_id)
-        if not assembly_data['is_active']:
+        if not rs.ambience['assembly']['is_active']:
             rs.notify("warning", "Assembly already concluded.")
             return self.redirect(rs, "assembly/show_assembly")
-        return self.render(rs, "create_ballot", {
-            "assembly_data": assembly_data})
+        return self.render(rs, "create_ballot")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
@@ -280,7 +264,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def create_ballot(self, rs, assembly_id, data):
         """Make a new ballot."""
         data['assembly_id'] = assembly_id
-        data = check(rs, "ballot_data", data, creation=True)
+        data = check(rs, "ballot", data, creation=True)
         if rs.errors:
             return self.create_ballot_form(rs, assembly_id)
         new_id = self.assemblyproxy.create_ballot(rs, data)
@@ -305,15 +289,19 @@ class AssemblyFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.BadRequest(
                 "Exactly one of assembly_id and ballot_id must be provided.")
         if assembly_id:
-            data = self.assemblyproxy.get_assembly_data_one(rs, assembly_id)
+            ballot = None
+            assembly = self.assemblyproxy.get_assembly(rs, assembly_id)
         else:
-            data = self.assemblyproxy.get_ballot(rs, ballot_id)
-            if now() > data['vote_begin']:
+            ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
+            assembly = self.assemblyproxy.get_assembly(rs,
+                                                       ballot['assembly_id'])
+            if now() > ballot['vote_begin']:
                 rs.notify("warning", "Voting has begun.")
                 return self.redirect(rs, "assembly/show_ballot", {
-                    'assembly_id': data['assembly_id'], 'ballot_id': ballot_id})
+                    'assembly_id': ballot['assembly_id'],
+                    'ballot_id': ballot_id})
         return self.render(rs, "add_attachment", {
-            'data': data, 'is_assembly': bool(assembly_id)})
+            'assembly': assembly, 'ballot': ballot})
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("assembly_id", "id_or_None"), ("ballot_id", "id_or_None"),
@@ -355,9 +343,9 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.redirect(rs, "assembly/show_assembly",
                                  {'assembly_id': assembly_id})
         else:
-            ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
+            ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
             return self.redirect(rs, "assembly/show_ballot", {
-                'assembly_id': ballot_data['assembly_id'],
+                'assembly_id': ballot['assembly_id'],
                 'ballot_id': ballot_id})
 
     @access("assembly_admin", modi={"POST"})
@@ -386,27 +374,26 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
         """
-        assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
-                                                                 assembly_id)
-        ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
-        attachments = self.assemblyproxy.list_attachments(rs,
-                                                          ballot_id=ballot_id)
-        attachment_data = self.assemblyproxy.get_attachments(rs, attachments)
+        ballot = rs.ambience['ballot']
+        attachment_ids = self.assemblyproxy.list_attachments(
+            rs, ballot_id=ballot_id)
+        attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         timestamp = now()
-        if (ballot_data['extended'] is None
-                and timestamp > ballot_data['vote_end']):
+        if (ballot['extended'] is None
+                and timestamp > ballot['vote_end']):
             self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
             return self.redirect(rs, "assembly/show_ballot")
         finished = (
-            timestamp > ballot_data['vote_end']
-            and (not ballot_data['extended']
-                 or timestamp > ballot_data['vote_extension_end']))
-        if finished and not ballot_data['is_tallied']:
+            timestamp > ballot['vote_end']
+            and (not ballot['extended']
+                 or timestamp > ballot['vote_extension_end']))
+        if finished and not ballot['is_tallied']:
             did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
             if did_tally:
-                attendees = self.assemblyproxy.list_attendees(rs, assembly_id)
-                user_data = self.coreproxy.get_assembly_users(rs, attendees)
-                mails = tuple(x['username'] for x in user_data.values())
+                attendee_ids = self.assemblyproxy.list_attendees(rs,
+                                                                 assembly_id)
+                attendees = self.coreproxy.get_assembly_users(rs, attendee_ids)
+                mails = tuple(x['username'] for x in attendees.values())
                 attachment_script = {
                     'path': os.path.join(self.conf.REPOSITORY_PATH,
                                          "bin/verify_votes.py"),
@@ -422,18 +409,16 @@ class AssemblyFrontend(AbstractUserFrontend):
                     {'To': (self.conf.MANAGEMENT_ADDRESS,),
                      'Bcc': mails,
                      'Subject': "Ballot '{}' got tallied".format(
-                         ballot_data['title'])},
-                    {'assembly_data': assembly_data,
-                     'ballot_data': ballot_data},
+                         ballot['title'])},
                     attachments=(attachment_script, attachment_result,))
             return self.redirect(rs, "assembly/show_ballot")
-        ballot_data['is_voting'] = (
-            timestamp > ballot_data['vote_begin']
-            and (timestamp < ballot_data['vote_end']
-                 or (ballot_data['extended']
-                     and timestamp < ballot_data['vote_extension_end'])))
+        ballot['is_voting'] = (
+            timestamp > ballot['vote_begin']
+            and (timestamp < ballot['vote_end']
+                 or (ballot['extended']
+                     and timestamp < ballot['vote_extension_end'])))
         result = None
-        if ballot_data['is_tallied']:
+        if ballot['is_tallied']:
             path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
                                 str(ballot_id))
             with open(path) as f:
@@ -446,8 +431,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         split_vote = None
         if vote:
             split_vote = tuple(x.split('=') for x in vote.split('>'))
-        if ballot_data['votes']:
-            bar = ballot_data['candidates'][ballot_data['bar']]
+        if ballot['votes']:
+            bar = ballot['candidates'][ballot['bar']]
             if result:
                 tiers = tuple(x.split('=') for x in result['result'].split('>'))
                 winners = []
@@ -455,7 +440,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     winners.extend(tier)
                     if bar['moniker'] in winners:
                         winners.remove(bar['moniker'])
-                    if len(winners) >= ballot_data['votes']:
+                    if len(winners) >= ballot['votes']:
                         break
                 result['winners'] = winners
             if split_vote:
@@ -469,26 +454,19 @@ class AssemblyFrontend(AbstractUserFrontend):
                     ## select voted options
                     rs.values.setlist('vote', split_vote[0])
         candidates = {e['moniker']: e
-                      for e in ballot_data['candidates'].values()}
+                      for e in ballot['candidates'].values()}
         return self.render(rs, "show_ballot", {
-            'assembly_data': assembly_data, 'ballot_data': ballot_data,
-            'attachment_data': attachment_data, 'split_vote': split_vote,
+            'attachments': attachments, 'split_vote': split_vote,
             'result': result, 'candidates': candidates, 'attends': attends})
 
     @access("assembly_admin")
     def change_ballot_form(self, rs, assembly_id, ballot_id):
         """Render form"""
-        assembly_data = self.assemblyproxy.get_assembly_data_one(rs,
-                                                                 assembly_id)
-        ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
-        if ballot_data['assembly_id'] != assembly_id:
-            return werkzeug.exceptions.NotFound("Wrong associated assembly.")
-        if now() > ballot_data['vote_begin']:
+        if now() > rs.ambience['ballot']['vote_begin']:
             rs.notify("warning", "Unable to modify active ballot.")
             return self.redirect(rs, "assembly/show_ballot")
-        merge_dicts(rs.values, ballot_data)
-        return self.render(rs, "change_ballot", {
-            "assembly_data": assembly_data, 'ballot_data': ballot_data})
+        merge_dicts(rs.values, rs.ambience['ballot'])
+        return self.render(rs, "change_ballot")
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
@@ -496,7 +474,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def change_ballot(self, rs, assembly_id, ballot_id, data):
         """Modify a ballot."""
         data['id'] = ballot_id
-        data = check(rs, "ballot_data", data)
+        data = check(rs, "ballot", data)
         if rs.errors:
             return self.change_ballot_form(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.set_ballot(rs, data)
@@ -522,14 +500,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
         """
-        ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
-        if ballot_data['votes']:
+        ballot = rs.ambience['ballot']
+        if ballot['votes']:
             voted = unwrap(
                 request_data_extractor(rs, (("vote", "[str_or_None]"),)))
             candidates = tuple(e['moniker']
-                               for e in ballot_data['candidates'].values()
-                               if e['id'] != ballot_data['bar'])
-            bar = ballot_data['candidates'][ballot_data['bar']]
+                               for e in ballot['candidates'].values()
+                               if e['id'] != ballot['bar'])
+            bar = ballot['candidates'][ballot['bar']]
             if voted == (MAGIC_NONE_OF_THEM,):
                 vote = "{}>{}".format(bar['moniker'], "=".join(candidates))
             elif voted == (MAGIC_ABSTAIN,):
@@ -540,7 +518,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     "=".join(c for c in candidates if c not in voted))
         else:
             vote = unwrap(request_data_extractor(rs, (("vote", "str"),)))
-        vote = check(rs, "vote", vote, "vote", ballot=ballot_data)
+        vote = check(rs, "vote", vote, "vote", ballot=ballot)
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
@@ -550,10 +528,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def get_result(self, rs, assembly_id, ballot_id):
         """Download the tallied stats of a ballot."""
-        ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
-        if ballot_data['assembly_id'] != assembly_id:
-            return werkzeug.exceptions.NotFound("Wrong associated assembly.")
-        if not ballot_data['is_tallied']:
+        if not rs.ambience['ballot']['is_tallied']:
             rs.notify("warning", "Ballot not yet tallied.")
             return self.show_ballot(rs, assembly_id, ballot_id)
         path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
@@ -565,8 +540,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
     def add_candidate(self, rs, assembly_id, ballot_id, moniker, description):
         """Create a new option for a ballot."""
-        ballot_data = self.assemblyproxy.get_ballot(rs, ballot_id)
-        monikers = {c['moniker'] for c in ballot_data['candidates'].values()}
+        monikers = {c['moniker']
+                    for c in rs.ambience['ballot']['candidates'].values()}
         if moniker in monikers:
             rs.errors.append(("moniker", ValueError("Duplicate moniker.")))
         if rs.errors:
@@ -583,7 +558,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         code = self.assemblyproxy.set_ballot(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_ballot")
-
 
     @access("assembly_admin", modi={"POST"})
     def remove_candidate(self, rs, assembly_id, ballot_id, candidate_id):
