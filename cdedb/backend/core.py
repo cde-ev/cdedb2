@@ -273,29 +273,29 @@ class CoreBackend(AbstractBackend):
             ## get current state
             history = self.changelog_get_history(
                 rs, data['id'], generations=(current_generation,))
-            current_data = history[current_generation]
+            current_state = history[current_generation]
 
             ## handle pending changes
             diff = None
-            if current_data['change_status'] == const.MemberChangeStati.pending:
-                committed_data = unwrap(self.get_total_personas(
+            if current_state['change_status'] == const.MemberChangeStati.pending:
+                committed_state = unwrap(self.get_total_personas(
                     rs, (data['id'],)))
                 ## stash pending change if we may not wait
                 if not may_wait:
-                    diff = {key: current_data[key] for key in committed_data
-                            if committed_data[key] != current_data[key]}
-                    current_data.update(committed_data)
+                    diff = {key: current_state[key] for key in committed_state
+                            if committed_state[key] != current_state[key]}
+                    current_state.update(committed_state)
                     query = glue("UPDATE core.changelog SET change_status = %s",
                                  "WHERE persona_id = %s AND change_status = %s")
                     self.query_exec(rs, query, (
                         const.MemberChangeStati.displaced, data['id'],
                         const.MemberChangeStati.pending))
             else:
-                committed_data = current_data
+                committed_state = current_state
 
             ## determine if something changed
             newly_changed_fields = {key for key, value in data.items()
-                                    if value != current_data[key]}
+                                    if value != current_state[key]}
             if not newly_changed_fields:
                 if diff:
                     ## reenable old change if we were going to displace it
@@ -311,12 +311,12 @@ class CoreBackend(AbstractBackend):
             ## Determine if something requiring a review changed.
             fields_requiring_review = {'birthday', 'family_name', 'given_names'}
             all_changed_fields = {key for key, value in data.items()
-                                  if value != committed_data[key]}
+                                  if value != committed_state[key]}
             requires_review = (
                 (all_changed_fields & fields_requiring_review
-                 or (current_data['change_status']
+                 or (current_state['change_status']
                      == const.MemberChangeStati.pending and not diff))
-                and current_data['is_cde_realm']
+                and current_state['is_cde_realm']
                 and not ({"core_admin", "cde_admin"} & rs.user.roles))
 
             ## prepare for inserting a new changelog entry
@@ -332,7 +332,7 @@ class CoreBackend(AbstractBackend):
                 const.MemberChangeStati.pending))
 
             ## insert new changelog entry
-            insert = copy.deepcopy(current_data)
+            insert = copy.deepcopy(current_state)
             insert.update(data)
             insert.update({
                 "submitted_by": rs.user.persona_id,
@@ -359,7 +359,7 @@ class CoreBackend(AbstractBackend):
             if diff:
                 if set(diff) & newly_changed_fields:
                     raise RuntimeError("Conflicting pending change.")
-                insert = copy.deepcopy(current_data)
+                insert = copy.deepcopy(current_state)
                 insert.update(data)
                 insert.update(diff)
                 insert.update({
@@ -417,9 +417,9 @@ class CoreBackend(AbstractBackend):
             self.query_exec(rs, query, params)
 
             ## determine changed fields
-            old_data = unwrap(self.get_total_personas(rs, (persona_id,)))
-            relevant_keys = tuple(key for key in old_data
-                                  if data[key] != old_data[key])
+            old_state = unwrap(self.get_total_personas(rs, (persona_id,)))
+            relevant_keys = tuple(key for key in old_state
+                                  if data[key] != old_state[key])
             relevant_keys += ('id',)
 
             udata = {key: data[key] for key in relevant_keys}
@@ -872,13 +872,13 @@ class CoreBackend(AbstractBackend):
                 if data and self.verify_password(password, unwrap(data)):
                     authorized = True
             if authorized:
-                new_data = {
+                new = {
                     'id': persona_id,
                     'username': new_username,
                 }
                 change_note = "Username change."
                 if self.set_persona(
-                        rs, new_data, change_note=change_note, may_wait=False,
+                        rs, new, change_note=change_note, may_wait=False,
                         allow_specials=("username",)):
                     return True, new_username
         return False, "Failed."
@@ -1060,9 +1060,9 @@ class CoreBackend(AbstractBackend):
         ## add balance for cde users
         if data.get('is_cde_realm') and 'balance' not in data:
             data['balance'] = decimal.Decimal(0)
-        fulltext_data = copy.deepcopy(data)
-        fulltext_data['id'] = None
-        data['fulltext'] = self.create_fulltext(fulltext_data)
+        fulltext_input = copy.deepcopy(data)
+        fulltext_input['id'] = None
+        data['fulltext'] = self.create_fulltext(fulltext_input)
         attributes = {
             'sn': "({})".format(data['username']),
             'mail': data['username'],
@@ -1305,7 +1305,7 @@ class CoreBackend(AbstractBackend):
             new_password = ''.join(random.choice(
                 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789' +
                 '!@#$%&*()[]-=<>') for _ in range(12))
-        ## do not use set_persona_data since it doesn't operate on password
+        ## do not use set_persona since it doesn't operate on password
         ## hashes by design
         query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
         with tempfile.NamedTemporaryFile(mode='w') as f:
@@ -1764,10 +1764,11 @@ class CoreBackend(AbstractBackend):
         data = affirm("meta_info", data, keys=self.conf.META_INFO_KEYS)
         with Atomizer(rs):
             query = "SELECT info FROM core.meta_info LIMIT 1"
-            the_data = unwrap(self.query_one(rs, query, tuple()))
-            the_data.update(data)
+            meta_info = unwrap(self.query_one(rs, query, tuple()))
+            meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
-            return self.query_exec(rs, query, (psycopg2.extras.Json(the_data),))
+            return self.query_exec(rs, query,
+                                   (psycopg2.extras.Json(meta_info),))
 
     @access("core_admin")
     def submit_general_query(self, rs, query):

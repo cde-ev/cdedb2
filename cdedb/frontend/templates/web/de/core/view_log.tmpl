@@ -26,14 +26,14 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
                     <td>{{ i18n(enums['CoreLogCodes'](entry['code'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
-                            {{ util.persona_anchor(user_data[entry['submitted_by']]) }}
+                            {{ util.persona_anchor(personas[entry['submitted_by']]) }}
                         {% else %}
                             –
                         {% endif %}
                     </td>
                     <td>
                         {% if entry['persona_id'] %}
-                            {{ util.persona_anchor(user_data[entry['persona_id']]) }}
+                            {{ util.persona_anchor(personas[entry['persona_id']]) }}
                         {% else %}
                             –
                         {% endif %}

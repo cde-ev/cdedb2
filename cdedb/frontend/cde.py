@@ -25,7 +25,7 @@ from cdedb.common import (
     ProxyShim, diacritic_patterns)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, Worker,
-    check_validation as check, cdedbid_filter, request_data_extractor,
+    check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
@@ -111,14 +111,14 @@ class CdEFrontend(AbstractUserFrontend):
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
-        new_data = {
+        new = {
             'id': rs.user.persona_id,
             'decided_search': True,
             'is_searchable': ack,
         }
         change_note = "Consent decision (is {}).".format(ack)
         code = self.coreproxy.change_persona(
-            rs, new_data, generation=None, may_wait=False,
+            rs, new, generation=None, may_wait=False,
             change_note=change_note)
         message = "Consent noted." if ack else "Decision noted."
         self.notify_return_code(rs, code, success=message)
@@ -472,7 +472,7 @@ class CdEFrontend(AbstractUserFrontend):
                 ("resolution{}".format(lineno), "enum_lineresolutions_or_None"),
                 ("doppelganger_id{}".format(lineno), "id_or_None"),
                 ("hash{}".format(lineno), "str_or_None"),)
-            tmp = request_data_extractor(rs, params)
+            tmp = request_extractor(rs, params)
             dataset['resolution'] = tmp["resolution{}".format(lineno)]
             dataset['doppelganger_id'] = tmp["doppelganger_id{}".format(lineno)]
             dataset['old_hash'] = tmp["hash{}".format(lineno)]
@@ -729,23 +729,22 @@ class CdEFrontend(AbstractUserFrontend):
         This presents open items as well as all permits.
         """
         lastschrift_ids = self.cdeproxy.list_lastschrift(rs)
-        lastschrift_data = self.cdeproxy.get_lastschrift(rs,
-                                                         lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids.keys())
         period = self.cdeproxy.current_period(rs)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, periods=(period,),
             stati=(const.LastschriftTransactionStati.issued,))
-        transaction_data = self.cdeproxy.get_lastschrift_transactions(
+        transactions = self.cdeproxy.get_lastschrift_transactions(
             rs, transaction_ids.keys())
         persona_ids = set(lastschrift_ids.values()).union({
-            x['submitted_by'] for x in lastschrift_data.values()})
-        persona_data = self.coreproxy.get_personas(rs, persona_ids)
+            x['submitted_by'] for x in lastschrifts.values()})
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         open_permits = self.determine_open_permits(rs, lastschrift_ids)
-        for lastschrift in lastschrift_data.values():
+        for lastschrift in lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
         return self.render(rs, "lastschrift_index", {
-            'lastschrift_data': lastschrift_data, 'persona_data': persona_data,
-            'transaction_data': transaction_data})
+            'lastschrifts': lastschrifts, 'personas': personas,
+            'transactions': transactions})
 
     @access("member")
     def lastschrift_show(self, rs, persona_id):
@@ -757,7 +756,7 @@ class CdEFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None)
-        lastschrifts = self.cdeproxy.get_lastschrift(rs, lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids.keys())
         transactions = {}
         if lastschrifts:
             transaction_ids = self.cdeproxy.list_lastschrift_transactions(
@@ -783,12 +782,10 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde_admin")
     def lastschrift_change_form(self, rs, lastschrift_id):
         """Render form."""
-        lastschrift_data = self.cdeproxy.get_lastschrift_one(rs, lastschrift_id)
-        merge_dicts(rs.values, lastschrift_data)
-        persona_data = self.coreproxy.get_persona(
-            rs, lastschrift_data['persona_id'])
-        return self.render(rs, "lastschrift_change", {
-            'lastschrift_data': lastschrift_data, 'persona_data': persona_data})
+        merge_dicts(rs.values, rs.ambience['lastschrift'])
+        persona = self.coreproxy.get_persona(
+            rs, rs.ambience['lastschrift']['persona_id'])
+        return self.render(rs, "lastschrift_change", {'persona': persona})
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
@@ -796,21 +793,18 @@ class CdEFrontend(AbstractUserFrontend):
     def lastschrift_change(self, rs, lastschrift_id, data):
         """Modify one permit."""
         data['id'] = lastschrift_id
-        data = check(rs, "lastschrift_data", data)
+        data = check(rs, "lastschrift", data)
         if rs.errors:
             return self.lastschrift_change_form(rs, lastschrift_id)
         code = self.cdeproxy.set_lastschrift(rs, data)
-        lastschrift = self.cdeproxy.get_lastschrift_one(rs, lastschrift_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/lastschrift_show", {
-            'persona_id': lastschrift['persona_id']})
+            'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     @access("cde_admin")
     def lastschrift_create_form(self, rs, persona_id):
         """Render form."""
-        persona_data = self.coreproxy.get_persona(rs, persona_id)
-        return self.render(rs, "lastschrift_create", {
-            'persona_data': persona_data})
+        return self.render(rs, "lastschrift_create")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdatadict('amount', 'iban', 'account_owner', 'account_address',
@@ -818,7 +812,7 @@ class CdEFrontend(AbstractUserFrontend):
     def lastschrift_create(self, rs, persona_id, data):
         """Create a new permit."""
         data['persona_id'] = persona_id
-        data = check(rs, "lastschrift_data", data, creation=True)
+        data = check(rs, "lastschrift", data, creation=True)
         if rs.errors:
             return self.lastschrift_create_form(rs, persona_id)
         new_id = self.cdeproxy.create_lastschrift(rs, data)
@@ -834,9 +828,8 @@ class CdEFrontend(AbstractUserFrontend):
         }
         code = self.cdeproxy.set_lastschrift(rs, data)
         self.notify_return_code(rs, code, success="Permit revoked.")
-        lastschrift = self.cdeproxy.get_lastschrift_one(rs, lastschrift_id)
         return self.redirect(rs, "cde/lastschrift_show", {
-            'persona_id': lastschrift['persona_id']})
+            'persona_id': rs.ambience['lastschrift']['persona_id']})
 
     def create_sepapain(self, rs, transactions):
         """Create an XML document for submission to a bank.
@@ -854,7 +847,7 @@ class CdEFrontend(AbstractUserFrontend):
           some additional attributes which are necessary.
         :rtype: str
         """
-        sanitized_transactions = check(rs, "sepa_data", transactions)
+        sanitized_transactions = check(rs, "sepa_transactions", transactions)
         if rs.errors:
             return None
         sorted_transactions = {}
@@ -910,10 +903,10 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, all_lids.keys()))
         else:
             lastschrift_ids = (lastschrift_id,)
-        lastschrift_data = self.cdeproxy.get_lastschrift(
+        lastschrifts = self.cdeproxy.get_lastschrifts(
             rs, lastschrift_ids)
-        persona_data = self.coreproxy.get_personas(
-            rs, tuple(e['persona_id'] for e in lastschrift_data.values()))
+        personas = self.coreproxy.get_personas(
+            rs, tuple(e['persona_id'] for e in lastschrifts.values()))
         new_transactions = tuple(
             {
                 'issued_at': now(),
@@ -924,11 +917,11 @@ class CdEFrontend(AbstractUserFrontend):
         transaction_ids = self.cdeproxy.issue_lastschrift_transaction_batch(
             rs, new_transactions, check_unique=True)
         for transaction in new_transactions:
-            lastschrift = lastschrift_data[transaction['lastschrift_id']]
-            pdata = persona_data[lastschrift['persona_id']]
+            lastschrift = lastschrifts[transaction['lastschrift_id']]
+            persona = personas[lastschrift['persona_id']]
             transaction.update({
                 'mandate_reference': lastschrift_reference(
-                    pdata['id'], lastschrift['id']),
+                    persona['id'], lastschrift['id']),
                 'amount': lastschrift['amount'],
                 'iban': lastschrift['iban'],
             })
@@ -941,16 +934,16 @@ class CdEFrontend(AbstractUserFrontend):
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
                 transaction['account_owner'] = "{} {}".format(
-                    pdata['given_names'], pdata['family_name'])
+                    persona['given_names'], persona['family_name'])
             timestamp = "{:.6f}".format(now().timestamp())
             transaction['unique_id'] = "{}-{}".format(
-                transaction['mandate_reference'], timestamp[-9:])
+                transaction['mandate_reference'], timestampersona[-9:])
             transaction['subject'] = glue(
                 "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
                 "z. Foerderung der Volks- u. Berufsbildung u.",
                 "Studentenhilfe").format(
-                    cdedbid_filter(pdata['id']), pdata['family_name'],
-                    pdata['given_names'])[:140] ## cut off bc of limit
+                    cdedbid_filter(persona['id']), persona['family_name'],
+                    persona['given_names'])[:140] ## cut off bc of limit
             previous = self.cdeproxy.list_lastschrift_transactions(
                 rs, lastschrift_ids=(lastschrift['id'],),
                 stati=(stati.success,))
@@ -1079,27 +1072,23 @@ class CdEFrontend(AbstractUserFrontend):
 
         This allows tax deductions.
         """
-        lastschrift_data = self.cdeproxy.get_lastschrift_one(
-            rs, lastschrift_id)
-        transaction_data = self.cdeproxy.get_lastschrift_transaction(
-            rs, transaction_id)
-        persona_data = self.coreproxy.get_cde_user(
-            rs, lastschrift_data['persona_id'])
-        addressee = make_postal_address(persona_data)
-        if lastschrift_data['account_owner']:
-            addressee[0] = lastschrift_data['account_owner']
-        if lastschrift_data['account_address']:
+        transaction = rs.ambience['transaction']
+        persona = self.coreproxy.get_cde_user(
+            rs, rs.ambience['lastschrift']['persona_id'])
+        addressee = make_postal_address(persona)
+        if rs.ambience['lastschrift']['account_owner']:
+            addressee[0] = rs.ambience['lastschrift']['account_owner']
+        if rs.ambience['lastschrift']['account_address']:
             addressee = addressee[:1]
-            addressee.extend(lastschrift_data['account_address'].split('\n'))
+            addressee.extend(
+                rs.ambience['lastschrift']['account_address'].split('\n'))
         words = (
-            int_to_words(int(transaction_data['amount']), rs.lang),
-            int_to_words(int(transaction_data['amount'] * 100) % 100, rs.lang))
-        transaction_data['amount_words'] = words
+            int_to_words(int(transaction['amount']), rs.lang),
+            int_to_words(int(transaction['amount'] * 100) % 100, rs.lang))
+        transaction['amount_words'] = words
         cde_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
-            'lastschrift_data': lastschrift_data, 'cde_info': cde_info,
-            'transaction_data': transaction_data, 'persona_data': persona_data,
-            'addressee': addressee})
+             'cde_info': cde_info, 'persona': persona, 'addressee': addressee})
         with tempfile.TemporaryDirectory() as tmp_dir:
             j = os.path.join
             work_dir = j(tmp_dir, 'workdir')
@@ -1117,15 +1106,15 @@ class CdEFrontend(AbstractUserFrontend):
 
         If we are not anonymous we prefill this with known information.
         """
-        persona_data = None
+        persona = None
         minor = True
         if rs.user.persona_id:
-            persona_data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             minor = determine_age_class(
-                persona_data['birthday'], now().date()).is_minor()
+                persona['birthday'], now().date()).is_minor()
         cde_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", {
-            'cde_info': cde_info, 'persona_data': persona_data, 'minor': minor})
+            'cde_info': cde_info, 'persona': persona, 'minor': minor})
         return self.serve_latex_document(rs, tex,
                                          "lastschrift_subscription_form")
 
@@ -1182,7 +1171,7 @@ class CdEFrontend(AbstractUserFrontend):
                     rrs, persona_ids=(persona_id,))
                 lastschrift = None
                 if lastschrift_list:
-                    lastschrift = self.cdeproxy.get_lastschrift_one(
+                    lastschrift = self.cdeproxy.get_lastschrift(
                         rrs, unwrap(lastschrift_list))
                     lastschrift['reference'] = lastschrift_reference(
                         persona['id'], lastschrift['id'])
@@ -1361,7 +1350,7 @@ class CdEFrontend(AbstractUserFrontend):
                     rrs, persona_ids=(persona_id,))
                 lastschrift = None
                 if lastschrift_list:
-                    lastschrift = self.cdeproxy.get_lastschrift_one(
+                    lastschrift = self.cdeproxy.get_lastschrift(
                         rrs, unwrap(lastschrift_list))
                     lastschrift['reference'] = lastschrift_reference(
                         persona['id'], lastschrift['id'])
@@ -1442,7 +1431,7 @@ class CdEFrontend(AbstractUserFrontend):
         :param institutions: ids of existing institutions
         :rtype: {int: {str: object} or None}
         """
-        delete_flags = request_data_extractor(
+        delete_flags = request_extractor(
             rs, (("delete_{}".format(institution_id), "bool")
                  for institution_id in institutions))
         deletes = {institution_id for institution_id in institutions
@@ -1455,7 +1444,7 @@ class CdEFrontend(AbstractUserFrontend):
                        for institution_id in institutions
                        if institution_id not in deletes
                        for key, value in spec.items())
-        data = request_data_extractor(rs, params)
+        data = request_extractor(rs, params)
         ret  = {
             institution_id: {key: data["{}_{}".format(key, institution_id)]
                              for key in spec}
@@ -1468,12 +1457,12 @@ class CdEFrontend(AbstractUserFrontend):
                 ret[institution_id]['id'] = institution_id
         marker = 1
         while marker < 2**10:
-            will_create = unwrap(request_data_extractor(
+            will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                data = request_data_extractor(rs, params)
+                data = request_extractor(rs, params)
                 ret[-marker] = {key: data["{}_-{}".format(key, marker)]
                                 for key in spec}
             else:
@@ -1671,9 +1660,9 @@ class CdEFrontend(AbstractUserFrontend):
             return self.create_past_event_form(rs)
         with Atomizer(rs):
             new_id = self.pasteventproxy.create_past_event(rs, data)
-            for cdata in thecourses:
-                cdata['pevent_id'] = new_id
-                self.pasteventproxy.create_past_course(rs, cdata)
+            for course in thecourses:
+                course['pevent_id'] = new_id
+                self.pasteventproxy.create_past_course(rs, course)
         self.notify_return_code(rs, new_id, success="Event created.")
         return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
 
@@ -1765,12 +1754,12 @@ class CdEFrontend(AbstractUserFrontend):
         ## no validation since the input stays valid, even if some options
         ## are lost
         log = self.cdeproxy.retrieve_cde_log(rs, codes, persona_id, start, stop)
-        personas = (
+        persona_ids = (
             {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_personas(rs, personas)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_cde_log", {
-            'log': log, 'persona_data': persona_data})
+            'log': log, 'personas': personas})
 
     @access("cde_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),

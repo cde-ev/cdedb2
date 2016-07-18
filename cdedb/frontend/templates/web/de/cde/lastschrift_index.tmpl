@@ -28,11 +28,11 @@
             <tr><th>Mitglied</th><th></th><th></th></tr>
         </thead>
         <tbody>
-        {% for lastschrift_id, lastschrift in lastschrift_data|dictsort %}
+        {% for lastschrift_id, lastschrift in lastschrifts|dictsort %}
             {% if lastschrift['open'] %}
                <tr>
                     <td>
-                        {{ util.persona_anchor(persona_data[lastschrift['persona_id']]) }}
+                        {{ util.persona_anchor(personas[lastschrift['persona_id']]) }}
                         ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                                     "Ermächtigung", icon="euro") }})
                     </td>
@@ -81,13 +81,13 @@
                 <tr><th></th><th>Mitglied</th><th>Datum</th><th>Betrag</th></tr>
             </thead>
             <tbody>
-            {% for transaction_id, transaction in transaction_data|xdictsort('issued_at') %}
+            {% for transaction_id, transaction in transactions|xdictsort('issued_at') %}
                 <tr>
                     <td>
                         {{ util.input_checkbox(name="transaction_ids", value=transaction_id) }}
                     </td>
                     <td>
-                    {{ util.persona_anchor(persona_data[lastschrift_data[transaction['lastschrift_id']]['persona_id']]) }}
+                    {{ util.persona_anchor(personas[lastschrifts[transaction['lastschrift_id']]['persona_id']]) }}
                     ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': transaction['lastschrift_id']}),
                                 "Ermächtigung", icon="euro") }})
                     </td>
@@ -97,7 +97,7 @@
             {% endfor %}
             </tbody>
         </table>
-        {% if transaction_data|length > 0 %}
+        {% if transactions|length > 0 %}
             Alle ausgewählten:
             {{ util.input_submit(value='Erfolg', name='success', aclass="btn btn-success") }}
             {{ util.input_submit(value='Abbruch', name='cancelled', aclass="btn btn-danger", icon="remove",
@@ -108,9 +108,9 @@
 
     <h2>Alle aktiven Einzugsermächtigungen</h2>
     <ul>
-        {% for lastschrift_id, lastschrift in lastschrift_data|dictsort %}
+        {% for lastschrift_id, lastschrift in lastschrifts|dictsort %}
            <li>
-                {{ util.persona_anchor(persona_data[lastschrift['persona_id']]) }}
+                {{ util.persona_anchor(personas[lastschrift['persona_id']]) }}
                 ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                               "Ermächtigung") }})
            </li>

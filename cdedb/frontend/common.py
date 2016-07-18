@@ -990,7 +990,7 @@ def reconnoitre_ambience(obj, rs):
               'persona', t),
         # no case_id for genesis cases since they are special and cause
         # PrivilegeErrors
-        Scout(lambda anid: obj.cdeproxy.get_lastschrift_one(rs, anid),
+        Scout(lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),
               'lastschrift_id', 'lastschrift', t),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
               'transaction_id', 'transaction',
@@ -1211,7 +1211,7 @@ def REQUESTdatadict(*proto_spec):
         return new_fun
     return wrap
 
-def request_data_extractor(rs, args):
+def request_extractor(rs, args):
     """Utility to apply REQUESTdata later than usual.
 
     This is intended to bu used, when the parameter list is not known before
@@ -1230,10 +1230,10 @@ def request_data_extractor(rs, args):
         return kwargs
     return fun(None, rs)
 
-def request_data_dict_extractor(rs, args):
+def request_dict_extractor(rs, args):
     """Utility to apply REQUESTdatadict later than usual.
 
-    Like :py:meth:`request_data_extractor`.
+    Like :py:meth:`request_extractor`.
 
     :type rs: :py:class:`RequestState`
     :type args: [str]

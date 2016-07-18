@@ -492,17 +492,17 @@ class MlBackend(AbstractBackend):
             query = glue("SELECT id FROM ml.subscription_states",
                          "WHERE mailinglist_id = %s AND persona_id = %s")
             data = self.query_one(rs, query, (mailinglist_id, persona_id))
-            new_data = {
+            new = {
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
                 'is_subscribed': is_subscribed,
                 'address': address,
             }
             if data is None:
-                return self.sql_insert(rs, "ml.subscription_states", new_data)
+                return self.sql_insert(rs, "ml.subscription_states", new)
             else:
-                new_data['id'] = unwrap(data)
-                return self.sql_update(rs, "ml.subscription_states", new_data)
+                new['id'] = unwrap(data)
+                return self.sql_update(rs, "ml.subscription_states", new)
 
     @access("ml")
     def change_subscription_state(self, rs, mailinglist_id, persona_id,

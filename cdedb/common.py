@@ -855,7 +855,7 @@ def diacritic_patterns(string):
         string = string.replace(normal, replacement)
     return string
 
-def extract_roles(session_data):
+def extract_roles(session):
     """Associate some roles to a data set.
 
     The data contains the relevant portion of attributes from the
@@ -865,28 +865,28 @@ def extract_roles(session_data):
 
     Note that this also works on non-personas (i.e. dicts of is_* flags).
 
-    :type session_data: {str: object}
+    :type session: {str: object}
     :rtype: {str}
     """
     ret = {"anonymous"}
-    if session_data['is_active']:
+    if session['is_active']:
         ret.add("persona")
     else:
         return ret
     realms = {"cde", "event", "ml", "assembly"}
     for realm in realms:
-        if session_data["is_{}_realm".format(realm)]:
+        if session["is_{}_realm".format(realm)]:
             ret.add(realm)
-            if session_data.get("is_{}_admin".format(realm)):
+            if session.get("is_{}_admin".format(realm)):
                 ret.add("{}_admin".format(realm))
     if "cde" in ret:
-        if session_data.get("is_core_admin"):
+        if session.get("is_core_admin"):
             ret.add("core_admin")
-        if session_data.get("is_admin"):
+        if session.get("is_admin"):
             ret.add("admin")
-        if session_data["is_member"]:
+        if session["is_member"]:
             ret.add("member")
-            if session_data.get("is_searchable"):
+            if session.get("is_searchable"):
                 ret.add("searchable")
     ## Grant global admin all roles
     if "admin" in ret:

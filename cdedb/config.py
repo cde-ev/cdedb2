@@ -127,7 +127,7 @@ _DEFAULTS = {
         "qview_event_user": {
             "minors": Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
-                ("user_data.persona_id", "given_names", "family_name",
+                ("persona.persona_id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),

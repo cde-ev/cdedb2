@@ -1222,7 +1222,7 @@ _LASTSCHRIFT_OPTIONAL_FIELDS = lambda: {
     'revoked_at': _datetime_or_None,
 }
 @_addvalidator
-def _lastschrift_data(val, argname=None, *, creation=False, _convert=True):
+def _lastschrift(val, argname=None, *, creation=False, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1232,7 +1232,7 @@ def _lastschrift_data(val, argname=None, *, creation=False, _convert=True):
       of a new entity.
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "lastschrift_data"
+    argname = argname or "lastschrift"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
@@ -1284,7 +1284,7 @@ def _lastschrift_transaction(val, argname=None, *, creation=False,
         val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs
 
-_SEPA_DATA_FIELDS = {
+_SEPA_TRANSACTIONS_FIELDS = {
     'issued_at': _datetime,
     'lastschrift_id': _id,
     'period_id': _id,
@@ -1297,25 +1297,25 @@ _SEPA_DATA_FIELDS = {
     'subject': _str,
     'type': _str,
 }
-_SEPA_DATA_LIMITS = {
+_SEPA_TRANSACTIONS_LIMITS = {
     'account_owner': 70,
     'subject': 140,
     'mandate_reference': 35,
     'unique_id': 35,
 }
 @_addvalidator
-def _sepa_data(val, argname=None, *, _convert=True):
+def _sepa_transactions(val, argname=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
     :type _convert: bool
     :rtype: (tuple or None, [(str or None, exception)])
     """
-    argname = argname or "sepa_data"
+    argname = argname or "sepa_transactions"
     val, errs = _iterable(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    mandatory_fields = _SEPA_DATA_FIELDS
+    mandatory_fields = _SEPA_TRANSACTIONS_FIELDS
     optional_fields = {}
     ret = []
     for entry in val:
@@ -1328,11 +1328,11 @@ def _sepa_data(val, argname=None, *, _convert=True):
         if e:
             errs.extend(e)
             continue
-        for attribute, validator in _SEPA_DATA_FIELDS.items():
+        for attribute, validator in _SEPA_TRANSACTIONS_FIELDS.items():
             if validator == _str:
                 entry[attribute] = asciificator(entry[attribute])
-            if attribute in _SEPA_DATA_LIMITS:
-                if len(entry[attribute]) > _SEPA_DATA_LIMITS[attribute]:
+            if attribute in _SEPA_TRANSACTIONS_LIMITS:
+                if len(entry[attribute]) > _SEPA_TRANSACTIONS_LIMITS[attribute]:
                     errs.append((attribute, ValueError("Too long.")))
         if entry['type'] not in ("OOFF", "FRST", "RCUR"):
             errs.append(('type', ValueError("Invalid constant.")))

@@ -30,7 +30,7 @@
             <<%- endif -%>>
         <<%- endfor -%>>}
 
-        \opening{Liebe<<< persona_data['gender']|genus('', 'r')|te >>> <<< persona_data['given_names']|te >>>,}
+        \opening{Liebe<<< persona['gender']|genus('', 'r')|te >>> <<< persona['given_names']|te >>>,}
 
         für deine Unterstützung der gemeinnützigen Arbeit des CdE durch die Initiative 25+ möchten wir uns herzlich
         bedanken.
@@ -64,10 +64,10 @@
         \begin{tabular}{l|l|l}
             \multicolumn{2}{@{}l|}{Betrag der Zuwendung}&\\
             -- in Ziffern -- & -- in Buchstaben -- & Tag der Zuwendung:\\
-            <<< "{:.2f}".format(transaction_data['amount'])|te >>>\,€
-                & <<< transaction_data['amount_words'][0]|te >>> Euro
-                  <<< transaction_data['amount_words'][1]|te >>> Cent
-                & <<< transaction_data['processed_at']|date|te >>>
+            <<< "{:.2f}".format(ambience['transaction']['amount'])|te >>>\,€
+                & <<< ambience['transaction']['amount_words'][0]|te >>> Euro
+                  <<< ambience['transaction']['amount_words'][1]|te >>> Cent
+                & <<< ambience['transaction']['processed_at']|date|te >>>
         \end{tabular}
         \par\bigskip
         Es handelt sich nicht um den Verzicht auf Erstattung von Aufwendungen.

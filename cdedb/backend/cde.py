@@ -147,8 +147,8 @@ class CdEBackend(AbstractBackend):
         return {e['id']: e['persona_id'] for e in data}
 
     @access("member")
-    @singularize("get_lastschrift_one")
-    def get_lastschrift(self, rs, ids):
+    @singularize("get_lastschrift")
+    def get_lastschrifts(self, rs, ids):
         """Retrieve direct debit permits.
 
         :type rs: :py:class:`cdedb.common.RequestState`
@@ -172,7 +172,7 @@ class CdEBackend(AbstractBackend):
         :rtype: int
         :returns: standard return code
         """
-        data = affirm("lastschrift_data", data)
+        data = affirm("lastschrift", data)
         with Atomizer(rs):
             ## First check whether we revoke a lastschrift
             log_code = const.FinanceLogCodes.modify_lastschrift
@@ -197,7 +197,7 @@ class CdEBackend(AbstractBackend):
         :rtype: int
         :returns: id of the new direct debit permit
         """
-        data = affirm("lastschrift_data", data, creation=True)
+        data = affirm("lastschrift", data, creation=True)
         data['submitted_by'] = rs.user.persona_id
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "cde.lastschrift", data)

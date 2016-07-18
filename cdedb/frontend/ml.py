@@ -219,7 +219,7 @@ class MlFrontend(AbstractUserFrontend):
                 rs, rs.ambience['mailinglist']['gateway'])
         event = {}
         if rs.ambience['mailinglist']['event_id']:
-            event = self.eventproxy.get_event_data_one(
+            event = self.eventproxy.get_event(
                 rs, rs.ambience['mailinglist']['event_id'])
         assembly = {}
         if rs.ambience['mailinglist']['assembly_id']:

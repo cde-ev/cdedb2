@@ -29,14 +29,14 @@
         \opening{}
 
         \begin{tabular}{ll}
-            <<% if persona_data %>>
-                Name & <<< "{} {}".format(persona_data['given_names'], persona_data['family_name'])|te >>>\\
-                Adresszusatz & <<< persona_data['address_supplement']|te >>>\\
-                Straße & <<< persona_data['address']|te >>>\\
-                PLZ, Ort & <<< "{} {}".format(persona_data['postal_code'], persona_data['location'])|te >>>\\
-                Land & <<< persona_data['country']|te >>>\\
-                E-Mail & <<< persona_data['username']|te >>>\\
-                Datenbank-ID & <<< persona_data['id']|cdedbid|te >>>\\
+            <<% if persona %>>
+                Name & <<< "{} {}".format(persona['given_names'], persona['family_name'])|te >>>\\
+                Adresszusatz & <<< persona['address_supplement']|te >>>\\
+                Straße & <<< persona['address']|te >>>\\
+                PLZ, Ort & <<< "{} {}".format(persona['postal_code'], persona['location'])|te >>>\\
+                Land & <<< persona['country']|te >>>\\
+                E-Mail & <<< persona['username']|te >>>\\
+                Datenbank-ID & <<< persona['id']|cdedbid|te >>>\\
             <<% else %>>
                 Name & \makebox[10cm]{\dotfill}\\
                 Adresszusatz & \makebox[10cm]{\dotfill}\\

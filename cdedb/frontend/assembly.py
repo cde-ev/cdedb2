@@ -10,7 +10,7 @@ import werkzeug
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access,
-    check_validation as check, request_data_extractor)
+    check_validation as check, request_extractor)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
 from cdedb.common import merge_dicts, unwrap, now, ProxyShim
@@ -503,7 +503,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot = rs.ambience['ballot']
         if ballot['votes']:
             voted = unwrap(
-                request_data_extractor(rs, (("vote", "[str_or_None]"),)))
+                request_extractor(rs, (("vote", "[str_or_None]"),)))
             candidates = tuple(e['moniker']
                                for e in ballot['candidates'].values()
                                if e['id'] != ballot['bar'])
@@ -517,7 +517,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     "=".join(voted), bar['moniker'],
                     "=".join(c for c in candidates if c not in voted))
         else:
-            vote = unwrap(request_data_extractor(rs, (("vote", "str"),)))
+            vote = unwrap(request_extractor(rs, (("vote", "str"),)))
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)

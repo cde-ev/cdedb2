@@ -270,18 +270,18 @@ class EventBackend(AbstractBackend):
                 raise PrivilegeError("Not privileged.")
             event = self.get_event(rs, event_id)
             part_table_template = glue(
-                "LEFT OUTER JOIN (SELECT registration_id, {part_data}",
+                "LEFT OUTER JOIN (SELECT registration_id, {part_columns}",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
                 "AS part{part_id} ON reg.id = part{part_id}.registration_id")
-            part_data_columns = ("course_id", "status", "lodgement_id",
-                                 "course_instructor",)
-            part_data_gen = lambda part_id: ", ".join(
+            part_atoms = ("course_id", "status", "lodgement_id",
+                          "course_instructor",)
+            part_columns_gen = lambda part_id: ", ".join(
                 "{col} AS {col}{part_id}".format(col=col, part_id=part_id)
-                for col in part_data_columns)
+                for col in part_atoms)
             view = _REGISTRATION_VIEW_TEMPLATE.format(
                 part_tables=" ".join(
                     part_table_template.format(
-                        part_data=part_data_gen(part_id), part_id=part_id)
+                        part_columns=part_columns_gen(part_id), part_id=part_id)
                     for part_id in event['parts']),
                 json_fields=", ".join(("registration_id int", ", ".join(
                     "{} {}".format(e['field_name'],
@@ -578,12 +578,11 @@ class EventBackend(AbstractBackend):
                         raise ValueError("Non-associated parts found.")
 
                     for anid in new:
-                        new_data = {
+                        new = {
                             'course_id': data['id'],
                             'part_id': anid,
                         }
-                        ret *= self.sql_insert(rs, "event.course_parts",
-                                               new_data)
+                        ret *= self.sql_insert(rs, "event.course_parts", new)
                 if deleted:
                     query = glue("DELETE FROM event.course_parts",
                                  "WHERE course_id = %s AND part_id = ANY(%s)")
@@ -816,11 +815,11 @@ class EventBackend(AbstractBackend):
                 fdata = unwrap(self.sql_select_one(rs, "event.registrations",
                                                    ("fields",), data['id']))
                 fdata.update(data['fields'])
-                new_data = {
+                new = {
                     'id': data['id'],
                     'fields': psycopg2.extras.Json(fdata),
                 }
-                ret *= self.sql_update(rs, "event.registrations", new_data)
+                ret *= self.sql_update(rs, "event.registrations", new)
             if 'parts' in data:
                 parts = data['parts']
                 if not(set(event['parts'].keys()) >= {x for x in parts}):
@@ -901,11 +900,11 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "event.registrations", rdata)
             for aspect in ('parts', 'choices'):
                 if aspect in data:
-                    new_data = {
+                    new = {
                         'id': new_id,
                         aspect: data[aspect]
                     }
-                    self.set_registration(rs, new_data)
+                    self.set_registration(rs, new)
             ## fix fields to contain registration id
             fdata = {
                 'id': new_id,

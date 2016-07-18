@@ -18,7 +18,7 @@ import werkzeug
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access,
     check_validation as check, event_guard,
-    REQUESTfile, request_data_extractor, cdedbid_filter)
+    REQUESTfile, request_extractor, cdedbid_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -360,7 +360,7 @@ class EventFrontend(AbstractUserFrontend):
         :param parts: ids of parts
         :rtype: {int: {str: object}}
         """
-        delete_flags = request_data_extractor(
+        delete_flags = request_extractor(
             rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
         deletes = {part_id for part_id in parts
                    if delete_flags['delete_{}'.format(part_id)]}
@@ -373,7 +373,7 @@ class EventFrontend(AbstractUserFrontend):
         params = tuple(("{}_{}".format(key, part_id), value)
                        for part_id in parts if part_id not in deletes
                        for key, value in spec.items())
-        data = request_data_extractor(rs, params)
+        data = request_extractor(rs, params)
         ret  = {
             part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
             for part_id in parts if part_id not in deletes
@@ -382,12 +382,12 @@ class EventFrontend(AbstractUserFrontend):
             ret[part_id] = None
         marker = 1
         while marker < 2**10:
-            will_create = unwrap(request_data_extractor(
+            will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                data = request_data_extractor(rs, params)
+                data = request_extractor(rs, params)
                 ret[-marker] = {key: data["{}_-{}".format(key, marker)]
                                 for key in spec}
             else:
@@ -447,7 +447,7 @@ class EventFrontend(AbstractUserFrontend):
         :param fields: ids of fields
         :rtype: {int: {str: object}}
         """
-        delete_flags = request_data_extractor(
+        delete_flags = request_extractor(
             rs, (("delete_{}".format(field_id), "bool") for field_id in fields))
         deletes = {field_id for field_id in fields
                    if delete_flags['delete_{}'.format(field_id)]}
@@ -456,7 +456,7 @@ class EventFrontend(AbstractUserFrontend):
                                ("entries_{}".format(anid), "str_or_None"))
         for field_id in fields:
             if field_id not in deletes:
-                tmp = request_data_extractor(rs, params(field_id))
+                tmp = request_extractor(rs, params(field_id))
                 temp = {}
                 temp['kind'] = tmp["kind_{}".format(field_id)]
                 temp['entries'] = tmp["entries_{}".format(field_id)]
@@ -470,10 +470,10 @@ class EventFrontend(AbstractUserFrontend):
                                ("kind_-{}".format(anid), "str"),
                                ("entries_-{}".format(anid), "str_or_None"))
         while marker < 2**10:
-            will_create = unwrap(request_data_extractor(
+            will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
-                tmp = request_data_extractor(rs, params(marker))
+                tmp = request_extractor(rs, params(marker))
                 temp = {}
                 temp['field_name'] = tmp["field_name_-{}".format(marker)]
                 temp['kind'] = tmp["kind_-{}".format(marker)]
@@ -1133,7 +1133,7 @@ class EventFrontend(AbstractUserFrontend):
                            ("notes", "str_or_None"))
         if parts is None:
             standard_params += (("parts", "[int]"),)
-        standard = request_data_extractor(rs, standard_params)
+        standard = request_extractor(rs, standard_params)
         if parts is not None:
             standard['parts'] = tuple(
                 part_id for part_id, entry in parts.items()
@@ -1141,11 +1141,11 @@ class EventFrontend(AbstractUserFrontend):
         choice_params = (("course_choice{}_{}".format(part_id, i), "id")
                          for part_id in standard['parts']
                          for i in range(3))
-        choices = request_data_extractor(rs, choice_params)
+        choices = request_extractor(rs, choice_params)
         instructor_params = (
             ("course_instructor{}".format(part_id), "id_or_None")
             for part_id in standard['parts'])
-        instructor = request_data_extractor(rs, instructor_params)
+        instructor = request_extractor(rs, instructor_params)
         if not standard['parts']:
             rs.errors.append(("parts",
                               ValueError("Must select at least one part.")))
@@ -1373,7 +1373,7 @@ class EventFrontend(AbstractUserFrontend):
             (f(entry)['field_name'], "{}_or_None".format(f(entry)['kind']))
             for entry in questionnaire
             if entry['field_id'] and not entry['readonly'])
-        data = request_data_extractor(rs, params)
+        data = request_extractor(rs, params)
         if rs.errors:
             return self.questionnaire_form(rs, event_id)
 
@@ -1407,7 +1407,7 @@ class EventFrontend(AbstractUserFrontend):
         :param num: number of rows to expect
         :rtype: [{str: object}]
         """
-        delete_flags = request_data_extractor(
+        delete_flags = request_extractor(
             rs, (("delete_{}".format(i), "bool") for i in range(num)))
         deletes = {i for i in range(num) if delete_flags['delete_{}'.format(i)]}
         spec = {
@@ -1420,19 +1420,19 @@ class EventFrontend(AbstractUserFrontend):
         params = tuple(("{}_{}".format(key, i), value)
                        for i in range(num) if i not in deletes
                        for key, value in spec.items())
-        data = request_data_extractor(rs, params)
+        data = request_extractor(rs, params)
         questionnaire = tuple(
             {key: data["{}_{}".format(key, i)] for key in spec}
             for i in range(num) if i not in deletes
         )
         marker = 1
         while marker < 2**10:
-            will_create = unwrap(request_data_extractor(
+            will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
-                data = request_data_extractor(rs, params)
+                data = request_extractor(rs, params)
                 questionnaire += ({key: data["{}_-{}".format(key, marker)]
                                    for key in spec},)
             else:
@@ -1575,7 +1575,7 @@ class EventFrontend(AbstractUserFrontend):
             ("reg.mixed_lodging", "bool"), ("reg.checkin", "date_or_None"),
             ("reg.foto_consent", "bool"),
             ("reg.real_persona_id", "cdedbid_or_None"))
-        raw_reg = request_data_extractor(rs, reg_params)
+        raw_reg = request_extractor(rs, reg_params)
         part_params = []
         for part_id in event['parts']:
             prefix = "part{}".format(part_id)
@@ -1586,12 +1586,12 @@ class EventFrontend(AbstractUserFrontend):
                 for suffix in ("course_id", "course_choice_0",
                                "course_choice_1", "course_choice_2",
                                "course_instructor", "lodgement_id"))
-        raw_parts = request_data_extractor(rs, part_params)
+        raw_parts = request_extractor(rs, part_params)
         field_params = tuple(
             ("fields.{}".format(fdata['field_name']),
              "{}_or_None".format(fdata['kind']))
             for fdata in event['fields'].values())
-        raw_fields = request_data_extractor(rs, field_params)
+        raw_fields = request_extractor(rs, field_params)
 
         new_parts = {
             part_id: {
@@ -1663,7 +1663,7 @@ class EventFrontend(AbstractUserFrontend):
         singnal legal consent which is not provided this way.
         """
         persona_id = unwrap(
-            request_data_extractor(rs, (("persona.persona_id", "cdedbid"),)))
+            request_extractor(rs, (("persona.persona_id", "cdedbid"),)))
         if (persona_id is not None
                 and not self.coreproxy.verify_personas(
                     rs, (persona_id,), required_roles=("event",))):
@@ -1958,7 +1958,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         params = tuple(("inhabitants_{}".format(part_id), "int_csv_list")
                        for part_id in rs.ambience['event']['parts'])
-        data = request_data_extractor(rs, params)
+        data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -2036,7 +2036,7 @@ class EventFrontend(AbstractUserFrontend):
         """Alter who is assigned to this course."""
         params = tuple(("attendees_{}".format(part_id), "int_csv_list")
                        for part_id in rs.ambience['course']['parts'])
-        data = request_data_extractor(rs, params)
+        data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_attendees_form(rs, event_id, course_id)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -2220,13 +2220,13 @@ class EventFrontend(AbstractUserFrontend):
         ## forbid NULL and are settable this way. If the aforementioned
         ## sentence is wrong all we get is a validation error in the
         ## backend.
-        value = unwrap(request_data_extractor(
+        value = unwrap(request_extractor(
             rs, (("value", "{}_or_None".format(spec[column])),)))
         selection_params = (("row_{}".format(i), "bool")
                             for i in range(num_rows))
-        selection = request_data_extractor(rs, selection_params)
+        selection = request_extractor(rs, selection_params)
         id_params = (("row_{}_id".format(i), "int") for i in range(num_rows))
-        ids = request_data_extractor(rs, id_params)
+        ids = request_extractor(rs, id_params)
         if rs.errors:
             return self.registration_query(rs, event_id, CSV=False,
                                            is_search=True)
@@ -2355,7 +2355,7 @@ class EventFrontend(AbstractUserFrontend):
         kind = "{}_or_None".format(event['fields'][field_id]['kind'])
         data_params = tuple(("input{}".format(registration_id), kind)
                             for registration_id in registration_ids)
-        data = request_data_extractor(rs, data_params)
+        data = request_extractor(rs, data_params)
         if rs.errors:
             return self.field_set_form(rs, event_id, field_id)
 

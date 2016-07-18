@@ -66,14 +66,14 @@
     {% endif %}
 {% endmacro %}
 
-{% macro persona_anchor(persona_data, verbose=False) %}
+{% macro persona_anchor(persona, verbose=False) %}
     {% if verbose %}
-        {{ href(show_user_link(persona_data['id']), "{} {} {} {}".format(
-              persona_data['title'], persona_data['given_names'],
-              persona_data['family_name'], persona_data['name_supplement'])) }}
+        {{ href(show_user_link(persona['id']), "{} {} {} {}".format(
+              persona['title'], persona['given_names'],
+              persona['family_name'], persona['name_supplement'])) }}
     {% else %}
-        {{ href(show_user_link(persona_data['id']), "{} {}".format(
-              persona_data['given_names'], persona_data['family_name'])) }}
+        {{ href(show_user_link(persona['id']), "{} {}".format(
+              persona['given_names'], persona['family_name'])) }}
     {% endif %}
 {% endmacro %}
 

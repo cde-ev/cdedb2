@@ -13,8 +13,8 @@ import psycopg2.extensions
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, merge_dicts, request_data_extractor, REQUESTfile,
-    request_data_dict_extractor, event_usage)
+    check_validation as check, merge_dicts, request_extractor, REQUESTfile,
+    request_dict_extractor, event_usage)
 from cdedb.common import (
     ProxyShim, glue, pairwise, extract_roles, privilege_tier, unwrap)
 from cdedb.backend.core import CoreBackend
@@ -84,7 +84,7 @@ class CoreFrontend(AbstractFrontend):
     def change_meta_info(self, rs):
         """Change the meta info constants."""
         data_params = tuple((key, "any") for key in self.conf.META_INFO_KEYS)
-        data = request_data_extractor(rs, data_params)
+        data = request_extractor(rs, data_params)
         data = check(rs, "meta_info", data, keys=self.conf.META_INFO_KEYS)
         if rs.errors:
             return self.meta_info_form(rs)
@@ -315,7 +315,7 @@ class CoreFrontend(AbstractFrontend):
         for realm in ('ml', 'assembly', 'event', 'cde'):
             if realm in rs.user.roles:
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
-        data = request_data_dict_extractor(rs, attributes)
+        data = request_dict_extractor(rs, attributes)
         data['id'] = rs.user.persona_id
         data = check(rs, "persona", data)
         if rs.errors:
@@ -459,7 +459,7 @@ class CoreFrontend(AbstractFrontend):
         for realm in ('ml', 'assembly', 'event', 'cde'):
             if realm in roles:
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
-        data = request_data_dict_extractor(rs, attributes)
+        data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id
         data = check(rs, "persona", data)
         if rs.errors:
@@ -1033,13 +1033,13 @@ class CoreFrontend(AbstractFrontend):
         ## no validation since the input stays valid, even if some options
         ## are lost
         log = self.coreproxy.retrieve_changelog_meta(rs, stati, start, stop)
-        personas = (
+        persona_ids = (
             {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['reviewed_by'] for entry in log if entry['reviewed_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        persona_data = self.coreproxy.get_personas(rs, personas)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_changelog_meta", {
-            'log': log, 'persona_data': persona_data})
+            'log': log, 'personas': personas})
 
     @access("core_admin")
     @REQUESTdata(("codes", "[int]"), ("persona_id", "cdedbid_or_None"),
@@ -1051,9 +1051,9 @@ class CoreFrontend(AbstractFrontend):
         ## no validation since the input stays valid, even if some options
         ## are lost
         log = self.coreproxy.retrieve_log(rs, codes, persona_id, start, stop)
-        personas = (
+        persona_ids = (
             {entry['submitted_by'] for entry in log if entry['submitted_by']}
             | {entry['persona_id'] for entry in log if entry['persona_id']})
-        user_data = self.coreproxy.get_personas(rs, personas)
-        return self.render(rs, "view_log", {'log': log, 'user_data': user_data})
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+        return self.render(rs, "view_log", {'log': log, 'personas': personas})
 
