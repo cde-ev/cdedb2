@@ -2,25 +2,24 @@
 
 """Services for the core realm."""
 
-import cgitb
 import hashlib
 import logging
 import os.path
-import sys
 import uuid
 
-import psycopg2.extensions
+import werkzeug
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_extractor, REQUESTfile,
     request_dict_extractor, event_usage)
 from cdedb.common import (
-    ProxyShim, glue, pairwise, extract_roles, privilege_tier, unwrap)
+    ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
+    PrivilegeError)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
-from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
+from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
     _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -241,7 +240,7 @@ class CoreFrontend(AbstractFrontend):
                      for f in fields}
         stati = const.MemberChangeStati
         pending = {i for i in history
-                   if (history[i]['change_status'] == stati.pending)}
+                   if history[i]['change_status'] == stati.pending}
         ## Track the omitted information whether a new value finally got
         ## committed or not.
         ##
@@ -355,15 +354,16 @@ class CoreFrontend(AbstractFrontend):
         choices = {'pevent_id': events}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
         params = {
-            'spec': spec, 'choices': choices, 'default_queries': default_queries,
-            'query': query}
+            'spec': spec, 'choices': choices,
+            'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                data = self.fill_template(rs, 'web', 'csv_search_result',
+                                          params)
                 return self.send_file(rs, data=data, inline=False,
                                       filename=self.i18n("result.txt", rs.lang))
         else:
@@ -399,7 +399,8 @@ class CoreFrontend(AbstractFrontend):
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                data = self.fill_template(rs, 'web', 'csv_search_result',
+                                          params)
                 return self.send_file(rs, data=data, inline=False,
                                       filename=self.i18n("result.txt", rs.lang))
         else:
@@ -443,11 +444,11 @@ class CoreFrontend(AbstractFrontend):
             'ml': set(),
             'assembly': set(),
             'event': {
-                "gender",  "birthday","telephone", "mobile",
+                "gender", "birthday", "telephone", "mobile",
                 "address_supplement", "address", "postal_code", "location",
                 "country"},
             'cde': {
-                "gender",  "birthday","telephone", "mobile",
+                "gender", "birthday", "telephone", "mobile",
                 "address_supplement", "address", "postal_code", "location",
                 "country",
                 "birth_name", "address_supplement2", "address2", "postal_code2",
@@ -561,7 +562,7 @@ class CoreFrontend(AbstractFrontend):
             data['is_ml_realm'] = True
         data = check(rs, "persona", data, transition=True)
         if rs.errors:
-            return self.promote_user_form(rs, persona_id)
+            return self.promote_user_form(rs, persona_id, target_realm)
         code = self.coreproxy.change_persona_realms(rs, data)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
@@ -813,7 +814,7 @@ class CoreFrontend(AbstractFrontend):
     def admin_username_change(self, rs, persona_id, new_username):
         """Change username without verification."""
         if rs.errors:
-            return self.admin_username_change_form(persona_id)
+            return self.admin_username_change_form(rs, persona_id)
         code, message = self.coreproxy.change_username(
             rs, persona_id, new_username, password=None)
         self.notify_return_code(rs, code, success="Username changed.",
@@ -908,9 +909,9 @@ class CoreFrontend(AbstractFrontend):
         stati = (const.GenesisStati.to_review, const.GenesisStati.approved)
         realm = None
         relevants = {"core_admin", "event_admin", "ml_admin"}
-        if (relevants & rs.user.roles == {"event_admin"}):
+        if relevants & rs.user.roles == {"event_admin"}:
             realm = "event"
-        elif (relevants & rs.user.roles == {"ml_admin"}):
+        elif relevants & rs.user.roles == {"ml_admin"}:
             realm = "ml"
         data = self.coreproxy.genesis_list_cases(rs, stati=stati, realm=realm)
         review_ids = tuple(

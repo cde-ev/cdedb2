@@ -100,8 +100,8 @@
                 <dd>{{ data['gender']|gender|e }}</dd>
             {% endif %}
         </dl>
-        
-        
+
+
         {% if data['id'] == user.persona_id or is_admin %}
             <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
             <dl class="dl-horizontal">
@@ -112,7 +112,7 @@
                     <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}</dd>
                 {% endif %}
             </dl>
-            
+
             <dl class="dl-horizontal">
                 <dt>Bereiche</dt>
                 <dd>
@@ -132,7 +132,7 @@
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
                 </dd>
-                
+
                 <dt>Admin-Privilegien</dt>
                 <dd>
                     {% set vars = {'any_privilege': False} %}
@@ -154,13 +154,13 @@
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
                 </dd>
-                
+
                 {% if data['notes'] and is_admin %}
                     <dt>Notizen</dt>
                     <dd>{{ data['notes']|rst }}</dd>
                 {% endif %}
             </dl>
-            
+
             {% if data['is_cde_realm'] %}
                 <dl class="dl-horizontal">
                     <dt>Mitgliedschaft</dt>
@@ -172,13 +172,13 @@
                         {% endif %}
                         {% if is_admin %}
                             {{ util.href(cdedblink('core/modify_membership_form'), "Status ändern", icon="pencil",
-                                    aclass="btn btn-xs btn-warning") }}
+                                         aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                     </dd>
-                    
+
                     <dt>Guthaben</dt>
                     <dd>{{ data['balance']|e }}€</dd>
-                    
+
                     {% if data['is_member'] %}
                         <dt>Sichtbarkeit</dt>
                         <dd>
@@ -189,31 +189,31 @@
                                 {% if not data['decided_search'] %}
                                     Noch nicht entschieden. (Daten sind nicht sichtbar)
                                     {% if data['id'] == user.persona_id %}
-                                        {{ util.href(cdedblink('cde/consent_decision'), "Entscheiden", icon="hand-right",
-                                                aclass="btn btn-xs btn-primary") }}
+                                        {{ util.href(cdedblink('cde/consent_decision'), "Entscheiden",
+                                                     icon="hand-right", aclass="btn btn-xs btn-primary") }}
                                     {% endif %}
                                 {% else %}
                                     Daten sind nicht sichtbar.
                                 {% endif %}
                             {% endif %}
                         </dd>
-                        
+
                         <dt>Datenzugriff für BuB</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=data['bub_search']) }}
                             {% if data['bub_search'] %}aktiv{% endif %}
                         </dd>
                     {% endif %}
-                    
+
                     <dt>CdE-Wolke</dt>
                     <dd>
                         {{ util.deko_checkbox(checked=data['cloud_account']) }}
                         {% if data['cloud_account'] %}Zugriff aktiv{% endif %}
                     </dd>
-                    
+
                     <dd>
                         {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                "Einzugsermächtigung …", icon="euro") }}
+                                     "Einzugsermächtigung …", icon="euro") }}
                     </dd>
                 </dl>
             {% endif %}
@@ -274,7 +274,7 @@
                 </dd>
             </dl>
         {% endif %}
-        
+
         {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests'] %}
             <h4 class="heading-underline">Lebenslauf</h4>
             <dl class="dl-horizontal">
@@ -321,7 +321,7 @@
             {% endfor %}
             </ul>
         {% endif %}
-        
+
         {% if data['free_form'] %}
             <h4 class="heading-underline">Sonstiges …</h4>
             {{ data['free_form']|rst }}

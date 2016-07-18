@@ -105,7 +105,8 @@
                                 for (var key in choices[selected]) {
                                     if (choices[selected].hasOwnProperty(key)) {
                                         $("#value_input").append($("<option>", {
-                                            "value": key, "html": choices[selected][key], "selected": (key == previous)}));
+                                            "value": key, "html": choices[selected][key],
+                                            "selected": (key == previous)}));
                                     }
                                 }
                             } else if (spec[selected] == "bool") {
@@ -117,8 +118,8 @@
                                                                             "selected": (key == previous)}));
                                 }
                             } else {
-                                $("#value_span").append($("<input>", {"name": "value", "id": "value_input", "type": "text",
-                                                                      "value": previous}));
+                                $("#value_span").append($("<input>", {"name": "value", "id": "value_input",
+                                                                      "type": "text", "value": previous}));
                             }
                         }
                         $(document).ready(function(){

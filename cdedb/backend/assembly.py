@@ -33,13 +33,11 @@ import os.path
 import string
 
 from cdedb.backend.common import (
-    access, internal_access, affirm_validation as affirm,
-    affirm_array_validation as affirm_array, Silencer,
-    singularize, AbstractBackend)
+    access, affirm_validation as affirm, affirm_array_validation as
+    affirm_array, Silencer, singularize, AbstractBackend)
 from cdedb.common import (
-    glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS,
-    ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
-    FUTURE_TIMESTAMP, now)
+    glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
+    ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const

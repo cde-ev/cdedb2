@@ -687,7 +687,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
         self.submit(f)
-        self.assertTitle("\nFeld transportation setzen (Große Testakademie 2222)\n")
+        self.assertTitle("Feld transportation setzen\n    (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("pedes", f['input2'].value)
         f['input2'] = "etc"
@@ -697,7 +697,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
         self.submit(f)
-        self.assertTitle("\nFeld transportation setzen (Große Testakademie 2222)\n")
+        self.assertTitle("Feld transportation setzen\n    (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("etc", f['input2'].value)
 
@@ -706,7 +706,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
         self.submit(f)
-        self.assertTitle("\nFeld lodge setzen (Große Testakademie 2222)\n")
+        self.assertTitle("Feld lodge setzen\n    (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("", f['input4'].value)
         f['input4'] = "Test\nmit\n\nLeerzeilen"
@@ -716,7 +716,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
         self.submit(f)
-        self.assertTitle("\nFeld lodge setzen (Große Testakademie 2222)\n")
+        self.assertTitle("Feld lodge setzen\n    (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("Test\nmit\nLeerzeilen", f['input4'].value)
 

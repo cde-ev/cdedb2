@@ -12,13 +12,12 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access,
     check_validation as check, request_extractor)
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
+from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import merge_dicts, unwrap, now, ProxyShim
 import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.database.connection import Atomizer
-
 
 #: Magic value to signal abstention during voting. Used during the emulation
 #: of classical voting. This can not occur as a moniker since it contains
@@ -114,7 +113,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             result = self.assemblyproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                data = self.fill_template(rs, 'web', 'csv_search_result',
+                                          params)
                 return self.send_file(rs, data=data, inline=False,
                                       filename=self.i18n("result.txt", rs.lang))
         else:

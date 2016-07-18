@@ -20,7 +20,7 @@
     <p>
         Derzeit befinden wir uns in Semester Nummer <span class="label label-default">{{ period['id']|e }}</span>.
     </p>
-    
+
     <script type="text/javascript">
         $(function() {
             $('#billform').cdedbProtectAction(null, function() {
@@ -35,7 +35,7 @@
             $('#proceedexpulsform').cdedbProtectAction();
         });
     </script>
-    
+
     <div class="row">
             <div class="col-md-6">
             <div class="panel {% if period['billing_done'] %}panel-default{% else %}panel-primary{% endif %}">
@@ -63,7 +63,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <div class="panel {% if period['ejection_done'] or not period['billing_done'] %}
                     panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
@@ -92,7 +92,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">            
+        <div class="col-md-6">
             <div class="panel {% if period['balance_done'] or not period['ejection_done'] %}
                     panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
@@ -166,7 +166,8 @@
                             {{ util.input_submit(value="Mails verschicken", icon="send") }}
                             </div>
                         </form>
-                        <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="noaddresscheckform">
+                        <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST"
+                          id="noaddresscheckform">
                             {{ util.input_hidden("skip", value=True) }}
                             {{ util.input_submit(value="Als erledigt markieren", aclass="btn btn-warning",
                                     icon="check")}}
@@ -174,7 +175,7 @@
                     {% endif %}
                 </div>
             </div>
-        </div>    
+        </div>
         <div class="col-md-6">
             <div class="panel {% if not expuls['addresscheck_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">

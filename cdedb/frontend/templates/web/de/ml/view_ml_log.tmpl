@@ -2,7 +2,8 @@
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-{{ ambience['mailinglist']['title']|e }} -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+    {{ ambience['mailinglist']['title']|e }} --
+    Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
 {% endblock %}
 {% block content %}
     <table>

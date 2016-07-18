@@ -52,5 +52,6 @@
             {% endfor %}
         </ul>
     {% endif %}
-    {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': ambience['assembly']['id']}), "Datei anhängen")}}
+    {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': ambience['assembly']['id']}),
+                 "Datei anhängen") }}
 {% endblock %}

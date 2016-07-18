@@ -6,20 +6,17 @@ variant for external participants.
 
 import collections
 import copy
-import datetime
 
 import psycopg2.extras
 
 from cdedb.backend.common import (
-    access, internal_access, affirm_validation as affirm, Silencer,
-    affirm_array_validation as affirm_array, singularize, PYTHON_TO_SQL_MAP,
-    AbstractBackend)
+    access, affirm_validation as affirm, AbstractBackend,
+    affirm_array_validation as affirm_array, singularize, PYTHON_TO_SQL_MAP)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
-    glue, PrivilegeError,
-    EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap, now, ProxyShim,
-    PERSONA_EVENT_FIELDS, INSTITUTION_FIELDS, CourseFilterPositions)
+    glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
+    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap,
+    now, ProxyShim, PERSONA_EVENT_FIELDS, CourseFilterPositions)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -232,8 +229,8 @@ class EventBackend(AbstractBackend):
             today = now().date()
             ret = {e['id']: e['title']
                    for e in data if (e['registration_start'] <= today
-                                         and e['event_end'] is not None
-                                         and e['event_end'] >= today)}
+                                     and e['event_end'] is not None
+                                     and e['event_end'] >= today)}
             return ret
 
     @access("persona")
@@ -1131,7 +1128,7 @@ class EventBackend(AbstractBackend):
                 "CDEDB_EXPORT_EVENT_VERSION": _CDEDB_EXPORT_EVENT_VERSION,
                 'id': event_id,
                 'event.events': self.sql_select(
-                        rs, "event.events", EVENT_FIELDS, (event_id,)),
+                    rs, "event.events", EVENT_FIELDS, (event_id,)),
                 'timestamp': now(),
             }
             ret['event.event_parts'] = self.sql_select(

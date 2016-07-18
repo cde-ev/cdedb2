@@ -4,27 +4,24 @@
 concluded events.
 """
 
-import collections
-import copy
 import datetime
 
-import psycopg2.extras
-
 from cdedb.backend.common import (
-    access, internal_access, affirm_validation as affirm, Silencer,
-    affirm_array_validation as affirm_array, singularize, PYTHON_TO_SQL_MAP,
-    AbstractBackend)
+    access, affirm_validation as affirm, Silencer, AbstractBackend,
+    affirm_array_validation as affirm_array, singularize)
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
-    EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS, REGISTRATION_FIELDS,
-    REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap, now, ProxyShim,
-    PERSONA_EVENT_FIELDS, INSTITUTION_FIELDS)
+    unwrap, now, ProxyShim, INSTITUTION_FIELDS)
 from cdedb.database.connection import Atomizer
-from cdedb.query import QueryOperators
 import cdedb.database.constants as const
 
 class PastEventBackend(AbstractBackend):
+    """Handle concluded events.
+
+    This is somewhere between CdE and event realm, so we split it into
+    its own realm.
+    """
     realm = "past_event"
 
     def __init__(self, configpath):
@@ -223,12 +220,12 @@ class PastEventBackend(AbstractBackend):
             "FROM past_event.events LEFT JOIN past_event.institutions",
             "ON institutions.id = events.institution")
         data = self.query_all(rs, query, tuple())
-        ret =  {e['pevent_id']: {'tempus': e['tempus'],
-                                 'institution_id': e['institution_id'],
-                                 'institution_moniker': e['moniker'],
-                                 'courses': 0,
-                                 'participants': 0,}
-                for e in data}
+        ret = {e['pevent_id']: {'tempus': e['tempus'],
+                                'institution_id': e['institution_id'],
+                                'institution_moniker': e['moniker'],
+                                'courses': 0,
+                                'participants': 0,}
+               for e in data}
         query = glue(
             "SELECT events.id, COUNT(*) AS courses FROM past_event.events",
             "JOIN past_event.courses ON courses.pevent_id = events.id",

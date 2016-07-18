@@ -35,7 +35,8 @@
         {{ util.make_icon('eye-close') }} Alle Felder anzeigen
     </button>
     {{ util.href(show_user_link(pending['id']), "Profil anzeigen", icon="share-alt", aclass="btn btn-sm btn-info") }}
-    {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
+    {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), "Geschichte",
+                 aclass="btn btn-info btn-sm", icon="time") }}
     <script type="text/javascript">
         $(function() {
             $('#diff-view').cdedbHideUnimportant($('#unhide-button'));
@@ -55,7 +56,7 @@
         {% call(next) show_diff('gender', "Geschlecht", True) %}
             {% if next %}{{ pending['gender']|gender|e }}{% else %}{{ current['gender']|gender|e }}{% endif %}
         {% endcall %}
-        
+
         <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
         {% call(next) show_diff('id', "CdeDB-ID", True) %}
             {{ util.href(show_user_link(pending['id']), pending['id']|cdedbid|e, aclass='nowrap') }}
@@ -63,27 +64,27 @@
         {{ show_diff('is_member', "CdE-Mitgliedschaft", True) }}
         {{ show_diff('balance', "Guthaben") }}
         {{ show_diff('bub_search', "Sichtbar für BuB") }}
-        
+
         <h4 class="heading-underline">Kontakt</h4>
         {{ show_diff('username', "Email", True) }}
         {{ show_diff('telephone', "Telefon") }}
         {{ show_diff('mobile', "Mobiltelefon") }}
         {{ show_diff('weblink', "WWW") }}
-        
+
         <h4 class="heading-underline">Adresse</h4>
         {{ show_diff('address', "Straße") }}
         {{ show_diff('address_supplement', "Adresszusatz") }}
         {{ show_diff('postal_code', "PLZ") }}
         {{ show_diff('location', "Ort") }}
         {{ show_diff('country', "Land") }}
-        
+
         <h4 class="heading-underline">Zweitadresse</h4>
         {{ show_diff('address2', "Straße") }}
         {{ show_diff('address_supplement2', "Adresszusatz") }}
         {{ show_diff('postal_code2', "PLZ") }}
         {{ show_diff('location2', "Ort") }}
         {{ show_diff('country2', "Land") }}
-        
+
         <h4 class="heading-underline">Lebenslauf</h4>
         {{ show_diff('specialisation', "Fachgebiet") }}
         {{ show_diff('affiliation', "Schule, Uni, ...") }}
@@ -91,7 +92,7 @@
         {{ show_diff('interests', "Interessen") }}
         {{ show_diff('free_form', "Sonstiges") }}
     </div>
-        
+
     <form action="{{ cdedblink('core/resolve_change')|e }}" method="POST" id="ackchangeform" style="display: inline;">
         {{ util.input_hidden(name="ack", value="True") }}
         {{ util.input_hidden(name="generation", value=pending['generation']) }}

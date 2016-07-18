@@ -4,7 +4,6 @@
 
 from collections import OrderedDict
 import copy
-import csv
 import itertools
 import logging
 import os
@@ -27,7 +26,6 @@ from cdedb.common import (
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 import cdedb.database.constants as const
-from cdedb.database.connection import Atomizer
 
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
@@ -203,7 +201,8 @@ class EventFrontend(AbstractUserFrontend):
             result = self.eventproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                data = self.fill_template(rs, 'web', 'csv_search_result',
+                                          params)
                 return self.send_file(rs, data=data, inline=False,
                                       filename=self.i18n("result.txt", rs.lang))
         else:
@@ -374,7 +373,7 @@ class EventFrontend(AbstractUserFrontend):
                        for part_id in parts if part_id not in deletes
                        for key, value in spec.items())
         data = request_extractor(rs, params)
-        ret  = {
+        ret = {
             part_id: {key: data["{}_{}".format(key, part_id)] for key in spec}
             for part_id in parts if part_id not in deletes
         }
@@ -548,8 +547,8 @@ class EventFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in registrations.values()))
             attendees = self.calculate_groups(
-                (course_id,), rs.ambience['event'], registrations, key="course_id",
-                personas=personas)
+                (course_id,), rs.ambience['event'], registrations,
+                key="course_id", personas=personas)
             params['personas'] = personas
             params['registrations'] = registrations
             params['attendees'] = attendees
@@ -756,15 +755,15 @@ class EventFrontend(AbstractUserFrontend):
         stati = const.RegistrationPartStati
         for course_id, course in courses.items():
             for part_id in rs.ambience['event']['parts']:
-                assigned = sum(1
-                    for reg in all_regs.values()
+                assigned = sum(
+                    1 for reg in all_regs.values()
                     if reg['parts'][part_id]['status'] == stati.participant
                     and reg['parts'][part_id]['course_id'] == course_id)
-                all_instructors = sum(1
-                    for reg in all_regs.values()
+                all_instructors = sum(
+                    1 for reg in all_regs.values()
                     if reg['parts'][part_id]['course_instructor'] == course_id)
-                assigned_instructors = sum(1
-                    for reg in all_regs.values()
+                assigned_instructors = sum(
+                    1 for reg in all_regs.values()
                     if reg['parts'][part_id]['status'] == stati.participant
                     and reg['parts'][part_id]['course_id'] == course_id
                     and reg['parts'][part_id]['course_instructor'] == course_id)
@@ -830,6 +829,7 @@ class EventFrontend(AbstractUserFrontend):
         Provide an overview of the number of choices and assignments for
         all courses.
         """
+        event = rs.ambience['event']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -842,8 +842,8 @@ class EventFrontend(AbstractUserFrontend):
                         and reg['choices'][part_id][i] == course_id
                         and (reg['parts'][part_id]['status']
                              == const.RegistrationPartStati.participant)
-                        and reg['persona_id'] not in rs.ambience['event']['orgas']))
-                for part_id in rs.ambience['event']['parts']
+                        and reg['persona_id'] not in event['orgas']))
+                for part_id in event['parts']
                 for i in range(3)
             }
             for course_id in course_ids
@@ -855,8 +855,8 @@ class EventFrontend(AbstractUserFrontend):
                     if (reg['parts'][part_id]['course_id'] == course_id
                         and (reg['parts'][part_id]['status']
                              == const.RegistrationPartStati.participant)
-                        and reg['persona_id'] not in rs.ambience['event']['orgas']))
-                for part_id in rs.ambience['event']['parts']
+                        and reg['persona_id'] not in event['orgas']))
+                for part_id in event['parts']
             }
             for course_id in course_ids
         }
@@ -917,6 +917,7 @@ class EventFrontend(AbstractUserFrontend):
 
         This can be printed and cut to help with distribution of participants.
         """
+        event = rs.ambience['event']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
@@ -931,8 +932,8 @@ class EventFrontend(AbstractUserFrontend):
                         and reg['choices'][part_id][i] == course_id
                         and (reg['parts'][part_id]['status']
                              == const.RegistrationPartStati.participant)
-                        and reg['persona_id'] not in rs.ambience['event']['orgas']))
-                for part_id in rs.ambience['event']['parts']
+                        and reg['persona_id'] not in event['orgas']))
+                for part_id in event['parts']
                 for i in range(3)
             }
             for course_id in course_ids
@@ -951,6 +952,7 @@ class EventFrontend(AbstractUserFrontend):
         This can be printed and cut to help with distribution of
         participants. This make use of the fields 'lodge' and 'may_reserve'.
         """
+        event = rs.ambience['event']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
@@ -958,13 +960,13 @@ class EventFrontend(AbstractUserFrontend):
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
-                self.event_begin(rs.ambience['event']))
+                self.event_begin(event))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         lodge_present = any(field['field_name'] == "lodge"
-                            for field in rs.ambience['event']['fields'].values())
+                            for field in event['fields'].values())
         may_reserve_present = any(field['field_name'] == "may_reserve"
-                                  for field in rs.ambience['event']['fields'].values())
+                                  for field in event['fields'].values())
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas, 'lodge_present': lodge_present,
@@ -998,7 +1000,8 @@ class EventFrontend(AbstractUserFrontend):
                     os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png"),
                     os.path.join(work_dir, "logo-{}.png".format(course_id)))
             return self.serve_complex_latex_document(
-                rs, tmp_dir, rs.ambience['event']['shortname'], "course_lists.tex", runs)
+                rs, tmp_dir, rs.ambience['event']['shortname'],
+                "course_lists.tex", runs)
 
     @access("event")
     @REQUESTdata(("runs", "single_digit_int"))
@@ -1225,7 +1228,8 @@ class EventFrontend(AbstractUserFrontend):
         self.do_mail(
             rs, "register",
             {'To': (rs.user.username,),
-             'Subject': 'Registered for event {}'.format(rs.ambience['event']['title'])},
+             'Subject': 'Registered for event {}'.format(
+                 rs.ambience['event']['title'])},
             {'fee': fee, 'age': age})
         self.notify_return_code(rs, new_id, success="Registered for event.")
         return self.redirect(rs, "event/registration_status")
@@ -2050,8 +2054,8 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in rs.ambience['course']['parts']:
                 attends = (registration_id
                            in data["attendees_{}".format(part_id)])
-                if (attends
-                        != (course_id == registration['parts'][part_id]['course_id'])):
+                part = registration['parts'][part_id]
+                if attends != (course_id == part['course_id']):
                     new_reg['parts'][part_id] = {
                         'course_id': (course_id if attends else None)
                     }
@@ -2200,7 +2204,8 @@ class EventFrontend(AbstractUserFrontend):
                                                           event_id=event_id)
             params['result'] = result
             if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                data = self.fill_template(rs, 'web', 'csv_search_result',
+                                          params)
                 return self.send_file(rs, data=data, inline=False,
                                       filename=self.i18n("result.txt", rs.lang))
         else:

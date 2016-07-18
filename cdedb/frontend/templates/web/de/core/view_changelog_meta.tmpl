@@ -62,9 +62,10 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
             {% endfor %}
         </tbody>
     </table>
-    
+
     {{ util.box_filter_begin() }}
-        <form action="{{ cdedblink('core/view_changelog_meta')|e }}" method="GET" id="logshowform" class="form-horizontal">
+        <form action="{{ cdedblink('core/view_changelog_meta')|e }}" method="GET" id="logshowform"
+          class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for status in enums['MemberChangeStati1'] %}

@@ -81,16 +81,16 @@
     {% else %}
         {% if is_admin %}
             <div class="list-group tear-down">
-                {{ util.href(cdedblink("event/list_db_events"), "DB-Veranstaltungen verwalten", aclass="list-group-item",
-                        icon="cog", active=(sidenav_active == 'event_list')) }}
+                {{ util.href(cdedblink("event/list_db_events"), "DB-Veranstaltungen verwalten",
+                             aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
                 {# TODO #}
                 {{ util.href(cdedblink("event/create_event_form"), "DB-Veranstaltung anlegen") }}
                 {{ util.href(cdedblink("event/user_search"), "Verantstaltungs-Nutzer verwalten",
-                        aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
+                             aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
                 {# TODO #}
                 {{ util.href(cdedblink("event/create_user_form"), "Neuen Nutzer anlegen") }}
                 {{ util.href(cdedblink("event/view_log"), "Log", aclass="list-group-item", icon="list-alt",
-                        active=(sidenav_active == 'event_log')) }}
+                             active=(sidenav_active == 'event_log')) }}
             </div>
         {% endif %}
     {% endif %}

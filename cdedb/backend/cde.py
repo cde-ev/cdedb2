@@ -10,9 +10,8 @@ import datetime
 import decimal
 
 from cdedb.backend.common import (
-    access, internal_access, affirm_validation as affirm,
-    affirm_array_validation as affirm_array, singularize, batchify,
-    AbstractBackend)
+    access, affirm_validation as affirm, AbstractBackend,
+    affirm_array_validation as affirm_array, singularize, batchify)
 from cdedb.common import (
     glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
     LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS)

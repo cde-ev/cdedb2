@@ -10,7 +10,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access,
     check_validation as check, mailinglist_guard)
 from cdedb.frontend.uncommon import AbstractUserFrontend
-from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input
+from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import name_key, merge_dicts, unwrap, ProxyShim
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
@@ -132,7 +132,8 @@ class MlFrontend(AbstractUserFrontend):
             result = self.mlproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                data = self.fill_template(rs, 'web', 'csv_search_result',
+                                          params)
                 return self.send_file(rs, data=data, inline=False,
                                       filename=self.i18n("result.txt", rs.lang))
         else:
@@ -225,7 +226,8 @@ class MlFrontend(AbstractUserFrontend):
         if rs.ambience['mailinglist']['assembly_id']:
             assembly = self.assemblyproxy.get_assembly(
                 rs, rs.ambience['mailinglist']['assembly_id'])
-        policy = const.SubscriptionPolicy(rs.ambience['mailinglist']['sub_policy'])
+        policy = const.SubscriptionPolicy(
+            rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(not is_subscribed)
         if not is_subscribed and gateway and  self.mlproxy.is_subscribed(
                 rs, rs.user.persona_id, rs.ambience['mailinglist']['gateway']):
@@ -291,7 +293,7 @@ class MlFrontend(AbstractUserFrontend):
         subscribers = self.mlproxy.subscribers(rs, mailinglist_id)
         requests = self.mlproxy.list_requests(rs, mailinglist_id)
         persona_ids = (set(rs.ambience['mailinglist']['moderators'])
-                    | set(subscribers.keys()) | set(requests))
+                       | set(subscribers.keys()) | set(requests))
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscribers = sorted(subscribers,
                              key=lambda anid: name_key(personas[anid]))
@@ -440,8 +442,8 @@ class MlFrontend(AbstractUserFrontend):
                 {'To': (email,),
                  'Subject': "Confirm email address for CdE mailing list"},
                 {'email': self.encode_parameter(
-                     "ml/do_address_change", "email", email,
-                     timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),})
+                    "ml/do_address_change", "email", email,
+                    timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),})
             rs.notify("info", "Confirmation email sent.")
         return self.redirect(rs, "ml/show_mailinglist")
 

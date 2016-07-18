@@ -42,7 +42,8 @@
                     <div class="col-sm-6">
                         {{ util.form_input_text(name="qval_username", label="E-Mail", aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_telephone,mobile", label="Telefon", aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_address,address_supplement,address2,address_supplement2", label="Adresse", aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_address,address_supplement,address2,address_supplement2",
+                                                label="Adresse", aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_postal_code,postal_code2", label="PLZ", aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_location,location2", label="Ort", aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_country,country2", label="Land", aclass="input-sm") }}
@@ -50,12 +51,17 @@
                 </div>
             </div>
             <div class="panel-footer text-right">
-                <button type="submit" class="btn btn-primary"><span class="glyphicon glyphicon-search"></span> Suche</button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="glyphicon glyphicon-search"></span> Suche
+                </button>
             </div>
         </div>
     </form>
     {% if values['is_search'] %}
-        <h3>Ergebnis <small>{{ result|length|e }} {{ result|length|numerus("Mitglied", "Mitglieder")|e }} gefunden</small></h3>
+        <h3>
+            Ergebnis
+            <small>{{ result|length|e }} {{ result|length|numerus("Mitglied", "Mitglieder")|e }} gefunden</small>
+        </h3>
         {% for dataset in result %}
             <p>
                 {{ util.href(show_user_link(dataset['id'], quote_me=True),

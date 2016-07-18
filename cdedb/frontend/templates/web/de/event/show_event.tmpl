@@ -123,7 +123,8 @@
         {% endif %}
         {% if is_admin and "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
             <h2>Archivierung</h2>
-            <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed" id="archiveeventform">
+            <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed"
+              id="archiveeventform">
                 <div>
                     {{ util.form_input_submit(value="Archivieren", readonly=is_locked) }}
                 </div>

@@ -818,22 +818,22 @@ def asciificator(s):
             ret += ' '
     return ret
 
-def diacritic_patterns(string):
+def diacritic_patterns(s):
     """Replace letters with a pattern matching expressions, so that
     ommitting diacritics in the query input is possible.
 
     This is intended for use with the sql SIMILAR TO clause or a python
     re module.
 
-    :type string: str
+    :type s: str
     :rtype: str
     """
     ## if fragile special chars are present do nothing
     ## all special chars: '_%|*+?{}()[]'
     special_chars = '|*+?{}()[]'
     for char in special_chars:
-        if char in string:
-            return string
+        if char in s:
+            return s
     ## some of the diacritics in use according to wikipedia
     umlaut_map = (
         ("ae", "(ae|[äæ])"),
@@ -852,8 +852,8 @@ def diacritic_patterns(string):
         ("z", "[zźż]"),
     )
     for normal, replacement in umlaut_map:
-        string = string.replace(normal, replacement)
-    return string
+        s = s.replace(normal, replacement)
+    return s
 
 def extract_roles(session):
     """Associate some roles to a data set.

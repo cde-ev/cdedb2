@@ -9,8 +9,8 @@ if it has moderator privileges for all lists.
 """
 
 from cdedb.backend.common import (
-    access, internal_access, affirm_validation as affirm, Silencer,
-    affirm_array_validation as affirm_array, singularize, AbstractBackend)
+    access, affirm_validation as affirm, Silencer, AbstractBackend,
+    affirm_array_validation as affirm_array, singularize)
 from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -385,7 +385,7 @@ class MlBackend(AbstractBackend):
             ret.update(explicits)
             defaults = tuple(k for k, v in ret.items() if not v)
             emails = self.sql_select(rs, "core.personas",
-                                    ("id", "username"), defaults)
+                                     ("id", "username"), defaults)
             ret.update({e['id']: e['username'] for e in emails})
             return ret
 

@@ -6,19 +6,20 @@
 {% block content %}
     <p>{{ ambience['ballot']['description']|rst }}</p>
     <p>
-        Abstimmungszeitraum: {{ ambience['ballot']['vote_begin']|datetime|e }} bis {{ ambience['ballot']['vote_end']|datetime|e }}<br>
+        Abstimmungszeitraum: {{ ambience['ballot']['vote_begin']|datetime|e }}
+                             bis {{ ambience['ballot']['vote_end']|datetime|e }}<br>
         {% if ambience['ballot']['extended'] is none %}
             {% if ambience['ballot']['quorum'] %}
-                Falls das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht wird, wird die Abstimmung bis
-                {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert.
+                Falls das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht wird, wird die
+                Abstimmung bis {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert.
             {% endif %}
         {% else %}
             {% if ambience['ballot']['extended'] %}
-                Die Abstimmung hat das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht, und wurde bis
-                {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert.
+                Die Abstimmung hat das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht, und
+                wurde bis {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert.
             {% elif ambience['ballot']['quorum'] %}
-                Die Abstimmung hat das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen erreicht und wurde nicht
-                verlängert.
+                Die Abstimmung hat das Quorum von {{ ambience['ballot']['quorum']|e }} Stimmen erreicht und wurde
+                nicht verlängert.
             {% endif %}
         {% endif %}
     </p>
@@ -179,8 +180,8 @@
                 {% endfor %}
             </ul>
             {% if ambience['ballot']['bar'] %}
-                Die Option {{ ambience['ballot']['candidates'][ambience['ballot']['bar']]['moniker']|e }} ist hierbei die
-                Schwellwertoption.
+                Die Option {{ ambience['ballot']['candidates'][ambience['ballot']['bar']]['moniker']|e }} ist hierbei
+                die Schwellwertoption.
             {% endif %}
         </p>
         {% if ambience['ballot']['is_voting'] %}
@@ -224,6 +225,7 @@
         </ul>
     {% endif %}
     {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
-        {{ util.href(cdedblink("assembly/add_attachment_form", {'ballot_id': ambience['ballot']['id']}), "Datei anhängen")}}
+        {{ util.href(cdedblink("assembly/add_attachment_form", {'ballot_id': ambience['ballot']['id']}),
+                     "Datei anhängen") }}
     {% endif %}
 {% endblock %}

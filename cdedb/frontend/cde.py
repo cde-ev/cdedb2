@@ -2,6 +2,7 @@
 
 """Services for the cde realm."""
 
+import cgitb
 from collections import OrderedDict
 import copy
 import csv
@@ -13,7 +14,10 @@ import random
 import re
 import shutil
 import string
+import sys
 import tempfile
+
+import psycopg2.extensions
 import werkzeug
 
 import cdedb.database.constants as const
@@ -24,7 +28,7 @@ from cdedb.common import (
     int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
     ProxyShim, diacritic_patterns)
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access, Worker,
+    REQUESTdata, REQUESTdatadict, access, Worker,
     check_validation as check, cdedbid_filter, request_extractor,
     make_postal_address, make_transaction_subject)
 from cdedb.frontend.uncommon import AbstractUserFrontend
@@ -107,7 +111,7 @@ class CdEFrontend(AbstractUserFrontend):
     def consent_decision(self, rs, ack):
         """Record decision."""
         if rs.errors:
-            return self.consent_decision_form(rs)
+            return self.consent_decision_form(rs, stay=True)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         if data['decided_search']:
             return self.redirect(rs, "core/index")
@@ -123,7 +127,7 @@ class CdEFrontend(AbstractUserFrontend):
         message = "Consent noted." if ack else "Decision noted."
         self.notify_return_code(rs, code, success=message)
         if not code:
-            return self.consent_decision_form(rs)
+            return self.consent_decision_form(rs, stay=True)
         return self.redirect(rs, "core/index")
 
     @access("searchable")
@@ -188,7 +192,8 @@ class CdEFrontend(AbstractUserFrontend):
             result = self.cdeproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result', params)
+                data = self.fill_template(rs, 'web', 'csv_search_result',
+                                          params)
                 return self.send_file(rs, data=data, inline=False,
                                       filename=self.i18n("result.txt", rs.lang))
         else:
@@ -640,7 +645,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
                               'Subject': 'CdE money transfer received',},
-                              {'persona': persona, 'address': address})
+                             {'persona': persona, 'address': address})
         return True, count
 
     @access("cde_admin", modi={"POST"})
@@ -658,7 +663,7 @@ class CdEFrontend(AbstractUserFrontend):
         """
         transfers = transfers or ''
         transferlines = transfers.splitlines()
-        fields = ('persona_id', 'family_name','given_names', 'amount', 'note')
+        fields = ('persona_id', 'family_name', 'given_names', 'amount', 'note')
         reader = csv.DictReader(
             transferlines, fieldnames=fields, delimiter=';',
             quoting=csv.QUOTE_ALL, doublequote=True, quotechar='"')
@@ -677,7 +682,8 @@ class CdEFrontend(AbstractUserFrontend):
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)
         if lineno != len(transferlines):
-            rs.errors.append(("transfers", ValueError("Lines didn't match up.")))
+            rs.errors.append(("transfers",
+                              ValueError("Lines didn't match up.")))
         open_issues = any(e['problems'] for e in data)
         if rs.errors or not data or open_issues:
             rs.values['checksum'] = None
@@ -729,7 +735,8 @@ class CdEFrontend(AbstractUserFrontend):
         This presents open items as well as all permits.
         """
         lastschrift_ids = self.cdeproxy.list_lastschrift(rs)
-        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs,
+                                                      lastschrift_ids.keys())
         period = self.cdeproxy.current_period(rs)
         transaction_ids = self.cdeproxy.list_lastschrift_transactions(
             rs, periods=(period,),
@@ -756,7 +763,8 @@ class CdEFrontend(AbstractUserFrontend):
             return werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None)
-        lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids.keys())
+        lastschrifts = self.cdeproxy.get_lastschrifts(rs,
+                                                      lastschrift_ids.keys())
         transactions = {}
         if lastschrifts:
             transaction_ids = self.cdeproxy.list_lastschrift_transactions(
@@ -1024,7 +1032,7 @@ class CdEFrontend(AbstractUserFrontend):
     def lastschrift_finalize_transactions(self, rs, transaction_ids, success,
                                           cancelled, failure):
         """Finish many transaction."""
-        if sum (1 for s in (success, cancelled, failure) if s) != 1:
+        if sum(1 for s in (success, cancelled, failure) if s) != 1:
             rs.errors.append((None, ValueError("Wrong number of actions.")))
         if rs.errors:
             return self.lastschrift_index(rs)
@@ -1088,7 +1096,7 @@ class CdEFrontend(AbstractUserFrontend):
         transaction['amount_words'] = words
         cde_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
-             'cde_info': cde_info, 'persona': persona, 'addressee': addressee})
+            'cde_info': cde_info, 'persona': persona, 'addressee': addressee})
         with tempfile.TemporaryDirectory() as tmp_dir:
             j = os.path.join
             work_dir = j(tmp_dir, 'workdir')
@@ -1148,6 +1156,8 @@ class CdEFrontend(AbstractUserFrontend):
             rs.notify("error", "Billing already done.")
             return self.redirect(rs, "show/semester")
         open_lastschrift = self.determine_open_permits(rs)
+        ## The rs parameter shadows the outer request state, making sure that
+        ## it doesn't leak
         def task(rrs, rs=None):
             """Send one billing mail and advance state."""
             with Atomizer(rrs):
@@ -1209,6 +1219,8 @@ class CdEFrontend(AbstractUserFrontend):
         if not period['billing_done'] or period['ejection_done']:
             rs.notify("error", "Wrong timing for ejection.")
             return self.redirect(rs, "show/semester")
+        ## The rs parameter shadows the outer request state, making sure that
+        ## it doesn't leak
         def task(rrs, rs=None):
             """Check one member for ejection and advance state."""
             with Atomizer(rrs):
@@ -1257,6 +1269,8 @@ class CdEFrontend(AbstractUserFrontend):
         if not period['ejection_done'] or period['balance_done']:
             rs.notify("error", "Wrong timing for balance update.")
             return self.redirect(rs, "show/semester")
+        ## The rs parameter shadows the outer request state, making sure that
+        ## it doesn't leak
         def task(rrs, rs=None):
             """Update one members balance and advance state."""
             with Atomizer(rrs):
@@ -1326,6 +1340,8 @@ class CdEFrontend(AbstractUserFrontend):
         if expuls['addresscheck_done']:
             rs.notify("error", "Addresscheck already done.")
             return self.redirect(rs, "show/semester")
+        ## The rs parameter shadows the outer request state, making sure that
+        ## it doesn't leak
         def task(rrs, rs=None):
             """Send one address check mail and advance state."""
             with Atomizer(rrs):
@@ -1445,7 +1461,7 @@ class CdEFrontend(AbstractUserFrontend):
                        if institution_id not in deletes
                        for key, value in spec.items())
         data = request_extractor(rs, params)
-        ret  = {
+        ret = {
             institution_id: {key: data["{}_{}".format(key, institution_id)]
                              for key in spec}
             for institution_id in institutions if institution_id not in deletes
@@ -1617,7 +1633,8 @@ class CdEFrontend(AbstractUserFrontend):
             'institutions': institutions})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("title", "shortname", "institution", "description", "tempus")
+    @REQUESTdatadict("title", "shortname", "institution", "description",
+                     "tempus")
     def change_past_event(self, rs, pevent_id, data):
         """Modify a concluded event."""
         data['id'] = pevent_id
@@ -1637,7 +1654,8 @@ class CdEFrontend(AbstractUserFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("courses", "str_or_None"))
-    @REQUESTdatadict("title", "shortname", "institution", "description", "tempus")
+    @REQUESTdatadict("title", "shortname", "institution", "description",
+                     "tempus")
     def create_past_event(self, rs, courses, data):
         """Add new concluded event."""
         data = check(rs, "past_event", data, creation=True)

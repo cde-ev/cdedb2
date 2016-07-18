@@ -13,7 +13,8 @@
         <div class="row">
             <div class="col-md-6">
                 {{ util.form_input_checkbox("membership", label="CdE-Mitgliedschaft eintragen", horizontal=False) }}
-                {{ util.form_input_checkbox("trial_membership", label="Probemitgliedschaft gutschreiben", horizontal=False) }}
+                {{ util.form_input_checkbox("trial_membership", label="Probemitgliedschaft gutschreiben",
+                                            horizontal=False) }}
             </div>
             <div class="col-md-6">
                 {{ util.form_input_checkbox("consent", label="Datenschutzeinwilligung gegeben", horizontal=False) }}
@@ -21,7 +22,7 @@
             </div>
         </div>
         {{ util.form_input_textarea(name="accounts", label="Daten", horizontal=False, rows=8) }}
-                               
+
         <p class="help-block">
             <span class="glyphicon glyphicon-info-sign"></span> Bitte einen Datensatz pro Zeile einfügen. Das Format ist
         </p>
@@ -32,7 +33,7 @@
         <p class="help-block">
             Bei Geschlecht 0 für weiblich, 1 für männlich und 2 für alles andere eintragen.
         </p>
-        
+
         {% if data %}
             <h2>Validierungsergebnisse</h2>
             {% for dataset in data %}
@@ -61,7 +62,7 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
-                    
+
                     <label>Aktion</label>
                     <div class="p">
                         {# jinja does not support list comprehension ... #}
@@ -72,7 +73,7 @@
                         {{ util.input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, radio=True,
                                 inline=True) }}
                     </div>
-                    
+
                     {% if dataset['doppelgangers'] %}
                         <label>Zusammenführen mit Account</label>
                         <div class="p strip-space">
@@ -94,7 +95,7 @@
                 </div>
             {% endfor %}
         {% endif %}
-        
+
         {% if values['finalized'] %}
             {{ util.form_input_submit(value="Anlegen", horizontal=False) }}
         {% else %}

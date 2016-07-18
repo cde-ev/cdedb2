@@ -356,4 +356,4 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("\nKlatsch und Tratsch -- Logs (0--6)\n")
+        self.assertTitle("\nKlatsch und Tratsch --\n    Logs (0--6)\n")

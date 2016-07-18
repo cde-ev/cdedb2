@@ -55,7 +55,8 @@
             <<% for part_id in ambience['event']['parts']|sort -%>>
                 <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%>>
                     <<% if registration['parts'][part_id]['course_id'] -%>>
-                        <<% if registration['parts'][part_id]['course_instructor'] == registration['parts'][part_id]['course_id'] -%>>
+                        <<% if registration['parts'][part_id]['course_instructor']
+                                == registration['parts'][part_id]['course_id'] -%>>
                             \emph{%
                                 <<< courses[registration['parts'][part_id]['course_id']]['shortname']|te >>>
                             }

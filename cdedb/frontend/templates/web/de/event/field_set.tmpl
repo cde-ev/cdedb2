@@ -2,7 +2,8 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Feld {{ ambience['event']['fields'][values['field_id']|int]['field_name']|e }} setzen ({{ ambience['event']['title']|e }})
+    Feld {{ ambience['event']['fields'][values['field_id']|int]['field_name']|e }} setzen
+    ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/show_event"), "Abbrechen") }}

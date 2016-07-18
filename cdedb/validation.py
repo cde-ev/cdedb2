@@ -31,14 +31,14 @@ import functools
 import io
 import json
 import logging
-import magic
-import PIL.Image
 import pytz
 import re
 import string
 import sys
 
 import dateutil.parser
+import magic
+import PIL.Image
 import werkzeug.datastructures
 
 from cdedb.common import (
@@ -851,7 +851,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     for suffix in ("", "2"):
         if ((not val.get('country' + suffix)
              or val.get('country' + suffix) == "Deutschland")
-             and val.get('postal_code' + suffix)):
+                and val.get('postal_code' + suffix)):
             postal_code, e = _german_postal_code(
                 val['postal_code' + suffix], 'postal_code' + suffix,
                 _convert=_convert)
@@ -1836,7 +1836,7 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
             for anid, part in oldparts.items():
                 anid, e = _id(anid, 'parts', _convert=_convert)
                 part, ee = _registration_part_or_None(part, 'parts',
-                                                           _convert=_convert)
+                                                      _convert=_convert)
                 if e or ee:
                     errs.extend(e)
                     errs.extend(ee)
@@ -2057,14 +2057,14 @@ def _serialized_event(val, argname=None, *, _convert=True):
             _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
         'event.field_definitions': _augment_dict_validator(
             _event_field, {'id': _id, 'event_id': _id,
-                                'field_name': _restrictive_identifier}),
+                           'field_name': _restrictive_identifier}),
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
             _registration, {'event_id': _id, 'persona_id': _id}),
         'event.registration_parts': _augment_dict_validator(
             _registration_part, {'id': _id, 'part_id': _id,
-                                      'registration_id': _id}),
+                                 'registration_id': _id}),
         'event.course_choices': _augment_dict_validator(
             _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id,
                           'registration_id': _id, 'rank': _int}),

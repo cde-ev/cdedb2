@@ -277,7 +277,8 @@ class CoreBackend(AbstractBackend):
 
             ## handle pending changes
             diff = None
-            if current_state['change_status'] == const.MemberChangeStati.pending:
+            if (current_state['change_status']
+                    == const.MemberChangeStati.pending):
                 committed_state = unwrap(self.get_total_personas(
                     rs, (data['id'],)))
                 ## stash pending change if we may not wait
@@ -1724,7 +1725,7 @@ class CoreBackend(AbstractBackend):
             (5, "location = %s", (persona['location'],)),
             (5, "postal_code = %s", (persona['postal_code'],)),
             (20, "given_names = %s AND family_name = %s",
-             (persona['family_name'],persona['given_names'],)),
+             (persona['family_name'], persona['given_names'],)),
             (21, "username = %s", (persona['username'],)),)
         ## Omit queries where some parameters are None
         queries = tuple(e for e in queries if all(x is not None for x in e[2]))

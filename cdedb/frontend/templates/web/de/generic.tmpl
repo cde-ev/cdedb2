@@ -3,7 +3,8 @@
 {% import "web/de/util.tmpl" as util with context %}
 
 {% macro create_user(realm) %}
-    <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform" class="form-horizontal">
+    <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform"
+      class="form-horizontal">
         <h4 class="heading-underline">Person</h4>
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_text(name="given_names", label="Vorname(n)") }}

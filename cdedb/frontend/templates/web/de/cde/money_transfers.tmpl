@@ -53,7 +53,8 @@
 
         {% if values['checksum'] %}
             <p class="help-block">
-                <span class="glyphicon glyphicon-info-sign"></span> Falls die Eingabe geändert wird, wird das Validierungsergebnis erneut angezeigt.
+                <span class="glyphicon glyphicon-info-sign"></span>
+                Falls die Eingabe geändert wird, wird das Validierungsergebnis erneut angezeigt.
             </p>
             {{ util.form_input_submit(value="Abschicken", horizontal=False) }}
         {% else %}

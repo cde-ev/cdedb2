@@ -1,7 +1,9 @@
 {% if ambience['persona']['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Profilbild für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }} bearbeiten{% endblock %}
+{% block title %}
+    Profilbild für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }} bearbeiten
+{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
 {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],

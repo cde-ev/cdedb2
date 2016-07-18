@@ -9,7 +9,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
-{# { util.breadcrumb_link(cdedblink("event/show_registration"), persona['given_names']|e + " " + persona['family_name']|e, icon="user") } #}
+{# TODO { util.breadcrumb_link(cdedblink("event/show_registration"), persona['given_names']|e + " " + persona['family_name']|e, icon="user") } #}
 {{ util.breadcrumb_link(cdedblink("event/change_registration"), "Ändern", active=True, icon="pencil") }}
 {% endblock %}
 {% block content %}

@@ -4,7 +4,8 @@
 {% block title %}Eigene E-Mail-Adresse ändern{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
-    {{ util.breadcrumb_link(show_user_link(user['persona_id']), user['given_names'] + " " + user['family_name'], icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user['persona_id']), user['given_names'] + " " + user['family_name'],
+                            icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_username_form"), "E-Mail-Adresse bearbeiten", active=True) }}
 {% endblock %}
 {% block content %}
