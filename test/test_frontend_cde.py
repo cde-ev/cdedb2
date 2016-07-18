@@ -440,23 +440,23 @@ class TestCdEFrontend(FrontendTest):
         head, _ = content.split("Validieren")
         output.append(head)
         expectation = (
-            (r"given_names:\W*Mustn't be empty.",
-             r"pevent_id:\W*No input supplied."),
+            (r"given_names:\W*Darf nicht leer sein.",
+             r"pevent_id:\W*Keine Eingabe vorhanden."),
             tuple(),
-            (r"Lines 3 and 4 are the same.",),
-            (r"Lines 3 and 4 are the same.",),
-            (r"persona:\W*Doppelgangers found.",),
-            (r"persona:\W*Doppelgangers found.",),
-            (r"persona:\W*Doppelgangers found.",),
-            (r"course:\W*No course available.",),
-            (r"pevent_id:\W*No event found.",
-             r"course:\W*No course available.",),
-            (r"pcourse_id:\W*No course found.",),
-            (r"birthday:\W*day is out of range for month",
-             r"birthday:\W*Mandatory key missing."),
-            (r"postal_code:\W*Invalid german postal code.",),
-            (r"Lines 13 and 14 are the same.",),
-            (r"Lines 13 and 14 are the same.",),
+            (r"Zeilen 3 und 4 sind identisch.",),
+            (r"Zeilen 3 und 4 sind identisch.",),
+            (r"persona:\W*Ähnlicher Account gefunden.",),
+            (r"persona:\W*Ähnlicher Account gefunden.",),
+            (r"persona:\W*Ähnlicher Account gefunden.",),
+            (r"course:\W*Kein Kurs verfügbar.",),
+            (r"pevent_id:\W*Keine Veranstaltung gefunden.",
+             r"course:\W*Kein Kurs verfügbar.",),
+            (r"pcourse_id:\W*Kein Kurs gefunden.",),
+            (r"birthday:\W*Tag liegt nicht im Monat.",
+             r"birthday:\W*Notwendige Angabe fehlt."),
+            (r"postal_code:\W*Ungültige Postleitzahl.",),
+            (r"Zeilen 13 und 14 sind identisch.",),
+            (r"Zeilen 13 und 14 sind identisch.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
@@ -505,12 +505,12 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"doppelganger:\W*Doppelganger not a CdE-Account.",),
+            (r"doppelganger:\W*Accountzusammenführung mit einem nicht-CdE-Account.",),
             tuple(),
-            (r"Entry changed.",),
-            (r"Entry changed.",),
-            (r"Entry changed.",),
-            (r"Entry changed.",),
+            (r"Eintrag geändert.",),
+            (r"Eintrag geändert.",),
+            (r"Eintrag geändert.",),
+            (r"Eintrag geändert.",),
             tuple(),
             tuple(),
             )
@@ -526,12 +526,12 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"pevent_id:\W*No event found.",
-             r"course:\W*No course available.",),
-            (r"pcourse_id:\W*No course found.",),
-            (r"birthday:\W*day is out of range for month",
-             r"birthday:\W*Mandatory key missing."),
-            (r"postal_code:\W*Invalid german postal code.",),
+            (r"pevent_id:\W*Keine Veranstaltung gefungen.",
+             r"course:\W*Kein Kurs verfügbar.",),
+            (r"pcourse_id:\W*Kein Kurs gefunden.",),
+            (r"birthday:\W*Tag liegt nicht im Monat.",
+             r"birthday:\W*Notwendige Angabe fehlt."),
+            (r"postal_code:\W*Ungültige Postleitzahl.",),
             tuple(),
             tuple(),
             )
@@ -564,7 +564,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"doppelganger:\W*Doppelganger choice doesn't fit resolution.",),
+            (r"doppelganger:\W*Accountzusammenführung inkonsistent mit Aktion.",),
             tuple(),
             tuple(),
             tuple(),
@@ -585,10 +585,10 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"Entry changed.",),
-            (r"Entry changed.",),
-            (r"Entry changed.",),
-            (r"Entry changed.",),
+            (r"Eintrag geändert.",),
+            (r"Eintrag geändert.",),
+            (r"Eintrag geändert.",),
+            (r"Eintrag geändert.",),
             tuple(),
             tuple(),
             )
@@ -606,7 +606,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['admissionform']
         self.assertEqual('True', f['finalized'].value)
         self.submit(f)
-        self.assertPresence("Created 6 accounts.", div="notifications")
+        self.assertPresence("6 Accounts erstellt.", div="notifications")
 
     @as_users("anton")
     def test_money_transfers(self, user):
@@ -633,16 +633,16 @@ class TestCdEFrontend(FrontendTest):
         head, _ = content.split("Validieren")
         output.append(head)
         expectation = (
-            (r"persona_id:\W*Mustn't be empty.",
-             r"family_name:\W*Mustn't be empty.",
-             r"given_names:\W*Mustn't be empty.",
-             r"amount:.*\W*.*decimal.",),
-            (r"persona_id:\W*Wrong formatting.",),
-            (r"family_name:\W*Family name doesn't match.",),
-            (r"persona_id:\W*Wrong formatting.",),
+            (r"persona_id:\W*Darf nicht leer sein.",
+             r"family_name:\W*Darf nicht leer sein.",
+             r"given_names:\W*Darf nicht leer sein.",
+             r"amount:.*\W*Keine Zahl gefunden.",),
+            (r"persona_id:\W*Falsches Format.",),
+            (r"family_name:\W*Nachname passt nicht.",),
+            (r"persona_id:\W*Falsches Format.",),
             tuple(),
-            (r"lines 6 and 7",),
-            (r"lines 6 and 7",),
+            (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
+            (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
@@ -658,7 +658,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
         self.submit(f)
-        self.assertPresence("Committed 3 transfers.", div="notifications")
+        self.assertPresence("3 Überweisungen gebucht.", div="notifications")
 
     @as_users("anton")
     def test_semester(self, user):

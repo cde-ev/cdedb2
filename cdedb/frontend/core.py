@@ -1019,7 +1019,7 @@ class CoreFrontend(AbstractFrontend):
             return self.list_pending_changes(rs)
         code = self.coreproxy.changelog_resolve_change(rs, persona_id,
                                                        generation, ack)
-        message = "Change comitted." if ack else "Change dropped."
+        message = "Change committed." if ack else "Change dropped."
         self.notify_return_code(rs, code, success=message)
         return self.redirect(rs, "core/list_pending_changes")
 

@@ -12,7 +12,7 @@ class TestI18n(unittest.TestCase):
         self.assertEqual("bar", i("foo"))
         self.assertEqual("no i18n", i("no i18n"))
         i = I18N()
-        i.add_regex("fo*([0-9]+)42", r"bar\1xx")
+        i.add_regex("fo*([0-9]+)42(.*)", r"bar\1xx\2")
         self.assertEqual("bar12xx", i("fo1242"))
         self.assertEqual("bar3333xx", i("foooooooo333342"))
         self.assertEqual("bar12xx to it", i("fo1242 to it"))

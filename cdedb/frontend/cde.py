@@ -1357,7 +1357,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.do_mail(
                     rrs, "addresscheck",
                     {'To': (persona['username'],),
-                     'Subject': 'Address check for ExPuls'},
+                     'Subject': 'Address check mail for ExPuls'},
                     {'persona': persona,
                      'lastschrift': lastschrift,
                      'fee': self.conf.MEMBERSHIP_FEE,

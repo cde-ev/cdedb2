@@ -408,7 +408,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs, "ballot_tallied",
                     {'To': (self.conf.MANAGEMENT_ADDRESS,),
                      'Bcc': mails,
-                     'Subject': "Ballot '{}' got tallied".format(
+                     'Subject': "Ballot '{}' got tallied.".format(
                          ballot['title'])},
                     attachments=(attachment_script, attachment_result,))
             return self.redirect(rs, "assembly/show_ballot")

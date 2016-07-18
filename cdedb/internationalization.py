@@ -42,10 +42,11 @@ class I18N:
         :type translated_regex: str
         :type lang: str
         """
-        self.regexes.setdefault(re.compile(internal_regex), {})[lang] = (
+        anchored_regex = '^' + internal_regex + '$'
+        self.regexes.setdefault(re.compile(anchored_regex), {})[lang] = (
             translated_regex)
         _LOGGER.debug("Added i18n regex '{}'->'{}' for {}.".format(
-            internal_regex, translated_regex, lang))
+            anchored_regex, translated_regex, lang))
 
     def __call__(self, internal_string, lang='de'):
         """

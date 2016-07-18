@@ -1375,7 +1375,7 @@ class CoreBackend(AbstractBackend):
                 ## do not allow password reset by anonymous for privileged
                 ## users, otherwise we incur a security degradation on the
                 ## RPC-interface
-                return False, "Privileged user."
+                return False, "Privileged user may not reset."
         ret = self.generate_reset_cookie(rs, persona_id)
         self.core_log(rs, const.CoreLogCodes.password_reset_cookie, persona_id)
         return True, ret
