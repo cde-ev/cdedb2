@@ -638,7 +638,7 @@ CREATE TABLE event.registrations (
 
         -- only basic data should be defined here and everything else will
         -- be handeled via additional fields
-        field_data              jsonb NOT NULL DEFAULT '{}'::jsonb
+        fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX idx_registrations_persona_id ON event.registrations(persona_id);
 CREATE INDEX idx_registrations_event_id ON event.registrations(event_id);

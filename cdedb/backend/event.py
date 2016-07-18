@@ -41,7 +41,7 @@ import cdedb.database.constants as const
 #:     LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3, status AS status3, lodgement_id AS lodgement_id3,
 #:                             course_instructor AS course_instructor3 FROM event.registration_parts WHERE part_id = 3)
 #:          AS part3 ON reg.id = part3.registration_id
-#:     LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(SELECT field_data FROM event.registrations)))
+#:     LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(SELECT fields FROM event.registrations)))
 #:          AS X(registration_id int, brings_balls bool, transportation varchar)) AS fields ON reg.id = fields.registration_id
 _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations AS reg",
@@ -49,7 +49,7 @@ _REGISTRATION_VIEW_TEMPLATE = glue(
     "{part_tables}", ## registration part details will be filled in here
     "LEFT OUTER JOIN (SELECT * FROM",
         "json_to_recordset(to_json(array(",
-            "SELECT field_data FROM event.registrations)))",
+            "SELECT fields FROM event.registrations)))",
         "AS X({json_fields})) AS fields ON reg.id = fields.registration_id")
 
 #: Version tag, so we know that we don't run out of sync with exported event
@@ -771,10 +771,10 @@ class EventBackend(AbstractBackend):
     def set_registration(self, rs, data):
         """Update some keys of a registration.
 
-        The syntax for updating the non-trivial keys field_data, parts and
+        The syntax for updating the non-trivial keys fields, parts and
         choices is as follows:
 
-        * If the key 'field_data' is present it must be a dict and is used to
+        * If the key 'fields' is present it must be a dict and is used to
           updated the stored value (in a python dict.update sense).
         * If the key 'parts' is present, the associated dict mapping the
           part ids to the respective data sets can contain an arbitrary
@@ -801,24 +801,24 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError("Not privileged.")
             event = self.get_event(rs, event_id)
-            if 'field_data' in data:
-                data['field_data'] = affirm(
-                    "registration_field_data", data['field_data'],
+            if 'fields' in data:
+                data['fields'] = affirm(
+                    "registration_fields", data['fields'],
                     fields=event['fields'])
 
             ## now we get to do the actual work
             rdata = {k: v for k, v in data.items()
-                     if k in REGISTRATION_FIELDS and k != "field_data"}
+                     if k in REGISTRATION_FIELDS and k != "fields"}
             ret = 1
             if len(rdata) > 1:
                 ret *= self.sql_update(rs, "event.registrations", rdata)
-            if 'field_data' in data:
+            if 'fields' in data:
                 fdata = unwrap(self.sql_select_one(rs, "event.registrations",
-                                                   ("field_data",), data['id']))
-                fdata.update(data['field_data'])
+                                                   ("fields",), data['id']))
+                fdata.update(data['fields'])
                 new_data = {
                     'id': data['id'],
-                    'field_data': psycopg2.extras.Json(fdata),
+                    'fields': psycopg2.extras.Json(fdata),
                 }
                 ret *= self.sql_update(rs, "event.registrations", new_data)
             if 'parts' in data:
@@ -878,7 +878,7 @@ class EventBackend(AbstractBackend):
         """Make a new registration.
 
         The data must contain a dataset for each part and may not contain a
-        value for 'field_data', which is initialized to a default value.
+        value for 'fields', which is initialized to a default value.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
@@ -906,10 +906,10 @@ class EventBackend(AbstractBackend):
                         aspect: data[aspect]
                     }
                     self.set_registration(rs, new_data)
-            ## fix field_data to contain registration id
+            ## fix fields to contain registration id
             fdata = {
                 'id': new_id,
-                'field_data': psycopg2.extras.Json({'registration_id': new_id})
+                'fields': psycopg2.extras.Json({'registration_id': new_id})
             }
             self.sql_update(rs, "event.registrations", fdata)
         self.event_log(
@@ -1303,10 +1303,10 @@ class EventBackend(AbstractBackend):
             ## Third fix the ids embedded in json
             for reg_id in translations['registration_id'].values():
                 json = self.sql_select_one(
-                    rs, 'event.registrations', ('id', 'field_data'), reg_id)
-                if json['field_data']['registration_id'] != reg_id:
-                    json['field_data']['registration_id'] = reg_id
-                    json['field_data'] = psycopg2.extras.Json(json['field_data'])
+                    rs, 'event.registrations', ('id', 'fields'), reg_id)
+                if json['fields']['registration_id'] != reg_id:
+                    json['fields']['registration_id'] = reg_id
+                    json['fields'] = psycopg2.extras.Json(json['fields'])
                     self.sql_update(rs, 'event.registrations', json)
             ## Fourth unlock the event
             update = {

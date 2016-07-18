@@ -1813,7 +1813,7 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        ## creation does not allow field_data for sake of simplicity
+        ## creation does not allow fields for sake of simplicity
         mandatory_fields = dict(_REGISTRATION_COMMON_FIELDS(),
                                 persona_id=_id, event_id=_id)
         optional_fields = _REGISTRATION_OPTIONAL_FIELDS()
@@ -1821,7 +1821,7 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
         ## no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': _id}
         optional_fields = dict(_REGISTRATION_COMMON_FIELDS(),
-                               field_data=_any,
+                               fields=_any,
                                **_REGISTRATION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
@@ -1868,7 +1868,7 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
                     else:
                         newchoices[part_id] = new_list
             val['choices'] = newchoices
-    ## the check of field_data is delegated to _registration_field_data
+    ## the check of fields is delegated to _registration_fields
     return val, errs
 
 @_addvalidator
@@ -1897,7 +1897,7 @@ def _registration_part(val, argname=None, *, _convert=True):
                                       _convert=_convert)
 
 @_addvalidator
-def _registration_field_data(val, argname=None, fields=None, *, _convert=True):
+def _registration_fields(val, argname=None, fields=None, *, _convert=True):
     """
     :type val: object
     :type argname: str or None
@@ -1906,7 +1906,7 @@ def _registration_field_data(val, argname=None, fields=None, *, _convert=True):
     :type _convert: bool
     :rtype: (dict or None, [(str or None, exception)])
     """
-    argname = argname or "field_data"
+    argname = argname or "fields"
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs

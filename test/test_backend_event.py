@@ -306,7 +306,7 @@ class TestEventBackend(BackendTest):
             'checkin': None,
             'choices': {1: [5, 4, 1], 2: [3, 4, 2], 3: [4, 2, 1]},
             'event_id': 1,
-            'field_data': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
+            'fields': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
             'foto_consent': True,
             'id': 2,
             'mixed_lodging': True,
@@ -340,12 +340,12 @@ class TestEventBackend(BackendTest):
         data = {
             'id': 2,
             'choices': {2: [2, 3, 4]},
-            'field_data': {'transportation': 'etc'},
+            'fields': {'transportation': 'etc'},
             'mixed_lodging': False,
         }
         self.assertLess(0, self.event.set_registration(self.key, data))
         expectation['choices'][2] = [2, 3, 4]
-        expectation['field_data']['transportation'] = 'etc'
+        expectation['fields']['transportation'] = 'etc'
         expectation['mixed_lodging'] = False
         self.assertEqual(expectation,
                          self.event.get_registration(self.key, 2))
@@ -384,7 +384,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
-        new_reg['field_data'] = {'registration_id': new_id}
+        new_reg['fields'] = {'registration_id': new_id}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
         new_reg['parts'][2]['part_id'] = 2
@@ -403,7 +403,7 @@ class TestEventBackend(BackendTest):
             1: {'checkin': None,
                 'choices': {1: [], 2: [2, 3, 4], 3: [1, 4, 5]},
                 'event_id': 1,
-                'field_data': {'registration_id': 1,
+                'fields': {'registration_id': 1,
                                'lodge': 'Die üblichen Verdächtigen :)'},
                 'foto_consent': True,
                 'id': 1,
@@ -436,7 +436,7 @@ class TestEventBackend(BackendTest):
             2: {'checkin': None,
                 'choices': {1: [5, 4, 1], 2: [3, 4, 2], 3: [4, 2, 1]},
                 'event_id': 1,
-                'field_data': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
+                'fields': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
                 'foto_consent': True,
                 'id': 2,
                 'mixed_lodging': True,
@@ -468,7 +468,7 @@ class TestEventBackend(BackendTest):
             4: {'checkin': None,
                 'choices': {1: [1, 4, 5], 2: [4, 2, 3], 3: [1, 2, 4]},
                 'event_id': 1,
-                'field_data': {'registration_id': 4,
+                'fields': {'registration_id': 4,
                                'brings_balls': False,
                                'may_reserve': True,
                                'transportation': 'etc'},
@@ -505,7 +505,7 @@ class TestEventBackend(BackendTest):
         data = {
             'id': 4,
             'choices': {1:[5, 4, 1], 2: [2, 3, 4]},
-            'field_data': {'transportation': 'pedes'},
+            'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
             'checkin': datetime.datetime.now(pytz.utc),
             'parts': {
@@ -523,7 +523,7 @@ class TestEventBackend(BackendTest):
         }
         self.assertLess(0, self.event.set_registration(self.key, data))
         expectation[4]['choices'].update(data['choices'])
-        expectation[4]['field_data'].update(data['field_data'])
+        expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
         expectation[4]['checkin'] = nearly_now()
         for key, value in expectation[4]['parts'].items():
@@ -564,7 +564,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
-        new_reg['field_data'] = {'registration_id': new_id}
+        new_reg['fields'] = {'registration_id': new_id}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
         new_reg['parts'][2]['part_id'] = 2
@@ -1351,7 +1351,7 @@ class TestEventBackend(BackendTest):
                                           'status': 1}),
             'event.registrations': ({'checkin': None,
                                      'event_id': 1,
-                                     'field_data': {'lodge': 'Die üblichen '
+                                     'fields': {'lodge': 'Die üblichen '
                                                              'Verdächtigen :)',
                                                     'registration_id': 1},
                                      'foto_consent': True,
@@ -1365,7 +1365,7 @@ class TestEventBackend(BackendTest):
                                      'real_persona_id': None},
                                     {'checkin': None,
                                      'event_id': 1,
-                                     'field_data': {'brings_balls': True,
+                                     'fields': {'brings_balls': True,
                                                     'registration_id': 2,
                                                     'transportation': 'pedes'},
                                      'foto_consent': True,
@@ -1380,7 +1380,7 @@ class TestEventBackend(BackendTest):
                                      'real_persona_id': None},
                                     {'checkin': None,
                                      'event_id': 1,
-                                     'field_data': {'registration_id': 3,
+                                     'fields': {'registration_id': 3,
                                                     'transportation': 'car'},
                                      'foto_consent': True,
                                      'id': 3,
@@ -1393,7 +1393,7 @@ class TestEventBackend(BackendTest):
                                      'real_persona_id': None},
                                     {'checkin': None,
                                      'event_id': 1,
-                                     'field_data': {'brings_balls': False,
+                                     'fields': {'brings_balls': False,
                                                     'may_reserve': True,
                                                     'registration_id': 4,
                                                     'transportation': 'etc'},
@@ -1446,7 +1446,7 @@ class TestEventBackend(BackendTest):
         new_data['event.registrations'].append(
             {'checkin': None,
              'event_id': 1,
-             'field_data': {'lodge': 'Langschläfer',
+             'fields': {'lodge': 'Langschläfer',
                             'behaviour': 'good',
                             'registration_id': 1000},
              'foto_consent': True,
@@ -1525,7 +1525,7 @@ class TestEventBackend(BackendTest):
         new_data['event.orgas'][-1]['id'] = 2
         new_data['event.orgas'][-1]['persona_id'] = 2
         new_data['event.registrations'][-1]['id'] = 5
-        new_data['event.registrations'][-1]['field_data']['registration_id'] = 5
+        new_data['event.registrations'][-1]['fields']['registration_id'] = 5
         new_data['event.registrations'][-1]['persona_id'] = 2
         new_data['event.registrations'][-1]['real_persona_id'] = None
         new_data['event.registration_parts'][-1]['id'] = 13
@@ -1719,7 +1719,7 @@ class TestEventBackend(BackendTest):
         data = {
             'id': 4,
             'choices': {1:[5, 4, 1], 2: [2, 3, 4]},
-            'field_data': {'transportation': 'pedes'},
+            'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
             'checkin': datetime.datetime.now(pytz.utc),
             'parts': {

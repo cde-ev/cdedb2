@@ -40,11 +40,11 @@
                     {<<% if rdata['age'] == enums['AgeClasses'].u16 %>>U18<<% endif -%>>
                      <<% if rdata['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if rdata['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
-                    {<<% if may_reserve_present and rdata['field_data'].get('may_reserve') -%>>
+                    {<<% if may_reserve_present and rdata['fields'].get('may_reserve') -%>>
                         Reserveplatz
                      <<%- endif %>>}%
-                    {<<% if lodge_present and rdata['field_data'].get('lodge') -%>>
-                        Wunsch: <<< rdata['field_data'].get('lodge')|te >>>\par
+                    {<<% if lodge_present and rdata['fields'].get('lodge') -%>>
+                        Wunsch: <<< rdata['fields'].get('lodge')|te >>>\par
                      <<% endif -%>>}
             <<% endif %>>
         <<% endfor %>>

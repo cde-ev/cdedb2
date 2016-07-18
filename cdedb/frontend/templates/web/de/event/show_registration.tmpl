@@ -168,19 +168,19 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                 <td>
                     {% if fdata['entries'] %}
                         {% for value, description in fdata['entries'] %}
-                            {% if ambience['registration']['field_data'].get(fdata['field_name']) == value %}
+                            {% if ambience['registration']['fields'].get(fdata['field_name']) == value %}
                                 {{ description|e }}
                             {% endif %}
                         {% endfor %}
                     {% else %}
                         {% if fdata['kind'] == "bool" %}
-                            {{ util.deko_checkbox(checked=ambience['registration']['field_data'].get(fdata['field_name'])) }}
+                            {{ util.deko_checkbox(checked=ambience['registration']['fields'].get(fdata['field_name'])) }}
                         {% elif fdata['kind'] == "date" %}
-                            {{ ambience['registration']['field_data'].get(fdata['field_name'])|date|e }}
+                            {{ ambience['registration']['fields'].get(fdata['field_name'])|date|e }}
                         {% elif fdata['kind'] == "datetime" %}
-                            {{ ambience['registration']['field_data'].get(fdata['field_name'])|datetime|e }}
+                            {{ ambience['registration']['fields'].get(fdata['field_name'])|datetime|e }}
                         {% else %}
-                            {{ ambience['registration']['field_data'].get(fdata['field_name'])|e|linebreaks }}
+                            {{ ambience['registration']['fields'].get(fdata['field_name'])|e|linebreaks }}
                         {% endif %}
                     {% endif %}
                 </td>

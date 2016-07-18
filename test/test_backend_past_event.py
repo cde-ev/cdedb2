@@ -209,7 +209,7 @@ class TestPastEventBackend(BackendTest):
                 }
             }
         }
-        self.event.set_event_data(self.key, update)
+        self.event.set_event(self.key, update)
         new_id, _ = self.pastevent.archive_event(self.key, 1)
         expectation = {
             'description': 'Everybody come!',

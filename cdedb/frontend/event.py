@@ -1342,7 +1342,7 @@ class EventFrontend(AbstractUserFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("info", "Event locked.")
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
-        merge_dicts(rs.values, registration['field_data'])
+        merge_dicts(rs.values, registration['fields'])
         return self.render(rs, "questionnaire", {
             'questionnaire': questionnaire,})
 
@@ -1378,7 +1378,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.questionnaire_form(rs, event_id)
 
         code = self.eventproxy.set_registration(rs, {
-            'id': registration_id, 'field_data': data,})
+            'id': registration_id, 'fields': data,})
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/questionnaire_form")
 
@@ -1546,7 +1546,7 @@ class EventFrontend(AbstractUserFrontend):
             part_values.append(one_part)
         field_values = {
             "fields.{}".format(key): value
-            for key, value in registration['field_data'].items()}
+            for key, value in registration['fields'].items()}
         ## Fix formatting of ID
         reg_values['reg.real_persona_id'] = cdedbid_filter(
             reg_values['reg.real_persona_id'])
@@ -1615,7 +1615,7 @@ class EventFrontend(AbstractUserFrontend):
         registration['parts'] = new_parts
         registration['choices'] = new_choices
         if do_fields:
-            registration['field_data'] = new_fields
+            registration['fields'] = new_fields
         return registration
 
     @access("event", modi={"POST"})
@@ -1760,7 +1760,7 @@ class EventFrontend(AbstractUserFrontend):
             to a lodgement as reserve lodgers."""
             return sum(
                 1 for reg_id in group
-                if registrations[reg_id]['field_data'].get(
+                if registrations[reg_id]['fields'].get(
                     'reserve_{}'.format(part_id)))
         def _reserve_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for reserve problems."""
@@ -1768,7 +1768,7 @@ class EventFrontend(AbstractUserFrontend):
                 "Wrong number of reserve lodgers used.", lodgement_id, part_id,
                 tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
-                    if registrations[reg_id]['field_data'].get(
+                    if registrations[reg_id]['fields'].get(
                         'reserve_{}'.format(part_id))))
 
         ## now the actual work
@@ -2242,7 +2242,7 @@ class EventFrontend(AbstractUserFrontend):
                     field = mo.group(2)
                     new['parts'] = {part_id: {field: value}}
                 elif column.startswith("fields."):
-                    new['field_data'] = {field: value}
+                    new['fields'] = {field: value}
                 else:
                     new[field] = value
                 code *= self.eventproxy.set_registration(rs, new)
@@ -2335,7 +2335,7 @@ class EventFrontend(AbstractUserFrontend):
         field_name = rs.ambience['event']['fields'][field_id]['field_name']
         values = {
             "input{}".format(registration_id):
-            rdata['field_data'].get(field_name)
+            rdata['fields'].get(field_name)
             for registration_id, rdata in registrations.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
@@ -2364,10 +2364,10 @@ class EventFrontend(AbstractUserFrontend):
         field_name = event['fields'][field_id]['field_name']
         for registration_id, rdata in registrations.items():
             if (data["input{}".format(registration_id)]
-                    != rdata['field_data'].get(field_name)):
+                    != rdata['fields'].get(field_name)):
                 new = {
                     'id': registration_id,
-                    'field_data': {
+                    'fields': {
                         field_name: data["input{}".format(registration_id)]
                     }
                 }

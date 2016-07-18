@@ -120,7 +120,7 @@ INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes) V
     (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.'),
     (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.'),
     (4, 1, 'Einzelzelle', 1, 0, NULL);
-INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, payment, parental_agreement, mixed_lodging, checkin, foto_consent, field_data) VALUES
+INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, payment, parental_agreement, mixed_lodging, checkin, foto_consent, fields) VALUES
     (1, 1, 1, NULL, NULL, NULL, NULL, True, NULL, True, '{"registration_id": 1, "lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
     (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', NULL, True, NULL, True, '{"registration_id": 2, "brings_balls": true, "transportation": "pedes"}'::jsonb),
     (3, 7, 1, NULL, NULL, date '2014-03-03', NULL, True, NULL, True, '{"registration_id": 3, "transportation": "car"}'::jsonb),

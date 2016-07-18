@@ -38,7 +38,7 @@ have the same name as a column used internally by the DB out of the
 following list:
 .. the list follows
 address, address_supplement, birthday, checkin, country, course_id,
-course_instructor, display_name, event_id, family_name, field_data,
+course_instructor, display_name, event_id, family_name, fields,
 foto_consent, gender, given_names, is_active, is_member, location,
 lodgement_id, mixed_lodging, mobile, name_supplement, notes, orga_notes,
 parental_agreement, payment, persona_id, postal_code, real_persona_id,

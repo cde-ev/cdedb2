@@ -543,26 +543,26 @@
     {% endif %}
 {% endmacro %}
 
-{% macro event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False, defaultvalue='',
+{% macro event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False, defaultvalue='',
                            anid='') %}
     {% if not name %}
-        {% set name = "fields.{}".format(field_data['field_name']) %}
+        {% set name = "fields.{}".format(fields['field_name']) %}
     {% endif %}
     {% if not label %}
-        {% set label = field_data['field_name'] %}
+        {% set label = fields['field_name'] %}
     {% endif %}
-    {% if field_data['entries'] %}
+    {% if fields['entries'] %}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
-        {% for value, description in field_data['entries'] %}
+        {% for value, description in fields['entries'] %}
             {{ myentries.append((value, description))|e }}
         {% endfor %}
         {{ form_input_select(name=name, title=label, entries=myentries, nulloption=True,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
    {% else %}
-        {% if field_data['kind'] == "bool" %}
+        {% if fields['kind'] == "bool" %}
             {{ form_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-        {% elif field_data['kind'] == "str" %}
+        {% elif fields['kind'] == "str" %}
             {{ form_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
                               defaultvalue=defaultvalue, anid=anid, rows=5) }}
         {% else %}
@@ -572,26 +572,26 @@
    {% endif %}
 {% endmacro %}
 
-{% macro tab_event_field_input(field_data, name='', label='', info='', displayerrors=True, readonly=False,
+{% macro tab_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
                                defaultvalue='', anid='') %}
     {% if not name %}
-        {% set name = "fields.{}".format(field_data['field_name']) %}
+        {% set name = "fields.{}".format(fields['field_name']) %}
     {% endif %}
     {% if not label %}
-        {% set label = field_data['field_name'] %}
+        {% set label = fields['field_name'] %}
     {% endif %}
-    {% if field_data['entries'] %}
+    {% if fields['entries'] %}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
-        {% for value, description in field_data['entries'] %}
+        {% for value, description in fields['entries'] %}
             {{ myentries.append((value, description))|e }}
         {% endfor %}
         {{ form_input_select(name=name, label=label, entries=myentries, nulloption=True,
                             readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
    {% else %}
-        {% if field_data['kind'] == "bool" %}
+        {% if fields['kind'] == "bool" %}
             {{ form_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-        {% elif field_data['kind'] == "str" %}
+        {% elif fields['kind'] == "str" %}
             {{ form_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
                                   defaultvalue=defaultvalue, anid=anid, rows=5) }}
         {% else %}

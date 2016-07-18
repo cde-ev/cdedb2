@@ -1420,7 +1420,7 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, current)
         is_referenced = set()
         event_ids = self.eventproxy.list_db_events(rs)
-        events = self.eventproxy.get_event_data(rs, event_ids.keys())
+        events = self.eventproxy.get_events(rs, event_ids.keys())
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids.keys())
         for event in events.values():
