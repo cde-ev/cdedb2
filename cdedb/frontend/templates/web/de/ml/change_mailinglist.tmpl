@@ -59,8 +59,8 @@
                                          entries=myentries, info="Keine Auswahl entspricht einer Orgaliste.") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for assembly_id, adata in assemblies|dictsort %}
-                {{ myentries.append((assembly_id, adata['title']))|e }}
+            {% for assembly_id, assembly in assemblies|dictsort %}
+                {{ myentries.append((assembly_id, assembly['title']))|e }}
             {% endfor %}
             {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}
         </table>

@@ -6,8 +6,8 @@
 Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
-    {% for part_id, pdata in ambience['event']['parts']|dictsort %}
-        <h2>{{ pdata['title']|e }}</h2>
+    {% for part_id, part in ambience['event']['parts']|dictsort %}
+        <h2>{{ part['title']|e }}</h2>
         <div>
             Bewohner
             <ul id="inhabitants_{{ part_id|e }}" class="connect_{{ part_id|e }} nonVanish">

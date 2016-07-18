@@ -5,11 +5,11 @@
 {% block title %}{{ ambience['assembly']['title']|e }} -- Abstimmungen{% endblock %}
 {% block content %}
     <ul>
-        {% for anid, bdata in ballots|dictsort %}
+        {% for ballot_id, ballot in ballots|dictsort %}
             <li>
-                {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': anid}), bdata['title'])}}
-                {% if is_admin and now() < bdata['vote_begin'] %}
-                    {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': anid}), "Bearbeiten")}}
+                {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title'])}}
+                {% if is_admin and now() < ballot['vote_begin'] %}
+                    {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), "Bearbeiten")}}
                 {% endif %}
             </li>
         {% endfor %}

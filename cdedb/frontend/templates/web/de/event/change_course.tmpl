@@ -13,8 +13,8 @@
             {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
-                {{ myentries.append((part_id, pdata['title']))|e }}
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                {{ myentries.append((part_id, part['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
         </table>

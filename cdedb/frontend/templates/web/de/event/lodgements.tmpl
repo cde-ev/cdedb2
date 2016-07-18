@@ -35,16 +35,16 @@
             <th>Unterkunft</th>
             <th>Plätze</th>
             <th>Reserveplätze</th>
-            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
-                <th>Belegung {{ pdata['title']|e }}</th>
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                <th>Belegung {{ part['title']|e }}</th>
             {% endfor %}
             <th>Aktionen</th>
         </tr>
-        {% for lodgement_id, ldata in lodgements|dictsort %}
+        {% for lodgement_id, lodgement in lodgements|dictsort %}
             <tr>
-                <td>{{ ldata['moniker']|e }}</td>
-                <td>{{ ldata['capacity']|e }}</td>
-                <td>{{ ldata['reserve']|e }}</td>
+                <td>{{ lodgement['moniker']|e }}</td>
+                <td>{{ lodgement['capacity']|e }}</td>
+                <td>{{ lodgement['reserve']|e }}</td>
                 {% for part_id in ambience['event']['parts']|sort %}
                     <td>{{ inhabitants[(lodgement_id, part_id)]|length|e }}</td>
                 {% endfor %}

@@ -108,16 +108,16 @@ class EventFrontend(AbstractUserFrontend):
         return event['offline_lock'] != self.conf.CDEDB_OFFLINE_DEPLOYMENT
 
     @staticmethod
-    def event_has_field(event, field):
+    def event_has_field(event, field_name):
         """Shorthand to check whether a field with given name is defined for
         an event.
 
         :type event: {str: object}
-        :type field: str
+        :type field_name: str
         :rtype: bool
         """
-        return any(fdata['field_name'] == field
-                   for fdata in event['fields'].values())
+        return any(field['field_name'] == field_name
+                   for field in event['fields'].values())
 
     @access("persona")
     def index(self, rs):
@@ -301,11 +301,11 @@ class EventFrontend(AbstractUserFrontend):
         """Make an additional persona become orga."""
         if rs.errors:
             return self.show_event(rs, event_id)
-        newdata = {
+        new = {
             'id': event_id,
             'orgas': rs.ambience['event']['orgas'] | {orga_id}
         }
-        code = self.eventproxy.set_event(rs, newdata)
+        code = self.eventproxy.set_event(rs, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
@@ -319,11 +319,11 @@ class EventFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.show_event(rs, event_id)
-        newdata = {
+        new = {
             'id': event_id,
             'orgas': rs.ambience['event']['orgas'] - {orga_id}
         }
-        code = self.eventproxy.set_event(rs, newdata)
+        code = self.eventproxy.set_event(rs, new)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/show_event")
 
@@ -542,9 +542,9 @@ class EventFrontend(AbstractUserFrontend):
             registrations = {
                 k: v for k, v in self.eventproxy.get_registrations(
                     rs, registration_ids).items()
-                if any(pdata['course_id'] == course_id
-                       or pdata['course_instructor'] == course_id
-                       for pdata in v['parts'].values())}
+                if any(part['course_id'] == course_id
+                       or part['course_instructor'] == course_id
+                       for part in v['parts'].values())}
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in registrations.values()))
             attendees = self.calculate_groups(
@@ -837,12 +837,12 @@ class EventFrontend(AbstractUserFrontend):
         choice_counts = {
             course_id: {
                 (part_id, i): sum(
-                    1 for rdata in registrations.values()
-                    if (len(rdata['choices'][part_id]) > i
-                        and rdata['choices'][part_id][i] == course_id
-                        and (rdata['parts'][part_id]['status']
+                    1 for reg in registrations.values()
+                    if (len(reg['choices'][part_id]) > i
+                        and reg['choices'][part_id][i] == course_id
+                        and (reg['parts'][part_id]['status']
                              == const.RegistrationPartStati.participant)
-                        and rdata['persona_id'] not in rs.ambience['event']['orgas']))
+                        and reg['persona_id'] not in rs.ambience['event']['orgas']))
                 for part_id in rs.ambience['event']['parts']
                 for i in range(3)
             }
@@ -851,11 +851,11 @@ class EventFrontend(AbstractUserFrontend):
         assign_counts = {
             course_id: {
                 part_id: sum(
-                    1 for rdata in registrations.values()
-                    if (rdata['parts'][part_id]['course_id'] == course_id
-                        and (rdata['parts'][part_id]['status']
+                    1 for reg in registrations.values()
+                    if (reg['parts'][part_id]['course_id'] == course_id
+                        and (reg['parts'][part_id]['status']
                              == const.RegistrationPartStati.participant)
-                        and rdata['persona_id'] not in rs.ambience['event']['orgas']))
+                        and reg['persona_id'] not in rs.ambience['event']['orgas']))
                 for part_id in rs.ambience['event']['parts']
             }
             for course_id in course_ids
@@ -881,10 +881,10 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
-            rdata['persona_id'] for rdata in registrations.values()))
-        for rdata in registrations.values():
-            rdata['age'] = determine_age_class(
-                personas[rdata['persona_id']]['birthday'],
+            reg['persona_id'] for reg in registrations.values()))
+        for registration in registrations.values():
+            registration['age'] = determine_age_class(
+                personas[registration['persona_id']]['birthday'],
                 self.event_begin(rs.ambience['event']))
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
@@ -920,18 +920,18 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
-            rdata['persona_id'] for rdata in registrations.values()))
+            reg['persona_id'] for reg in registrations.values()))
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         counts = {
             course_id: {
                 (part_id, i): sum(
-                    1 for rdata in registrations.values()
-                    if (len(rdata['choices'][part_id]) > i
-                        and rdata['choices'][part_id][i] == course_id
-                        and (rdata['parts'][part_id]['status']
+                    1 for reg in registrations.values()
+                    if (len(reg['choices'][part_id]) > i
+                        and reg['choices'][part_id][i] == course_id
+                        and (reg['parts'][part_id]['status']
                              == const.RegistrationPartStati.participant)
-                        and rdata['persona_id'] not in rs.ambience['event']['orgas']))
+                        and reg['persona_id'] not in rs.ambience['event']['orgas']))
                 for part_id in rs.ambience['event']['parts']
                 for i in range(3)
             }
@@ -954,17 +954,17 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
-            rdata['persona_id'] for rdata in registrations.values()))
-        for rdata in registrations.values():
-            rdata['age'] = determine_age_class(
-                personas[rdata['persona_id']]['birthday'],
+            reg['persona_id'] for reg in registrations.values()))
+        for registration in registrations.values():
+            registration['age'] = determine_age_class(
+                personas[registration['persona_id']]['birthday'],
                 self.event_begin(rs.ambience['event']))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodge_present = any(fdata['field_name'] == "lodge"
-                            for fdata in rs.ambience['event']['fields'].values())
-        may_reserve_present = any(fdata['field_name'] == "may_reserve"
-                                  for fdata in rs.ambience['event']['fields'].values())
+        lodge_present = any(field['field_name'] == "lodge"
+                            for field in rs.ambience['event']['fields'].values())
+        may_reserve_present = any(field['field_name'] == "may_reserve"
+                                  for field in rs.ambience['event']['fields'].values())
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas, 'lodge_present': lodge_present,
@@ -1041,8 +1041,8 @@ class EventFrontend(AbstractUserFrontend):
             k: v
             for k, v in self.eventproxy.get_registrations(
                 rs, registration_ids).items()
-            if any(pdata['status'] == const.RegistrationPartStati.participant
-                   for pdata in v['parts'].values())}
+            if any(part['status'] == const.RegistrationPartStati.participant
+                   for part in v['parts'].values())}
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
         ordered = sorted(
@@ -1588,9 +1588,9 @@ class EventFrontend(AbstractUserFrontend):
                                "course_instructor", "lodgement_id"))
         raw_parts = request_extractor(rs, part_params)
         field_params = tuple(
-            ("fields.{}".format(fdata['field_name']),
-             "{}_or_None".format(fdata['kind']))
-            for fdata in event['fields'].values())
+            ("fields.{}".format(field['field_name']),
+             "{}_or_None".format(field['kind']))
+            for field in event['fields'].values())
         raw_fields = request_extractor(rs, field_params)
 
         new_parts = {
@@ -1705,10 +1705,10 @@ class EventFrontend(AbstractUserFrontend):
         """
         def _check_belonging(entity_id, part_id, registration_id):
             """The actual check, un-inlined."""
-            pdata = registrations[registration_id]['parts'][part_id]
+            part = registrations[registration_id]['parts'][part_id]
             return (
-                pdata[key] == entity_id
-                and const.RegistrationPartStati(pdata['status']).is_present())
+                part[key] == entity_id
+                and const.RegistrationPartStati(part['status']).is_present())
         if personas is None:
             sorter = lambda x: x
         else:
@@ -1775,8 +1775,8 @@ class EventFrontend(AbstractUserFrontend):
         for lodgement_id in lodgements:
             for part_id in event['parts']:
                 group = inhabitants[(lodgement_id, part_id)]
-                ldata = lodgements[lodgement_id]
-                if len(group) > ldata['capacity'] + ldata['reserve']:
+                lodgement = lodgements[lodgement_id]
+                if len(group) > lodgement['capacity'] + lodgement['reserve']:
                     ret.append(("Overful lodgement.", lodgement_id, part_id,
                                 tuple()))
                 if _mixed(group) and any(
@@ -1784,9 +1784,9 @@ class EventFrontend(AbstractUserFrontend):
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
                 if (cls.event_has_field(event, 'reserve')
-                        and (len(group) - ldata['capacity']
+                        and (len(group) - lodgement['capacity']
                              != _reserve(group, part_id))
-                        and ((len(group) - ldata['capacity'] > 0)
+                        and ((len(group) - lodgement['capacity'] > 0)
                              or _reserve(group, part_id))):
                     ret.append(_reserve_problem(lodgement_id, part_id))
         return ret
@@ -1825,8 +1825,8 @@ class EventFrontend(AbstractUserFrontend):
         registrations = {
             k: v for k, v in self.eventproxy.get_registrations(
                 rs, registration_ids).items()
-            if any(pdata['lodgement_id'] == lodgement_id
-                   for pdata in v['parts'].values())}
+            if any(part['lodgement_id'] == lodgement_id
+                   for part in v['parts'].values())}
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()))
         inhabitants = self.calculate_groups(
@@ -1908,19 +1908,19 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
-            rdata['persona_id'] for rdata in registrations.values()))
+            reg['persona_id'] for reg in registrations.values()))
         inhabitants = self.calculate_groups(
             (lodgement_id,), rs.ambience['event'], registrations,
             key="lodgement_id", personas=personas)
         def _check_without_lodgement(registration_id, part_id):
             """Un-inlined check for registration without lodgement."""
-            pdata = registrations[registration_id]['parts'][part_id]
-            return (const.RegistrationPartStati(pdata['status']).is_present()
-                    and not pdata['lodgement_id'])
+            part = registrations[registration_id]['parts'][part_id]
+            return (const.RegistrationPartStati(part['status']).is_present()
+                    and not part['lodgement_id'])
         without_lodgement = {
             part_id: sorted(
                 (registration_id
-                 for registration_id, rdata in registrations.items()
+                 for registration_id in registrations
                  if _check_without_lodgement(registration_id, part_id)),
                 key=lambda anid: name_key(
                     personas[registrations[anid]['persona_id']])
@@ -1929,14 +1929,14 @@ class EventFrontend(AbstractUserFrontend):
         }
         def _check_with_lodgement(registration_id, part_id):
             """Un-inlined check for registration with different lodgement."""
-            pdata = registrations[registration_id]['parts'][part_id]
-            return (const.RegistrationPartStati(pdata['status']).is_present()
-                    and pdata['lodgement_id']
-                    and pdata['lodgement_id'] != lodgement_id)
+            part = registrations[registration_id]['parts'][part_id]
+            return (const.RegistrationPartStati(part['status']).is_present()
+                    and part['lodgement_id']
+                    and part['lodgement_id'] != lodgement_id)
         with_lodgement = {
             part_id: sorted(
                 (registration_id
-                 for registration_id, rdata in registrations.items()
+                 for registration_id in registrations
                  if _check_with_lodgement(registration_id, part_id)),
                 key=lambda anid: name_key(
                     personas[registrations[anid]['persona_id']])
@@ -1964,7 +1964,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         code = 1
-        for registration_id, rdata in registrations.items():
+        for registration_id, registration in registrations.items():
             new_reg = {
                 'id': registration_id,
                 'parts': {},
@@ -1974,7 +1974,7 @@ class EventFrontend(AbstractUserFrontend):
                             in data["inhabitants_{}".format(part_id)])
                 if (inhabits
                         != (lodgement_id
-                            == rdata['parts'][part_id]['lodgement_id'])):
+                            == registration['parts'][part_id]['lodgement_id'])):
                     new_reg['parts'][part_id] = {
                         'lodgement_id': (lodgement_id if inhabits else None)
                     }
@@ -1990,19 +1990,19 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
-            rdata['persona_id'] for rdata in registrations.values()))
+            reg['persona_id'] for reg in registrations.values()))
         attendees = self.calculate_groups(
             (course_id,), rs.ambience['event'], registrations, key="course_id",
             personas=personas)
         def _check_without_course(registration_id, part_id):
             """Un-inlined check for registration without course."""
-            pdata = registrations[registration_id]['parts'][part_id]
-            return (pdata['status'] == const.RegistrationPartStati.participant
-                    and not pdata['course_id'])
+            part = registrations[registration_id]['parts'][part_id]
+            return (part['status'] == const.RegistrationPartStati.participant
+                    and not part['course_id'])
         without_course = {
             part_id: sorted(
                 (registration_id
-                 for registration_id, rdata in registrations.items()
+                 for registration_id in registrations
                  if _check_without_course(registration_id, part_id)),
                 key=lambda anid: name_key(
                     personas[registrations[anid]['persona_id']])
@@ -2011,14 +2011,14 @@ class EventFrontend(AbstractUserFrontend):
         }
         def _check_with_course(registration_id, part_id):
             """Un-inlined check for registration with different course."""
-            pdata = registrations[registration_id]['parts'][part_id]
-            return (pdata['status'] == const.RegistrationPartStati.participant
-                    and pdata['course_id']
-                    and pdata['course_id'] != course_id)
+            part = registrations[registration_id]['parts'][part_id]
+            return (part['status'] == const.RegistrationPartStati.participant
+                    and part['course_id']
+                    and part['course_id'] != course_id)
         with_course = {
             part_id: sorted(
                 (registration_id
-                 for registration_id, rdata in registrations.items()
+                 for registration_id in registrations
                  if _check_with_course(registration_id, part_id)),
                 key=lambda anid: name_key(
                     personas[registrations[anid]['persona_id']])
@@ -2042,7 +2042,7 @@ class EventFrontend(AbstractUserFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         code = 1
-        for registration_id, rdata in registrations.items():
+        for registration_id, registration in registrations.items():
             new_reg = {
                 'id': registration_id,
                 'parts': {},
@@ -2051,7 +2051,7 @@ class EventFrontend(AbstractUserFrontend):
                 attends = (registration_id
                            in data["attendees_{}".format(part_id)])
                 if (attends
-                        != (course_id == rdata['parts'][part_id]['course_id'])):
+                        != (course_id == registration['parts'][part_id]['course_id'])):
                     new_reg['parts'][part_id] = {
                         'course_id': (course_id if attends else None)
                     }
@@ -2105,37 +2105,37 @@ class EventFrontend(AbstractUserFrontend):
         for part_id in event['parts']:
             choices.update({
                 "part{0}.course_id{0}".format(part_id): {
-                    course_id: cdata['title']
-                    for course_id, cdata in courses.items()
-                    if part_id in cdata['parts']},
+                    course_id: course['title']
+                    for course_id, course in courses.items()
+                    if part_id in course['parts']},
                 "part{0}.status{0}".format(part_id): cls.enum_choice(
                     rs, const.RegistrationPartStati),
                 "part{0}.lodgement_id{0}".format(part_id): {
-                    lodgement_id: ldata['moniker']
-                    for lodgement_id, ldata in lodgements.items()},
+                    lodgement_id: lodgement['moniker']
+                    for lodgement_id, lodgement in lodgements.items()},
                 "part{0}.course_instructor{0}".format(part_id): {
-                    course_id: cdata['title']
-                    for course_id, cdata in courses.items()
-                    if part_id in cdata['parts']},})
+                    course_id: course['title']
+                    for course_id, course in courses.items()
+                    if part_id in course['parts']},})
         choices.update({
-            "fields.{}".format(fdata['field_name']): {
-                value: desc for value, desc in fdata['entries']}
-            for fdata in event['fields'].values() if fdata['entries']})
+            "fields.{}".format(field['field_name']): {
+                value: desc for value, desc in field['entries']}
+            for field in event['fields'].values() if field['entries']})
 
         titles = {
-            "fields.{}".format(fdata['field_name']): fdata['field_name']
-            for fdata in event['fields'].values()}
-        for part_id, pdata in event['parts'].items():
+            "fields.{}".format(field['field_name']): field['field_name']
+            for field in event['fields'].values()}
+        for part_id, part in event['parts'].items():
             titles.update({
                 "part{0}.course_id{0}".format(part_id): cls.i18n(
-                    "course (part {})".format(pdata['title']), rs.lang),
+                    "course (part {})".format(part['title']), rs.lang),
                 "part{0}.status{0}".format(part_id): cls.i18n(
-                    "registration status (part {})".format(pdata['title']),
+                    "registration status (part {})".format(part['title']),
                     rs.lang),
                 "part{0}.lodgement_id{0}".format(part_id): cls.i18n(
-                    "lodgement (part {})".format(pdata['title']), rs.lang),
+                    "lodgement (part {})".format(part['title']), rs.lang),
                 "part{0}.course_instructor{0}".format(part_id): cls.i18n(
-                    "course instructor (part {})".format(pdata['title']),
+                    "course instructor (part {})".format(part['title']),
                     rs.lang),
             })
         titles.update({
@@ -2258,10 +2258,10 @@ class EventFrontend(AbstractUserFrontend):
     def checkin_form(self, rs, event_id):
         """Render form."""
         today = now().date()
-        for part_id, pdata in rs.ambience['event']['parts'].items():
-            if pdata['part_begin'] <= today and pdata['part_end'] >= today:
+        for part_id, part in rs.ambience['event']['parts'].items():
+            if part['part_begin'] <= today and part['part_end'] >= today:
                 current_part = part_id
-                if pdata['part_end'] > today:
+                if part['part_end'] > today:
                     break
         else:
             current_part = None
@@ -2273,10 +2273,10 @@ class EventFrontend(AbstractUserFrontend):
                 and (not current_part or const.RegistrationPartStati(
                     v['parts'][current_part]['status']).is_present()))}
         personas = self.coreproxy.get_event_users(rs, tuple(
-            rdata['persona_id'] for rdata in registrations.values()))
-        for rdata in registrations.values():
-            rdata['age'] = determine_age_class(
-                personas[rdata['persona_id']]['birthday'],
+            reg['persona_id'] for reg in registrations.values()))
+        for registration in registrations.values():
+            registration['age'] = determine_age_class(
+                personas[registration['persona_id']]['birthday'],
                 self.event_begin(rs.ambience['event']))
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas})
@@ -2335,8 +2335,8 @@ class EventFrontend(AbstractUserFrontend):
         field_name = rs.ambience['event']['fields'][field_id]['field_name']
         values = {
             "input{}".format(registration_id):
-            rdata['fields'].get(field_name)
-            for registration_id, rdata in registrations.items()}
+            registration['fields'].get(field_name)
+            for registration_id, registration in registrations.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
             'registrations': registrations, 'personas': personas,
@@ -2362,9 +2362,9 @@ class EventFrontend(AbstractUserFrontend):
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         code = 1
         field_name = event['fields'][field_id]['field_name']
-        for registration_id, rdata in registrations.items():
+        for registration_id, registration in registrations.items():
             if (data["input{}".format(registration_id)]
-                    != rdata['fields'].get(field_name)):
+                    != registration['fields'].get(field_name)):
                 new = {
                     'id': registration_id,
                     'fields': {

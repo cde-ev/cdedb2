@@ -937,7 +937,7 @@ class CdEFrontend(AbstractUserFrontend):
                     persona['given_names'], persona['family_name'])
             timestamp = "{:.6f}".format(now().timestamp())
             transaction['unique_id'] = "{}-{}".format(
-                transaction['mandate_reference'], timestampersona[-9:])
+                transaction['mandate_reference'], timestamp[-9:])
             transaction['subject'] = glue(
                 "{}, {}, {} I25+ Mitgliedsbeitrag u. Spende CdE e.V.",
                 "z. Foerderung der Volks- u. Berufsbildung u.",

@@ -33,19 +33,19 @@
                 <tr>
                     <th>Angabe</th>
                     <th></th>
-                    {% for part_id, pdata in ambience['event']['parts']|dictsort %}
-                        <th>{{ pdata['title']|e }}</th>
+                    {% for part_id, part in ambience['event']['parts']|dictsort %}
+                        <th>{{ part['title']|e }}</th>
                     {% endfor %}
                 </tr>
-                {% for row, rdata in statistics.items() %}
+                {% for key, row in statistics.items() %}
                     <tr>
-                        {% if row.startswith(" ") %}
+                        {% if key.startswith(" ") %}
                             <th></th>
-                            <th>{{ HEADINGS.get(row, row)|e }}</th>
+                            <th>{{ HEADINGS.get(key, key)|e }}</th>
                         {% else %}
-                            <th colspan="2">{{ HEADINGS.get(row, row)|e }}</th>
+                            <th colspan="2">{{ HEADINGS.get(key, key)|e }}</th>
                         {% endif %}
-                        {% for part_id, datum in rdata|dictsort %}
+                        {% for part_id, datum in row|dictsort %}
                             <td>{{ datum|e }}</td>
                         {% endfor %}
                     </tr>
@@ -61,8 +61,8 @@
         ('wrong choice', True, "Ungewählter Kurs zugeteilt"),) %}
         {% if not course_only or courses %}
             <h2>{{ heading|e }}</h2>
-            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
-                <h3>{{ pdata['title']|e }} -- {{ listings[key][part_id]|length|e }}
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                <h3>{{ part['title']|e }} -- {{ listings[key][part_id]|length|e }}
                     Anmeldung{{ listings[key][part_id]|length|numerus("", "en")|e }} </h3>
                 {% if 3*(listings[key][part_id]|length) < registrations|length %}
                     <ul>

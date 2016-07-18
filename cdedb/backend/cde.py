@@ -278,7 +278,7 @@ class CdEBackend(AbstractBackend):
         stati = const.LastschriftTransactionStati
         data = affirm("lastschrift_transaction", data, creation=True)
         with Atomizer(rs):
-            lastschrift = unwrap(self.get_lastschrift(
+            lastschrift = unwrap(self.get_lastschrifts(
                 rs, (data['lastschrift_id'],)))
             if lastschrift['revoked_at']:
                 raise RuntimeError("Lastschrift already revoked.")
@@ -350,7 +350,7 @@ class CdEBackend(AbstractBackend):
                 'status': status,
             }
             ret = self.sql_update(rs, "cde.lastschrift_transactions", update)
-            lastschrift = unwrap(self.get_lastschrift(
+            lastschrift = unwrap(self.get_lastschrifts(
                 rs, (transaction['lastschrift_id'],)))
             persona_id = lastschrift['persona_id']
             delta = None
@@ -402,7 +402,7 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             transaction = unwrap(self.get_lastschrift_transactions(
                 rs, (transaction_id,)))
-            lastschrift = unwrap(self.get_lastschrift(
+            lastschrift = unwrap(self.get_lastschrifts(
                 rs, (transaction['lastschrift_id'],)))
             if transaction['status'] != stati.success:
                 raise RuntimeError("Transaction was not successful.")
@@ -471,7 +471,7 @@ class CdEBackend(AbstractBackend):
         """
         lastschrift_id = affirm("id", lastschrift_id)
         with Atomizer(rs):
-            lastschrift = unwrap(self.get_lastschrift(rs, (lastschrift_id,)))
+            lastschrift = unwrap(self.get_lastschrifts(rs, (lastschrift_id,)))
             if not self.lastschrift_may_skip(rs, lastschrift):
                 ## Skipping will invalidate permit.
                 return 0

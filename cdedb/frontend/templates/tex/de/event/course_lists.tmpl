@@ -5,8 +5,8 @@
     \pagestyle{empty}
 <<% endblock %>>
 <<% block content %>>
-    <<% for course_id, cdata in courses|dictsort %>>
-        <<% for part_id in cdata['parts']|sort %>>
+    <<% for course_id, course in courses|dictsort %>>
+        <<% for part_id in course['parts']|sort %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}
@@ -14,7 +14,7 @@
                 \end{center}
                 \vspace{-2\baselineskip}
             \end{wrapfigure}
-            \section*{<<< cdata['title']|te >>> (<<< ambience['event']['parts'][part_id]['title']|te >>>)}
+            \section*{<<< course['title']|te >>> (<<< ambience['event']['parts'][part_id]['title']|te >>>)}
             \begin{itemize}
                 <<% for registration_id in attendees[(course_id, part_id)] %>>
                     \item

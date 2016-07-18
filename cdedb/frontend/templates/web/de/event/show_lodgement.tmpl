@@ -48,9 +48,9 @@
         </tr>
     </table>
     <h2>Belegung</h2>
-    {% for part_id, pdata in ambience['event']['parts']|dictsort %}
+    {% for part_id, part in ambience['event']['parts']|dictsort %}
         {# TODO make this multi-column #}
-        <h3>{{ pdata['title']|e }} -- {{ inhabitants[(values['lodgement_id'], part_id)]|length|e }} Bewohner</h3>
+        <h3>{{ part['title']|e }} -- {{ inhabitants[(values['lodgement_id'], part_id)]|length|e }} Bewohner</h3>
         <ul>
             {% for registration_id in inhabitants[(values['lodgement_id'], part_id)] %}
                 <li>

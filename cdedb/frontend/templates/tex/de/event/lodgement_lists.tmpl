@@ -5,8 +5,8 @@
     \pagestyle{empty}
 <<% endblock %>>
 <<% block content %>>
-    <<% for lodgement_id, ldata in lodgements|dictsort %>>
-        <<% for part_id, pdata in ambience['event']['parts']|dictsort %>>
+    <<% for lodgement_id, lodgement in lodgements|dictsort %>>
+        <<% for part_id, part in ambience['event']['parts']|dictsort %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}
@@ -14,7 +14,7 @@
                 \end{center}
                 \vspace{-2\baselineskip}
             \end{wrapfigure}
-            \section*{<<< ldata['moniker']|te >>> (<<< pdata['title']|te >>>)}
+            \section*{<<< lodgement['moniker']|te >>> (<<< part['title']|te >>>)}
             \begin{itemize}
                 <<% for registration_id in inhabitants[(lodgement_id, part_id)] %>>
                     \item

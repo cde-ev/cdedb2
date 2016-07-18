@@ -356,19 +356,19 @@ class MlBackend(AbstractBackend):
                         for e in subs if not e['is_subscribed']}
             if ml['event_id']:
                 if not ml['registration_stati']:
-                    odata = self.sql_select(
+                    orgas = self.sql_select(
                         rs, "event.orgas", ("persona_id",),
                         (ml['event_id'],), entity_key="event_id")
-                    ret = {e['persona_id']: None for e in odata}
+                    ret = {e['persona_id']: None for e in orgas}
                 else:
-                    rdata = self.query_all(rs, event_list_query, (
+                    regs = self.query_all(rs, event_list_query, (
                         ml['event_id'], ml['registration_stati']))
-                    ret = {e['persona_id']: None for e in rdata}
+                    ret = {e['persona_id']: None for e in regs}
             elif ml['assembly_id']:
-                adata = self.sql_select(
+                attendees = self.sql_select(
                     rs, "assembly.attendees", ("persona_id",),
                     (ml['assembly_id'],), entity_key="assembly_id")
-                ret = {e['persona_id']: None for e in adata}
+                ret = {e['persona_id']: None for e in attendees}
             elif const.SubscriptionPolicy(ml['sub_policy']).is_additive():
                 ## explicits take care of everything
                 pass
@@ -379,14 +379,14 @@ class MlBackend(AbstractBackend):
                     "WHERE {} AND is_active = True".format(
                         const.AudiencePolicy(
                             ml['audience_policy']).sql_test()))
-                pdata = self.query_all(rs, query, tuple())
-                ret = {e['id']: None for e in pdata}
+                personas = self.query_all(rs, query, tuple())
+                ret = {e['id']: None for e in personas}
             ret = {k: v for k, v in ret.items() if k not in excludes}
             ret.update(explicits)
             defaults = tuple(k for k, v in ret.items() if not v)
-            udata = self.sql_select(rs, "core.personas",
+            emails = self.sql_select(rs, "core.personas",
                                     ("id", "username"), defaults)
-            ret.update({e['id']: e['username'] for e in udata})
+            ret.update({e['id']: e['username'] for e in emails})
             return ret
 
     @access("ml")
@@ -450,23 +450,23 @@ class MlBackend(AbstractBackend):
                             query = glue(
                                 "SELECT persona_id FROM event.orgas",
                                 "WHERE event_id = %s AND persona_id = %s")
-                            odata = self.query_one(rs, query, (
+                            orga = self.query_one(rs, query, (
                                 this_ml['event_id'], persona_id))
-                            if odata:
+                            if orga:
                                 ret[mailinglist_id] = None
                         else:
-                            rdata = self.query_one(rs, event_list_query, (
+                            reg = self.query_one(rs, event_list_query, (
                                 this_ml['event_id'],
                                 this_ml['registration_stati'], persona_id))
-                            if rdata:
+                            if reg:
                                 ret[mailinglist_id] = None
                     elif this_ml['assembly_id']:
                         query = glue(
                             "SELECT persona_id FROM assembly.attendees",
                             "WHERE assembly_id = %s AND persona_id = %s")
-                        adata = self.query_one(rs, query, (
+                        attendee = self.query_one(rs, query, (
                             this_ml['assembly_id'], persona_id))
-                        if adata:
+                        if attendee:
                             ret[mailinglist_id] = None
                     elif not const.SubscriptionPolicy(
                             this_ml['sub_policy']).is_additive():
@@ -491,17 +491,17 @@ class MlBackend(AbstractBackend):
         with Atomizer(rs):
             query = glue("SELECT id FROM ml.subscription_states",
                          "WHERE mailinglist_id = %s AND persona_id = %s")
-            data = self.query_one(rs, query, (mailinglist_id, persona_id))
+            current = self.query_one(rs, query, (mailinglist_id, persona_id))
             new = {
                 'mailinglist_id': mailinglist_id,
                 'persona_id': persona_id,
                 'is_subscribed': is_subscribed,
                 'address': address,
             }
-            if data is None:
+            if current is None:
                 return self.sql_insert(rs, "ml.subscription_states", new)
             else:
-                new['id'] = unwrap(data)
+                new['id'] = unwrap(current)
                 return self.sql_update(rs, "ml.subscription_states", new)
 
     @access("ml")
@@ -551,8 +551,8 @@ class MlBackend(AbstractBackend):
                     and ml['sub_policy'] == policy.moderated_opt_in):
                 query = glue("SELECT id FROM ml.subscription_requests",
                              "WHERE mailinglist_id = %s AND persona_id = %s")
-                rdata = self.query_one(rs, query, (mailinglist_id, persona_id))
-                if rdata:
+                exists = self.query_one(rs, query, (mailinglist_id, persona_id))
+                if exists:
                     return 0
                 self.ml_log(rs, const.MlLogCodes.subscription_requested,
                             mailinglist_id, persona_id=persona_id)

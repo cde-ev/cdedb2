@@ -354,7 +354,7 @@ class TestCdEBackend(BackendTest):
             'persona_id': 2,
             'revoked_at': None,
             'submitted_by': 1}}
-        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (2,)))
+        self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
         update = {
             'id': 2,
             'notes': 'ehem. reicher Onkel',
@@ -362,7 +362,7 @@ class TestCdEBackend(BackendTest):
         }
         self.assertLess(0, self.cde.set_lastschrift(self.key, update))
         expectation[2].update(update)
-        self.assertEqual(expectation, self.cde.get_lastschrift(self.key, (2,)))
+        self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
         self.assertEqual({}, self.cde.list_lastschrift(self.key))
         self.assertEqual({1: 2, 2: 2}, self.cde.list_lastschrift(self.key, active=False))
         newdata = {
@@ -384,7 +384,7 @@ class TestCdEBackend(BackendTest):
             'submitted_by': 1,
         })
         self.assertEqual({new_id: newdata},
-                         self.cde.get_lastschrift(self.key, (new_id,)))
+                         self.cde.get_lastschrifts(self.key, (new_id,)))
 
     @as_users("anton")
     def test_lastschrift_transaction(self, user):

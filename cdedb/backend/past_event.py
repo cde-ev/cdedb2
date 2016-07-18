@@ -373,11 +373,11 @@ class PastEventBackend(AbstractBackend):
         current = unwrap(self.get_past_courses(rs, (pcourse_id,)))
         with Atomizer(rs):
             if cascade and self.list_participants(rs, pcourse_id=pcourse_id):
-                cdata = unwrap(self.get_past_courses(rs, (pcourse_id,)))
+                course = unwrap(self.get_past_courses(rs, (pcourse_id,)))
                 with Silencer(rs):
                     for pid in self.list_participants(rs,
                                                       pcourse_id=pcourse_id):
-                        self.remove_participant(rs, cdata['pevent_id'],
+                        self.remove_participant(rs, course['pevent_id'],
                                                 pcourse_id, pid)
             ret = self.sql_delete_one(rs, "past_event.courses", pcourse_id)
             self.past_event_log(
@@ -571,8 +571,8 @@ class PastEventBackend(AbstractBackend):
             course_ids = self.event.list_db_courses(rs, event_id)
             courses = self.event.get_courses(rs, course_ids.keys())
             course_map = {}
-            for course_id, cdata in courses.items():
-                pcourse = {k: v for k, v in cdata.items()
+            for course_id, course in courses.items():
+                pcourse = {k: v for k, v in course.items()
                            if k in PAST_COURSE_FIELDS}
                 del pcourse['id']
                 pcourse['pevent_id'] = new_id

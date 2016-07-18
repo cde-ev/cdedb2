@@ -66,25 +66,25 @@
     {% endif %}
     {% if participants %}
         <ul>
-            {% for anid, pdata in participants.items() %} {# This dict is already sorted. #}
+            {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
                 <li>
-                    {% if pdata['is_orga'] %}
+                    {% if participant['is_orga'] %}
                         <strong>
                     {% endif %}
-                    {% if pdata['viewable'] %}
+                    {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid]) }}
                     {% else %}
-                        {{ pdata['given_names']|e }} {{ pdata['family_name']|e }}
+                        {{ participant['given_names']|e }} {{ participant['family_name']|e }}
                     {% endif %}
-                    {% if pdata['is_orga'] %}
+                    {% if participant['is_orga'] %}
                         </strong>
                     {% endif %}
                     {# only allow removal of participants without a course #}
-                    {% if is_admin and pdata['pcourse_id'] is none %}
+                    {% if is_admin and participant['pcourse_id'] is none %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}" style="display: inline;">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
-                            {{ util.input_hidden(name="pcourse_id", value=pdata['pcourse_id']) }}
+                            {{ util.input_hidden(name="pcourse_id", value=participant['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(title='entfernen', icon="trash", aclass="btn btn-xs btn-danger",
                                     value="") }}

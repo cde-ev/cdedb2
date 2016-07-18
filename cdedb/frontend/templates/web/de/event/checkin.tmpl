@@ -9,10 +9,10 @@
         <input type="text" name="selector" id="selector" class="jsEnabled" value="" disabled>
     </div>
     <ul>
-        {% for registration_id, rdata in registrations|dictsort %}
+        {% for registration_id, registration in registrations|dictsort %}
             <li class="selectee">
-                {{ personas[rdata['persona_id']]['given_names']|e }}
-                {{ personas[rdata['persona_id']]['family_name']|e }}
+                {{ personas[registration['persona_id']]['given_names']|e }}
+                {{ personas[registration['persona_id']]['family_name']|e }}
                 <form action="{{ cdedblink('event/checkin')|e }}" method="POST" id="checkinform{{ registration_id|e }}">
                     {{ util.input_hidden(name="registration_id", value=registration_id) }}
                     {{ util.form_input_submit(value="Checkin") }}

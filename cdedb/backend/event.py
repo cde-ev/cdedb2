@@ -900,11 +900,11 @@ class EventBackend(AbstractBackend):
             new_id = self.sql_insert(rs, "event.registrations", rdata)
             for aspect in ('parts', 'choices'):
                 if aspect in data:
-                    new = {
+                    adata = {
                         'id': new_id,
                         aspect: data[aspect]
                     }
-                    self.set_registration(rs, new)
+                    self.set_registration(rs, adata)
             ## fix fields to contain registration id
             fdata = {
                 'id': new_id,

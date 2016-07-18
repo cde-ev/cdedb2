@@ -118,8 +118,8 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                 {{ util.deko_checkbox(checked=ambience['registration']['foto_consent']) }}
             </td>
         </tr>
-        {% for part_id, pdata in ambience['event']['parts']|dictsort %}
-            <tr><th colspan="2">{{ pdata['title']|e }}</th></tr>
+        {% for part_id, part in ambience['event']['parts']|dictsort %}
+            <tr><th colspan="2">{{ part['title']|e }}</th></tr>
             <tr>
                 <td>Status</td>
                 <td>
@@ -162,25 +162,25 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
             </tr>
         {% endfor %}
         <tr><th colspan="2">Felder</th></tr>
-        {% for field_id, fdata in ambience['event']['fields']|dictsort %}
+        {% for field_id, field in ambience['event']['fields']|dictsort %}
             <tr>
-                <td>{{ fdata['field_name']|e }}</td>
+                <td>{{ field['field_name']|e }}</td>
                 <td>
-                    {% if fdata['entries'] %}
-                        {% for value, description in fdata['entries'] %}
-                            {% if ambience['registration']['fields'].get(fdata['field_name']) == value %}
+                    {% if field['entries'] %}
+                        {% for value, description in field['entries'] %}
+                            {% if ambience['registration']['fields'].get(field['field_name']) == value %}
                                 {{ description|e }}
                             {% endif %}
                         {% endfor %}
                     {% else %}
-                        {% if fdata['kind'] == "bool" %}
-                            {{ util.deko_checkbox(checked=ambience['registration']['fields'].get(fdata['field_name'])) }}
-                        {% elif fdata['kind'] == "date" %}
-                            {{ ambience['registration']['fields'].get(fdata['field_name'])|date|e }}
-                        {% elif fdata['kind'] == "datetime" %}
-                            {{ ambience['registration']['fields'].get(fdata['field_name'])|datetime|e }}
+                        {% if field['kind'] == "bool" %}
+                            {{ util.deko_checkbox(checked=ambience['registration']['fields'].get(field['field_name'])) }}
+                        {% elif field['kind'] == "date" %}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|date|e }}
+                        {% elif field['kind'] == "datetime" %}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|datetime|e }}
                         {% else %}
-                            {{ ambience['registration']['fields'].get(fdata['field_name'])|e|linebreaks }}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|e|linebreaks }}
                         {% endif %}
                     {% endif %}
                 </td>

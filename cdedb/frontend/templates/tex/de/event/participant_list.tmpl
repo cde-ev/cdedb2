@@ -23,16 +23,16 @@
     \begin{longtabu}{ll>{\raggedright}p{.3\linewidth}l<<< ('l'*(ambience['event']['parts']|length))|te >>>l}
     \toprule
     Vorname & Nachname & Ort &
-    <<% for part_id, pdata in ambience['event']['parts']|dictsort -%>>
-        <<< pdata['title']|te >>> &
+    <<% for part_id, part in ambience['event']['parts']|dictsort -%>>
+        <<< part['title']|te >>> &
     <<% endfor -%>>
     Email \\
     \midrule
     \endfirsthead
     \midrule
     Vorname & Nachname & Ort & Handy &
-    <<% for part_id, pdata in ambience['event']['parts']|dictsort -%>>
-        <<< pdata['title']|te >>> &
+    <<% for part_id, part in ambience['event']['parts']|dictsort -%>>
+        <<< part['title']|te >>> &
     <<% endfor -%>>
     Email \\
     \midrule
@@ -42,27 +42,27 @@
     \bottomrule
     \endlastfoot
     <<% for registration_id in ordered -%>>
-        <<% with rdata = registrations[registration_id] -%>>
-            <<< personas[rdata['persona_id']]['given_names']|te >>> &
-            <<< personas[rdata['persona_id']]['family_name']|te >>> &
-            <<< personas[rdata['persona_id']]['postal_code']|te >>>
-            <<< personas[rdata['persona_id']]['location']|te >>>
-            <<% if personas[rdata['persona_id']]['country'] != "Deutschland" -%>>
-                <<< personas[rdata['persona_id']]['country']|te >>>
+        <<% with registration = registrations[registration_id] -%>>
+            <<< personas[registration['persona_id']]['given_names']|te >>> &
+            <<< personas[registration['persona_id']]['family_name']|te >>> &
+            <<< personas[registration['persona_id']]['postal_code']|te >>>
+            <<< personas[registration['persona_id']]['location']|te >>>
+            <<% if personas[registration['persona_id']]['country'] != "Deutschland" -%>>
+                <<< personas[registration['persona_id']]['country']|te >>>
             <<%- endif -%>>
             &
-            <<< personas[rdata['persona_id']]['mobile']|te >>> &
+            <<< personas[registration['persona_id']]['mobile']|te >>> &
             <<% for part_id in ambience['event']['parts']|sort -%>>
-                <<% if rdata['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%>>
-                    <<% if rdata['parts'][part_id]['course_id'] -%>>
-                        <<% if rdata['parts'][part_id]['course_instructor'] == rdata['parts'][part_id]['course_id'] -%>>
+                <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%>>
+                    <<% if registration['parts'][part_id]['course_id'] -%>>
+                        <<% if registration['parts'][part_id]['course_instructor'] == registration['parts'][part_id]['course_id'] -%>>
                             \emph{%
-                                <<< courses[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
+                                <<< courses[registration['parts'][part_id]['course_id']]['shortname']|te >>>
                             }
                         <<% else -%>>
-                            <<< courses[rdata['parts'][part_id]['course_id']]['shortname']|te >>>
+                            <<< courses[registration['parts'][part_id]['course_id']]['shortname']|te >>>
                         <<% endif -%>>
-                    <<% elif rdata['persona_id'] in ambience['event']['orgas'] -%>>
+                    <<% elif registration['persona_id'] in ambience['event']['orgas'] -%>>
                         \emph{Orga}
                     <<% else -%>>
                         % nichts
@@ -72,7 +72,7 @@
                 <<% endif -%>>
                 &
             <<% endfor -%>>
-            <<< personas[rdata['persona_id']]['username']|te >>> \\
+            <<< personas[registration['persona_id']]['username']|te >>> \\
         <<% endwith -%>>
     <<% endfor -%>>
     \end{longtabu}

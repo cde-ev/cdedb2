@@ -4,8 +4,8 @@
 {% block content %}
     <p>Insgesamt {{ attendees|length|e }} Anwesende.</p>
     <ul>
-        {% for persona_id, pdata in attendees|dictsort %}
-            <li>{{ pdata['given_names']|e }} {{ pdata['family_name']|e }}</li>
+        {% for persona_id, persona in attendees|dictsort %}
+            <li>{{ persona['given_names']|e }} {{ persona['family_name']|e }}</li>
         {% endfor %}
     </ul>
 {% endblock %}

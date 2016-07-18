@@ -1572,19 +1572,19 @@ def _event(val, argname=None, *, creation=False, _convert=True):
             errs.extend(e)
         else:
             newparts = {}
-            for anid, partdata in oldparts.items():
+            for anid, part in oldparts.items():
                 anid, e = _int(anid, 'parts', _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
                     creation = (anid < 0)
-                    partdata, ee = _event_part_or_None(
-                        partdata, 'parts', creation=creation,
+                    part, ee = _event_part_or_None(
+                        part, 'parts', creation=creation,
                         _convert=_convert)
                     if ee:
                         errs.extend(ee)
                     else:
-                        newparts[anid] = partdata
+                        newparts[anid] = part
             val['parts'] = newparts
     if 'fields' in val:
         oldfields, e = _mapping(val['fields'], 'fields', _convert=_convert)
@@ -1592,19 +1592,19 @@ def _event(val, argname=None, *, creation=False, _convert=True):
             errs.extend(e)
         else:
             newfields = {}
-            for anid, fielddata in oldfields.items():
+            for anid, field in oldfields.items():
                 anid, e = _int(anid, 'fields', _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
                     creation = (anid < 0)
-                    fielddata, ee = _event_field_or_None(
-                        fielddata, 'fields', creation=creation,
+                    field, ee = _event_field_or_None(
+                        field, 'fields', creation=creation,
                         _convert=_convert)
                     if ee:
                         errs.extend(ee)
                     else:
-                        newfields[anid] = fielddata
+                        newfields[anid] = field
             val['fields'] = newfields
     return val, errs
 

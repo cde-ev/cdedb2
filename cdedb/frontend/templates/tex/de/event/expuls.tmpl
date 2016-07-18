@@ -1,14 +1,14 @@
 <<# This is just a part of a tex document, so we do not inherit the base template. #>>
-<<% for course_id, cdata in courses|dictsort %>>
-\kurs <<< cdata['title']|te >>>
-\von <<< cdata['instructors']|te >>>
+<<% for course_id, course in courses|dictsort %>>
+\kurs <<< course['title']|te >>>
+\von <<< course['instructors']|te >>>
 
 In:
-<<%- for part_id in cdata['parts']|sort %>>
+<<%- for part_id in course['parts']|sort %>>
     <<< ambience['event']['parts'][part_id]['title']|te >>>
     <<%- if not loop.last %>>,<<% endif %>>
 <<%- endfor %>>
 
-<<< cdata['description']|te >>>
+<<< course['description']|te >>>
 
 <<% endfor %>>

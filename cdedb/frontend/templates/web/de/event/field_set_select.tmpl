@@ -8,8 +8,8 @@
         <div>
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for field_id, fdata in ambience['event']['fields']|dictsort %}
-                {{ myentries.append((field_id, fdata['field_name']))|e }}
+            {% for field_id, field in ambience['event']['fields']|dictsort %}
+                {{ myentries.append((field_id, field['field_name']))|e }}
             {% endfor %}
             {{ util.form_input_select("field_id", entries=myentries) }}
             {{ util.form_input_submit(value="Anzeigen") }}

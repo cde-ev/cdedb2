@@ -77,18 +77,18 @@
                     {% if ambience['ballot']['votes'] == 1 %}
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [("special: none", "keiner der Kandidaten")] %}
-                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                        {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                             {% if candidate_id != ambience['ballot']['bar'] %}
-                                {{ myentries.append((cdata['moniker'], cdata['description']))|e }}
+                                {{ myentries.append((candidate['moniker'], candidate['description']))|e }}
                             {% endif %}
                         {% endfor %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, radio=True) }}
                     {% else %}
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
-                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                        {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                             {% if candidate_id != ambience['ballot']['bar'] %}
-                                {{ myentries.append((cdata[ 'moniker'], cdata['description']))|e }}
+                                {{ myentries.append((candidate[ 'moniker'], candidate['description']))|e }}
                             {% endif %}
                         {% endfor %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries) }}
@@ -116,9 +116,9 @@
                 <h3>Gewählte Kandidaten</h3>
                 <p>
                     <ul>
-                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                        {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                             {% if candidate_id in result['winners'] %}
-                                <li><strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}</li>
+                                <li><strong>{{ candidate['moniker']|e }}</strong> {{ candidate['description']|e }}</li>
                             {% endif %}
                         {% endfor %}
                     </ul>
@@ -126,9 +126,9 @@
                 <h3>Nicht-gewählte Kandidaten</h3>
                 <p>
                     <ul>
-                        {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                        {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                             {% if candidate_id not in result['winners'] and candidate_id != ambience['ballot']['bar'] %}
-                                <li><strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}</li>
+                                <li><strong>{{ candidate['moniker']|e }}</strong> {{ candidate['description']|e }}</li>
                             {% endif %}
                         {% endfor %}
                     </ul>
@@ -140,10 +140,10 @@
             <h3>Kandidatenliste</h3>
             <p>
                 <ul>
-                    {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                    {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                         {% if candidate_id != ambience['ballot']['bar'] or is_admin %}
                             <li>
-                                <strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}
+                                <strong>{{ candidate['moniker']|e }}</strong> {{ candidate['description']|e }}
                                 {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                                     <form action="{{ cdedblink('assembly/remove_candidate',
                                                                {'candidate_id': candidate_id})|e }}"
@@ -163,9 +163,9 @@
         <h3>Kandidatenliste</h3>
         <p>
             <ul>
-                {% for candidate_id, cdata in ambience['ballot']['candidates']|dictsort %}
+                {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                     <li>
-                        <strong>{{ cdata['moniker']|e }}</strong> {{ cdata['description']|e }}
+                        <strong>{{ candidate['moniker']|e }}</strong> {{ candidate['description']|e }}
                         {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                             <form action="{{ cdedblink('assembly/remove_candidate',
                                                        {'candidate_id': candidate_id})|e }}"
@@ -207,10 +207,10 @@
     {% if attachments %}
         <h2>Verfügbare Dateien</h2>
         <ul>
-            {% for attachment_id, adata in attachments|dictsort %}
+            {% for attachment_id, assembly in attachments|dictsort %}
                 <li>
                     {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                           adata['title'])}}
+                                           assembly['title'])}}
                     {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                         <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id})|e }}"
                          method="POST" id="removeattachmentform{{ attachment_id|e }}">

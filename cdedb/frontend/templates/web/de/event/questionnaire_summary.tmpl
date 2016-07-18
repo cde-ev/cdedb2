@@ -12,8 +12,8 @@
 {% block content %}
     {# jinja does not support list comprehension ... #}
     {% set field_entries = [("", "nur Text")] %}
-    {% for field_id, fdata in ambience['event']['fields']|dictsort %}
-        {{ field_entries.append((field_id, fdata['field_name']))|e }}
+    {% for field_id, field in ambience['event']['fields']|dictsort %}
+        {{ field_entries.append((field_id, field['field_name']))|e }}
     {% endfor %}
     <form action="{{ cdedblink('event/questionnaire_summary')|e }}" method="POST" id="questionnairesummaryform">
         {% with INPUT_SIZE_LABELS = {0: "einzeilig",

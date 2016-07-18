@@ -56,8 +56,8 @@ Versammlung -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|
                                      entries=myentries) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for assembly_id, adata in all_assemblies|dictsort %}
-                {{ myentries.append((assembly_id, adata['title']))|e }}
+            {% for assembly_id, assembly in all_assemblies|dictsort %}
+                {{ myentries.append((assembly_id, assembly['title']))|e }}
             {% endfor %}
             {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}
             {{ util.form_input_text(name="start", label="Anfang") }}

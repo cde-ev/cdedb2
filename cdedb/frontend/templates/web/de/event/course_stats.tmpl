@@ -8,27 +8,27 @@
             <th>Nummer</th>
             <th>Kurs</th>
             <th>Kurzname</th>
-            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
-                <th colspan="4">{{ pdata['title']|e }}</th>
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                <th colspan="4">{{ part['title']|e }}</th>
             {% endfor %}
         </tr>
         <tr>
             <th></th>
             <th></th>
             <th></th>
-            {% for part_id, pdata in ambience['event']['parts']|dictsort %}
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
                 <th>zugewiesen</th>
                 <th>Erstwahl</th>
                 <th>Zweitwahl</th>
                 <th>Drittwahl</th>
             {% endfor %}
         </tr>
-        {% for course_id, cdata in courses|dictsort %}
+        {% for course_id, course in courses|dictsort %}
             <tr>
-                <td>{{ cdata['nr']|e }}</td>
-                <td>{{ cdata['title']|e }}</td>
-                <td>{{ cdata['shortname']|e }}</td>
-                {% for part_id, pdata in ambience['event']['parts']|dictsort %}
+                <td>{{ course['nr']|e }}</td>
+                <td>{{ course['title']|e }}</td>
+                <td>{{ course['shortname']|e }}</td>
+                {% for part_id, part in ambience['event']['parts']|dictsort %}
                      <td> {{ assign_counts[course_id][part_id]|e }} </td>
                      {% for i in range(3) %}
                          <td> {{ choice_counts[course_id][(part_id, i)]|e }} </td>
