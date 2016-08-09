@@ -848,6 +848,23 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Inga")
 
     @as_users("garcia")
+    def test_automatic_assignment(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/course/choices'},)
+        self.assertTitle("Kurswahlen (Große Testakademie 2222)")
+        self.assertPresence("Heldentum")
+        self.assertPresence("Anton Armin")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertPresence("Inga")
+        f = self.response.forms['choiceactionform']
+        f['registration_ids'] = [1, 2, 3, 4]
+        f['part_ids'] = [1,2, 3]
+        f['action'] = -2
+        self.submit(f)
+
+    @as_users("garcia")
     def test_downloads(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},

@@ -91,7 +91,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
         {{ util.form_input_checkboxes(name="part_ids", entries=myentries) }}
         nach
         {{ util.form_input_checkboxes(name="action", label="Kurs", radio=True, entries=(
-            (0, "Erstwahl"), (1, "Zweitwahl"), (2, "Drittwahl"), (-1, "Kurs aus Liste"))) }}
+            (0, "Erstwahl"), (1, "Zweitwahl"), (2, "Drittwahl"), (-1, "Kurs aus Liste"), (-2, "Automatisch"))) }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for course_id, course in courses|dictsort %}

@@ -795,11 +795,12 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.course_choices_form(rs, event_id)
 
-        registrations = None
-        if action >= 0:
-            registrations = self.eventproxy.get_registrations(
-                rs, registration_ids)
-        elif action == -1:
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        courses = None
+        if action == -2:
+            course_ids = self.eventproxy.list_db_courses(rs, event_id)
+            courses = self.eventproxy.get_courses(rs, course_ids)
+        elif action in {-1, 0, 1, 2}:
             pass
         else:
             rs.notify("warning", "No action taken.")
@@ -811,8 +812,12 @@ class EventFrontend(AbstractUserFrontend):
                 'parts': {}
             }
             for part_id in part_ids:
+                reg_part = registrations[registration_id]['parts'][part_id]
+                choices = registrations[registration_id]['choices']
+                if (reg_part['status']
+                        != const.RegistrationPartStati.participant):
+                    continue
                 if action >= 0:
-                    choices = registrations[registration_id]['choices']
                     try:
                         choice = choices[part_id][action]
                     except IndexError:
@@ -821,7 +826,27 @@ class EventFrontend(AbstractUserFrontend):
                         tmp['parts'][part_id] = {'course_id': choice}
                 elif action == -1:
                     tmp['parts'][part_id] = {'course_id': course_id}
-            code *= self.eventproxy.set_registration(rs, tmp)
+                elif action == -2:
+                    ## Automatic assignment
+                    cid = reg_part['course_id']
+                    if cid and part_id in courses[cid]['active_parts']:
+                        ## Do not modify a valid assignment
+                        continue
+                    instructor = reg_part['course_instructor']
+                    if (instructor
+                            and part_id in courses[instructor]['active_parts']):
+                        ## Let instructors instruct
+                        tmp['parts'][part_id] = {'course_id': instructor}
+                        continue
+                    for choice in choices[part_id]:
+                        if part_id in courses[choice]['active_parts']:
+                            ## Assign first possible choice
+                            tmp['parts'][part_id] = {'course_id': choice}
+                            break
+                    else:
+                        rs.notify("error", "No choice available.")
+            if tmp['parts']:
+                code *= self.eventproxy.set_registration(rs, tmp)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/course_choices_form")
 
