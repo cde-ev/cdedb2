@@ -1,13 +1,15 @@
 <<% extends "tex/de/event/base_article.tmpl" %>>
 <<% block extra_preamble %>>
     \parindent 0pt\relax
-    \newcommand\course[5]{
+    \newcommand\course[7]{
         \section*{#1 (#2)}
         Kursleiter: #3
         \par
-        Notizen: #4
+        Minimalgröße/Maximalgröße: #4/#5
         \par
-        Erst-/Zweit-/Drittwahlen: #5}
+        Notizen: #6
+        \par
+        Erst-/Zweit-/Drittwahlen: #7}
     \newcommand\participant[6]{
         \section*{#1 (#2)}
         #3
@@ -19,10 +21,10 @@
     <<% for course_id, course in courses|dictsort %>>
         <<% for part_id in course['parts']|sort %>>
             \course{<<< course['title']|te >>>}{<<< ambience['event']['parts'][part_id]['title']|te >>>}%
-                   {<<< course['instructors']|te >>>}{<<< course['notes']|te >>>}%
-                   {<<< counts[course_id][(part_id, 0)] >>>/%
-                    <<< counts[course_id][(part_id, 1)] >>>/%
-                    <<< counts[course_id][(part_id, 2)] >>>}
+                   {<<< course['instructors']|te >>>}{<<< course['min_size']|te >>>}{<<< course['max_size']|te >>>}%
+                   {<<< course['notes']|te >>>}{<<< counts[course_id][(part_id, 0)] >>>/%
+                                                <<< counts[course_id][(part_id, 1)] >>>/%
+                                                <<< counts[course_id][(part_id, 2)] >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage

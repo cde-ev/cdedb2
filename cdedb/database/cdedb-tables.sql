@@ -560,6 +560,8 @@ CREATE TABLE event.courses (
         shortname               varchar NOT NULL,
         -- string containing all course-instructors
         instructors             varchar,
+        min_size                integer,
+        max_size                integer,
         notes                   varchar
 );
 CREATE INDEX idx_courses_event_id ON event.courses(event_id);

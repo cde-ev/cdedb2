@@ -569,7 +569,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @REQUESTdata(("parts", "[int]"), ("active_parts", "[int]"), )
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
-                     "notes")
+                     "max_size", "min_size", "notes")
     @event_guard(check_offline=True)
     def change_course(self, rs, event_id, course_id, parts, active_parts, data):
         """Modify a course associated to an event organized via DB."""
@@ -595,7 +595,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     @REQUESTdata(("parts", "[int]"))
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
-                     "notes")
+                     "max_size", "min_size", "notes")
     @event_guard(check_offline=True)
     def create_course(self, rs, event_id, parts, data):
         """Create a new course associated to an event organized via DB."""

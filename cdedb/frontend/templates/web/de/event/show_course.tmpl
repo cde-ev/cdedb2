@@ -7,6 +7,8 @@
         {{ util.href(cdedblink('event/manage_attendees_form'), "Kursteilnehmer verwalten", readonly=is_locked) }}
     {% endif %}
     <p>Kursleiter: {{ ambience['course']['instructors']|e }}</p>
+    <p>Maximalgröße: {{ ambience['course']['max_size']|e }}</p>
+    <p>Minimalgröße: {{ ambience['course']['min_size']|e }}</p>
     <p>{{ ambience['course']['description']|e }}</p>
     {% if ambience['event']['id'] in user.orga or is_admin %}
         <h2>Teilnehmer</h2>

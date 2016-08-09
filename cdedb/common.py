@@ -1067,7 +1067,7 @@ PAST_COURSE_FIELDS = ("id", "pevent_id", "title", "description")
 
 #: Fields of a course associated to an event organized via the CdEDB
 COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
-                 "instructors", "notes")
+                 "instructors", "max_size", "min_size", "notes")
 
 #: Fields specifying in which part a course is available
 COURSE_PART_FIELDS = ("course_id", "part_id", "is_active")

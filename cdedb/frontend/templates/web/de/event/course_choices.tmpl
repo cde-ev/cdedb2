@@ -5,7 +5,7 @@
 Kurswahlen ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
-    {# TODO incorporate active_parts of courses #}
+    {# TODO incorporate active_parts, max_size, min_size of courses #}
     <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}

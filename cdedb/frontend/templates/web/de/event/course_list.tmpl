@@ -20,6 +20,8 @@
                                      readonly=is_locked) }}
                     {% endif %}
                     <p>Kursleiter: {{ entry['instructors']|e }}</p>
+                    <p>Maximalgröße: {{ entry['max_size']|e }}</p>
+                    <p>Minimalgröße: {{ entry['min_size']|e }}</p>
                     <p>{{ entry['description']|e }}</p>
                 </li>
             {% endfor %}

@@ -399,8 +399,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("1", f.get('active_parts', index=0).value)
         self.assertEqual(None, f.get('active_parts', index=1).value)
         self.assertEqual("3", f.get('active_parts', index=2).value)
+        self.assertEqual("10", f['max_size'].value)
+        self.assertEqual("3", f['min_size'].value)
         f['title'] = "Planetenretten für Fortgeschrittene"
         f['nr'] = "ω"
+        f['max_size'] = "21"
         f['parts'] = ['2', '3']
         f['active_parts'] = ['2']
         self.submit(f)
@@ -414,6 +417,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(None, f.get('active_parts', index=0).value)
         self.assertEqual("2", f.get('active_parts', index=1).value)
         self.assertEqual(None, f.get('active_parts', index=2).value)
+        self.assertEqual("21", f['max_size'].value)
 
     @as_users("anton")
     def test_create_course(self, user):

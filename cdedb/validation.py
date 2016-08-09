@@ -1735,6 +1735,8 @@ _COURSE_COMMON_FIELDS = lambda: {
     'nr': _str_or_None,
     'shortname': _str,
     'instructors': _str_or_None,
+    'max_size': _int_or_None,
+    'min_size': _int_or_None,
     'notes': _str_or_None,
 }
 _COURSE_OPTIONAL_FIELDS = {

@@ -11,6 +11,8 @@
             {{ util.form_input_text(name="nr", label="Nummer") }}
             {{ util.form_input_text(name="shortname", label="Kürzel") }}
             {{ util.form_input_text(name="instructors", label="Kursleiter") }}
+            {{ util.form_input_text(name="min_size", label="Minimalgröße") }}
+            {{ util.form_input_text(name="max_size", label="Maximalgröße") }}
             {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}

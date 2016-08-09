@@ -3,6 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Kurse -- Übersicht ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
+    {# TODO incorporate active_parts, max_size, min_size of courses #}
     <table>
         <tr>
             <th>Nummer</th>
@@ -37,5 +38,4 @@
             </tr>
         {% endfor %}
     </table>
-    {# TODO incorporate active_parts of courses #}
 {% endblock %}
