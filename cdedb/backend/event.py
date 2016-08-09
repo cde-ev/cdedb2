@@ -15,8 +15,9 @@ from cdedb.backend.common import (
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
-    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS, unwrap,
-    now, ProxyShim, PERSONA_EVENT_FIELDS, CourseFilterPositions)
+    REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
+    COURSE_PART_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
+    CourseFilterPositions)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -524,12 +525,16 @@ class EventBackend(AbstractBackend):
             data = self.sql_select(rs, "event.courses", COURSE_FIELDS, ids)
             ret = {e['id']: e for e in data}
             data = self.sql_select(
-                rs, "event.course_parts", ("part_id", "course_id"), ids,
+                rs, "event.course_parts", COURSE_PART_FIELDS, ids,
                 entity_key="course_id")
             for anid in ids:
                 parts = {p['part_id'] for p in data if p['course_id'] == anid}
                 assert('parts' not in ret[anid])
                 ret[anid]['parts'] = parts
+                active_parts = {p['part_id'] for p in data
+                                if p['course_id'] == anid and p['is_active']}
+                assert('active_parts' not in ret[anid])
+                ret[anid]['active_parts'] = active_parts
         return ret
 
     @access("event")
@@ -538,6 +543,10 @@ class EventBackend(AbstractBackend):
 
         If the 'parts' key is present you have to pass the complete list
         of part IDs, which will superseed the current list of parts.
+
+        If the 'active_parts' key is present you have to pass the
+        complete list of active part IDs, which will superseed the
+        current list of active parts.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: {str: object}
@@ -560,8 +569,8 @@ class EventBackend(AbstractBackend):
                     additional_info=current['title'])
             if 'parts' in data:
                 current_parts = self.sql_select(
-                    rs, "event.course_parts", ("part_id",), (data['id'],),
-                    entity_key="course_id")
+                    rs, "event.course_parts", ("part_id",),
+                    (data['id'],), entity_key="course_id")
                 existing = {e['part_id'] for e in current_parts}
                 new = data['parts'] - existing
                 deleted = existing - data['parts']
@@ -575,11 +584,12 @@ class EventBackend(AbstractBackend):
                         raise ValueError("Non-associated parts found.")
 
                     for anid in new:
-                        new = {
+                        insert = {
                             'course_id': data['id'],
                             'part_id': anid,
+                            'is_active': True,
                         }
-                        ret *= self.sql_insert(rs, "event.course_parts", new)
+                        ret *= self.sql_insert(rs, "event.course_parts", insert)
                 if deleted:
                     query = glue("DELETE FROM event.course_parts",
                                  "WHERE course_id = %s AND part_id = ANY(%s)")
@@ -587,6 +597,45 @@ class EventBackend(AbstractBackend):
                 if new or deleted:
                     self.event_log(
                         rs, const.EventLogCodes.course_parts_changed,
+                        current['event_id'], additional_info=current['title'])
+            if 'active_parts' in data:
+                current_parts = self.sql_select(
+                    rs, "event.course_parts", ("part_id", "is_active"),
+                    (data['id'],), entity_key="course_id")
+                existing = {e['part_id'] for e in current_parts}
+                active = {e['part_id'] for e in current_parts if e['is_active']}
+                created = data['active_parts'] - existing
+                activated = (data['active_parts'] - active) - created
+                deactivated = active - data['active_parts']
+                if created:
+                    ## check, that all new parts belong to the event of the
+                    ## course
+                    associated_events = self.sql_select(
+                        rs, "event.event_parts", ("event_id",), created)
+                    event_ids = {e['event_id'] for e in associated_events}
+                    if {current['event_id']} != event_ids:
+                        raise ValueError("Non-associated parts found.")
+
+                    for anid in created:
+                        new = {
+                            'course_id': data['id'],
+                            'part_id': anid,
+                            'is_active': True,
+                        }
+                        ret *= self.sql_insert(rs, "event.course_parts", new)
+                if activated:
+                    query = glue(
+                        "UPDATE event.course_parts SET is_active = True",
+                        "WHERE course_id = %s AND part_id = ANY(%s)")
+                    ret *= self.query_exec(rs, query, (data['id'], activated))
+                if deactivated:
+                    query = glue(
+                        "UPDATE event.course_parts SET is_active = False",
+                        "WHERE course_id = %s AND part_id = ANY(%s)")
+                    ret *= self.query_exec(rs, query, (data['id'], deactivated))
+                if created or activated or deactivated:
+                    self.event_log(
+                        rs, const.EventLogCodes.course_part_activity_changed,
                         current['event_id'], additional_info=current['title'])
         return ret
 
@@ -607,11 +656,14 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             cdata = {k: v for k, v in data.items() if k in COURSE_FIELDS}
             new_id = self.sql_insert(rs, "event.courses", cdata)
-            if 'parts' in data:
+            if 'parts' in data or 'active_parts' in data:
                 pdata = {
                     'id': new_id,
-                    'parts': data['parts'],
                 }
+                if 'parts' in data:
+                    pdata['parts'] = data['parts']
+                if 'active_parts' in data:
+                    pdata['active_parts'] = data['active_parts']
                 self.set_course(rs, pdata)
         self.event_log(rs, const.EventLogCodes.course_created,
                        data['event_id'], additional_info=data['title'])
@@ -1138,7 +1190,7 @@ class EventBackend(AbstractBackend):
             tables = (
                 ('event.courses', "event_id", COURSE_FIELDS),
                 ('event.course_parts', "part_id", (
-                    'id', 'course_id', 'part_id',)),
+                    'id', 'course_id', 'part_id', 'is_active')),
                 ('event.orgas', "event_id", (
                     'id', 'persona_id', 'event_id',)),
                 ('event.field_definitions', "event_id", (

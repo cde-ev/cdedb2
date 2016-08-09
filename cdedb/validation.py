@@ -1739,6 +1739,7 @@ _COURSE_COMMON_FIELDS = lambda: {
 }
 _COURSE_OPTIONAL_FIELDS = {
     'parts': _any,
+    'active_parts': _any,
 }
 @_addvalidator
 def _course(val, argname=None, *, creation=False, _convert=True):
@@ -1780,6 +1781,24 @@ def _course(val, argname=None, *, creation=False, _convert=True):
                 else:
                     parts.add(v)
             val['parts'] = parts
+    if 'active_parts' in val:
+        oldparts, e = _iterable(val['active_parts'], 'active_parts',
+                                _convert=_convert)
+        if e:
+            errs.extend(e)
+        else:
+            active_parts = set()
+            for anid in oldparts:
+                v, e = _id(anid, 'active_parts', _convert=_convert)
+                if e:
+                    errs.extend(e)
+                else:
+                    active_parts.add(v)
+            val['active_parts'] = active_parts
+    if 'parts' in val and 'active_parts' in val:
+        if not val['active_parts'] <= val['parts']:
+            errs.append(('parts',
+                         ValueError("Must be a superset of active parts.")))
     return val, errs
 
 _REGISTRATION_COMMON_FIELDS = lambda: {
@@ -2052,7 +2071,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.courses': _augment_dict_validator(
             _course, {'event_id': _id}),
         'event.course_parts': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id}),
+            _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id,
+                          'is_active': _bool}),
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
         'event.field_definitions': _augment_dict_validator(

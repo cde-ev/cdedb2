@@ -570,7 +570,8 @@ GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_persona;
 CREATE TABLE event.course_parts (
         id                      serial PRIMARY KEY,
         course_id               integer NOT NULL REFERENCES event.courses(id),
-        part_id                 integer NOT NULL REFERENCES event.event_parts(id)
+        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
+        is_active               boolean NOT NULL DEFAULT True
 );
 CREATE INDEX idx_course_parts_course_id ON event.course_parts(course_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_parts TO cdb_persona;

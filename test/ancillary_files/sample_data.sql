@@ -94,18 +94,18 @@ INSERT INTO event.courses (id, event_id, title, description, nr, shortname, inst
     (3, 1, 'Kurzer Kurs', 'mit hoher Leistung.', 'γ', 'Kurz', 'Heinrich und Thomas Mann', NULL),
     (4, 1, 'Langer Kurs', 'mit hohem Umsatz.', 'δ', 'Lang', 'Stephen Hawking und Richard Feynman', NULL),
     (5, 1, 'Backup-Kurs', 'damit wir Auswahl haben', 'ε', 'Backup', 'TBA', NULL);
-INSERT INTO event.course_parts (course_id, part_id) VALUES
-    (1, 1),
-    (1, 3),
-    (2, 2),
-    (2, 3),
-    (3, 2),
-    (4, 1),
-    (4, 2),
-    (4, 3),
-    (5, 1),
-    (5, 2),
-    (5, 3);
+INSERT INTO event.course_parts (course_id, part_id, is_active) VALUES
+    (1, 1, True),
+    (1, 3, True),
+    (2, 2, False),
+    (2, 3, True),
+    (3, 2, True),
+    (4, 1, True),
+    (4, 2, True),
+    (4, 3, True),
+    (5, 1, True),
+    (5, 2, True),
+    (5, 3, False);
 INSERT INTO event.orgas (persona_id, event_id) VALUES
     (7, 1);
 INSERT INTO event.field_definitions (id, event_id, field_name, kind, entries) VALUES

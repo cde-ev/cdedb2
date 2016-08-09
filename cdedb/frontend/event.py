@@ -560,18 +560,22 @@ class EventFrontend(AbstractUserFrontend):
         """Render form."""
         if 'parts' not in rs.values:
             rs.values.setlist('parts', rs.ambience['course']['parts'])
+        if 'active_parts' not in rs.values:
+            rs.values.setlist('active_parts',
+                              rs.ambience['course']['active_parts'])
         merge_dicts(rs.values, rs.ambience['course'])
         return self.render(rs, "change_course")
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("parts", "[int]"))
+    @REQUESTdata(("parts", "[int]"), ("active_parts", "[int]"), )
     @REQUESTdatadict("title", "description", "nr", "shortname", "instructors",
                      "notes")
     @event_guard(check_offline=True)
-    def change_course(self, rs, event_id, course_id, parts, data):
+    def change_course(self, rs, event_id, course_id, parts, active_parts, data):
         """Modify a course associated to an event organized via DB."""
         data['id'] = course_id
         data['parts'] = parts
+        data['active_parts'] = active_parts
         data = check(rs, "course", data)
         if rs.errors:
             return self.change_course_form(rs, event_id, course_id)

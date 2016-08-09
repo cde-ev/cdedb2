@@ -596,8 +596,8 @@ class PastEventBackend(AbstractBackend):
                 if course_id not in courses_seen:
                     self.delete_past_course(rs, course_map[course_id])
                 else:
-                    if not courses[course_id]['parts']:
+                    if not courses[course_id]['active_parts']:
                         self.logger.warning(
-                            "Course {} remains without parts.".format(
+                            "Course {} remains without active parts.".format(
                                 course_id))
         return new_id, None

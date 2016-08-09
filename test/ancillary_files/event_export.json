@@ -226,57 +226,68 @@
         {
             "course_id": 1,
             "id": 1,
-            "part_id": 1
+            "part_id": 1,
+            "is_active": true
         },
         {
             "course_id": 1,
             "id": 2,
-            "part_id": 3
+            "part_id": 3,
+            "is_active": true
         },
         {
             "course_id": 2,
             "id": 3,
-            "part_id": 2
+            "part_id": 2,
+            "is_active": false
         },
         {
             "course_id": 2,
             "id": 4,
-            "part_id": 3
+            "part_id": 3,
+            "is_active": true
         },
         {
             "course_id": 3,
             "id": 5,
-            "part_id": 2
+            "part_id": 2,
+            "is_active": true
         },
         {
             "course_id": 4,
             "id": 6,
-            "part_id": 1
+            "part_id": 1,
+            "is_active": true
         },
         {
             "course_id": 4,
             "id": 7,
-            "part_id": 2
+            "part_id": 2,
+            "is_active": true
         },
         {
             "course_id": 4,
             "id": 8,
-            "part_id": 3
+            "part_id": 3,
+            "is_active": true
         },
         {
             "course_id": 5,
             "id": 9,
-            "part_id": 1
+            "part_id": 1,
+            "is_active": true
         },
         {
             "course_id": 5,
             "id": 10,
-            "part_id": 2
+            "part_id": 2,
+            "is_active": true
         },
         {
             "course_id": 5,
             "id": 11,
-            "part_id": 3
+            "part_id": 3,
+            "is_active": false
         }
     ],
     "event.lodgements": [

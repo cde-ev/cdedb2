@@ -262,6 +262,7 @@ class TestEventBackend(BackendTest):
         }
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
+        cdata['active_parts'] = cdata['parts']
         self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
 
@@ -280,6 +281,7 @@ class TestEventBackend(BackendTest):
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
             'parts': {2, 3},
+            'active_parts': {2},
         }
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
@@ -287,13 +289,20 @@ class TestEventBackend(BackendTest):
                          self.event.get_course(self.key, new_id))
         data['title'] = "Alternate Universes"
         data['parts'] = {1, 3}
+        data['active_parts'] = {1, 3}
         self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'parts': data['parts']})
+            'id': new_id, 'title': data['title'], 'parts': data['parts'],
+            'active_parts': data['active_parts']})
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_db_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
+        data['active_parts'] = {1}
+        self.event.set_course(self.key, {
+            'id': new_id, 'active_parts': data['active_parts']})
+        self.assertEqual(data,
+                         self.event.get_course(self.key, new_id))
 
     @as_users("anton", "garcia")
     def test_open_events(self, user):
@@ -1070,17 +1079,17 @@ class TestEventBackend(BackendTest):
                                       'part_id': 3,
                                       'rank': 2,
                                       'registration_id': 4}),
-            'event.course_parts': ({'course_id': 1, 'id': 1, 'part_id': 1},
-                                   {'course_id': 1, 'id': 2, 'part_id': 3},
-                                   {'course_id': 2, 'id': 3, 'part_id': 2},
-                                   {'course_id': 2, 'id': 4, 'part_id': 3},
-                                   {'course_id': 3, 'id': 5, 'part_id': 2},
-                                   {'course_id': 4, 'id': 6, 'part_id': 1},
-                                   {'course_id': 4, 'id': 7, 'part_id': 2},
-                                   {'course_id': 4, 'id': 8, 'part_id': 3},
-                                   {'course_id': 5, 'id': 9, 'part_id': 1},
-                                   {'course_id': 5, 'id': 10, 'part_id': 2},
-                                   {'course_id': 5, 'id': 11, 'part_id': 3}),
+            'event.course_parts': ({'course_id': 1, 'id': 1, 'part_id': 1, 'is_active': True},
+                                   {'course_id': 1, 'id': 2, 'part_id': 3, 'is_active': True},
+                                   {'course_id': 2, 'id': 3, 'part_id': 2, 'is_active': False},
+                                   {'course_id': 2, 'id': 4, 'part_id': 3, 'is_active': True},
+                                   {'course_id': 3, 'id': 5, 'part_id': 2, 'is_active': True},
+                                   {'course_id': 4, 'id': 6, 'part_id': 1, 'is_active': True},
+                                   {'course_id': 4, 'id': 7, 'part_id': 2, 'is_active': True},
+                                   {'course_id': 4, 'id': 8, 'part_id': 3, 'is_active': True},
+                                   {'course_id': 5, 'id': 9, 'part_id': 1, 'is_active': True},
+                                   {'course_id': 5, 'id': 10, 'part_id': 2, 'is_active': True},
+                                   {'course_id': 5, 'id': 11, 'part_id': 3, 'is_active': False}),
             'event.courses': ({'description': 'Wir werden die Bäume drücken.',
                                'event_id': 1,
                                'id': 1,
@@ -1482,7 +1491,7 @@ class TestEventBackend(BackendTest):
              'title': 'Spontankurs'})
         ## course parts
         new_data['event.course_parts'].append(
-            {'course_id': 3000, 'id': 8000, 'part_id': 4000})
+            {'course_id': 3000, 'id': 8000, 'part_id': 4000, 'is_active': True})
         ## course choices
         choices = new_data['event.course_choices'][:-2]
         choices.append({'course_id': 5, 'id': 32, 'part_id': 3, 'rank': 1,

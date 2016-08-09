@@ -12,6 +12,9 @@
         <h2>Teilnehmer</h2>
         {% for part_id in ambience['course']['parts']|sort %}
             <h3>{{ ambience['event']['parts'][part_id]['title']|e }}</h3>
+            {% if part_id not in ambience['course']['active_parts'] %}
+                <strong>Ausgefallen!</strong>
+            {% endif %}
             <ul>
                 {% for registration_id in attendees[(ambience['course']['id'], part_id)] %}
                     <li>

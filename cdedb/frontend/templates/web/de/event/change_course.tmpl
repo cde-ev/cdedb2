@@ -17,6 +17,7 @@
                 {{ myentries.append((part_id, part['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
+            {{ util.form_input_checkboxes(name="active_parts", label="Veranstaltungsteile", entries=myentries) }}
         </table>
         <div>
             {{ util.form_input_submit(value="Speichern") }}
