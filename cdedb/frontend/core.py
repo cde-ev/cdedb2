@@ -58,7 +58,8 @@ class CoreFrontend(AbstractFrontend):
         if wants:
             rs.values['wants'] = self.encode_parameter("core/login", "wants",
                                                        wants)
-        return self.render(rs, "index")
+        meta_info = self.coreproxy.get_meta_info(rs)
+        return self.render(rs, "index", {'meta_info': meta_info})
 
     @access("anonymous")
     @REQUESTdata(("kind", "printable_ascii"))

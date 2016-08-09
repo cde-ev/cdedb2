@@ -44,7 +44,8 @@ INSERT INTO core.meta_info (info) VALUES
        "Finanzvorstand_Adresse_Zeile2": "bei Spielmanns",
        "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
        "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
-       "Finanzvorstand_Ort": "Utopia"}'::jsonb);
+       "Finanzvorstand_Ort": "Utopia",
+       "message_of_the_day": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*"}'::jsonb);
 
 --
 -- cde
