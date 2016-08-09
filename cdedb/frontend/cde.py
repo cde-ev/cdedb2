@@ -1094,9 +1094,9 @@ class CdEFrontend(AbstractUserFrontend):
             int_to_words(int(transaction['amount']), rs.lang),
             int_to_words(int(transaction['amount'] * 100) % 100, rs.lang))
         transaction['amount_words'] = words
-        cde_info = self.coreproxy.get_meta_info(rs)
+        meta_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
-            'cde_info': cde_info, 'persona': persona, 'addressee': addressee})
+            'meta_info': meta_info, 'persona': persona, 'addressee': addressee})
         with tempfile.TemporaryDirectory() as tmp_dir:
             j = os.path.join
             work_dir = j(tmp_dir, 'workdir')
@@ -1120,9 +1120,9 @@ class CdEFrontend(AbstractUserFrontend):
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             minor = determine_age_class(
                 persona['birthday'], now().date()).is_minor()
-        cde_info = self.coreproxy.get_meta_info(rs)
+        meta_info = self.coreproxy.get_meta_info(rs)
         tex = self.fill_template(rs, "tex", "lastschrift_subscription_form", {
-            'cde_info': cde_info, 'persona': persona, 'minor': minor})
+            'meta_info': meta_info, 'persona': persona, 'minor': minor})
         return self.serve_latex_document(rs, tex,
                                          "lastschrift_subscription_form")
 

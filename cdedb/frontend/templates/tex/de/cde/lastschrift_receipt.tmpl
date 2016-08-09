@@ -3,23 +3,23 @@
     \usepackage{url}
     \usepackage{multicol}
 
-    \setkomavar{signature}{<<< cde_info['Finanzvorstand_Vorname']|te >>>\\ Vorstand CdE e.\,V.}
+    \setkomavar{signature}{<<< meta_info['Finanzvorstand_Vorname']|te >>>\\ Vorstand CdE e.\,V.}
     \setkomavar{subject}{Zuwendungsbestätigung Initiative 25+}
 <<% endblock %>>
 <<% block backaddress_line1 -%>>
-    <<< cde_info['Finanzvorstand_Name']|te >>>
+    <<< meta_info['Finanzvorstand_Name']|te >>>
 <<%- endblock %>>
 <<% block backaddress_line2 -%>>
-    <<< cde_info['Finanzvorstand_Adresse_Zeile2']|te >>>
+    <<< meta_info['Finanzvorstand_Adresse_Zeile2']|te >>>
 <<%- endblock %>>
 <<% block backaddress_line3 -%>>
-    <<< cde_info['Finanzvorstand_Adresse_Zeile3']|te >>>
+    <<< meta_info['Finanzvorstand_Adresse_Zeile3']|te >>>
 <<%- endblock %>>
 <<% block backaddress_line4 -%>>
-    <<< cde_info['Finanzvorstand_Adresse_Zeile4']|te >>>
+    <<< meta_info['Finanzvorstand_Adresse_Zeile4']|te >>>
 <<%- endblock %>>
 <<% block backaddress_oneline -%>>
-    <<< cde_info['Finanzvorstand_Adresse_Einzeiler']|te >>>
+    <<< meta_info['Finanzvorstand_Adresse_Einzeiler']|te >>>
 <<%- endblock %>>
 <<% block content %>>
     \begin{letter}{
@@ -86,8 +86,8 @@
 
         \vspace{15mm}\par
         \begin{tabular}{@{}lc}
-            <<< cde_info['Finanzvorstand_Ort']|te >>>,  den <<< now()|date|te >>> & \makebox[7cm]{\dotfill} \\
-            & {\small <<< cde_info['Finanzvorstand_Name']|te >>>, Vorstand}
+            <<< meta_info['Finanzvorstand_Ort']|te >>>,  den <<< now()|date|te >>> & \makebox[7cm]{\dotfill} \\
+            & {\small <<< meta_info['Finanzvorstand_Name']|te >>>, Vorstand}
         \end{tabular}
         \par\vfill
         \begin{footnotesize}

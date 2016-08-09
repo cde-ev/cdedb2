@@ -19,10 +19,10 @@
 <<% endblock %>>
 <<% block content %>>
     \begin{letter}{Club der Ehemaligen e.\,V.\\
-                   c/o <<< cde_info['Finanzvorstand_Name']|te  >>>
+                   c/o <<< meta_info['Finanzvorstand_Name']|te  >>>
                    <<% for i in ("2", "3", "4") -%>>
-                       <<% if cde_info['Finanzvorstand_Adresse_Zeile{}'.format(i)] -%>>
-                           \\ <<< cde_info['Finanzvorstand_Adresse_Zeile{}'.format(i)]|te >>>
+                       <<% if meta_info['Finanzvorstand_Adresse_Zeile{}'.format(i)] -%>>
+                           \\ <<< meta_info['Finanzvorstand_Adresse_Zeile{}'.format(i)]|te >>>
                        <<% endif -%>>
                    <<% endfor %>>}
 
