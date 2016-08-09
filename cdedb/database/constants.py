@@ -12,16 +12,16 @@ import enum
 @enum.unique
 class Genders(enum.IntEnum):
     """Spec for field gender of core.personas."""
-    female = 0 #:
-    male = 1 #:
+    female = 1 #:
+    male = 2 #:
     #: this is a catch-all for complicated reality
-    unknown = 2
+    unknown = 10
 
 @enum.unique
 class MemberChangeStati(enum.IntEnum):
     """Spec for field change_status of core.changelog."""
-    pending = 0 #:
-    committed = 1 #:
+    pending = 1 #:
+    committed = 2 #:
     superseded = 10 #:
     nacked = 11 #:
     #: replaced by a change which could not wait
@@ -31,12 +31,12 @@ class MemberChangeStati(enum.IntEnum):
 class RegistrationPartStati(enum.IntEnum):
     """Spec for field status of event.registration_parts."""
     not_applied = -1 #:
-    applied = 0 #:
-    participant = 1 #:
-    waitlist = 2 #:
-    guest = 3 #:
-    cancelled = 4 #:
-    rejected = 5 #:
+    applied = 1 #:
+    participant = 2 #:
+    waitlist = 3 #:
+    guest = 4 #:
+    cancelled = 5 #:
+    rejected = 6 #:
 
     def is_involved(self):
         """Any status which warrants further attention by the orgas.
@@ -60,13 +60,13 @@ class RegistrationPartStati(enum.IntEnum):
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, email unconfirmed
-    unconfirmed = 0
+    unconfirmed = 1
     #: email confirmed, awaiting review
-    to_review = 1
+    to_review = 2
     #: reviewed and approved, awaiting persona creation
-    approved = 2
+    approved = 3
     #: finished (persona created, challenge archived)
-    finished = 3
+    finished = 4
     #: reviewed and rejected (also a final state)
     rejected = 10
     #: abandoned and archived (also final)
@@ -76,13 +76,13 @@ class GenesisStati(enum.IntEnum):
 class SubscriptionPolicy(enum.IntEnum):
     """Regulate (un)subscriptions to mailinglists."""
     #: everybody is subscribed (think CdE-all)
-    mandatory = 0
-    opt_out = 1 #:
-    opt_in = 2 #:
+    mandatory = 1
+    opt_out = 2 #:
+    opt_in = 3 #:
     #: everybody may subscribe, but only after approval
-    moderated_opt_in = 3
+    moderated_opt_in = 4
     #: nobody may subscribe by themselves
-    invitation_only = 4
+    invitation_only = 5
 
     def is_additive(self):
         """Differentiate between additive and subtractive mailing lists.
@@ -111,10 +111,10 @@ class SubscriptionPolicy(enum.IntEnum):
 @enum.unique
 class ModerationPolicy(enum.IntEnum):
     """Regulate posting of mail to a list."""
-    unmoderated = 0 #:
+    unmoderated = 1 #:
     #: subscribers may post without moderation, but external mail is reviewed
-    non_subscribers = 1
-    fully_moderated = 2 #:
+    non_subscribers = 2
+    fully_moderated = 3 #:
 
 @enum.unique
 class AttachmentPolicy(enum.IntEnum):
@@ -122,19 +122,19 @@ class AttachmentPolicy(enum.IntEnum):
 
     This is currently only a tri-state, so we implement it as an enum.
     """
-    allow = 0 #:
+    allow = 1 #:
     #: allow the mime-type application/pdf but nothing else
-    pdf_only = 1
-    forbid = 2 #:
+    pdf_only = 2
+    forbid = 3 #:
 
 @enum.unique
 class AudiencePolicy(enum.IntEnum):
     """Regulate who may subscribe to a mailing list by status."""
-    everybody = 0 #:
-    require_assembly = 1 #:
-    require_event = 2 #:
-    require_cde = 3 #:
-    require_member = 4 #:
+    everybody = 1 #:
+    require_assembly = 2 #:
+    require_event = 3 #:
+    require_cde = 4 #:
+    require_member = 5 #:
 
     @staticmethod
     def applicable(roles):
@@ -196,8 +196,8 @@ class AudiencePolicy(enum.IntEnum):
 @enum.unique
 class LastschriftTransactionStati(enum.IntEnum):
     """Basically store the outcome (if it exists) of a transaction."""
-    issued = 0 #:
-    skipped = 1 #:
+    issued = 1 #:
+    skipped = 2 #:
     success = 10 #:
     failure = 11 #:
     cancelled = 12 #:
@@ -215,8 +215,8 @@ class LastschriftTransactionStati(enum.IntEnum):
 @enum.unique
 class CoreLogCodes(enum.IntEnum):
     """Available log messages core.log."""
-    persona_creation = 0 #:
-    persona_change = 1 #:
+    persona_creation = 1 #:
+    persona_change = 2 #:
     password_change = 10 #:
     password_reset_cookie = 11 #:
     password_reset = 12 #:
@@ -228,15 +228,15 @@ class CoreLogCodes(enum.IntEnum):
 @enum.unique
 class CdeLogCodes(enum.IntEnum):
     """Available log messages cde.log."""
-    advance_semester = 0 #:
-    advance_expuls = 1 #:
+    advance_semester = 1 #:
+    advance_expuls = 2 #:
 
 @enum.unique
 class FinanceLogCodes(enum.IntEnum):
     """Available log messages cde.finance_log."""
-    new_member = 0 #:
-    gain_membership = 1 #:
-    lose_membership = 2 #:
+    new_member = 1 #:
+    gain_membership = 2 #:
+    lose_membership = 3 #:
     increase_balance = 10 #:
     deduct_membership_fee = 11 #:
     end_trial_membership = 12 #:
@@ -253,8 +253,8 @@ class FinanceLogCodes(enum.IntEnum):
 @enum.unique
 class EventLogCodes(enum.IntEnum):
     """Available log messages event.log."""
-    event_created = 0 #:
-    event_changed = 1 #:
+    event_created = 1 #:
+    event_changed = 2 #:
     orga_added = 10 #:
     orga_removed = 11 #:
     part_created = 15 #:
@@ -278,8 +278,8 @@ class EventLogCodes(enum.IntEnum):
 @enum.unique
 class PastEventLogCodes(enum.IntEnum):
     """Available log messages past_event.log."""
-    event_created = 0 #:
-    event_changed = 1 #:
+    event_created = 1 #:
+    event_changed = 2 #:
     course_created = 10 #:
     course_changed = 11 #:
     course_deleted = 12 #:
@@ -292,9 +292,9 @@ class PastEventLogCodes(enum.IntEnum):
 @enum.unique
 class AssemblyLogCodes(enum.IntEnum):
     """Available log messages core.log."""
-    assembly_created = 0 #:
-    assembly_changed = 1 #:
-    assembly_concluded = 2 #:
+    assembly_created = 1 #:
+    assembly_changed = 2 #:
+    assembly_concluded = 3 #:
     ballot_created = 10 #:
     ballot_changed = 11 #:
     ballot_deleted = 12 #:
@@ -310,9 +310,9 @@ class AssemblyLogCodes(enum.IntEnum):
 @enum.unique
 class MlLogCodes(enum.IntEnum):
     """Available log messages for ml.log."""
-    list_created = 0 #:
-    list_changed = 1 #:
-    list_deleted = 2 #:
+    list_created = 1 #:
+    list_changed = 2 #:
+    list_deleted = 3 #:
     moderator_added = 10 #:
     moderator_removed = 11 #:
     whitelist_added = 12 #:

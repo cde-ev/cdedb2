@@ -661,10 +661,10 @@ class AgeClasses(enum.IntEnum):
     If there is any need for additional detail in differentiating this
     can be centrally added here.
     """
-    full = 0 #: at least 18 years old
-    u18 = 1 #: between 16 and 18 years old
-    u16 = 2 #: between 14 and 16 years old
-    u14 = 3 #: less than 14 years old
+    full = 1 #: at least 18 years old
+    u18 = 2 #: between 16 and 18 years old
+    u16 = 3 #: between 14 and 16 years old
+    u14 = 4 #: less than 14 years old
 
     def is_minor(self):
         """Checks whether a legal guardian is required.
@@ -720,11 +720,11 @@ def determine_age_class(birth, reference):
 class LineResolutions(enum.IntEnum):
     """Possible actions during batch admission
     """
-    create = 0 #: Create a new account with this data.
-    skip = 1 #: Do nothing with this line.
-    renew_trial = 2 #: Renew the trial membership of an existing account.
-    update = 3 #: Update an existing account with this data.
-    renew_and_update = 4 #: A combination of renew_trial and update.
+    create = 1 #: Create a new account with this data.
+    skip = 2 #: Do nothing with this line.
+    renew_trial = 3 #: Renew the trial membership of an existing account.
+    update = 4 #: Update an existing account with this data.
+    renew_and_update = 5 #: A combination of renew_trial and update.
 
     def do_trial(self):
         """Whether to grant a trial membership.
@@ -761,13 +761,13 @@ class CourseFilterPositions(enum.IntEnum):
     or something else. Where exactly we search for the course is
     specified via this enum.
     """
-    instructor = 0 #: Being a course instructor for the course in question.
-    first_choice = 1 #:
-    second_choice = 2 #:
-    third_choice = 3 #:
-    any_choice = 4 #:
-    assigned = 5 #: Being in this course either as participant or as instructor.
-    anywhere = 6 #:
+    instructor = 1 #: Being a course instructor for the course in question.
+    first_choice = 2 #:
+    second_choice = 3 #:
+    third_choice = 4 #:
+    any_choice = 5 #:
+    assigned = 6 #: Being in this course either as participant or as instructor.
+    anywhere = 7 #:
 
 def asciificator(s):
     """Pacify a string.

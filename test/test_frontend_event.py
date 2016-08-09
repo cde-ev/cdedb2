@@ -83,7 +83,7 @@ class TestEventFrontend(FrontendTest):
             "name_supplement": 'von und zu',
             "display_name": 'Zelda',
             "birthday": "5.6.1987",
-            "gender": "0",
+            "gender": "1",
             "telephone": "030456790",
             ## "mobile"
             "address": "Street 7",
@@ -145,7 +145,7 @@ class TestEventFrontend(FrontendTest):
             "name_supplement": 'von und zu',
             "display_name": 'Zelda',
             "birthday": "5.6.1987",
-            "gender": "0",
+            "gender": "1",
             "telephone": "030456790",
             ## "mobile"
             "address": "Street 7",
@@ -581,8 +581,8 @@ etc;anything else""", f['entries_2'].value)
         f['reg.orga_notes'] = "Wir wllen mal nicht so sein."
         self.assertEqual(True, f['reg.mixed_lodging'].checked)
         f['reg.mixed_lodging'].checked = False
-        self.assertEqual("2", f['part1.status'].value)
-        f['part1.status'] = 1
+        self.assertEqual("3", f['part1.status'].value)
+        f['part1.status'] = 2
         self.assertEqual("4", f['part2.lodgement_id'].value)
         f['part2.lodgement_id'] = 3
         self.assertEqual("2", f['part3.course_choice_1'].value)
@@ -598,7 +598,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Wir wllen mal nicht so sein.", f['reg.orga_notes'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
-        self.assertEqual("1", f['part1.status'].value)
+        self.assertEqual("2", f['part1.status'].value)
         self.assertEqual("3", f['part2.lodgement_id'].value)
         self.assertEqual("5", f['part3.course_choice_1'].value)
         self.assertEqual("etc", f['fields.transportation'].value)
@@ -773,7 +773,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
-        f['position'] = 3
+        f['position'] = 4
         self.submit(f)
         self.assertNonPresence("Anton Armin")
         self.assertNonPresence("Emilia")
@@ -781,7 +781,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
-        f['position'] = 3
+        f['position'] = 4
         f['part_id'] = 3
         self.submit(f)
         self.assertNonPresence("Anton Armin")
@@ -800,7 +800,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 1
-        f['position'] = 5
+        f['position'] = 6
         f['part_id'] = 3
         self.submit(f)
         self.assertPresence("Anton Armin")
@@ -809,7 +809,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
-        f['position'] = 5
+        f['position'] = 6
         f['part_id'] = 3
         self.submit(f)
         self.assertNonPresence("Anton Armin")
@@ -829,7 +829,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 5
-        f['position'] = 5
+        f['position'] = 6
         self.submit(f)
         self.assertNonPresence("Anton Armin")
         self.assertNonPresence("Emilia")

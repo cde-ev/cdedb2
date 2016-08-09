@@ -17,12 +17,12 @@ from cdedb.common import glue
 @enum.unique
 class QueryOperators(enum.IntEnum):
     """Enum for all possible operators on a query column."""
-    empty = 0
-    nonempty = 1
-    equal = 2
-    unequal = 3
-    oneof = 4
-    otherthan = 5
+    empty = 1
+    nonempty = 2
+    equal = 3
+    unequal = 4
+    oneof = 5
+    otherthan = 6
     similar = 10
     dissimilar = 11
     regex = 12

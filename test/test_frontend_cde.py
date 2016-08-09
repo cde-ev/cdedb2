@@ -199,7 +199,7 @@ class TestCdEFrontend(FrontendTest):
             "timeline": "tja",
             "interests": "hmmmm",
             "free_form": "jaaah",
-            "gender": "0",
+            "gender": "1",
             "telephone": "030456790",
             ## "mobile"
             "weblink": "www.zzz.cc",
@@ -463,26 +463,26 @@ class TestCdEFrontend(FrontendTest):
                 self.assertTrue(re.search(piece, out))
         for i in range(14):
             if i in (1, 7):
-                expectation = '0'
+                expectation = '1'
             else:
                 expectation = None
             self.assertEqual(expectation, f['resolution{}'.format(i)].value)
         inputdata = f['accounts'].value
-        f['resolution0'] = 1
-        f['resolution2'] = 1
-        f['resolution3'] = 1
-        f['resolution4'] = 4
+        f['resolution0'] = 2
+        f['resolution2'] = 2
+        f['resolution3'] = 2
+        f['resolution4'] = 5
         f['doppelganger_id4'] = '2'
-        f['resolution5'] = 3
+        f['resolution5'] = 4
         f['doppelganger_id5'] = '4'
-        f['resolution6'] = 2
+        f['resolution6'] = 3
         f['doppelganger_id6'] = '5'
         inputdata = inputdata.replace("pa99", "pa14")
         inputdata = inputdata.replace("Doomed course from hell", "Swish -- und alles ist gut")
         inputdata = inputdata.replace("31.02.1981", "21.02.1981")
         inputdata = inputdata.replace("00000", "07751")
-        f['resolution12'] = 1
-        f['resolution13'] = 1
+        f['resolution12'] = 2
+        f['resolution13'] = 2
         f['accounts'] = inputdata
         self.submit(f, check_notification=False)
 
@@ -538,11 +538,11 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution6'] = 0
-        f['resolution8'] = 0
-        f['resolution9'] = 0
-        f['resolution10'] = 0
-        f['resolution11'] = 0
+        f['resolution6'] = 1
+        f['resolution8'] = 1
+        f['resolution9'] = 1
+        f['resolution10'] = 1
+        f['resolution11'] = 1
         self.submit(f, check_notification=False)
 
         ## third round
@@ -595,7 +595,7 @@ class TestCdEFrontend(FrontendTest):
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
-        f['resolution6'] = 1
+        f['resolution6'] = 2
         f['doppelganger_id6'] = ''
         self.assertEqual('', f['finalized'].value)
         self.submit(f, check_notification=False)
@@ -1031,7 +1031,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/past/log'})
         self.assertTitle("Log: Abgeschlossene Veranstaltungen [0–8]")
         f = self.response.forms['logshowform']
-        f['codes'] = [0, 10, 21]
+        f['codes'] = [1, 10, 21]
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)

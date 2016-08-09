@@ -8,7 +8,7 @@
         var $element = $(element);
         var obj = this;
         var settings = $.extend({
-            choices : {},            
+            choices : {},
             separator : ',',
             escapechar : '\\\\', //double escaped backslash for usage in regex
         }, options || {});
@@ -18,7 +18,7 @@
          * type: data type (string: bool, int, string, list, date, datetime, float)
          * name: human readable name of the field
          * choices: List of choices if type==list. Each choice has the format {'id' : 'name'}
-         * sortable: Can this field be used for sorting? (bool) 
+         * sortable: Can this field be used for sorting? (bool)
          * input_select: jQuery DOM object of the non-js field select checkbox
          * input_filter_op: jQuery DOM object of the non-js filter operator select box
          * input_filter: jQuery DOM object of the non-js filter value field
@@ -31,13 +31,13 @@
          * input_order: jQuery DOM object of the order (asc/desc) select box
          */
         var sortInputs = [];
-        
+
         /* Scan formular rows and initialize field list */
         $element.find('.query_field').each(function() {
             var id = $(this).attr('data-id');
             var input_select = $(this).find('.outputSelector');
             var error_block = $(this).find('.input-error-block');
-            
+
             fieldList.push({
                 id: id,
                 type: settings.choices[id] ? 'list' : $(this).attr('data-type'),//TODO list type
@@ -50,7 +50,7 @@
                 error: error_block.length ? error_block.html() : null,
             });
         });
-        
+
         /* Find formular sort fields */
         $element.find('.query_sort').each(function() {
             sortInputs.push({
@@ -58,7 +58,7 @@
                 input_order : $(this).find('.sort-order')
             });
         });
-        
+
         /* Scan sort field options and mark sortable fields */
         sortInputs[0].input_field.children('option').each(function() {
             for (i in fieldList) {
@@ -68,11 +68,11 @@
                 }
             }
         });
-        
+
         /* Member functions */
         /**
          * Init function.
-         * 
+         *
          * Hides non-js formular, shows our nice dynamic form and adds predefined filters (and selected fields) to it.
          * Enables Event handlers for select boxes.
          */
@@ -80,14 +80,14 @@
             // Hide non-js form, show js form
             $element.find('.queryform-nojs').hide();
             $element.find('.queryform-js').show();
-            
+
             // Add currently selected and filtered fields to dynamic lists
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
-                
+
                 if (f.input_filter_op.val() !== '')
                     this.addFilterRow(i);
-                
+
                 if (f.input_select && f.input_select.prop('checked'))
                     this.addViewRow(i);
             }
@@ -104,25 +104,25 @@
                     }
                     if (field == -1)
                         continue;
-                        
+
                     // Add field to sort list
                     this.addSortRow(field, sortInputs[i].input_order.val());
                 }
             }
-            
+
             // Eventhandler and list update for add*field select boxes
             $('.addviewfield').change(function() {
                 obj.addViewRow($(this).val());
                 obj.refreshViewFieldSelect();
             });
             this.refreshViewFieldSelect();
-            
+
             $('.addfilter').change(function() {
                 obj.addFilterRow($(this).val());
                 obj.refreshFilterFieldSelect();
             });
             this.refreshFilterFieldSelect();
-            
+
             $('.addsortfield').change(function() {
                 obj.addSortRow($(this).val(),'True');
                 obj.updateSortInputs();
@@ -131,16 +131,16 @@
             this.updateSortInputs();
             this.refreshSortFieldSelect();
         };
-        
+
         /**
          * Add a filter row to the dynamic formular. The filter field is specified by the entry id in the field list
          * array.
-         * 
+         *
          * @param number (int) Id of the field in fieldList
          */
         this.addFilterRow = function(number) {
             var f = fieldList[number];
-            
+
             var $button = $('<button></button>', {'class':"btn btn-sm btn-danger pull-right",'type':"button"})
                     .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
                     .click(function() {
@@ -163,8 +163,8 @@
                 $opselector.val(f.input_filter_op.val());
             else
                 f.input_filter_op.val($opselector.val());
-                
-                
+
+
             var $item = $('<li></li>',{'class':"list-group-item queryform-filterbox",'data-id':number})
                     .append(f.name).append('&ensp;')
                     .append($opselector).append('&ensp;')
@@ -172,24 +172,24 @@
                     .append($button);
             if (f.error)
                 $item.append($('<div></div>',{'class':'input-error-block'}).html(f.error));
-            
+
             $element.find('.filterfield-list').append($item);
             $opselector.focus();
-            
+
             this.updateFilterValueInput(number, $opselector.val(), $fieldbox)
         };
-        
+
         /**
          * Generate the filter value inputs according to the selected filter operator.
-         * 
+         *
          * @param fieldNumber (int) Id of the field in fieldList
          * @param operator (int) selected filter operator
          * @param $fieldbox (jQuery DOM object) DOM element to fill with the inputs.
          */
         this.updateFilterValueInput = function(fieldNumber, operator, $fieldbox) {
             $fieldbox.empty();
-            var f = fieldList[fieldNumber];            
-            
+            var f = fieldList[fieldNumber];
+
             var inputTypes = {
                     'date' : 'date',
                     'datetime' : 'datetime-local',
@@ -197,15 +197,15 @@
                     'id' : 'number',
                     'str' : 'text',
                     'float' : 'text'};
-            
+
             switch (parseInt(operator)) {
             // The constants arise from cdedb.query.QueryOperators.
-            case 0: //emtpy
-            case 1: //nonempty
+            case 1: //emtpy
+            case 2: //nonempty
                 break;
-            
-            case 2: //equal
-            case 3: //unequal
+
+            case 3: //equal
+            case 4: //unequal
             case 10: //similar
             case 11: //dissimilar
             case 12: //regex
@@ -219,7 +219,7 @@
                     f.error = null;
                     $fieldbox.siblings('.input-error-block').detach();
                 };
-                
+
                 if (f.type == 'bool' || f.type == 'list') {
                     var $s = $('<select>',{class : "form-control input-sm input-slim", type: inputTypes[f.type]})
                             .change(changeFunction)
@@ -230,13 +230,13 @@
                         $s.append($('<option>',{'value' : 'True'}).text('wahr'))
                             .append($('<option>',{'value' : 'False'}).text('falsch'));
                     }
-                    
+
                     if (f.input_filter_value.val() !== '')
                         $s.val(f.input_filter_value.val());
                     else
                         f.input_filter_value.val($s.val());
                     $s.appendTo($fieldbox);
-                    
+
                     // TODO select2 if list
                 } else {
                     $i = $('<input>',{'class':"form-control input-sm input-slim", 'type': inputTypes[f.type]})
@@ -249,7 +249,7 @@
                     $i.appendTo($fieldbox);
                 }
                 break;
-                
+
             case 22: //between
             case 23: //outside
                 var escape = function(v) {
@@ -260,7 +260,7 @@
                     return v.replace(settings.escapechar+settings.separator,settings.separator)
                             .replace(settings.escapechar+settings.escapechar,settings.escapechar);
                 }
-            
+
                 //Split value at separator but not at escapechar+separator
                 var values = f.input_filter_value.val()
                         .match(new RegExp('('+settings.escapechar+'.|[^'+settings.separator+'])+','g'));
@@ -268,27 +268,27 @@
                     values = values.map(unescape);
                 else
                     values=["",""]
-            
+
                 $i1 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
                         .val(values[0]);
                 $i2 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
                         .val(values[1]);
-                
+
                 if (f.type == 'date')
                     $i1.add($i2).attr('placeholder','YYYY-MM-DD');
                 else if (f.type == 'datetime')
                     $i1.add($i2).attr('placeholder','YYYY-MM-DDThh:mm');
-                    
+
                 $i1.add($i2).change(function() {
                     var val = escape($i1.val()) + ',' + escape($i2.val());
                     f.input_filter_value.val(val);
                 });
-                
+
                 $fieldbox.append($i1).append('&ensp;und&ensp;').append($i2);
-            
+
                 break;
-            case 4: //oneof
-            case 5: //otherthan
+            case 5: //oneof
+            case 6: //otherthan
             case 14: //containsall
             case 15: //containsnone
             case 16: //containssome
@@ -300,22 +300,22 @@
                     'list' : '<id>,<id>,…',
                     'str' : '<wert>,<wert>,…',
                     'float' : '<wert>,<wert>,…'};
-                    
+
                 $('<input>',{'class' : "form-control input-sm input-slim",
                              'type': 'text', placeholder: placeholders[f.type]})
                         .change(function() { f.input_filter_value.val($(this).val()); })
                         .attr('size','40')
                         .val(f.input_filter_value.val())
                         .appendTo($fieldbox);
-                
+
                 //TODO multiselect with select2 if list
                 break;
             }
         }
-        
+
         /**
          * Add a row to the dynamic view list. The new field is specified by the entry id in the field list array.
-         * 
+         *
          * @param number (int) Id of the field in fieldList
          */
         this.addViewRow = function(number) {
@@ -324,10 +324,10 @@
                 console.warn('Field '+f.id+' does not allow selection for view.');
                 return;
             }
-            
+
             // Check hidden checkbox representing the actual state
             f.input_select.prop('checked',true);
-            
+
             // Add box to the dynamic list
             var $button = $('<button></button>', {'class':"btn btn-xs btn-danger",'type':"button"})
                     .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
@@ -339,20 +339,20 @@
             var $box = $('<span></span>',{'class':'queryform-fieldbox', 'data-id':number})
                     .text(f.name)
                     .append($button);
-            
+
             this.refreshViewFieldSelect();
             $element.find('.viewfield-list').append($box);
         };
-        
+
         /**
          * Add a row to the list of sort fields of the dynamic formular.
-         * 
+         *
          * @param number (int) Id of the field in fieldList
          * @param sorting (string) predefined value of the order (asc/desc) select box
          */
         this.addSortRow = function(number, sorting) {
             var f = fieldList[number];
-            
+
             var inputTypes = {
                     'bool' : ['✘→✔','✔→✘'],
                     'date' : ['0→9','9→0'],
@@ -362,7 +362,7 @@
                     'str' : ['A→Z','Z→A'],
                     'list' : ['A→Z','Z→A'],
                     'float' : ['0→9','9→0']};
-            
+
             var $button = $('<button></button>', {'class':"btn btn-sm btn-danger pull-right",'type':"button"})
                     .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
                     .click(function() {
@@ -382,7 +382,7 @@
                     .append(f.name).append('&ensp;')
                     .append($sortselector).append('&ensp;')
                     .append($button);
-            
+
             $element.find('.sortfield-list').append($item);
         };
 
@@ -396,7 +396,7 @@
             $element.find('.filterfield-list .queryform-filterbox').each(function() {
                 currentFields[$(this).attr('data-id')] = true;
             });
-            
+
             // Add not listed fields to selectbox
             var $box = $element.find('.addfilter');
             $box.empty();
@@ -409,7 +409,7 @@
             }
             $box.val('');
         }
-        
+
         /**
          * Refresh the list of options in the .addviewfield select box.
          */
@@ -419,7 +419,7 @@
             $element.find('.viewfield-list .queryform-fieldbox').each(function() {
                 currentFields[$(this).attr('data-id')] = true;
             });
-            
+
             // Add all valid and not listed fields to selectbox
             var $box = $element.find('.addviewfield');
             $box.empty();
@@ -432,7 +432,7 @@
             }
             $box.val('');
         }
-        
+
         /**
          * Refresh the list of options in the .addsortfield select box.
          */
@@ -444,15 +444,15 @@
                 currentFields[$(this).attr('data-id')] = true;
                 numSortFields++;
             });
-            
+
             // Add all valid and not listed fields to selectbox
             var $box = $element.find('.addsortfield');
-            
+
             if (numSortFields >= sortInputs.length)
                 $box.parent().hide();
             else
                 $box.parent().show();
-            
+
             $box.empty();
             $box.append(new Option('— Sortierung hinzufügen —',''));
             for (var i=0; i < fieldList.length; i++) {
@@ -463,7 +463,7 @@
             }
             $box.val('');
         }
-        
+
         /**
          * Write back the sort selection and ordering into the input fields of the non-js form.
          * Also updates the displayed numbers in the dynamic sort list.
@@ -481,8 +481,8 @@
             }
         }
     };
-    
-    
+
+
     /**
      * The actual "jQuery plugin" - a function to be used on the jQuery object of the query form.
      * It constructs and initializes the above defined object which does everything neccessary for the fancy js form.
@@ -492,10 +492,10 @@
         $(this).each(function() {
             if ($(this).data('cdedbQueryForm'))
                 return;
-            
+
             var obj = new QueryForm(this,options);
             $(this).data('cdedbQueryForm',obj);
-            
+
             // Custom submit handler
             // Inspired by http://stackoverflow.com/a/5169572 and http://www.billerickson.net/code/hide-empty-fields-get-form/
             $(this).submit(function(e) {
@@ -519,20 +519,20 @@
                             .add($(this).find('.sort-order'));
                     }
                 });
-                
+
                 // Disable them
                 $toDisable.attr("disabled", "disabled");
-                
+
                 // Now submit the form
                 // Important: We're using the DOM object's handler to prevent calling our jQuery handler recursively
                 this.submit();
-                
+
                 // And reenable fields after some milliseconds (in case user submitted CSV-Form or navigates back)
                 setTimeout(function(){
                     $toDisable.removeAttr("disabled");
                 },100);
             });
-            
+
             obj.init();
         });
         return this;

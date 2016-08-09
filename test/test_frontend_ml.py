@@ -213,10 +213,10 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['createlistform']
         f['title'] = "Munkelwand"
         f['address'] = "munkelwand@example.cde"
-        f['sub_policy'] = 2
-        f['mod_policy'] = 0
-        f['attachment_policy'] = 1
-        f['audience_policy'] = 0
+        f['sub_policy'] = 3
+        f['mod_policy'] = 1
+        f['attachment_policy'] = 2
+        f['audience_policy'] = 1
         f['subject_prefix'] = "[munkel]"
         f['maxsize'] = 512
         f['is_active'].checked = True
@@ -236,9 +236,9 @@ class TestMlFrontend(FrontendTest):
         f['title'] = "Munkelwand"
         self.assertEqual("werbung@example.cde", f['address'].value)
         f['address'] = "munkelwand@example.cde"
-        self.assertEqual("1", f['sub_policy'].value)
-        f['sub_policy'] = 2
-        f['audience_policy'] = 0
+        self.assertEqual("2", f['sub_policy'].value)
+        f['sub_policy'] = 4
+        f['audience_policy'] = 2
         self.assertTrue(f['is_active'].checked)
         f['is_active'].checked = False
         self.submit(f)
@@ -247,7 +247,7 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['changelistform']
         self.assertEqual("Munkelwand", f['title'].value)
         self.assertEqual("munkelwand@example.cde", f['address'].value)
-        self.assertEqual("2", f['sub_policy'].value)
+        self.assertEqual("4", f['sub_policy'].value)
         self.assertFalse(f['is_active'].checked)
         self.traverse({'href': '/ml/$'})
         self.assertTitle("Mailinglisten")
@@ -322,7 +322,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/3/change'},)
         self.assertTitle("Witz des Tages -- Konfiguration")
         f = self.response.forms['changelistform']
-        f['audience_policy'] = 4
+        f['audience_policy'] = 5
         self.submit(f)
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},

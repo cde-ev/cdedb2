@@ -564,7 +564,7 @@
             "is_searchable": true,
             "telephone": "+49 (234) 98765",
             "mobile": null,
-            "gender": 1,
+            "gender": 2,
             "title": null,
             "family_name": "Administrator",
             "given_names": "Anton Armin A.",
@@ -597,7 +597,7 @@
             "is_searchable": false,
             "telephone": "+49 (5432) 555666777",
             "mobile": null,
-            "gender": 0,
+            "gender": 1,
             "title": null,
             "family_name": "Eventis",
             "given_names": "Emilia E.",
@@ -630,7 +630,7 @@
             "is_searchable": false,
             "telephone": null,
             "mobile": null,
-            "gender": 0,
+            "gender": 1,
             "title": null,
             "family_name": "Generalis",
             "given_names": "Garcia G.",
@@ -663,7 +663,7 @@
             "is_searchable": true,
             "telephone": null,
             "mobile": "0163/456897",
-            "gender": 0,
+            "gender": 1,
             "title": null,
             "family_name": "Iota",
             "given_names": "Inga",
@@ -715,7 +715,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 2,
-            "status": 0,
+            "status": 1,
             "lodgement_id": null
         },
         {
@@ -724,7 +724,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 3,
-            "status": 1,
+            "status": 2,
             "lodgement_id": 1
         },
         {
@@ -733,7 +733,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 4,
-            "status": 2,
+            "status": 3,
             "lodgement_id": null
         },
         {
@@ -742,7 +742,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 5,
-            "status": 3,
+            "status": 4,
             "lodgement_id": 4
         },
         {
@@ -751,7 +751,7 @@
             "course_instructor": 1,
             "course_id": 1,
             "id": 6,
-            "status": 1,
+            "status": 2,
             "lodgement_id": 4
         },
         {
@@ -760,7 +760,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 7,
-            "status": 1,
+            "status": 2,
             "lodgement_id": 2
         },
         {
@@ -769,7 +769,7 @@
             "course_instructor": null,
             "course_id": 2,
             "id": 8,
-            "status": 1,
+            "status": 2,
             "lodgement_id": null
         },
         {
@@ -778,7 +778,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 9,
-            "status": 1,
+            "status": 2,
             "lodgement_id": 2
         },
         {
@@ -787,7 +787,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 10,
-            "status": 5,
+            "status": 6,
             "lodgement_id": null
         },
         {
@@ -796,7 +796,7 @@
             "course_instructor": null,
             "course_id": null,
             "id": 11,
-            "status": 4,
+            "status": 5,
             "lodgement_id": null
         },
         {
@@ -805,7 +805,7 @@
             "course_instructor": null,
             "course_id": 1,
             "id": 12,
-            "status": 1,
+            "status": 2,
             "lodgement_id": 2
         }
     ],
