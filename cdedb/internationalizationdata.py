@@ -233,6 +233,7 @@ I18N_STRINGS = {
     "Invalid german postal code.": "Ungültige Postleitzahl.",
     "'Mandatory key missing.'": "Notwendige Angabe fehlt.",
     "Must be a datetime.date.": "Kein Datum gefunden.",
+    "'Participation already recorded.'": "Teilnahme bereits erfasst.",
     "Mustn't be empty.": "Darf nicht leer sein.",
     "No course available.": "Kein Kurs verfügbar.",
     "No course found.": "Kein Kurs gefunden.",

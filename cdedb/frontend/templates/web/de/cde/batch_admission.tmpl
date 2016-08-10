@@ -41,7 +41,14 @@
                 <strong>
                     Zeile {{ dataset['lineno']|e }}: {{ dataset['raw']['given_names']|e }}
                     {{ dataset['raw']['family_name']|e }} &lt;{{ dataset['raw']['username']|e }}&gt;
-                    (geb. am {{ dataset['raw']['birthday']|e }})
+                    geb. am {{ dataset['raw']['birthday']|e }}
+                    {% if dataset['pevent_id'] %}
+                        ({{ pevents[dataset['pevent_id']]|e }}
+                        {%- if dataset['pcourse_id'] -%}
+                            /{{ pcourses[dataset['pevent_id']][dataset['pcourse_id']]|e }}
+                        {%- endif -%}
+                        )
+                    {% endif %}
                 </strong>
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}

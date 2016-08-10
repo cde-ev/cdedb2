@@ -255,7 +255,13 @@ class CdEFrontend(AbstractUserFrontend):
         }
         merge_dicts(rs.values, defaults)
         data = data or {}
-        return self.render(rs, "batch_admission", {'data': data,})
+        pevents = self.pasteventproxy.list_past_events(rs)
+        pevent_ids = {d['pevent_id'] for d in data if d['pevent_id']}
+        pcourses = {
+            pevent_id: self.pasteventproxy.list_past_courses(rs, pevent_id)
+            for pevent_id in pevent_ids}
+        return self.render(rs, "batch_admission", {
+            'data': data, 'pevents': pevents, 'pcourses': pcourses})
 
     def examine_for_admission(self, rs, datum):
         """Check one line of batch admission.
@@ -291,13 +297,15 @@ class CdEFrontend(AbstractUserFrontend):
         merge_dicts(persona, PERSONA_DEFAULTS)
         persona, problems = validate.check_persona(persona, "persona",
                                                    creation=True)
-        pevent_id, p = self.pasteventproxy.find_past_event(
+        pevent_id, w, p = self.pasteventproxy.find_past_event(
             rs, datum['raw']['event'])
+        warnings.extend(w)
         problems.extend(p)
         pcourse_id = None
         if datum['raw']['course'] and pevent_id:
-            pcourse_id, p = self.pasteventproxy.find_past_course(
+            pcourse_id, w, p = self.pasteventproxy.find_past_course(
                 rs, datum['raw']['course'], pevent_id)
+            warnings.extend(w)
             problems.extend(p)
         else:
             warnings.append(("course", ValueError("No course available.")))
@@ -323,6 +331,12 @@ class CdEFrontend(AbstractUserFrontend):
                     problems.append(
                         ("doppelganger",
                          ValueError("Doppelganger not a CdE-Account.")))
+        if datum['doppelganger_id'] and pevent_id:
+            existing = self.pasteventproxy.list_participants(
+                rs, pevent_id=pevent_id)
+            if (datum['doppelganger_id'], pcourse_id) in existing:
+                problems.append(
+                    ("pevent_id", KeyError("Participation already recorded.")))
         datum.update({
             'persona': persona,
             'pevent_id': pevent_id,
@@ -355,6 +369,7 @@ class CdEFrontend(AbstractUserFrontend):
             with Atomizer(rs):
                 count = 0
                 for index, datum in enumerate(data):
+                    persona_id = None
                     if datum['resolution'] == LineResolutions.skip:
                         continue
                     elif datum['resolution'] == LineResolutions.create:
@@ -363,9 +378,11 @@ class CdEFrontend(AbstractUserFrontend):
                             'trial_member': trial_membership,
                             'is_searchable': consent,
                             })
-                        self.coreproxy.create_persona(rs, datum['persona'])
+                        persona_id = self.coreproxy.create_persona(
+                            rs, datum['persona'])
                         count += 1
                     elif datum['resolution'].is_modification():
+                        persona_id = datum['doppelganger_id']
                         if datum['resolution'].do_trial():
                             self.coreproxy.change_membership(
                                 rs, datum['doppelganger_id'], is_member=True)
@@ -388,6 +405,11 @@ class CdEFrontend(AbstractUserFrontend):
                                 datum['persona']['username'], password=None)
                     else:
                         raise RuntimeError("Impossible.")
+                    if datum['pevent_id']:
+                        ## TODO preserve instructor/orga information
+                        self.pasteventproxy.add_participant(
+                            rs, datum['pevent_id'], datum['pcourse_id'],
+                            persona_id, is_instructor=False, is_orga=False)
         except psycopg2.extensions.TransactionRollbackError:
             ## We perform a rather big transaction, so serialization errors
             ## could happen.

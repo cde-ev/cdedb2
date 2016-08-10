@@ -285,7 +285,7 @@ class CoreFrontend(AbstractFrontend):
         anid, errs = validate.check_cdedbid(phrase, "phrase")
         if not errs:
             return self.redirect_show_user(rs, anid)
-        anid, errs = validate.check_int(phrase, "phrase")
+        anid, errs = validate.check_id(phrase, "phrase")
         if not errs:
             return self.redirect_show_user(rs, anid)
         terms = tuple(t.strip() for t in phrase.split(' ') if t)

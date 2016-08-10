@@ -223,15 +223,15 @@ class TestPastEventBackend(BackendTest):
                                        datetime.date(2003, 11, 11),})
         del data['tempus']
         self.assertEqual(expectation, data)
-        expectation = {2: 'Planetenretten für Anfänger',
-                       3: 'Lustigsein für Fortgeschrittene'}
+        expectation = {3: 'Planetenretten für Anfänger',
+                       4: 'Lustigsein für Fortgeschrittene'}
         self.assertEqual(expectation,
                          self.pastevent.list_past_courses(self.key, new_id))
         expectation = {
-            (7, 3): {'pcourse_id': 3,
+            (7, 4): {'pcourse_id': 4,
                      'is_instructor': False,
                      'is_orga': True,
                      'persona_id': 7}}
         self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pcourse_id=3))
+                         self.pastevent.list_participants(self.key, pcourse_id=4))
 

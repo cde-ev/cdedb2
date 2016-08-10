@@ -486,24 +486,32 @@ class PastEventBackend(AbstractBackend):
         """
         moniker = affirm("str_or_None", moniker)
         if not moniker:
-            return None, [("pevent_id", ValueError("No input supplied."))]
-        pattern = "\\s*{}\\s*".format(moniker)
+            return None, [], [("pevent_id", ValueError("No input supplied."))]
         query = glue("SELECT id FROM past_event.events",
                      "WHERE (title ~* %s OR shortname ~* %s) AND tempus >= %s")
+        query2 = glue("SELECT id FROM past_event.events",
+                      "WHERE similarity(title, %s) > %s AND tempus >= %s")
         today = now().date()
         reference = today - datetime.timedelta(days=200)
         reference = reference.replace(day=1, month=1)
-        ret = self.query_all(rs, query, (pattern, pattern, reference))
+        ret = self.query_all(rs, query, (moniker, moniker, reference))
+        warnings = []
+        ## retry with less restrictive conditions until we find something or
+        ## give up
         if len(ret) == 0:
-            ## retry with less restrictive conditions
             ret = self.query_all(rs, query,
-                                 (pattern, pattern, datetime.date.min))
+                                 (moniker, moniker, datetime.date.min))
         if len(ret) == 0:
-            return None, [("pevent_id", ValueError("No event found."))]
+            warnings.append(("pevent_id", ValueError("Only fuzzy match.")))
+            ret = self.query_all(rs, query2, (moniker, 0.5, reference))
+        if len(ret) == 0:
+            ret = self.query_all(rs, query2, (moniker, 0.5, datetime.date.min))
+        if len(ret) == 0:
+            return None, [], [("pevent_id", ValueError("No event found."))]
         elif len(ret) > 1:
-            return None, [("pevent_id", ValueError("Ambiguous event."))]
+            return None, warnings, [("pevent_id", ValueError("Ambiguous event."))]
         else:
-            return unwrap(unwrap(ret)), []
+            return unwrap(unwrap(ret)), warnings, []
 
     @access("cde_admin", "event_admin")
     def find_past_course(self, rs, moniker, pevent_id):
@@ -520,17 +528,26 @@ class PastEventBackend(AbstractBackend):
         :returns: The id of the past course or None if there were errors.
         """
         moniker = affirm("str_or_None", moniker)
+        if not moniker:
+            return None, [], [("pcourse_id", ValueError("No input supplied."))]
         pevent_id = affirm("id", pevent_id)
-        pattern = "\\s*{}\\s*".format(moniker)
         query = glue("SELECT id FROM past_event.courses",
                      "WHERE title ~* %s AND pevent_id = %s")
-        ret = self.query_all(rs, query, (pattern, pevent_id))
+        query2 = glue("SELECT id FROM past_event.courses",
+                     "WHERE similarity(title, %s) > %s AND pevent_id = %s")
+        ret = self.query_all(rs, query, (moniker, pevent_id))
+        warnings = []
+        ## retry with less restrictive conditions until we find something or
+        ## give up
         if len(ret) == 0:
-            return None, [("pcourse_id", ValueError("No course found."))]
+            warnings.append(("pcourse_id", ValueError("Only fuzzy match.")))
+            ret = self.query_all(rs, query2, (moniker, 0.5, pevent_id))
+        if len(ret) == 0:
+            return None, [], [("pcourse_id", ValueError("No course found."))]
         elif len(ret) > 1:
-            return None, [("pcourse_id", ValueError("Ambiguous course."))]
+            return None, warnings, [("pcourse_id", ValueError("Ambiguous course."))]
         else:
-            return unwrap(ret), []
+            return unwrap(unwrap(ret)), warnings, []
 
     @access("cde_admin", "event_admin")
     def archive_event(self, rs, event_id):

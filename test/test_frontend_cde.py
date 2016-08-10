@@ -434,7 +434,7 @@ class TestCdEFrontend(FrontendTest):
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
         _, content = content.split(" Zeile 1:")
         output = []
-        for i in range(2, 15):
+        for i in range(2, 16):
             head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
         head, _ = content.split("Validieren")
@@ -457,12 +457,14 @@ class TestCdEFrontend(FrontendTest):
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             (r"Zeilen 13 und 14 sind identisch.",),
             (r"Zeilen 13 und 14 sind identisch.",),
+            (r"pevent_id\W*Only fuzzy match.",
+             r"pcourse_id\W*Only fuzzy match.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
-        for i in range(14):
-            if i in (1, 7):
+        for i in range(15):
+            if i in (1, 7, 14):
                 expectation = '1'
             else:
                 expectation = None
@@ -481,6 +483,8 @@ class TestCdEFrontend(FrontendTest):
         inputdata = inputdata.replace("Doomed course from hell", "Swish -- und alles ist gut")
         inputdata = inputdata.replace("31.02.1981", "21.02.1981")
         inputdata = inputdata.replace("00000", "07751")
+        inputdata = inputdata.replace("fPingst", "Pfingst")
+        inputdata = inputdata.replace("wSish", "Swish")
         f['resolution12'] = 2
         f['resolution13'] = 2
         f['accounts'] = inputdata
@@ -493,7 +497,7 @@ class TestCdEFrontend(FrontendTest):
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
         _, content = content.split(" Zeile 1:")
         output = []
-        for i in range(2, 15):
+        for i in range(2, 16):
             head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
         head, _ = content.split("Validieren".format(i))
@@ -503,7 +507,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            tuple(),
+            (r"pevent_id:\W*Teilnahme bereits erfasst.",),
             tuple(),
             (r"doppelganger:\W*Accountzusammenführung mit einem nicht-CdE-Account.",),
             tuple(),
@@ -513,6 +517,7 @@ class TestCdEFrontend(FrontendTest):
             (r"Eintrag geändert.",),
             tuple(),
             tuple(),
+            (r"Eintrag geändert.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
@@ -534,25 +539,36 @@ class TestCdEFrontend(FrontendTest):
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             tuple(),
             tuple(),
+            (r"pevent_id\W*Only fuzzy match.",
+             r"pcourse_id\W*Only fuzzy match.",),
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
+
+        inputdata = f['accounts'].value
+        inputdata = inputdata.replace('"Swish -- und alles ist gut";"Beispiel";"Bertålotta"',
+                                      '"Goethe zum Anfassen";"Beispiel";"Bertålotta"')
+        f['accounts'] = inputdata
+        f['resolution4'] = 5
+        f['doppelganger_id4'] = '2'
         f['resolution6'] = 1
         f['resolution8'] = 1
         f['resolution9'] = 1
         f['resolution10'] = 1
         f['resolution11'] = 1
+        f['resolution14'] = 1
         self.submit(f, check_notification=False)
 
         ## third round
         self.assertPresence("Validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
+        self.assertEqual(None, f['resolution4'].value)
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
         _, content = content.split(" Zeile 1:")
         output = []
-        for i in range(2, 15):
+        for i in range(2, 16):
             head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
         head, _ = content.split("Validieren".format(i))
@@ -572,6 +588,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
+            tuple(),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
@@ -581,7 +598,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            tuple(),
+            (r"pevent_id:\W*Teilnahme bereits erfasst.",),
             tuple(),
             tuple(),
             tuple(),
@@ -589,12 +606,15 @@ class TestCdEFrontend(FrontendTest):
             (r"Eintrag geändert.",),
             (r"Eintrag geändert.",),
             (r"Eintrag geändert.",),
+            tuple(),
             tuple(),
             tuple(),
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
                 self.assertFalse(re.search(piece, out))
+        f['resolution4'] = 5
+        f['doppelganger_id4'] = '2'
         f['resolution6'] = 2
         f['doppelganger_id6'] = ''
         self.assertEqual('', f['finalized'].value)
@@ -604,9 +624,19 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Anlegen")
         self.assertNonPresence("Validieren")
         f = self.response.forms['admissionform']
+        self.assertEqual('5', f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
         self.submit(f)
-        self.assertPresence("6 Accounts erstellt.", div="notifications")
+        self.assertPresence("7 Accounts erstellt.", div="notifications")
+
+        ## validate
+        self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
+        self.assertTitle("Abgeschlossene Veranstaltungen")
+        self.traverse({'href': '/past/event/1/show'})
+        self.assertTitle("PfingstAkademie 2014")
+        self.assertNonPresence("Willy Brandt")
+        self.assertPresence("Gerhard Schröder")
+        self.assertPresence("Angela Merkel")
 
     @as_users("anton")
     def test_money_transfers(self, user):
