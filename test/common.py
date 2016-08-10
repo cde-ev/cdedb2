@@ -360,7 +360,7 @@ class FrontendTest(unittest.TestCase):
         u = USER_DICT[user]
         self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
         f = self.response.forms['adminshowuserform']
-        f['id_to_show'] = u["DB-ID"]
+        f['phrase'] = u["DB-ID"]
         self.submit(f)
         if check:
             self.assertTitle("{} {}".format(u['given_names'], u['family_name']))

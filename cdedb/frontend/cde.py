@@ -134,7 +134,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("is_search", "bool"))
     def member_search(self, rs, is_search):
         """Search for members."""
-        spec = QUERY_SPECS['qview_cde_member']
+        spec = copy.deepcopy(QUERY_SPECS['qview_cde_member'])
         query = check(
             rs, "query_input",
             mangle_query_input(rs, spec, MEMBERSEARCH_DEFAULTS), "query",
@@ -171,7 +171,7 @@ class CdEFrontend(AbstractUserFrontend):
     @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
     def user_search(self, rs, CSV, is_search):
         """Perform search."""
-        spec = QUERY_SPECS['qview_cde_user']
+        spec = copy.deepcopy(QUERY_SPECS['qview_cde_user'])
         ## mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:

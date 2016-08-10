@@ -95,10 +95,11 @@ class Query:
         :param spec: Keys are field names and values are validator names. See
             :py:const:`QUERY_SPECS`.
         :type constraints: [(str, QueryOperators, object)]
-        :param constraints: clauses for WHERE
+        :param constraints: clauses for WHERE, they are concatenated with AND
+            and each comma in the first component causes an OR
         :type order: [(str, bool)]
         :param order: First components are the column names to be used for
-          ORDER BY and the second component toggles ascending sorting order.
+            ORDER BY and the second component toggles ascending sorting order.
         """
         self.scope = scope
         self.spec = spec

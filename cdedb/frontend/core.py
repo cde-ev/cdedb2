@@ -2,6 +2,7 @@
 
 """Services for the core realm."""
 
+import copy
 import hashlib
 import logging
 import os.path
@@ -12,19 +13,20 @@ import werkzeug
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_extractor, REQUESTfile,
-    request_dict_extractor, event_usage)
+    request_dict_extractor, event_usage, querytoparams_filter)
 from cdedb.common import (
     ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
     PrivilegeError)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
-from cdedb.query import QUERY_SPECS, mangle_query_input
+from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
 from cdedb.database.connection import Atomizer
 from cdedb.validation import (
     _PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
     _PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS)
 import cdedb.database.constants as const
+import cdedb.validation as validate
 
 class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
@@ -271,12 +273,55 @@ class CoreFrontend(AbstractFrontend):
             'pending': pending, 'eventual_status': eventual_status})
 
     @access("core_admin")
-    @REQUESTdata(("id_to_show", "cdedbid"))
-    def admin_show_user(self, rs, id_to_show):
-        """Allow admins to view any user data set."""
+    @REQUESTdata(("phrase", "str"))
+    def admin_show_user(self, rs, phrase):
+        """Allow admins to view any user data set.
+
+        The search phrase may be anything: a numeric id (wellformed with
+        check digit or without) or a string matching the data set.
+        """
         if rs.errors:
             return self.index(rs)
-        return self.redirect_show_user(rs, id_to_show)
+        anid, errs = validate.check_cdedbid(phrase, "phrase")
+        if not errs:
+            return self.redirect_show_user(rs, anid)
+        anid, errs = validate.check_int(phrase, "phrase")
+        if not errs:
+            return self.redirect_show_user(rs, anid)
+        terms = tuple(t.strip() for t in phrase.split(' ') if t)
+        search = [("username,family_name,given_names,display_name",
+                   QueryOperators.similar, t) for t in terms]
+        spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
+        spec["username,family_name,given_names,display_name"] = "str"
+        query = Query(
+            "qview_core_user",
+            spec,
+            ("personas.id",),
+            search,
+            (("personas.id", True),))
+        result = self.coreproxy.submit_general_query(rs, query)
+        if len(result) == 1:
+            return self.redirect_show_user(rs, result[0]["id"])
+        elif len(result) > 0:
+            ## TODO make this accessible
+            pass
+        query = Query(
+            "qview_core_user",
+            spec,
+            ("personas.id", "username", "family_name", "given_names",
+             "display_name"),
+            [('fulltext', QueryOperators.containsall, terms)],
+            (("personas.id", True),))
+        result = self.coreproxy.submit_general_query(rs, query)
+        if len(result) == 1:
+            return self.redirect_show_user(rs, result[0]["id"])
+        elif len(result) > 0:
+            params = querytoparams_filter(query)
+            rs.values.update(params)
+            return self.user_search(rs, is_search=True, CSV=False, query=query)
+        else:
+            rs.notify("warning", "No account found.")
+            return self.index(rs)
 
     @access("persona")
     def change_user_form(self, rs):
@@ -334,7 +379,7 @@ class CoreFrontend(AbstractFrontend):
 
     @access("core_admin")
     @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
-    def user_search(self, rs, CSV, is_search):
+    def user_search(self, rs, CSV, is_search, query=None):
         """Perform search.
 
         CSV signals whether the output should be a csv-file or an
@@ -342,15 +387,20 @@ class CoreFrontend(AbstractFrontend):
 
         is_search signals whether the page was requested by an actual
         query or just to display the search form.
+
+        If the parameter query is specified this query is executed
+        instead. This is meant for calling this function
+        programmatically.
         """
-        spec = QUERY_SPECS['qview_core_user']
-        ## mangle the input, so we can prefill the form
-        query_input = mangle_query_input(rs, spec)
-        if is_search:
+        spec = copy.deepcopy(QUERY_SPECS['qview_core_user'])
+        if query:
+            query = check(rs, "query", query, "query")
+        elif is_search:
+            ## mangle the input, so we can prefill the form
+            query_input = mangle_query_input(rs, spec)
             query = check(rs, "query_input", query_input, "query",
                           spec=spec, allow_empty=False)
-        else:
-            query = None
+            query.scope = "qview_core_user"
         events = self.pasteventproxy.list_past_events(rs)
         choices = {'pevent_id': events}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
@@ -359,7 +409,6 @@ class CoreFrontend(AbstractFrontend):
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
-            query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
@@ -379,7 +428,7 @@ class CoreFrontend(AbstractFrontend):
         Archived users are somewhat special since they are not visible
         otherwise.
         """
-        spec = QUERY_SPECS['qview_archived_persona']
+        spec = copy.deepcopy(QUERY_SPECS['qview_archived_persona'])
         ## mangle the input, so we can prefill the form
         query_input = mangle_query_input(rs, spec)
         if is_search:

@@ -47,6 +47,34 @@ class TestCoreFrontend(FrontendTest):
         berta = USER_DICT['berta']
         self.assertTitle("Bertålotta Beispiel")
 
+    @as_users("anton")
+    def test_adminshowuser_advanced(self, user):
+        for phrase, title in (("DB-2-H", "Bertålotta Beispiel"),
+                              ("2", "Bertålotta Beispiel"),
+                              ("Bertålotta Beispiel", "Bertålotta Beispiel"),
+                              ("berta@example.cde", "Bertålotta Beispiel"),
+                              ("anton@example.cde", "Anton Armin A. Administrator"),
+                              ("Spielmanns", "Bertålotta Beispiel"),):
+            self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+            f = self.response.forms['adminshowuserform']
+            f['phrase'] = phrase
+            self.submit(f)
+            self.assertTitle(title)
+        self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = "nonsense asorecuhasoecurhkgdgdckgdoao"
+        self.submit(f)
+        self.assertTitle("CdE Datenbank")
+        self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+        f = self.response.forms['adminshowuserform']
+        f['phrase'] = "@example.cde"
+        self.submit(f)
+        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertPresence("Bertålotta")
+        self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
+        self.assertPresence("Kalif")
+
     @as_users("anton", "berta", "garcia")
     def test_changedata(self, user):
         self.traverse({'href': '/core/self/show'}, {'href': '/core/self/change'})
