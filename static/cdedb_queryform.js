@@ -210,6 +210,7 @@
             case 11: //dissimilar
             case 12: //regex
             case 13: //notregex
+            case 17: //fuzzy
             case 20: //less
             case 21: //lessequal
             case 24: //greaterequal

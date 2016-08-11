@@ -30,6 +30,7 @@ class QueryOperators(enum.IntEnum):
     containsall = 14
     containsnone = 15
     containssome = 16
+    fuzzy = 17
     less = 20
     lessequal = 21
     between = 22
@@ -43,7 +44,7 @@ _ops = QueryOperators
 VALID_QUERY_OPERATORS = {
     "str": (_ops.similar, _ops.equal, _ops.unequal, _ops.containsall,
             _ops.containsnone, _ops.containssome, _ops.oneof, _ops.otherthan,
-            _ops.regex, _ops.notregex, _ops.empty, _ops.nonempty),
+            _ops.regex, _ops.notregex, _ops.fuzzy, _ops.empty, _ops.nonempty),
     "id": (_ops.equal, _ops.unequal, _ops.oneof, _ops.otherthan, _ops.empty,
            _ops.nonempty),
     "int": (_ops.equal, _ops.unequal, _ops.oneof, _ops.otherthan, _ops.less,
