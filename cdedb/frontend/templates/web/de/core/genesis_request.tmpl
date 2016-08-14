@@ -19,7 +19,7 @@
         <div>
             {{ util.form_input_text(name="given_names", label="Vorname(n)", small=True) }}
             {{ util.form_input_text(name="family_name", label="Nachname", small=True) }}
-            {{ util.form_input_text(name="username", label="Emailadresse", small=True) }}
+            {{ util.form_input_text(name="username", label="Emailadresse", small=True, type="email") }}
             {{ util.form_input_select(name="realm", small=True, entries=(
                 ("event", "CdE-Veranstaltung"),
                 ("ml", "CdE-Mailingliste")),

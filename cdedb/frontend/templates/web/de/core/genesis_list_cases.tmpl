@@ -1,73 +1,99 @@
 {% set sidenav_active='core_genesis_list' %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Accountanfragen [{{ to_review|length|e }}]{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}Accountanfragen{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen", active="True") }}
 {% endblock %}
 {% block content %}
-    {% for case_id, entry in to_review|dictsort %}
-        <div class="row">
-            <div class="col-sm-3">
-                <p>
-                    {{ entry['given_names']|e }} {{ entry['family_name']|e }}
-                    &lt;{{ util.href('mailto:'+entry['username']|e,entry['username']|e) }}&gt;
-                </p>
-            </div>
-            <div class="col-sm-4">
-                {% with realms = {'event': ('Veranstaltung', 'blackboard'), 'ml': ('Mailingliste', 'envelope')} %}
-                    {{ util.make_icon(realms[entry['realm']][1]) }} {{ realms[entry['realm']][0] }}
-                {% endwith %}
-                {% if entry['notes'] %}<p class="textbox">{{ entry['notes']|e }}</p>{% endif %}
-            </div>
-            <div class="col-sm-5">
-                <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
-                 id="genesisrejectionform{{ loop.index|e }}" class="pull-left">
-                    {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                    {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
-                </form>
-                <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
-                 id="genesisapprovalform{{ loop.index|e }}" style="display: inline;">
-                    {{ util.input_hidden(name="case_id", value=case_id) }}
-                    {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                    <div class="input-group">
+    <h2>Ausstehende Anfragen [{{ to_review|length|e }}]</h2>
+
+    <script type="text/javascript">
+        $(function() {
+            $('.rejection-form,.timeout-form').cdedbProtectAction();
+        });
+    </script>
+    {% if to_review|length > 0 %}
+        <p>
+            Die im Folgenden aufgeführten Personen haben einen Account für den angegebenen Bereich der CdE-Datenbank
+            beantragt. Nach dem Genehmigen einer Anfrage erhält der Bewerber eine E-Mail mit Link zu einem Formular
+            zum Anlegen seines Accounts. Wird die Anfrage abgelehnt, so erhält er eine E-Mail, die ihn darüber
+            informiert.
+        </p>
+
+        {% for case_id, entry in to_review|dictsort %}
+            <div class="row">
+                <div class="col-sm-3">
+                    <p>
+                        {{ entry['given_names']|e }} {{ entry['family_name']|e }}
+                        &lt;{{ util.href('mailto:'+entry['username']|e,entry['username']|e) }}&gt;
+                    </p>
+                </div>
+                <div class="col-sm-4">
+                    {% with realms = {'event': ('Veranstaltung', 'blackboard'), 'ml': ('Mailingliste', 'envelope')} %}
+                        {{ util.make_icon(realms[entry['realm']][1]) }} {{ realms[entry['realm']][0] }}
+                    {% endwith %}
+                    {% if entry['notes'] %}<p class="textbox">{{ entry['notes']|e }}</p>{% endif %}
+                </div>
+                <div class="col-sm-5">
+                    <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
+                     id="genesisrejectionform{{ loop.index|e }}" class="pull-left rejection-form">
+                        {{ util.input_hidden(name="case_id", value=case_id) }}
+                        {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
+                        {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
+                    </form>
+                    <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
+                     id="genesisapprovalform{{ loop.index|e }}" style="display: inline;">
+                        {{ util.input_hidden(name="case_id", value=case_id) }}
+
                         {% if "core_admin" in user.roles %}
-                            {{ util.input_select(name="realm", aclass="form-control input-sm", entries=(
-                                ("event", "Veranstaltung"), ("ml", "Mailinglisten")), defaultvalue=entry['realm']) }}
+                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
+                            <div class="input-group">
+                                    {{ util.input_select(name="realm", aclass="form-control input-sm", entries=(
+                                        ("event", "Veranstaltung"), ("ml", "Mailinglisten")),
+                                        defaultvalue=entry['realm']) }}
+                                <span class="input-group-btn">
+                                    {{ util.input_submit(value="Genehmigen", aclass="btn btn-sm btn-success") }}
+                                </span>
+                            </div>
                         {% else %}
-                            <span>{{ entry['realm']|e }}</span> {# FIXME formatting #}
-                        {% endif %}
-                        <span class="input-group-btn">
                             {{ util.input_submit(value="Genehmigen", aclass="btn btn-sm btn-success") }}
-                        </span>
-                    </div>
-                </form>
+                        {% endif %}
+                    </form>
+                </div>
             </div>
-        </div>
-        {% if not loop.last %}
-            <hr />
-        {% endif %}
-    {% endfor %}
-    {% if to_review|length == 0 %}
+            {% if not loop.last %}
+                <hr />
+            {% endif %}
+        {% endfor %}
+    {% else %}
         <p class="text-muted">Zur Zeit liegen keine Anfragen vor.</p>
     {% endif %}
-    
+
     <h2>Offene bestätigte Anfragen [{{ approved|length|e }}]</h1>
-    <ul>
-        {% for case_id, entry in approved|dictsort %}
-            <li>
-                {{ entry['given_names']|e }} {{ entry['family_name']|e }}
-                &lt;{{ util.href('mailto:'+entry['username']|e,entry['username']|e) }}&gt;
-                <form action="{{ cdedblink('core/genesis_timeout', {'case_id': case_id})|e }}" method="POST"
-                 id="genesistimeoutform{{ loop.index|e }}" style="display: inline;">
-                    {{ util.input_hidden(name="case_id", value=case_id) }}
-                    <button type="submit" class="btn btn-danger btn-xs">
-                        <span class="glyphicon glyphicon-trash"></span> Widerrufen
-                    </button>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
+    {% if approved|length > 0 %}
+        <p>
+            Die folgenden Account-Anfragen wurden bereits bestätigt, die entsprechenden Benutzer haben ihr Account
+            jedoch bisher noch nicht angelegt.
+        </p>
+        <ul>
+            {% for case_id, entry in approved|dictsort %}
+                <li>
+                    {{ entry['given_names']|e }} {{ entry['family_name']|e }}
+                    &lt;{{ util.href('mailto:'+entry['username']|e,entry['username']|e) }}&gt;
+                    <form action="{{ cdedblink('core/genesis_timeout', {'case_id': case_id})|e }}" method="POST"
+                     id="genesistimeoutform{{ loop.index|e }}" style="display: inline;" class="timeout-form">
+                        {{ util.input_hidden(name="case_id", value=case_id) }}
+                        <button type="submit" class="btn btn-danger btn-xs">
+                            <span class="glyphicon glyphicon-trash"></span> Widerrufen
+                        </button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">Zur Zeit gibt es keine offenen bestätigten Anfragen.</p>
+    {% endif %}
 {% endblock %}

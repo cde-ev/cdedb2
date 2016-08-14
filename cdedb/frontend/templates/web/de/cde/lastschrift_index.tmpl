@@ -68,41 +68,44 @@
     </form>
 
     <h2>Offene Einzüge</h2>
-    <p>
-        Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald diese ausgeführt wurden, bitte hier eintragen, ob
-        diese erfolgreich ausgeführt wurden, gar nicht ausgeführt wurden oder geplatzt sind. Im letzteren Falle wird die
-        Ermächtigung als Widerrufen angesehen.
-    </p>
+    {% if transactions|length > 0 %}
+        <p>
+            Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald diese ausgeführt wurden, bitte hier eintragen, ob
+            diese erfolgreich ausgeführt wurden, gar nicht ausgeführt wurden oder geplatzt sind. Im letzteren Falle wird die
+            Ermächtigung als Widerrufen angesehen.
+        </p>
 
-    {# FIXME formatting #}
-    <form action="{{ cdedblink('cde/lastschrift_finalize_transactions')|e }}" method="POST" id="finalizationform">
-        <table class="table table-condensed">
-            <thead>
-                <tr><th></th><th>Mitglied</th><th>Datum</th><th>Betrag</th></tr>
-            </thead>
-            <tbody>
-            {% for transaction_id, transaction in transactions|xdictsort('issued_at') %}
-                <tr>
-                    <td>
-                        {{ util.input_checkbox(name="transaction_ids", value=transaction_id) }}
-                    </td>
-                    <td>
-                    {{ util.persona_anchor(personas[lastschrifts[transaction['lastschrift_id']]['persona_id']]) }}
-                    ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': transaction['lastschrift_id']}),
-                                "Ermächtigung", icon="euro") }})
-                    </td>
-                    <td>{{ transaction['issued_at']|datetime|e }}</td>
-                    <td>{{ transaction['amount']|e }}€</td>
-               </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {% if transactions|length > 0 %}
+        <form action="{{ cdedblink('cde/lastschrift_finalize_transactions')|e }}" method="POST" id="finalizationform">
+            <table class="table table-condensed">
+                <thead>
+                    <tr><th></th><th>Mitglied</th><th>Datum</th><th>Betrag</th></tr>
+                </thead>
+                <tbody>
+                {% for transaction_id, transaction in transactions|xdictsort('issued_at') %}
+                    <tr>
+                        <td>
+                            {{ util.input_checkbox(name="transaction_ids", value=transaction_id) }}
+                        </td>
+                        <td>
+                        {{ util.persona_anchor(personas[lastschrifts[transaction['lastschrift_id']]['persona_id']]) }}
+                        ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': transaction['lastschrift_id']}),
+                                    "Ermächtigung", icon="euro") }})
+                        </td>
+                        <td>{{ transaction['issued_at']|datetime|e }}</td>
+                        <td>{{ transaction['amount']|e }}€</td>
+                   </tr>
+                {% endfor %}
+                </tbody>
+            </table>
             Alle ausgewählten:
             {{ util.input_submit(value='Erfolg', name='success', aclass="btn btn-success") }}
             {{ util.input_submit(value='Abbruch', name='cancelled', aclass="btn btn-danger", icon="remove",
                     anid="finalization-cancel") }}
             {{ util.input_submit(value='Geplatzt', name='failure', aclass="btn btn-danger", icon="exclamation-sign") }}
+        {% else %}
+            <p>
+                Aktuell befinden sich keine Einzüge in der Schwebe.
+            </p>
         {% endif %}
     </form>
 
