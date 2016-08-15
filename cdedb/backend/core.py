@@ -1474,32 +1474,36 @@ class CoreBackend(AbstractBackend):
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
-    def genesis_list_cases(self, rs, realm=None, stati=None):
+    def genesis_list_cases(self, rs, realms=None, stati=None):
         """List persona creation cases.
 
         Restrict to certain stati and certain target realms.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type stati: {int}
+        :type stati: {int} or None
         :param stati: restrict to these stati
-        :type stati: str or None
-        :param stati: restrict to this realm
+        :type realms: [str] or None
+        :param realms: restrict to these realms
         :rtype: {int: {str: object}}
         :returns: dict mapping case ids to dicts containing information
           about the case
         """
-        realm = affirm("str_or_None", realm)
+        realms = realms or []
+        realms = affirm_array("str", realms)
         stati = stati or set()
         stati = affirm_array("enum_genesisstati", stati)
-        if "{}_admin".format(realm or "core") not in rs.user.roles:
+        if not realms and "core_admin" not in rs.user.roles:
+            raise PrivilegeError("Not privileged.")
+        elif not all({"{}_admin".format(realm), "core_admin"} & rs.user.roles
+                     for realm in realms):
             raise PrivilegeError("Not privileged.")
         query = glue("SELECT id, ctime, username, given_names, family_name,",
                      "case_status FROM core.genesis_cases")
         connector = " WHERE"
         params = []
-        if realm:
-            query = glue(query, connector, "realm = %s")
-            params.append(realm)
+        if realms:
+            query = glue(query, connector, "realm = ANY(%s)")
+            params.append(realms)
             connector = "AND"
         if stati:
             query = glue(query, connector, "case_status = ANY(%s)")

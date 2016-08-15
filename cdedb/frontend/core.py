@@ -957,13 +957,12 @@ class CoreFrontend(AbstractFrontend):
     def genesis_list_cases(self, rs):
         """Compile a list of genesis cases to review."""
         stati = (const.GenesisStati.to_review, const.GenesisStati.approved)
-        realm = None
-        relevants = {"core_admin", "event_admin", "ml_admin"}
-        if relevants & rs.user.roles == {"event_admin"}:
-            realm = "event"
-        elif relevants & rs.user.roles == {"ml_admin"}:
-            realm = "ml"
-        data = self.coreproxy.genesis_list_cases(rs, stati=stati, realm=realm)
+        realms = []
+        if {"core_admin", "event_admin"} & rs.user.roles:
+            realms.append("event")
+        if {"core_admin", "ml_admin"} & rs.user.roles:
+            realms.append("ml")
+        data = self.coreproxy.genesis_list_cases(rs, stati=stati, realms=realms)
         review_ids = tuple(
             k for k in data
             if data[k]['case_status'] == const.GenesisStati.to_review)
