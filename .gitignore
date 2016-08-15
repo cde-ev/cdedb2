@@ -12,6 +12,7 @@ doc/build/**
 
 # local configuration
 cdedb/localconfig.py
+.ldap_rootpw_local
 
 # cache data
 .coverage

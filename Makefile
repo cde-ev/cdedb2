@@ -25,6 +25,12 @@ help:
 PYTHONBIN ?= "python3"
 TESTPATTERN ?= ""
 
+ifneq ($(wildcard ".ldap_rootpw_local"),"")
+LDAP_PASSWORDFILE = ".ldap_rootpw_local"
+else
+LDAP_PASSWORDFILE = ".ldap_rootpw"
+endif
+
 doc:
 	make -C doc html
 
@@ -53,16 +59,16 @@ storage-test:
 	cp test/ancillary_files/{picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv} /tmp/cdedb-store/testfiles/
 
 ldap:
-	echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
-	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
-	ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw -f cdedb/database/init.ldif || true
-	sed -e 's/{LDAP_ORGANIZATION}/personas/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
-	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+	echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
+	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
+	ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} -f cdedb/database/init.ldif || true
+	sed -e 's/{LDAP_ORGANIZATION}/personas/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
+	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
 
 ldap-test:
-	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
-	ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw -f cdedb/database/init.ldif || true
-	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y .ldap_rootpw || true
+	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
+	ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} -f cdedb/database/init.ldif || true
+	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
 
 sql:
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
