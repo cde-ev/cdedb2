@@ -4,6 +4,7 @@
 
 import cgitb
 import json
+import os.path
 import sys
 
 import psycopg2.extensions
@@ -50,6 +51,10 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets)
+        if os.path.isfile("/DBVM"):
+            ## Sanity checks for the live instance
+            if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
+                raise RuntimeError("Refusing to start in debug mode.")
 
     @werkzeug.wrappers.Request.application
     def __call__(self, request):

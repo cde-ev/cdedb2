@@ -22,13 +22,13 @@ help:
 	@echo "                 'test.test_common.TestCommon.test_extract_roles')"
 	@echo "coverage -- run coverage to determine test suite coverage"
 
-PYTHONBIN ?= "python3"
-TESTPATTERN ?= ""
+PYTHONBIN ?= python3
+TESTPATTERN ?=
 
-ifneq ($(wildcard ".ldap_rootpw_local"),"")
-LDAP_PASSWORDFILE = ".ldap_rootpw_local"
+ifeq ($(wildcard .ldap_rootpw_local), .ldap_rootpw_local)
+LDAP_PASSWORDFILE = .ldap_rootpw_local
 else
-LDAP_PASSWORDFILE = ".ldap_rootpw"
+LDAP_PASSWORDFILE = .ldap_rootpw
 endif
 
 doc:
@@ -59,6 +59,9 @@ storage-test:
 	cp test/ancillary_files/{picture.png,picture.jpg,form.pdf,ballot_result.json,sepapain.xml,event_export.json,batch_admission.csv,money_transfers.csv} /tmp/cdedb-store/testfiles/
 
 ldap:
+ifeq ($(wildcard /DBVM),/DBVM)
+	$(error Refusing to touch live instance)
+endif
 	echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
 	echo 'ou=personas-test,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
 	ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} -f cdedb/database/init.ldif || true
@@ -71,6 +74,9 @@ ldap-test:
 	sed -e 's/{LDAP_ORGANIZATION}/personas-test/' test/ancillary_files/sample_data.ldif | ldapadd -c -x -D `cat .ldap_rootdn` -y ${LDAP_PASSWORDFILE} || true
 
 sql:
+ifeq ($(wildcard /DBVM),/DBVM)
+	$(error Refusing to touch live instance)
+endif
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
