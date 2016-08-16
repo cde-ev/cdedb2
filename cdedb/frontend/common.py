@@ -44,7 +44,7 @@ from cdedb.internationalization import i18n_factory
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     glue, merge_dicts, compute_checkdigit, now, asciificator, roles_to_db_role,
-    RequestState)
+    RequestState, make_root_logger)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -69,8 +69,6 @@ class BaseApp(metaclass=abc.ABCMeta):
     """Additional base class under :py:class:`AbstractFrontend` which will be
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
-    logger = logging.getLogger(__name__)
-
     def __init__(self, configpath, *args, **kwargs):
         """
         :type configpath: str
@@ -78,6 +76,21 @@ class BaseApp(metaclass=abc.ABCMeta):
         super().__init__(*args, **kwargs)
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
+        ## initialize logging
+        if getattr(self, 'realm', None):
+            logger_name = "cdedb.frontend.{}".format(self.realm)
+            logger_file = getattr(self.conf,
+                                  "{}_FRONTEND_LOG".format(self.realm.upper()))
+        else:
+            logger_name = "cdedb.frontend"
+            logger_file = self.conf.FRONTEND_LOG
+        make_root_logger(
+            logger_name, logger_file, self.conf.LOG_LEVEL,
+            syslog_level=self.conf.SYSLOG_LEVEL,
+            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+        self.logger = logging.getLogger(logger_name) ## logger are thread-safe!
+        self.logger.info("Instantiated {} with configpath {}.".format(
+            self, configpath))
         self.decode_parameter = (
             lambda target, name, param:
             decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
@@ -390,8 +403,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     i18n = i18n_factory()
     #: to be overridden by children
     realm = None
-    ## logger are thread-safe!
-    logger = logging.getLogger(__name__)
 
     def __init__(self, configpath, *args, **kwargs):
         """

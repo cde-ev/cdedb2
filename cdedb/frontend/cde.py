@@ -8,7 +8,6 @@ import copy
 import csv
 import hashlib
 import itertools
-import logging
 import os.path
 import random
 import re
@@ -63,7 +62,6 @@ class CdEFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
     realm = "cde"
-    logger = logging.getLogger(__name__)
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_cde_user,
     }

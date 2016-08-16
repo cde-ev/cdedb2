@@ -261,6 +261,10 @@ def make_root_logger(name, logfile_path, log_level, syslog_level=None,
     :rtype: logging.Logger
     """
     logger = logging.getLogger(name)
+    if logger.handlers:
+        logger.info("Logger {} already initialized.".format(name))
+        return logger
+    logger.propagate = False
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
@@ -278,7 +282,7 @@ def make_root_logger(name, logfile_path, log_level, syslog_level=None,
         console_handler.setLevel(console_log_level)
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
-    logger.debug("Configured logger {}.".format(name))
+    logger.info("Configured logger {}.".format(name))
     return logger
 
 def glue(*args):

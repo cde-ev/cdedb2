@@ -36,11 +36,6 @@ class Application(BaseApp):
         :type configpath: str
         """
         super().__init__(configpath)
-        ## initialize logging
-        make_root_logger("cdedb.frontend", self.conf.FRONTEND_LOG,
-                         self.conf.LOG_LEVEL,
-                         syslog_level=self.conf.SYSLOG_LEVEL,
-                         console_log_level=self.conf.CONSOLE_LOG_LEVEL)
         ## do not use a ProxyShim since the only usage here is before the
         ## RequestState exists
         self.sessionproxy = SessionBackend(configpath)

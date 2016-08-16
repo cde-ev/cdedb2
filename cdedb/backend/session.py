@@ -33,11 +33,12 @@ class SessionBackend:
         """
         self.conf = Config(configpath)
         secrets = SecretsConfig(configpath)
-        make_root_logger("cdedb.backend",
-                         getattr(self.conf, "SESSION_BACKEND_LOG"),
-                         self.conf.LOG_LEVEL,
-                         syslog_level=self.conf.SYSLOG_LEVEL,
-                         console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+        make_root_logger(
+            "cdedb.backend.session", getattr(self.conf, "SESSION_BACKEND_LOG"),
+            self.conf.LOG_LEVEL, syslog_level=self.conf.SYSLOG_LEVEL,
+            console_log_level=self.conf.CONSOLE_LOG_LEVEL)
+        ## logger are thread-safe!
+        self.logger = logging.getLogger("cdedb.backend.session")
         ## To prevent lots of serialization failures due to races for
         ## updating time stamps if a user opens several connections at once
         ## we lower the isolation level for this backend.
@@ -50,8 +51,6 @@ class SessionBackend:
             self.conf.CDB_DATABASE_NAME, ("cdb_anonymous", "cdb_persona"),
             secrets,
             isolation_level=psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED)
-        ## logger are thread-safe!
-        self.logger = logging.getLogger("cdedb.backend.session")
 
     def lookupsession(self, sessionkey, ip):
         """Raison d'etre.

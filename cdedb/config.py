@@ -77,6 +77,8 @@ _DEFAULTS = {
 
     ## log for frontend issues
     "FRONTEND_LOG": "/tmp/cdedb-frontend.log",
+    ## log for backend issues
+    "BACKEND_LOG": "/tmp/cdedb-backend.log",
     ## timeout for protected url parameters to prevent replay
     "ONLINE_PARAMETER_TIMEOUT": datetime.timedelta(seconds=120),
     ## email is a slower medium, so this has a longer timeout
@@ -156,6 +158,7 @@ _DEFAULTS = {
     ### Core stuff
 
     ## Core server configuration
+    "CORE_FRONTEND_LOG": "/tmp/cdedb-frontend-core.log",
     "CORE_BACKEND_LOG": "/tmp/cdedb-backend-core.log",
 
     ### Session stuff
@@ -170,6 +173,7 @@ _DEFAULTS = {
     ### CdE stuff
 
     ## CdE server configuration
+    "CDE_FRONTEND_LOG": "/tmp/cdedb-frontend-cde.log",
     "CDE_BACKEND_LOG": "/tmp/cdedb-backend-cde.log",
 
     ## maximal number of data sets a normal user is allowed to view per day
@@ -209,6 +213,7 @@ _DEFAULTS = {
     ### event stuff
 
     ## event server configuration
+    "EVENT_FRONTEND_LOG": "/tmp/cdedb-frontend-event.log",
     "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
 
     ### past event stuff
@@ -219,11 +224,13 @@ _DEFAULTS = {
     ### ml stuff
 
     ## ml server configuration
+    "ML_FRONTEND_LOG": "/tmp/cdedb-frontend-ml.log",
     "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
 
     ### assembly stuff
 
     ## assembly server configuration
+    "ASSEMBLY_FRONTEND_LOG": "/tmp/cdedb-frontend-assembly.log",
     "ASSEMBLY_BACKEND_LOG": "/tmp/cdedb-backend-assembly.log",
 }
 

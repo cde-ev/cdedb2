@@ -5,7 +5,6 @@
 from collections import OrderedDict
 import copy
 import itertools
-import logging
 import os
 import os.path
 import re
@@ -30,7 +29,6 @@ import cdedb.database.constants as const
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
     realm = "event"
-    logger = logging.getLogger(__name__)
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_event_user,
     }

@@ -4,7 +4,6 @@
 
 import copy
 import hashlib
-import logging
 import os.path
 import uuid
 
@@ -32,7 +31,6 @@ class CoreFrontend(AbstractFrontend):
     """Note that there is no user role since the basic distinction is between
     anonymous access and personas. """
     realm = "core"
-    logger = logging.getLogger(__name__)
 
     def __init__(self, configpath):
         """

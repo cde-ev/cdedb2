@@ -3,7 +3,6 @@
 """Services for the ml realm."""
 
 import copy
-import logging
 
 import werkzeug
 
@@ -25,7 +24,6 @@ from cdedb.database.connection import connection_pool_factory
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""
     realm = "ml"
-    logger = logging.getLogger(__name__)
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_ml_user,
     }

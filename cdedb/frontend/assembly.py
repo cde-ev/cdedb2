@@ -4,7 +4,6 @@
 
 import copy
 import json
-import logging
 import os
 
 import werkzeug
@@ -32,7 +31,6 @@ MAGIC_NONE_OF_THEM = "special: none"
 class AssemblyFrontend(AbstractUserFrontend):
     """Organize congregations and vote on ballots."""
     realm = "assembly"
-    logger = logging.getLogger(__name__)
     user_management = {
         "persona_getter": lambda obj: obj.coreproxy.get_assembly_user,
     }
