@@ -8,11 +8,21 @@
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/change_meta_info')|e }}" method="POST" id="changeinfoform" class="form-horizontal">
-        {% for key in keys %}
+        {% for key in ("Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
+                       "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
+                       "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4") %}
             {{ util.form_input_text(name=key, label=key) }}
+        {% endfor %}
+        {% for key in ("message_of_the_day",) %}
+            {{ util.form_input_textarea(name=key, label=key) }}
         {% endfor %}
         <div>
             {{ util.form_input_submit(value="Ändern") }}
         </div>
     </form>
 {% endblock %}
+    ## Keys of the dict in the core.meta_info.info column
+    "META_INFO_KEYS": (
+        ),
+
+

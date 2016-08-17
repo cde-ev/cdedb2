@@ -78,7 +78,7 @@ class CoreFrontend(AbstractFrontend):
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
         merge_dicts(rs.values, info)
-        return self.render(rs, "meta_info", {'keys': self.conf.META_INFO_KEYS})
+        return self.render(rs, "meta_info")
 
     @access("core_admin", modi={"POST"})
     def change_meta_info(self, rs):
