@@ -1772,10 +1772,10 @@ class CoreBackend(AbstractBackend):
         :rtype: int
         :returns: Standard return code.
         """
-        data = affirm("meta_info", data, keys=self.conf.META_INFO_KEYS)
         with Atomizer(rs):
-            query = "SELECT info FROM core.meta_info LIMIT 1"
-            meta_info = unwrap(self.query_one(rs, query, tuple()))
+            meta_info = self.get_meta_info(rs)
+            ## Late validation since we need to know the keys
+            data = affirm("meta_info", data, keys=meta_info.keys())
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
             return self.query_exec(rs, query,

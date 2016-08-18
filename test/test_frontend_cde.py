@@ -325,8 +325,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, button="cancelled")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertIn('generatetransactionform2', self.response.forms)
-        f = self.response.forms['finalizationform']
-        self.assertNotIn('transaction_ids', f.fields)
+        self.assertPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
 
     @as_users("anton")
     def test_lastschrift_transaction_failure(self, user):
@@ -343,8 +342,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, button="failure")
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.assertNotIn('generatetransactionform2', self.response.forms)
-        f = self.response.forms['finalizationform']
-        self.assertNotIn('transaction_ids', f.fields)
+        self.assertPresence("Aktuell befinden sich keine Einzüge in der Schwebe.")
 
     @as_users("anton")
     def test_lastschrift_skip(self, user):

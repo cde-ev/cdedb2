@@ -83,9 +83,10 @@ class CoreFrontend(AbstractFrontend):
     @access("core_admin", modi={"POST"})
     def change_meta_info(self, rs):
         """Change the meta info constants."""
-        data_params = tuple((key, "any") for key in self.conf.META_INFO_KEYS)
+        info = self.coreproxy.get_meta_info(rs)
+        data_params = tuple((key, "str_or_None") for key in info)
         data = request_extractor(rs, data_params)
-        data = check(rs, "meta_info", data, keys=self.conf.META_INFO_KEYS)
+        data = check(rs, "meta_info", data, keys=info.keys())
         if rs.errors:
             return self.meta_info_form(rs)
         code = self.coreproxy.set_meta_info(rs, data)

@@ -1444,7 +1444,7 @@ def _meta_info(val, keys, argname=None, *, _convert=True):
     if errs:
         return val, errs
     mandatory_fields = {}
-    optional_fields = {key: _safe_str for key in keys}
+    optional_fields = {key: _str_or_None for key in keys}
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     return val, errs

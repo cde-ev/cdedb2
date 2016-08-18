@@ -122,7 +122,7 @@ class TestEventFrontend(FrontendTest):
         self.follow()
         self.login(user)
         self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen [1]")
+        self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde")
         self.assertPresence("Offene bestätigte Anfragen [0]")
         f = self.response.forms['genesisapprovalform1']
@@ -134,7 +134,7 @@ class TestEventFrontend(FrontendTest):
             if line.startswith('[1] '):
                 link = line[4:]
         link = quopri.decodestring(link).decode('utf-8')
-        self.assertTitle("Accountanfragen [0]")
+        self.assertTitle("Accountanfragen")
         self.assertPresence("Offene bestätigte Anfragen [1]")
         self.assertPresence("zelda@example.cde")
         self.logout()
@@ -201,7 +201,7 @@ class TestEventFrontend(FrontendTest):
         self.follow()
         self.login(user)
         self.traverse({'href': '/core/genesis/list'})
-        self.assertTitle("Accountanfragen [1]")
+        self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde")
         self.assertPresence("Offene bestätigte Anfragen [0]")
         f = self.response.forms['genesisapprovalform1']
@@ -213,12 +213,12 @@ class TestEventFrontend(FrontendTest):
             if line.startswith('[1] '):
                 link = line[4:]
         link = quopri.decodestring(link).decode('utf-8')
-        self.assertTitle("Accountanfragen [0]")
+        self.assertTitle("Accountanfragen")
         self.assertPresence("Offene bestätigte Anfragen [1]")
         self.assertPresence("zelda@example.cde")
         f = self.response.forms['genesistimeoutform1']
         self.submit(f)
-        self.assertTitle("Accountanfragen [0]")
+        self.assertTitle("Accountanfragen")
         self.assertPresence("Offene bestätigte Anfragen [0]")
         self.assertNonPresence("zelda@example.cde")
 

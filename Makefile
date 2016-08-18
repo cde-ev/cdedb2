@@ -128,6 +128,9 @@ single-check:
 	${PYTHONBIN} -m unittest ${TESTPATTERN}
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
+quick-check:
+	TESTPATTERN="test.test_frontend_event.TestEventFrontend.test_genesis"  make single-check
+
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) $(wildcard cdedb/frontend/*.py) $(wildcard cdedb/backend/*.py) $(wildcard test/*.py)
 	${PYTHONBIN} /usr/bin/coverage run -m test.main
 
