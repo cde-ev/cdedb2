@@ -1408,6 +1408,8 @@ class CoreBackend(AbstractBackend):
             entity_key="username")
         if not data:
             return False, "Nonexistant user."
+        if self.conf.LOCKDOWN and not self.is_admin(rs):
+            return False, "Lockdown active."
         persona_id = unwrap(data)
         ret = self.modify_password(rs, persona_id, new_password,
                                    reset_cookie=cookie)
@@ -1450,6 +1452,8 @@ class CoreBackend(AbstractBackend):
         """
         data = affirm("genesis_case", data, creation=True)
         if self.verify_existence(rs, data['username']):
+            return None
+        if self.conf.LOCKDOWN and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
         ret = self.sql_insert(rs, "core.genesis_cases", data)
@@ -1635,6 +1639,8 @@ class CoreBackend(AbstractBackend):
         case_id = affirm("id", case_id)
         secret = affirm("str", secret)
         realm = affirm("str", realm)
+        if self.conf.LOCKDOWN and not self.is_admin(rs):
+            return 0
         ACCESS_BITS = {
             'cde' : {
                 'is_cde_realm': True,
