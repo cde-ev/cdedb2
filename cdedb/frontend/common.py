@@ -632,6 +632,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
             rs.notify("error", "Failed validation.")
+        if self.conf.LOCKDOWN:
+            rs.notify("info", glue("The database currently undergoes",
+                                   "maintenance and is unavailable."))
         html = self.fill_template(rs, "web", templatename, params)
         if "<pre>" not in html:
             ## eliminate empty lines, since they don't matter
