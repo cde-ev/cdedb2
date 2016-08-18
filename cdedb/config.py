@@ -53,7 +53,9 @@ _BASIC_DEFAULTS = {
 
 #: defaults for :py:class:`Config`
 _DEFAULTS = {
-    ## Global stuff
+    ###
+    ### Global stuff
+    ###
 
     ## name of database to use
     "CDB_DATABASE_NAME": "cdb",
@@ -61,24 +63,25 @@ _DEFAULTS = {
     ## True for offline versions running on academies
     "CDEDB_OFFLINE_DEPLOYMENT": False,
 
+    ## If True only core admins are granted access
+    "LOCKDOWN": False,
+
     ## location of ldap server
     "LDAP_URL": "ldap://localhost",
-
     ## name of ldap unit (i.e. subtree) to use
     "LDAP_UNIT_NAME": "ou=personas,dc=cde-ev,dc=de",
-
     ## name of ldap user to use
     "LDAP_USER": "cn=root,dc=cde-ev,dc=de",
 
     ## place for uploaded data
     "STORAGE_DIR": "/var/lib/cdedb/",
 
+    ###
     ### Frontend stuff
+    ###
 
     ## log for frontend issues
     "FRONTEND_LOG": "/tmp/cdedb-frontend.log",
-    ## log for backend issues
-    "BACKEND_LOG": "/tmp/cdedb-backend.log",
     ## timeout for protected url parameters to prevent replay
     "ONLINE_PARAMETER_TIMEOUT": datetime.timedelta(seconds=120),
     ## email is a slower medium, so this has a longer timeout
@@ -86,7 +89,9 @@ _DEFAULTS = {
     ## maximum length of rationale for requesting an account
     "MAX_RATIONALE": 200,
 
-    ## email stuff
+    ###
+    ### email stuff
+    ###
 
     ## email for administrative notifications
     "MANAGEMENT_ADDRESS": "verwaltung@cde-ev.de",
@@ -106,7 +111,90 @@ _DEFAULTS = {
     ## email for ml account requests
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
 
-    ## query stuff
+    ## logs
+    "CORE_FRONTEND_LOG": "/tmp/cdedb-frontend-core.log",
+    "CDE_FRONTEND_LOG": "/tmp/cdedb-frontend-cde.log",
+    "EVENT_FRONTEND_LOG": "/tmp/cdedb-frontend-event.log",
+    "ML_FRONTEND_LOG": "/tmp/cdedb-frontend-ml.log",
+    "ASSEMBLY_FRONTEND_LOG": "/tmp/cdedb-frontend-assembly.log",
+
+    ###
+    ### Backend stuff
+    ###
+
+    ## log for backend issues
+    "BACKEND_LOG": "/tmp/cdedb-backend.log",
+
+    ### Core stuff
+
+    ## log
+    "CORE_BACKEND_LOG": "/tmp/cdedb-backend-core.log",
+
+    ### Session stuff
+
+    ## log
+    "SESSION_BACKEND_LOG": "/tmp/cdedb-backend-session.log",
+
+    ## session parameters
+    "SESSION_TIMEOUT": datetime.timedelta(days=2),
+    "SESSION_LIFESPAN": datetime.timedelta(days=7),
+
+    ### CdE stuff
+
+    ## log
+    "CDE_BACKEND_LOG": "/tmp/cdedb-backend-cde.log",
+
+    ## maximal number of data sets a normal user is allowed to view per day
+    "MAX_QUERIES_PER_DAY": 50,
+    ## maximal number of results for a member search
+    "MAX_QUERY_RESULTS": 50,
+    ## amount deducted from balance each period (semester)
+    "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
+    ## probably always 1 or 2
+    "PERIODS_PER_YEAR": 2,
+
+    ## Name of the organization where the SEPA transaction originated
+    "SEPA_SENDER_NAME": "CdE e.V.",
+    ## Address of the originating organization
+    ## The actual address consists of multiple lines
+    "SEPA_SENDER_ADDRESS": ("Musterstrasse 123", "00000 Teststadt"),
+    "SEPA_SENDER_COUNTRY": "DE",
+    ## Bank details of the originator
+    "SEPA_SENDER_IBAN": "DE87200500001234567890",
+    ## "Gläubiger-ID" for direct debit transfers
+    "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
+    ## Date at which SEPA was introduced
+    "SEPA_INITIALISATION_DATE": datetime.date(2013, 7, 30),
+    ## Date after which SEPA was used exclusively
+    "SEPA_CUTOFF_DATE": datetime.date(2013, 10, 14),
+    ## Timespan to wait between issuing of SEPA order and fulfillment
+    "SEPA_PAYMENT_OFFSET": datetime.timedelta(days=17),
+    ## processing fee we incur if a transaction is rolled back
+    "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
+
+    ### event stuff
+
+    ## log
+    "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
+
+    ### past event stuff
+
+    ## log
+    "PAST_EVENT_BACKEND_LOG": "/tmp/cdedb-backend-past-event.log",
+
+    ### ml stuff
+
+    ## log
+    "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
+
+    ### assembly stuff
+
+    ## log
+    "ASSEMBLY_BACKEND_LOG": "/tmp/cdedb-backend-assembly.log",
+
+    ###
+    ### Query stuff
+    ###
 
     ## dict where the values are dicts mapping titles to queries for "speed
     ## dialing"
@@ -154,78 +242,6 @@ _DEFAULTS = {
                 tuple(),)
         },
     },
-
-    ### Core stuff
-
-    ## Core server configuration
-    "CORE_FRONTEND_LOG": "/tmp/cdedb-frontend-core.log",
-    "CORE_BACKEND_LOG": "/tmp/cdedb-backend-core.log",
-
-    ### Session stuff
-
-    ## session server configuration
-    "SESSION_BACKEND_LOG": "/tmp/cdedb-backend-session.log",
-
-    ## session parameters
-    "SESSION_TIMEOUT": datetime.timedelta(days=2),
-    "SESSION_LIFESPAN": datetime.timedelta(days=7),
-
-    ### CdE stuff
-
-    ## CdE server configuration
-    "CDE_FRONTEND_LOG": "/tmp/cdedb-frontend-cde.log",
-    "CDE_BACKEND_LOG": "/tmp/cdedb-backend-cde.log",
-
-    ## maximal number of data sets a normal user is allowed to view per day
-    "MAX_QUERIES_PER_DAY": 50,
-    ## maximal number of results for a member search
-    "MAX_QUERY_RESULTS": 50,
-    ## amount deducted from balance each period (semester)
-    "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
-    ## probably always 1 or 2
-    "PERIODS_PER_YEAR": 2,
-
-    ## Name of the organization where the SEPA transaction originated
-    "SEPA_SENDER_NAME": "CdE e.V.",
-    ## Address of the originating organization
-    ## The actual address consists of multiple lines
-    "SEPA_SENDER_ADDRESS": ("Musterstrasse 123", "00000 Teststadt"),
-    "SEPA_SENDER_COUNTRY": "DE",
-    ## Bank details of the originator
-    "SEPA_SENDER_IBAN": "DE87200500001234567890",
-    ## "Gläubiger-ID" for direct debit transfers
-    "SEPA_GLAEUBIGERID": "DE00ZZZ00099999999",
-    ## Date at which SEPA was introduced
-    "SEPA_INITIALISATION_DATE": datetime.date(2013, 7, 30),
-    ## Date after which SEPA was used exclusively
-    "SEPA_CUTOFF_DATE": datetime.date(2013, 10, 14),
-    ## Timespan to wait between issuing of SEPA order and fulfillment
-    "SEPA_PAYMENT_OFFSET": datetime.timedelta(days=17),
-    ## processing fee we incur if a transaction is rolled back
-    "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
-
-    ### event stuff
-
-    ## event server configuration
-    "EVENT_FRONTEND_LOG": "/tmp/cdedb-frontend-event.log",
-    "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
-
-    ### past event stuff
-
-    ## event server configuration
-    "PAST_EVENT_BACKEND_LOG": "/tmp/cdedb-backend-past-event.log",
-
-    ### ml stuff
-
-    ## ml server configuration
-    "ML_FRONTEND_LOG": "/tmp/cdedb-frontend-ml.log",
-    "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
-
-    ### assembly stuff
-
-    ## assembly server configuration
-    "ASSEMBLY_FRONTEND_LOG": "/tmp/cdedb-frontend-assembly.log",
-    "ASSEMBLY_BACKEND_LOG": "/tmp/cdedb-backend-assembly.log",
 }
 
 #: defaults for :py:class:`SecretsConfig`
