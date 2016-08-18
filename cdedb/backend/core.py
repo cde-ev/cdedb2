@@ -1108,8 +1108,10 @@ class CoreBackend(AbstractBackend):
         password = affirm("str", password)
         ip = affirm("printable_ascii", ip)
         ## note the lower-casing for email addresses
-        query = glue("SELECT id, password_hash FROM core.personas",
-                     "WHERE username = lower(%s) AND is_active = True")
+        query = glue(
+            "SELECT id, password_hash, is_admin, is_core_admin",
+            "FROM core.personas",
+            "WHERE username = lower(%s) AND is_active = True")
         data = self.query_one(rs, query, (username,))
         verified = bool(data) and self.conf.CDEDB_OFFLINE_DEPLOYMENT
         if not verified and data:
@@ -1120,6 +1122,10 @@ class CoreBackend(AbstractBackend):
                 ip, username))
             return None
         else:
+            if self.conf.LOCKDOWN and not (data['is_admin']
+                                           or data['is_core_admin']):
+                ## Short circuit in case of lockdown
+                return None
             sessionkey = str(uuid.uuid4())
             with Atomizer(rs):
                 query = glue(
