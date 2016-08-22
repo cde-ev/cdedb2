@@ -1683,8 +1683,9 @@ class CdEFrontend(AbstractUserFrontend):
         if courses:
             courselines = courses.split('\n')
             reader = csv.DictReader(
-                courselines, fieldnames=("title", "description"), delimiter=';',
-                quoting=csv.QUOTE_ALL, doublequote=True, quotechar='"')
+                courselines, fieldnames=("nr", "title", "description"),
+                delimiter=';', quoting=csv.QUOTE_ALL, doublequote=True,
+                quotechar='"')
             lineno = 0
             for entry in reader:
                 lineno += 1
@@ -1711,7 +1712,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "change_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description")
+    @REQUESTdatadict("nr", "title", "description")
     def change_past_course(self, rs, pevent_id, pcourse_id, data):
         """Modify a concluded course."""
         data['id'] = pcourse_id
@@ -1728,7 +1729,7 @@ class CdEFrontend(AbstractUserFrontend):
         return self.render(rs, "create_past_course")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict("title", "description")
+    @REQUESTdatadict("nr", "title", "description")
     def create_past_course(self, rs, pevent_id, data):
         """Add new concluded course."""
         data['pevent_id'] = pevent_id

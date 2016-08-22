@@ -10,7 +10,7 @@ if it has moderator privileges for all lists.
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, Silencer, AbstractBackend,
-    affirm_array_validation as affirm_array, singularize)
+    affirm_set_validation as affirm_set, singularize)
 from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -45,7 +45,7 @@ class MlBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {int}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(
             rs, "ml.moderators", ("persona_id", "mailinglist_id"), ids,
             entity_key="persona_id")
@@ -141,7 +141,7 @@ class MlBackend(AbstractBackend):
         :returns: Mapping of mailinglist ids to titles.
         """
         active_only = affirm("bool", active_only)
-        audience_policies = affirm_array(
+        audience_policies = affirm_set(
             "enum_audiencepolicy", audience_policies, allow_None=True)
         query = "SELECT id, title FROM ml.mailinglists"
         params = []
@@ -169,7 +169,7 @@ class MlBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "ml.mailinglists", MAILINGLIST_FIELDS,
                                    ids)
@@ -419,7 +419,7 @@ class MlBackend(AbstractBackend):
           given, meaning the username is used.
         """
         persona_id = affirm("id", persona_id)
-        lists = affirm_array("id", lists, allow_None=True)
+        lists = affirm_set("id", lists, allow_None=True)
         if (persona_id != rs.user.persona_id
                 and not self.is_admin(rs)
                 and not all(self.is_moderator(rs, anid) for anid in lists)):
@@ -640,7 +640,7 @@ class MlBackend(AbstractBackend):
         :rtype: {int: [int]}
         :returns: A dict mapping list ids to offending personas.
         """
-        mailinglist_ids = affirm_array("id", mailinglist_ids)
+        mailinglist_ids = affirm_set("id", mailinglist_ids)
 
         mailinglists = self.get_mailinglists(rs, mailinglist_ids)
         sql_tests = {

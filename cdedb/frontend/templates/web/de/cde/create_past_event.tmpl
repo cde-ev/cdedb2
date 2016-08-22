@@ -27,7 +27,7 @@
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
         {{ util.form_input_text(name="tempus", label="Stichtag", type="date", placeholder="YYYY-MM-DD") }}
         {{ util.form_input_textarea(name="courses", label="Kurse",
-                               info='Hier einen Kurs pro Zeile im Format "Titel";"Beschreibung" eingeben.') }}
+                               info='Hier einen Kurs pro Zeile im Format "Nummer";"Titel";"Beschreibung" eingeben.') }}
         {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("cde/list_past_events")) }}
     </form>
 {% endblock %}

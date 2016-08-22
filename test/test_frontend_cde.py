@@ -178,7 +178,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
         self.assertTrue(self.response.lxml.get_element_by_id('membership_checkbox').get('data-checked') == 'True')
-        self.assertPresence("Daten sind nicht sichtbar")
+        self.assertPresence("Daten sind für andere Mitglieder sichtbar.")
 
     @as_users("anton")
     def test_create_user(self, user):
@@ -949,9 +949,9 @@ class TestCdEFrontend(FrontendTest):
         f['institution'] = 1
         f['description'] = "Ganz ohne Minderjährige."
         f['tempus'] = "1.1.2000"
-        f['courses'] = '''"Hoola Hoop";"Spaß mit dem Reifen"
-"Abseilen";"Von ganz oben"
-"Tretbootfahren";""
+        f['courses'] = '''"1";"Hoola Hoop";"Spaß mit dem Reifen"
+"2";"Abseilen";"Von ganz oben"
+"3";"Tretbootfahren";""
 '''
         self.submit(f)
         self.assertTitle("Link Academy II")
@@ -984,6 +984,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/past/event/1/course/create'},)
         self.assertTitle("Kurs hinzufügen (PfingstAkademie 2014)")
         f = self.response.forms['createcourseform']
+        f['nr'] = "42"
         f['title'] = "Abstract Nonsense"
         f['description'] = "Lots of arrows."
         self.submit(f)
@@ -998,6 +999,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/past/event/1/course/create'},)
         self.assertTitle("Kurs hinzufügen (PfingstAkademie 2014)")
         f = self.response.forms['createcourseform']
+        f['nr'] = "42"
         f['title'] = "Abstract Nonsense"
         self.submit(f)
         self.assertTitle("Abstract Nonsense (PfingstAkademie 2014)")

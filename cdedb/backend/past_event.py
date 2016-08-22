@@ -8,7 +8,7 @@ import datetime
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, Silencer, AbstractBackend,
-    affirm_array_validation as affirm_array, singularize)
+    affirm_set_validation as affirm_set, singularize)
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
@@ -42,7 +42,7 @@ class PastEventBackend(AbstractBackend):
         :rtype: {int: [dict]}
         :returns: Keys are the ids and items are the event lists.
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         query = glue(
             "SELECT p.persona_id, p.pevent_id, e.title AS event_name,",
             "e.tempus, p.pcourse_id, c.title AS course_name, p.is_instructor,",
@@ -127,7 +127,7 @@ class PastEventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "past_event.institutions",
                                INSTITUTION_FIELDS, ids)
         return {e['id']: e for e in data}
@@ -253,7 +253,7 @@ class PastEventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, ids)
         return {e['id']: e for e in data}
 
@@ -311,7 +311,7 @@ class PastEventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "past_event.courses", PAST_COURSE_FIELDS,
                                ids)
         return {e['id']: e for e in data}

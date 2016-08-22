@@ -51,6 +51,9 @@ CREATE TABLE core.personas (
         -- member status grants access to additional functionality
         is_member               boolean NOT NULL,
         -- searchability governs whether a persona may search for others
+        --
+        -- a persona is visible/may search
+        -- iff is_searchable and is_member are both TRUE
         is_searchable           boolean NOT NULL DEFAULT False,
         -- grant access to the CdE cloud (this is utilized via LDAP)
         cloud_account           boolean NOT NULL DEFAULT False,
@@ -459,6 +462,7 @@ GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
 CREATE TABLE past_event.courses (
         id                      serial PRIMARY KEY,
         pevent_id               integer NOT NULL REFERENCES past_event.events(id),
+        nr                      varchar,
         title                   varchar NOT NULL,
         description             varchar
 );
@@ -551,12 +555,12 @@ GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
+        nr                      varchar,
         title                   varchar NOT NULL,
         description             varchar,
         --
         -- cut for past_event.courses
         --
-        nr                      varchar,
         shortname               varchar NOT NULL,
         -- string containing all course-instructors
         instructors             varchar,

@@ -75,9 +75,9 @@ INSERT INTO past_event.institutions(id, title, moniker) VALUES
     (1, 'Club der Ehemaligen', 'CdE');
 INSERT INTO past_event.events (id, title, shortname, institution, tempus, description) VALUES
     (1, 'PfingstAkademie 2014', 'pa14', 1, date '2014-05-25', 'Great event!');
-INSERT INTO past_event.courses (id, pevent_id, title, description) VALUES
-    (1, 1, 'Swish -- und alles ist gut', 'Ringelpiez mit anfassen.'),
-    (2, 1, 'Goethe zum Anfassen', 'Hier werden die Reime getanzt.');
+INSERT INTO past_event.courses (id, pevent_id, nr, title, description) VALUES
+    (1, 1, '1a', 'Swish -- und alles ist gut', 'Ringelpiez mit anfassen.'),
+    (2, 1, 'Ω', 'Goethe zum Anfassen', 'Hier werden die Reime getanzt.');
 INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instructor, is_orga) VALUES
     (2, 1, 1, True, False);
 --

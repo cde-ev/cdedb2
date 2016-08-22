@@ -62,6 +62,7 @@ class TestPastEventBackend(BackendTest):
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         data = {
             'pevent_id': pevent_id,
+            'nr': '0',
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 
@@ -131,6 +132,7 @@ class TestPastEventBackend(BackendTest):
             'id': new_id, 'title': "Alternate Universe Academy"})
         data = {
             'pevent_id': 1,
+            'nr': '0',
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
 

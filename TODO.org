@@ -1,4 +1,5 @@
 * actionable items
+** past course numbers fixup
 ** merge profile pages
 ** streamline search forms/pages
 ** Allow specification of TTL for ephemeral links

@@ -33,8 +33,8 @@ import os.path
 import string
 
 from cdedb.backend.common import (
-    access, affirm_validation as affirm, affirm_array_validation as
-    affirm_array, Silencer, singularize, AbstractBackend)
+    access, affirm_validation as affirm, affirm_set_validation as affirm_set,
+    Silencer, singularize, AbstractBackend)
 from cdedb.common import (
     glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key)
@@ -236,7 +236,7 @@ class AssemblyBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
 
@@ -299,7 +299,7 @@ class AssemblyBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
 
         with Atomizer(rs):
             data = self.sql_select(rs, "assembly.ballots", BALLOT_FIELDS, ids)
@@ -864,7 +864,7 @@ class AssemblyBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "assembly.attachments",
                                ASSEMBLY_ATTACHMENT_FIELDS, ids)
         return {e['id']: e for e in data}

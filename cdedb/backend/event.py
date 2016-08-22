@@ -11,7 +11,7 @@ import psycopg2.extras
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
-    affirm_array_validation as affirm_array, singularize, PYTHON_TO_SQL_MAP)
+    affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
@@ -139,7 +139,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {int}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "event.orgas", ("persona_id", "event_id"),
                                ids, entity_key="persona_id")
         ret = {}
@@ -316,7 +316,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.events", EVENT_FIELDS, ids)
             ret = {e['id']: e for e in data}
@@ -520,7 +520,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         with Atomizer(rs):
             data = self.sql_select(rs, "event.courses", COURSE_FIELDS, ids)
             ret = {e['id']: e for e in data}
@@ -773,7 +773,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         if not ids:
             return {}
         with Atomizer(rs):
@@ -992,7 +992,7 @@ class EventBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         if not ids:
             return {}
         with Atomizer(rs):

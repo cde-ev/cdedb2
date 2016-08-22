@@ -249,6 +249,8 @@ class FinanceLogCodes(enum.IntEnum):
     lastschrift_transaction_skip = 33 #:
     lastschrift_transaction_cancelled = 34 #:
     lastschrift_transaction_revoked = 35 #:
+    #: Fallback for strange cases
+    other = 99
 
 @enum.unique
 class EventLogCodes(enum.IntEnum):

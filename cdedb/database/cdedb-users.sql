@@ -27,3 +27,4 @@ CREATE USER cdb_admin           PASSWORD '9876543210abcdefghijklmnopqrst';
 GRANT cdb_anonymous TO cdb_persona;
 GRANT cdb_persona TO cdb_member;
 GRANT cdb_member TO cdb_admin;
+GRANT cdb_admin TO cdb;

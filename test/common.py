@@ -66,9 +66,8 @@ class BackendShim(ProxyShim):
         rs = RequestState(
             key, None, None, None, [], None, None,
             None, [], {}, "de", None, None)
-        vals = {k: data[k] for k in ('persona_id', 'username',
-                                     'given_names', 'display_name',
-                                     'family_name')}
+        vals = {k: data[k] for k in ('persona_id', 'username', 'given_names',
+                                     'display_name', 'family_name')}
         rs.user = User(roles=extract_roles(data), **vals)
         rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
         if self.validate_scriptkey(key):

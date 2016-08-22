@@ -1067,7 +1067,7 @@ EVENT_FIELDS = (
 EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
 
 #: Fields of a concluded course
-PAST_COURSE_FIELDS = ("id", "pevent_id", "title", "description")
+PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
 
 #: Fields of a course associated to an event organized via the CdEDB
 COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",

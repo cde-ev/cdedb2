@@ -21,7 +21,7 @@ import psycopg2.extras
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
     access, internal_access, singularize,
-    affirm_validation as affirm, affirm_array_validation as affirm_array)
+    affirm_validation as affirm, affirm_set_validation as affirm_set)
 from cdedb.common import (
     glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
@@ -46,6 +46,16 @@ def ldap_bool(val):
         False: 'FALSE',
     }
     return mapping[val]
+
+def ldap_str(val):
+    """Sanitize a string to be digestable by LDAP.
+
+    :type val: str or None
+    :rtype: str
+    """
+    if not val:
+        return ""
+    return val
 
 class CoreBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
@@ -214,7 +224,7 @@ class CoreBackend(AbstractBackend):
         :type stop: int or None
         :rtype: [{str: object}]
         """
-        stati = affirm_array("enum_memberchangestati", stati, allow_None=True)
+        stati = affirm_set("enum_memberchangestati", stati, allow_None=True)
         start = affirm("int_or_None", start)
         stop = affirm("int_or_None", stop)
         start = start or 0
@@ -463,7 +473,7 @@ class CoreBackend(AbstractBackend):
         :returns: dict mapping persona ids to dicts containing information
           about the change and the persona
         """
-        stati = affirm_array("enum_memberchangestati", stati)
+        stati = affirm_set("enum_memberchangestati", stati)
         query = glue("SELECT persona_id, given_names, family_name, generation",
                      "FROM core.changelog WHERE change_status = ANY(%s)")
         data = self.query_all(rs, query, (stati,))
@@ -483,7 +493,7 @@ class CoreBackend(AbstractBackend):
         anid = affirm("id", anid)
         if anid != rs.user.persona_id and not self.is_admin(rs):
             raise PrivilegeError("Not privileged.")
-        generations = affirm_array("int", generations, allow_None=True)
+        generations = affirm_set("int", generations, allow_None=True)
         fields = list(PERSONA_ALL_FIELDS)
         fields.remove('id')
         fields.append("persona_id AS id")
@@ -549,14 +559,17 @@ class CoreBackend(AbstractBackend):
         """
         ldap_ops = {}
         if 'username' in data:
-            ldap_ops['mail'] = [(ldap3.MODIFY_REPLACE, [data['username']])]
+            ldap_ops['mail'] = [(ldap3.MODIFY_REPLACE,
+                                 [ldap_str(data['username'])])]
         if 'given_names' in data:
-            ldap_ops['cn'] = [(ldap3.MODIFY_REPLACE, [data['given_names']])]
+            ldap_ops['cn'] = [(ldap3.MODIFY_REPLACE,
+                               [ldap_str(data['given_names'])])]
         if 'family_name' in data:
-            ldap_ops['sn'] = [(ldap3.MODIFY_REPLACE, [data['family_name']])]
+            ldap_ops['sn'] = [(ldap3.MODIFY_REPLACE,
+                               [ldap_str(data['family_name'])])]
         if 'display_name' in data:
             ldap_ops['displayName'] = [(ldap3.MODIFY_REPLACE,
-                                        [data['display_name']])]
+                                        [ldap_str(data['display_name'])])]
         if 'cloud_account' in data:
             ldap_ops['cloudAccount'] = [(ldap3.MODIFY_REPLACE,
                                          [ldap_bool(data['cloud_account'])])]
@@ -822,8 +835,7 @@ class CoreBackend(AbstractBackend):
                 delta = -current['balance']
                 new_balance = decimal.Decimal(0)
                 code = const.FinanceLogCodes.lose_membership
-                update['is_searchable'] = False
-                update['decided_search'] = False
+                ## Do not modify searchability.
                 update['balance'] = decimal.Decimal(0)
             else:
                 delta = None
@@ -907,7 +919,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         return self.retrieve_personas(rs, ids, columns=PERSONA_CORE_FIELDS)
 
     @access("event")
@@ -919,9 +931,9 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_EVENT_FIELDS)
-        if (ids != (rs.user.persona_id,)
+        if (ids != {rs.user.persona_id}
                 and "event_admin" not in rs.user.roles
                 and (any(e['is_cde_realm'] for e in ret.values()))):
             ## The event user view on a cde user contains lots of personal
@@ -947,7 +959,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         with Atomizer(rs):
             query = glue("SELECT queries FROM core.quota WHERE persona_id = %s",
                          "AND qdate = %s")
@@ -987,7 +999,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_ML_FIELDS)
         if any(not e['is_ml_realm'] for e in ret.values()):
             raise RuntimeError("Not an ml user.")
@@ -1002,7 +1014,7 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_ASSEMBLY_FIELDS)
         if any(not e['is_assembly_realm'] for e in ret.values()):
             raise RuntimeError("Not an assembly user.")
@@ -1020,8 +1032,8 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: {int: {str: object}}
         """
-        ids = affirm_array("id", ids)
-        if ids != (rs.user.persona_id,) and not self.is_admin(rs):
+        ids = affirm_set("id", ids)
+        if ids != {rs.user.persona_id} and not self.is_admin(rs):
             raise PrivilegeError("Must be privileged.")
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
 
@@ -1065,12 +1077,12 @@ class CoreBackend(AbstractBackend):
         fulltext_input['id'] = None
         data['fulltext'] = self.create_fulltext(fulltext_input)
         attributes = {
-            'sn': "({})".format(data['username']),
-            'mail': data['username'],
+            'sn': ldap_str(data['family_name']),
+            'mail': ldap_str(data['username']),
             ## againg slight modification of 'secret'
             'userPassword': "{SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWV",
-            'cn': data['display_name'],
-            'displayName': data['display_name'],
+            'cn': ldap_str(data['given_names']),
+            'displayName': ldap_str(data['display_name']),
             'cloudAccount': ldap_bool(data['cloud_account']),
             'isActive': ldap_bool(data['is_active'])}
         with Atomizer(rs):
@@ -1159,8 +1171,8 @@ class CoreBackend(AbstractBackend):
         :type ids: [int]
         :rtype: bool
         """
-        ids = affirm_array("id", ids)
-        if ids == (rs.user.persona_id,):
+        ids = affirm_set("id", ids)
+        if ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE id = ANY(%s)"
         data = self.query_one(rs, query, (ids,))
@@ -1192,7 +1204,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: str}
         :returns: dict mapping id to realm
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         roles = self.get_roles_multi(rs, ids)
         all_realms = {"cde", "event", "assembly", "ml"}
         return {key: value & all_realms for key, value in roles.items()}
@@ -1209,9 +1221,9 @@ class CoreBackend(AbstractBackend):
         :rtype: [int]
         :returns: All ids which successfully validated.
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         required_roles = required_roles or tuple()
-        required_roles = set(affirm_array("str", required_roles))
+        required_roles = affirm_set("str", required_roles)
         roles = self.get_roles_multi(rs, ids)
         return tuple(key for key, value in roles.items()
                      if value >= required_roles)
@@ -1499,9 +1511,9 @@ class CoreBackend(AbstractBackend):
           about the case
         """
         realms = realms or []
-        realms = affirm_array("str", realms)
+        realms = affirm_set("str", realms)
         stati = stati or set()
-        stati = affirm_array("enum_genesisstati", stati)
+        stati = affirm_set("enum_genesisstati", stati)
         if not realms and "core_admin" not in rs.user.roles:
             raise PrivilegeError("Not privileged.")
         elif not all({"{}_admin".format(realm), "core_admin"} & rs.user.roles
@@ -1552,7 +1564,7 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: dict mapping ids to the requested data
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "core.genesis_cases", GENESIS_CASE_FIELDS,
                                ids)
         if ("core_admin" not in rs.user.roles

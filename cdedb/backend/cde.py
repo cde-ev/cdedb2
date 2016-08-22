@@ -11,7 +11,7 @@ import decimal
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
-    affirm_array_validation as affirm_array, singularize, batchify)
+    affirm_set_validation as affirm_set, singularize, batchify)
 from cdedb.common import (
     glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
     LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS)
@@ -87,12 +87,12 @@ class CdEBackend(AbstractBackend):
         :py:meth:`cdedb.backend.common.AbstractBackend.generic_retrieve_log`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type stati: [int] or None
+        :type codes: [int] or None
         :type start: int or None
         :type stop: int or None
         :rtype: [{str: object}]
         """
-        codes = affirm_array("enum_financelogcodes", codes, allow_None=True)
+        codes = affirm_set("enum_financelogcodes", codes, allow_None=True)
         persona_id = affirm("id_or_None", persona_id)
         start = affirm("int_or_None", start)
         stop = affirm("int_or_None", stop)
@@ -129,7 +129,7 @@ class CdEBackend(AbstractBackend):
         :rtype: {int: int}
         :returns: Mapping of lastschrift ids to granting persona.
         """
-        persona_ids = affirm_array("id", persona_ids, allow_None=True)
+        persona_ids = affirm_set("id", persona_ids, allow_None=True)
         active = affirm("bool_or_None", active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = []
@@ -155,7 +155,7 @@ class CdEBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: Mapping ids to data sets.
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
         if (not self.is_admin(rs)
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
@@ -217,15 +217,15 @@ class CdEBackend(AbstractBackend):
         :param stati: If this is not None show only transactions with these
           statuses.
         :type periods: [int] or None
-        :param periods: If this is not None show only those
-          transactions in the specified periods.
+        :param periods: If this is not None show only those transactions in
+          the specified periods.
         :rtype: {int: int}
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
-        lastschrift_ids = affirm_array("id", lastschrift_ids, allow_None=True)
-        stati = affirm_array("enum_lastschrifttransactionstati", stati,
-                             allow_None=True)
-        periods = affirm_array("id", periods, allow_None=True)
+        lastschrift_ids = affirm_set("id", lastschrift_ids, allow_None=True)
+        stati = affirm_set("enum_lastschrifttransactionstati", stati,
+                           allow_None=True)
+        periods = affirm_set("id", periods, allow_None=True)
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
         params = []
         connector = "WHERE"
@@ -253,7 +253,7 @@ class CdEBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         :returns: Mapping ids to data sets.
         """
-        ids = affirm_array("id", ids)
+        ids = affirm_set("id", ids)
         data = self.sql_select(rs, "cde.lastschrift_transactions",
                                LASTSCHRIFT_TRANSACTION_FIELDS, ids)
         return {e['id']: e for e in data}
@@ -527,7 +527,7 @@ class CdEBackend(AbstractBackend):
 
     @access("cde_admin")
     def get_period(self, rs, period_id):
-        """Get data for the a semester
+        """Get data for a semester
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type period_id: int
@@ -539,7 +539,7 @@ class CdEBackend(AbstractBackend):
 
     @access("cde_admin")
     def set_period(self, rs, period):
-        """Set data for the a semester
+        """Set data for the current semester
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type period: {str: object}
@@ -653,22 +653,25 @@ class CdEBackend(AbstractBackend):
         """
         query = affirm("query", query)
         if query.scope == "qview_cde_member":
-            query.constraints.append(("is_cde_realm", QueryOperators.equal,
-                                      True))
-            query.constraints.append(("is_searchable", QueryOperators.equal,
-                                      True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
+            query.constraints.append(
+                ("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(
+                ("is_member", QueryOperators.equal, True))
+            query.constraints.append(
+                ("is_searchable", QueryOperators.equal, True))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal, False))
             query.spec['is_cde_realm'] = "bool"
+            query.spec['is_member'] = "bool"
             query.spec['is_searchable'] = "bool"
             query.spec["is_archived"] = "bool"
         elif query.scope == "qview_cde_user":
             if not self.is_admin(rs):
                 raise PrivilegeError("Admin only.")
-            query.constraints.append(("is_cde_realm", QueryOperators.equal,
-                                      True))
-            query.constraints.append(("is_archived", QueryOperators.equal,
-                                      False))
+            query.constraints.append(
+                ("is_cde_realm", QueryOperators.equal, True))
+            query.constraints.append(
+                ("is_archived", QueryOperators.equal, False))
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError("Bad scope.")

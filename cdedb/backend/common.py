@@ -562,11 +562,11 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         :param additional_columns: Extra values to retrieve.
         :rtype: [{str: object}]
         """
-        codes = affirm_array_validation(code_validator, codes, allow_None=True)
+        codes = affirm_set_validation(code_validator, codes, allow_None=True)
         entity_id = affirm_validation("id_or_None", entity_id)
         start = affirm_validation("int_or_None", start)
         stop = affirm_validation("int_or_None", stop)
-        additional_columns = affirm_array_validation(
+        additional_columns = affirm_set_validation(
             "restrictive_identifier", additional_columns, allow_None=True)
         start = start or 0
         additional_columns = additional_columns or tuple()
@@ -646,6 +646,21 @@ def affirm_array_validation(assertion, values, allow_None=False, **kwargs):
         return None
     checker = getattr(validate, "assert_{}".format(assertion))
     return tuple(checker(value, **kwargs) for value in values)
+
+def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
+    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set.
+
+    :type assertion: str
+    :type allow_None: bool
+    :param allow_None: Since we don't have the luxury of an automatic
+      '_or_None' variant like with other validators we have this parameter.
+    :type values: {object} (or None)
+    :rtype: {object}
+    """
+    if allow_None and values is None:
+        return None
+    checker = getattr(validate, "assert_{}".format(assertion))
+    return {checker(value, **kwargs) for value in values}
 
 #: Translate between validator names and sql data types.
 #:
