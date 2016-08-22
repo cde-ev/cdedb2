@@ -636,7 +636,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs.notify("info", glue("The database currently undergoes",
                                    "maintenance and is unavailable."))
         html = self.fill_template(rs, "web", templatename, params)
-        if "<pre>" not in html:
+        if "<pre>" not in html and "<textarea>" not in html:
             ## eliminate empty lines, since they don't matter
             html = "\n".join(line for line in html.split('\n') if line.strip())
         rs.response = Response(html, mimetype='text/html')
