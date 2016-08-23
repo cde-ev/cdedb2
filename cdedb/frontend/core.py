@@ -267,9 +267,14 @@ class CoreFrontend(AbstractFrontend):
                             and (eventual_status[f][anchor]
                                  not in (stati.committed, stati.nacked))):
                         eventual_status[f][anchor] = stati.pending
+        persona_ids = {e['submitted_by'] for e in history.values()}
+        persona_ids = persona_ids | {e['reviewed_by'] for e in history.values()
+                                     if e['reviewed_by']}
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "show_history", {
             'entries': history, 'constants': constants, 'current': current,
-            'pending': pending, 'eventual_status': eventual_status})
+            'pending': pending, 'eventual_status': eventual_status,
+            'personas': personas})
 
     @access("core_admin")
     @REQUESTdata(("phrase", "str"))
