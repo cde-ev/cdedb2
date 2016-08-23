@@ -248,5 +248,14 @@
             {% endcall %}
         {% endfor %}
 
-    </dl>
+    </div>
+    {# FIXME formatting #}
+    <h3>Veränderungen</h4>
+    <ul>
+        {% for _, entry in entries|xdictsort('generation')|reverse %}
+            <li>
+                Generation {{ entry['generation']|e }} ({{ entry['ctime']|datetime|e }}): {{ entry['change_note']|e }}
+            </li>
+        {% endfor %}
+    </ul>
 {% endblock %}
