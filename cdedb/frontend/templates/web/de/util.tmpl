@@ -12,12 +12,16 @@
 {% macro cdedb_script(script) %}
     {% if script == 'queryform' %}
         <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js")|e }}"></script>
+        {{ cdedb_script('selectize') }}
     {% elif script == 'dynamicrow' %}
         <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js")|e }}"></script>
     {% elif script == 'historycollapse' %}
         <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js")|e }}"></script>
     {% elif script == 'helper' %}
         <script type="text/javascript" src="{{ staticurl("cdedb_helper.js")|e }}"></script>
+    {% elif script == 'selectize' %}
+        <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js")|e }}"></script>
+        <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css")|e }}" />
     {% endif %}
 {% endmacro %}
 
@@ -296,12 +300,12 @@
 {% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
                       heading='Suchmaske') %}
     {{ box_filter_begin(heading) }}
-    {% with OPERATOR_LABELS = {0: "ist leer",
-                               1: "ist nicht leer",
-                               2: "ist gleich",
-                               3: "ist ungleich",
-                               4: "ist eines aus",
-                               5: "ist keines aus",
+    {% with OPERATOR_LABELS = {1: "ist leer",
+                               2: "ist nicht leer",
+                               3: "ist gleich",
+                               4: "ist ungleich",
+                               5: "ist eines aus",
+                               6: "ist keines aus",
                                10: "ist ähnlich zu",
                                11: "ist nicht ähnlich zu",
                                12: "passt auf RegEx",

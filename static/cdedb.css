@@ -180,6 +180,29 @@ h1.title {
     }
 }
 
+/* Selectize Bootstrap enhancements */
+.selectize-control.input-slim {
+    vertical-align: top;
+    line-height: 0.5;
+}
+.selectize-control.input-slim .selectize-input {
+    min-width: 128px;
+}
+.selectize-control.input-sm .selectize-input {
+    min-height: 30px;
+    padding: 4px 12px;
+}
+.selectize-control.input-sm .selectize-input.has-items {
+    padding: 3px 9px;
+    min-height: 30px;
+}
+.selectize-control.multi.input-sm .selectize-input.has-items {
+    padding: 3px 6px 0px;
+}
+.selectize-control.multi.input-sm .selectize-input > div {
+    margin: 0 3px 3px 0;
+}
+
 
 /* ************* *
  * Extra styling *
@@ -192,7 +215,7 @@ h1.title {
     padding-bottom: 2px;
     border-bottom: solid 2px #ddd;
     font-weight: bold;
-    font-size: 1em;    
+    font-size: 1em;
 }
 
 .profilepic {

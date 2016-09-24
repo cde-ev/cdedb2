@@ -238,7 +238,8 @@
                         f.input_filter_value.val($s.val());
                     $s.appendTo($fieldbox);
 
-                    // TODO select2 if list
+                    if (f.type == 'list')
+                        $s.selectize();
                 } else {
                     $i = $('<input>',{'class':"form-control input-sm input-slim", 'type': inputTypes[f.type]})
                             .change(changeFunction)
@@ -302,14 +303,23 @@
                     'str' : '<wert>,<wert>,…',
                     'float' : '<wert>,<wert>,…'};
 
-                $('<input>',{'class' : "form-control input-sm input-slim",
+                var $i = $('<input>',{'class' : "form-control input-sm input-slim",
                              'type': 'text', placeholder: placeholders[f.type]})
                         .change(function() { f.input_filter_value.val($(this).val()); })
                         .attr('size','40')
                         .val(f.input_filter_value.val())
                         .appendTo($fieldbox);
 
-                //TODO multiselect with select2 if list
+                if (f.type == 'list') {
+                    var options = [];
+                    for (var i in f.choices)
+                        options.push({value: i, text: f.choices[i]});
+                    $i.attr('placeholder','');
+                    $i.selectize({
+                        options: options
+                    });
+                }
+
                 break;
             }
         }
