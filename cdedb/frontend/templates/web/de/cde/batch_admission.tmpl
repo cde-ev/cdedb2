@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_manage_users' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('batch-admission') }}{% endblock %}
 {% block title %}Accounts anlegen{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
@@ -21,7 +22,7 @@
                 {{ util.form_input_checkbox("sendmail", label="Willkommensmail verschicken", horizontal=False) }}
             </div>
         </div>
-        {{ util.form_input_textarea(name="accounts", label="Daten", horizontal=False, rows=8) }}
+        {{ util.form_input_textarea(name="accounts", label="Daten", horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
             <span class="glyphicon glyphicon-info-sign"></span> Bitte einen Datensatz pro Zeile einfügen. Das Format ist
@@ -39,7 +40,7 @@
             {% for dataset in data %}
                 {{ util.input_hidden("hash{}".format(dataset['lineno'] - 1)) }}
                 <strong>
-                    Zeile {{ dataset['lineno']|e }}: {{ dataset['raw']['given_names']|e }}
+                    <span class="row-key" data-row="{{ dataset['lineno']|e }}">Zeile {{ dataset['lineno']|e }}</span>: {{ dataset['raw']['given_names']|e }}
                     {{ dataset['raw']['family_name']|e }} &lt;{{ dataset['raw']['username']|e }}&gt;
                     geb. am {{ dataset['raw']['birthday']|e }}
                     {% if dataset['pevent_id'] %}
@@ -52,18 +53,22 @@
                 </strong>
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}
-                        <ul class="list-unstyled"">
+                        <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
                                     {{ util.make_icon('exclamation-sign', title="Fehler") }}
-                                    {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                    {% if key %}
+                                        <em class="row-col-key" data-row="{{ dataset['lineno']|e }}" data-col="{{ csvfields.get(key, -1) }}">{{ key|e }}</em>:
+                                    {% endif %}
                                     {{ i18n(problem|string)|e }}
                                 </li>
                             {% endfor %}
                             {% for key, warning in dataset['warnings'] %}
                                 <li class="text-warning">
                                     {{ util.make_icon('warning-sign', title="Warnung") }}
-                                    {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                    {% if key %}
+                                        <em class="row-col-key" data-row="{{ dataset['lineno']|e }}" data-col="{{ csvfields.get(key, -1) }}">{{ key|e }}</em>:
+                                    {% endif %}
                                     {{ i18n(warning|string)|e }}
                                 </li>
                             {% endfor %}
@@ -75,7 +80,9 @@
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
                         {% for resolution in enums['LineResolutions'] %}
-                            {{ myentries.append((resolution.value, i18n(resolution|string)))|e }}
+                            {% if dataset['doppelgangers'] or not resolution.is_modification() %}
+                                {{ myentries.append((resolution.value, i18n(resolution|string)))|e }}
+                            {% endif %}
                         {% endfor %}
                         {{ util.input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, radio=True,
                                 inline=True) }}

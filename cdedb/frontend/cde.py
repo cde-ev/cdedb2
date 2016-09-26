@@ -239,7 +239,7 @@ class CdEFrontend(AbstractUserFrontend):
         raise NotImplementedError("Not available in cde realm.")
 
     @access("cde_admin")
-    def batch_admission_form(self, rs, data=None):
+    def batch_admission_form(self, rs, data=None, csvfields=[]):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -258,8 +258,11 @@ class CdEFrontend(AbstractUserFrontend):
         pcourses = {
             pevent_id: self.pasteventproxy.list_past_courses(rs, pevent_id)
             for pevent_id in pevent_ids}
+        csv_position = { key: ind for ind, key in enumerate(csvfields) }
+        csv_position['pevent_id'] = csv_position.pop('event',-1)
         return self.render(rs, "batch_admission", {
-            'data': data, 'pevents': pevents, 'pcourses': pcourses})
+            'data': data, 'pevents': pevents, 'pcourses': pcourses,
+            'csvfields': csv_position})
 
     def examine_for_admission(self, rs, datum):
         """Check one line of batch admission.
@@ -544,10 +547,10 @@ class CdEFrontend(AbstractUserFrontend):
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
             for e in data)
         if rs.errors or not data or open_issues:
-            return self.batch_admission_form(rs, data=data)
+            return self.batch_admission_form(rs, data=data, csvfields=fields)
         if not finalized:
             rs.values['finalized'] = True
-            return self.batch_admission_form(rs, data=data)
+            return self.batch_admission_form(rs, data=data, csvfields=fields)
 
         ## Here we have survived all validation
         success, num = self.perform_batch_admission(rs, data, trial_membership,
@@ -560,7 +563,7 @@ class CdEFrontend(AbstractUserFrontend):
                 rs.notify("warning", "DB serialization error.")
             else:
                 rs.notify("error", "Unexpected error on line {}.".format(num))
-            return self.batch_admission_form(rs, data=data)
+            return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("cde_admin")
     def money_transfers_form(self, rs, data=None):

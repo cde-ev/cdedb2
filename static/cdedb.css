@@ -345,3 +345,6 @@ div.p {
 .button-par {
     margin-bottom: -8px;
 }
+.clickable {
+    cursor: pointer;
+}
