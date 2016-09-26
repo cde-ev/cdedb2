@@ -8,6 +8,17 @@
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten") }}
 {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), "Massenaufnahme", active=True) }}
 {% endblock %}
+{% macro ba_submit_button() %}
+    {% if values['finalized'] %}
+        {{ util.form_input_submit(value="Anlegen", horizontal=False) }}
+    {% else %}
+        {% if data %}
+            {{ util.form_input_submit(value="Erneut validieren", horizontal=False) }}
+        {% else %}
+            {{ util.form_input_submit(value="Validieren", horizontal=False) }}
+        {% endif %}
+    {% endif %}
+{% endmacro %}
 {% block content %}
     <form action="{{ cdedblink('cde/batch_admission')|e }}" method="POST" id="admissionform">
         {{ util.input_hidden("finalized") }}
@@ -34,6 +45,8 @@
         <p class="help-block">
             Bei Geschlecht 0 für weiblich, 1 für männlich und 2 für alles andere eintragen.
         </p>
+
+        {{ ba_submit_button() }}
 
         {% if data %}
             <h2>Validierungsergebnisse</h2>
@@ -108,12 +121,8 @@
                     {% endif %}
                 </div>
             {% endfor %}
-        {% endif %}
 
-        {% if values['finalized'] %}
-            {{ util.form_input_submit(value="Anlegen", horizontal=False) }}
-        {% else %}
-            {{ util.form_input_submit(value="Validieren", horizontal=False) }}
+            {{ ba_submit_button() }}
         {% endif %}
     </form>
 {% endblock %}

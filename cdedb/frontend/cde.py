@@ -260,6 +260,7 @@ class CdEFrontend(AbstractUserFrontend):
             for pevent_id in pevent_ids}
         csv_position = { key: ind for ind, key in enumerate(csvfields) }
         csv_position['pevent_id'] = csv_position.pop('event',-1)
+        csv_position['pcourse_id'] = csv_position.get('course',-1)
         return self.render(rs, "batch_admission", {
             'data': data, 'pevents': pevents, 'pcourses': pcourses,
             'csvfields': csv_position})
