@@ -426,7 +426,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
 
         ## first round
-        self.assertPresence("Validieren")
+        self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
@@ -435,7 +435,7 @@ class TestCdEFrontend(FrontendTest):
         for i in range(2, 16):
             head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
-        head, _ = content.split("Validieren")
+        head, _ = content.split("Erneut validieren")
         output.append(head)
         expectation = (
             (r"given_names:\W*Darf nicht leer sein.",
@@ -489,7 +489,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
 
         ## second round
-        self.assertPresence("Validieren")
+        self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
@@ -498,7 +498,7 @@ class TestCdEFrontend(FrontendTest):
         for i in range(2, 16):
             head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
-        head, _ = content.split("Validieren".format(i))
+        head, _ = content.split("Erneut validieren".format(i))
         output.append(head)
         expectation = (
             tuple(),
@@ -559,7 +559,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
 
         ## third round
-        self.assertPresence("Validieren")
+        self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
         self.assertEqual(None, f['resolution4'].value)
@@ -569,7 +569,7 @@ class TestCdEFrontend(FrontendTest):
         for i in range(2, 16):
             head, content = content.split(" Zeile {}:".format(i))
             output.append(head)
-        head, _ = content.split("Validieren".format(i))
+        head, _ = content.split("Erneut validieren".format(i))
         output.append(head)
         expectation = (
             tuple(),
@@ -620,7 +620,7 @@ class TestCdEFrontend(FrontendTest):
 
         ## fourth round
         self.assertPresence("Anlegen")
-        self.assertNonPresence("Validieren")
+        self.assertNonPresence("Erneut validieren")
         f = self.response.forms['admissionform']
         self.assertEqual('5', f['resolution4'].value)
         self.assertEqual('True', f['finalized'].value)
