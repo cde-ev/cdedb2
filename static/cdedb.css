@@ -244,6 +244,20 @@ p.textbox {
     margin: -10px 0 10px 0;
 }
 
+/* list select */
+.ls-list:focus {
+    outline: none;
+}
+tr.ls-selected td {
+    background: #d9edf7;
+}
+.ls-list:focus tr.ls-cursor {
+    border-color: #23527c;
+    border-width: 2px;
+    border-style: none solid;
+}
+
+
 /* dynamic row js */
 tr.drow-new>td {
     background-color: #dff0d8;

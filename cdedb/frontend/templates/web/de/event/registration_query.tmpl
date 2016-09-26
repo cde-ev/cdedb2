@@ -2,7 +2,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Anmeldungen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -19,7 +19,7 @@
         </div>
     {% endwith %}
 
-    
+
     {{ titles.update({
             "reg.id": "ID",
             "reg.notes": "Anmerkungen",
@@ -48,15 +48,8 @@
 
     {{ util.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
 
-    <h3>Aktionen</h3>
-    <p>
-        <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
-        <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
-        <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
-    </p>
-
     {% if values['is_search'] %}
-        <h3>Ergebnis -- {{ result|length|e }} {{ result|length|numerus("Eintrag", "Einträge")|e }} gefunden</h3>
+        <h3>Ergebnis [{{ result|length|e }}]</h3>
         <form action="{{ cdedblink('event/registration_action', query|querytoparams)|e }}" method="POST"
          id="actionform">
             {{ titles.update({
@@ -87,12 +80,6 @@
 
                 {{ util.display_query_result(result, query, titles, choices) }}
 
-            <h3>Aktionen</h3>
-            <p>
-                <input type="button" value="Alle auswählen" id="action_select_all" class="jsEnabled" disabled>
-                <input type="button" value="Alle abwählen" id="action_select_none" class="jsEnabled" disabled>
-                <input type="button" value="Auswahl umkehren" id="action_select_invert" class="jsEnabled" disabled>
-            </p>
             <div>
                 Ausgewählte Anmeldungen modifizieren
                     <script type="text/javascript">
@@ -158,19 +145,4 @@
             </div>
         </form>
     {% endif %}
-
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $("#action_select_all").click(function (){
-                 $(".outputSelector").prop('checked', true);
-                 });
-            $("#action_select_none").click(function (){
-                 $(".outputSelector").prop('checked', false);
-                 });
-            $("#action_select_invert").click(function (){
-                 $(".outputSelector").each(function (){
-                     $(this).prop('checked', !$(this).prop('checked'));
-                 })});
-        });
-    </script>
 {% endblock %}

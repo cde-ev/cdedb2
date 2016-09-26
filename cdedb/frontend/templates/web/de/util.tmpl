@@ -320,11 +320,6 @@
                                23: "liegt nicht zwischen",
                                24: "ist größergleich",
                                25: "ist größer",} %}
-        <script type="text/javascript">
-            $(function() {
-                $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});
-            });
-        </script>
         <form action="{{ target|e }}" method="GET" id="queryform">
             {{ input_hidden(name="is_search", value=True) }}
 
@@ -468,6 +463,9 @@
                 </button>
             </p>
         </form>
+        <script type="text/javascript">
+            $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});
+        </script>
     {% endwith %}
     {{ box_filter_end() }}
 {% endmacro %}
@@ -510,14 +508,49 @@
     {% if not result|length %}
         Keine Ergebnisse!
     {% else %}
-        {# TODO add fancy js to table #}
-        <table class="table table-condensed table-hover">
+        <script type="text/javascript">
+            $(function(){
+                $('.ls-list').cdedbListSelect();
+                $('#btn-select-all').click(function(){
+                    $('#query-result').data('listSelect').selectAll();
+                });
+                $('#btn-select-none').click(function(){
+                    $('#query-result').data('listSelect').selectNone();
+                });
+                $('#btn-select-swap').click(function(){
+                    $('#query-result').data('listSelect').invertSelection();
+                });
+            });
+        </script>
+        <div class="p">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
+                    {{ make_icon('check') }} <span class="hidden-xs">alle</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
+                    {{ make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
+                    {{ make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                </button>
+            </div>
+        </div>
+        <table class="table table-condensed table-hover ls-list" id="query-result">
             <thead>
                 <tr>
                     <th></th>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
-                            <th>{{ titles.get(field, field)|e }}</th>
+                            <th>
+                                {{ titles.get(field, field)|e }}
+                                {% if values.get("qop_{}".format(field)) %}
+                                    <span class="label label-warning">{{ make_icon('filter') }}</span>
+                                {% endif %}
+                                {% if values.get("qord_primary") == field or values.get("qord_secondary") == field or
+                                        values.get("qord_tertiary") == field %}
+                                    <span class="label label-info">{{ make_icon('sort-by-alphabet') }}</span>
+                                {% endif %}
+                            </th>
                         {% endfor %}
                     {% endfor %}
                 </tr>
@@ -525,7 +558,7 @@
             <tbody>
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
-                <tr>
+                <tr class="ls-item">
                     <td>
                         {{ input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
                                           aclass="rowSelector") }}

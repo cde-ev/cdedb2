@@ -3,7 +3,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Veranstaltungsnutzersuche{% endblock %}
 {% block content %}
     <div class="row">
@@ -30,7 +30,7 @@
     {{ generic.user_search_mask("event", ("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
-        <h3>Ergebnis -- {{ result|length|e }} {{ result|length|numerus("Eintrag", "Einträge")|e }} gefunden</h3>
+        <h3>Ergebnis [{{ result|length|e }}]</h3>
         {{ generic.user_search_result(result, "event") }}
     {% endif %}
 {% endblock %}
