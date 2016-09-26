@@ -2,6 +2,7 @@
 
 import unittest
 import copy
+import json
 import quopri
 import webtest
 
@@ -46,6 +47,14 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('berta')
         berta = USER_DICT['berta']
         self.assertTitle("Bertålotta Beispiel")
+
+    @as_users("anton")
+    def test_selectpersona(self, user):
+        self.get('/core/persona/select?kind=persona&phrase=din')
+        expectation = {
+            "personas": [{"name": "Daniel D. Dino", "id": 4},
+                         {"name": "Ferdinand F. Findus", "id": 6}]}
+        self.assertEqual(expectation, self.response.json)
 
     @as_users("anton")
     def test_adminshowuser_advanced(self, user):

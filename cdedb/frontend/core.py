@@ -2,6 +2,7 @@
 
 """Services for the core realm."""
 
+import collections
 import copy
 import hashlib
 import os.path
@@ -389,7 +390,7 @@ class CoreFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             search = [("username,family_name,given_names,display_name",
                        QueryOperators.similar, t) for t in terms]
-            search.extend(search_addition)
+            search.extend(search_additions)
             spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
             spec["username,family_name,given_names,display_name"] = "str"
             spec.update(spec_additions)
