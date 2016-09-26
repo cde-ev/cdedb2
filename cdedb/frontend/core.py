@@ -15,7 +15,7 @@ from cdedb.frontend.common import (
     request_dict_extractor, event_usage, querytoparams_filter)
 from cdedb.common import (
     ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
-    PrivilegeError)
+    PrivilegeError, name_key)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -326,6 +326,105 @@ class CoreFrontend(AbstractFrontend):
         else:
             rs.notify("warning", "No account found.")
             return self.index(rs)
+
+    @access("persona")
+    @REQUESTdata(("phrase", "str"), ("kind", "str"))
+    def select_persona(self, rs, phrase, kind):
+        """Provide data for inteligent input fields.
+
+        This searches for users by name so they can be easily selected
+        without entering their numerical ids. This is for example
+        intended for addition of orgas to events.
+        """
+        if rs.errors:
+            return self.send_json(rs, {})
+
+        spec_additions = {}
+        search_additions = []
+        if kind == "persona":
+            if "core_admin" not in rs.user.roles:
+                raise PrivilegeError("Not privileged.")
+        elif kind == "member":
+            if "cde_admin" not in rs.user.roles:
+                raise PrivilegeError("Not privileged.")
+            search_additions.append(
+                ("is_member", QueryOperators.equal, True))
+        elif kind == "cde_user":
+            if "cde_admin" not in rs.user.roles:
+                raise PrivilegeError("Not privileged.")
+            search_additions.append(
+                ("is_cde_realm", QueryOperators.equal, True))
+        elif kind == "event_user":
+            if "event_admin" not in rs.user.roles:
+                raise PrivilegeError("Not privileged.")
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
+        elif kind == "assembly_user":
+            if "assembly_admin" not in rs.user.roles:
+                raise PrivilegeError("Not privileged.")
+            search_additions.append(
+                ("is_assembly_realm", QueryOperators.equal, True))
+        elif kind == "ml_user":
+            if "ml_admin" not in rs.user.roles:
+                raise PrivilegeError("Not privileged.")
+            search_additions.append(
+                ("is_ml_realm", QueryOperators.equal, True))
+        else:
+            return self.send_json(rs, {})
+
+        data = None
+        anid, errs = validate.check_cdedbid(phrase, "phrase")
+        if not errs:
+            data = self.get_personas(rs, anid)
+        else:
+            anid, errs = validate.check_id(phrase, "phrase")
+            if not errs:
+                data = self.get_personas(rs, anid)
+        if data:
+            data = unwrap(data)
+        if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
+            return self.send_json(rs, {})
+
+        if data is None:
+            terms = tuple(t.strip() for t in phrase.split(' ') if t)
+            search = [("username,family_name,given_names,display_name",
+                       QueryOperators.similar, t) for t in terms]
+            search.extend(search_addition)
+            spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
+            spec["username,family_name,given_names,display_name"] = "str"
+            spec.update(spec_additions)
+            query = Query(
+                "qview_core_user",
+                spec,
+                ("personas.id", "username", "family_name", "given_names"),
+                search,
+                (("personas.id", True),))
+            data = self.coreproxy.submit_general_query(rs, query)
+
+        if len(data) > self.conf.NUM_PREVIEW_PERSONAS:
+            tmp = sorted(data, key=lambda e: e['id'])
+            data = tmp[:self.conf.NUM_PREVIEW_PERSONAS]
+
+        counter = collections.defaultdict(lambda: 0)
+        def formatter(entry, verbose=False):
+            if verbose:
+                return "{} {} ({})".format(
+                    entry['given_names'], entry['family_name'],
+                    entry['username'])
+            else:
+                return "{} {}".format(
+                    entry['given_names'], entry['family_name'])
+        for entry in data:
+            counter[formatter(entry)] += 1
+        ret = []
+        for entry in sorted(data, key=name_key):
+            verbose = counter[formatter(entry)] > 1
+            ret.append(
+                {
+                    'id': entry['id'],
+                    'name': formatter(entry, verbose),
+                })
+        return self.send_json(rs, {'personas': ret})
 
     @access("persona")
     def change_user_form(self, rs):

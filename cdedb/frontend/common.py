@@ -609,6 +609,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return Response(f, direct_passthrough=True, headers=headers,
                         **extra_args)
 
+    def send_json(self, rs, data):
+        """Slim helper to create json responses.
+
+        :type rs: :py:class:`RequestState`
+        :type templatename: str
+        :type params: {str: object}
+        :rtype: :py:class:`werkzeug.wrappers.Response`
+        """
+        rs.response = Response(json.dumps(data), mimetype='text/json')
+        rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
+        return rs.response
+
     def render(self, rs, templatename, params=None):
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
