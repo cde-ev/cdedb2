@@ -64,7 +64,7 @@ class TestMlFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Mailinglistennutzersuche")
-        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
+        self.assertPresence("Ergebnis [1]")
         self.assertPresence("Jalapeño")
 
     @as_users("anton")

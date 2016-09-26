@@ -297,7 +297,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Allgemeine Nutzerverwaltung")
-        self.assertPresence("Ergebnis -- 5 Einträge gefunden")
+        self.assertPresence("Ergebnis [5]")
         self.assertPresence("Jalapeño")
 
     @as_users("anton")
@@ -312,7 +312,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Archivnutzersuche")
-        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
+        self.assertPresence("Ergebnis [1]")
         self.assertPresence("Hell")
 
     @as_users("anton")
@@ -327,7 +327,7 @@ class TestCoreFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Archivnutzersuche")
-        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
+        self.assertPresence("Ergebnis [1]")
         self.assertPresence("Hell")
 
     @as_users("anton")

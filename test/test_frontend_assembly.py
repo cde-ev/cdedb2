@@ -65,7 +65,7 @@ class TestAssemblyFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Versammlungsnutzersuche")
-        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
+        self.assertPresence("Ergebnis [1]")
         self.assertPresence("Karabatschi")
 
     @as_users("anton")

@@ -68,7 +68,7 @@ class TestEventFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("Veranstaltungsnutzersuche")
-        self.assertPresence("Ergebnis -- 4 Einträge gefunden")
+        self.assertPresence("Ergebnis [4]")
         self.assertPresence("Hohle Gasse 13")
 
     @as_users("anton")
@@ -539,7 +539,7 @@ etc;anything else""", f['entries_2'].value)
         f['qord_primary'] = 'reg.id'
         self.submit(f)
         self.assertTitle("\nAnmeldungen (Große Testakademie 2222)")
-        self.assertPresence("Ergebnis -- 2 Einträge gefunden")
+        self.assertPresence("Ergebnis [2]")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
@@ -555,7 +555,7 @@ etc;anything else""", f['entries_2'].value)
         f['value'] = 3
         self.submit(f)
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
-        self.assertPresence("Ergebnis -- 2 Einträge gefunden")
+        self.assertPresence("Ergebnis [2]")
         self.assertEqual(
             '3',
             self.response.lxml.get_element_by_id('row_0_lodgement_id2').value)

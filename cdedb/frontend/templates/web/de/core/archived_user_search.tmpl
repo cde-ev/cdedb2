@@ -20,7 +20,7 @@
     {{ generic.user_search_mask("archived", ("pevent_id",)) }}
 
     {% if values['is_search'] %}
-        <h3>Ergebnis -- {{ result|length|e }} {{ result|length|numerus("Eintrag", "Einträge")|e }} gefunden</h3>
+        <h3>Ergebnis [{{ result|length|e }}]</h3>
         {{ generic.user_search_result(result, "archived") }}
     {% endif %}
 {% endblock %}

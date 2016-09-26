@@ -130,7 +130,7 @@ class TestCdEFrontend(FrontendTest):
                 f[field].checked = True
         self.submit(f)
         self.assertTitle("CdE Nutzerverwaltung")
-        self.assertPresence("Ergebnis -- 1 Eintrag gefunden")
+        self.assertPresence("Ergebnis [1]")
         self.assertIn('"row_0_id" value="2"', self.response.text)
 
     @as_users("anton")
