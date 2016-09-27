@@ -57,6 +57,12 @@ class TestPastEventBackend(BackendTest):
         self.assertIn(new_id, new_events)
 
     @as_users("anton")
+    def test_delete_past_course_cascade(self, user):
+        self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
+        self.pastevent.delete_past_course(self.key, 1, cascade=True)
+        self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
+
+    @as_users("anton")
     def test_entity_past_course(self, user):
         pevent_id = 1
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)

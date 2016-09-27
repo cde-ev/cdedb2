@@ -372,8 +372,8 @@ class PastEventBackend(AbstractBackend):
             if cascade and self.list_participants(rs, pcourse_id=pcourse_id):
                 course = unwrap(self.get_past_courses(rs, (pcourse_id,)))
                 with Silencer(rs):
-                    for pid in self.list_participants(rs,
-                                                      pcourse_id=pcourse_id):
+                    for pid, _ in self.list_participants(rs,
+                                                         pcourse_id=pcourse_id):
                         self.remove_participant(rs, course['pevent_id'],
                                                 pcourse_id, pid)
             ret = self.sql_delete_one(rs, "past_event.courses", pcourse_id)
@@ -452,7 +452,7 @@ class PastEventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type pevent_id: int or None
         :type pcourse_id: int or None
-        :rtype: {(int, int, int): {str: object}}
+        :rtype: {(int, int): {str: object}}
         """
         if pevent_id is None and pcourse_id is None:
             raise ValueError("No input specified.")
