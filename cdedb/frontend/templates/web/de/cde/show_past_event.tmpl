@@ -20,7 +20,7 @@
     {% endif %}
     <p><strong>Organisation</strong>: {{ institutions[ambience['pevent']['institution']]|e }}</p>
     {{ ambience['pevent']['description']|rst }}
-    
+
     <h2>Kurse</h2>
     {% if is_admin %}
         <div class="p">
@@ -35,7 +35,7 @@
             {% endfor %}
         </ul>
     {% endif %}
-    
+
     <h2>Teilnehmer</h2>
     {% if is_admin %}
         <div class="panel panel-success">
@@ -80,11 +80,10 @@
                         </strong>
                     {% endif %}
                     {# only allow removal of participants without a course #}
-                    {% if is_admin and participant['pcourse_id'] is none %}
+                    {% if is_admin and not participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}" style="display: inline;">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
-                            {{ util.input_hidden(name="pcourse_id", value=participant['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(title='entfernen', icon="trash", aclass="btn btn-xs btn-danger",
                                     value="") }}

@@ -24,7 +24,7 @@
         </div>
     {% endif %}
     {{ ambience['pcourse']['description']|e }}
-    
+
     <h2>Teilnehmer</h2>
     {% if is_admin %}
         <div class="panel panel-success">
@@ -65,7 +65,7 @@
                         <strong>
                     {% endif %}
                     {% if participant['viewable'] %}
-                        {{ util.persona_anchor(participant) }}
+                        {{ util.persona_anchor(personas[anid]) }}
                     {% else %}
                         {{ participant['given_names']|e }} {{ participant['family_name']|e }}
                     {% endif %}

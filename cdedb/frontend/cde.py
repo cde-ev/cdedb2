@@ -1537,28 +1537,36 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "cde/institution_summary_form")
 
-    @access("cde")
-    def show_past_event(self, rs, pevent_id):
-        """Display concluded event."""
-        courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+    def process_participants(self, rs, pevent_id, pcourse_id=None):
+        """Helper to pretty up participation infos.
+
+        The problem is, that multiple participations can be logged for a
+        persona per event (easiest example multiple courses in multiple
+        parts). So here we fuse these entries into one per persona.
+
+        Note that the returned dict of participants is already sorted.
+
+        :type rs: :py:class:`FrontendRequestState`
+        :type pevent_id: int
+        :type pcourse_id: int or None
+        :param pcourse_id: if not None, restrict to participants of this
+        course
+        :rtype: ({int: {str: object}}, {int: {str: object}}, int)
+        :returns: This returns three things: the processed participants,
+        the persona data sets of the participants and the number of
+        redacted participants.
+        """
         participant_infos = self.pasteventproxy.list_participants(
             rs, pevent_id=pevent_id)
-        institutions = self.pasteventproxy.list_institutions(rs)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
+        privileged = is_participant or self.is_admin(rs)
         participants = {}
         personas = {}
         extra_participants = 0
-        ## Make the list of participants visible to other participants.
-        ##
-        ## If the user is a search-member she may view the participants, which
-        ## are search-members.
-        if (is_participant or ("searchable" in rs.user.roles)
-                or self.is_admin(rs)):
-            ## fix up participants, so we only see each persona once
+        if (privileged or ("searchable" in rs.user.roles)):
             persona_ids = {persona_id
                            for persona_id, _ in participant_infos.keys()}
-            tmp = {}
             for persona_id in persona_ids:
                 base_set = tuple(x for x in participant_infos.values()
                                  if x['persona_id'] == persona_id)
@@ -1568,17 +1576,18 @@ class CdEFrontend(AbstractUserFrontend):
                     'is_orga': any(x['is_orga'] for x in base_set),
                     'is_instructor': False,
                     }
-                if any(x['pcourse_id'] is None for x in base_set):
-                    entry['pcourse_id'] = None
-                else:
-                    entry['pcourse_id'] = min(x['pcourse_id'] for x in base_set)
-                tmp[persona_id] = entry
-            participants = tmp
+                entry['pcourse_ids'] = tuple(x['pcourse_id'] for x in base_set
+                                             if x['pcourse_id'])
+                if pcourse_id and pcourse_id not in entry['pcourse_ids']:
+                    ## remove non-participants with respect to the relevant
+                    ## course if there is a relevant course
+                    continue
+                participants[persona_id] = entry
 
             personas = self.coreproxy.get_personas(rs, participants.keys())
             participants = OrderedDict(sorted(
                 participants.items(), key=lambda x: name_key(personas[x[0]])))
-        if participants and not (is_participant or self.is_admin(rs)):
+        if participants and not privileged:
             for anid, persona in personas.items():
                 if not persona['is_searchable'] or not persona['is_member']:
                     del participants[anid]
@@ -1590,6 +1599,15 @@ class CdEFrontend(AbstractUserFrontend):
             for anid in participants:
                 if personas[anid]['is_searchable']:
                     participants[anid]['viewable'] = True
+        return participants, personas, extra_participants
+
+    @access("cde")
+    def show_past_event(self, rs, pevent_id):
+        """Display concluded event."""
+        courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+        institutions = self.pasteventproxy.list_institutions(rs)
+        participants, personas, extra_participants = self.process_participants(
+            rs, pevent_id)
         return self.render(rs, "show_past_event", {
             'courses': courses, 'participants': participants,
             'personas': personas, 'institutions': institutions,
@@ -1598,38 +1616,10 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde")
     def show_past_course(self, rs, pevent_id, pcourse_id):
         """Display concluded course."""
-        participant_infos = self.pasteventproxy.list_participants(
-            rs, pcourse_id=pcourse_id)
-        is_participant = any(anid == rs.user.persona_id
-                             for anid, _ in participant_infos.keys())
-        participants = {}
-        personas = {}
-        extra_participants = 0
-        ## Make the list of participants visible to other participants.
-        ##
-        ## If the user is a search-member she may view the participants, which
-        ## are search-members.
-        if (is_participant or ("searchable" in rs.user.roles)
-                or self.is_admin(rs)):
-            participants = self.coreproxy.get_personas(
-                rs, tuple(anid for anid, _ in participant_infos.keys()))
-            participants = OrderedDict(sorted(
-                participants.items(), key=lambda x: name_key(x[1])))
-            personas = self.coreproxy.get_personas(rs, participants.keys())
-        if participants and not (is_participant or self.is_admin(rs)):
-            for anid, persona in personas.items():
-                if not persona['is_searchable'] or not persona['is_member']:
-                    del participants[anid]
-                    extra_participants += 1
-        for anid in participants:
-            participants[anid]['viewable'] = (self.is_admin(rs)
-                                              or anid == rs.user.persona_id)
-        if "searchable" in rs.user.roles:
-            for anid in participants:
-                if personas[anid]['is_searchable']:
-                    participants[anid]['viewable'] = True
+        participants, personas, extra_participants = self.process_participants(
+            rs, pevent_id, pcourse_id=pcourse_id)
         return self.render(rs, "show_past_course", {
-            'participants': participants,
+            'participants': participants, 'personas': personas,
             'extra_participants': extra_participants})
 
     @access("cde")
@@ -1762,7 +1752,21 @@ class CdEFrontend(AbstractUserFrontend):
                         is_instructor, is_orga):
         """Add participant to concluded event."""
         if rs.errors:
-            return self.show_past_course(rs, pevent_id, pcourse_id)
+            if pcourse_id:
+                return self.show_past_course(rs, pevent_id, pcourse_id)
+            else:
+                return self.show_past_event(rs, pevent_id)
+        if pcourse_id:
+            param = {'pcourse_id': pcourse_id}
+        else:
+            param = {'pevent_id': pevent_id}
+        participants = self.pasteventproxy.list_participants(rs, **param)
+        if persona_id in participants:
+            rs.notify("warning", "Participant already present.")
+            if pcourse_id:
+                return self.show_past_course(rs, pevent_id, pcourse_id)
+            else:
+                return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.add_participant(
             rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga)
         self.notify_return_code(rs, code)
