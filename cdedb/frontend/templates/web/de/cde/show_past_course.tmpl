@@ -61,14 +61,13 @@
         <ul>
             {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
                 <li>
-                    {% if participant['is_instructor'] %}
-                        <strong>
-                    {% endif %}
+                    {% if participant['is_instructor'] %}<strong>{% endif %}
                     {% if participant['viewable'] %}
                         {{ util.persona_anchor(personas[anid]) }}
                     {% else %}
                         {{ participant['given_names']|e }} {{ participant['family_name']|e }}
                     {% endif %}
+                    {% if participant['is_course_instructor'] %}</strong>{% endif %}
                     {% if is_admin %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}" style="display: inline;">
@@ -78,9 +77,6 @@
                             {{ util.input_submit(title='entfernen', icon="trash", aclass="btn btn-xs btn-danger",
                                     value="") }}
                         </form>
-                    {% endif %}
-                    {% if participant['is_instructor'] %}
-                        </strong>
                     {% endif %}
                 </li>
             {% endfor %}
