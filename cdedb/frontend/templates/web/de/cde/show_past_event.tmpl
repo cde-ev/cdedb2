@@ -52,7 +52,7 @@
                             {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
                                     anid="input-add-participant") }}
                             <script type="text/javascript">
-                                $('#input-add-participant').cdedbSearchPerson('cde_user',[]);
+                                $('#input-add-participant').cdedbSearchPerson('cde_user',{{ participants.keys()|list|json }});
                                 {# TODO: Filter out existing participants #}
                             </script>
                         </div>
@@ -79,21 +79,21 @@
                     {% else %}
                         {{ participant['given_names']|e }} {{ participant['family_name']|e }}
                     {% endif %}
-                    {% if participant['pcourse_ids'] %}
+                    {% if participant['pcourse_ids'] != (None,) %}
                         (
-                        {%- for pcourse_id in participant['pcourse_ids'] -%}
-                            {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
-                                courses[pcourse_id]) }}
-                            {%- if not loop.last %}, {% endif -%}
+                        {%- for pcourse_id in participant['pcourse_ids'] %}
+                            {%- if pcourse_id -%}
+                                {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
+                                    courses[pcourse_id]) }}
+                                {%- if not loop.last %}, {% endif -%}
+                            {% endif -%}
                         {% endfor -%}
                         )
                     {% endif %}
                     {% if participant['is_orga'] %}(Orga){% endif %}
 
                     {# only allow removal of participants without a course #}
-                    {# TODO: allow removal of participants with and without course or deny adding with and without
-                        course #}
-                    {% if is_admin and not participant['pcourse_ids'] %}
+                    {% if is_admin and None in participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}" style="display: inline;">
                             {{ util.input_hidden(name="persona_id", value=anid) }}

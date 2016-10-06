@@ -1575,8 +1575,7 @@ class CdEFrontend(AbstractUserFrontend):
                     'persona_id': persona_id,
                     'is_orga': any(x['is_orga'] for x in base_set),
                     }
-                entry['pcourse_ids'] = tuple(x['pcourse_id'] for x in base_set
-                                             if x['pcourse_id'])
+                entry['pcourse_ids'] = tuple(x['pcourse_id'] for x in base_set)
                 entry['is_instructor'] = any(x['is_instructor']
                                              for x in base_set
                                              if x['pcourse_id'] == pcourse_id
