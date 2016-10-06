@@ -1,9 +1,9 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}){% endblock %}
+{% block title %}{{ ambience['pcourse']['title']|e }} <small>({{ ambience['pevent']['title']|e }})</small>{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
@@ -21,6 +21,9 @@
                     id="deletecourseform" style="display: inline;">
                 {{ util.input_submit(value="Gesamten Kurs löschen", icon="trash", aclass="btn btn-danger btn-sm") }}
             </form>
+            <script type="text/javascript">
+                $('#deletecourseform').cdedbProtectAction();
+            </script>
         </div>
     {% endif %}
     {{ ambience['pcourse']['description']|e }}
@@ -36,8 +39,11 @@
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                     <div class="row">
                         <div class="col-sm-5">
-                            {# TODO select2 here #}
-                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X") }}
+                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X", anid='input-add-participant') }}
+                            <script type="text/javascript">
+                                $('#input-add-participant').cdedbSearchPerson('cde_user',[]);
+                                {# TODO: Filter out existing participants #}
+                            </script>
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox">

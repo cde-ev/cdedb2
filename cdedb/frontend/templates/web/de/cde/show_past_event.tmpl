@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('search-persona') }}{% endblock %}
 {% block title %}{{ ambience['pevent']['title']|e }}{% endblock %}
 {% block heading %}
     <h1 class="title">{{ ambience['pevent']['title']|e }} <small>({{ ambience['pevent']['shortname']|e }})</small></h1>
@@ -48,8 +49,12 @@
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
                         <div class="col-sm-7">
-                            {# TODO select2 here #}
-                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X") }}
+                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
+                                    anid="input-add-participant") }}
+                            <script type="text/javascript">
+                                $('#input-add-participant').cdedbSearchPerson('cde_user',[]);
+                                {# TODO: Filter out existing participants #}
+                            </script>
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox">
@@ -86,6 +91,8 @@
                     {% if participant['is_orga'] %}(Orga){% endif %}
 
                     {# only allow removal of participants without a course #}
+                    {# TODO: allow removal of participants with and without course or deny adding with and without
+                        course #}
                     {% if is_admin and not participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
                          id="removeparticipantform{{ anid|e }}" style="display: inline;">
