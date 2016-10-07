@@ -388,11 +388,11 @@ class CoreFrontend(AbstractFrontend):
 
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
-            search = [("username,family_name,given_names,display_name",
+            search = [("family_name,given_names",
                        QueryOperators.similar, t) for t in terms]
             search.extend(search_additions)
             spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
-            spec["username,family_name,given_names,display_name"] = "str"
+            spec["family_name,given_names"] = "str"
             spec.update(spec_additions)
             query = Query(
                 "qview_core_user",
