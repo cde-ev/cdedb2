@@ -376,8 +376,10 @@ class FrontendTest(unittest.TestCase):
         return ret
 
     def assertTitle(self, title):
-        components = tuple(x.strip() for x in self.response.lxml.xpath('//h1/text()'))
-        self.assertIn(title.strip(), components)
+        components = tuple(x.strip() for x in self.response.lxml.xpath('/html/head/title/text()'))
+        # The first 7 chars of html title are "CdEDB –". Remove them and split following
+        # whitespace to compare actual title
+        self.assertEquals(title.strip(), components[0][7:].strip())
 
     def assertPresence(self, s, div="content", regex=False):
         if self.response.content_type == "text/plain":
@@ -401,4 +403,3 @@ class FrontendTest(unittest.TestCase):
     def assertLogin(self, name):
         span = self.response.lxml.xpath("//span[@id='displayname']")[0]
         self.assertEqual(name.strip(), span.text_content().strip())
-
