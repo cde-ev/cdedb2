@@ -1,3 +1,4 @@
+{% set sidenav_active='ml_index' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% block title %}Mailinglisten{% endblock %}
 {% macro format_entry(mailinglist_id, title) %}
@@ -10,8 +11,14 @@
     </li>
 {% endmacro %}
 {% block content %}
-    Hier findest Du die Mailinglisten des CdE; insbesondere auch zu
-    Akademien und Mitgliederversammlungen.
+    <div class="p">
+        {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen", icon="plus",
+                aclass="btn btn-sm btn-success") }}
+    </div>
+    <p>
+        Hier findest Du die Mailinglisten des CdE; insbesondere auch zu
+        Akademien und Mitgliederversammlungen.
+    </p>
     <h2>Aktuelle Mailinglisten</h2>
     <h3>Allgemeine Listen</h3>
     <ul>

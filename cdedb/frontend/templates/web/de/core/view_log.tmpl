@@ -43,7 +43,7 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
             {% endfor %}
         </tbody>
     </table>
-    
+
     {{ util.box_filter_begin() }}
         <form action="{{ cdedblink('core/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
@@ -53,8 +53,8 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                     entries=myentries, small=True) }}
-            {{ util.form_input_text(name="persona_id", label="Account", small=True) }}
-            
+            {{ util.form_input_text(name="persona_id", label="Account", small=True, placeholder="DB-XXXX-X") }}
+
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}
         </form>

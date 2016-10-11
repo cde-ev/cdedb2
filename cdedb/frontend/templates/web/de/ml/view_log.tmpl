@@ -1,69 +1,73 @@
 {% set sidenav_active='ml_log' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}
-Mailinglisten -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+{% block title -%}
+Log: Mailinglisten [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block content %}
-    <table>
-        <tr>
-            <th>Zeitstempel</th>
-            <th>Code</th>
-            <th>Verantwortlich</th>
-            <th>Mailingliste</th>
-            <th>Betroffen</th>
-            <th>Zusatz</th>
-        </tr>
-        {% for entry in log %}
+    <table class="table table-condensed table-hover">
+        <thead>
             <tr>
-                <td>{{ entry['ctime']|datetime|e }}</td>
-                <td>{{ i18n(enums['MlLogCodes'](entry['code'])|string)|e }}</td>
-                <td>
-                    {% if entry['submitted_by'] %}
-                        {{ personas[entry['submitted_by']]['given_names']|e }}
-                        {{ personas[entry['submitted_by']]['family_name']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if entry['mailinglist_id'] %}
-                        {{ mailinglists[entry['mailinglist_id']]['title']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if entry['persona_id'] %}
-                        {{ personas[entry['persona_id']]['given_names']|e }}
-                        {{ personas[entry['persona_id']]['family_name']|e }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ entry['additional_info']|e }}</td>
+                <th>Zeitstempel</th>
+                <th>Code</th>
+                <th>Verantwortlich</th>
+                <th>Mailingliste</th>
+                <th>Betroffen</th>
+                <th>Info</th>
             </tr>
-        {% endfor %}
+        </thead>
+        <tbody>
+            {% for entry in log %}
+                <tr>
+                    <td>{{ entry['ctime']|datetime|e }}</td>
+                    <td>{{ i18n(enums['MlLogCodes'](entry['code'])|string)|e }}</td>
+                    <td>
+                        {% if entry['submitted_by'] %}
+                            {{ util.persona_anchor(personas[entry['submitted_by']]) }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry['mailinglist_id'] %}
+                            {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id' : entry['mailinglist_id']}),
+                                    mailinglists[entry['mailinglist_id']]['title']|e) }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry['persona_id'] %}
+                            {{ util.persona_anchor(personas[entry['persona_id']]) }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </td>
+                    <td>{{ entry['additional_info']|e }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
-    <form action="{{ cdedblink('ml/view_log')|e }}" method="GET" id="logshowform">
-        <div>
+
+    {{ util.box_filter_begin() }}
+        <form action="{{ cdedblink('ml/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in enums['MlLogCodes'] %}
                 {{ myentries.append((code.value, i18n(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                                     entries=myentries) }}
+                    entries=myentries, small=True) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for mailinglist_id, title in all_mailinglists|dictsort %}
                 {{ myentries.append((mailinglist_id, title))|e }}
             {% endfor %}
             {{ util.form_input_select(name="mailinglist_id", label="Mailingliste", nulloption=True,
-                                      entries=myentries) }}
-            {{ util.form_input_text(name="start", label="Anfang") }}
-            {{ util.form_input_text(name="stop", label="Ende") }}
-            {{ util.form_input_submit(value="Anzeigen") }}
-        </div>
-    </form>
+                    entries=myentries, small=True) }}
+
+            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
+            {{ util.form_input_submit(value="Anzeigen", small=True) }}
+        </form>
+    {{ util.box_filter_end() }}
 {% endblock %}

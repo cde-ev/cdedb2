@@ -24,7 +24,11 @@
     <h2 class="heading-responsive">Navigation</h2>
     {% if ambience['mailinglist'] %}
         <p>
-            {{ util.href(cdedblink("ml/index"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
+            {% if is_admin and not ambience['mailinglist']['is_active'] %}
+                {{ util.href(cdedblink("ml/list_mailinglists"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
+            {% else %}
+                {{ util.href(cdedblink("ml/index"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
+            {% endif %}
         </p>
 
         <h4><span class="glyphicon glyphicon-envelope"></span> {{ ambience['mailinglist']['title'] }}</h4>
@@ -32,16 +36,19 @@
     {% else %}
         <div class="list-group tear-down">
             {% if is_admin %}
-                {# TODO #}
-                {{ util.href(cdedblink("ml/create_user_form"), "Neuen Nutzer anlegen") }}
+                {{ util.href(cdedblink("ml/index"), "Aktive Mailinglisten", icon="triangle-right",
+                        aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
+                {{ util.href(cdedblink("ml/list_mailinglists"), "Alle Mailinglisten", icon="cog",
+                        aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
+            </div>
+            <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/user_search"), "Mailinglisten-Nutzer verwalten",
                         icon="user", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {{ util.href(cdedblink("ml/view_log"), "Log", icon="list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'ml_log')) }}
-                {{ util.href(cdedblink("ml/list_mailinglists"), "Mailinglisten verwalten", icon="cog",
-                        aclass="list-group-item", active=(sidenav_active == 'ml_all')) }}
-                {# TODO #}
-                {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen") }}
+            {% else %}
+                {{ util.href(cdedblink("ml/index"), "Übersicht", icon="triangle-right", aclass="list-group-item",
+                        active=(sidenav_active == 'ml_index')) }}
             {% endif %}
         </div>
     {% endif %}

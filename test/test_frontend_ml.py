@@ -69,7 +69,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_user(self, user):
-        self.traverse({'href': '/ml/$'}, {'href': '/ml/user/create'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'}, {'href': '/ml/user/create'})
         self.assertTitle("Neuen Mailinglistennutzer anlegen")
         data = {
             "username": 'zelda@example.cde',
@@ -230,7 +230,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/2'},
                       {'href': '/ml/mailinglist/2/change'},)
-        self.assertTitle("Werbung -- Konfiguration")
+        self.assertTitle("Werbung – Konfiguration")
         f = self.response.forms['changelistform']
         self.assertEqual("Werbung", f['title'].value)
         f['title'] = "Munkelwand"
@@ -320,7 +320,7 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Witz des Tages -- Konsistenzcheck")
         self.assertNonPresence("Janis Jalapeño")
         self.traverse({'href': '/ml/mailinglist/3/change'},)
-        self.assertTitle("Witz des Tages -- Konfiguration")
+        self.assertTitle("Witz des Tages – Konfiguration")
         f = self.response.forms['changelistform']
         f['audience_policy'] = 5
         self.submit(f)
@@ -343,17 +343,17 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/log'})
-        self.assertTitle("\nMailinglisten -- Logs (0--7)\n")
+        self.assertTitle("Log: Mailinglisten [0–7]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 11, 20, 21, 22]
         f['mailinglist_id'] = 4
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("\nMailinglisten -- Logs (1--3)\n")
+        self.assertTitle("Log: Mailinglisten [1–3]")
 
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("\nKlatsch und Tratsch --\n    Logs (0--6)\n")
+        self.assertTitle("Log: Klatsch und Tratsch\n    [0–6]")

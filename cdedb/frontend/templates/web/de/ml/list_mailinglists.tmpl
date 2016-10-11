@@ -12,6 +12,10 @@
     </li>
 {% endmacro %}
 {% block content %}
+    <div class="p">
+        {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen", icon="plus",
+                aclass="btn btn-sm btn-success") }}
+    </div>
     <h2>Allgemeine Listen</h2>
     <ul>
         {% for mailinglist_id, title in mailinglists|dictsort %}
