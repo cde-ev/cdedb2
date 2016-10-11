@@ -3,7 +3,10 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block title %}{{ ambience['pcourse']['title']|e }} <small>({{ ambience['pevent']['title']|e }})</small>{% endblock %}
+{% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}){% endblock %}
+{% block heading %}
+    <h1 class="title">{{ ambience['pcourse']['title']|e }} <small>({{ ambience['pevent']['title']|e }})</small></h1>
+{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
