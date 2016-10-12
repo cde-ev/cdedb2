@@ -84,7 +84,7 @@ dd {
     }
 }
 
-/* no-space classes */
+/* no-space and more-space classes */
 p.nosp {
     margin-bottom: 0;
 }
@@ -100,6 +100,10 @@ label.nosp {
 .strip-space>.radio:last-child, .strip-space>.checkbox:last-child {
     margin-bottom: 0;
 }
+h4.mosp,h5.mosp {
+    margin-top: 20px;
+}
+
 
 /* Main navbar */
 .navbar {
@@ -210,6 +214,10 @@ h1.title {
 .heading-underline {
     padding-bottom: 2px;
     border-bottom: solid 1px #ddd;
+}
+.subtitle {
+    font-size: 1.3em;
+    margin: -4px 0 10px;
 }
 .filter-title {
     padding-bottom: 2px;
