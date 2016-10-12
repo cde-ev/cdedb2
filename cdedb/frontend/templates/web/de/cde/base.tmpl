@@ -2,9 +2,10 @@
 {% extends "web/de/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block navigation %}
-    <h2 class="heading-responsive">Navigation</h2>
+    <h2 class="heading-responsive nosp">Navigation</h2>
+    <h4>CdE</h4>
     <div class="list-group tear-down">
-        {{ util.href(cdedblink("cde/index"), "Start", aclass="list-group-item",
+        {{ util.href(cdedblink("cde/index"), "Übersicht", aclass="list-group-item",
                 icon="triangle-right", active=(sidenav_active=='cde_index')) }}
         {% if "searchable" in user.roles %}
             {{ util.href(cdedblink("cde/member_search"), "CdE-Mitglied suchen", aclass="list-group-item", icon="search",

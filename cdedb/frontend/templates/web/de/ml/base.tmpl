@@ -21,7 +21,8 @@
 {% endmacro %}
 
 {% block navigation %}
-    <h2 class="heading-responsive">Navigation</h2>
+    <h2 class="heading-responsive nosp">Navigation</h2>
+    <h4>Mailinglisten</h4>
     {% if ambience['mailinglist'] %}
         <p>
             {% if is_admin and not ambience['mailinglist']['is_active'] %}
