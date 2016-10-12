@@ -29,7 +29,7 @@
                 info="Öffentlich für den gesamten Empfängerkreis sichtbar.") }}
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
 
-        <h4 class="heading-underline">Moderation &amp; Empfänger</h4>
+        <h4 class="heading-underline">Moderation &amp; Abonnenten</h4>
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for policy in enums['ModerationPolicy'] %}
