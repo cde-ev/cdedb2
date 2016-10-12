@@ -40,6 +40,7 @@
             create: true,
             options: [],
             maxItems: 1,
+            copyClassesToDropdown: false,
             load: function(query, callback) {
                 if (!query.length) return callback();
                 $.ajax({

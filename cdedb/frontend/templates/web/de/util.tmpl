@@ -482,7 +482,7 @@
             <div class="panel-body">
                 {% if queries|length > 0 %}
                     <div class="row">
-                        {% for list in queries | batch(2) %}
+                        {% for list in queries | slice(2) %}
                         <div class="col-sm-6">
                             <ul>
                                 {% for query in list %}

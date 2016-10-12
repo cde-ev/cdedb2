@@ -33,6 +33,9 @@ body{
 .table-superdense>tfoot>tr>th, .table-superdense>thead>tr>td, .table-superdense>thead>tr>th {
     padding: 3px;
 }
+ul.slim {
+    padding-left: 15px;
+}
 
 .list-group-condensed .list-group-item {
     padding: 4px 6px;
@@ -102,6 +105,9 @@ label.nosp {
 }
 h4.mosp,h5.mosp {
     margin-top: 20px;
+}
+ul.nosp, ol.nosp {
+    margin-bottom: 0;
 }
 
 
@@ -206,7 +212,26 @@ h1.title {
 .selectize-control.multi.input-sm .selectize-input > div {
     margin: 0 3px 3px 0;
 }
-
+.has-success .selectize-input {
+    border-color: #3d763d;
+}
+.input-group .selectize-input {
+    border-radius: none;
+}
+.input-group .selectize-input {
+    border-radius: none;
+}
+.input-group .selectize-control:not(:last-child) .selectize-input {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.input-group .selectize-control:not(:first-child) .selectize-input {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.input-group .selectize-control {
+    line-height: 1;
+}
 
 /* ************* *
  * Extra styling *
@@ -337,7 +362,7 @@ tr.drow-delete>td {
 .softhide {
     display: none;
 }
-div.p {
+.p {
     margin: 0 0 10px;
 }
 .nowrap {

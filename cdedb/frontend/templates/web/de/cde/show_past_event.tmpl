@@ -54,6 +54,7 @@
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson('cde_user',{{ participants.keys()|list|json }});
                             </script>
+                            {{ util.output_errors('persona_id') }}
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox">
