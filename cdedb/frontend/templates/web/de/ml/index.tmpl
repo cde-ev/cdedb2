@@ -1,6 +1,9 @@
 {% set sidenav_active='ml_index' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% block title %}Mailinglisten{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten", active=True) }}
+{% endblock %}
 {% macro format_entry(mailinglist_id, title) %}
     <li>
         {{ util.deko_checkbox(mailinglist_id in subscriptions) }}

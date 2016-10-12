@@ -2,6 +2,11 @@
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ ambience['mailinglist']['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope",
+        active=True) }}
+{% endblock %}
 {% block content %}
     {% if ambience['mailinglist']['gateway'] %}
         <div class="subtitle">

@@ -1,6 +1,13 @@
+{% set sidenav_active='ml_manage' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ ambience['mailinglist']['title']|e }} -- Konsistenzcheck{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+{{ util.breadcrumb_link(cdedblink("ml/management"), "Verwalten") }}
+{{ util.breadcrumb_link(cdedblink("ml/check_states"), "Konsistenzcheck", active=True) }}
+{% endblock %}
 {% block content %}
     Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe.
     <ul>

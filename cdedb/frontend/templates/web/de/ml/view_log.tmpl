@@ -4,6 +4,10 @@
 {% block title -%}
 Log: Mailinglisten [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ util.breadcrumb_link(cdedblink("ml/view_log"), "Log", active=True) }}
+{% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">
         <thead>

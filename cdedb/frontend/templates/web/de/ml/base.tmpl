@@ -22,7 +22,6 @@
 
 {% block navigation %}
     <h2 class="heading-responsive nosp">Navigation</h2>
-    <h4>Mailinglisten</h4>
     {% if ambience['mailinglist'] %}
         <p>
             {% if is_admin and not ambience['mailinglist']['is_active'] %}
@@ -35,6 +34,7 @@
         <h4><span class="glyphicon glyphicon-envelope"></span> {{ ambience['mailinglist']['title'] }}</h4>
         {{ ml_inner_navigation(ambience['mailinglist']) }}
     {% else %}
+        <h4>Mailinglisten</h4>
         <div class="list-group tear-down">
             {% if is_admin %}
                 {{ util.href(cdedblink("ml/index"), "Aktive Mailinglisten", icon="triangle-right",

@@ -5,6 +5,10 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Mailinglistennutzersuche{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ util.breadcrumb_link(cdedblink("ml/user_search"), "Nutzer verwalten", active=True) }}
+{% endblock %}
 {% block content %}
     {{ generic.user_search('ml') }}
 {% endblock %}

@@ -5,6 +5,11 @@
     Log: {{ ambience['mailinglist']['title']|e }}
     [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+{{ util.breadcrumb_link(cdedblink("ml/view_ml_log"), "Log", active=True) }}
+{% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">
         <thead>
