@@ -120,7 +120,7 @@
                     {% for bit, desc, icon in (("is_cde_realm", "CdE", "education"),
                                                ("is_event_realm", "Veranstaltungen", "blackboard"),
                                                ("is_ml_realm", "Mailinglisten", "envelope"),
-                                               ("is_assembly_realm", "Versammlungen", "stats"),)%}
+                                               ("is_assembly_realm", "Versammlungen", "bullhorn"),)%}
                         {% if data[bit] %}
                             {{ util.make_icon(icon) }} {{ desc|e }},
                         {% else %}
@@ -141,7 +141,7 @@
                                               ("is_cde_admin", "CdE", "education"),
                                               ("is_event_admin", "Veranstaltungs", "blackboard"),
                                               ("is_ml_admin", "Mailinglisten", "envelope"),
-                                              ("is_assembly_admin", "Versammlungs", "stats"),)%}
+                                              ("is_assembly_admin", "Versammlungs", "bullhorn"),)%}
                         {% if data[bit] %}
                             {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
                             {# Dirty hack to workaround Jinjas set drawbacks #}
