@@ -381,3 +381,7 @@ tr.drow-delete>td {
 .clickable {
     cursor: pointer;
 }
+ul.styleless {
+    list-style: none;
+    padding-left: 15px;
+}

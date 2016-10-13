@@ -43,13 +43,23 @@
         </div>
     {% endif %}
 
+    <dl class="dl-horizontal">
+        <dt>Listen-Adresse</dt>
+        <dd>{{ util.href('mailto:' + ambience['mailinglist']['address']|e, ambience['mailinglist']['address']) }}</dd>
+        <dt>Moderatoren</dt>
+        <dd>
+            {% for moderator in ambience['mailinglist']['moderators'] %}
+                {{ util.persona_anchor(personas[moderator]) }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        </dd>
+    </dl>
+
     {{ ambience['mailinglist']['description']|rst }}
 
     {% if not ambience['mailinglist']['is_active'] %}
         <p class="text-warning"><strong>Diese Liste ist nicht mehr aktiv.</strong></p>
     {% else %}
-        <div class="panel {% if is_subscribed %}panel-success
-                {%- elif may_toggle %}panel-default{% else %}panel-danger{% endif %}">
+        <div class="panel {% if is_subscribed %}panel-success{% else %}panel-default{% endif %}">
             <div class="panel-heading">
                 <h3 class="panel-title">Dein Abonnement</h3>
             </div>
@@ -108,7 +118,7 @@
                             </div>
                         </form>
                     {% else %}
-                        <p class="text-danger">
+                        <p>
                             Du kannst diese Mailingliste nicht abonnieren, da Du nicht Teil ihres Adressatenkreises
                             bist.
                         </p>

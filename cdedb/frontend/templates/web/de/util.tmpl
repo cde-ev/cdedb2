@@ -42,12 +42,13 @@
     <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}" {% if title %}title="{{ title|e }}"{% endif %}></span>
 {% endmacro %}
 
-{% macro deko_checkbox(checked, anid='') %}
+{% macro deko_checkbox(checked, anid='', titles=[]) %}
     {% if checked %}
-        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"></span>
+        <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"
+                {% if titles[1] %}title="{{ titles[1] }}"{% endif %}></span>
     {% else %}
-        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %}  data-checked="false">
-        </span>
+        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %}  data-checked="False"
+                {% if titles[0] %}title="{{ titles[0] }}"{% endif %}></span>
     {% endif %}
 {% endmacro %}
 
@@ -79,14 +80,14 @@
 {% endmacro %}
 
 {% macro persona_anchor(persona, verbose=False) %}
-    {% if verbose %}
+    {%- if verbose -%}
         {{ href(show_user_link(persona['id']), "{} {} {} {}".format(
               persona['title'], persona['given_names'],
               persona['family_name'], persona['name_supplement'])) }}
-    {% else %}
+    {%- else -%}
         {{ href(show_user_link(persona['id']), "{} {}".format(
               persona['given_names'], persona['family_name'])) }}
-    {% endif %}
+    {%- endif -%}
 {% endmacro %}
 
 {# ################### #

@@ -231,10 +231,12 @@ class MlFrontend(AbstractUserFrontend):
         if not is_subscribed and gateway and  self.mlproxy.is_subscribed(
                 rs, rs.user.persona_id, rs.ambience['mailinglist']['gateway']):
             may_toggle = True
+        personas = self.coreproxy.get_personas(
+            rs, rs.ambience['mailinglist']['moderators'])
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'is_subscribed': is_subscribed,
             'gateway': gateway, 'event': event, 'assembly': assembly,
-            'may_toggle': may_toggle})
+            'may_toggle': may_toggle, 'personas': personas})
 
     @access("ml_admin")
     def change_mailinglist_form(self, rs, mailinglist_id):
@@ -482,4 +484,3 @@ class MlFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, problems)
         return self.render(rs, "check_states", {
             'problems': problems, 'personas': personas})
-

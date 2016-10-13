@@ -6,7 +6,7 @@
 {% endblock %}
 {% macro format_entry(mailinglist_id, title) %}
     <li>
-        {{ util.deko_checkbox(mailinglist_id in subscriptions) }}
+        {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=['nicht abonniert','abonniert']) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
         {% if not all_mailinglists[mailinglist_id]['is_active'] %}
             (inaktiv)
@@ -22,9 +22,9 @@
         Hier findest Du die Mailinglisten des CdE; insbesondere auch zu
         Akademien und Mitgliederversammlungen.
     </p>
-    <h2>Aktuelle Mailinglisten</h2>
+
     <h3>Allgemeine Listen</h3>
-    <ul>
+    <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort %}
             {% if  (not all_mailinglists[mailinglist_id]['event_id']
                     and not all_mailinglists[mailinglist_id]['assembly_id']) %}
@@ -32,20 +32,24 @@
             {% endif %}
         {% endfor %}
     </ul>
+    {% if 'event' in user.roles %}
     <h3>Veranstaltungslisten</h3>
-    <ul>
+    <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort %}
             {% if  all_mailinglists[mailinglist_id]['event_id'] %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
     </ul>
+    {% endif %}
+    {% if 'assembly' in user.roles %}
     <h3>Versammlungslisten</h3>
-    <ul>
+    <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort %}
             {% if  all_mailinglists[mailinglist_id]['assembly_id'] %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
     </ul>
+    {% endif %}
 {% endblock %}
