@@ -317,7 +317,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/3'},
                       {'href': '/ml/mailinglist/3/management'},
                       {'href': '/ml/mailinglist/3/check'},)
-        self.assertTitle("Witz des Tages -- Konsistenzcheck")
+        self.assertTitle("Witz des Tages – Konsistenzcheck")
         self.assertNonPresence("Janis Jalapeño")
         self.traverse({'href': '/ml/mailinglist/3/change'},)
         self.assertTitle("Witz des Tages – Konfiguration")
@@ -329,7 +329,7 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/3'},
                       {'href': '/ml/mailinglist/3/management'},
                       {'href': '/ml/mailinglist/3/check'},)
-        self.assertTitle("Witz des Tages -- Konsistenzcheck")
+        self.assertTitle("Witz des Tages – Konsistenzcheck")
         self.assertPresence("Janis Jalapeño")
 
     def test_log(self):
@@ -356,4 +356,4 @@ class TestMlFrontend(FrontendTest):
                       {'href': '/ml/mailinglist/list$'},
                       {'href': '/ml/mailinglist/4'},
                       {'href': '/ml/mailinglist/4/log'})
-        self.assertTitle("Log: Klatsch und Tratsch\n    [0–6]")
+        self.assertTitle("Log: Klatsch und Tratsch [0–6]")
