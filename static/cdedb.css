@@ -230,7 +230,7 @@ h1.title {
     border-bottom-left-radius: 0;
 }
 .input-group .selectize-control {
-    line-height: 1;
+    line-height: 0;
 }
 
 /* ************* *

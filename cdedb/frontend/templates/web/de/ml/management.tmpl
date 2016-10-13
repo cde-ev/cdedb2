@@ -60,21 +60,21 @@
                 <ul>
                     {% for request in requests|sort %}
                         <li>
-                            {{ personas[request]['given_names']|e }} {{ personas[request]['family_name']|e }}
-                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST" id="ackrequestform{{ request|e }}">
-                                <div>
-                                    {{ util.input_hidden(name="ack", value=True) }}
-                                    {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.form_input_submit(value="Annehmen") }}
-                                </div>
+                            {{ util.persona_anchor(personas[request]) }}
+                            <span class="nowrap">
+                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
+                                    id="nackrequestform{{ request|e }}" style="display: inline;">
+                                {{ util.input_hidden(name="ack", value=False) }}
+                                {{ util.input_hidden(name="persona_id", value=request) }}
+                                {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-xs btn-danger") }}
                             </form>
-                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST" id="nackrequestform{{ request|e }}">
-                                <div>
-                                    {{ util.input_hidden(name="ack", value=False) }}
-                                    {{ util.input_hidden(name="persona_id", value=request) }}
-                                    {{ util.form_input_submit(value="Ablehnen") }}
-                                </div>
+                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
+                                    id="ackrequestform{{ request|e }}" style="display: inline;">
+                                {{ util.input_hidden(name="ack", value=True) }}
+                                {{ util.input_hidden(name="persona_id", value=request) }}
+                                {{ util.input_submit(value="Genehmigen", aclass="btn btn-xs btn-success") }}
                             </form>
+                        </span>
                         </li>
                     {% endfor %}
                 </ul>
@@ -125,7 +125,7 @@
     </form>
 
     <div class="row">
-        {% for list in subscribers | slice(3) %}
+        {% for list in subscribers | slice(3 if subscribers|length > 10 else 2 if subscribers|length > 5 else 1) %}
             <div class="col-sm-4">
                 <ul class="nosp slim">
                     {% for anid in list %}
