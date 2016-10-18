@@ -221,13 +221,21 @@ class MlFrontend(AbstractUserFrontend):
         if rs.ambience['mailinglist']['event_id']:
             event = self.eventproxy.get_event(
                 rs, rs.ambience['mailinglist']['event_id'])
-            event['is_visible'] = (registration_is_open(event) or
-                                   bool(self.eventproxy.list_registrations(
-                                       rs, event['id'], rs.user.persona_id)))
+            event['is_visible'] = (
+                "event_admin" in rs.user.roles or
+                rs.user.persona_id in event['orgas'] or
+                registration_is_open(event) or
+                bool(self.eventproxy.list_registrations(
+                    rs, event['id'], rs.user.persona_id)))
         assembly = {}
         if rs.ambience['mailinglist']['assembly_id']:
             assembly = self.assemblyproxy.get_assembly(
                 rs, rs.ambience['mailinglist']['assembly_id'])
+            assembly['is_visible'] = (
+                "assembly_admin" in rs.user.roles or
+                assembly['is_active'] or
+                bool(self.assemblyproxy.does_attend(
+                    rs, assembly_id=assembly['id'])))
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(not is_subscribed)

@@ -52,13 +52,13 @@ class TestCoreFrontend(FrontendTest):
     def test_selectpersona(self, user):
         self.get('/core/persona/select?kind=persona&phrase=din')
         expectation = {
-            {'personas': [{'display_name': 'Daniel',
-                           'email': 'daniel@example.cde',
-                           'id': 4,
-                           'name': 'Daniel D. Dino'},
-                           {'display_name': 'Ferdinand',
-                            'email': 'ferdinand@example.cde',
-                            'id': 6,
+            'personas': [{'display_name': 'Daniel',
+                          'email': 'daniel@example.cde',
+                          'id': 4,
+                          'name': 'Daniel D. Dino'},
+                          {'display_name': 'Ferdinand',
+                           'email': 'ferdinand@example.cde',
+                           'id': 6,
                            'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
 
