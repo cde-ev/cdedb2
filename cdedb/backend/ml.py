@@ -488,11 +488,11 @@ class MlBackend(AbstractBackend):
         """
         persona_ids = affirm_set("id", persona_ids)
         mailinglist_ids = affirm_set("id", mailinglist_ids)
-        if not self.is_admin(rs):
-            if (persona_ids != {rs.user.persona_id}
-                    or (len(mailinglist_ids) > 1
-                        or not self.is_moderator(rs, unwrap(mailinglist_ids)))):
-                raise PrivilegeError("Not privileged.")
+        if (persona_ids != {rs.user.persona_id}
+                and (len(mailinglist_ids) > 1
+                     or not self.is_moderator(rs, unwrap(mailinglist_ids)))
+                and not self.is_admin(rs)):
+            raise PrivilegeError("Not privileged.")
         ret = {}
         for persona_id in persona_ids:
             query = glue("SELECT mailinglist_id FROM ml.subscription_requests",
@@ -575,6 +575,20 @@ class MlBackend(AbstractBackend):
             ml = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             if not privileged and not ml['is_active']:
                 return 0
+            query = glue("SELECT id FROM ml.subscription_requests",
+                         "WHERE mailinglist_id = %s AND persona_id = %s")
+            requested = self.query_one(rs, query, (mailinglist_id, persona_id))
+            if requested:
+                if subscribe:
+                    return 0
+                else:
+                    self.ml_log(rs, const.MlLogCodes.request_cancelled,
+                                mailinglist_id, persona_id=persona_id)
+                    query = glue(
+                        "DELETE FROM ml.subscription_requests",
+                        "WHERE mailinglist_id = %s AND persona_id = %s")
+                    return self.query_exec(rs, query,
+                                           (mailinglist_id, persona_id))
             if self.is_subscribed(rs, persona_id, mailinglist_id) == subscribe:
                 self.ml_log(rs, const.MlLogCodes.subscription_changed,
                             mailinglist_id, persona_id=persona_id,
@@ -587,11 +601,6 @@ class MlBackend(AbstractBackend):
             policy = const.SubscriptionPolicy
             if (subscribe and not privileged and not gateway
                     and ml['sub_policy'] == policy.moderated_opt_in):
-                query = glue("SELECT id FROM ml.subscription_requests",
-                             "WHERE mailinglist_id = %s AND persona_id = %s")
-                exists = self.query_one(rs, query, (mailinglist_id, persona_id))
-                if exists:
-                    return 0
                 self.ml_log(rs, const.MlLogCodes.subscription_requested,
                             mailinglist_id, persona_id=persona_id)
                 request = {

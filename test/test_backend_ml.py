@@ -275,6 +275,20 @@ class TestMlBackend(BackendTest):
                          self.ml.lookup_subscription_states(
                              self.key, (1, 2, 9), (1, 4, 9)))
 
+    @as_users("inga")
+    def test_request_cancellation(self, user):
+        self.assertEqual({(9, 4): 1},
+                         self.ml.lookup_subscription_states(
+                             self.key, (9,), (4,)))
+        self.ml.change_subscription_state(self.key, 4, 9, True)
+        self.assertEqual({(9, 4): 10},
+                         self.ml.lookup_subscription_states(
+                             self.key, (9,), (4,)))
+        self.ml.change_subscription_state(self.key, 4, 9, False)
+        self.assertEqual({(9, 4): 1},
+                         self.ml.lookup_subscription_states(
+                             self.key, (9,), (4,)))
+
     @as_users("anton")
     def test_log(self, user):
         ## first generate some data
