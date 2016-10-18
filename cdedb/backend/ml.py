@@ -12,7 +12,8 @@ from cdedb.backend.common import (
     access, affirm_validation as affirm, Silencer, AbstractBackend,
     affirm_set_validation as affirm_set, singularize)
 from cdedb.common import (
-    glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,SubscriptionStates)
+    glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS, SubscriptionStates,
+    extract_roles)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -572,6 +573,7 @@ class MlBackend(AbstractBackend):
 
         privileged = self.is_moderator(rs, mailinglist_id) or self.is_admin(rs)
         with Atomizer(rs):
+            ## (1) Initial checks for easy situations
             ml = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
             if not privileged and not ml['is_active']:
                 return 0
@@ -595,6 +597,12 @@ class MlBackend(AbstractBackend):
                             additional_info=address)
                 return self.write_subscription_state(
                     rs, mailinglist_id, persona_id, subscribe, address)
+            ## (2) Handle actual transitions
+            policy = const.AudiencePolicy(ml['audience_policy'])
+            roles = extract_roles(self.core.get_persona(rs, persona_id))
+            if not policy.check(roles) and not self.is_admin(rs):
+                ## Only admins may add non-matching users
+                return 0
             gateway = False
             if subscribe and ml['gateway']:
                 gateway = self.is_subscribed(rs, persona_id, ml['gateway'])

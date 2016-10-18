@@ -18,6 +18,7 @@ from cdedb.common import (
     ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
     PrivilegeError, name_key)
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.ml import MlBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.query import QUERY_SPECS, mangle_query_input, Query, QueryOperators
@@ -39,6 +40,7 @@ class CoreFrontend(AbstractFrontend):
         """
         super().__init__(configpath)
         self.coreproxy = ProxyShim(CoreBackend(configpath))
+        self.mlproxy = ProxyShim(MlBackend(configpath))
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
@@ -329,19 +331,25 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"))
-    def select_persona(self, rs, phrase, kind):
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
+    def select_persona(self, rs, phrase, kind, aux):
         """Provide data for inteligent input fields.
 
         This searches for users by name so they can be easily selected
         without entering their numerical ids. This is for example
         intended for addition of orgas to events.
+
+        The aux parameter allows to supply an additional id for example
+        in the case of a moderator this would be the relevant
+        mailinglist id.
         """
         if rs.errors:
             return self.send_json(rs, {})
 
         spec_additions = {}
         search_additions = []
+        mailinglist = None
+        num_preview_personas = self.conf.NUM_PREVIEW_PERSONAS
         if kind == "persona":
             if "core_admin" not in rs.user.roles:
                 raise PrivilegeError("Not privileged.")
@@ -368,6 +376,14 @@ class CoreFrontend(AbstractFrontend):
         elif kind == "ml_user":
             if "ml_admin" not in rs.user.roles:
                 raise PrivilegeError("Not privileged.")
+            search_additions.append(
+                ("is_ml_realm", QueryOperators.equal, True))
+        elif kind == "mod_ml_user":
+            mailinglist = self.mlproxy.get_mailinglist(rs, aux)
+            if "ml_admin" not in rs.user.roles:
+                num_preview_personas //= 2
+                if rs.user.persona_id not in mailinglist['moderators']:
+                    raise PrivilegeError("Not privileged.")
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
         else:
@@ -400,9 +416,17 @@ class CoreFrontend(AbstractFrontend):
                  "display_name"), search, (("personas.id", True),))
             data = self.coreproxy.submit_general_query(rs, query)
 
-        if len(data) > self.conf.NUM_PREVIEW_PERSONAS:
+        if mailinglist:
+            persona_ids = tuple(e['id'] for e in data)
+            personas = self.coreproxy.get_personas(rs, persona_ids)
+            pol = const.AudiencePolicy(mailinglist['audience_policy'])
+            data = tuple(
+                e for e in data
+                if pol.check(extract_roles(personas[e['id']])))
+
+        if len(data) > num_preview_personas:
             tmp = sorted(data, key=lambda e: e['id'])
-            data = tmp[:self.conf.NUM_PREVIEW_PERSONAS]
+            data = tmp[:num_preview_personas]
 
         counter = collections.defaultdict(lambda: 0)
         def formatter(entry, verbose=False):
