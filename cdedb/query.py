@@ -124,6 +124,7 @@ QUERY_SPECS = {
     "qview_cde_member" :
     collections.OrderedDict([
         ("fulltext", "str"),
+        ("personas.id", "id"),
         ("family_name,birth_name", "str"),
         ("given_names,display_name", "str"),
         ("username", "str"),
@@ -354,7 +355,7 @@ QUERY_PRIMARIES = {
     "qview_event_user": "personas.id",
     "qview_registration": "reg.id",
     "qview_core_user": "personas.id",
-    "qview_persona": "personas.id",
+    "qview_persona": "id",
     "qview_archived_persona": "personas.id",
 }
 

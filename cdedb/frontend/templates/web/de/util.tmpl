@@ -510,7 +510,7 @@
     {% endif %}
 {% endmacro %}
 
-{% macro display_query_result(result, query, titles, choices, persona_id_column="personas.id") %}
+{% macro display_query_result(result, query, titles, choices) %}
     {% if not result|length %}
         Keine Ergebnisse!
     {% else %}
@@ -552,7 +552,8 @@
                                 {% if values.get("qop_{}".format(field)) %}
                                     <span class="label label-warning">{{ make_icon('filter') }}</span>
                                 {% endif %}
-                                {% if values.get("qord_primary") == field or values.get("qord_secondary") == field or
+                                {% if values.get("qord_primary") == field or
+                                        values.get("qord_secondary") == field or
                                         values.get("qord_tertiary") == field %}
                                     <span class="label label-info">{{ make_icon('sort-by-alphabet') }}</span>
                                 {% endif %}
@@ -568,6 +569,9 @@
                     <td>
                         {{ input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
                                           aclass="rowSelector") }}
+                        {{ input_hidden("id_row_{}".format(outerloopindex),
+                                        row[query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1]],
+                                        anid="id_row_{}".format(outerloopindex)) }}
                     </td>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
@@ -575,12 +579,13 @@
                                     by the query #}
                             {% with afield = field.split('.')[-1] %}
                                 <td>
-                                    {% if field == persona_id_column %}
-                                        {{ href(show_user_link(row[afield]), row[afield]|cdedbid, aclass='nowrap') }}
+                                    {% if field == "personas.id" or (query.scope == "qview_persona" and field == "id") %}
+                                        {{ href(show_user_link(row[afield]), row[afield]|cdedbid,
+                                                aclass='nowrap') }}
                                     {% elif field == "reg.id" %}
                                         {# This should occur only if the context allows the following link. #}
-                                        {{ href(cdedblink("event/show_registration", {'registration_id': row[afield]}),
-                                             row[afield]) }}
+                                        {{ href(cdedblink("event/show_registration",
+                                                {'registration_id': row[afield]}), row[afield]) }}
                                     {% elif query.spec[csvfield] == "bool" %}
                                         {{ deko_checkbox(row.get(afield)) }}
                                     {% else %}

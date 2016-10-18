@@ -238,10 +238,6 @@
         "bub_search": "Sichtbarkeit BuB",
         "notes": "Notizen",} %}
 
-        {% if realm in ("ml", "assembly") %}
-            {{ util.display_query_result(result, query, TITLES, choices, persona_id_column="id") }}
-        {% else %}
-            {{ util.display_query_result(result, query, TITLES, choices) }}
-        {% endif%}
+        {{ util.display_query_result(result, query, TITLES, choices) }}
     {% endwith %}
 {% endmacro %}
