@@ -388,18 +388,16 @@ class CoreFrontend(AbstractFrontend):
 
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
-            search = [("family_name,given_names",
+            search = [("username,family_name,given_names,display_name",
                        QueryOperators.similar, t) for t in terms]
             search.extend(search_additions)
             spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
-            spec["family_name,given_names"] = "str"
+            spec["username,family_name,given_names,display_name"] = "str"
             spec.update(spec_additions)
             query = Query(
-                "qview_core_user",
-                spec,
-                ("personas.id", "username", "family_name", "given_names"),
-                search,
-                (("personas.id", True),))
+                "qview_core_user", spec,
+                ("personas.id", "username", "family_name", "given_names",
+                 "display_name"), search, (("personas.id", True),))
             data = self.coreproxy.submit_general_query(rs, query)
 
         if len(data) > self.conf.NUM_PREVIEW_PERSONAS:
@@ -424,6 +422,8 @@ class CoreFrontend(AbstractFrontend):
                 {
                     'id': entry['id'],
                     'name': formatter(entry, verbose),
+                    'display_name': entry['display_name'],
+                    'email': entry['username'],
                 })
         return self.send_json(rs, {'personas': ret})
 
