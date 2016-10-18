@@ -379,7 +379,7 @@ class FrontendTest(unittest.TestCase):
         components = tuple(x.strip() for x in self.response.lxml.xpath('/html/head/title/text()'))
         # The first 7 chars of html title are "CdEDB –". Remove them and split following
         # whitespace to compare actual title
-        self.assertEquals(title.strip(), components[0][7:].strip())
+        self.assertEqual(title.strip(), components[0][7:].strip())
 
     def assertPresence(self, s, div="content", regex=False):
         if self.response.content_type == "text/plain":

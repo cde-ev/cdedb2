@@ -11,7 +11,8 @@ if it has moderator privileges for all lists.
 from cdedb.backend.common import (
     access, affirm_validation as affirm, Silencer, AbstractBackend,
     affirm_set_validation as affirm_set, singularize)
-from cdedb.common import glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS
+from cdedb.common import (
+    glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS,SubscriptionStates)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -472,6 +473,43 @@ class MlBackend(AbstractBackend):
                             this_ml['sub_policy']).is_additive():
                         ret[mailinglist_id] = None
             return ret
+
+    @access("ml")
+    def lookup_subscription_states(self, rs, persona_ids, mailinglist_ids):
+        """Check relation between some personas and some mailinglists.
+
+        This especially takes subscription requests into account.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_ids: [int]
+        :type persona_ids: [int]
+        :rtype: {(int, int): SubscriptionStates}
+        :returns: The keys are tuples (persona_id, mailinglist_id).
+        """
+        persona_ids = affirm_set("id", persona_ids)
+        mailinglist_ids = affirm_set("id", mailinglist_ids)
+        if not self.is_admin(rs):
+            if (persona_ids != {rs.user.persona_id}
+                    or (len(mailinglist_ids) > 1
+                        or not self.is_moderator(rs, unwrap(mailinglist_ids)))):
+                raise PrivilegeError("Not privileged.")
+        ret = {}
+        for persona_id in persona_ids:
+            query = glue("SELECT mailinglist_id FROM ml.subscription_requests",
+                         "WHERE mailinglist_id = ANY(%s) AND persona_id = %s")
+            requests = self.query_all(rs, query, (mailinglist_ids, persona_id))
+            requests = tuple(e['mailinglist_id'] for e in requests)
+            subscriptions = self.subscriptions(rs, persona_id,
+                                               lists=mailinglist_ids)
+            for mailinglist_id in mailinglist_ids:
+                SS = SubscriptionStates
+                if mailinglist_id in subscriptions:
+                    ret[(persona_id, mailinglist_id)] = SS.subscribed
+                elif mailinglist_id in requests:
+                    ret[(persona_id, mailinglist_id)] = SS.requested
+                else:
+                    ret[(persona_id, mailinglist_id)] = SS.unsubscribed
+        return ret
 
     def write_subscription_state(self, rs, mailinglist_id, persona_id,
                                  is_subscribed, address):

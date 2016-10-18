@@ -257,6 +257,24 @@ class TestMlBackend(BackendTest):
         expectation = {1: None, 3: 'devnull@example.cde', 5: None}
         self.assertEqual(expectation, self.ml.subscriptions(self.key, 9))
 
+    def test_lookup_subscription_states(self):
+        self.login(USER_DICT['inga'])
+        self.ml.change_subscription_state(self.key, 4, 9, True)
+        self.login(USER_DICT['anton'])
+        expectation = {
+            (1, 1): 2,
+            (1, 4): 2,
+            (1, 9): 2,
+            (2, 1): 2,
+            (2, 4): 2,
+            (2, 9): 1,
+            (9, 1): 2,
+            (9, 4): 10,
+            (9, 9): 2,}
+        self.assertEqual(expectation,
+                         self.ml.lookup_subscription_states(
+                             self.key, (1, 2, 9), (1, 4, 9)))
+
     @as_users("anton")
     def test_log(self, user):
         ## first generate some data

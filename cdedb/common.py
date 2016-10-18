@@ -773,6 +773,14 @@ class CourseFilterPositions(enum.IntEnum):
     assigned = 6 #: Being in this course either as participant or as instructor.
     anywhere = 7 #:
 
+@enum.unique
+class SubscriptionStates(enum.IntEnum):
+    """Relation to a mailing list.
+    """
+    unsubscribed = 1 #:
+    subscribed = 2 #:
+    requested = 10 #: A subscription request is waiting for moderation.
+
 def asciificator(s):
     """Pacify a string.
 
