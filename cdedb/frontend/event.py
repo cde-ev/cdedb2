@@ -21,7 +21,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now, ProxyShim, json_serialize)
+    unwrap, now, ProxyShim, json_serialize, registration_is_open)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 import cdedb.database.constants as const
@@ -56,22 +56,6 @@ class EventFrontend(AbstractUserFrontend):
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
-
-    @staticmethod
-    def is_open(event):
-        """Small helper to determine if an event is open for registration.
-
-        This is a somewhat verbose condition encapsulated here for brevity.
-
-        :type event: {str: object}
-        :param event: event dataset as returned by the backend
-        :rtype: bool
-        """
-        today = now().date()
-        return (event['registration_start']
-                and event['registration_start'] <= today
-                and (event['registration_hard_limit'] is None
-                     or event['registration_hard_limit'] >= today))
 
     @staticmethod
     def event_begin(event):
@@ -220,7 +204,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
-        rs.ambience['event']['is_open'] = self.is_open(rs.ambience['event'])
+        rs.ambience['event']['is_open'] = registration_is_open(rs.ambience['event'])
         params = {}
         if event_id in rs.user.orga or self.is_admin(rs):
             params['orgas'] = self.coreproxy.get_personas(
@@ -233,7 +217,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def course_list(self, rs, event_id):
         """List courses from an event."""
-        rs.ambience['event']['is_open'] = self.is_open(rs.ambience['event'])
+        rs.ambience['event']['is_open'] = registration_is_open(rs.ambience['event'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
@@ -1112,7 +1096,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.user.persona_id in registrations.values():
             rs.notify("info", "Allready registered.")
             return self.redirect(rs, "event/registration_status")
-        if not self.is_open(rs.ambience['event']):
+        if not registration_is_open(rs.ambience['event']):
             rs.notify("warning", "Registration not open.")
             return self.redirect(rs, "event/show_event")
         if self.is_locked(rs.ambience['event']):
@@ -1224,7 +1208,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     def register(self, rs, event_id):
         """Register for an event."""
-        if not self.is_open(rs.ambience['event']):
+        if not registration_is_open(rs.ambience['event']):
             rs.notify("error", "Registration not open.")
             return self.redirect(rs, "event/show_event")
         if self.is_locked(rs.ambience['event']):

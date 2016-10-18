@@ -1560,3 +1560,18 @@ def make_transaction_subject(persona):
     return "{}, {}, {}".format(cdedbid_filter(persona['id']),
                                asciificator(persona['family_name']),
                                asciificator(persona['given_names']))
+
+def registration_is_open(event):
+    """Small helper to determine if an event is open for registration.
+
+    This is a somewhat verbose condition encapsulated here for brevity.
+
+    :type event: {str: object}
+    :param event: event dataset as returned by the backend
+    :rtype: bool
+    """
+    today = now().date()
+    return (event['registration_start']
+            and event['registration_start'] <= today
+            and (event['registration_hard_limit'] is None
+                 or event['registration_hard_limit'] >= today))

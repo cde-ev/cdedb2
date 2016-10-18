@@ -7,7 +7,7 @@ import copy
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access,
+    REQUESTdata, REQUESTdatadict, access, registration_is_open,
     check_validation as check, mailinglist_guard)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
@@ -221,6 +221,9 @@ class MlFrontend(AbstractUserFrontend):
         if rs.ambience['mailinglist']['event_id']:
             event = self.eventproxy.get_event(
                 rs, rs.ambience['mailinglist']['event_id'])
+            event['is_visible'] = (registration_is_open(event) or
+                                   bool(self.eventproxy.list_registrations(
+                                       rs, event['id'], rs.user.persona_id)))
         assembly = {}
         if rs.ambience['mailinglist']['assembly_id']:
             assembly = self.assemblyproxy.get_assembly(
