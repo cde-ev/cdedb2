@@ -14,7 +14,7 @@ import tempfile
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, registration_is_open
+    REQUESTdata, REQUESTdatadict, access, registration_is_open,
     check_validation as check, event_guard,
     REQUESTfile, request_extractor, cdedbid_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
