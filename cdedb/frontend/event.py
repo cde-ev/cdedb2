@@ -14,14 +14,14 @@ import tempfile
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access,
+    REQUESTdata, REQUESTdatadict, access, registration_is_open
     check_validation as check, event_guard,
     REQUESTfile, request_extractor, cdedbid_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now, ProxyShim, json_serialize, registration_is_open)
+    unwrap, now, ProxyShim, json_serialize)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 import cdedb.database.constants as const
