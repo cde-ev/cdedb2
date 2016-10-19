@@ -99,9 +99,10 @@ class Application(BaseApp):
                     try:
                         notifications = json.loads(raw_notifications)
                         for note in notifications:
-                            ntype, nmessage = self.decode_notification(note)
+                            ntype, nmessage, nparams = self.decode_notification(
+                                note)
                             if ntype:
-                                rs.notify(ntype, nmessage)
+                                rs.notify(ntype, nmessage, nparams)
                             else:
                                 self.logger.info(
                                     "Invalid notification '{}'".format(note))

@@ -35,9 +35,13 @@ class RequestState:
         :type user: :py:class:`User`
         :type request: :py:class:`werkzeug.wrappers.Request`
         :type response: :py:class:`werkzeug.wrappers.Response` or None
-        :type notifications: [(str, str)]
-        :param notifications: messages to be displayed to the user, to be
-          submitted by :py:meth:`notify`
+        :type notifications: [(str, str, {str: object})]
+        :param notifications: Messages to be displayed to the user. To be
+          submitted by :py:meth:`notify`. The parameters are
+            * the type of message (e.g. warning),
+            * the message string,
+            * a (possibly empty) dict describing substitutions to be done on
+              the message string (after i18n).
         :type mapadapter: :py:class:`werkzeug.routing.MapAdapter`
         :param mapadapter: URL generator (specific for this request)
         :type requestargs: {str: object}
@@ -85,7 +89,7 @@ class RequestState:
         ## Toggle to disable logging
         self.is_quiet = False
 
-    def notify(self, ntype, message):
+    def notify(self, ntype, message, params=None):
         """Store a notification for later delivery to the user.
 
         :type ntype: str
@@ -94,7 +98,8 @@ class RequestState:
         """
         if ntype not in NOTIFICATION_TYPES:
             raise ValueError("Invalid notification type {} found".format(ntype))
-        self.notifications.append((ntype, message))
+        params = params or {}
+        self.notifications.append((ntype, message, params))
 
 class User:
     """Container for a persona."""

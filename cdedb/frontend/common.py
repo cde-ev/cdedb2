@@ -100,31 +100,42 @@ class BaseApp(metaclass=abc.ABCMeta):
                                     param, timeout=timeout)
         self.encode_parameter = my_encode
 
-    def encode_notification(self, ntype, nmessage):
+    def encode_notification(self, ntype, nmessage, nparams=None):
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
-        The message format is A--B, with
+        The message format is A--B--C--D, with
         * A is the notification type, conforming to '[a-z]+'
-        * B is the notification message
+        * B is the length of the notification message
+        * C is the notification message
+        * D is the parameter dict to be substituted in the message
+          (json-encoded).
 
         :type ntype: str
         :type nmessage: str
+        :type nparams: {str: object}
         :rtype: str
         """
-        message = "{}--{}".format(ntype, nmessage)
+        nparams = nparams or {}
+        message = "{}--{}--{}--{}".format(ntype, len(nmessage), nmessage,
+                                          json.dumps(nparams))
         return self.encode_parameter('_/notification', 'displaynote', message)
 
     def decode_notification(self, note):
         """Inverse wrapper to :py:meth:`encode_notification`.
 
         :type note: str
-        :rtype: str
+        :rtype: str, str, {str: object}
         """
         message = self.decode_parameter('_/notification', 'displaynote', note)
         if not message:
-            return  None, None
-        sep = message.index("--")
-        return message[:sep], message[sep+2:]
+            return  None, None, None
+        parts = message.split("--")
+        ntype = parts[0]
+        length = int(parts[1])
+        remainder = "--".join(parts[2:])
+        nmessage = remainder[:length]
+        nparams = json.loads(remainder[length+2:])
+        return ntype, nmessage, nparams
 
     def redirect(self, rs, target, params=None):
         """Create a response which diverts the user. Special care has to be
@@ -141,8 +152,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         url = cdedburl(rs, target, params)
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(ntype, nmessage)
-                             for ntype, nmessage in rs.notifications]
+            notifications = [self.encode_notification(ntype, nmessage, nparams)
+                             for ntype, nmessage, nparams in rs.notifications]
             ret.set_cookie("displaynote", json.dumps(notifications))
         return ret
 

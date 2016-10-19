@@ -108,11 +108,11 @@
                                               "warning" : "warning", "error" : "danger"},
                                 messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:",
                                                 "warning" : "Warnung!", "error" : "Fehler!"} %}
-                            {% for ntype, message in notifications %}
+                            {% for ntype, message, params in notifications %}
                                 <div class="alert alert-{{ alerttypes[ntype] }}">
                                     <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
                                     <strong>{{ messagetypes[ntype] }}</strong>
-                                    <span class="notificationMessage">{{ i18n(message)|e }}</span>
+                                    <span class="notificationMessage">{{ i18n(message).format(**params)|e }}</span>
                                 </div>
                             {% endfor %}
                         {% endwith %}
