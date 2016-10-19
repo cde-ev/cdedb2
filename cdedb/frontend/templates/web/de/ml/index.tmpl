@@ -8,7 +8,7 @@
     <li>
         {{ util.deko_checkbox(mailinglist_id in subscriptions, titles=['nicht abonniert','abonniert']) }}
         {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
-        {% if not all_mailinglists[mailinglist_id]['is_active'] %}
+        {% if not mailinglist_infos[mailinglist_id]['is_active'] %}
             (inaktiv)
         {% endif %}
     </li>
@@ -26,8 +26,8 @@
     <h3>Allgemeine Listen</h3>
     <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort %}
-            {% if  (not all_mailinglists[mailinglist_id]['event_id']
-                    and not all_mailinglists[mailinglist_id]['assembly_id']) %}
+            {% if (not mailinglist_infos[mailinglist_id]['event_id']
+                   and not mailinglist_infos[mailinglist_id]['assembly_id']) %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
@@ -36,7 +36,7 @@
     <h3>Veranstaltungslisten</h3>
     <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort %}
-            {% if  all_mailinglists[mailinglist_id]['event_id'] %}
+            {% if mailinglist_infos[mailinglist_id]['event_id'] %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
@@ -46,7 +46,7 @@
     <h3>Versammlungslisten</h3>
     <ul class="styleless">
         {% for mailinglist_id, title in mailinglists|dictsort %}
-            {% if  all_mailinglists[mailinglist_id]['assembly_id'] %}
+            {% if mailinglist_infos[mailinglist_id]['assembly_id'] %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}

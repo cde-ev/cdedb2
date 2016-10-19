@@ -62,12 +62,12 @@ class MlFrontend(AbstractUserFrontend):
         policies = const.AudiencePolicy.applicable(rs.user.roles)
         mailinglists = self.mlproxy.list_mailinglists(
             rs, audience_policies=policies)
-        all_mailinglists = self.mlproxy.get_mailinglists(rs, mailinglists)
+        mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         subscriptions = self.mlproxy.subscriptions(
             rs, rs.user.persona_id, lists=mailinglists.keys())
         return self.render(rs, "index", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
-            'all_mailinglists': all_mailinglists})
+            'mailinglist_infos': mailinglist_infos})
 
     @access("ml_admin")
     def create_user_form(self, rs):
@@ -143,12 +143,18 @@ class MlFrontend(AbstractUserFrontend):
     def list_mailinglists(self, rs):
         """Show all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(rs, active_only=False)
-        all_mailinglists = self.mlproxy.get_mailinglists(rs, mailinglists)
+        mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         subscriptions = self.mlproxy.subscriptions(
             rs, rs.user.persona_id, lists=mailinglists.keys())
+        events = self.eventproxy.list_db_events(rs)
+        assemblies = self.assemblyproxy.list_assemblies(rs)
+        for mailinglist_id in mailinglists:
+            subs = self.mlproxy.subscribers(rs, mailinglist_id)
+            mailinglist_infos[mailinglist_id]['num_subscribers'] = len(subs)
         return self.render(rs, "list_mailinglists", {
             'mailinglists': mailinglists, 'subscriptions': subscriptions,
-            'all_mailinglists': all_mailinglists})
+            'mailinglist_infos': mailinglist_infos, 'events': events,
+            'assemblies': assemblies})
 
     @access("ml_admin")
     def create_mailinglist_form(self, rs):
