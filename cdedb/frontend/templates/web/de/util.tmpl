@@ -579,7 +579,8 @@
                                     by the query #}
                             {% with afield = field.split('.')[-1] %}
                                 <td>
-                                    {% if field == "personas.id" or (query.scope == "qview_persona" and field == "id") %}
+                                    {% if field == "personas.id" or (query.scope == "qview_persona"
+                                                                     and field == "id") %}
                                         {{ href(show_user_link(row[afield]), row[afield]|cdedbid,
                                                 aclass='nowrap') }}
                                     {% elif field == "reg.id" %}

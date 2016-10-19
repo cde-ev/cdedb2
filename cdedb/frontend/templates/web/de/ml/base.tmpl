@@ -14,8 +14,8 @@
                 {{ util.href(cdedblink("ml/change_mailinglist_form", {'mailinglist_id': data['id']}),
                         "Konfiguration", aclass="list-group-item", icon="cog",
                         active=(sidenav_active == 'ml_change')) }}
-                {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), "Log", aclass="list-group-item",
-                        icon="list-alt", active=(sidenav_active == 'ml_ml_log')) }}
+                {{ util.href(cdedblink("ml/view_ml_log", {'mailinglist_id': data['id']}), "Log",
+                             aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'ml_ml_log')) }}
             {% endif %}
         </div>
 {% endmacro %}
@@ -25,7 +25,8 @@
     {% if ambience['mailinglist'] %}
         <p>
             {% if is_admin and not ambience['mailinglist']['is_active'] %}
-                {{ util.href(cdedblink("ml/list_mailinglists"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
+                {{ util.href(cdedblink("ml/list_mailinglists"), "Zur Mailinglisten-Übersicht",
+                             icon="circle-arrow-up") }}
             {% else %}
                 {{ util.href(cdedblink("ml/index"), "Zur Mailinglisten-Übersicht", icon="circle-arrow-up") }}
             {% endif %}

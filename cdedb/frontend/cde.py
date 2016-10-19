@@ -239,7 +239,7 @@ class CdEFrontend(AbstractUserFrontend):
         raise NotImplementedError("Not available in cde realm.")
 
     @access("cde_admin")
-    def batch_admission_form(self, rs, data=None, csvfields=[]):
+    def batch_admission_form(self, rs, data=None, csvfields=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -253,14 +253,15 @@ class CdEFrontend(AbstractUserFrontend):
         }
         merge_dicts(rs.values, defaults)
         data = data or {}
+        csvfields = csvfields or tuple()
         pevents = self.pasteventproxy.list_past_events(rs)
         pevent_ids = {d['pevent_id'] for d in data if d['pevent_id']}
         pcourses = {
             pevent_id: self.pasteventproxy.list_past_courses(rs, pevent_id)
             for pevent_id in pevent_ids}
-        csv_position = { key: ind for ind, key in enumerate(csvfields) }
-        csv_position['pevent_id'] = csv_position.pop('event',-1)
-        csv_position['pcourse_id'] = csv_position.get('course',-1)
+        csv_position = {key: ind for ind, key in enumerate(csvfields)}
+        csv_position['pevent_id'] = csv_position.pop('event', -1)
+        csv_position['pcourse_id'] = csv_position.get('course', -1)
         return self.render(rs, "batch_admission", {
             'data': data, 'pevents': pevents, 'pcourses': pcourses,
             'csvfields': csv_position})
@@ -1578,8 +1579,8 @@ class CdEFrontend(AbstractUserFrontend):
                 entry['pcourse_ids'] = tuple(x['pcourse_id'] for x in base_set)
                 entry['is_instructor'] = any(x['is_instructor']
                                              for x in base_set
-                                             if x['pcourse_id'] == pcourse_id
-                                                or not pcourse_id)
+                                             if (x['pcourse_id'] == pcourse_id
+                                                 or not pcourse_id))
                 if pcourse_id and pcourse_id not in entry['pcourse_ids']:
                     ## remove non-participants with respect to the relevant
                     ## course if there is a relevant course

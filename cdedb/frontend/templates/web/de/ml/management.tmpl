@@ -45,8 +45,8 @@
                                 id="removemoderatorform{{ moderator|e }}" style="display: inline;">
                             {{ util.input_hidden(name="moderator_id", value=moderator) }}
                             {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="trash",
-                                    title=personas[moderator]['given_names'] + " " + personas[moderator]['family_name'] +
-                                    " als Moderator entfernen") }}
+                                    title=glue(personas[moderator]['given_names'], personas[moderator]['family_name'],
+                                               "als Moderator entfernen")) }}
                         </form>
                     </li>
                 {% endfor %}

@@ -509,7 +509,8 @@ class PastEventBackend(AbstractBackend):
         if len(ret) == 0:
             return None, [], [("pevent_id", ValueError("No event found."))]
         elif len(ret) > 1:
-            return None, warnings, [("pevent_id", ValueError("Ambiguous event."))]
+            return None, warnings, [("pevent_id",
+                                     ValueError("Ambiguous event."))]
         else:
             return unwrap(unwrap(ret)), warnings, []
 
@@ -534,7 +535,7 @@ class PastEventBackend(AbstractBackend):
         query = glue("SELECT id FROM past_event.courses",
                      "WHERE title ~* %s AND pevent_id = %s")
         query2 = glue("SELECT id FROM past_event.courses",
-                     "WHERE similarity(title, %s) > %s AND pevent_id = %s")
+                      "WHERE similarity(title, %s) > %s AND pevent_id = %s")
         ret = self.query_all(rs, query, (moniker, pevent_id))
         warnings = []
         ## retry with less restrictive conditions until we find something or
@@ -545,7 +546,8 @@ class PastEventBackend(AbstractBackend):
         if len(ret) == 0:
             return None, [], [("pcourse_id", ValueError("No course found."))]
         elif len(ret) > 1:
-            return None, warnings, [("pcourse_id", ValueError("Ambiguous course."))]
+            return None, warnings, [("pcourse_id",
+                                     ValueError("Ambiguous course."))]
         else:
             return unwrap(unwrap(ret)), warnings, []
 

@@ -70,9 +70,9 @@
     <h2>Offene Einzüge</h2>
     {% if transactions|length > 0 %}
         <p>
-            Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald diese ausgeführt wurden, bitte hier eintragen, ob
-            diese erfolgreich ausgeführt wurden, gar nicht ausgeführt wurden oder geplatzt sind. Im letzteren Falle wird die
-            Ermächtigung als Widerrufen angesehen.
+            Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald diese ausgeführt wurden, bitte hier
+            eintragen, ob diese erfolgreich ausgeführt wurden, gar nicht ausgeführt wurden oder geplatzt sind.
+            Im letzteren Falle wird die Ermächtigung als Widerrufen angesehen.
         </p>
 
         <form action="{{ cdedblink('cde/lastschrift_finalize_transactions')|e }}" method="POST" id="finalizationform">

@@ -650,7 +650,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         html = self.fill_template(rs, "web", templatename, params)
         if "<pre" not in html and "<textarea" not in html:
             ## eliminate multiple whitespace, since it doesn't matter
-            html = re.sub('\s+', ' ', html)
+            html = re.sub(r'\s+', ' ', html)
         rs.response = Response(html, mimetype='text/html')
         rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return rs.response

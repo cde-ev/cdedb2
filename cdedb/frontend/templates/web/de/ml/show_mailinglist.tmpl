@@ -79,8 +79,8 @@
                     {% if may_toggle %}
                         <div class="p">
                             {% if sub_address %}
-                                <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="resetaddressform"
-                                        style="display: inline;">
+                                <form action="{{ cdedblink('ml/change_address')|e }}" method="POST"
+                                  id="resetaddressform" style="display: inline;">
                                     {{ util.input_hidden(name="email", value="") }}
                                     {{ util.input_submit(value="Adresse zurücksetzen", icon="share-alt",
                                             aclass="btn btn-warning btn-sm") }}
@@ -113,7 +113,8 @@
                 {% else %}
                     {% if may_toggle %}
                         <p><strong>Du bist zurzeit kein Abonnent dieser Mailingliste.</strong></p>
-                        <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST" id="subscribeform">
+                        <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
+                          id="subscribeform">
                             <div>
                                 {{ util.input_hidden(name="subscribe", value=True) }}
                                 {{ util.input_submit(value="Abonnieren", aclass="btn btn-sm btn-success") }}

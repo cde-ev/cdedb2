@@ -31,7 +31,6 @@ import functools
 import io
 import json
 import logging
-import pytz
 import re
 import string
 import sys
@@ -39,6 +38,7 @@ import sys
 import dateutil.parser
 import magic
 import PIL.Image
+import pytz
 import werkzeug.datastructures
 
 from cdedb.common import (

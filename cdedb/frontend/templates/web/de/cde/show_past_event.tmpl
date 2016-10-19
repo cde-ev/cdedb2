@@ -52,7 +52,8 @@
                             {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
                                     anid="input-add-participant") }}
                             <script type="text/javascript">
-                                $('#input-add-participant').cdedbSearchPerson('cde_user',{{ participants.keys()|list|json }});
+                                $('#input-add-participant').cdedbSearchPerson('cde_user',
+                                                                              {{ participants.keys()|list|json }});
                             </script>
                             {{ util.output_errors('persona_id') }}
                         </div>

@@ -204,7 +204,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
-        rs.ambience['event']['is_open'] = registration_is_open(rs.ambience['event'])
+        rs.ambience['event']['is_open'] = registration_is_open(
+            rs.ambience['event'])
         params = {}
         if event_id in rs.user.orga or self.is_admin(rs):
             params['orgas'] = self.coreproxy.get_personas(
@@ -217,7 +218,8 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def course_list(self, rs, event_id):
         """List courses from an event."""
-        rs.ambience['event']['is_open'] = registration_is_open(rs.ambience['event'])
+        rs.ambience['event']['is_open'] = registration_is_open(
+            rs.ambience['event'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         if course_ids:
             courses = self.eventproxy.get_courses(rs, course_ids.keys())
