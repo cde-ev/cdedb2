@@ -2173,8 +2173,12 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    if val.get('event_id') and val.get('assembly_id'):
-        error = ValueError("Only one allowed of event_id and assembly_id.")
+    specials = sum(1 for x in (val.get('gateway'), val.get('event_id'),
+                               val.get('assembly_id')) if x)
+    if specials > 1:
+        error = ValueError(glue("Only one allowed of gateway, event_id and",
+                                "assembly_id."))
+        errs.append(('gateway', error))
         errs.append(('event_id', error))
         errs.append(('assembly_id', error))
     for key, validator in (('registration_stati', _enum_registrationpartstati),
