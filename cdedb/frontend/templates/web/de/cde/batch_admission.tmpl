@@ -73,7 +73,7 @@
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno']|e }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e }}
+                                            {{ key|e -}}
                                         </em>:
                                     {% endif %}
                                     {{ i18n(problem|string)|e }}
@@ -85,7 +85,7 @@
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno']|e }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
-                                            {{ key|e }}
+                                            {{ key|e -}}
                                         </em>:
                                     {% endif %}
                                     {{ i18n(warning|string)|e }}
