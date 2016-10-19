@@ -558,13 +558,14 @@ class CdEFrontend(AbstractUserFrontend):
         success, num = self.perform_batch_admission(rs, data, trial_membership,
                                                     consent, sendmail)
         if success:
-            rs.notify("success", "Created {} accounts.".format(num))
+            rs.notify("success", "Created {num} accounts.", {'num': num})
             return self.redirect(rs, "cde/index")
         else:
             if num is None:
                 rs.notify("warning", "DB serialization error.")
             else:
-                rs.notify("error", "Unexpected error on line {}.".format(num))
+                rs.notify("error", "Unexpected error on line {num}.",
+                          {'num': num})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("cde_admin")
@@ -721,13 +722,14 @@ class CdEFrontend(AbstractUserFrontend):
         ## Here validation is finished
         success, num = self.perform_money_transfers(rs, data, sendmail)
         if success:
-            rs.notify("success", "Committed {} transfers.".format(num))
+            rs.notify("success", "Committed {num} transfers.", {'num': num})
             return self.redirect(rs, "cde/index")
         else:
             if num is None:
                 rs.notify("warning", "DB serialization error.")
             else:
-                rs.notify("error", "Unexpected error on line {}.".format(num))
+                rs.notify("error", "Unexpected error on line {num}.",
+                          {'num': num})
             return self.money_transfers_form(rs, data=data)
 
     def determine_open_permits(self, rs, lastschrift_ids=None):
@@ -1691,7 +1693,8 @@ class CdEFrontend(AbstractUserFrontend):
                 if entry:
                     thecourses.append(entry)
                 else:
-                    rs.notify("warning", "Line {} is faulty.".format(lineno))
+                    rs.notify("warning", "Line {lineno} is faulty.",
+                              {'lineno': lineno})
         if rs.errors:
             return self.create_past_event_form(rs)
         with Atomizer(rs):

@@ -184,9 +184,11 @@ I18N_STRINGS = {
     "Case approved.": "Antrag genehmigt.",
     "Change committed.": "Änderung übernommen.",
     "Change pending.": "Änderung wartet auf Bestätigung.",
+    "Committed {num} transfers.": "{num} Überweisungen gebucht.",
     "Confirmation email sent.": "Verifizierungsemail verschickt.",
     "Consent noted.": "Zustimmung gespeichert.",
     "Course created.": "Kurs erstellt.",
+    "Created {num} accounts.": "{num} Accounts erstellt.",
     "Email sent.": "Email abgeschickt.",
     "Email verified.": "Emailadresse verifiziert.",
     "Entry changed.": "Eintrag geändert.",
@@ -278,11 +280,9 @@ I18N_STRINGS = {
 I18N_REGEXES = {
     r"No persona with id ([0-9]+)\.": r"Kein Nutzer mit ID \1 gefunden.",
     r"Ballot '([^)]+)' got tallied.": r"Abstimmung '\1' wurde ausgezählt.",
-    r"Committed ([0-9]+) transfers.": r"\1 Überweisungen gebucht.",
     r"course instructor \(part ([^)]+)\)": r"Kursleiter (\1)",
     r"course \(part  ([^)]+)\)": r"Kurs zugeteilt (\1)",
     r"lodgement \(part ([^)]+)\)": r"Unterkunft (\1)",
-    r"Created ([0-9]+) accounts.": r"\1 Accounts erstellt.",
     r"invalid literal for int\(\) with base 10: .*": r"Keine Zahl gefunden.",
     r"Lines ([0-9]+) and ([0-9]+) are the same.": glue(
         r"Zeilen \1 und \2 sind identisch."),

@@ -698,7 +698,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         ret = self._send_mail(msg)
         if ret:
             ## This is mostly intended for the test suite.
-            rs.notify("info", "Stored email to hard drive at {}".format(ret))
+            rs.notify("info", "Stored email to hard drive at {path}",
+                      {'path': ret})
         return ret
 
     def _create_mail(self, text, headers, attachments):
