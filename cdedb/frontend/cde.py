@@ -1551,11 +1551,11 @@ class CdEFrontend(AbstractUserFrontend):
         :type pevent_id: int
         :type pcourse_id: int or None
         :param pcourse_id: if not None, restrict to participants of this
-        course
+          course
         :rtype: ({int: {str: object}}, {int: {str: object}}, int)
         :returns: This returns three things: the processed participants,
-        the persona data sets of the participants and the number of
-        redacted participants.
+          the persona data sets of the participants and the number of
+          redacted participants.
         """
         participant_infos = self.pasteventproxy.list_participants(
             rs, pevent_id=pevent_id)
