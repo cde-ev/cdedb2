@@ -2170,6 +2170,10 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
+    if val.get('event_id') and val.get('assembly_id'):
+        error = ValueError("Only one allowed of event_id and assembly_id.")
+        errs.append(('event_id', error))
+        errs.append(('assembly_id', error))
     for key, validator in (('registration_stati', _enum_registrationpartstati),
                            ('moderators', _id), ('whitelist', _email)):
         if key in val:

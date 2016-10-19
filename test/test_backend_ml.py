@@ -117,6 +117,16 @@ class TestMlBackend(BackendTest):
         self.assertLess(0, self.ml.set_mailinglist(self.key, setter))
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, 7))
 
+    @as_users("janis")
+    def test_double_link(self, user):
+        setter = {
+            'id': 7,
+            'event_id': 1,
+            'assembly_id': 1
+        }
+        with self.assertRaises(ValueError):
+            self.ml.set_mailinglist(self.key, setter)
+
     @as_users("anton")
     def test_mailinglist_creation_deletion(self, user):
         oldlists = self.ml.list_mailinglists(self.key)
