@@ -20,7 +20,10 @@ We offer three variants.
 The raw validator implementations are functions with signature ``(val,
 argname, *, _convert, **kwargs)`` which are wrapped into the three variants
 above. They return the tuple ``(mangled_value, errors)``, where
-``errors`` is a list containing tuples ``(argname, exception)``.
+``errors`` is a list containing tuples ``(argname, exception)``. Each
+exception may have one or two arguments. The first is the error string
+and the second optional may be a {str: object} dict describing
+substitutions to the error string done after i18n.
 """
 
 import collections.abc
@@ -1424,8 +1427,8 @@ def _safe_str(val, argname=None, *, _convert=True):
         return val, errs
     for char in val:
         if not (char.isalnum() or char.isspace() or char in ALLOWED):
-            errs.append((argname,
-                         ValueError("Forbidden character ({}).".format(char))))
+            errs.append((argname, ValueError(
+                "Forbidden character ({char}).",{'char': char})))
     if errs:
         return None, errs
     return val, errs
@@ -2647,7 +2650,7 @@ def _enum_validator_maker(anenum, name=None):
                         return None, [(argname, e)]
                 else:
                     return None, [(argname,
-                                   TypeError("Must be an {}.".format(anenum)))]
+                                   TypeError("Must be a {type}.", {'type': anenum}))]
         return val, []
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())

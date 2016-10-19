@@ -66,7 +66,13 @@
         <div class="input-error-block">
             {% for error in errors.get(name, []) %}
                 {% if error %}
-                    {{ i18n(error|string)|e }}<br />
+                    {% if error.args|length == 1 %}
+                        {{ i18n(error.args[0])|e }}<br />
+                    {% elif error.args|length == 2 %}
+                        {{ i18n(error.args[0]).format(**args[1])|e }}<br />
+                    {% else %}
+                        Nicht wohlgeformter Fehler.<br />
+                    {% endif %}
                 {% endif %}
             {% endfor %}
         </div>

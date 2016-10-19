@@ -49,8 +49,11 @@ class RequestState:
         :type urlmap: :py:class:`werkzeug.routing.Map`
         :param urlmap: abstract URL information
         :type errors: [(str, exception)]
-        :param errors: validation errors, consisting of a pair of (parameter
-          name, the actual error)
+        :param errors: Validation errors, consisting of a pair of (parameter
+          name, the actual error). The exceptions have one or two
+          parameters. First a string being the error message. And second an
+          optional {str: object} dict, describing substitutions to be done
+          after i18n.
         :type values: {str: object}
         :param values: Parameter values extracted via :py:func:`REQUESTdata`
           and :py:func:`REQUESTdatadict` decorators, which allows automatically
