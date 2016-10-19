@@ -78,12 +78,14 @@
                     </dl>
                     {% if may_toggle %}
                         <div class="p">
-                            <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="resetaddressform"
-                                    style="display: inline;">
-                                {{ util.input_hidden(name="email", value="") }}
-                                {{ util.input_submit(value="Adresse zurücksetzen", icon="share-alt",
-                                        aclass="btn btn-warning btn-sm") }}
-                            </form>
+                            {% if sub_address %}
+                                <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="resetaddressform"
+                                        style="display: inline;">
+                                    {{ util.input_hidden(name="email", value="") }}
+                                    {{ util.input_submit(value="Adresse zurücksetzen", icon="share-alt",
+                                            aclass="btn btn-warning btn-sm") }}
+                                </form>
+                            {% endif %}
                             <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
                                     id="unsubscribeform" style="display: inline;">
                                 {{ util.input_hidden(name="subscribe", value=False) }}

@@ -239,7 +239,7 @@ class MlFrontend(AbstractUserFrontend):
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(not is_subscribed)
-        if not is_subscribed and gateway and  self.mlproxy.is_subscribed(
+        if not is_subscribed and gateway and self.mlproxy.is_subscribed(
                 rs, rs.user.persona_id, rs.ambience['mailinglist']['gateway']):
             may_toggle = True
         personas = self.coreproxy.get_personas(
@@ -422,7 +422,7 @@ class MlFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
-    @REQUESTdata(("email", "email"))
+    @REQUESTdata(("email", "email_or_None"))
     def change_address(self, rs, mailinglist_id, email):
         """Modify address to which emails are delivered for this list.
 
@@ -438,14 +438,14 @@ class MlFrontend(AbstractUserFrontend):
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(False)
-        if not may_toggle:
+        if email and not may_toggle:
             rs.notify("warning", "Disallowed to change address.")
             return self.redirect(rs, "ml/show_mailinglist")
 
         subscriptions = self.mlproxy.subscriptions(rs, rs.user.persona_id)
-        if email in subscriptions.values():
+        if not email or email in subscriptions.values():
             code = self.mlproxy.change_subscription_state(
-                mailinglist_id, rs.user.persona_id, subscribe=True,
+                rs, mailinglist_id, rs.user.persona_id, subscribe=True,
                 address=email)
             self.notify_return_code(rs, code)
         else:

@@ -309,6 +309,11 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
         self.assertPresence('pepper@example.cde')
+        f = self.response.forms['resetaddressform']
+        self.submit(f)
+        self.assertTitle("Klatsch und Tratsch")
+        self.assertIn('unsubscribeform', self.response.forms)
+        self.assertNonPresence('pepper@example.cde')
 
     @as_users("anton")
     def test_check_states(self, user):
