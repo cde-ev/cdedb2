@@ -11,7 +11,8 @@ from cdedb.frontend.common import (
     check_validation as check, mailinglist_guard)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
-from cdedb.common import name_key, merge_dicts, unwrap, ProxyShim
+from cdedb.common import (name_key, merge_dicts, unwrap, ProxyShim,
+    SubscriptionStates)
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
 from cdedb.backend.cde import CdEBackend
@@ -208,8 +209,12 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
-        is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
-                                                   mailinglist_id)
+
+        state = self.mlproxy.lookup_subscription_states(
+            rs, [rs.user.persona_id], [mailinglist_id])[
+            (rs.user.persona_id, mailinglist_id)]
+        is_subscribed = state == SubscriptionStates.subscribed
+        is_pending = state == SubscriptionStates.requested
         sub_address = None
         if is_subscribed:
             sub_address = unwrap(self.mlproxy.subscriptions(
@@ -253,7 +258,8 @@ class MlFrontend(AbstractUserFrontend):
         return self.render(rs, "show_mailinglist", {
             'sub_address': sub_address, 'is_subscribed': is_subscribed,
             'gateway': gateway, 'event': event, 'assembly': assembly,
-            'may_toggle': may_toggle, 'personas': personas})
+            'may_toggle': may_toggle, 'personas': personas,
+            'pending': is_pending})
 
     @access("ml_admin")
     def change_mailinglist_form(self, rs, mailinglist_id):

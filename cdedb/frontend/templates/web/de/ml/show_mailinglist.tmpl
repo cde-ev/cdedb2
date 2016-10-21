@@ -8,17 +8,6 @@
         active=True) }}
 {% endblock %}
 {% block content %}
-    {% if ambience['mailinglist']['gateway'] %}
-        <div class="subtitle">
-            Mailingliste für Abonnenten von
-            {% if gateway['is_active'] or is_admin %}
-                {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': gateway['id']}), gateway['title'],
-                        icon='envelope')}}
-            {% else %}
-                {{ util.make_icon('envelope') }} {{ gateway['title']|e }}
-            {% endif %}
-        </div>
-    {% endif %}
     {% if ambience['mailinglist']['event_id'] %}
         <div class="subtitle">
             Mailingliste zur Veranstaltung
@@ -43,6 +32,17 @@
         </div>
     {% endif %}
 
+    {% if ambience['mailinglist']['gateway'] %}
+        <p>
+            Zugänglich für Abonnenten von
+            {% if gateway['is_active'] or is_admin %}
+                {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': gateway['id']}), gateway['title'],
+                        icon='envelope')}}
+            {% else %}
+                {{ util.make_icon('envelope') }} {{ gateway['title']|e }}
+            {% endif %}
+        </p>
+    {% endif %}
     <dl class="dl-horizontal">
         <dt>Listen-Adresse</dt>
         <dd>{{ util.href('mailto:' + ambience['mailinglist']['address']|e, ambience['mailinglist']['address']) }}</dd>
@@ -109,17 +109,36 @@
                                 <div class="input-group-btn">{{ util.input_submit(value="Adresse ändern") }}</div>
                             </div>
                         </form>
+                    {% else %}
+                        <p class="text-muted">
+                            {{ util.make_icon('info-sign') }} Diese Mailingliste ist obligatorisch. Daher bist Du stets
+                            mit deiner primären E-Mail-Adresse eingeschrieben. Um diese zu ändern, besuche die
+                            {{ util.href(cdedblink('core/change_username_form'), 'entsprechende Seite') }} in Deinen
+                            Account-Einstellungen.
+                        </p>
                     {% endif %}
                 {% else %}
                     {% if may_toggle %}
-                        <p><strong>Du bist zurzeit kein Abonnent dieser Mailingliste.</strong></p>
-                        <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
-                          id="subscribeform">
-                            <div>
-                                {{ util.input_hidden(name="subscribe", value=True) }}
-                                {{ util.input_submit(value="Abonnieren", aclass="btn btn-sm btn-success") }}
-                            </div>
-                        </form>
+                        {% if pending %}
+                            <p><strong>
+                                Deine Anfrage für diese Mailingliste wartet auf Bestätigung durch einen Moderator.
+                            </strong></p>
+                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
+                                    id="subscribeform">
+                                {{ util.input_hidden(name="subscribe", value=False) }}
+                                {{ util.input_submit(value="Zurücktreten", aclass="btn btn-sm btn-danger",
+                                        icon="remove") }}
+                            </form>
+                        {% else %}
+                            <p><strong>Du bist zurzeit kein Abonnent dieser Mailingliste.</strong></p>
+                            <form action="{{ cdedblink('ml/subscribe_or_unsubscribe')|e }}" method="POST"
+                              id="subscribeform">
+                                <div>
+                                    {{ util.input_hidden(name="subscribe", value=True) }}
+                                    {{ util.input_submit(value="Abonnieren", aclass="btn btn-sm btn-success") }}
+                                </div>
+                            </form>
+                        {% endif%}
                     {% else %}
                         <p>
                             Du kannst diese Mailingliste nicht abonnieren, da Du nicht Teil ihres Adressatenkreises
