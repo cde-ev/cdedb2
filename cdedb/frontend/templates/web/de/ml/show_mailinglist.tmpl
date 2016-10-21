@@ -11,8 +11,7 @@
     {% if ambience['mailinglist']['event_id'] %}
         <div class="subtitle">
             Mailingliste zur Veranstaltung
-            {# TODO: only link if (event is open or user is orga and event is not archived) or user is event admin #}
-            {% if 'event' in user.roles %}
+            {% if event['is_visible'] %}
                 {{ util.href(cdedblink('event/show_event',{'event_id':event['id']}), event['title'],
                         icon='blackboard')}}
             {% else %}
@@ -23,7 +22,7 @@
     {% if ambience['mailinglist']['assembly_id'] %}
         <div class="subtitle">
             Mailingliste zur Versammlung
-            {% if 'assembly' in user.roles and assembly['is_active'] or 'assembly_admin' in user.roles %}
+            {% if event['is_visible'] %}
                 {{ util.href(cdedblink('assembly/show_assembly',{'assembly_id':assembly['id']}), assembly['title'],
                         icon='bullhorn')}}
             {% else %}
