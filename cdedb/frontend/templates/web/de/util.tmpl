@@ -142,8 +142,9 @@
     <input type="{{ type|e }}" {% if aclass %} class="{{ aclass|e }}"{% endif %}
             {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {% if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
-            {% if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"
-            name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} {{ attributes }} />
+            {% if anid %} id="{{ anid|e }}"{% endif %} name="{{ name|e }}"
+            {% if type != 'password' %}value="{{ values.get(name, defaultvalue)|e }}"{% endif %}
+            {% if readonly %}disabled="disabled"{% endif %} {{ attributes }} />
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
     maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="") %}
