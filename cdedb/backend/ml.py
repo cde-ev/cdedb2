@@ -213,6 +213,12 @@ class MlBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
+            policy = const.SubscriptionPolicy
+            if ('sub_policy' in mdata and not self.is_admin(rs)
+                    and not policy(mdata['sub_policy'].is_additive())):
+                current = unwrap(self.get_mailinglists(rs, (data['id'],)))
+                if current['sub_policy'] != mdata['sub_policy']:
+                    raise PrivilegeError("Only admin may set opt out policies.")
             if len(mdata) > 1:
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
