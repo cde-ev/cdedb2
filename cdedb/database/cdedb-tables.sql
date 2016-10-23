@@ -906,6 +906,16 @@ GRANT SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
 GRANT INSERT, DELETE ON ml.mailinglists TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_admin;
 
+-- Record mailinglist membership information.
+--
+-- In general there are three ways to become a member of a mailinglist:
+--   * explicit subscription,
+--   * the list is not additive (i.e. opt_out) and being part of the audience,
+--   * the list is linked to an event or assembly where one participates.
+--
+-- However in every case the is_subscribed boolean below is authorative. And
+-- only if there is no explicit entry then the implicit criterions (number 2
+-- and 3 above) are evaluated.
 CREATE TABLE ml.subscription_states (
         id                      serial PRIMARY KEY,
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
