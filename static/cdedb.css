@@ -239,6 +239,10 @@ h1.title {
 .input-group .selectize-control {
     line-height: 0;
 }
+.selectize-dropdown .option .meta {
+    font-size: 85%;
+    color: #777;
+}
 
 /* ************* *
  * Extra styling *

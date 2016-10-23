@@ -36,11 +36,28 @@
             'placeholder' : '',
             'valueField' : 'cdedb_id',
             'labelField' : 'name',
-            searchField: 'name',
+            searchField: ['name','email','id'],
             create: true,
+            createOnBlur: true,
+            createFilter: function(string) {
+                var res = string.match(/^DB-(\d+)-(\w)$/);
+                if (!res) return false;
+                return (exclude.indexOf(parseInt(res[1])) == -1) && (compute_checkdigit(res[1]) == res[2]);
+            },
             options: [],
             maxItems: 1,
             copyClassesToDropdown: false,
+            render: {
+                option: function(data, escape) {
+                    if (data['id'] && data['email']) {
+                        return '<div class="option"><div class="name">' + escape(data['name']) +
+                               '</div><div class="meta">' + cdedb_id(data['id']) + ' • '+ escape(data['email']) +
+                               '</div></div>';
+                    } else {
+                        return '<div class="option">' + escape(data['name']) + '</div>';
+                    }
+                }
+            },
             load: function(query, callback) {
                 if (!query.length) return callback();
                 $.ajax({
