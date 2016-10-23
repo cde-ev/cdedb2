@@ -15,9 +15,11 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href(cdedblink('ml/check_states'), "Konsistenzcheck", aclass="btn btn-info btn-sm", icon="check") }}
-    </div>
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink('ml/check_states'), "Konsistenzcheck", aclass="btn btn-info btn-sm", icon="check") }}
+        </div>
+    {% endif %}
 
     <div class="row">
         <div class="col-md-6">
@@ -114,8 +116,9 @@
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
             {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber") }}
             <script type="text/javascript">
+                {# TODO only show users according to AudiencePolicy #}
                 $('#input-add-subscriber').cdedbSearchPerson('ml_user',
-                        {{ ambience['mailinglist']['subscribers']|sort|json }});
+                        {{ subscribers|sort|json }});
             </script>
             <div class="input-group-btn">
                 {{ util.input_submit(value="Abonnent eintragen", aclass="btn btn-success") }}
@@ -135,8 +138,8 @@
                                     id="removesubscriberform{{ anid|e }}" style="display: inline;">
                                 {{ util.input_hidden(name="subscriber_id", value=anid) }}
                                 {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
-                                        title="personas[anid]['given_names'] + " " + personas[anid]['family_name']" +
-                                        " als Abonnenten entfernen") }}
+                                        title=(personas[anid]['given_names'] + " " + personas[anid]['family_name'] +
+                                        " als Abonnent entfernen")) }}
                             </form>
                         </li>
                     {% endfor %}

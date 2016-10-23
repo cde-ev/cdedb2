@@ -36,6 +36,13 @@ body{
 ul.slim {
     padding-left: 15px;
 }
+.list-group-item-muted {
+    color: #777;
+    background-color: #eee;
+}
+.list-group-item-muted a, .text-muted a, a.text-muted {
+    color: #96b4cd;
+}
 
 .list-group-condensed .list-group-item {
     padding: 4px 6px;
@@ -363,7 +370,7 @@ tr.drow-delete>td {
     display: none;
 }
 .p {
-    margin: 0 0 10px;
+    margin-bottom: 10px;
 }
 .nowrap {
     white-space: nowrap;

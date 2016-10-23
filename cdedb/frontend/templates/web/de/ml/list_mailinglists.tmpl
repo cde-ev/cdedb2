@@ -7,42 +7,98 @@
 {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), "Alle Mailinglisten", active=True) }}
 {% endblock %}
 {% macro format_entry(mailinglist_id, title) %}
-    <li>
-        {{ util.deko_checkbox(mailinglist_id in subscriptions) }}
-        {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
-        {% if not mailinglist_infos[mailinglist_id]['is_active'] %}
-            (inaktiv)
-        {% endif %}
-    </li>
+    {% set ml = mailinglist_infos[mailinglist_id] %}
+    <div class="row list-group-item{% if not ml['is_active'] %} list-group-item-muted{% endif %}">
+        {# {{ util.deko_checkbox(mailinglist_id in subscriptions) }} #}
+        <div class="col-sm-3">
+            {{ util.href(cdedblink("ml/show_mailinglist", {'mailinglist_id': mailinglist_id}), title) }}
+            {% if mailinglist_id in subscriptions %}{{ util.make_icon('ok-sign', title="abonniert") }}{% endif %}<br />
+            {% if not ml['is_active'] %}<span class="small">inaktiv</span>{% endif %}
+        </div>
+        <div class="col-sm-1">
+            {% if ml['audience_policy'] == enums['AudiencePolicy'].everybody %}
+                {{ util.make_icon('user', title="Sichtbar für alle") }}
+            {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_assembly %}
+                {{ util.make_icon('bullhorn', title="Sichtbar für Versammlungs-Nutzer") }}
+            {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_event %}
+                {{ util.make_icon('blackboard', title="Sichtbar für Veranstaltungs-Nutzer") }}
+            {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_cde %}
+                {{ util.make_icon('education', title="Sichtbar für CdE-Nutzer") }}
+            {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_member %}
+                <span title="Sichtbar für CdE-Mitglieder">
+                    {{ util.make_icon('education') }}{{ util.make_icon('ok-circle') }}
+                </span>
+            {% endif %}
+        </div>
+        <div class="col-sm-5 small">
+            {% if ml['sub_policy'] == enums['SubscriptionPolicy'].mandatory %}
+                obligatorisch
+            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].opt_out %}
+                Opt-Out
+            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].opt_in %}
+                Opt-In
+            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].moderated_opt_in %}
+                Moderiertes Opt-In
+            {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].invitation_only %}
+                Moderator-Einschreibung
+            {% endif %}
+
+            {% if ml['event_id'] %}
+                für
+                {% if True %}
+                    {{ util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
+                            events[ml['event_id']], icon='blackboard')}}
+                {% else %}
+                    {{ util.make_icon('blackboard') }} {{ events[ml['event_id']]|e }}
+                {% endif %}
+            {% elif ml['assembly_id'] %}
+                für
+                {% if True %}
+                    {{ util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
+                            assemblies[ml['assembly_id']]['title'], icon='bullhorn')}}
+                {% else %}
+                    {{ util.make_icon('bullhorn') }} {{ assemblies[ml['assembly_id']]['title']|e }}
+                {% endif %}
+            {% elif ml['gateway'] %}
+                {% if ml['sub_policy'] in (enums['SubscriptionPolicy'].moderated_opt_in,
+                                           enums['SubscriptionPolicy'].invitation_only) %}
+                    oder
+                {% endif %}
+                {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': ml['gateway']}),
+                        mailinglist_infos[ml['gateway']]['title'], icon='envelope')}}
+            {% endif %}
+        </div>
+        <div class="col-sm-3 small">
+            {{ ml['num_subscribers'] }} Abonnenten,
+            {{ ml['moderators']|length }} Moderator{% if ml['moderators']|length != 1 %}en{% endif %}
+        </div>
+    </div>
 {% endmacro %}
 {% block content %}
     <div class="p">
         {{ util.href(cdedblink("ml/create_mailinglist_form"), "Mailingliste anlegen", icon="plus",
                 aclass="btn btn-sm btn-success") }}
     </div>
-    <h2>Allgemeine Listen</h2>
-    <ul>
+    <h3>Allgemeine Listen</h3>
+        <div class="list-group list-group-hover list-group-condensed">
         {% for mailinglist_id, title in mailinglists|dictsort %}
-            {% if  (not mailinglist_infos[mailinglist_id]['event_id']
-                    and not mailinglist_infos[mailinglist_id]['assembly_id']) %}
+            {% if mailinglist_infos[mailinglist_id]['audience_policy'] not in (
+                    enums['AudiencePolicy'].require_assembly,
+                    enums['AudiencePolicy'].require_event) %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
-    </ul>
-    <h2>Veranstaltungslisten</h2>
-    <ul>
+        </div>
+    <h3>Veranstaltungslisten</h3>
         {% for mailinglist_id, title in mailinglists|dictsort %}
-            {% if  mailinglist_infos[mailinglist_id]['event_id'] %}
+            {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_event %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
-    </ul>
-    <h2>Versammlungslisten</h2>
-    <ul>
+    <h3>Versammlungslisten</h3>
         {% for mailinglist_id, title in mailinglists|dictsort %}
-            {% if  mailinglist_infos[mailinglist_id]['assembly_id'] %}
+            {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_assembly %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
         {% endfor %}
-    </ul>
 {% endblock %}
