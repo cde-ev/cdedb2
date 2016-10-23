@@ -28,10 +28,12 @@
     /**
      * Custom wrapper for selectize.js to search for personas via XHR requests.
      *
-     * Adds selecizes to the given DOM elements to search personas in the specified realm via jQuerys ajax() function
-     * and the json api provieded by our python code.
+     * Adds selecizes to the given DOM elements to search personas via jQuerys ajax() function and the json api at the
+     * given url provided by our python code.
+     *
+     * The url parameter must contain '%s' wich will be replaced by the search pattern
      */
-    $.fn.cdedbSearchPerson = function(realm,exclude) {
+    $.fn.cdedbSearchPerson = function(url,exclude) {
         $(this).selectize({
             'placeholder' : '',
             'valueField' : 'cdedb_id',
@@ -61,7 +63,7 @@
             load: function(query, callback) {
                 if (!query.length) return callback();
                 $.ajax({
-                    url: '/db/core/persona/select?kind=' + encodeURIComponent(realm) + '&phrase=' + encodeURIComponent(query),
+                    url: url.replace('%s',encodeURIComponent(query)),
                     type: 'GET',
                     error: function() {
                         callback();

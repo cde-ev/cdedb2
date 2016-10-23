@@ -29,8 +29,17 @@
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
                     {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X") }}
                     <script type="text/javascript">
-                        $('#input-add-moderator').cdedbSearchPerson('ml_user',
-                                {{ ambience['mailinglist']['moderators']|sort|json }});
+                        {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
+                                                enums['AudiencePolicy'].require_assembly: 'assembly_user',
+                                                enums['AudiencePolicy'].require_event: 'event_user',
+                                                enums['AudiencePolicy'].require_cde: 'cde_user',
+                                                enums['AudiencePolicy'].require_member: 'cde_member'} %}
+                            $('#input-add-moderator').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') + '?kind=' +
+                                    search_realm[ambience['mailinglist']['audience_policy']] + '&phrase=%s'}}',
+                                {{ ambience['mailinglist']['moderators']|list|json }}
+                            );
+                        {% endwith %}
                     </script>
                     <div class="input-group-btn">
                         {{ util.input_submit(value="Moderator hinzufügen", aclass="btn btn-success") }}
@@ -116,9 +125,17 @@
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
             {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber") }}
             <script type="text/javascript">
-                {# TODO only show users according to AudiencePolicy #}
-                $('#input-add-subscriber').cdedbSearchPerson('ml_user',
-                        {{ subscribers|sort|json }});
+                {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
+                                        enums['AudiencePolicy'].require_assembly: 'assembly_user',
+                                        enums['AudiencePolicy'].require_event: 'event_user',
+                                        enums['AudiencePolicy'].require_cde: 'cde_user',
+                                        enums['AudiencePolicy'].require_member: 'cde_member'} %}
+                    $('#input-add-subscriber').cdedbSearchPerson(
+                        '{{ cdedblink('core/select_persona') + '?kind=' +
+                            search_realm[ambience['mailinglist']['audience_policy']] + '&phrase=%s'}}',
+                        {{ subscribers|list|json }}
+                    );
+                {% endwith %}
             </script>
             <div class="input-group-btn">
                 {{ util.input_submit(value="Abonnent eintragen", aclass="btn btn-success") }}
