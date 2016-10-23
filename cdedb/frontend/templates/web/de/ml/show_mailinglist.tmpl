@@ -107,6 +107,7 @@
                                         anid="input-new-adress") }}
                                 <div class="input-group-btn">{{ util.input_submit(value="Adresse ändern") }}</div>
                             </div>
+                            {{ util.output_errors('email') }}
                         </form>
                     {% else %}
                         <p class="text-muted">

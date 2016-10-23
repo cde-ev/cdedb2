@@ -38,34 +38,29 @@
             {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].opt_in %}
                 Opt-In
             {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].moderated_opt_in %}
-                Moderiertes Opt-In
+                moderiertes Opt-In
             {% elif ml['sub_policy'] == enums['SubscriptionPolicy'].invitation_only %}
-                Moderator-Einschreibung
+                durch Moderator
             {% endif %}
 
-            {% if ml['event_id'] %}
-                für
-                {% if True %}
+            {% if ml['sub_policy'] in (enums['SubscriptionPolicy'].moderated_opt_in,
+                                       enums['SubscriptionPolicy'].invitation_only) %}
+                {% if ml['event_id'] %}
+                    oder
                     {{ util.href(cdedblink('event/show_event',{'event_id': ml['event_id']}),
                             events[ml['event_id']], icon='blackboard')}}
-                {% else %}
-                    {{ util.make_icon('blackboard') }} {{ events[ml['event_id']]|e }}
-                {% endif %}
-            {% elif ml['assembly_id'] %}
-                für
-                {% if True %}
+                    (Opt-Out)
+                {% elif ml['assembly_id'] %}
+                    oder
                     {{ util.href(cdedblink('assembly/show_assembly',{'assembly_id': ml['assembly_id']}),
                             assemblies[ml['assembly_id']]['title'], icon='bullhorn')}}
-                {% else %}
-                    {{ util.make_icon('bullhorn') }} {{ assemblies[ml['assembly_id']]['title']|e }}
-                {% endif %}
-            {% elif ml['gateway'] %}
-                {% if ml['sub_policy'] in (enums['SubscriptionPolicy'].moderated_opt_in,
-                                           enums['SubscriptionPolicy'].invitation_only) %}
+                    (Opt-Out)
+                {% elif ml['gateway'] %}
                     oder
+                    {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': ml['gateway']}),
+                            mailinglist_infos[ml['gateway']]['title'], icon='envelope')}}
+                    (Opt-In)
                 {% endif %}
-                {{ util.href(cdedblink('ml/show_mailinglist',{'mailinglist_id': ml['gateway']}),
-                        mailinglist_infos[ml['gateway']]['title'], icon='envelope')}}
             {% endif %}
         </div>
         <div class="col-sm-3 small">

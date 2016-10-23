@@ -1,7 +1,7 @@
 {% set sidenav_active='ml_index' %}
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('change-mailinglist')}}{% endblock %}
 {% block title %}Mailingliste anlegen{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
@@ -10,7 +10,7 @@
 {% block content %}
     <script type="text/javascript">
         $(function() {
-            $('#createlistform').cdedbProtectChanges();
+            $('#createlistform').cdedbProtectChanges().cdedbChangeMailinglist();
         });
     </script>
     <form action="{{ cdedblink('ml/create_mailinglist')|e }}" method="POST" id="createlistform" class="form-horizontal">
@@ -47,27 +47,29 @@
         {% for event_id, title in events|dictsort %}
             {{ myentries.append((event_id, title))|e }}
         {% endfor %}
-        {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
+        {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries,
+                info="Die Teilnehmer dieser Veranstaltung werden der Liste hinzugefügt. (Opt-Out)") }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for status in enums['RegistrationPartStati'] %}
             {{ myentries.append((status.value, i18n(status|string)))|e }}
         {% endfor %}
         {{ util.form_input_checkboxes(name="registration_stati", label="Veranstaltungsempfänger",
-                 entries=myentries, info="Keine Auswahl entspricht einer Orgaliste.") }}
+                entries=myentries, info="Keine Auswahl entspricht einer Orgaliste.") }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for assembly_id, assembly in assemblies|dictsort %}
             {{ myentries.append((assembly_id, assembly['title']))|e }}
         {% endfor %}
-        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries) }}
+        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries,
+                info="Die Teilnehmer dieser Versammlung werden der Liste hinzugefügt. (Opt-Out)") }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for mailinglist_id, title in mailinglists|dictsort %}
             {{ myentries.append((mailinglist_id, title))|e }}
         {% endfor %}
         {{ util.form_input_select(name="gateway", label="Zugangsvererbung", nulloption=True, entries=myentries,
-                                 info="Mitglieder der gewählten Liste können sich in diese Liste einschreiben.") }}
+                info="Die Abonnenten dieser Liste können sich immer eintragen. (Opt-In)") }}
 
         <h4 class="heading-underline">Mails</h4>
         {{ util.form_input_text(name="subject_prefix", label="Präfix (Betreffzeile)") }}
@@ -78,7 +80,6 @@
         {% endfor %}
         {{ util.form_input_select(name="attachment_policy", label="Anhänge", entries=myentries) }}
         {{ util.form_input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}
-
         {{ util.form_input_submit(value="Mailingliste anlegen", cancellink=cdedblink("ml/index")) }}
     </form>
 {% endblock %}

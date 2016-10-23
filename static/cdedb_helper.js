@@ -8,6 +8,7 @@
             $(window).scrollTop(top + height + 10 - window.innerHeight);
         else if (offset < 0)
             $(window).scrollTop(top - 10);
+        return this;
     }
 
     /**
@@ -25,6 +26,7 @@
                 $(this).hide();
             })
             .show();
+        return this;
     };
 
     /**
@@ -64,6 +66,8 @@
                 return message;
             }
         };
+
+        return this;
     };
 
     /**
@@ -77,6 +81,7 @@
         $(this).submit(function() {
             return ((is_safe_callback.bind(this))() || confirm(message));
         });
+        return this;
     };
 
     /**

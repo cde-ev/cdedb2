@@ -27,6 +27,8 @@
     {% elif script == 'search-persona' %}
         {{ cdedb_script('selectize') }}
         <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js")|e }}"></script>
+    {% elif script == 'change-mailinglist' %}
+        <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js")|e }}"></script>
     {% endif %}
 {% endmacro %}
 
