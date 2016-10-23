@@ -31,6 +31,11 @@
          * input_order: jQuery DOM object of the order (asc/desc) select box
          */
         var sortInputs = [];
+        /**
+         * Index of the id field in the fieldList. This field is used by the setIdFilter() function.
+         * -1 if no filterable field is known to be the id field.
+         */
+        var idField = -1;
 
         /* Scan formular rows and initialize field list */
         $element.find('.query_field').each(function() {
@@ -40,7 +45,7 @@
 
             fieldList.push({
                 id: id,
-                type: settings.choices[id] ? 'list' : $(this).attr('data-type'),//TODO list type
+                type: settings.choices[id] ? 'list' : $(this).attr('data-type'),
                 name: $(this).find('.name').text(),
                 choices: settings.choices[id] ? settings.choices[id] : null,
                 sortable : false,
@@ -49,6 +54,9 @@
                 input_filter_value: $(this).find('.filter-value'),
                 error: error_block.length ? error_block.html() : null,
             });
+
+            if ($(this).hasClass('id-field'))
+                idField = fieldList.length - 1;
         });
 
         /* Find formular sort fields */
@@ -490,6 +498,117 @@
             for (;i<sortInputs.length;i++) {
                 sortInputs[i].input_field.val('');
             }
+        }
+
+        /**
+         * Public API: Remove all filters
+         */
+        this.clearFilters = function() {
+            for (var i in fieldList) {
+                f = fieldList[i];
+                f.input_filter_op.val('');
+                f.input_filter_value.val('');
+            }
+            $element.find('.filterfield-list').children().detach();
+            obj.refreshFilterFieldSelect();
+        }
+
+        /**
+         * Public API: Remove all view fields
+         */
+        this.clearViewFields = function() {
+            for (var i in fieldList) {
+                f = fieldList[i];
+                if (f.input_select)
+                    f.input_select.prop('checked',false);
+            }
+            $element.find('.viewfield-list').children().detach();
+            obj.refreshViewFieldSelect();
+        }
+
+        /**
+         * Public API: Remove all sort fields
+         */
+        this.clearSortFields = function () {
+            $element.find('.sortfield-list').children().detach();
+            obj.updateSortInputs();
+            obj.refreshSortFieldSelect();
+        }
+
+        /**
+         * Public API: Remove all filters and add an 'one of filter' for the id field (if an id field is existent)
+         *
+         * @param ids Array of ids to be searched
+         */
+        this.setIdFilter = function(ids) {
+            if (idField == -1)
+                return;
+
+            this.clearFilters()
+
+            var f = fieldList[idField];
+            // Set filter operator in nonjs-form to 'one of'
+            f.input_filter_op.val(5);
+            // Set filter value in nonjs-form to id list
+            f.input_filter_value.val(ids.join(settings.separator));
+            // Add filter rot to js-form
+            this.addFilterRow(idField)
+        }
+
+        /**
+         * Public API: Reset query form to parameters from query url.
+         * @param url The query url to read query parameters from. The GET-parameter string is sufficient; anything
+         *            before the first question mark will be stripped.
+         */
+        this.queryFromURL = function(url) {
+            // First get the parameters in an indexed object
+            var parts = url.split('?');
+            parts = parts[parts.length-1].split('#');
+            parts = parts[0].split('&');
+            var parameters = {};
+            for (var i in parts) {
+                var s = parts[i].split('=');
+                parameters[s[0]] = s[1];
+            }
+
+            // Now clear formular
+            this.clearFilters();
+            this.clearViewFields();
+            this.clearSortFields();
+
+            // Scan for filters and view fields
+            for (var i in fieldList) {
+                var f = fieldList[i];
+                if (parameters[f.input_filter_op.attr('name')]) {
+                    f.input_filter_op.val(parameters[f.input_filter_op.attr('name')]);
+                    f.input_filter_value.val(decodeURIComponent(parameters[f.input_filter_value.attr('name')]));
+                    this.addFilterRow(i);
+                }
+                if (f.input_select && parameters[f.input_select.attr('name')] == 'True') {
+                    f.input_select.prop('checked',true);
+                    this.addViewRow(i);
+                }
+            }
+            // Scan for sort fields
+            for (var i in sortInputs) {
+                if (parameters[sortInputs[i].input_field.attr('name')]) {
+                    sortInputs[i].input_field.val(parameters[sortInputs[i].input_field.attr('name')]);
+                    //Search field in fieldList
+                    var field = -1;
+                    for (var j in fieldList) {
+                        if (fieldList[j].id == sortInputs[i].input_field.val()) {
+                            field = j;
+                            break;
+                        }
+                    }
+                    if (field == -1)
+                        continue;
+                    // Add field to sort list
+                    this.addSortRow(field, sortInputs[i].input_order.val());
+                }
+            }
+            obj.updateSortInputs();
+            obj.refreshSortFieldSelect();
         }
     };
 

@@ -334,7 +334,6 @@
                                25: "ist größer",} %}
         <form action="{{ target|e }}" method="GET" id="queryform">
             {{ input_hidden(name="is_search", value=True) }}
-
             <!-- Non-JS form -->
             <p class="queryform-nojs">
                 <button type="submit" class="btn btn-primary">{{ make_icon('search') }} Suche</button>
@@ -354,7 +353,8 @@
                         </thead>
                         <tbody>
                         {% for field in spec %}
-                            <tr class="query_field {% if field in errors %}errorInput{% endif %}"
+                            <tr class="query_field {% if field in errors %}errorInput{% endif %}
+                                       {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
                                     data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
                                 <td>
                                     {# multi-fields are not reliably selectable, so we disable selection #}
@@ -487,32 +487,33 @@
         <div class="panel panel-default">
             <div class="panel-heading"><h4 class="panel-title">{{ title|e }}</h4></div>
             <div class="panel-body">
-                {% if queries|length > 0 %}
-                    <div class="row">
-                        {% for list in queries | slice(2) %}
-                        <div class="col-sm-6">
-                            <ul>
-                                {% for query in list %}
-                                    <li>
-                                        {{ href(cdedblink(target, queries[query]|querytoparams),
-                                                titles.get(query, query)) }}
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        {% endfor %}
+                <div class="row">
+                    {% for list in queries | slice(2) %}
+                    <div class="col-sm-6">
+                        <ul>
+                            {% for query in list %}
+                                <li>
+                                    {{ href(cdedblink(target, queries[query]|querytoparams),
+                                            titles.get(query, query), aclass="default-query") }}
+                                </li>
+                            {% endfor %}
+                        </ul>
                     </div>
-                {% else %}
-                    <ul>
-                        {% for query in queries %}
-                            <li>
-                                {{ href(cdedblink(target, queries[query]|querytoparams), titles.get(query, query)) }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
+                    {% endfor %}
+                </div>
             </div>
         </div>
+        <script type="text/javascript">
+            $('.default-query').each(function(){
+                var url = $(this).attr('href');
+                var $link = $('<a></a>',{'href':'#', 'title':'im Formular anzeigen', 'class': 'btn btn-default btn-xs'})
+                    .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open'}))
+                    .click(function(){
+                        $('#queryform').data('cdedbQueryForm').queryFromURL(url);
+                    });
+                $(this).after($link).after(' ');
+            });
+        </script>
     {% endif %}
 {% endmacro %}
 
@@ -532,9 +533,20 @@
                 $('#btn-select-swap').click(function(){
                     $('#query-result').data('listSelect').invertSelection();
                 });
+                $('#btn-select-filter').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    $('#queryform').data('cdedbQueryForm').setIdFilter(list);
+                    $('#queryform').submit();
+                });
+                $('#js-button-group').show();
             });
         </script>
-        <div class="p">
+        <div class="p softhide" id="js-button-group">
             <div class="btn-group">
                 <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
                     {{ make_icon('check') }} <span class="hidden-xs">alle</span>
@@ -546,6 +558,9 @@
                     {{ make_icon('expand') }} <span class="hidden-xs">umkehren</span>
                 </button>
             </div>
+            <button type="button" class="btn btn-sm btn-info" title="Filter auf ausgewählte setzen" id="btn-select-filter">
+                {{ make_icon('share') }} <span class="hidden-xs">nur ausgewählte</span>
+            </button>
         </div>
         <table class="table table-condensed table-hover ls-list" id="query-result">
             <thead>
@@ -556,12 +571,16 @@
                             <th>
                                 {{ titles.get(field, field)|e }}
                                 {% if values.get("qop_{}".format(field)) %}
-                                    <span class="label label-warning">{{ make_icon('filter') }}</span>
+                                    <span class="label label-default" title="Gefilterte Spalte">
+                                        {{ make_icon('filter') }}
+                                    </span>
                                 {% endif %}
                                 {% if values.get("qord_primary") == field or
                                         values.get("qord_secondary") == field or
                                         values.get("qord_tertiary") == field %}
-                                    <span class="label label-info">{{ make_icon('sort-by-alphabet') }}</span>
+                                    <span class="label label-default" title="Sortierte Spalte">
+                                        {{ make_icon('sort-by-alphabet') }}
+                                    </span>
                                 {% endif %}
                             </th>
                         {% endfor %}
@@ -571,13 +590,10 @@
             <tbody>
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
-                <tr class="ls-item">
+                <tr class="ls-item" data-id="{{ row[query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1]]|e }}">
                     <td>
                         {{ input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
                                           aclass="rowSelector") }}
-                        {{ input_hidden("id_row_{}".format(outerloopindex),
-                                        row[query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1]],
-                                        anid="id_row_{}".format(outerloopindex)) }}
                     </td>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}

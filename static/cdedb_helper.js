@@ -248,13 +248,17 @@
 
             $(this).find('.rowSelector')
                 .change(function() {
-                    if ($(this).is(':checked'))
+                    if (this.checked)
                         $(this).closest('.ls-item').addClass('ls-selected');
                     else
                         $(this).closest('.ls-item').removeClass('ls-selected');
                 })
                 .click(function(e){
                     e.stopPropagation();
+                })
+                .each(function() {
+                    if (this.checked)
+                        $(this).closest('.ls-item').addClass('ls-selected');
                 });
             $(this).find('a').click(function(e){
                 e.stopPropagation();
