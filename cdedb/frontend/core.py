@@ -868,16 +868,17 @@ class CoreFrontend(AbstractFrontend):
         success, message = self.coreproxy.make_reset_cookie(rs, email)
         if not success:
             rs.notify("error", message)
-        self.do_mail(
-            rs, "reset_password",
-            {'To': (email,), 'Subject': 'CdEDB password reset'},
-            {'email': self.encode_parameter(
-                "core/do_password_reset_form", "email", email,
-                timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
-             'cookie': message})
-        self.logger.info("Sent password reset mail to {} for IP {}.".format(
-            email, rs.request.remote_addr))
-        rs.notify("success", "Email sent.")
+        else:
+            self.do_mail(
+                rs, "reset_password",
+                {'To': (email,), 'Subject': 'CdEDB password reset'},
+                {'email': self.encode_parameter(
+                    "core/do_password_reset_form", "email", email,
+                    timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
+                 'cookie': message})
+            self.logger.info("Sent password reset mail to {} for IP {}.".format(
+                email, rs.request.remote_addr))
+            rs.notify("success", "Email sent.")
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
