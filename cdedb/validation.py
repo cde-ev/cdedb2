@@ -52,7 +52,7 @@ from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
-from cdedb.enums import ALL_ENUMS
+from cdedb.enums import ALL_ENUMS, ENUMS_DICT
 _BASICCONF = BasicConfig()
 
 current_module = sys.modules[__name__]
@@ -2181,6 +2181,17 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
         errs.append(('gateway', error))
         errs.append(('event_id', error))
         errs.append(('assembly_id', error))
+    apol = ENUMS_DICT['AudiencePolicy']
+    if (val.get('assembly_id')
+            and val.get('audience_policy') != apol.require_assembly):
+        error = ValueError("Linked assembly requires assembly audience.")
+        errs.append(('assembly_id', error))
+        errs.append(('audience_policy', error))
+    if (val.get('event_id')
+            and val.get('audience_policy') != apol.require_event):
+        error = ValueError("Linked event requires event audience.")
+        errs.append(('event_id', error))
+        errs.append(('audience_policy', error))
     for key, validator in (('registration_stati', _enum_registrationpartstati),
                            ('moderators', _id), ('whitelist', _email)):
         if key in val:
