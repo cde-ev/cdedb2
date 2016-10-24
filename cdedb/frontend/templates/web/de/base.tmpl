@@ -23,9 +23,12 @@
         {% block scripts %}{% endblock %}
     </head>
     <body>
-        <!-- main navigation bar -->
-        <nav class="navbar navbar-default">
-            <div class="container">
+        <div class="container page">
+            <div class="logo">
+                <img src="{{ staticurl("logo.jpg")|e }}" alt="CdE" />
+            </div>
+            <!-- main navigation bar -->
+            <nav class="navbar navbar-default">
                 <div class="navbar-header">
                     <p class="navbar-collapse-header">Hauptmenü</p>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
@@ -49,7 +52,7 @@
                                         </span>
                                     </p>
                                     <button type="submit" name="submitlogout" value="Abmelden"
-                                      class="btn navbar-button" title="Logout">
+                                      class="btn navbar-button btn-default" title="Logout">
                                         <span class="glyphicon glyphicon-off"></span>
                                         <span class="visible-xs-inline-block">Logout</span>
                                     </button>
@@ -84,10 +87,8 @@
                         {% endif %}
                     </ul>
                 </div><!-- /.navbar-collapse -->
-            </div><!-- /.container-fluid -->
-        </nav>
+            </nav>
 
-        <div class="container">
             <div class="row row-wide">
                 <div class="col-md-3 col-wide-3" role="navigation">
                     {% block navigation %}
@@ -95,7 +96,7 @@
                 </div>
                 <div class="col-md-9 col-wide-auto" role="main">
                     {% if self.breadcrumb %}
-                        <ol class="breadcrumb breadcrumb-small">{% block breadcrumb %}{% endblock %}</ol>
+                        <ol class="breadcrumb breadcrumb-hanging">{% block breadcrumb %}{% endblock %}</ol>
                     {% endif %}
                     {% block heading %}
                         <h1 class="title">{{ self.title() }}</h1>
@@ -125,9 +126,9 @@
                     </div>
                 </div>
             </div>
-            <div id="footer">
-                {% block footer %}{{ debugstring|e }} ; time taken: {{ generation_time()|e }}{% endblock %}
-            </div>
+        </div>
+        <div id="footer" class="container">
+            {% block footer %}{{ debugstring|e }} ; time taken: {{ generation_time()|e }}{% endblock %}
         </div>
     </body>
     {% if errors %}

@@ -3,13 +3,42 @@
  * *********** */
 body{
     margin: 0px;
+    background-color: #7c868e;
+    background: url(bg-pattern.png)
 }
 
 #footer {
     margin-top: 20px;
     font-size: 85%;
-    color: #777;
+    color: #ccc;
     text-align: center;
+    margin-bottom: 20px;
+}
+
+.page {
+    background: #fff;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    padding-top: 10px;
+    padding-bottom: 25px;
+    border: solid 1px #ddd;
+    border-top-style: none;
+    position: relative;
+    min-height: 480px;
+}
+.page:before {
+    position: absolute;
+    height: 280px;
+    width: 50px;
+    top: 180px;
+    left: -70px;
+    content: " ";
+    background: url(dots.png);
+}
+.logo {
+    padding-bottom: 6px;
+}
+.logo img {
+    max-width: 80%;
 }
 
 /* ********************** *
@@ -53,7 +82,7 @@ ul.slim {
 hr.strong {
     border-top: 1px solid #ddd;
 }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     h2.heading-responsive {
         font-size: 20px;
         margin-top: 10px;
@@ -121,8 +150,34 @@ ul.nosp, ol.nosp {
 /* Main navbar */
 .navbar {
     border-radius: 0;
-    border-style: solid none;
-    margin-bottom: 10px;
+    margin: 0 -25px 10px -30px;
+    padding: 0 10px 0 15px;
+    box-shadow: 0 0 15px rgba(63,63,63,0.2);
+    z-index: 2;
+}
+.navbar-default {
+    background-color: #f0f0f0;
+    border-color: #e7e7e7;
+}
+.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>.active>a:hover {
+    color: #555;
+    background-color: #e0e0e0;
+}
+.navbar:before {
+    width: 0;
+    height: 0;
+    border-bottom: 15px solid #bbb;
+    border-left: 15px solid transparent;
+    content: " ";
+    overflow: hidden;
+    display: block;
+    position: absolute;
+    top: -16px;
+    left: -1px;
+    z-index: -11;
+}
+.navbar.navbar-inverse:before {
+    border-bottom-color: #555;
 }
 .navbar-form .navbar-text {
     margin: 7px 15px;
@@ -174,11 +229,16 @@ ul.nosp, ol.nosp {
 /* Title header and breadcrumb bar */
 h1.title {
 }
-.breadcrumb-small {
-    background: none;
-    margin: 0 0 -20px 0;
-    padding: 4px 0;
+.breadcrumb {
     font-size: 0.9em;
+    margin-bottom: -6px;
+}
+@media (min-width: 992px) {
+    .breadcrumb-hanging {
+        margin-top: -10px;
+        padding: 10px 12px 8px;
+        border-radius: 0 0 4px 4px;
+    }
 }
 
 /* Helper classes */
@@ -186,14 +246,16 @@ h1.title {
     display: block;
     overflow: hidden;
 }
-.pull-right-responsive {
-    float: right;
-    margin-left: 20px;
+.text-right-responsive {
+    text-align: center;
 }
-@media (max-width: 768px) {
+@media (min-width: 768px) {
     .pull-right-responsive {
-        float: none;
-        margin-left: 0;
+        float: right;
+        margin-left: 20px;
+    }
+    .text-right-responsive {
+        text-align: right;
     }
 }
 
