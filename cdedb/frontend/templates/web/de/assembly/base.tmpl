@@ -28,7 +28,7 @@
 
 {% block navigation %}
     {% if ambience['assembly'] %}
-        <h2 class="heading-responsive nosp">Navigation</h2>
+        <h2 class="sr-only">Navigation</h2>
         <p>
             {{ util.href(cdedblink("assembly/index"), "Zur Versammlungs-Übersicht", icon="circle-arrow-up") }}
         </p>
@@ -37,7 +37,7 @@
         {{ assembly_inner_navigation(ambience['assembly']) }}
     {% else %}
         {% if is_admin %}
-            <h2 class="heading-responsive nosp">Navigation</h2>
+            <h2 class="sr-only">Navigation</h2>
             <h4>Versammlung</h4>
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("assembly/index"), "Alle Versammlungen", icon="list",

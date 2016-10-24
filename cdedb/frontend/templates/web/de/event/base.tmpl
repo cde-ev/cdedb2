@@ -70,7 +70,7 @@
 {% endmacro %}
 
 {% block navigation %}
-    <h2 class="heading-responsive nosp">Navigation</h2>
+    <h2 class="sr-only">Navigation</h2>
     {% if ambience['event'] %}
         <p>
             {{ util.href(cdedblink("event/index"), "Zur Veranstaltungs-Übersicht", icon="circle-arrow-up") }}
@@ -81,7 +81,7 @@
     {% else %}
         <h4>Veranstaltungen</h4>
         {% if is_admin %}
-            <div class="list-group tear-down">
+            <div class="sr-only">
                 {{ util.href(cdedblink("event/list_db_events"), "DB-Veranstaltungen verwalten",
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
                 {# TODO #}

@@ -188,6 +188,9 @@ ul.nosp, ol.nosp {
 @media (max-width: 767px) {
     .navbar-form {
         margin-right: 0;
+        margin-bottom: 0;
+        margin-top: -8px;
+        border-top: none;
     }
 }
 .navbar-collapse-header {
