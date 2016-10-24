@@ -3,7 +3,11 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
-{% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}
+    {{ util.cdedb_script('queryform') }}
+    {{ util.cdedb_script('search-persona') }}
+    {{ util.cdedb_script('helper') }}
+{% endblock %}
 {% block title %}Allgemeine Nutzerverwaltung{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
@@ -22,10 +26,9 @@
             <div class="panel panel-warning">
                 <div class="panel-heading"><h3 class="panel-title">Aktionen</h3></div>
                 <div class="panel-body">
-                    <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform"
-                      style="display: inline-block; width:150px; vertical-align:middle;">
+                    <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
                         <div class="input-group">
-                            <input type="text" name="phrase" class="form-control" />
+                            <input type="text" name="phrase" class="form-control" id="input-showuser-id" />
                             <span class="input-group-btn">
                                 <button type="submit" class="btn btn-primary" title="Suchen">
                                     <span class="glyphicon glyphicon-search"></span>
@@ -33,6 +36,12 @@
                             </span>
                         </div>
                     </form>
+                    <script type="text/javascript">
+                        var $i = $('#input-showuser-id');
+                        $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') + '?kind=persona&phrase=%s'}}', [], true);
+                        $i.next().after($i);
+                        $i.change(function(){$('#adminshowuserform').submit();})
+                    </script>
                 </div>
             </div>
         </div>

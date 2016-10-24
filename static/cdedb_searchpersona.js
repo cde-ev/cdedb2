@@ -32,8 +32,11 @@
      * given url provided by our python code.
      *
      * The url parameter must contain '%s' wich will be replaced by the search pattern
+     * 'exclude' may contain an array of (unformatted) persona ids, which will be excluded from the fetched result list
+     * if 'freeform' is true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
+     * added as option.
      */
-    $.fn.cdedbSearchPerson = function(url,exclude) {
+    $.fn.cdedbSearchPerson = function(url,exclude,freeform) {
         $(this).selectize({
             'placeholder' : '',
             'valueField' : 'cdedb_id',
@@ -41,7 +44,7 @@
             searchField: ['name','email','id'],
             create: true,
             createOnBlur: true,
-            createFilter: function(string) {
+            createFilter: freeform ? null : function(string) {
                 var res = string.match(/^DB-(\d+)-(\w)$/);
                 if (!res) return false;
                 return (exclude.indexOf(parseInt(res[1])) == -1) && (compute_checkdigit(res[1]) == res[2]);

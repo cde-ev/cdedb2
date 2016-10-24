@@ -10,7 +10,6 @@
 {{ util.breadcrumb_link(cdedblink("core/archived_user_search"), "Archivsuche", active="True") }}
 {% endblock %}
 {% block content %}
-    <h3>Standardabfragen</h3>
     {% with TITLES = {} %}
         <div>
             {{ util.place_default_queries("core/archived_user_search", default_queries, TITLES) }}

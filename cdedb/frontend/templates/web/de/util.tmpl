@@ -9,26 +9,30 @@
     <link rel="stylesheet" type="text/css" href="{{ staticurl("jquery-ui/jquery-ui.css")|e }}">
 {% endmacro %}
 
+{% set script_files = [] %}
 {% macro cdedb_script(script) %}
-    {% if script == 'queryform' %}
-        <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js")|e }}"></script>
-        {{ cdedb_script('selectize') }}
-    {% elif script == 'dynamicrow' %}
-        <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js")|e }}"></script>
-    {% elif script == 'historycollapse' %}
-        <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js")|e }}"></script>
-    {% elif script == 'helper' %}
-        <script type="text/javascript" src="{{ staticurl("cdedb_helper.js")|e }}"></script>
-    {% elif script == 'selectize' %}
-        <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js")|e }}"></script>
-        <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css")|e }}" />
-    {% elif script == 'batch-admission' %}
-        <script type="text/javascript" src="{{ staticurl("cdedb_batch_admission.js")|e }}"></script>
-    {% elif script == 'search-persona' %}
-        {{ cdedb_script('selectize') }}
-        <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js")|e }}"></script>
-    {% elif script == 'change-mailinglist' %}
-        <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js")|e }}"></script>
+    {% if not script in script_files %}
+        {% if script == 'queryform' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js")|e }}"></script>
+            {{ cdedb_script('selectize') }}
+        {% elif script == 'dynamicrow' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js")|e }}"></script>
+        {% elif script == 'historycollapse' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js")|e }}"></script>
+        {% elif script == 'helper' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_helper.js")|e }}"></script>
+        {% elif script == 'selectize' and not selectize_included %}
+            <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js")|e }}"></script>
+            <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css")|e }}" />
+        {% elif script == 'batch-admission' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_batch_admission.js")|e }}"></script>
+        {% elif script == 'search-persona' %}
+            {{ cdedb_script('selectize') }}
+            <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js")|e }}"></script>
+        {% elif script == 'change-mailinglist' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js")|e }}"></script>
+        {% endif %}
+        {{ script_files.append(script) }}
     {% endif %}
 {% endmacro %}
 
