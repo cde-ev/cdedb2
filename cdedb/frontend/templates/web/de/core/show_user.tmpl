@@ -50,21 +50,19 @@
         </div>
     {% endif %}
     {% if data['is_cde_realm'] %}
-        <div class="pull-right-responsive">
-            <p class="text-right">
-                {% if data['foto'] %}
-                    <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
-                      class="profilepic img-thumbnail">
-                {% else %}
-                    <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
-                      class="profilepic img-thumbnail">
-                {% endif %}
-                {% if data['id'] == user.persona_id or is_admin %}
-                    <br />
-                    {{ util.href(cdedblink('core/set_foto_form'), "Profilbild ändern", aclass="btn btn-xs btn-warning",
-                            icon="pencil") }}
-                {% endif %}
-            </p>
+        <div class="pull-right-responsive text-right-responsive">
+            {% if data['foto'] %}
+                <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
+                  class="profilepic img-thumbnail">
+            {%- else %}
+                <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
+                  class="profilepic img-thumbnail">
+            {%- endif -%}
+            {% if data['id'] == user.persona_id or is_admin -%}
+                <br />
+                {{ util.href(cdedblink('core/set_foto_form'), "Profilbild ändern", aclass="btn btn-xs btn-warning",
+                        icon="pencil") }}
+            {% endif %}
         </div>
     {% endif %}
 
@@ -122,7 +120,7 @@
                                                ("is_ml_realm", "Mailinglisten", "envelope"),
                                                ("is_assembly_realm", "Versammlungen", "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon) }} {{ desc|e }},
+                            {{ util.make_icon(icon, title=desc) }}
                         {% else %}
                             {% set tmp = vars.update({'any_realm_not': True}) %}
                         {% endif %}
@@ -143,7 +141,7 @@
                                               ("is_ml_admin", "Mailinglisten", "envelope"),
                                               ("is_assembly_admin", "Versammlungs", "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon) }} {{ desc|e }}-Admin,
+                            {{ util.make_icon(icon, title=desc+"-Admin") }}
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_privilege': True}) %}
                         {% endif %}
