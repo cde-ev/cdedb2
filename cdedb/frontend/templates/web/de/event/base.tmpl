@@ -81,15 +81,15 @@
     {% else %}
         <h4>Veranstaltungen</h4>
         {% if is_admin %}
-            <div class="sr-only">
-                {{ util.href(cdedblink("event/list_db_events"), "DB-Veranstaltungen verwalten",
+            <div class="list-group tear-down">
+                {{ util.href(cdedblink("event/index"), "Übersicht",
+                             aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_index')) }}
+                {{ util.href(cdedblink("event/list_db_events"), "All Veranstaltungen",
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
-                {# TODO #}
-                {{ util.href(cdedblink("event/create_event_form"), "DB-Veranstaltung anlegen") }}
+            </div>
+            <div class="list-group tear-down">
                 {{ util.href(cdedblink("event/user_search"), "Verantstaltungs-Nutzer verwalten",
                              aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
-                {# TODO #}
-                {{ util.href(cdedblink("event/create_user_form"), "Neuen Nutzer anlegen") }}
                 {{ util.href(cdedblink("event/view_log"), "Log", aclass="list-group-item", icon="list-alt",
                              active=(sidenav_active == 'event_log')) }}
             </div>

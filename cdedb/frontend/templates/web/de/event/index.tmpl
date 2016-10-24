@@ -1,7 +1,12 @@
+{% set sidenav_active='event_index' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Veranstaltungen{% endblock %}
 {% block content %}
+    <div class="p">
+        {{ util.href(cdedblink("event/create_event_form"), "Veranstaltung anlegen", aclass="btn btn-success btn-sm",
+                icon="plus") }}
+    </div>
     Hier findest Du Akademien und andere Veranstaltungen.
 
     <h3>Aktuelle Veranstaltungen</h3>
