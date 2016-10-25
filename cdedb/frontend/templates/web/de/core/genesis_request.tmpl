@@ -24,8 +24,8 @@
                 ("event", "CdE-Veranstaltung"),
                 ("ml", "CdE-Mailingliste")),
                 label="Grund") }}
-            {{ util.form_input_textarea(name="notes", label="Begründung (max. 200 Zeichen)", small=True,
-                                        maxlength=200) }}
+            {{ util.form_input_textarea(name="notes", label="Begründung (max. {} Zeichen)".format(max_rationale),
+                                        small=True, maxlength=max_rationale) }}
             {{ util.form_input_submit(value="Antrag abschicken", small=True) }}
         </div>
     </form>
