@@ -73,7 +73,9 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("anton")
     def test_create_user(self, user):
-        self.traverse({'href': '/event/$'}, {'href': '/event/user/create'})
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/search/user'},
+                      {'href': '/event/user/create'})
         self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
         data = {
             "username": 'zelda@example.cde',

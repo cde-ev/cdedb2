@@ -426,6 +426,10 @@ class TestCoreBackend(BackendTest):
     @as_users("anton")
     def test_meta_info(self, user):
         expectation = {
+            'CdE_Konto_BIC': 'BFSWDE33XXX',
+            'CdE_Konto_IBAN': 'DE26 3702 0500 0008 0689 00',
+            'CdE_Konto_Inhaber': 'CdE e.V.',
+            'CdE_Konto_Institut': 'Bank für Sozialwirtschaft',
             'Finanzvorstand_Adresse_Einzeiler':
                 'Bertålotta Beispiel, bei Spielmanns, Im Garten 77, 34576 Utopia',
             'Finanzvorstand_Adresse_Zeile2': 'bei Spielmanns',
@@ -434,7 +438,8 @@ class TestCoreBackend(BackendTest):
             'Finanzvorstand_Name': 'Bertålotta Beispiel',
             'Finanzvorstand_Ort': 'Utopia',
             'Finanzvorstand_Vorname': 'Bertålotta',
-            'message_of_the_day': '*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*'}
+            'banner_before_login': 'Das Passwort ist secret!',
+            'banner_after_login': '*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*'}
         self.assertEqual(expectation, self.core.get_meta_info(self.key))
         update = {
             'Finanzvorstand_Name': 'Zelda'

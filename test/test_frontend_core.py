@@ -168,6 +168,10 @@ class TestCoreFrontend(FrontendTest):
                 f['email'] = user['username']
                 self.submit(f)
                 self.assertTitle("CdE Datenbank")
+                if u in {"anton"}:
+                    ## admins are not resettable
+                    self.assertEqual([], self.fetch_mail())
+                    continue
                 mail = self.fetch_mail()[0]
                 link = None
                 for line in mail.split('\n'):
@@ -180,13 +184,7 @@ class TestCoreFrontend(FrontendTest):
                 f = self.response.forms['passwordresetform']
                 f['new_password'] = new_password
                 f['new_password2'] = new_password
-                if u in {"anton"}:
-                    self.submit(f, check_notification=False)
-                    ## admins are not resettable
-                    self.assertEqual([], self.fetch_mail())
-                    continue
-                else:
-                    self.submit(f)
+                self.submit(f)
                 self.login(user)
                 self.assertIn('loginform', self.response.forms)
                 new_user = copy.deepcopy(user)

@@ -85,6 +85,7 @@ class CdEFrontend(AbstractUserFrontend):
         user_lastschrift = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(rs.user.persona_id,), active=True)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        # FIXME take trial membership into account
         data['periods_left'] = data['balance'] // self.conf.MEMBERSHIP_FEE
         meta_info = self.coreproxy.get_meta_info(rs)
         return self.render(rs, "index", {
