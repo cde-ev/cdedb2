@@ -4,7 +4,11 @@
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}Versammlungsnutzersuche{% endblock %}
+{% block title %}Versammlungs-Nutzerverwaltung{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Nutzer verwalten", active=True) }}
+{% endblock %}
 {% block content %}
     {{ generic.user_search('assembly') }}
 {% endblock %}

@@ -56,7 +56,7 @@ class TestAssemblyFrontend(FrontendTest):
     @as_users("anton")
     def test_user_search(self, user):
         self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'})
-        self.assertTitle("Versammlungsnutzersuche")
+        self.assertTitle("Versammlungs-Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 'f@'
@@ -64,13 +64,14 @@ class TestAssemblyFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Versammlungsnutzersuche")
+        self.assertTitle("Versammlungs-Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Karabatschi")
 
     @as_users("anton")
     def test_create_user(self, user):
-        self.traverse({'href': '/assembly/$'}, {'href': '/assembly/user/create'})
+        self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'},
+                      {'href': '/assembly/user/create'})
         self.assertTitle("Neuen Versammlungsnutzer anlegen")
         data = {
             "username": 'zelda@example.cde',
@@ -414,16 +415,16 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/log'})
-        self.assertTitle("\nVersammlung -- Logs (0--16)\n")
+        self.assertTitle("\nVersammlung – Logs (0–16)\n")
         f = self.response.forms['logshowform']
         f['codes'] = [0, 1, 2, 10, 11, 12, 14]
         f['assembly_id'] = 1
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("\nVersammlung -- Logs (1--7)\n")
+        self.assertTitle("\nVersammlung – Logs (1–7)\n")
 
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/log.*1'})
-        self.assertTitle("\nVersammlung -- Logs (0--8)\n")
+        self.assertTitle("\nVersammlung – Logs (0–8)\n")

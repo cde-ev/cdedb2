@@ -36,20 +36,18 @@
         <h4>{{ util.make_icon('bullhorn')}} {{ ambience['assembly']['title'] }}</h4>
         {{ assembly_inner_navigation(ambience['assembly']) }}
     {% else %}
+        <h2 class="sr-only">Navigation</h2>
+        <h4>Versammlungen</h4>
+        <div class="list-group tear-down">
+            {{ util.href(cdedblink("assembly/index"), "Übersicht", icon="triangle-right",
+                    aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
+        </div>
         {% if is_admin %}
-            <h2 class="sr-only">Navigation</h2>
-            <h4>Versammlung</h4>
             <div class="list-group tear-down">
-                {{ util.href(cdedblink("assembly/index"), "Alle Versammlungen", icon="list",
-                        aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
-                {{ util.href(cdedblink("assembly/user_search"), "Versammlungs-Nutzer verwalten", icon="user",
+                {{ util.href(cdedblink("assembly/user_search"), "Nutzer verwalten", icon="user",
                         aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
-                {# TODO #}
-                {{ util.href(cdedblink("assembly/create_user_form"), "Neuen Nutzer anlegen") }}
                 {{ util.href(cdedblink("assembly/view_log"), "Log", icon="list-alt", aclass="list-group-item",
                         active=(sidenav_active == 'assembly_log')) }}
-                {# TODO #}
-                {{ util.href(cdedblink("assembly/create_assembly_form"), "Versammlung anlegen") }}
             </div>
         {% endif %}
     {% endif %}

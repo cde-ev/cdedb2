@@ -3,6 +3,11 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Neuen Versammlungsnutzer anlegen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Versammlungs-Nutzer verwalten") }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Nutzer anlegen", active=True) }}
+{% endblock %}
 {% block content %}
     {{ generic.create_user('assembly') }}
 {% endblock %}

@@ -1,16 +1,18 @@
+{% set sidenav_active='assembly_index' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Versammlung anlegen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Versammlung anlegen", active=True) }}
+{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/create_assembly')|e }}" method="POST" id="createassemblyform">
-        <table>
-            {{ util.form_input_text(name="title", label="Titel") }}
-            {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
-            {{ util.form_input_text(name="signup_end", label="Anmeldeschluss") }}
-            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Anlegen") }}
-        </div>
+    <form action="{{ cdedblink('assembly/create_assembly')|e }}" method="POST" id="createassemblyform"
+            class="form-horizontal">
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_text(name="signup_end", label="Anmeldeschluss") }}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5", info="Nur für Admins sichtbar.") }}
+        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink('assembly/index')) }}
     </form>
 {% endblock %}
