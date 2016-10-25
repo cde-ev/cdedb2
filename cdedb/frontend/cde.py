@@ -79,15 +79,13 @@ class CdEFrontend(AbstractUserFrontend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    @access("persona")
+    @access("cde")
     def index(self, rs):
         """Render start page."""
         user_lastschrift = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(rs.user.persona_id,), active=True)
-        data = None
-        if "cde" in rs.user.roles:
-            data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-            data['periods_left'] = data['balance'] // self.conf.MEMBERSHIP_FEE
+        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        data['periods_left'] = data['balance'] // self.conf.MEMBERSHIP_FEE
         meta_info = self.coreproxy.get_meta_info(rs)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
