@@ -1040,6 +1040,9 @@ class CoreFrontend(AbstractFrontend):
             rs.errors.append(("notes", ValueError("Too long.")))
         if rs.errors:
             return self.genesis_request_form(rs)
+        if self.coreproxy.verify_existence(rs, data['username']):
+            rs.notify("error", "Email address already in DB. Reset password.")
+            return self.redirect(rs, "core/index")
         case_id = self.coreproxy.genesis_request(rs, data)
         if not case_id:
             rs.notify("error", "Failed.")
