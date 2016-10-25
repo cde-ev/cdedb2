@@ -62,5 +62,45 @@
                 </div>
             </div>
         </div>
+        {% if not has_lastschrift %}
+            <div class="col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4 class="panel-title"><span class="glyphicon glyphicon-euro"></span> Mitgliedsbeitrag</h4>
+                    </div>
+                    <div class="panel-body">
+                        <p>
+                            Dein aktuelles Guthaben beträgt {{ data['balance']|money|e }}. Dies reicht noch für
+                            {{ data['periods_left']|e }} Semester.
+                        </p>
+                        <p>
+                            Um dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto.
+                            <table>
+                                    <tr>
+                                            <td>Kontoinhaber</td>
+                                            <td>{{ meta_info['CdE_Konto_Inhaber']|e }}</td>
+                                    </tr>
+                                    <tr>
+                                            <td>IBAN</td>
+                                            <td>{{ meta_info['CdE_Konto_IBAN']|e }}</td>
+                                    </tr>
+                                    <tr>
+                                            <td>BIC</td>
+                                            <td>{{ meta_info['CdE_Konto_BIC']|e }}</td>
+                                    </tr>
+                                    <tr>
+                                            <td>Kreditinstitut</td>
+                                            <td>{{ meta_info['CdE_Konto_Institut']|e }}</td>
+                                    </tr>
+                                    <tr>
+                                            <td>Verwendungszweck</td>
+                                            <td>{{ data['id']|cdedbid|e }}, {{ data['family_name']|e }}, {{ data['given_names']|e }}</td>
+                                    </tr>
+                            </table>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

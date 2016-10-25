@@ -45,6 +45,10 @@ INSERT INTO core.meta_info (info) VALUES
        "Finanzvorstand_Adresse_Zeile3": "Im Garten 77",
        "Finanzvorstand_Adresse_Zeile4": "34576 Utopia",
        "Finanzvorstand_Ort": "Utopia",
+       "CdE_Konto_Inhaber": "CdE e.V.",
+       "CdE_Konto_IBAN": "DE26 3702 0500 0008 0689 00",
+       "CdE_Konto_BIC": "BFSWDE33XXX",
+       "CdE_Konto_Institut": "Bank für Sozialwirtschaft",
        "message_of_the_day": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*"}'::jsonb);
 
 --

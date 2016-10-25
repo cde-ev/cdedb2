@@ -10,7 +10,8 @@
     <form action="{{ cdedblink('core/change_meta_info')|e }}" method="POST" id="changeinfoform" class="form-horizontal">
         {% for key in ("Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
                        "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
-                       "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4") %}
+                       "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
+                       "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",) %}
             {{ util.form_input_text(name=key, label=key) }}
         {% endfor %}
         {% for key in ("message_of_the_day",) %}
