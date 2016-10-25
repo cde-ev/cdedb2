@@ -577,6 +577,9 @@ def _password_strength(val, argname=None, *, _convert=True):
     This has the strictly competing goals of security and usability. We
     will use the results of [1] to select a hopefully good policy.
 
+    However, we diverge by using nine instead of twelve as the lower
+    limit for length for the sake of usability.
+
     [1] https://www.ece.cmu.edu/~lbauer/papers/2016/tissec2016-password-policies.pdf
 
     :type val: object
@@ -595,7 +598,7 @@ def _password_strength(val, argname=None, *, _convert=True):
         "passwor",
         "qwert",)
     if val:
-        if len(val) < 12:
+        if len(val) < 9:
             errors.append((argname,
                            ValueError("Must be at least 12 characters.")))
         num_classes = 0
