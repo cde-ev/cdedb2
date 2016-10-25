@@ -458,7 +458,10 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 constraints.append(constraint)
                 continue ## skip constraints.append below
             if operator == _ops.empty:
-                phrase = "( {0} IS NULL OR {0} = '' )"
+                if query.spec[field] == "str":
+                    phrase = "( {0} IS NULL OR {0} = '' )"
+                else:
+                    phrase = "( {0} IS NULL )"
             elif operator == _ops.nonempty:
                 if query.spec[field] == "str":
                     phrase = "( {0} IS NOT NULL AND {0} <> '' )"
