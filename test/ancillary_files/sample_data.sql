@@ -49,7 +49,8 @@ INSERT INTO core.meta_info (info) VALUES
        "CdE_Konto_IBAN": "DE26 3702 0500 0008 0689 00",
        "CdE_Konto_BIC": "BFSWDE33XXX",
        "CdE_Konto_Institut": "Bank für Sozialwirtschaft",
-       "message_of_the_day": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*"}'::jsonb);
+       "banner_before_login": "Das Passwort ist secret!",
+       "banner_after_login": "*Dies ist eine Testversion der Datenbank, alles wird gelöscht werden!*"}'::jsonb);
 
 --
 -- cde

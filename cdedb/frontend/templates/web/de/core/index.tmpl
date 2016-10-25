@@ -33,7 +33,9 @@
         {{ util.href(cdedblink('core/reset_password_form'), "Passwort vergessen?") }} |
         {{ util.href(cdedblink('core/genesis_request_form'), "Account anfordern") }}
     {% endif %}
-    {% if meta_info.get('message_of_the_day') %}
-        {{ meta_info['message_of_the_day']|rst }}
+    {% if "persona" in user.roles %}
+        {{ meta_info.get('banner_after_login')|rst }}
+    {% else %}
+        {{ meta_info.get('banner_before_login')|rst }}
     {% endif %}
 {% endblock %}

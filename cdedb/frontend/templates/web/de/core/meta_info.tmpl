@@ -14,7 +14,7 @@
                        "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",) %}
             {{ util.form_input_text(name=key, label=key) }}
         {% endfor %}
-        {% for key in ("message_of_the_day",) %}
+        {% for key in ("banner_before_login", "banner_after_login") %}
             {{ util.form_input_textarea(name=key, label=key) }}
         {% endfor %}
         <div>
