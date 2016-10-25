@@ -87,7 +87,7 @@ _DEFAULTS = {
     ## email is a slower medium, so this has a longer timeout
     "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=1),
     ## maximum length of rationale for requesting an account
-    "MAX_RATIONALE": 200,
+    "MAX_RATIONALE": 500,
     ## minimal number of input characters to start a search for personas
     ## fitting an intelligent input field
     "NUM_PREVIEW_CHARS": 3,
