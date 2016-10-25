@@ -549,6 +549,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'query_mod': query_mod,
             'enums': ENUMS_DICT,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
+            'CDEDB_DEV': self.conf.CDEDB_DEV,
         }
         ## check that default values are not overridden
         assert(not set(data) & set(params))
