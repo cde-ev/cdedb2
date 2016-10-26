@@ -4,6 +4,10 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}{{ ambience['assembly']['title']|e }} -- Abstimmungen{% endblock %}
 {% block content %}
+    <div class="p">
+        {{ util.href(cdedblink("assembly/create_ballot"), "Abstimmung anlegen", aclass="btn btn-success btn-sm",
+                icon="plus") }}
+    </div>
     <ul>
         {% for ballot_id, ballot in ballots|dictsort %}
             <li>

@@ -136,7 +136,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/attendees'})
-        self.assertTitle("Anwesenheitsliste -- Internationaler Kongress")
+        self.assertTitle("Anwesenheitsliste (Internationaler Kongress)")
         self.assertPresence("Anton")
         self.assertPresence("Bertålotta")
         self.assertPresence("Kalif")

@@ -1,6 +1,7 @@
 {% set sidenav_active='assembly_index' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Versammlung anlegen{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
@@ -11,8 +12,11 @@
             class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
-        {{ util.form_input_text(name="signup_end", label="Anmeldeschluss") }}
+        {{ util.form_input_text(name="signup_end", label="Anmeldeschluss", placeholder="YYYY-MM-DD hh:ii+00:00") }}
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="5", info="Nur für Admins sichtbar.") }}
         {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink('assembly/index')) }}
     </form>
+    <script type="text/javascript">
+        $('#createassemblyform').cdedbProtectChanges();
+    </script>
 {% endblock %}

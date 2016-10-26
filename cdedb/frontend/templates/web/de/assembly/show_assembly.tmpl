@@ -1,57 +1,77 @@
 {% set sidenav_active='assembly_show' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% block title %}{{ ambience['assembly']['title']|e }}{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn",
+            active=True) }}
+{% endblock %}
 {% block content %}
-    <p>{{ ambience['assembly']['description']|rst }}</p>
-    <p>Anmeldeschluss: {{ ambience['assembly']['signup_end']|datetime|e }}</p>
-    <p>{{ util.href(cdedblink("assembly/list_attendees"), "Teilnehmerliste")}}</p>
-    {% if is_admin %}
-        <p>Notizen: {{ ambience['assembly']['notes']|rst }}</p>
-    {% endif %}
-    <p>
-        Partizipationsstatus:
-        {% if attends %}
-            anwesend
-        {% else %}
-            nicht anwesend
-            {% if now() < ambience['assembly']['signup_end'] %}
-                <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
-                    <div>
-                        {{ util.form_input_submit(value="Teilnehmen") }}
-                    </div>
-                </form>
-            {% endif %}
-        {% endif %}
-    </p>
-    {% if is_admin and ambience['assembly']['is_active'] %}
-        <p>
-            {{ util.href(cdedblink("assembly/change_assembly"), "Bearbeiten")}}
-            <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST" id="concludeassemblyform">
-                <div>
-                    {{ util.form_input_submit(value="Archivieren", readonly=(not has_activity)) }}
-                </div>
+    <div class="p">
+        {% if is_admin and ambience['assembly']['is_active'] %}
+            <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST" id="concludeassemblyform"
+                    style="display: inline;">
+                {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-sm btn-danger",
+                        icon="ban-circle") }}
             </form>
-        </p>
+            {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), "Log",
+                    icon="list-alt") }}
+        {% endif %}
+    </div>
+
+    <dl class="dl-horizontal">
+        <dt>Anmeldeschluss</dt>
+        <dd>{{ ambience['assembly']['signup_end']|datetime|e }}</dd>
+        <dt>Partizipationsstatus</dt>
+        <dd>
+            {% if attends %}
+                <strong class="text-success">Du nimmst an der Versammlung teil.</strong>
+            {% else %}
+                <p><strong class="text-muted">Du nimmst nicht teil.</strong></p>
+                {% if now() < ambience['assembly']['signup_end'] %}
+                    <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
+                        {{ util.input_submit(value="Teilnehmen", icon="log-in") }}
+                    </form>
+                {% endif %}
+            {% endif %}
+        </dd>
+    </dl>
+
+    {{ ambience['assembly']['description']|rst }}
+
+    {% if is_admin and ambience['assembly']['notes'] %}
+        <h3>Admin-Notizen</h3>
+        {{ ambience['assembly']['notes']|rst }}
     {% endif %}
-    <p>{{ util.href(cdedblink("assembly/list_ballots"), "Abstimmungen")}}</p>
-    {% if attachments %}
-        <h2>Verfügbare Dateien</h2>
-        <ul>
-            {% for attachment_id, title in attachments|dictsort %}
-                <li>
-                    {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}), title)}}
-                    {% if is_admin %}
-                        <form action="{{ cdedblink('assembly/remove_attachment', {'attachment_id': attachment_id})|e }}"
-                         method="POST" id="removeattachmentform{{ attachment_id|e }}">
-                            <div>
-                                {{ util.form_input_submit(value="Löschen") }}
-                            </div>
-                        </form>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-    {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': ambience['assembly']['id']}),
-                 "Datei anhängen") }}
+
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ util.make_icon('file') }} Dateien</h3>
+        </div>
+        <div class="panel-body">
+            {% if attachments %}
+                <ul>
+                    {% for attachment_id, attachment in attachments|dictsort %}
+                        <li>
+                            {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
+                                    attachment['title'])}}
+                            {% if is_admin %}
+                                <form action="{{ cdedblink('assembly/remove_attachment',
+                                                           {'attachment_id': attachment_id})|e }}"
+                                        method="POST" id="removeattachmentform{{ attachment_id|e }}",
+                                        style="display: inline;">
+                                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
+                                            title="Datei löschen") }}
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if is_admin %}
+                {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': ambience['assembly']['id']}),
+                        "Datei anhängen", aclass="btn btn-success btn-sm", icon="plus") }}
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

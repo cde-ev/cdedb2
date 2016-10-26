@@ -6,22 +6,16 @@
         <div class="list-group tear-down">
             {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), "Übersicht",
                     aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'assembly_show')) }}
-            {% if is_admin %}
-                {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), "Konfiguration",
-                        aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
 
                 {{ util.href(cdedblink("assembly/list_attendees", {'assembly_id': data['id']}), "Teilnehmer",
                         aclass="list-group-item", icon="user", active=(sidenav_active == 'assembly_attendees')) }}
 
                 {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), "Abstimmungen",
-                        aclass="list-group-item", icon="stats", active=(sidenav_active == 'assembly_ballots')) }}
+                        aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
 
-                {# TODO #}
-                {{ util.href(cdedblink("assembly/create_ballot", {'assembly_id': data['id']}),
-                         "Abstimmung anlegen") }}
-
-                {{ util.href(cdedblink("assembly/view_log", {'assembly_id': data['id']}), "Log",
-                        aclass="list-group-item", icon="list-alt", active=(sidenav_active == 'assembly_a_log')) }}
+            {% if is_admin %}
+                {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), "Konfiguration",
+                        aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
             {% endif %}
         </div>
 {% endmacro %}
