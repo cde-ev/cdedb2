@@ -69,8 +69,8 @@
                 </ul>
             {% endif %}
             {% if is_admin %}
-                {{ util.href(cdedblink("assembly/add_attachment_form", {'assembly_id': ambience['assembly']['id']}),
-                        "Datei anhängen", aclass="btn btn-success btn-sm", icon="plus") }}
+                {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
+                             aclass="btn btn-success btn-sm", icon="plus") }}
             {% endif %}
         </div>
     </div>

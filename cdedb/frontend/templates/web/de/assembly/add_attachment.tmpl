@@ -2,10 +2,10 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-    {% if ballot %}
-        Datei anhängen ({{ assembly['title']|e }}/{{ ballot['title']|e }})
+    {% if ambience['ballot'] %}
+        Datei anhängen ({{ ambience['assembly']['title']|e }}/{{ ambience['ballot']['title']|e }})
     {% else %}
-        Datei anhängen ({{ assembly['title']|e }})
+        Datei anhängen ({{ ambience['assembly']['title']|e }})
     {% endif %}
 {% endblock %}
 {% block content %}
@@ -14,11 +14,6 @@
     <form action="{{ cdedblink('assembly/add_attachment')|e }}" method="POST" enctype="multipart/form-data"
      id="addattachmentform">
         <div>
-            {% if ballot %}
-                {{ util.input_hidden(name="ballot_id", value=ballot['id']) }}
-            {% else %}
-                {{ util.input_hidden(name="assembly_id", value=assembly['id']) }}
-            {% endif %}
             {{ util.form_input_text(name="title", label="Bezeichnung") }}
             {{ util.form_input_text(name="filename", label="Dateiname",
                                     info="Leer lassen für derzeitigen Dateinamen.") }}

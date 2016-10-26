@@ -281,42 +281,23 @@ class AssemblyFrontend(AbstractUserFrontend):
                               filename=rs.ambience['attachment']['filename'])
 
     @access("assembly_admin")
-    @REQUESTdata(("assembly_id", "id_or_None"), ("ballot_id", "id_or_None"))
-    def add_attachment_form(self, rs, assembly_id, ballot_id):
+    def add_attachment_form(self, rs, assembly_id, ballot_id=None):
         """Render form."""
-        if (assembly_id and ballot_id) or (not assembly_id and not ballot_id):
-            return werkzeug.exceptions.BadRequest(
-                "Exactly one of assembly_id and ballot_id must be provided.")
-        if assembly_id:
-            ballot = None
-            assembly = self.assemblyproxy.get_assembly(rs, assembly_id)
-        else:
-            ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
-            assembly = self.assemblyproxy.get_assembly(rs,
-                                                       ballot['assembly_id'])
-            if now() > ballot['vote_begin']:
-                rs.notify("warning", "Voting has begun.")
-                return self.redirect(rs, "assembly/show_ballot", {
-                    'assembly_id': ballot['assembly_id'],
-                    'ballot_id': ballot_id})
-        return self.render(rs, "add_attachment", {
-            'assembly': assembly, 'ballot': ballot})
+        if ballot_id and now() > rs.ambience['ballot']['vote_begin']:
+            rs.notify("warning", "Voting has begun.")
+            return self.redirect(rs, "assembly/show_ballot")
+        return self.render(rs, "add_attachment")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("assembly_id", "id_or_None"), ("ballot_id", "id_or_None"),
-                 ("title", "str"), ("filename", "identifier_or_None"))
+    @REQUESTdata(("title", "str"), ("filename", "identifier_or_None"))
     @REQUESTfile("attachment")
-    def add_attachment(self, rs, assembly_id, ballot_id, title, filename,
-                       attachment):
+    ## ballot_id is optional, but comes semantically after assembly_id
+    def add_attachment(self, rs, assembly_id, title, filename,
+                       attachment, ballot_id=None):
         """Create a new attachment.
 
         It can either be associated to an assembly or a ballot.
         """
-        if (assembly_id and ballot_id) or (not assembly_id and not ballot_id):
-            rs.errors.append(("assembly_id",
-                              ValueError("Exactly one must be selected.")))
-            rs.errors.append(("ballot_id",
-                              ValueError("Exactly one must be selected.")))
         if not filename:
             tmp = os.path.basename(attachment.filename)
             filename = check(rs, "identifier", tmp, 'attachment')
@@ -328,24 +309,20 @@ class AssemblyFrontend(AbstractUserFrontend):
             'title': title,
             'filename': filename
         }
-        if assembly_id:
-            data['assembly_id'] = assembly_id
         if ballot_id:
             data['ballot_id'] = ballot_id
+        else:
+            data['assembly_id'] = assembly_id
         attachment_id = self.assemblyproxy.add_attachment(rs, data)
         path = os.path.join(self.conf.STORAGE_DIR, 'assembly_attachment',
                             str(attachment_id))
         with open(path, 'wb') as f:
             f.write(attachment)
         self.notify_return_code(rs, attachment_id, success="Attachment added.")
-        if assembly_id:
-            return self.redirect(rs, "assembly/show_assembly",
-                                 {'assembly_id': assembly_id})
+        if ballot_id:
+            return self.redirect(rs, "assembly/show_ballot")
         else:
-            ballot = self.assemblyproxy.get_ballot(rs, ballot_id)
-            return self.redirect(rs, "assembly/show_ballot", {
-                'assembly_id': ballot['assembly_id'],
-                'ballot_id': ballot_id})
+            return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
     ## ballot_id is optional, but comes semantically before attachment_id

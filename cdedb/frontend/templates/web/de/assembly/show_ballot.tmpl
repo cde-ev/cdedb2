@@ -225,7 +225,6 @@
         </ul>
     {% endif %}
     {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
-        {{ util.href(cdedblink("assembly/add_attachment_form", {'ballot_id': ambience['ballot']['id']}),
-                     "Datei anhängen") }}
+        {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen") }}
     {% endif %}
 {% endblock %}
