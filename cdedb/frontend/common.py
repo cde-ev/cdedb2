@@ -33,6 +33,7 @@ import tempfile
 import threading
 import urllib.parse
 
+import babel.dates
 import docutils.core
 import jinja2
 import werkzeug
@@ -172,20 +173,38 @@ def sanitize_None(data):
     else:
         return data
 
-def date_filter(val, formatstr="%Y-%m-%d"):
+def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium"):
     """Custom jinja filter to format ``datetime.date`` objects.
 
     :type val: datetime.date
+    :type formatstr: str
+    :param formatstr: Formatting used, if no l10n happens.
+    :type lang: str or None
+    :param lang: If not None, then localize to the passed language.
+    :type verbosity: str
+    :param verbosity: Controls localized formatting. Takes one of the
+      following values: short, medium, long and full.
     :rtype: str
     """
     if val is None or val == '':
         return None
-    return val.strftime(formatstr)
+    if lang:
+        return babel.dates.format_date(val, locale=lang, format=verbosity)
+    else:
+        return val.strftime(formatstr)
 
-def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
+def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
+                    verbosity="medium"):
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
     :type val: datetime.datetime
+    :type formatstr: str
+    :param formatstr: Formatting used, if no l10n happens.
+    :type lang: str or None
+    :param lang: If not None, then localize to the passed language.
+    :type verbosity: str
+    :param verbosity: Controls localized formatting. Takes one of the
+      following values: short, medium, long and full.
     :rtype: str
     """
     if val is None or val == '':
@@ -194,7 +213,10 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
         val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
     else:
         _LOGGER.warning("Found naive datetime object {}.".format(val))
-    return val.strftime(formatstr)
+    if lang:
+        return babel.dates.format_datetime(val, locale=lang, format=verbosity)
+    else:
+        return val.strftime(formatstr)
 
 def money_filter(val, currency="€"):
     """Custom jinja filter to format ``decimal.Decimal`` objects.
@@ -540,20 +562,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'cdedblink': _cdedblink,
             'default_selections': default_selections,
             'encode_parameter': self.encode_parameter,
+            'enums': ENUMS_DICT,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
             'glue': glue,
             'gettext': rs.gettext,
-            'ngettext': rs.ngettext,
             'is_admin': self.is_admin(rs),
+            'lang': rs.lang,
+            'ngettext': rs.ngettext,
             'notifications': rs.notifications,
             'now': now,
+            'query_mod': query_mod,
             'show_user_link': _show_user_link,
             'staticurl': staticurl,
             'user': rs.user,
             'values': rs.values,
-            'query_mod': query_mod,
-            'enums': ENUMS_DICT,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
             'CDEDB_DEV': self.conf.CDEDB_DEV,
             'GIT_COMMIT': self.conf.GIT_COMMIT,

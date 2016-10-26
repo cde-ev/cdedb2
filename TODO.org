@@ -1,6 +1,5 @@
 * actionable items
 ** allow realm admins to ack changes for their users
-** implement pretty date filters
 ** make not yet active ballots invisible to normal users?
 ** make active assemblies invisible to non-participants?
 ** ml design cleanup
