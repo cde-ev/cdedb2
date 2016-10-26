@@ -84,13 +84,36 @@ class CdEFrontend(AbstractUserFrontend):
         """Render start page."""
         user_lastschrift = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(rs.user.persona_id,), active=True)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        # FIXME take trial membership into account
-        data['periods_left'] = data['balance'] // self.conf.MEMBERSHIP_FEE
         meta_info = self.coreproxy.get_meta_info(rs)
+        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        deadline = None
+        if "member" in rs.user.roles:
+            periods_left = data['balance'] // self.conf.MEMBERSHIP_FEE
+            if data['trial_member']:
+                periods_left += 1
+            period = self.cdeproxy.get_period(rs,
+                                              self.cdeproxy.current_period(rs))
+            today = now().date()
+            ## Compensate if the start of the period is not exactly on the
+            ## 1.1. or 1.7.
+            if not period['billing_done'] and today.month in (6, 12):
+                periods_left += 1
+            if period['balance_done'] and today.month in (1, 7):
+                periods_left -= 1
+            ## Initialize deadline
+            deadline = now().date().replace(day=1)
+            month = 7 if deadline.month >= 7 else 1
+            deadline = deadline.replace(month=month)
+            ## Add remaining periods
+            deadline.replace(year=deadline.year + periods_left//2)
+            if periods_left % 2:
+                if deadline.month >= 7:
+                    deadline.replace(year=deadline.year + 1, month=1)
+                else:
+                    deadline.replace(month=7)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
-            'meta_info': meta_info})
+            'meta_info': meta_info, 'deadline': deadline})
 
     @access("persona")
     @REQUESTdata(("stay", "bool_or_None"))

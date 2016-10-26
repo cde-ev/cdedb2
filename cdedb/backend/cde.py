@@ -525,7 +525,7 @@ class CdEBackend(AbstractBackend):
         query = "SELECT MAX(id) FROM cde.org_period"
         return unwrap(self.query_one(rs, query, tuple()))
 
-    @access("cde_admin")
+    @access("cde")
     def get_period(self, rs, period_id):
         """Get data for a semester
 

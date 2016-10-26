@@ -122,10 +122,14 @@
             </div>
             <div class="panel {% if not period['balance_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
-                    <span class="pull-right">(01.04./01.10.)</span>
+                    <span class="pull-right">(01.07./01.01.)</span>
                     <h4 class="panel-title">Nächstes Semester</h4>
                 </div>
                 <div class="panel-body">
+                    <p>
+                        Der Semesterzustand beeinflusst die Anzeige der Guthaben. Dieser Knopf sollte also zum
+                        Zielzeitpunkt (plus/minus drei Wochen) gedrückt werden.
+                    </p>
                     {% if period['balance_done'] %}
                         <form action="{{ cdedblink('cde/semester_advance')|e }}" method="POST" id="proceedform">
                             {{ util.input_submit(value="Nächstes Semester") }}

@@ -69,10 +69,21 @@
                         <h4 class="panel-title"><span class="glyphicon glyphicon-euro"></span> Mitgliedsbeitrag</h4>
                     </div>
                     <div class="panel-body">
-                        <p>
-                            Dein aktuelles Guthaben beträgt {{ data['balance']|money|e }}. Dies reicht noch für
-                            {{ data['periods_left']|e }} Semester.
-                        </p>
+                        {% if "member" in user.roles %}
+                            <p>
+                                Dein aktuelles Guthaben beträgt {{ data['balance']|money|e }}.
+                                {% if deadline <= now().date() %}
+                                    Deine Mitgliedschaft läuft in wenigen Tagen aus.
+                                {% else %}
+                                    Dies reicht voraussichtlich bis {{ deadline|date|e }}.
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <p>
+                                Du bist derzeit kein Mitglied, um wieder Mitglied zu werden, musst Du lediglich
+                                Dein Guthaben auffüllen.
+                            </p>
+                        {% endif %}
                         <p>
                             Um dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto.
                             <table>
