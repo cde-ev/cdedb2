@@ -10,9 +10,9 @@
         icon="user", active=True) }}
 {% endblock %}
 {% block content %}
-    {% if data['id'] == user.persona_id or is_admin %}
+    {% if data['id'] == user.persona_id or is_relative_admin %}
         <div class="p">
-            {% if is_admin %}
+            {% if is_relative_admin %}
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten (normal)",
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
@@ -44,7 +44,7 @@
                     </form>
                 {% endif %}
             {% endif %}
-            {% if is_admin %}
+            {% if is_relative_admin %}
                 {{ util.href(cdedblink("core/show_history"), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
             {% endif %}
         </div>
@@ -58,7 +58,7 @@
                 <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
                   class="profilepic img-thumbnail">
             {%- endif -%}
-            {% if data['id'] == user.persona_id or is_admin -%}
+            {% if data['id'] == user.persona_id or is_relative_admin -%}
                 <br />
                 {{ util.href(cdedblink('core/set_foto_form'), "Profilbild ändern", aclass="btn btn-xs btn-warning",
                         icon="pencil") }}
@@ -100,12 +100,12 @@
         </dl>
 
 
-        {% if data['id'] == user.persona_id or is_admin %}
+        {% if data['id'] == user.persona_id or is_relative_admin %}
             <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
             <dl class="dl-horizontal">
                 <dt>CdEDB-ID</dt>
                 <dd>{{ data['id']|cdedbid|e }}</dd>
-                {% if is_admin %}
+                {% if is_relative_admin %}
                     <dt>Account aktiv</td>
                     <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}</dd>
                 {% endif %}
@@ -122,6 +122,7 @@
                         {% if data[bit] %}
                             {{ util.make_icon(icon, title=desc) }}
                         {% else %}
+                            {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_realm_not': True}) %}
                         {% endif %}
                     {% endfor %}
@@ -153,7 +154,7 @@
                     {% endif %}
                 </dd>
 
-                {% if data['notes'] and is_admin %}
+                {% if data['notes'] and is_relative_admin %}
                     <dt>Notizen</dt>
                     <dd>{{ data['notes']|rst }}</dd>
                 {% endif %}
@@ -168,7 +169,7 @@
                         {% if data['trial_member'] %}
                             (Probemitgliedschaft)
                         {% endif %}
-                        {% if is_admin %}
+                        {% if is_relative_admin %}
                             {{ util.href(cdedblink('core/modify_membership_form'), "Status ändern", icon="pencil",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -225,7 +226,7 @@
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten",
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
-                {% elif is_admin %}
+                {% elif is_relative_admin %}
                     {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% endif %}

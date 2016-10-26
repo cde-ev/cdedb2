@@ -85,6 +85,22 @@ class CoreBackend(AbstractBackend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
+    @access("persona")
+    def is_relative_admin(self, rs, persona_id):
+        """Check whether the user is privileged with respect to a persona.
+
+        A mailinglist admin may not edit cde users, but the other way
+        round it should work.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :rtype: bool
+        """
+        if self.is_admin(rs):
+            return True
+        roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))))
+        return bool(rs.user.roles & privilege_tier(roles))
+
     @staticmethod
     def verify_password(password, password_hash):
         """Central function, so that the actual implementation may be easily
@@ -480,18 +496,19 @@ class CoreBackend(AbstractBackend):
         return {e['persona_id']: e for e in data}
 
     @access("persona")
-    def changelog_get_history(self, rs, anid, generations):
+    def changelog_get_history(self, rs, persona_id, generations):
         """Retrieve history of a data set.
 
         :type rs: :py:class:`cdedb.common.RequestState`
-        :type anid: int
+        :type persona_id: int
         :type generations: [int] or None
         :parameter generations: generations to retrieve, all if None
         :rtype: {int: {str: object}}
         :returns: mapping generation to data set
         """
-        anid = affirm("id", anid)
-        if anid != rs.user.persona_id and not self.is_admin(rs):
+        persona_id = affirm("id", persona_id)
+        if (persona_id != rs.user.persona_id
+                and not self.is_relative_admin(rs,persona_id)):
             raise PrivilegeError("Not privileged.")
         generations = affirm_set("int", generations, allow_None=True)
         fields = list(PERSONA_ALL_FIELDS)
@@ -501,7 +518,7 @@ class CoreBackend(AbstractBackend):
                        "change_status", "change_note"))
         query = "SELECT {} FROM core.changelog WHERE persona_id = %s".format(
             ", ".join(fields))
-        params = [anid]
+        params = [persona_id]
         if generations:
             query = glue(query, "AND generation = ANY(%s)")
             params.append(generations)
@@ -672,17 +689,15 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError("Own activation prevented.")
 
         ## check for permission to edit
-        is_archived = None
-        if rs.user.persona_id != data['id']:
-            privs = self.sql_select_one(rs, "core.personas",
-                                        PERSONA_STATUS_FIELDS, data['id'])
-            if not privilege_tier(extract_roles(privs)) & rs.user.roles:
-                raise PrivilegeError("Not privileged.")
-            is_archived = privs['is_archived'] ## store for later use
+        if (rs.user.persona_id != data['id']
+                and not self.is_relative_admin(rs, data['id'])):
+            raise PrivilegeError("Not privileged.")
 
         ## Prevent modification of archived members. This check (using
         ## is_archived) is sufficient since we can only edit our own data if
         ## we are not archived.
+        is_archived = unwrap(self.sql_select_one(rs, "core.personas",
+                                                 ("is_archived",), data['id']))
         if is_archived and data.get('is_archived', True):
             raise RuntimeError("Editing archived member impossible.")
 
@@ -870,14 +885,14 @@ class CoreBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         new_username = affirm("email_or_None", new_username)
         password = affirm("str_or_None", password)
-        if new_username is None and not self.is_admin(rs):
+        if new_username is None and not self.is_relative_admin(rs, persona_id):
             return False, "Only admins may unset a username."
         with Atomizer(rs):
             if new_username and self.verify_existence(rs, new_username):
                 ## abort if there is already an account with this address
                 return False, "Name collision."
             authorized = False
-            if self.is_admin(rs):
+            if self.is_relative_admin(rs, persona_id):
                 authorized = True
             elif password:
                 data = self.sql_select_one(rs, "core.personas",

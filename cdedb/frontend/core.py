@@ -150,12 +150,11 @@ class CoreFrontend(AbstractFrontend):
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", "Link expired.")
             return self.index(rs)
-
-        roles = extract_roles(rs.ambience['persona'])
-        may_admin_edit = bool(rs.user.roles & privilege_tier(roles))
         if (rs.ambience['persona']['is_archived']
                 and "core_admin" not in rs.user.roles):
             raise PrivilegeError("Only admins may view archived datasets.")
+
+        is_relative_admin = self.coreproxy.is_relative_admin(rs, persona_id)
 
         ALL_ACCESS_LEVELS = {
             "persona", "ml", "assembly", "event", "cde", "core", "admin",
@@ -189,6 +188,7 @@ class CoreFrontend(AbstractFrontend):
         pass
 
         ## Retrieve data
+        roles = extract_roles(rs.ambience['persona'])
         data = self.coreproxy.get_persona(rs, persona_id)
         if "ml" in access_levels and "ml" in roles:
             data.update(self.coreproxy.get_ml_user(rs, persona_id))
@@ -215,7 +215,7 @@ class CoreFrontend(AbstractFrontend):
                     del data[key]
             if not "orga" in access_levels and "is_member" in data:
                 del data["is_member"]
-        if not may_admin_edit and "notes" in data:
+        if not is_relative_admin and "notes" in data:
             del data['notes']
 
         ## Add participation info
@@ -226,11 +226,14 @@ class CoreFrontend(AbstractFrontend):
 
         return self.render(rs, "show_user", {
             'data': data, 'participation_info': participation_info,
-            'may_admin_edit': may_admin_edit})
+            'is_relative_admin': is_relative_admin})
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin")
     def show_history(self, rs, persona_id):
         """Display user history."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError("Not a relative admin.")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", "Persona is archived.")
             return self.redirect_show_user(rs, persona_id)
@@ -589,12 +592,11 @@ class CoreFrontend(AbstractFrontend):
             "assembly_admin")
     def admin_change_user_form(self, rs, persona_id):
         """Render form."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError("Not a relative admin.")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", "Persona is archived.")
             return self.redirect_show_user(rs, persona_id)
-        if not (privilege_tier(extract_roles(rs.ambience['persona']))
-                & rs.user.roles):
-            raise PrivilegeError("Not privileged.")
 
         generation = self.coreproxy.changelog_get_generation(
             rs, persona_id)
@@ -611,9 +613,8 @@ class CoreFrontend(AbstractFrontend):
     @REQUESTdata(("generation", "int"), ("change_note", "str_or_None"))
     def admin_change_user(self, rs, persona_id, generation, change_note):
         """Privileged edit of data set."""
-        roles = extract_roles(rs.ambience['persona'])
-        if not privilege_tier(roles) & rs.user.roles:
-            raise PrivilegeError("Not privileged.")
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError("Not a relative admin.")
 
         REALM_ATTRIBUTES = {
             'persona': {
@@ -979,19 +980,25 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.redirect(rs, "core/index")
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin")
     def admin_username_change_form(self, rs, persona_id):
         """Render form."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError("Not a relative admin.")
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", "Persona is archived.")
             return self.redirect_show_user(rs, persona_id)
         data = self.coreproxy.get_persona(rs, persona_id)
         return self.render(rs, "admin_username_change", {'data': data})
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin", modi={"POST"})
     @REQUESTdata(('new_username', 'email_or_None'))
     def admin_username_change(self, rs, persona_id, new_username):
         """Change username without verification."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError("Not a relative admin.")
         if rs.errors:
             return self.admin_username_change_form(rs, persona_id)
         code, message = self.coreproxy.change_username(
@@ -1003,10 +1010,13 @@ class CoreFrontend(AbstractFrontend):
         else:
             return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "cde_admin", "event_admin", "ml_admin",
+            "assembly_admin", modi={"POST"})
     @REQUESTdata(("activity", "bool"))
     def toggle_activity(self, rs, persona_id, activity):
         """Enable/disable an account."""
+        if not self.coreproxy.is_relative_admin(rs, persona_id):
+            raise PrivilegeError("Not a relative admin.")
         if rs.errors:
             # Redirect for encoded parameter
             return self.redirect_show_user(rs, persona_id)
@@ -1105,7 +1115,7 @@ class CoreFrontend(AbstractFrontend):
         return self.render(rs, "genesis_list_cases", {
             'to_review': to_review, 'approved': approved,})
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
     @REQUESTdata(("case_status", "enum_genesisstati"),
                  ("realm", "realm_or_None"))
     def genesis_decide(self, rs, case_id, case_status, realm):
@@ -1117,6 +1127,9 @@ class CoreFrontend(AbstractFrontend):
         if rs.errors:
             return self.genesis_list_cases(rs)
         case = self.coreproxy.genesis_get_case(rs, case_id)
+        if (not self.is_admin(rs)
+                and "{}_admin".format(case['realm']) not in rs.user.roles):
+            raise PrivilegeError("Not privileged.")
         if case['case_status'] != const.GenesisStati.to_review:
             rs.notify("error", "Case not to review.")
             return self.genesis_list_cases(rs)
@@ -1150,7 +1163,7 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("info", "Case rejected.")
         return self.redirect(rs, "core/genesis_list_cases")
 
-    @access("core_admin", modi={"POST"})
+    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
     def genesis_timeout(self, rs, case_id):
         """Abandon a genesis case.
 
@@ -1158,6 +1171,9 @@ class CoreFrontend(AbstractFrontend):
         it remains dangling. Thus this enables to archive them.
         """
         case = self.coreproxy.genesis_get_case(rs, case_id)
+        if (not self.is_admin(rs)
+                and "{}_admin".format(case['realm']) not in rs.user.roles):
+            raise PrivilegeError("Not privileged.")
         if case['case_status'] != const.GenesisStati.approved:
             rs.notify("error", "Case not approved.")
             return self.genesis_list_cases(rs)
