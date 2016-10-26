@@ -277,7 +277,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Retrieve an attachment."""
         path = os.path.join(self.conf.STORAGE_DIR, "assembly_attachment",
                             str(attachment_id))
-        return self.send_file(rs, path=path,
+        return self.send_file(rs, path=path, mimetype="application/pdf",
                               filename=rs.ambience['attachment']['filename'])
 
     @access("assembly_admin")

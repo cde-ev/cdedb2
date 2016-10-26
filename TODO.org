@@ -1,4 +1,7 @@
 * actionable items
+** implement pretty date filters
+** make not yet active ballots invisible to normal users?
+** make active assemblies invisible to non-participants?
 ** ml design cleanup
 *** have separate subscription policies for implicit and explicit members
 *** have an audience policy independent of the target audience of a mandatory list
