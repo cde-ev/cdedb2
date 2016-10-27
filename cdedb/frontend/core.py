@@ -243,10 +243,34 @@ class CoreFrontend(AbstractFrontend):
             rs, persona_id)
         current = history[current_generation]
         fields = current.keys()
-        constants = {f: tuple(y for x, y in pairwise(sorted(history.keys()))
-                              if history[x][f] == history[y][f])
-                     for f in fields}
         stati = const.MemberChangeStati
+        constants = {}
+        for f in fields:
+            total_const = tuple()
+            tmp = []
+            already_committed = False
+            for x, y in pairwise(sorted(history.keys())):
+                if history[x]['change_status'] == stati.committed:
+                    already_committed = True
+                ## Somewhat involved determination of a field being constant.
+                ##
+                ## Basically it's done by the following line, except we
+                ## don't want to mask a change that was rejected and then
+                ## resubmitted and accepted.
+                is_constant = history[x][f] == history[y][f]
+                if (history[x]['change_status'] == stati.nacked
+                        and not already_committed):
+                    is_constant = False
+                if is_constant:
+                    tmp.append(y)
+                else:
+                    already_committed = False
+                    if tmp:
+                        total_const += tuple(tmp)
+                        tmp = []
+            if tmp:
+                total_const += tuple(tmp)
+            constants[f] = total_const
         pending = {i for i in history
                    if history[i]['change_status'] == stati.pending}
         ## Track the omitted information whether a new value finally got
