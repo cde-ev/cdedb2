@@ -660,6 +660,7 @@ class CoreFrontend(AbstractFrontend):
                 "bub_search"}
         }
         attributes = REALM_ATTRIBUTES['persona']
+        roles = extract_roles(rs.ambience['persona'])
         for realm in ('ml', 'assembly', 'event', 'cde'):
             if realm in roles:
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
