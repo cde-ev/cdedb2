@@ -18,6 +18,7 @@ from cdedb.common import (
     ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
     PrivilegeError, name_key)
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -40,6 +41,7 @@ class CoreFrontend(AbstractFrontend):
         """
         super().__init__(configpath)
         self.coreproxy = ProxyShim(CoreBackend(configpath))
+        self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
         self.mlproxy = ProxyShim(MlBackend(configpath))
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
@@ -62,7 +64,76 @@ class CoreFrontend(AbstractFrontend):
             rs.values['wants'] = self.encode_parameter("core/login", "wants",
                                                        wants)
         meta_info = self.coreproxy.get_meta_info(rs)
-        return self.render(rs, "index", {'meta_info': meta_info})
+        dashboard = {}
+        if rs.user.persona_id:
+            ## genesis cases
+            if {"core_admin", "event_admin", "ml_admin"} & rs.user.roles:
+                realms = []
+                if {"core_admin", "event_admin"} & rs.user.roles:
+                    realms.append("event")
+                if {"core_admin", "ml_admin"} & rs.user.roles:
+                    realms.append("ml")
+                data = self.coreproxy.genesis_list_cases(
+                    rs, stati=(const.GenesisStati.to_review,), realms=realms)
+                dashboard['genesis_cases'] = len(data)
+            ## pending changes
+            if self.is_admin(rs):
+                data = self.coreproxy.changelog_get_changes(
+                    rs, stati=(const.MemberChangeStati.pending,))
+                dashboard['pending_changes'] = len(data)
+            ## events organized
+            orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
+            if orga_info:
+                orga = {}
+                events = self.eventproxy.get_events(rs, orga_info)
+                today = now().date()
+                for event_id, event in events.items():
+                    start = event['registration_start']
+                    if (not start or start >= today
+                            or abs(start.year - today.year) < 2):
+                        regs = self.eventproxy.list_registrations(rs,
+                                                                  event['id'])
+                        event['registrations'] = len(regs)
+                        orga[event_id] = event
+                dashboard['orga'] = orga
+            ## mailinglists moderated
+            moderator_info = self.mlproxy.moderator_info(rs,
+                                                            rs.user.persona_id)
+            if moderator_info:
+                moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
+                for mailinglist_id, mailinglist in moderator.items():
+                    requests = self.mlproxy.list_requests(rs, mailinglist_id)
+                    mailinglist['requests'] = len(requests)
+                dashboard['moderator'] = moderator
+            ## open events
+            if "event" in rs.user.roles:
+                event_ids = self.eventproxy.list_open_events(rs)
+                events = self.eventproxy.get_events(rs, event_ids.keys())
+                final = {}
+                for event_id, event in events.items():
+                    if event_id not in orga_info:
+                        registration = self.eventproxy.list_registrations(
+                            rs, event_id, rs.user.persona_id)
+                        event['registration'] = bool(registration)
+                        final[event_id] = event
+                if final:
+                    dashboard['events'] = final
+            ## open assemblies
+            if "assembly" in rs.user.roles:
+                assembly_ids = self.assemblyproxy.list_assemblies(
+                    rs, is_active=True)
+                assemblies = self.assemblyproxy.get_assemblies(
+                    rs, assembly_ids.keys())
+                final = {}
+                for assembly_id, assembly in assemblies.items():
+                    assembly['does_attend'] = self.assemblyproxy.does_attend(
+                        rs, assembly_id=assembly_id)
+                    if assembly['does_attend'] or assembly['signup_end'] > now():
+                        final[assembly_id] = assembly
+                if final:
+                    dashboard['assemblies'] = final
+        return self.render(rs, "index", {
+            'meta_info': meta_info, 'dashboard': dashboard})
 
     @access("anonymous")
     @REQUESTdata(("kind", "printable_ascii"))

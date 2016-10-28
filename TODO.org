@@ -1,4 +1,5 @@
 * actionable items
+** display nice pages on 404 and 403
 ** allow realm admins to ack changes for their users
 ** implement pretty date filters
 ** make not yet active ballots invisible to normal users?
