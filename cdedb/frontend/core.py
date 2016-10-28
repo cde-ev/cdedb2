@@ -1091,7 +1091,8 @@ class CoreFrontend(AbstractFrontend):
                 timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
              'given_names': data['given_names'],
              'family_name': data['family_name'],})
-        rs.notify("success", "Email sent.")
+        rs.notify("success",
+                  "Email sent. Please follow the link contained in the email.")
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
@@ -1105,8 +1106,12 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error", "Link expired.")
             return self.genesis_request_form(rs)
         code, realm = self.coreproxy.genesis_verify(rs, case_id)
-        self.notify_return_code(rs, code, success="Email verified.",
-                                error="Verification failed.")
+        self.notify_return_code(
+            rs, code,
+            error="Verification failed. Please contact the administrators.",
+            success=glue(
+                "Email verified. Wait for moderation.",
+                "You will be notified by mail."))
         notify = None
         if realm == "event":
             notify = self.conf.EVENT_ADMIN_ADDRESS
