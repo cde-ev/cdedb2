@@ -28,7 +28,7 @@ class MlBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @staticmethod
-    def is_moderator(rs, ml_id=None):
+    def is_moderator(rs, ml_id):
         """Check for moderator privileges as specified in the ml.moderators
         table.
 

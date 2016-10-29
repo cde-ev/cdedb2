@@ -13,10 +13,10 @@ import werkzeug
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_extractor, REQUESTfile,
-    request_dict_extractor, event_usage, querytoparams_filter)
+    request_dict_extractor, event_usage, querytoparams_filter, ml_usage)
 from cdedb.common import (
     ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
-    PrivilegeError, name_key)
+    PrivilegeError, name_key, now, glue)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
@@ -54,6 +54,8 @@ class CoreFrontend(AbstractFrontend):
         return super().is_admin(rs)
 
     @access("anonymous")
+    @event_usage
+    @ml_usage
     @REQUESTdata(("wants", "#str_or_None"))
     def index(self, rs, wants=None):
         """Basic entry point.
@@ -97,11 +99,11 @@ class CoreFrontend(AbstractFrontend):
                         orga[event_id] = event
                 dashboard['orga'] = orga
             ## mailinglists moderated
-            moderator_info = self.mlproxy.moderator_info(rs,
-                                                            rs.user.persona_id)
+            moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
                 moderator = self.mlproxy.get_mailinglists(rs, moderator_info)
                 for mailinglist_id, mailinglist in moderator.items():
+                    self.logger.error("FOO {} {} {} {}".format(moderator_info, mailinglist_id, mailinglist, rs.user.persona_id))
                     requests = self.mlproxy.list_requests(rs, mailinglist_id)
                     mailinglist['requests'] = len(requests)
                 dashboard['moderator'] = moderator
