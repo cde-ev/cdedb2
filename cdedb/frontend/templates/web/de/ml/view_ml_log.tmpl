@@ -46,8 +46,8 @@
         </tbody>
     </table>
 
-    {{ util.box_filter_begin() }}
-    <form action="{{ cdedblink('ml/view_ml_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
+        <form action="{{ cdedblink('ml/view_ml_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in enums['MlLogCodes'] %}
@@ -58,6 +58,6 @@
 
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}
-    </form>
-    {{ util.box_filter_end() }}
+        </form>
+    {% endcall %}
 {% endblock %}

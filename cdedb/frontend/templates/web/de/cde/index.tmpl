@@ -7,11 +7,7 @@
 {% block content %}
     <div class="row">
         <div class="col-md-6">
-            <div class="panel panel-primary">
-                <div class="panel-heading">
-                    <h4 class="panel-title"><span class="glyphicon glyphicon-search"></span> Mitgliedersuche</h4>
-                </div>
-                <div class="panel-body">
+            {% call util.bootstrap_panel(title="Mitgliedersuche", icon='search', aclass="panel-primary") %}
                     {% if "searchable" in user.roles %}
                         <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform"
                                 class="form-horizontal">
@@ -27,20 +23,15 @@
                         </form>
                     {% else %}
                         <p>
-                            Um die Mitgliedersucher benutzen zu können, musst Du die
+                            Um die Mitgliedersuche verwenden zu können, musst Du die
                             {{ util.href(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung") }}
-                            Datenschutzerklärung bestätigen.
+                            bestätigen.
                         </p>
                     {% endif %}
-                </div>
-            </div>
+            {% endcall %}
         </div>
         <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title"><span class="glyphicon glyphicon-euro"></span> Initiative 25+</h4>
-                </div>
-                <div class="panel-body">
+            {% call util.bootstrap_panel(title="Initiative 25+", icon='euro') %}
                     <p>
                         Du möchtest den CdE und die „Idee Schülerakademie“ finanziell unterstützen? Sofern Du die
                         Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich 25 € oder einen beliebigen höheren
@@ -59,16 +50,11 @@
                             {{ util.href(cdedblink("cde/lastschrift_subscription_form"), "Lastschrift-Formular") }}.
                         </p>
                     {% endif %}
-                </div>
-            </div>
+            {% endcall %}
         </div>
         {% if not has_lastschrift %}
             <div class="col-md-6">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h4 class="panel-title"><span class="glyphicon glyphicon-euro"></span> Mitgliedsbeitrag</h4>
-                    </div>
-                    <div class="panel-body">
+                {% call util.bootstrap_panel(title="Mitgliedsbeitrag", icon='euro') %}
                         {% if "member" in user.roles %}
                             <p>
                                 Dein aktuelles Guthaben beträgt {{ data['balance']|money|e }}.
@@ -109,8 +95,7 @@
                                     </tr>
                             </table>
                         </p>
-                    </div>
-                </div>
+                {% endcall %}
             </div>
         {% endif %}
     </div>

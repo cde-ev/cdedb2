@@ -320,7 +320,7 @@
 
 {% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
                       heading='Suchmaske') %}
-    {{ box_filter_begin(heading) }}
+    {% call bootstrap_panel(title=heading, icon="search", aclass="panel-primary") %}
     {% with OPERATOR_LABELS = {1: "ist leer",
                                2: "ist nicht leer",
                                3: "ist gleich",
@@ -488,30 +488,27 @@
             $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});
         </script>
     {% endwith %}
-    {{ box_filter_end() }}
+    {% endcall %}
 {% endmacro %}
 
 {% macro place_default_queries(target, queries, titles, title="Standardabfragen") %}
     {% if queries %}
-        <div class="panel panel-default">
-            <div class="panel-heading"><h4 class="panel-title">{{ title|e }}</h4></div>
-            <div class="panel-body">
-                <div class="row">
-                    {% for list in queries | slice(2) %}
-                    <div class="col-sm-6">
-                        <ul>
-                            {% for query in list %}
-                                <li>
-                                    {{ href(cdedblink(target, queries[query]|querytoparams),
-                                            titles.get(query, query), aclass="default-query") }}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endfor %}
+        {% call bootstrap_panel(title=title) %}
+            <div class="row">
+                {% for list in queries | slice(2) %}
+                <div class="col-sm-6">
+                    <ul>
+                        {% for query in list %}
+                            <li>
+                                {{ href(cdedblink(target, queries[query]|querytoparams),
+                                        titles.get(query, query), aclass="default-query") }}
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </div>
+                {% endfor %}
             </div>
-        </div>
+        {% endcall %}
         <script type="text/javascript">
             $('.default-query').each(function(){
                 var url = $(this).attr('href');
@@ -725,16 +722,17 @@
     {%- endif -%}
 {% endmacro %}
 
-
-{% macro box_filter_begin(title='Filter') %}
-<div class="panel panel-primary">
-    <div class="panel-heading"><h3 class="panel-title">{{ title|e }}</h3></div>
-    <div class="panel-body">
-{% endmacro %}
-
-{% macro box_filter_end() %}
+{% macro bootstrap_panel(title="", aclass="panel-default", icon="") %}
+    <div class="panel {{ aclass|e }}">
+        {% if title or icon %}
+            <div class="panel-heading">
+                <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title|e }}</h3>
+            </div>
+        {% endif %}
+        <div class="panel-body">
+            {{ caller() }}
+        </div>
     </div>
-</div>
 {% endmacro %}
 
 {% macro output_given_displayname(given_names, display_name) %}

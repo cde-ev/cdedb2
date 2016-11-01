@@ -43,9 +43,8 @@
         </tbody>
     </table>
     
-    {{ util.box_filter_begin() }}
-    <form action="{{ cdedblink('cde/view_cde_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-        <div>
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
+        <form action="{{ cdedblink('cde/view_cde_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in enums['CdeLogCodes'] %}
@@ -56,6 +55,6 @@
             {{ util.form_input_text(name="persona_id", label="Account", small=True) }}
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}
-        </div>
-    </form>
+        </form>
+    {% endcall %}
 {% endblock %}

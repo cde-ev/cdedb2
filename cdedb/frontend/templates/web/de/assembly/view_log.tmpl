@@ -48,7 +48,7 @@ Versammlung – Logs ({{ values['start']|int|e }}–{{ (values['start']|int + lo
         {% endfor %}
         </tbody>
     </table>
-    {{ util.box_filter_begin() }}
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
     <form action="{{ cdedblink('assembly/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
@@ -67,5 +67,5 @@ Versammlung – Logs ({{ values['start']|int|e }}–{{ (values['start']|int + lo
         {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
         {{ util.form_input_submit(value="Anzeigen", small=True) }}
     </form>
-    {{ util.box_filter_end() }}
+    {% endcall %}
 {% endblock %}

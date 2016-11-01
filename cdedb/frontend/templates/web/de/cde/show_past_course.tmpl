@@ -33,11 +33,7 @@
 
     <h2>Teilnehmer</h2>
     {% if is_admin %}
-        <div class="panel panel-success">
-            <div class="panel-heading">
-                <h4 class="panel-title">Teilnehmer zu diesem Kurs hinzufügen</h4>
-            </div>
-            <div class="panel-body">
+        {% call util.bootstrap_panel(title="Teilnehmer zu diesem Kurs hinzufügen", aclass="panel-success") %}
                 <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                     <div class="row">
@@ -67,8 +63,7 @@
                         </div>
                     </div>
                 </form>
-            </div>
-        </div>
+        {% endcall %}
     {% endif %}
     {% if participants %}
         <ul>

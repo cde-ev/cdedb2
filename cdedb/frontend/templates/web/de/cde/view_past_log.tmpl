@@ -53,9 +53,8 @@ Log: Abgeschlossene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['s
         </tbody>
     </table>
     
-    {{ util.box_filter_begin() }}    
-    <form action="{{ cdedblink('cde/view_past_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-        <div>
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}    
+        <form action="{{ cdedblink('cde/view_past_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in enums['PastEventLogCodes'] %}
@@ -72,7 +71,6 @@ Log: Abgeschlossene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['s
                     small=True) }}
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen",small=True) }}
-        </div>
-    </form>
-    {{ util.box_filter_end() }}
+        </form>
+    {% endcall %}
 {% endblock %}

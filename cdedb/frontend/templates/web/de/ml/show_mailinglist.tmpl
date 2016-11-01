@@ -58,11 +58,8 @@
     {% if not ambience['mailinglist']['is_active'] %}
         <p class="text-warning"><strong>Diese Liste ist nicht mehr aktiv.</strong></p>
     {% else %}
-        <div class="panel {% if is_subscribed %}panel-success{% else %}panel-default{% endif %}">
-            <div class="panel-heading">
-                <h3 class="panel-title">Dein Abonnement</h3>
-            </div>
-            <div class="panel-body">
+        {% call util.bootstrap_panel(title="Dein Abonnement",
+                                     aclass=("panel-success" if is_subscribed else "panel-default")) %}
                 {% if is_subscribed %}
                     <p class="text-success"><strong>Du hast diese Mailingliste abonniert.</strong></p>
                     <dl class="dl-horizontal">
@@ -146,7 +143,6 @@
                         </p>
                     {% endif %}
                 {% endif %}
-            </div>
-        </div>
+        {% endcall %}
     {% endif %}
 {% endblock %}

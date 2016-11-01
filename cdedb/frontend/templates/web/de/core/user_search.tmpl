@@ -23,9 +23,7 @@
             {% endwith %}
         </div>
         <div class="col-md-4">
-            <div class="panel panel-warning">
-                <div class="panel-heading"><h3 class="panel-title">Aktionen</h3></div>
-                <div class="panel-body">
+            {% call util.bootstrap_panel(title="Aktionen", aclass="panel-warning") %}
                     <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
                         <div class="input-group">
                             <input type="text" name="phrase" class="form-control" id="input-showuser-id" />
@@ -42,8 +40,7 @@
                         $i.next().after($i);
                         $i.change(function(){$('#adminshowuserform').submit();})
                     </script>
-                </div>
-            </div>
+            {% endcall %}
         </div>
     </div>
 

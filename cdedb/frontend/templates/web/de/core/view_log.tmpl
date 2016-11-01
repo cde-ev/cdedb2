@@ -44,7 +44,7 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
         </tbody>
     </table>
 
-    {{ util.box_filter_begin() }}
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('core/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
@@ -58,5 +58,5 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}
         </form>
-    {{ util.box_filter_end() }}
+    {% endcall %}
 {% endblock %}
