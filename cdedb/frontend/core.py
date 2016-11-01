@@ -90,7 +90,8 @@ class CoreFrontend(AbstractFrontend):
                 events = self.eventproxy.get_events(rs, orga_info)
                 today = now().date()
                 for event_id, event in events.items():
-                    start = event['registration_start']
+                    start = min(part['part_begin'] for part in event['parts'].values()) \
+                            if event['parts'] else None
                     if (not start or start >= today
                             or abs(start.year - today.year) < 2):
                         regs = self.eventproxy.list_registrations(rs,
@@ -98,6 +99,7 @@ class CoreFrontend(AbstractFrontend):
                         event['registrations'] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga
+                dashboard['today'] = today
             ## mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
@@ -114,6 +116,12 @@ class CoreFrontend(AbstractFrontend):
                 final = {}
                 for event_id, event in events.items():
                     if event_id not in orga_info:
+                        event['start'] = \
+                            min(part['part_begin'] for part in event['parts'].values()) \
+                            if event['parts'] else None
+                        event['end'] = \
+                            max(part['part_end'] for part in event['parts'].values()) \
+                            if event['parts'] else None
                         registration = self.eventproxy.list_registrations(
                             rs, event_id, rs.user.persona_id)
                         event['registration'] = bool(registration)

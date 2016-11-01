@@ -6,11 +6,15 @@
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start", active="True") }}
 {% endblock %}
 {% block content %}
-    <h2>Willkommen!</h2>
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
-        Dies ist die Offline-Datenbank.
-
-        TODO Erklaertext
+        <div class="alert alert-info">
+            <p>
+                {{ util.make_icon('info-sign') }} <strong>Info</strong>
+                Dies ist eine Offline-Instanz der CdE-Datenbank
+            </p>
+            
+            <p class=nosp>TODO Erklärtext</p>
+        </div>
     {% endif %}
     {% if "persona" not in user.roles %}
         <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform" class="form-horizontal">
@@ -30,74 +34,132 @@
                 {{ util.form_input_submit(value="Anmelden", small=True) }}
             </p>
         </form>
-        {{ util.href(cdedblink('core/reset_password_form'), "Passwort vergessen?") }} |
-        {{ util.href(cdedblink('core/genesis_request_form'), "Account anfordern") }}
+        <p>
+            {{ util.href(cdedblink('core/reset_password_form'), "Passwort vergessen?") }} |
+            {{ util.href(cdedblink('core/genesis_request_form'), "Account anfordern") }}
+        </p>
+        {% if meta_info.get('banner_before_login') %}
+            {% call util.bootstrap_panel() %}
+                {{ meta_info.get('banner_before_login')|rst }}
+            {% endcall %}
+        {% endif %}
     {% endif %}
+    
+    {# Internal index -- Dashboard #}
     {% if "persona" in user.roles %}
-        {{ meta_info.get('banner_after_login')|rst }}
-        <div>
-            <p>
-                Dashboard
-            </p>
-
-            {% if 'genesis_cases' in dashboard %}
-                <p>
-                    Accountanfragen
-
-                    Derzeit {{ dashboard['genesis_cases']|e }} zu
-                    {{ util.href(cdedblink('core/genesis_list_cases'), "bearbeiten") }}.
-                </p>
+        {% if meta_info.get('banner_after_login') %}
+            {% call util.bootstrap_panel() %}
+                {{ meta_info.get('banner_after_login')|rst }}
+            {% endcall %}
+        {% endif %}
+    
+        <div class="row">
+            {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 or
+                  'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
+                      
+                <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Verwaltung", aclass='panel-info', icon='check') %}
+                    {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 %}
+                        <p>
+                            Derzeit {{ dashboard['genesis_cases']|e }}
+                            {{ util.href(cdedblink('core/genesis_list_cases'), "Accountanfragen") }}
+                            zu bearbeiten.
+                        </p>
+                    {% endif %}
+                    
+                    {% if 'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
+                        <p>
+                            Derzeit {{ dashboard['pending_changes']|e }}
+                            {{ util.href(cdedblink('core/list_pending_changes'), "Änderungen") }}
+                            zu überprüfen.
+                        </p>
+                    {% endif %}
+                {% endcall %}
+                </div>
             {% endif %}
-            {% if 'pending_changes' in dashboard %}
-                <p>
-                    Änderungen
-
-                    Derzeit {{ dashboard['pending_changes']|e }} zu
-                    {{ util.href(cdedblink('core/list_pending_changes'), "überprüfen") }}.
-                </p>
-            {% endif %}
+            
             {% if 'orga' in dashboard %}
-                <p>
-                    Organisierte Veranstaltungen
-
-                    <ul>
-                        {% for event_id, event in dashboard['orga']|dictsort %}
+                <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Orga-Veranstaltungen", icon='blackboard', aclass='panel-warning') %}
+                    <ul class="slim">
+                        {% for event_id, event in dashboard['orga']|xdictsort('start') %}
                             <li>
-                                {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title']) }}
-                                mit {{ event['registrations']|e }} Anmeldungen
+                                {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
+                                        icon='blackboard') }}
+                                {% if event['registration_start'] %}
+                                    <br />
+                                    {% if event['registration_start'] <= dashboard['today'] %}
+                                        {{ event['registrations']|e }} Anmeldungen
+                                        {% if event['registration_hard_limit'] >= dashboard['today'] %}
+                                            (Anmeldung bis {{ event['registration_hard_limit']|date }})
+                                        {% endif %}
+                                    {% else %}
+                                        (Anmeldung ab {{ event['registration_start']|date }})
+                                    {% endif %}
+                                {% endif %}
+                                <br />
+                                <span class="small">
+                                    {{ util.href(cdedblink('event/change_event', {'event_id': event_id}), "Konfiguration",
+                                            icon='cog') }}
+                                	&bull;
+                                    {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
+                                            "Kurse", icon='book') }}
+                                	&bull;
+                                    {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
+                                            "Anmeldungen", icon='list') }}
+                                </span>
                             </li>
                         {% endfor %}
                     </ul>
-                </p>
+                {% endcall %}
+                </div>
             {% endif %}
+            
             {% if 'moderator' in dashboard %}
-                <p>
-                    Moderierte Mailinglisten
-
-                    <ul>
+                <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Moderierte Mailinglisten", icon='envelope',
+                                             aclass='panel-warning') %}
+                    <ul class="slim">
                         {% for mailinglist_id, mailinglist in dashboard['moderator']|dictsort %}
                             <li>
                                 {{ util.href(cdedblink('ml/show_mailinglist', {'mailinglist_id': mailinglist_id}),
-                                             mailinglist['title']) }}
-                                mit {{ mailinglist['requests']|e }} Anfragen
+                                             mailinglist['title'], icon='envelope') }}
+                                {% if mailinglist['requests'] %}
+                                    <br />
+                                    {{ util.href(cdedblink('ml/management', {'mailinglist_id' : mailinglist_id}),
+                                                 mailinglist['requests']|e + "Anfragen") }}
+                                {% endif %}
                             </li>
                         {% endfor %}
                     </ul>
-                </p>
+                {% endcall %}
+                </div>
             {% endif %}
+            
             {% if 'events' in dashboard %}
-                <p>
-                    Derzeitige Veranstaltungen
-
-                    <ul>
-                        {% for event_id, event in dashboard['events']|dictsort %}
+                <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Aktuelle Veranstaltungen", icon='blackboard',
+                                             aclass='panel-success') %}
+                    <ul class="slim">
+                        {% for event_id, event in dashboard['events']|xdictsort('start') %}
                             <li>
-                                {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title']) }}
+                                {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
+                                             icon='blackboard') }}
+                                <br />
+                                {{ event['start']|date }}–{{ event['end']|date }}
+                                <br />
                                 {% if event['registration'] %}
-                                    bereits angemeldet ({{ util.href(cdedblink('event/registration_status',
-                                                                              {'event_id': event_id}), "anzeigen") }})
+                                    (bereits {{ util.href(cdedblink('event/registration_status', {'event_id': event_id}),
+                                                         "angemeldet") }}
+                                    {%- if event['use_questionnaire'] %}
+                                        &bull;
+                                        {{ util.href(cdedblink('event/questionnaire', {'event_id': event_id}),
+                                                     "Fragebogen", icon='edit') -}}
+                                    {% endif -%}
+                                    )
                                 {% else %}
-                                    {{ util.href(cdedblink('event/register_form', {'event_id': event_id}), "anmelden") }}
+                                    {{ util.href(cdedblink('event/register_form', {'event_id': event_id}), "anmelden",
+                                                 icon='log-in') }}
                                     {% if event['registration_soft_limit'] %}
                                         {% if now().date() >= event['registration_soft_limit'] %}
                                             (bis {{ event['registration_soft_limit']|date|e }})
@@ -115,29 +177,31 @@
                             </li>
                         {% endfor %}
                     </ul>
-                </p>
+                {% endcall %}
+                </div>
             {% endif %}
+            
             {% if 'assemblies' in dashboard %}
-                <p>
-                    Derzeitige Veranstaltungen
-
-                    <ul>
+                <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Aktuelle Versammlungen", icon='bullhorn',
+                                             aclass='panel-success') %}
+                    <ul class="slim">
                         {% for assembly_id, assembly in dashboard['assemblies']|dictsort %}
                             <li>
                                 {{ util.href(cdedblink('assembly/show_assembly', {'assembly_id': assembly_id}),
-                                             assembly['title']) }}
+                                             assembly['title'], icon='bullhorn') }}
+                                <br />
                                 {% if assembly['does_attend'] %}
-                                    bereits angemeldet
+                                    (bereits angemeldet)
                                 {% else %}
-                                    (bis {{ assembly['signup_end']|datetime|e }} möglich)
+                                    (Anmeldung bis {{ assembly['signup_end']|datetime|e }} möglich)
                                 {% endif %}
                             </li>
                         {% endfor %}
                     </ul>
-                </p>
+                {% endcall %}
+                </div>
             {% endif %}
         </div>
-    {% else %}
-        {{ meta_info.get('banner_before_login')|rst }}
     {% endif %}
 {% endblock %}
