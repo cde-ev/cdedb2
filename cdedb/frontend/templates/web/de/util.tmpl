@@ -21,7 +21,7 @@
             <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js")|e }}"></script>
         {% elif script == 'helper' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_helper.js")|e }}"></script>
-        {% elif script == 'selectize' and not selectize_included %}
+        {% elif script == 'selectize' %}
             <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js")|e }}"></script>
             <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css")|e }}" />
         {% elif script == 'batch-admission' %}
@@ -450,7 +450,7 @@
 
 
             <!-- JS Form -->
-            <div class="queryform-js">
+            <div class="queryform-js softhide">
                 <h4 class="filter-title nosp">{{ make_icon('filter') }} Filter</h4>
                 <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
                 <div class="input-group has-success queryform-add">
@@ -516,6 +516,7 @@
                     .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open'}))
                     .click(function(){
                         $('#queryform').data('cdedbQueryForm').queryFromURL(url);
+                        return false;
                     });
                 $(this).after($link).after(' ');
             });
