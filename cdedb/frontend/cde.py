@@ -105,12 +105,12 @@ class CdEFrontend(AbstractUserFrontend):
             month = 7 if deadline.month >= 7 else 1
             deadline = deadline.replace(month=month)
             ## Add remaining periods
-            deadline.replace(year=deadline.year + periods_left//2)
+            deadline = deadline.replace(year=deadline.year + periods_left//2)
             if periods_left % 2:
                 if deadline.month >= 7:
-                    deadline.replace(year=deadline.year + 1, month=1)
+                    deadline = deadline.replace(year=deadline.year + 1, month=1)
                 else:
-                    deadline.replace(month=7)
+                    deadline = deadline.replace(month=7)
         return self.render(rs, "index", {
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
             'meta_info': meta_info, 'deadline': deadline})
