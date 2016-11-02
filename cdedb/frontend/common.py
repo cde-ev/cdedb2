@@ -205,7 +205,7 @@ def money_filter(val, currency="€"):
     """
     if val is None:
         return None
-    return "{:.2f}{}".format(val, currency)
+    return "{:.2f} {}".format(val, currency)
 
 def cdedbid_filter(val):
     """Custom jinja filter to format persona ids with a check digit. Every user

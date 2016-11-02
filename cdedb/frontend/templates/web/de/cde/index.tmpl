@@ -39,19 +39,24 @@
         </div>
         <div class="col-md-6">
             {% call util.bootstrap_panel(title="Initiative 25+", icon='euro') %}
-                <p>
-                    Du möchtest den CdE und die „Idee Schülerakademie“ finanziell unterstützen? Sofern Du die
-                    Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich 25 € oder einen beliebigen höheren
-                    Betrag als Lastschrift von Deinem Konto ein: 25+ eben.
-                </p>
                 {% if has_lastschrift %}
                     <p>
-                        {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }} dazu oder Deine
+                        Mit der Initiative 25+ unterstützt Du den CdE und die „Idee Schülerakademie“ finanziell durch
+                        einen Lastschrifteinzug von jährlich 25 € oder mehr.
+                        {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }}
+                    </p>
+                    <p>
+                        <strong>Du nimmst bereits an der Initiative 25+ teil</strong>. Du kannst Deine
                         {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
-                                "bestehende Einzugsermächtigung") }}
+                                "bestehende Einzugsermächtigung", icon='euro') }}
                         ansehen.
                     </p>
                 {% else %}
+                    <p>
+                        Du möchtest den CdE und die „Idee Schülerakademie“ finanziell unterstützen? Sofern Du die
+                        Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich 25 € oder einen beliebigen höheren
+                        Betrag als Lastschrift von Deinem Konto ein: 25+ eben.
+                    </p>
                     <p>
                         {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }} dazu oder direkt zum
                         {{ util.href(cdedblink("cde/lastschrift_subscription_form"), "Lastschrift-Formular") }}.
@@ -78,7 +83,7 @@
                 </p>
             {% endif %}
             <p>
-                Um Dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto.
+                Um Dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto:
             </p>
             <table class="table table-condensed">
                 <tbody>
