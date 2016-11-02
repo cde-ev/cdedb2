@@ -82,12 +82,13 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde")
     def index(self, rs):
         """Render start page."""
-        user_lastschrift = self.cdeproxy.list_lastschrift(
-            rs, persona_ids=(rs.user.persona_id,), active=True)
         meta_info = self.coreproxy.get_meta_info(rs)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         deadline = None
+        user_lastschrift = []
         if "member" in rs.user.roles:
+            user_lastschrift = self.cdeproxy.list_lastschrift(
+                rs, persona_ids=(rs.user.persona_id,), active=True)
             periods_left = data['balance'] // self.conf.MEMBERSHIP_FEE
             if data['trial_member']:
                 periods_left += 1
