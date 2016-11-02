@@ -1,4 +1,4 @@
-{% set sidenav_active='assembly_config' %}
+{% set sidenav_active='assembly_ballots' if ambience['ballot'] else 'assembly_show' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
@@ -8,17 +8,32 @@
         Datei anhängen ({{ ambience['assembly']['title']|e }})
     {% endif %}
 {% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Datei anhängen
+        {% if ambience['ballot'] %}
+            <small>{{ util.make_icon('thumbs-up') }} {{ ambience['ballot']['title']|e }}</small>
+        {% else %}
+            <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title']|e }}</small>
+        {% endif %}
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {% if ambience['ballot'] %}
+        {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
+        {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
+    {% endif %}
+    {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), "Datei anhängen", active=True) }}
+{% endblock %}
 {% block content %}
-    Bitte beachte, dass nur PDF-Dokumente zulässig sind.
-
     <form action="{{ cdedblink('assembly/add_attachment')|e }}" method="POST" enctype="multipart/form-data"
-     id="addattachmentform">
-        <div>
-            {{ util.form_input_text(name="title", label="Bezeichnung") }}
-            {{ util.form_input_text(name="filename", label="Dateiname",
-                                    info="Leer lassen für derzeitigen Dateinamen.") }}
-            {{ util.form_input_file(name="attachment", accept="application/pdf") }}
-            {{ util.form_input_submit(value="Hochladen") }}
-        </div>
+            id="addattachmentform" class="form-horizontal">
+        {{ util.form_input_text(name="title", label="Bezeichnung") }}
+        {{ util.form_input_text(name="filename", label="Dateiname", info="Leer lassen für derzeitigen Dateinamen.") }}
+        {{ util.form_input_file(name="attachment", accept="application/pdf", info="Nur PDF-Dokumente sind möglich.") }}
+        {{ util.form_input_submit(value="Hochladen", cancellink=(
+            cdedblink('assembly/show_ballot') if ambience['ballot'] else cdedblink('assembly/show_assembly'))) }}
     </form>
 {% endblock %}

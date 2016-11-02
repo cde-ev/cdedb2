@@ -1,23 +1,30 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block inner_navigation %}{{assembly_inner_navigation(ambience['assembly'])}}{% endblock %}
-{% block title %}Abstimmung anlegen ({{ ambience['assembly']['title']|e }}){% endblock %}
+{% block title %}Abstimmung anlegen{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/create_ballot"), "Abstimmung anlegen", active=True) }}
+{% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('assembly/create_ballot')|e }}" method="POST" id="createballotform">
-        <table>
-            {{ util.form_input_text(name="title", label="Titel") }}
-            {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
-            {{ util.form_input_text(name="vote_begin", label="Beginn der Abstimmung") }}
-            {{ util.form_input_text(name="vote_end", label="Ende der Abstimmung") }}
-            {{ util.form_input_text(name="quorum", label="Quorum") }}
-            {{ util.form_input_text(name="vote_extension_end", label="Ende der Verlängerung") }}
-            {{ util.form_input_text(name="votes", label="Anzahl der Stimmen",
-                                   info="Leer lassen für vollständige Präferenzwahl.") }}
-            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Anlegen") }}
-        </div>
+    <form action="{{ cdedblink('assembly/create_ballot')|e }}" method="POST" id="createballotform",
+            class="form-horizontal">
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_text(name="vote_begin", label="Beginn der Abstimmung") }}
+        {{ util.form_input_text(name="vote_end", label="Ende der Abstimmung") }}
+        {{ util.form_input_text(name="quorum", label="Quorum") }}
+        {{ util.form_input_text(name="vote_extension_end", label="Ende der Verlängerung") }}
+        {{ util.form_input_text(name="votes", label="Anzahl der Stimmen",
+                               info="Leer lassen für vollständige Präferenzwahl.") }}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink('assembly/list_ballots')) }}
     </form>
+    <script type="text/javascript">
+        $('#createballotform').cdedbProtectChanges();
+    </script>
 {% endblock %}

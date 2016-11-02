@@ -181,7 +181,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
-        self.assertTitle("Internationaler Kongress -- Abstimmungen")
+        self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertNonPresence("Maximale Länge der Satzung")
         self.traverse({'href': '/assembly/1/ballot/create'},)
         f = self.response.forms['createballotform']
@@ -207,7 +207,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertEqual("April, April!", f['notes'].value)
         self.traverse({'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
-        self.assertTitle("Internationaler Kongress -- Abstimmungen")
+        self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertPresence("Maximale Länge der Satzung")
         self.traverse({'href': '/assembly/1/ballot/6/show'},)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
@@ -216,7 +216,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.submit(f)
         self.traverse({'href': '/assembly/1/show'},
                       {'href': '/assembly/1/ballot/list'},)
-        self.assertTitle("Internationaler Kongress -- Abstimmungen")
+        self.assertTitle("Internationaler Kongress – Abstimmungen")
         self.assertNonPresence("Maximale Länge der Satzung")
 
     @as_users("anton")
