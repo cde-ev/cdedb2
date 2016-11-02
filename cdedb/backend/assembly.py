@@ -37,7 +37,8 @@ from cdedb.backend.common import (
     Silencer, singularize, AbstractBackend)
 from cdedb.common import (
     glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
-    ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key)
+    ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
+    extract_roles)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -49,6 +50,31 @@ class AssemblyBackend(AbstractBackend):
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
+
+    def may_assemble(self, rs, *, assembly_id=None, ballot_id=None,
+                     persona_id=None):
+        """Helper to check authorization.
+
+        The deal is that members may access anything and assembly users
+        may access any assembly in which they are participating. This
+        especially allows people who have "cde", but not "member" in
+        their roles, to access only those assemblies they participated
+        in.
+
+        Exactly one of the two id parameters has to be provided
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
+        :type persona_id: int or None
+        :param persona_id: If not provided the current user is used.
+        :rtype: bool
+        """
+        if "member" in rs.user.roles:
+            return True
+        return self.check_attendance(
+            rs, assembly_id=assembly_id, ballot_id=ballot_id,
+            persona_id=persona_id)
 
     @staticmethod
     def encrypt_vote(salt, secret, vote):
@@ -162,11 +188,46 @@ class AssemblyBackend(AbstractBackend):
             raise RuntimeError("Bad scope.")
         return self.general_query(rs, query)
 
+    def check_attendance(self, rs, *, assembly_id=None, ballot_id=None,
+                         persona_id=None):
+        """Check wether a persona attends a specific assembly/ballot.
+
+        Exactly one of the inputs assembly_id and ballot_id has to be
+        provided.
+
+        This does not check for authorization since it is used during
+        the authorization check.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int or None
+        :type ballot_id: int or None
+        :type persona_id: int or None
+        :param persona_id: If not provided the current user is used.
+        :rtype: bool
+        """
+        if assembly_id is None and ballot_id is None:
+            raise ValueError("No input specified.")
+        if assembly_id is not None and ballot_id is not None:
+            raise ValueError("Too many inputs specified.")
+        if persona_id is None:
+            persona_id = rs.user.persona_id
+        with Atomizer(rs):
+            if ballot_id is not None:
+                assembly_id = unwrap(self.sql_select_one(
+                    rs, "assembly.ballots", ("assembly_id",), ballot_id))
+            query = glue("SELECT id FROM assembly.attendees",
+                         "WHERE assembly_id = %s and persona_id = %s")
+            return bool(self.query_one(
+                rs, query, (assembly_id, persona_id)))
+
     @access("assembly")
     def does_attend(self, rs, *, assembly_id=None, ballot_id=None):
         """Check wether this persona attends a specific assembly/ballot.
 
         Exactly one of the inputs has to be provided.
+
+        This does not check for authorization since it is used during
+        the authorization check.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type assembly_id: int or None
@@ -175,18 +236,8 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id_or_None", assembly_id)
         ballot_id = affirm("id_or_None", ballot_id)
-        if assembly_id is None and ballot_id is None:
-            raise ValueError("No input specified.")
-        if assembly_id is not None and ballot_id is not None:
-            raise ValueError("Too many inputs specified.")
-        with Atomizer(rs):
-            if ballot_id is not None:
-                assembly_id = unwrap(self.sql_select_one(
-                    rs, "assembly.ballots", ("assembly_id",), ballot_id))
-            query = glue("SELECT id FROM assembly.attendees",
-                         "WHERE assembly_id = %s and persona_id = %s")
-            return bool(self.query_one(
-                rs, query, (assembly_id, rs.user.persona_id)))
+        return self.check_attendance(rs, assembly_id=assembly_id,
+                                     ballot_id=ballot_id)
 
     @access("assembly")
     def list_attendees(self, rs, assembly_id):
@@ -202,6 +253,8 @@ class AssemblyBackend(AbstractBackend):
         :rtype: [int]
         """
         assembly_id = affirm("id", assembly_id)
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
             entity_key="assembly_id")
@@ -225,7 +278,11 @@ class AssemblyBackend(AbstractBackend):
             query = glue(query, "WHERE is_active = %s")
             params = (is_active,)
         data = self.query_all(rs, query, params)
-        return {e['id']: e for e in data}
+        ret = {e['id']: e for e in data}
+        if "member" not in rs.user.roles:
+            ret = {k: v for k, v in ret.items()
+                   if self.check_attendance(rs, assembly_id=k)}
+        return ret
 
     @access("assembly")
     @singularize("get_assembly")
@@ -237,6 +294,8 @@ class AssemblyBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
+        if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
+            raise PrivilegeError("Not authorized.")
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
 
@@ -282,6 +341,8 @@ class AssemblyBackend(AbstractBackend):
         :returns: Mapping of ballot ids to titles.
         """
         assembly_id = affirm("id", assembly_id)
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         data = self.sql_select(rs, "assembly.ballots", ("id", "title"),
                                (assembly_id,), entity_key="assembly_id")
         return {e['id']: e['title'] for e in data}
@@ -313,6 +374,9 @@ class AssemblyBackend(AbstractBackend):
                               if e['ballot_id'] == anid}
                 assert('candidates' not in ret[anid])
                 ret[anid]['candidates'] = candidates
+            if "member" not in rs.user.roles:
+                ret = {k: v for k, v in ret.items()
+                       if self.check_attendance(rs, ballot_id=k)}
         return ret
 
     @access("assembly_admin")
@@ -530,7 +594,70 @@ class AssemblyBackend(AbstractBackend):
                     ballot['assembly_id'], additional_info=ballot['title'])
         return update['extended']
 
-    @access("assembly")
+    def process_signup(self, rs, assembly_id, persona_id):
+        """Helper to perform the actual signup
+
+        This has to take care to keep the voter register consistent.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type persona_id: int
+        :rtype: str or None
+        :returns: The secret if a new secret was generated or None if we
+          already attend.
+        """
+        with Atomizer(rs):
+            if self.check_attendance(rs, assembly_id=assembly_id,
+                                     persona_id=persona_id):
+                ## already signed up
+                return None
+            assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
+            if now() > assembly['signup_end']:
+                raise ValueError("Signup already ended.")
+
+            new_attendee = {
+                'assembly_id': assembly_id,
+                'persona_id': persona_id,
+                'secret': random_ascii(),
+            }
+            self.sql_insert(rs, "assembly.attendees", new_attendee)
+            self.assembly_log(rs, const.AssemblyLogCodes.new_attendee,
+                              assembly_id, persona_id=persona_id)
+            ## update voter register
+            ballots = self.list_ballots(rs, assembly_id)
+            for ballot in ballots:
+                entry = {
+                    'persona_id': persona_id,
+                    'ballot_id': ballot,
+                }
+                self.sql_insert(rs, "assembly.voter_register", entry)
+            return new_attendee['secret']
+
+    @access("assembly_admin")
+    def external_signup(self, rs, assembly_id, persona_id):
+        """Make a non-member attend an assembly.
+
+        Those are not allowed to subscribe themselves, but must be added
+        by an admin. On the other hand we disallow this action for members.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :rtype: str or None
+        :returns: The secret if a new secret was generated or None if we
+          already attend.
+        """
+        assembly_id = affirm("id", assembly_id)
+        persona_id = affirm("id", persona_id)
+
+        roles = extract_roles(self.core.get_persona(rs, persona_id))
+        if "member" in roles:
+            raise ValueError("Not allowed for members.")
+        if "assembly" not in roles:
+            raise ValueError("Only allowed for assembly users.")
+
+        return self.process_signup(rs, assembly_id, persona_id)
+
+    @access("member")
     def signup(self, rs, assembly_id):
         """Attend the assembly.
 
@@ -546,31 +673,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id", assembly_id)
 
-        with Atomizer(rs):
-            if self.does_attend(rs, assembly_id=assembly_id):
-                ## already signed up
-                return None
-            assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
-            if now() > assembly['signup_end']:
-                raise ValueError("Signup already ended.")
-
-            new_attendee = {
-                'assembly_id': assembly_id,
-                'persona_id': rs.user.persona_id,
-                'secret': random_ascii(),
-            }
-            self.sql_insert(rs, "assembly.attendees", new_attendee)
-            self.assembly_log(rs, const.AssemblyLogCodes.new_attendee,
-                              assembly_id, persona_id=rs.user.persona_id)
-            ## update voter register
-            ballots = self.list_ballots(rs, assembly_id)
-            for ballot in ballots:
-                entry = {
-                    'persona_id': rs.user.persona_id,
-                    'ballot_id': ballot,
-                }
-                self.sql_insert(rs, "assembly.voter_register", entry)
-            return new_attendee['secret']
+        return self.process_signup(rs, assembly_id, rs.user.persona_id)
 
     @access("assembly")
     def vote(self, rs, ballot_id, vote, secret):
@@ -593,7 +696,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             vote = affirm("vote", vote, ballot=ballot)
-            if not self.does_attend(rs, ballot_id=ballot_id):
+            if not self.check_attendance(rs, ballot_id=ballot_id):
                 raise ValueError("Must attend to vote.")
             if ballot['extended']:
                 reference = ballot['vote_extension_end']
@@ -656,6 +759,9 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm("id", ballot_id)
         secret = affirm("printable_ascii_or_None", secret)
 
+        if not self.check_attendance(rs, ballot_id=ballot_id):
+            raise PrivilegeError("Must attend the ballot.")
+
         with Atomizer(rs):
             query = glue("SELECT has_voted FROM assembly.voter_register",
                          "WHERE ballot_id = %s and persona_id = %s")
@@ -714,6 +820,8 @@ class AssemblyBackend(AbstractBackend):
     ]
 }
 """)
+        if not self.may_assemble(rs, ballot_id=ballot_id):
+            raise PrivilegeError("Not authorized.")
 
         with Atomizer(rs):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
@@ -844,6 +952,10 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError("No input specified.")
         if assembly_id is not None and ballot_id is not None:
             raise ValueError("Too many inputs specified.")
+        if not self.may_assemble(rs, assembly_id=assembly_id,
+                                 ballot_id=ballot_id):
+            raise PrivilegeError("Not authorized.")
+
         if assembly_id is not None:
             column = "assembly_id"
             key = affirm("id", assembly_id)
@@ -867,7 +979,11 @@ class AssemblyBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         data = self.sql_select(rs, "assembly.attachments",
                                ASSEMBLY_ATTACHMENT_FIELDS, ids)
-        return {e['id']: e for e in data}
+        ret = {e['id']: e for e in data}
+        if "member" not in rs.user.roles:
+            ret = {k: v for k, v in ret.items() if self.check_attendance(
+                rs, assembly_id=v['assembly_id'], ballot_id=v['ballot_id'])}
+        return ret
 
     @access("assembly_admin")
     def add_attachment(self, rs, data):

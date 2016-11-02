@@ -131,6 +131,34 @@ class TestAssemblyFrontend(FrontendTest):
         with open("./bin/verify_votes.py", 'rb') as f:
             self.assertEqual(f.read(), value)
 
+    @as_users("anton")
+    def test_external_signup(self, user):
+        self.traverse({'href': '/assembly/$'},
+                      {'href': '/assembly/create'},)
+        f = self.response.forms['createassemblyform']
+        f['title'] = 'Drittes CdE-Konzil'
+        f['signup_end'] = "2222-4-1 00:00:00"
+        f['description'] = "Wir werden alle Häretiker exkommunizieren."
+        f['notes'] = "Nur ein Aprilscherz"
+        self.submit(f)
+        self.assertTitle('Drittes CdE-Konzil')
+        self.traverse({'href': '/assembly/2/attendees'})
+        self.assertNonPresence("Kalif")
+        self.traverse({'href': '/assembly/2/show'})
+        f = self.response.forms['addattendeeform']
+        f['persona_id'] = "DB-11-G"
+        self.submit(f)
+        self.assertTitle('Drittes CdE-Konzil')
+        mail = self.fetch_mail()[0]
+        parser = email.parser.Parser()
+        msg = parser.parsestr(mail)
+        attachment = msg.get_payload()[1]
+        value = attachment.get_payload(decode=True)
+        with open("./bin/verify_votes.py", 'rb') as f:
+            self.assertEqual(f.read(), value)
+        self.traverse({'href': '/assembly/2/attendees'})
+        self.assertPresence("Kalif")
+
     @as_users("kalif")
     def test_list_attendees(self, user):
         self.traverse({'href': '/assembly/$'},

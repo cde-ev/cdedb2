@@ -348,9 +348,8 @@ class TestAssemblyBackend(BackendTest):
             'votes': None}
         ballot_id = self.assembly.create_ballot(self.key, data)
         self.assembly.check_voting_priod_extension(self.key, ballot_id)
-        self.login(USER_DICT['kalif'])
-        self.assembly.signup(self.key, new_id)
-        self.login(USER_DICT['anton'])
+        self.assembly.external_signup(self.key, new_id,
+                                      persona_id=USER_DICT['kalif']['id'])
         update = {
             'id': new_id,
             'signup_end': datetime.datetime.now(pytz.utc),

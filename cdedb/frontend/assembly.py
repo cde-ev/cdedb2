@@ -47,7 +47,28 @@ class AssemblyFrontend(AbstractUserFrontend):
     def is_admin(cls, rs):
         return super().is_admin(rs)
 
-    @access("persona")
+    def may_assemble(self, rs, *, assembly_id=None, ballot_id=None):
+        """Helper to check authorization.
+
+        The deal is that members may access anything and assembly users
+        may access any assembly in which they are participating. This
+        especially allows people who have "cde", but not "member" in
+        their roles, to access only those assemblies they participated
+        in.
+
+        Exactly one of the two id parameters has to be provided
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type ballot_id: int
+        :rtype: bool
+        """
+        if "member" in rs.user.roles:
+            return True
+        return self.assemblyproxy.does_attend(
+            rs, assembly_id=assembly_id, ballot_id=ballot_id)
+
+    @access("assembly")
     def index(self, rs):
         """Render start page."""
         assemblies = self.assemblyproxy.list_assemblies(rs)
@@ -146,6 +167,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def show_assembly(self, rs, assembly_id):
         """Present an assembly."""
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
@@ -162,9 +185,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                     and timestamp < ballot['vote_extension_end']))
                for ballot in ballots.values()):
             has_activity = True
+        attendees = {}
+        if self.is_admin(rs):
+            attendees = self.assemblyproxy.list_attendees(rs, assembly_id)
         return self.render(rs, "show_assembly", {
             "attachments": attachments, "attends": attends,
-            "has_activity": has_activity})
+            "has_activity": has_activity, "attendees": attendees})
 
     @access("assembly_admin")
     def change_assembly_form(self, rs, assembly_id):
@@ -201,7 +227,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly", {
             'assembly_id': new_id})
 
-    @access("assembly", modi={"POST"})
+    @access("member", modi={"POST"})
     def signup(self, rs, assembly_id):
         """Join an assembly."""
         if now() > rs.ambience['assembly']['signup_end']:
@@ -225,9 +251,40 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs.notify("info", "Already signed up.")
         return self.redirect(rs, "assembly/show_assembly")
 
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("persona_id", "cdedbid"))
+    def external_signup(self, rs, assembly_id, persona_id):
+        """Add an external participant to an assembly."""
+        if now() > rs.ambience['assembly']['signup_end']:
+            rs.notify("warning", "Signup already ended.")
+            return self.redirect(rs, "assembly/show_assembly")
+        if rs.errors:
+            return self.show_assembly(rs, assembly_id)
+        secret = self.assemblyproxy.external_signup(rs, assembly_id,
+                                                    persona_id)
+        persona = self.coreproxy.get_persona(rs, persona_id)
+        if secret:
+            rs.notify("success", "Signed up.")
+            attachment = {
+                'path': os.path.join(self.conf.REPOSITORY_PATH,
+                                     "bin/verify_votes.py"),
+                'filename': 'verify_votes.py',
+                'mimetype': 'text/plain'}
+            self.do_mail(
+                rs, "signup",
+                {'To': (persona['username'],),
+                 'Subject': 'Signed up for assembly {}'.format(
+                     rs.ambience['assembly']['title'])},
+                {'secret': secret}, attachments=(attachment,))
+        else:
+            rs.notify("info", "Already signed up.")
+        return self.redirect(rs, "assembly/show_assembly")
+
     @access("assembly")
     def list_attendees(self, rs, assembly_id):
         """Provide a list of who is/was present."""
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
         attendees = self.coreproxy.get_assembly_users(rs, attendee_ids)
         return self.render(rs, "list_attendees", {"attendees": attendees})
@@ -245,6 +302,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def list_ballots(self, rs, assembly_id):
         """View available ballots for an assembly."""
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         return self.render(rs, "list_ballots", {'ballots': ballots})
@@ -275,6 +334,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     ## ballot_id is optional, but comes semantically before attachment_id
     def get_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Retrieve an attachment."""
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         path = os.path.join(self.conf.STORAGE_DIR, "assembly_attachment",
                             str(attachment_id))
         return self.send_file(rs, path=path, mimetype="application/pdf",
@@ -350,6 +411,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
         """
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         ballot = rs.ambience['ballot']
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
@@ -476,6 +539,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         for classical voting (i.e. with a fixed number of equally weighted
         votes).
         """
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         ballot = rs.ambience['ballot']
         if ballot['votes']:
             voted = unwrap(
@@ -504,6 +569,8 @@ class AssemblyFrontend(AbstractUserFrontend):
     @access("assembly")
     def get_result(self, rs, assembly_id, ballot_id):
         """Download the tallied stats of a ballot."""
+        if not self.may_assemble(rs, assembly_id=assembly_id):
+            raise PrivilegeError("Not authorized.")
         if not rs.ambience['ballot']['is_tallied']:
             rs.notify("warning", "Ballot not yet tallied.")
             return self.show_ballot(rs, assembly_id, ballot_id)
