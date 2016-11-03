@@ -306,7 +306,30 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise PrivilegeError("Not authorized.")
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
-        return self.render(rs, "list_ballots", {'ballots': ballots})
+        ref = now()
+        update = False
+        for ballot_id, ballot in ballots.items():
+            if (ballot['extended'] is None and ref > ballot['vote_end']):
+                tmp = self.assemblyproxy.check_voting_priod_extension(ers, ballot_id)
+                update = update or tmp
+        if update:
+            return self.redirect(rs, "assembly/list_ballots")
+        future = {k: v for k, v in ballots.items()
+                  if ballot['vote_begin'] > ref}
+        current = {k: v for k, v in ballots.items()
+                   if ballot['vote_begin'] <= ref and ballot['vote_end'] > ref}
+        extended = {k: v for k, v in ballots.items()
+                    if (ballot['vote_end'] <= ref
+                        and ballot['extended']
+                        and ballot['vote_extension_end'] > ref)}
+        done = {k: v for k, v in ballots.items()
+                   if (ballot['vote_end'] <= ref
+                       and (ballot['extended'] == False
+                            or ballot['vote_extension_end'] <= ref))}
+        assert(len(ballots) == len(future) + len(current) + len(extended) + len(done))
+        return self.render(rs, "list_ballots", {
+            'ballots': ballots, 'future': future, 'current': current, 'extended': extended,
+            'done': done})
 
     @access("assembly_admin")
     def create_ballot_form(self, rs, assembly_id):
