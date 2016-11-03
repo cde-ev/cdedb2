@@ -13,7 +13,7 @@ from cdedb.frontend.common import (
     check_validation as check, request_extractor)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
-from cdedb.common import merge_dicts, unwrap, now, ProxyShim
+from cdedb.common import merge_dicts, unwrap, now, ProxyShim, PrivilegeError
 import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -227,41 +227,20 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly", {
             'assembly_id': new_id})
 
-    @access("member", modi={"POST"})
-    def signup(self, rs, assembly_id):
-        """Join an assembly."""
-        if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", "Signup already ended.")
-            return self.redirect(rs, "assembly/show_assembly")
-        secret = self.assemblyproxy.signup(rs, assembly_id)
-        if secret:
-            rs.notify("success", "Signed up.")
-            attachment = {
-                'path': os.path.join(self.conf.REPOSITORY_PATH,
-                                     "bin/verify_votes.py"),
-                'filename': 'verify_votes.py',
-                'mimetype': 'text/plain'}
-            self.do_mail(
-                rs, "signup",
-                {'To': (rs.user.username,),
-                 'Subject': 'Signed up for assembly {}'.format(
-                     rs.ambience['assembly']['title'])},
-                {'secret': secret}, attachments=(attachment,))
-        else:
-            rs.notify("info", "Already signed up.")
-        return self.redirect(rs, "assembly/show_assembly")
+    def process_signup(self, rs, assembly_id, persona_id=None):
+        """Helper to actually perform signup.
 
-    @access("assembly_admin", modi={"POST"})
-    @REQUESTdata(("persona_id", "cdedbid"))
-    def external_signup(self, rs, assembly_id, persona_id):
-        """Add an external participant to an assembly."""
-        if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", "Signup already ended.")
-            return self.redirect(rs, "assembly/show_assembly")
-        if rs.errors:
-            return self.show_assembly(rs, assembly_id)
-        secret = self.assemblyproxy.external_signup(rs, assembly_id,
-                                                    persona_id)
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type assembly_id: int
+        :type persona_id: int or None
+        :rtype: None
+        """
+        if persona_id:
+            persona_id = rs.user.persona_id
+            secret = self.assemblyproxy.signup(rs, assembly_id)
+        else:
+            secret = self.assemblyproxy.external_signup(
+                rs, assembly_id, persona_id)
         persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
             rs.notify("success", "Signed up.")
@@ -275,9 +254,30 @@ class AssemblyFrontend(AbstractUserFrontend):
                 {'To': (persona['username'],),
                  'Subject': 'Signed up for assembly {}'.format(
                      rs.ambience['assembly']['title'])},
-                {'secret': secret}, attachments=(attachment,))
+                {'secret': secret, 'persona': persona},
+                attachments=(attachment,))
         else:
             rs.notify("info", "Already signed up.")
+
+    @access("member", modi={"POST"})
+    def signup(self, rs, assembly_id):
+        """Join an assembly."""
+        if now() > rs.ambience['assembly']['signup_end']:
+            rs.notify("warning", "Signup already ended.")
+            return self.redirect(rs, "assembly/show_assembly")
+        self.process_signup(rs, assembly_id)
+        return self.redirect(rs, "assembly/show_assembly")
+
+    @access("assembly_admin", modi={"POST"})
+    @REQUESTdata(("persona_id", "cdedbid"))
+    def external_signup(self, rs, assembly_id, persona_id):
+        """Add an external participant to an assembly."""
+        if now() > rs.ambience['assembly']['signup_end']:
+            rs.notify("warning", "Signup already ended.")
+            return self.redirect(rs, "assembly/show_assembly")
+        if rs.errors:
+            return self.show_assembly(rs, assembly_id)
+        self.process_signup(rs, assembly_id, persona_id)
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly")

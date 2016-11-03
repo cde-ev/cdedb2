@@ -38,7 +38,7 @@ from cdedb.backend.common import (
 from cdedb.common import (
     glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
-    extract_roles)
+    extract_roles, PrivilegeError)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
