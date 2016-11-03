@@ -766,16 +766,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 afile = open(attachment['path'], 'rb')
         ## Only support common types
-        def text_factory(data, _subtype):
-            ## Explicitly specify utf-8. This should not be necessary, but
-            ## otherwise we sometimes see UnicodeDecodeErrors
-            return email.mime.text.MIMEText(data, _subtype=_subtype,
-                                            _charset="utf-8")
         factories = {
             'application': email.mime.application.MIMEApplication,
             'audio': email.mime.audio.MIMEAudio,
             'image': email.mime.image.MIMEImage,
-            'text': text_factory,
+            'text': email.mime.text.MIMEText,
         }
         ret = factories[maintype](afile.read(), _subtype=subtype)
         if not attachment.get('file'):
