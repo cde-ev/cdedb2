@@ -236,11 +236,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         :rtype: None
         """
         if persona_id:
-            persona_id = rs.user.persona_id
-            secret = self.assemblyproxy.signup(rs, assembly_id)
-        else:
             secret = self.assemblyproxy.external_signup(
                 rs, assembly_id, persona_id)
+        else:
+            persona_id = rs.user.persona_id
+            secret = self.assemblyproxy.signup(rs, assembly_id)
         persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
             rs.notify("success", "Signed up.")
