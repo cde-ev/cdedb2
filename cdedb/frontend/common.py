@@ -762,7 +762,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             # TODO use a with context?
             if maintype == "text":
-                afile = open(attachment['path'])
+                ## FIXME quick hack: add encoding against unicode errors
+                afile = open(attachment['path'], encoding="utf-8")
             else:
                 afile = open(attachment['path'], 'rb')
         ## Only support common types
