@@ -312,21 +312,22 @@ class AssemblyFrontend(AbstractUserFrontend):
         if update:
             return self.redirect(rs, "assembly/list_ballots")
         future = {k: v for k, v in ballots.items()
-                  if ballot['vote_begin'] > ref}
+                  if v['vote_begin'] > ref}
         current = {k: v for k, v in ballots.items()
-                   if ballot['vote_begin'] <= ref and ballot['vote_end'] > ref}
+                   if v['vote_begin'] <= ref and v['vote_end'] > ref}
         extended = {k: v for k, v in ballots.items()
-                    if (ballot['vote_end'] <= ref
-                        and ballot['extended']
-                        and ballot['vote_extension_end'] > ref)}
+                    if (v['vote_end'] <= ref
+                        and v['extended']
+                        and v['vote_extension_end'] > ref)}
         done = {k: v for k, v in ballots.items()
-                   if (ballot['vote_end'] <= ref
-                       and (ballot['extended'] == False
-                            or ballot['vote_extension_end'] <= ref))}
+                   if (v['vote_end'] <= ref
+                       and (v['extended'] == False
+                            or v['vote_extension_end'] <= ref))}
         assert(len(ballots) == len(future) + len(current) + len(extended) + len(done))
+        # Currently we don't distinguis between current and extended ballots
+        current.update(extended)
         return self.render(rs, "list_ballots", {
-            'ballots': ballots, 'future': future, 'current': current, 'extended': extended,
-            'done': done})
+            'ballots': ballots, 'future': future, 'current': current, 'done': done})
 
     @access("assembly_admin")
     def create_ballot_form(self, rs, assembly_id):

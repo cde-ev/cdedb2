@@ -20,17 +20,20 @@
                 icon="plus") }}
     </div>
     {% for heading, sample in (("Zukünftige Abstimmungen", future), ("Laufende Abstimmungen", current),
-                               ("Verlängerte Abstimmungen", extended), ("Fertige Abstimmungen", done)) %}
-        <p> {{ heading|e }} </p>
+                               ("Abgeschlossene Abstimmungen", done)) %}
+        {% if sample %}
+        <h3> {{ heading|e }} </h3>
         <ul>
             {% for ballot_id, ballot in sample|dictsort %}
                 <li>
                     {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title'])}}
                     {% if is_admin and now() < ballot['vote_begin'] %}
-                        {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), "Bearbeiten")}}
+                        {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), "Bearbeiten",
+                                     aclass="btn btn-xs btn-warning", icon="pencil")}}
                     {% endif %}
                 </li>
             {% endfor %}
         </ul>
+        {% endif %}
     {% endfor %}
 {% endblock %}
