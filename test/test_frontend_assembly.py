@@ -144,11 +144,11 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle('Drittes CdE-Konzil')
         self.traverse({'href': '/assembly/2/attendees'})
         self.assertNonPresence("Kalif")
-        self.traverse({'href': '/assembly/2/show'})
+        self.traverse({'href': '/assembly/2/attendees'})
         f = self.response.forms['addattendeeform']
         f['persona_id'] = "DB-11-G"
         self.submit(f)
-        self.assertTitle('Drittes CdE-Konzil')
+        self.assertTitle('Anwesenheitsliste (Drittes CdE-Konzil)')
         mail = self.fetch_mail()[0]
         parser = email.parser.Parser()
         msg = parser.parsestr(mail)

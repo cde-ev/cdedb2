@@ -18,35 +18,6 @@
                     icon="list-alt") }}
         {% endif %}
     </div>
-    {% if is_admin and now() < ambience['assembly']['signup_end'] %}
-        {# FIXME formatting #}
-        <div class="panel panel-success">
-            <div class="panel-heading">
-                <h4 class="panel-title">Externe Teilnehmer hinzufügen</h4>
-            </div>
-            <div class="panel-body">
-                <form action="{{ cdedblink('assembly/external_signup')|e }}" method="POST" id="addattendeeform">
-                    <div class="row">
-                        <div class="col-sm-7">
-                            {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
-                                    anid="input-add-attendee") }}
-                            {# FIXME this is somehow broken :( #}
-                            <script type="text/javascript">
-                                $('#input-add-attendee').cdedbSearchPerson(
-                                    '{{ cdedblink('core/select_persona') + '?kind=pure_assembly_user&phrase=%s'}}',
-                                    {{ attendees|list|json }}
-                                );
-                            </script>
-                            {{ util.output_errors('persona_id') }}
-                        </div>
-                        <div class="col-sm-3">
-                            {{ util.input_submit(value="hinzufügen", icon="plus") }}
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    {% endif %}
 
     <dl class="dl-horizontal">
         <dt>Anmeldeschluss</dt>

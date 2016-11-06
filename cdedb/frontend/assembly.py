@@ -185,12 +185,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                     and timestamp < ballot['vote_extension_end']))
                for ballot in ballots.values()):
             has_activity = True
-        attendees = {}
-        if self.is_admin(rs):
-            attendees = self.assemblyproxy.list_attendees(rs, assembly_id)
         return self.render(rs, "show_assembly", {
             "attachments": attachments, "attends": attends,
-            "has_activity": has_activity, "attendees": attendees})
+            "has_activity": has_activity})
 
     @access("assembly_admin")
     def change_assembly_form(self, rs, assembly_id):
@@ -274,11 +271,11 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Add an external participant to an assembly."""
         if now() > rs.ambience['assembly']['signup_end']:
             rs.notify("warning", "Signup already ended.")
-            return self.redirect(rs, "assembly/show_assembly")
+            return self.redirect(rs, "assembly/list_attendees")
         if rs.errors:
-            return self.show_assembly(rs, assembly_id)
+            return self.list_attendees(rs, assembly_id)
         self.process_signup(rs, assembly_id, persona_id)
-        return self.redirect(rs, "assembly/show_assembly")
+        return self.redirect(rs, "assembly/list_attendees")
 
     @access("assembly")
     def list_attendees(self, rs, assembly_id):
