@@ -307,7 +307,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         update = False
         for ballot_id, ballot in ballots.items():
             if (ballot['extended'] is None and ref > ballot['vote_end']):
-                tmp = self.assemblyproxy.check_voting_priod_extension(ers, ballot_id)
+                tmp = self.assemblyproxy.check_voting_priod_extension(rs,
+                                                                      ballot_id)
                 update = update or tmp
         if update:
             return self.redirect(rs, "assembly/list_ballots")
@@ -323,11 +324,18 @@ class AssemblyFrontend(AbstractUserFrontend):
                    if (v['vote_end'] <= ref
                        and (v['extended'] == False
                             or v['vote_extension_end'] <= ref))}
-        assert(len(ballots) == len(future) + len(current) + len(extended) + len(done))
+        assert(len(ballots)
+               == len(future) + len(current) + len(extended) + len(done))
+        votes = {}
+        if self.assemblyproxy.does_attend(rs, assembly_id=assembly_id):
+            for ballot_id in ballot_ids:
+                votes[ballot_id] = self.assemblyproxy.get_vote(
+                    rs, ballot_id, secret=None)
         # Currently we don't distinguis between current and extended ballots
         current.update(extended)
         return self.render(rs, "list_ballots", {
-            'ballots': ballots, 'future': future, 'current': current, 'done': done})
+            'ballots': ballots, 'future': future, 'current': current,
+            'done': done, 'votes': votes})
 
     @access("assembly_admin")
     def create_ballot_form(self, rs, assembly_id):

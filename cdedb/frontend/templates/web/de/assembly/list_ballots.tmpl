@@ -27,6 +27,13 @@
             {% for ballot_id, ballot in sample|dictsort %}
                 <li>
                     {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title'])}}
+                    {% if ballot_id in votes %}
+                        {% if votes[ballot_id] %}
+                            bereits abgestimmt
+                        {% else %}
+                            noch nicht abgestimmt
+                        {% endif %}
+                    {% endif %}
                     {% if is_admin and now() < ballot['vote_begin'] %}
                         {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), "Bearbeiten",
                                      aclass="btn btn-xs btn-warning", icon="pencil")}}

@@ -404,7 +404,7 @@ class TestAssemblyFrontend(FrontendTest):
         f['votes'] = ""
         self.submit(f)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
-        self.assertPresence("Die Abstimmung hat das Quorum von 1000 Stimmen nicht erreicht,")
+        self.assertPresence("verlängert, da 1000 Stimmen nicht erreicht wurden.")
 
     @as_users("anton")
     def test_candidate_manipulation(self, user):
