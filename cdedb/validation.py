@@ -2258,7 +2258,7 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
     'quorum': _int,
     'votes': _int_or_None,
-    'bar': _int_or_None,
+    'bar': _id_or_None,
     'is_tallied': _bool,
     'candidates': _any
 }
@@ -2309,6 +2309,10 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
                     else:
                         newcandidates[anid] = candidate
             val['candidates'] = newcandidates
+    if 'votes' in val and 'bar' in val:
+        if val['votes'] is not None and val['bar'] is None:
+            errs.append(('bar',
+                         ValueError("Classical voting requires a bar.")))
     return val, errs
 
 _BALLOT_CANDIDATE_COMMON_FIELDS = {

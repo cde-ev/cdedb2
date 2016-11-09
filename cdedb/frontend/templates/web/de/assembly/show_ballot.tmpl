@@ -96,7 +96,7 @@
                         {% set myentries = [] %}
                         {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                             {% if candidate_id != ambience['ballot']['bar'] %}
-                                {{ myentries.append((candidate[ 'moniker'], candidate['description']))|e }}
+                                {{ myentries.append((candidate['moniker'], candidate['description']))|e }}
                             {% endif %}
                         {% endfor %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries) }}
