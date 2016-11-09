@@ -88,6 +88,17 @@ hr.strong {
         margin-top: 10px;
     }
 }
+@media (max-width: 767px) {
+    h1 small, h2 small {
+        display: block;
+    }
+}
+@media (min-width: 768px) {
+    h1 small, h2 small {
+        white-space: nowrap;
+    }
+}
+
 
 /* Better definition lists */
 dd {

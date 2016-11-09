@@ -43,8 +43,9 @@
         <h3>Admin-Notizen</h3>
         {{ ambience['assembly']['notes']|rst }}
     {% endif %}
-
-    {% call util.bootstrap_panel(title="Dateien", icon='file') %}
+    
+    {% if attachments or is_admin %}
+        {% call util.bootstrap_panel(title="Dateien", icon='file') %}
             {% if attachments %}
                 <ul>
                     {% for attachment_id, attachment in attachments|dictsort %}
@@ -68,5 +69,6 @@
                 {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
                              aclass="btn btn-success btn-sm", icon="plus") }}
             {% endif %}
-    {% endcall %}
+        {% endcall %}
+    {% endif %}
 {% endblock %}
