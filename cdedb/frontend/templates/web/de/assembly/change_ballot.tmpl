@@ -24,12 +24,7 @@
         {{ util.form_input_text(name="vote_begin", label="Beginn der Abstimmung") }}
         {{ util.form_input_text(name="vote_end", label="Ende der Abstimmung") }}
         {{ util.form_input_text(name="quorum", label="Quorum") }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
-            {{ myentries.append((candidate['id'], candidate['moniker']))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="bar", entries=myentries, label="Schwellwertoption", nulloption=True) }}
+        {{ util.form_input_checkbox(name="use_bar", label="Erlaube Ablehnungen") }}
         {{ util.form_input_text(name="vote_extension_end", label="Ende der Verlängerung") }}
         {{ util.form_input_text(name="votes", label="Anzahl der Stimmen",
                                info="Leer lassen für vollständige Präferenzwahl.") }}

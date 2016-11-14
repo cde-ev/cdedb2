@@ -83,12 +83,8 @@ class TestAssemblyBackend(BackendTest):
                                                                  assembly_id))
         expectation = {
             1: {'assembly_id': 1,
-                'bar': 1,
-                'candidates': {1: {'ballot_id': 1,
-                                   'description': 'None of the above',
-                                   'id': 1,
-                                   'moniker': '0'},
-                               2: {'ballot_id': 1,
+                'use_bar': True,
+                'candidates': {2: {'ballot_id': 1,
                                    'description': 'Ich',
                                    'id': 2,
                                    'moniker': '1'},
@@ -116,7 +112,7 @@ class TestAssemblyBackend(BackendTest):
                 'vote_extension_end': nearly_now(),
                 'votes': None},
             4: {'assembly_id': 1,
-                'bar': 22,
+                'use_bar': True,
                 'candidates': {17: {'ballot_id': 4,
                                     'description': 'Wackelpudding',
                                     'id': 17,
@@ -136,11 +132,7 @@ class TestAssemblyBackend(BackendTest):
                                21: {'ballot_id': 4,
                                     'description': 'Nichts',
                                     'id': 21,
-                                    'moniker': 'N'},
-                               22: {'ballot_id': 4,
-                                    'description': 'Etwas anderes',
-                                    'id': 22,
-                                    'moniker': 'bar'}},
+                                    'moniker': 'N'},},
                 'description': 'denkt an die Frutaner',
                 'extended': None,
                 'id': 4,
@@ -162,7 +154,7 @@ class TestAssemblyBackend(BackendTest):
             self.assembly.set_ballot(self.key, data)
         expectation = {
             'assembly_id': 1,
-            'bar': None,
+            'use_bar': False,
             'candidates': {6: {'ballot_id': 2,
                                'description': 'Rot',
                                'id': 6,
@@ -193,7 +185,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
         data = {
             'id': 2,
-            'bar': 8,
+            'use_bar': True,
             'candidates': {
                 6: {'description': 'Teracotta', 'moniker': 'terra'},
                 7: None,
@@ -204,7 +196,7 @@ class TestAssemblyBackend(BackendTest):
             'quorum': 42,
         }
         self.assertLess(0, self.assembly.set_ballot(self.key, data))
-        for key in ('bar', 'notes', 'vote_extension_end', 'quorum'):
+        for key in ('use_bar', 'notes', 'vote_extension_end', 'quorum'):
             expectation[key] = data[key]
         expectation['candidates'][6]['description'] = data['candidates'][6]['description']
         expectation['candidates'][6]['moniker'] = data['candidates'][6]['moniker']
@@ -218,7 +210,7 @@ class TestAssemblyBackend(BackendTest):
 
         data = {
             'assembly_id': assembly_id,
-            'bar': None,
+            'use_bar': False,
             'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
                            -2: {'description': 'Nein', 'moniker': 'n'},},
             'description': 'Sind sie sich sicher?',
@@ -259,7 +251,7 @@ class TestAssemblyBackend(BackendTest):
         self.login(USER_DICT['anton'])
         data = {
             'assembly_id': 1,
-            'bar': None,
+            'use_bar': False,
             'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
                            -2: {'description': 'Nein', 'moniker': 'n'},},
             'description': 'Sind sie sich sicher?',
@@ -287,16 +279,16 @@ class TestAssemblyBackend(BackendTest):
 
     def test_get_vote(self):
         tests = (
-            {'user': 'anton', 'ballot_id': 1, 'secret': 'aoeuidhtns', 'expectation': '2>3>0>1=4'},
-            {'user': 'berta', 'ballot_id': 1, 'secret': 'snthdiueoa', 'expectation': '3>2=4>0>1'},
-            {'user': 'inga', 'ballot_id': 1, 'secret': 'asonetuhid', 'expectation': '0>4>3>2>1'},
-            {'user': 'kalif', 'ballot_id': 1, 'secret': 'bxronkxeud', 'expectation': '1>2=3=4>0'},
-            {'user': 'anton', 'ballot_id': 1, 'secret': None, 'expectation': '2>3>0>1=4'},
-            {'user': 'berta', 'ballot_id': 1, 'secret': None, 'expectation': '3>2=4>0>1'},
-            {'user': 'inga', 'ballot_id': 1, 'secret': None, 'expectation': '0>4>3>2>1'},
-            {'user': 'kalif', 'ballot_id': 1, 'secret': None, 'expectation': '1>2=3=4>0'},
+            {'user': 'anton', 'ballot_id': 1, 'secret': 'aoeuidhtns', 'expectation': '2>3>_bar_>1=4'},
+            {'user': 'berta', 'ballot_id': 1, 'secret': 'snthdiueoa', 'expectation': '3>2=4>_bar_>1'},
+            {'user': 'inga', 'ballot_id': 1, 'secret': 'asonetuhid', 'expectation': '_bar_>4>3>2>1'},
+            {'user': 'kalif', 'ballot_id': 1, 'secret': 'bxronkxeud', 'expectation': '1>2=3=4>_bar_'},
+            {'user': 'anton', 'ballot_id': 1, 'secret': None, 'expectation': '2>3>_bar_>1=4'},
+            {'user': 'berta', 'ballot_id': 1, 'secret': None, 'expectation': '3>2=4>_bar_>1'},
+            {'user': 'inga', 'ballot_id': 1, 'secret': None, 'expectation': '_bar_>4>3>2>1'},
+            {'user': 'kalif', 'ballot_id': 1, 'secret': None, 'expectation': '1>2=3=4>_bar_'},
             {'user': 'berta', 'ballot_id': 2, 'secret': None, 'expectation': None},
-            {'user': 'berta', 'ballot_id': 3, 'secret': None, 'expectation': 'Lo>0>Li=St=Fi=Bu=Go'},
+            {'user': 'berta', 'ballot_id': 3, 'secret': None, 'expectation': 'Lo>Li=St=Fi=Bu=Go=_bar_'},
             {'user': 'berta', 'ballot_id': 4, 'secret': None, 'expectation': None},
         )
         for case in tests:
@@ -308,12 +300,12 @@ class TestAssemblyBackend(BackendTest):
     def test_vote(self):
         self.login(USER_DICT['anton'])
         self.assertEqual(None, self.assembly.get_vote(self.key, 3, secret=None))
-        self.assertLess(0, self.assembly.vote(self.key, 3, 'Go>0>Li=St=Fi=Bu=Lo', secret=None))
-        self.assertEqual('Go>0>Li=St=Fi=Bu=Lo', self.assembly.get_vote(self.key, 3, secret=None))
+        self.assertLess(0, self.assembly.vote(self.key, 3, 'Go>Li=St=Fi=Bu=Lo=_bar_', secret=None))
+        self.assertEqual('Go>Li=St=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
         self.login(USER_DICT['berta'])
-        self.assertEqual('Lo>0>Li=St=Fi=Bu=Go', self.assembly.get_vote(self.key, 3, secret=None))
-        self.assertLess(0, self.assembly.vote(self.key, 3, 'St>0>Li=Go=Fi=Bu=Lo', secret=None))
-        self.assertEqual('St>0>Li=Go=Fi=Bu=Lo', self.assembly.get_vote(self.key, 3, secret=None))
+        self.assertEqual('Lo>Li=St=Fi=Bu=Go=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
+        self.assertLess(0, self.assembly.vote(self.key, 3, 'St>Li=Go=Fi=Bu=Lo=_bar_', secret=None))
+        self.assertEqual('St>Li=Go=Fi=Bu=Lo=_bar_', self.assembly.get_vote(self.key, 3, secret=None))
 
     @as_users("kalif")
     def test_tally(self, user):
@@ -335,7 +327,7 @@ class TestAssemblyBackend(BackendTest):
         self.assembly.signup(self.key, new_id)
         data = {
             'assembly_id': new_id,
-            'bar': None,
+            'use_bar': False,
             'candidates': {-1: {'description': 'Ja', 'moniker': 'j'},
                            -2: {'description': 'Nein', 'moniker': 'n'},},
             'description': 'Sind sie sich sicher?',

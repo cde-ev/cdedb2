@@ -38,7 +38,7 @@ from cdedb.backend.common import (
 from cdedb.common import (
     glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
-    extract_roles, PrivilegeError)
+    extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -530,12 +530,6 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError("Unable to remove active ballot.")
             if cascade:
                 with Silencer(rs):
-                    if current['bar']:
-                        deletor = {
-                            'id': ballot_id,
-                            'bar': None,
-                        }
-                        ret *= self.set_ballot(rs, deletor)
                     if current['candidates']:
                         deletor = {
                             'id': ballot_id,
@@ -811,7 +805,7 @@ class AssemblyBackend(AbstractBackend):
     "candidates": {
         ${CANDIDATES}
     },
-    "bar": ${BAR},
+    "use_bar": ${USE_BAR},
     "voters": [
         ${VOTERS}
     ],
@@ -839,9 +833,11 @@ class AssemblyBackend(AbstractBackend):
             votes = self.sql_select(
                 rs, "assembly.votes", ("vote", "salt", "hash"), (ballot_id,),
                 entity_key="ballot_id")
-            result = schulze_evaluate(
-                {e['vote'] for e in votes},
-                tuple(x['moniker'] for x in ballot['candidates'].values()))
+            monikers = tuple(
+                x['moniker'] for x in ballot['candidates'].values())
+            if ballot['use_bar']:
+                monikers += (ASSEMBLY_BAR_MONIKER,)
+            result = schulze_evaluate({e['vote'] for e in votes}, monikers)
             update = {
                 'id': ballot_id,
                 'is_tallied': True,
@@ -871,16 +867,12 @@ class AssemblyBackend(AbstractBackend):
             votes = sorted('{{"vote": {}, "salt": {}, "hash": {}}}'.format(
                 esc(v['vote']), esc(v['salt']), esc(v['hash'])) for v in votes)
             vote_list = ",\n        ".join(v for v in votes)
-            if ballot['bar']:
-                bar = esc(ballot['candidates'][ballot['bar']]['moniker'])
-            else:
-                bar = esc(None)
             result_file = template.substitute({
                 'ASSEMBLY': esc(assembly['title']),
                 'BALLOT': esc(ballot['title']),
                 'RESULT': esc(result),
                 'CANDIDATES': candidates,
-                'BAR': bar,
+                'USE_BAR': esc(ballot['use_bar']),
                 'VOTERS': voter_list,
                 'VOTES': vote_list,})
             path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',

@@ -639,6 +639,9 @@ def schulze_evaluate(votes, candidates):
     ## votes are.
     return ">".join("=".join(level) for level in result)
 
+#: Magic value of moniker of the ballot candidate representing the bar.
+ASSEMBLY_BAR_MONIKER = "_bar_"
+
 def unwrap(single_element_list, keys=False):
     """Remove one nesting layer (of lists, etc.).
 
@@ -1119,7 +1122,7 @@ ASSEMBLY_FIELDS = ("id", "title", "description", "signup_end", "is_active",
 #: Fields of a ballot
 BALLOT_FIELDS = (
     "id", "assembly_id", "title", "description", "vote_begin", "vote_end",
-    "vote_extension_end", "extended", "bar", "quorum", "votes",
+    "vote_extension_end", "extended", "use_bar", "quorum", "votes",
     "is_tallied", "notes")
 
 #: Fields of an attachment in the assembly realm (attached either to an

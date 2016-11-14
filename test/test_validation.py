@@ -415,39 +415,38 @@ class TestValidation(unittest.TestCase):
     def test_vote(self):
         ballot = {
             'votes': None,
-            'bar': 99,
+            'use_bar': True,
             'candidates': {
                 1: {'moniker': 'A'},
                 2: {'moniker': 'B'},
                 3: {'moniker': 'C'},
                 4: {'moniker': 'D'},
                 5: {'moniker': 'E'},
-                99: {'moniker': '0'},
             }
         }
         classical_ballot = copy.deepcopy(ballot)
         classical_ballot['votes'] = 2
         self.do_validator_test("_vote", (
-            ("A>B>C=D>E>0", "A>B>C=D>E>0", None, True),
-            ("0=B>E=C=D>A", "0=B>E=C=D>A", None, True),
-            ("0=B>F=C=D>A", None, KeyError, False),
+            ("A>B>C=D>E>_bar_", "A>B>C=D>E>_bar_", None, True),
+            ("_bar_=B>E=C=D>A", "_bar_=B>E=C=D>A", None, True),
+            ("_bar_=B>F=C=D>A", None, KeyError, False),
             ("", None, ValueError, False),
-            ("0=B<E=C=D<A", None, KeyError, False),
-            ("0=B>E=C>A", None, KeyError, False),
-            ("0=B>E=C>A>F=D", None, KeyError, False),
+            ("_bar_=B<E=C=D<A", None, KeyError, False),
+            ("_bar_=B>E=C>A", None, KeyError, False),
+            ("_bar_=B>E=C>A>F=D", None, KeyError, False),
             ("=>=>>=", None, KeyError, False),
             ), extraparams={'ballot': ballot})
         self.do_validator_test("_vote", (
-            ("A=B>0>C=D=E", "A=B>0>C=D=E", None, True),
-            ("A>0>B=C=D=E", "A>0>B=C=D=E", None, True),
-            ("0>A=B=C=D=E", "0>A=B=C=D=E", None, True),
-            ("0=A=B=C=D=E", "0=A=B=C=D=E", None, True),
-            ("E=C>0>A=D=B", "E=C>0>A=D=B", None, True),
-            ("A=B=C>0>D=E", None, ValueError, False),
-            ("A>B>0=C=D=E", None, ValueError, False),
-            ("A=0>B=C=D=E", None, ValueError, False),
-            ("A>0>B=C=D>E", None, ValueError, False),
-            ("0>A=B=C=D>E", None, ValueError, False),
-            ("A>B=C=D=E>0", None, ValueError, False),
-            ("E=C>A>0=D=B",  None, ValueError, False),
+            ("A=B>C=D=E=_bar_", "A=B>C=D=E=_bar_", None, True),
+            ("A>B=C=D=E=_bar_", "A>B=C=D=E=_bar_", None, True),
+            ("_bar_>A=B=C=D=E", "_bar_>A=B=C=D=E", None, True),
+            ("_bar_=A=B=C=D=E", "_bar_=A=B=C=D=E", None, True),
+            ("E=C>A=D=B=_bar_", "E=C>A=D=B=_bar_", None, True),
+            ("A=B=C>_bar_>D=E", None, ValueError, False),
+            ("A>B>_bar_=C=D=E", None, ValueError, False),
+            ("A=_bar_>B=C=D=E", None, ValueError, False),
+            ("A>_bar_>B=C=D>E", None, ValueError, False),
+            ("_bar_>A=B=C=D>E", None, ValueError, False),
+            ("A>B=C=D=E>_bar_", None, ValueError, False),
+            ("E=C>A>_bar_=D=B",  None, ValueError, False),
             ), extraparams={'ballot': classical_ballot})

@@ -746,25 +746,26 @@ CREATE TABLE assembly.ballots (
         -- keep track of wether the quorum was missed
         -- NULL as long as normal voting has not ended
         extended                boolean DEFAULT NULL,
-        -- Special option which means "options below this are not acceptable
-        -- as outcome to me". For electing a person an alternative title may
-        -- be "reopen nominations".
+        -- Enable a special candidate option which means "options below this
+        -- are not acceptable as outcome to me". For electing a person an
+        -- alternative title may be "reopen nominations".
         --
-        -- This is a bit complicated since a bar references a candidate
-        -- references a ballot. But this seems to be the least ugly way to
-        -- do it.
-        bar                     integer DEFAULT NULL, -- REFERENCES assembly.candidates(id),
+        -- It will not be listed in the assembly.candidates table, but added
+        -- on the fly. Its moniker will be "_bar_".
+        use_bar                 boolean,
         -- number of submitted votes necessary to not trigger extension
         quorum                  integer NOT NULL DEFAULT 0,
         -- number of votes per ballot
         --
         -- NULL means arbitrary preference list
-        -- n > 0 means, that the list must be of the form
-        --       a_1=a_2=...=a_m>0>b_1=b_2=...=b_l
-        --       with m non-negative and at most n, and where '0' is the
-        --       bar's moniker (which must be non-NULL) or of the form
-        --       0=a_1=a_2=...=a_m=b_1=b_2=...=b_l
-        --       to signal an abstention.
+        -- n > 0 means, that the list must be of one of the following forms
+        --     * a_1=a_2=...=a_m>b_1=b_2=...=b_l
+        --       with m non-negative and at most n, if the bar is used it
+        --       must be one of the b_i
+        --     * o_1=o_2=...=o_l
+        --       to encode abstention
+        --     * _bar_>o_1=o_2=...=o_l
+        --       to encode disapproval of all candidates (only if the bar is used)
         votes                   integer DEFAULT NULL,
         -- True after creation of the result summary file
         is_tallied              boolean DEFAULT False,
@@ -786,9 +787,6 @@ CREATE UNIQUE INDEX idx_moniker_constraint ON assembly.candidates(ballot_id, mon
 GRANT SELECT ON assembly.candidates TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_admin;
 GRANT SELECT, UPDATE ON assembly.candidates_id_seq TO cdb_admin;
-
--- create previously impossible reference
-ALTER TABLE assembly.ballots ADD FOREIGN KEY (bar) REFERENCES assembly.candidates(id);
 
 CREATE TABLE assembly.attendees (
         id                      serial PRIMARY KEY,

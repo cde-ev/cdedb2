@@ -45,7 +45,8 @@ import pytz
 import werkzeug.datastructures
 
 from cdedb.common import (
-    EPSILON, compute_checkdigit, now, extract_roles, asciificator, glue)
+    EPSILON, compute_checkdigit, now, extract_roles, asciificator, glue,
+    ASSEMBLY_BAR_MONIKER)
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
@@ -2258,7 +2259,7 @@ _BALLOT_OPTIONAL_FIELDS = lambda: {
     'extended': _bool_or_None,
     'quorum': _int,
     'votes': _int_or_None,
-    'bar': _id_or_None,
+    'use_bar': _bool,
     'is_tallied': _bool,
     'candidates': _any
 }
@@ -2309,10 +2310,6 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
                     else:
                         newcandidates[anid] = candidate
             val['candidates'] = newcandidates
-    if 'votes' in val and 'bar' in val:
-        if val['votes'] is not None and val['bar'] is None:
-            errs.append(('bar',
-                         ValueError("Classical voting requires a bar.")))
     return val, errs
 
 _BALLOT_CANDIDATE_COMMON_FIELDS = {
@@ -2340,8 +2337,13 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
     else:
         mandatory_fields = {}
         optional_fields = _BALLOT_CANDIDATE_COMMON_FIELDS
-    return _examine_dictionary_fields(
+    val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
+        errs.append(("moniker", ValueError("Mustn't be the bar moniker.")))
+    return val, errs
 
 _ASSEMBLY_ATTACHMENT_COMMON_FIELDS = {
     "title": _str,
@@ -2397,6 +2399,8 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
         return val, errs
     entries = tuple(y for x in val.split('>') for y in x.split('='))
     reference = set(e['moniker'] for e in ballot['candidates'].values())
+    if ballot['use_bar']:
+        reference.add(ASSEMBLY_BAR_MONIKER)
     if set(entries) - reference:
         errs.append((argname, KeyError("Superfluous candidates.")))
     if reference - set(entries):
@@ -2406,21 +2410,15 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
     if ballot['votes'] and '>' in val:
         ## ordinary voting has more constraints
         ## if no strictly greater we have a valid abstention
-        bar = ballot['candidates'][ballot['bar']]['moniker']
-        num = entries.index(bar)
-        if num > ballot['votes']:
-            errs.append((argname, ValueError("Too many votes.")))
         groups = val.split('>')
-        if len(groups) > 3:
+        if len(groups) > 2:
             errs.append((argname, ValueError("Too many levels.")))
-        elif len(groups) == 3:
-            if groups[1] != bar:
-                errs.append((argname, ValueError("Misplaced bar.")))
-        elif len(groups) == 2:
-            if bar not in groups:
-                errs.append((argname, ValueError("Non-sharp bar.")))
-        else:
-            raise RuntimeError("Impossible.")
+        if len(groups[0].split('=')) > ballot['votes']:
+            errs.append((argname, ValueError("Too many votes.")))
+        first_group = groups[0].split('=')
+        if (ASSEMBLY_BAR_MONIKER in first_group
+                and first_group != [ASSEMBLY_BAR_MONIKER]):
+            errs.append((argname, ValueError("Misplaced bar.")))
         if errs:
             return None, errs
     return val, errs

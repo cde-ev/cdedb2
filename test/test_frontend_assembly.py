@@ -320,11 +320,10 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Bester Hof (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual("Li", f['vote'].value)
-        f['vote'] = "special: none"
+        f = self.response.forms['rejectionform']
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
-        f = self.response.forms['voteform']
-        self.assertEqual("special: none", f['vote'].value)
+        self.assertEqual("special: none", f.get('vote', index=0).value)
         self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']
         self.submit(f)

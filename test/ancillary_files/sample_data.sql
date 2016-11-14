@@ -193,15 +193,14 @@ INSERT INTO event.questionnaire_rows (event_id, field_id, pos, title, info, inpu
 INSERT INTO assembly.assemblies (id, title, description, signup_end) VALUES
     (1, 'Internationaler Kongress', 'Proletarier aller Länder vereinigt Euch!', date '2111-11-11');
 
-INSERT INTO assembly.ballots (id, assembly_id, title, description, vote_begin, vote_end, vote_extension_end, extended, bar, quorum, votes, is_tallied, notes) VALUES
-    (1, 1, 'Antwort auf die letzte aller Fragen', 'Nach dem Leben, dem Universum und dem ganzen Rest.', timestamp with time zone '2002-02-22 22:22:22.222222+02', timestamp with time zone '2002-02-23 22:22:22.222222+02', now(), True, NULL, 2, NULL, False, NULL),
-    (2, 1, 'Farbe des Logos', 'Ulitmativ letzte Entscheidung', timestamp with time zone '2222-02-02 22:22:22.222222+02', timestamp with time zone '2222-02-03 22:22:22.222222+02', NULL, NULL, NULL, 0, NULL, False, 'Nochmal alle auf diese wichtige Entscheidung hinweisen.'),
-    (3, 1, 'Bester Hof', 'total objektiv', timestamp with time zone '2000-02-10 22:22:22.222222+02', timestamp with time zone '2222-02-11 22:22:22.222222+02', NULL, NULL, NULL, 0, 1, False, NULL),
-    (4, 1, 'Akademie-Nachtisch', 'denkt an die Frutaner', now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, NULL, 0, 2, False, NULL),
-    (5, 1, 'Lieblingszahl', NULL, now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, NULL, 0, NULL, False, NULL);
+INSERT INTO assembly.ballots (id, assembly_id, title, description, vote_begin, vote_end, vote_extension_end, extended, use_bar, quorum, votes, is_tallied, notes) VALUES
+    (1, 1, 'Antwort auf die letzte aller Fragen', 'Nach dem Leben, dem Universum und dem ganzen Rest.', timestamp with time zone '2002-02-22 22:22:22.222222+02', timestamp with time zone '2002-02-23 22:22:22.222222+02', now(), True, True, 2, NULL, False, NULL),
+    (2, 1, 'Farbe des Logos', 'Ulitmativ letzte Entscheidung', timestamp with time zone '2222-02-02 22:22:22.222222+02', timestamp with time zone '2222-02-03 22:22:22.222222+02', NULL, NULL, False, 0, NULL, False, 'Nochmal alle auf diese wichtige Entscheidung hinweisen.'),
+    (3, 1, 'Bester Hof', 'total objektiv', timestamp with time zone '2000-02-10 22:22:22.222222+02', timestamp with time zone '2222-02-11 22:22:22.222222+02', NULL, NULL, True, 0, 1, False, NULL),
+    (4, 1, 'Akademie-Nachtisch', 'denkt an die Frutaner', now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, True, 0, 2, False, NULL),
+    (5, 1, 'Lieblingszahl', NULL, now(), timestamp with time zone '2222-01-01 22:22:22.222222+02', NULL, NULL, False, 0, NULL, False, NULL);
 
 INSERT INTO assembly.candidates (id, ballot_id, description, moniker) VALUES
-    (1, 1, 'None of the above', '0'),
     (2, 1, 'Ich', '1'),
     (3, 1, '23', '2'),
     (4, 1, '42', '3'),
@@ -216,22 +215,16 @@ INSERT INTO assembly.candidates (id, ballot_id, description, moniker) VALUES
     (13, 3, 'Buchwald', 'Bu'),
     (14, 3, 'Löscher', 'Lo'),
     (15, 3, 'Goldborn', 'Go'),
-    (16, 3, 'Keine der Optionen', '0'),
     (17, 4, 'Wackelpudding', 'W'),
     (18, 4, 'Salat', 'S'),
     (19, 4, 'Eis', 'E'),
     (20, 4, 'Joghurt', 'J'),
     (21, 4, 'Nichts', 'N'),
-    (22, 4, 'Etwas anderes', 'bar'),
     (23, 5, 'e', 'e'),
     (24, 5, 'pi', 'pi'),
     (25, 5, 'i', 'i'),
     (26, 5, '1', '1'),
     (27, 5, '0', '0');
-
-UPDATE assembly.ballots SET bar = 1 WHERE id = 1;
-UPDATE assembly.ballots SET bar = 16 WHERE id = 3;
-UPDATE assembly.ballots SET bar = 22 WHERE id = 4;
 
 INSERT INTO assembly.attendees (assembly_id, persona_id, secret) VALUES
     (1, 1, 'aoeuidhtns'),
@@ -261,12 +254,13 @@ INSERT INTO assembly.voter_register (persona_id, ballot_id, has_voted) VALUES
     (11, 4, False),
     (11, 5, False);
 
+-- FIXME correct hashes
 INSERT INTO assembly.votes (ballot_id, vote, salt, hash) VALUES
-    (1, '2>3>0>1=4', 'rxt3x\jnl', 'eebbb299075feffbb3fe8c620a2a2e116ec1ba2daacf430bc3201180c32942d3001111d0ab14eb969126e9e616eff0fa12869a9609127cbbd65e3cf8532a9f9e'),
-    (1, '3>2=4>0>1', 'et3[uh''kr', '97155c8534388cbb191e6b2bd706f1739a2bbc6dcef363a026afc3e50e9df226adc2acfe289a280fefba2c2207571f9c6b32f729bdfbadee80ac597099b6eee4'),
-    (1, '0>4>3>2>1', 'krcqm"xdv', '1b95f13b1819746d948e698ff38bf0ea85bc15ba9e8356e925f6a9f1c2d9810b1b851790de2ecf212b4a8906d39bff04da1817912d641afa4dd2732708aeaaeb'),
-    (1, '1>2=3=4>0', 'klw3xjq8s', 'e5f5550c78eaee20d53741b5f361803b756494f69e1a251a942e5e8afae6e58ea7c5307ec2fa8c94c5c6b1e77c6bb71f79d8a30d7e7c3d8e00d9b8697c2133eb'),
-    (3, 'Lo>0>Li=St=Fi=Bu=Go', 'lkn\4kvj9', 'f214d18f53bc0efc70632a24ec89e8265b4196651cc534c25d149d58659683678925d17af25d895f9b0402efac92c940551534408899071d9cd1eb2a87c18fab');
+    (1, '2>3>_bar_>1=4', 'rxt3x/jnl', 'd40aec7b54edf646991f100511fd19372f9d48445610b2e23ac59c7f2f0185175a78ef438f887794c7481c8dedb64a58c4be56fd67cc60c2ccbe66e2f5cd8b5e'),
+    (1, '3>2=4>_bar_>1', 'et3[uh{kr', '6c9533ce039c6a89576574bf28e1df4ad3b5610c934d32216b2b3e188b2c635f6f3a47d7ce0a69be40ada6d8dce6c6ff406aaf4e2bc03006616d848ec868283b'),
+    (1, '_bar_>4>3>2>1', 'krcqm"xdv', '2638c1ce32f8cab312d550d9149dc7e02617da994d0551c9c4425577c3cdfea760cfce54197af498b236e62ea2fa0d1a3de4f090af41cbb1abac739c11902f86'),
+    (1, '1>2=3=4>_bar_', 'klw3xjq8s', 'e4e3ca08ae6b31473fa04a3fc8afec94f94dafb28fc67333d2e8deaea1e7cfa869196f31005947ec57313cf14c0e26d67ef5ac8207601963c29e93de5c20383e'),
+    (3, 'Lo>Li=St=Fi=Bu=Go=_bar_', 'lkn/4kvj9', 'aeebbc35184f4e286b48bf7874d33525980c8a8f76ab18fc862332ce31e0ec423a6ef2b87a95754a6fba569bf6f0d389b7e3a045aaccdd004ac7436d443d6a76');
 
 --
 -- ml

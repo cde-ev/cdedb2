@@ -13,7 +13,8 @@ from cdedb.frontend.common import (
     check_validation as check, request_extractor)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
-from cdedb.common import merge_dicts, unwrap, now, ProxyShim, PrivilegeError
+from cdedb.common import (
+    merge_dicts, unwrap, now, ProxyShim, PrivilegeError, ASSEMBLY_BAR_MONIKER)
 import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -447,6 +448,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             rs, ballot_id=ballot_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         timestamp = now()
+        ## check whether we need to initiate extension
         if (ballot['extended'] is None
                 and timestamp > ballot['vote_end']):
             self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
@@ -455,6 +457,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             timestamp > ballot['vote_end']
             and (not ballot['extended']
                  or timestamp > ballot['vote_extension_end']))
+        ## check whether we need to initiate tallying
         if finished and not ballot['is_tallied']:
             did_tally = self.assemblyproxy.tally_ballot(rs, ballot_id)
             if did_tally:
@@ -480,6 +483,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                          ballot['title'])},
                     attachments=(attachment_script, attachment_result,))
             return self.redirect(rs, "assembly/show_ballot")
+        ## initial checks done, present the ballot
         ballot['is_voting'] = (
             timestamp > ballot['vote_begin']
             and (timestamp < ballot['vote_end']
@@ -500,14 +504,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         if vote:
             split_vote = tuple(x.split('=') for x in vote.split('>'))
         if ballot['votes']:
-            bar = ballot['candidates'][ballot['bar']]
             if result:
                 tiers = tuple(x.split('=') for x in result['result'].split('>'))
                 winners = []
                 for tier in tiers:
                     winners.extend(tier)
-                    if bar['moniker'] in winners:
-                        winners.remove(bar['moniker'])
+                    if ASSEMBLY_BAR_MONIKER in winners:
+                        winners.remove(ASSEMBLY_BAR_MONIKER)
+                        break
                     if len(winners) >= ballot['votes']:
                         break
                 result['winners'] = winners
@@ -515,7 +519,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if len(split_vote) == 1:
                     ## abstention
                     rs.values['vote'] = MAGIC_ABSTAIN
-                elif len(split_vote) == 2:
+                elif (len(split_vote) == 2
+                          and split_vote[0] == (ASSEMBLY_BAR_MONIKER,)):
                     ## none of the candidates
                     rs.values['vote'] = MAGIC_NONE_OF_THEM
                 else:
@@ -523,9 +528,13 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs.values.setlist('vote', split_vote[0])
         candidates = {e['moniker']: e
                       for e in ballot['candidates'].values()}
+        if ballot['use_bar']:
+            candidates[ASSEMBLY_BAR_MONIKER] = self.i18n(
+                "FIXME bar description text", rs.lang)
         return self.render(rs, "show_ballot", {
             'attachments': attachments, 'split_vote': split_vote,
-            'result': result, 'candidates': candidates, 'attends': attends})
+            'result': result, 'candidates': candidates, 'attends': attends,
+            'ASSEMBLY_BAR_MONIKER': ASSEMBLY_BAR_MONIKER})
 
     @access("assembly_admin")
     def change_ballot_form(self, rs, assembly_id, ballot_id):
@@ -538,7 +547,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "bar", "quorum", "votes", "notes")
+                     "vote_extension_end", "use_bar", "quorum", "votes",
+                     "notes")
     def change_ballot(self, rs, assembly_id, ballot_id, data):
         """Modify a ballot."""
         data['id'] = ballot_id
@@ -573,19 +583,31 @@ class AssemblyFrontend(AbstractUserFrontend):
         ballot = rs.ambience['ballot']
         if ballot['votes']:
             voted = unwrap(
-                request_extractor(rs, (("vote", "[str_or_None]"),)))
+                request_extractor(rs, (("vote", "[str]"),)))
+            if rs.errors:
+                return self.show_ballot(rs, assembly_id, ballot_id)
             candidates = tuple(e['moniker']
-                               for e in ballot['candidates'].values()
-                               if e['id'] != ballot['bar'])
-            bar = ballot['candidates'][ballot['bar']]
+                               for e in ballot['candidates'].values())
             if voted == (MAGIC_NONE_OF_THEM,):
-                vote = "{}>{}".format(bar['moniker'], "=".join(candidates))
+                if not ballot['use_bar']:
+                    raise ValueError("Not available.")
+                vote = "{}>{}".format(ASSEMBLY_BAR_MONIKER, "=".join(candidates))
             elif voted == (MAGIC_ABSTAIN,):
-                vote = "{}={}".format(bar['moniker'], "=".join(candidates))
+                vote = "=".join(candidates)
+                if ballot['use_bar']:
+                    vote += "={}".format(ASSEMBLY_BAR_MONIKER)
             else:
-                vote = "{}>{}>{}".format(
-                    "=".join(voted), bar['moniker'],
-                    "=".join(c for c in candidates if c not in voted))
+                winners = "=".join(voted)
+                loosers = "=".join(c for c in candidates if c not in voted)
+                if ballot['use_bar']:
+                    if loosers:
+                        loosers += "={}".format(ASSEMBLY_BAR_MONIKER)
+                    else:
+                        loosers = ASSEMBLY_BAR_MONIKER
+                if winners and loosers:
+                    vote = "{}>{}".format(winners, loosers)
+                else:
+                    vote = winners + loosers
         else:
             vote = unwrap(request_extractor(rs, (("vote", "str"),)))
         vote = check(rs, "vote", vote, "vote", ballot=ballot)

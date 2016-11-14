@@ -1,15 +1,14 @@
 {
     "assembly": "Internationaler Kongress",
     "ballot": "Antwort auf die letzte aller Fragen",
-    "result": "3>2=4>0>1",
+    "result": "3>2=4>_bar_>1",
     "candidates": {
-        "0": "None of the above",
         "1": "Ich",
         "2": "23",
         "3": "42",
         "4": "Philosophie"
     },
-    "bar": "0",
+    "use_bar": true,
     "voters": [
         "Anton Armin A. Administrator",
         "Bert\u00e5lotta Beispiel",
@@ -17,9 +16,9 @@
         "Kalif ibn al-\u1e24asan Karabatschi"
     ],
     "votes": [
-        {"vote": "0>4>3>2>1", "salt": "krcqm\"xdv", "hash": "1b95f13b1819746d948e698ff38bf0ea85bc15ba9e8356e925f6a9f1c2d9810b1b851790de2ecf212b4a8906d39bff04da1817912d641afa4dd2732708aeaaeb"},
-        {"vote": "1>2=3=4>0", "salt": "klw3xjq8s", "hash": "e5f5550c78eaee20d53741b5f361803b756494f69e1a251a942e5e8afae6e58ea7c5307ec2fa8c94c5c6b1e77c6bb71f79d8a30d7e7c3d8e00d9b8697c2133eb"},
-        {"vote": "2>3>0>1=4", "salt": "rxt3x\\jnl", "hash": "eebbb299075feffbb3fe8c620a2a2e116ec1ba2daacf430bc3201180c32942d3001111d0ab14eb969126e9e616eff0fa12869a9609127cbbd65e3cf8532a9f9e"},
-        {"vote": "3>2=4>0>1", "salt": "et3[uh'kr", "hash": "97155c8534388cbb191e6b2bd706f1739a2bbc6dcef363a026afc3e50e9df226adc2acfe289a280fefba2c2207571f9c6b32f729bdfbadee80ac597099b6eee4"}
+        {"vote": "1>2=3=4>_bar_", "salt": "klw3xjq8s", "hash": "e4e3ca08ae6b31473fa04a3fc8afec94f94dafb28fc67333d2e8deaea1e7cfa869196f31005947ec57313cf14c0e26d67ef5ac8207601963c29e93de5c20383e"},
+        {"vote": "2>3>_bar_>1=4", "salt": "rxt3x/jnl", "hash": "d40aec7b54edf646991f100511fd19372f9d48445610b2e23ac59c7f2f0185175a78ef438f887794c7481c8dedb64a58c4be56fd67cc60c2ccbe66e2f5cd8b5e"},
+        {"vote": "3>2=4>_bar_>1", "salt": "et3[uh{kr", "hash": "6c9533ce039c6a89576574bf28e1df4ad3b5610c934d32216b2b3e188b2c635f6f3a47d7ce0a69be40ada6d8dce6c6ff406aaf4e2bc03006616d848ec868283b"},
+        {"vote": "_bar_>4>3>2>1", "salt": "krcqm\"xdv", "hash": "2638c1ce32f8cab312d550d9149dc7e02617da994d0551c9c4425577c3cdfea760cfce54197af498b236e62ea2fa0d1a3de4f090af41cbb1abac739c11902f86"}
     ]
 }

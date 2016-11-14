@@ -27,7 +27,7 @@
             </form>
         </div>
     {% endif %}
-    
+
     {# General information about ballot #}
     <dl class="dl-horizontal">
         <dt>Abstimmungszeitraum</dt>
@@ -50,14 +50,14 @@
         </dd>
         {# TODO add information on state of ballot (including personal voting state) #}
     </dl>
-    
+
     {{ ambience['ballot']['description']|rst }}
     {% if is_admin and ambience['ballot']['notes'] %}
         {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag") %}
             {{ ambience['ballot']['notes']|rst }}
         {% endcall %}
     {% endif %}
-    
+
     {# Add candidate form #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
         {% call util.bootstrap_panel(aclass="panel-success", title="Kandidaten hinzufügen") %}
@@ -74,7 +74,7 @@
             </form>
         {% endcall %}
     {% endif %}
-    
+
     {# Classical voting #}
     {% if ambience['ballot']['votes'] %}
         <p>
@@ -87,7 +87,7 @@
             {% else %}
                 {% if split_vote|length == 1 %}
                     Du hast Dich enthalten.
-                {% elif split_vote|length == 2 %}
+                {% elif split_vote|length == 2 and split_vote[0] == (ASSEMBLY_BAR_MONIKER,) %}
                     Du hast Dich gegen alle Kandidaten entschieden.
                 {% else %}
                     Du hast für folgende Kandidaten gestimmt:
@@ -101,40 +101,31 @@
                 {% endif %}
             {% endif %}
         </p>
-        
+
         {# Classical voting: Voting form #}
         {% if ambience['ballot']['is_voting'] %}
             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
+                    {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
+                        {{ myentries.append((candidate['moniker'], candidate['description']))|e }}
+                    {% endfor %}
                     {% if ambience['ballot']['votes'] == 1 %}
-                        {# jinja does not support list comprehension ... #}
-                        {% set myentries = [("special: none", "keiner der Kandidaten")] %}
-                        {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
-                            {% if candidate_id != ambience['ballot']['bar'] %}
-                                {{ myentries.append((candidate['moniker'], candidate['description']))|e }}
-                            {% endif %}
-                        {% endfor %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, radio=True,
                                                       small=True) }}
                     {% else %}
-                        {# jinja does not support list comprehension ... #}
-                        {% set myentries = [] %}
-                        {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
-                            {% if candidate_id != ambience['ballot']['bar'] %}
-                                {{ myentries.append((candidate['moniker'], candidate['description']))|e }}
-                            {% endif %}
-                        {% endfor %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, small=True) }}
                     {% endif %}
                     {{ util.form_input_submit(value="Abstimmen", small=True) }}
             </form>
-            
+
             <div class="form-horizontal">
                 <div class="form-group">
                     <div class="col-sm-2 control-label">
                         <strong>Weitere Optionen</strong>
                     </div>
                     <div class="col-sm-10">
-                        {% if ambience['ballot']['votes'] > 1 %}
+                        {% if ambience['ballot']['use_bar'] %}
                             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="rejectionform"
                                     style="display: inline;">
                                 {{ util.input_hidden(name="vote", value="special: none") }}
@@ -150,7 +141,7 @@
                     </div>
                 </div>
             </div>
-            
+
         {# Classical voting: Results #}
         {% elif ambience['ballot']['is_tallied'] %}
             <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen")}}</p>
@@ -169,7 +160,7 @@
                 <p>
                     <ul>
                         {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
-                            {% if candidate_id not in result['winners'] and candidate_id != ambience['ballot']['bar'] %}
+                            {% if candidate_id not in result['winners'] %}
                                 <li><strong>{{ candidate['moniker']|e }}</strong> {{ candidate['description']|e }}</li>
                             {% endif %}
                         {% endfor %}
@@ -178,31 +169,29 @@
             {% else %}
                 <p>Das Ergebnis ist leider nicht aussagekräftig (zu viele Gewinner).</p>
             {% endif %}
-            
+
         {# Classical voting: Presentation of candidates #}
         {% else %}
             <h3>Kandidaten</h3>
             <ul>
                 {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
-                    {% if candidate_id != ambience['ballot']['bar'] or is_admin %}
-                        <li>
-                            <span class="label label-primary">{{ candidate['moniker']|e }}</span>
-                            {{ candidate['description']|e }}
-                            {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
-                                <form action="{{ cdedblink('assembly/remove_candidate',
-                                                           {'candidate_id': candidate_id})|e }}"
-                                        method="POST" id="removecandidateform{{ candidate_id|e }}"
-                                        style="display: inline;">
-                                    {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
-                                                         title="Kandidaten löschen") }}
-                                </form>
-                            {% endif %}
-                        </li>
-                    {% endif %}
+                    <li>
+                        <span class="label label-primary">{{ candidate['moniker']|e }}</span>
+                        {{ candidate['description']|e }}
+                        {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                            <form action="{{ cdedblink('assembly/remove_candidate',
+                                                       {'candidate_id': candidate_id})|e }}"
+                                    method="POST" id="removecandidateform{{ candidate_id|e }}"
+                                    style="display: inline;">
+                                {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
+                                                     title="Kandidaten löschen") }}
+                            </form>
+                        {% endif %}
+                    </li>
                 {% endfor %}
             </ul>
         {% endif %}
-    
+
     {# Preferential voting #}
     {% else %}
         {# Preferential voting: Presentation of candidates #}
@@ -212,7 +201,8 @@
                 <li>
                     <span class="label label-primary">{{ candidate['moniker']|e }}</span>
                     {{ candidate['description']|e }}
-                    {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                    {% if is_admin and now() < ambience['ballot']['vote_begin']
+                            and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
                         <form action="{{ cdedblink('assembly/remove_candidate',
                                                    {'candidate_id': candidate_id})|e }}"
                                 method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;">
@@ -223,7 +213,7 @@
                 </li>
             {% endfor %}
         </ul>
-        
+
         {# Preferential voting: Voting form #}
         {% if ambience['ballot']['is_voting'] %}
             <p>
@@ -241,14 +231,14 @@
                 {{ util.form_input_text(name="vote", label="Präferenzliste", small=True) }}
                 {{ util.form_input_submit(value="Abstimmen", small=True) }}
             </form>
-        
+
         {# Preferential voting: Results #}
         {% elif ambience['ballot']['is_tallied'] %}
             <h3>Ergebnis</h3>
             <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen", icon="download")}}</p>
         {% endif %}
     {% endif %}
-    
+
     {# Attachments #}
     {% if attachments or is_admin and now() < ambience['ballot']['vote_begin'] %}
         {% call util.bootstrap_panel(title="Dateien", icon='file') %}
