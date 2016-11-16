@@ -167,18 +167,30 @@ class TestCoreBackend(BackendTest):
                 search_filter='(uid={})'.format(user['id']),
                 attributes=['cn', 'displayName', 'mail', 'cloudAccount'])
             self.assertTrue(ret)
-            cloud_expectation = 'TRUE'
+            cloud_expectation = True
             if user['id'] == 1:
-                cloud_expectation = 'FALSE'
+                cloud_expectation = False
             expectation = {
                 'cn': user['given_names'],
                 'displayName': new_name,
                 'mail': new_address,
                 'cloudAccount': cloud_expectation,}
             self.assertEqual(1, len(l.entries))
-            self.assertEqual(dn, l.entries[0].entry_get_dn())
+            try:
+                found_dn = l.entries[0].entry_dn
+            except:
+                found_dn = l.entries[0].entry_get_dn()
+            self.assertEqual(dn, found_dn)
             for attr, val in expectation.items():
-                self.assertEqual(val, l.entries[0][attr].value)
+                try:
+                    self.assertEqual(val, l.entries[0][attr].value)
+                except AssertionError:
+                    ## Backwards compatability hack for ldap3 version < 2.0.0
+                    if type(val) == bool:
+                        self.assertEqual(str(val).upper(),
+                                         l.entries[0][attr].value)
+                    else:
+                        raise
 
     @as_users("anton")
     def test_create_persona(self, user):
@@ -272,12 +284,24 @@ class TestCoreBackend(BackendTest):
                 'cn': data['display_name'],
                 'displayName': data['display_name'],
                 'mail': data['username'],
-                'cloudAccount': "FALSE",
-                'isActive': "TRUE"}
+                'cloudAccount': False,
+                'isActive': True}
             self.assertEqual(1, len(l.entries))
-            self.assertEqual(dn, l.entries[0].entry_get_dn())
+            try:
+                found_dn = l.entries[0].entry_dn
+            except:
+                found_dn = l.entries[0].entry_get_dn()
+            self.assertEqual(dn, found_dn)
             for attr, val in expectation.items():
-                self.assertEqual(val, l.entries[0][attr].value)
+                try:
+                    self.assertEqual(val, l.entries[0][attr].value)
+                except AssertionError:
+                    ## Backwards compatability hack for ldap3 version < 2.0.0
+                    if type(val) == bool:
+                        self.assertEqual(str(val).upper(),
+                                         l.entries[0][attr].value)
+                    else:
+                        raise
 
     @as_users("anton")
     def test_create_member(self, user):
