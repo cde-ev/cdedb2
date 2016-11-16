@@ -495,6 +495,21 @@ class AssemblyFrontend(AbstractUserFrontend):
                                 str(ballot_id))
             with open(path) as f:
                 result = json.load(f)
+            tiers = tuple(x.split('=') for x in result['result'].split('>'))
+            winners = []
+            loosers = []
+            tmp = winners
+            lookup = {e['moniker']: e['id']
+                      for e in ballot['candidates'].values()}
+            for tier in tiers:
+                ## Remove bar if present
+                ntier = tuple(lookup[x] for x in tier if x in lookup)
+                if ntier:
+                    tmp.append(ntier)
+                if ASSEMBLY_BAR_MONIKER in tier:
+                    tmp = loosers
+            result['winners'] = winners
+            result['loosers'] = loosers
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         vote = None
         if attends:
@@ -504,17 +519,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         if vote:
             split_vote = tuple(x.split('=') for x in vote.split('>'))
         if ballot['votes']:
-            if result:
-                tiers = tuple(x.split('=') for x in result['result'].split('>'))
-                winners = []
-                for tier in tiers:
-                    winners.extend(tier)
-                    if ASSEMBLY_BAR_MONIKER in winners:
-                        winners.remove(ASSEMBLY_BAR_MONIKER)
-                        break
-                    if len(winners) >= ballot['votes']:
-                        break
-                result['winners'] = winners
             if split_vote:
                 if len(split_vote) == 1:
                     ## abstention
