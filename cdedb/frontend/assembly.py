@@ -600,6 +600,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 vote = "=".join(candidates)
                 if ballot['use_bar']:
                     vote += "={}".format(ASSEMBLY_BAR_MONIKER)
+            elif MAGIC_NONE_OF_THEM in voted and len(voted) > 1:
+                rs.notify("warning", "Rejection is exclusive.")
+                return self.show_ballot(rs, assembly_id, ballot_id)
             else:
                 winners = "=".join(voted)
                 loosers = "=".join(c for c in candidates if c not in voted)
