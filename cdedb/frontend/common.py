@@ -149,7 +149,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         params = params or {}
         if rs.errors and not rs.notifications:
             rs.notify("error", "Failed validation.")
-        url = cdedburl(rs, target, params)
+        url = cdedburl(rs, target, params, force_external=True)
         ret = basic_redirect(rs, url)
         if rs.notifications:
             notifications = [self.encode_notification(ntype, nmessage, nparams)
@@ -505,7 +505,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             :rtype: str
             """
             params = params or {}
-            return cdedburl(rs, endpoint, params)
+            return cdedburl(rs, endpoint, params,
+                            force_external=(modus != "web"))
 
         def _show_user_link(persona_id, quote_me=None):
             """Convenience method to create link to user data page.
@@ -1132,13 +1133,14 @@ def access(*roles, modi=None):
         return new_fun
     return decorator
 
-def cdedburl(rs, endpoint, params=None):
+def cdedburl(rs, endpoint, params=None, force_external=False):
     """Construct an HTTP URL.
 
     :type rs: :py:class:`RequestState`
     :type endpoint: str
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
     :type params: {str: object}
+    :type force_external: bool
     :rtype: str
     """
     params = params or {}
@@ -1152,7 +1154,7 @@ def cdedburl(rs, endpoint, params=None):
     else:
         for key in params:
             allparams[key] = params[key]
-    return rs.urls.build(endpoint, allparams)
+    return rs.urls.build(endpoint, allparams, force_external=force_external)
 
 def staticurl(path):
     """Construct an HTTP URL to a static resource (to be found in the static
