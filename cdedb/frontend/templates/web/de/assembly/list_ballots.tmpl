@@ -19,20 +19,25 @@
         {{ util.href(cdedblink("assembly/create_ballot"), "Abstimmung anlegen", aclass="btn btn-success btn-sm",
                 icon="plus") }}
     </div>
-    {% for heading, sample in (("Zukünftige Abstimmungen", future), ("Laufende Abstimmungen", current),
-                               ("Abgeschlossene Abstimmungen", done)) %}
+    {% for heading, sample, show_state in (("Zukünftige Abstimmungen", future, False),
+                                           ("Laufende Abstimmungen", current, True),
+                                           ("Abgeschlossene Abstimmungen", done, False)) %}
         {% if sample %}
         <h3> {{ heading|e }} </h3>
         <ul>
             {% for ballot_id, ballot in sample|dictsort %}
                 <li>
                     {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title'])}}
-                    {% if ballot_id in votes %}
-                        {% if votes[ballot_id] %}
-                            bereits abgestimmt
-                        {% else %}
-                            noch nicht abgestimmt
-                        {% endif %}
+                    {% if ballot_id in votes and show_state %}
+                        ({% if votes[ballot_id] -%}
+                            {% if ">" in votes[ballot_id] -%}
+                                <span class="text-success">{{ util.make_icon('check') }} bereits abgestimmt</span>
+                            {%- else -%}
+                                <span class="text-warning">{{ util.make_icon('unchecked') }} enthalten</span>
+                            {%- endif -%}
+                        {% else -%}
+                            <span class="text-danger">noch nicht abgestimmt</span>
+                        {%- endif -%})
                     {% endif %}
                     {% if is_admin and now() < ballot['vote_begin'] %}
                         {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), "Bearbeiten",
