@@ -409,6 +409,28 @@ def xdictsort_filter(value, attribute):
     """
     return sorted(value.items(), key=lambda item: item[1].get(attribute))
 
+#: Dictionary of custom filters we make available in the templates.
+JINJA_FILTERS = {
+    'date': date_filter,
+    'datetime': datetime_filter,
+    'money': money_filter,
+    'cdedbid': cdedbid_filter,
+    'escape': escape_filter,
+    'e': escape_filter,
+    'gender': gender_filter,
+    'json': json_filter,
+    'stringIn': stringIn_filter,
+    'querytoparams': querytoparams_filter,
+    'numerus': numerus_filter,
+    'genus': genus_filter,
+    'linebreaks': linebreaks_filter,
+    'rst': rst_filter,
+    'enum': enum_filter,
+    'xdictsort': xdictsort_filter,
+    'tex_escape': tex_escape_filter,
+    'te': tex_escape_filter,
+}
+
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
     i18n = i18n_factory()
@@ -425,27 +447,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
             extensions=['jinja2.ext.with_'],
             finalize=sanitize_None)
-        filters = {
-            'date': date_filter,
-            'datetime': datetime_filter,
-            'money': money_filter,
-            'cdedbid': cdedbid_filter,
-            'escape': escape_filter,
-            'e': escape_filter,
-            'gender': gender_filter,
-            'json': json_filter,
-            'stringIn': stringIn_filter,
-            'querytoparams': querytoparams_filter,
-            'numerus': numerus_filter,
-            'genus': genus_filter,
-            'linebreaks': linebreaks_filter,
-            'rst': rst_filter,
-            'enum': enum_filter,
-            'xdictsort': xdictsort_filter,
-            'tex_escape': tex_escape_filter,
-            'te': tex_escape_filter,
-        }
-        self.jinja_env.filters.update(filters)
+        self.jinja_env.filters.update(JINJA_FILTERS)
 
     @abc.abstractmethod
     def finalize_session(self, rs, auxilliary=False):

@@ -7,6 +7,12 @@ from test.common import as_users, USER_DICT, FrontendTest
 class TestApplication(FrontendTest):
     def test_404(self):
         self.get("/nonexistentpath", status=404)
+        self.assertTitle('Oops')
+
+    @as_users("berta")
+    def test_403(self, user):
+        self.get("/cde/semester/show", status=403)
+        self.assertTitle('Oops')
 
     def test_wrong_post(self):
         self.get("/core/login", status=405)

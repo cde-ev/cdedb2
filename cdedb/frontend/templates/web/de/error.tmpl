@@ -1,0 +1,13 @@
+{% set sidenav_active='core_index' %}
+{% extends "web/de/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Oops{% endblock %}
+{% block content %}
+    {% if error.code == 403 %}
+        Du darfst auf diese Seite nicht zugreifen.
+    {% elif error.code == 404 %}
+        Die gewünschte Seite konnte leider nicht gefunden werden.
+    {% else %}
+        Dies sollte nie zu sehen sein.
+    {% endif %}
+{% endblock %}

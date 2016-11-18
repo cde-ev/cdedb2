@@ -7,6 +7,7 @@ import json
 import os.path
 import sys
 
+import jinja2
 import psycopg2.extensions
 import werkzeug
 import werkzeug.routing
@@ -22,12 +23,14 @@ from cdedb.common import (
     glue, make_root_logger, QuotaException, PrivilegeError, now,
     roles_to_db_role, RequestState, User, extract_roles)
 from cdedb.frontend.common import (
-    BaseApp, construct_redirect, Response)
+    BaseApp, construct_redirect, Response, sanitize_None, staticurl,
+    JINJA_FILTERS)
 from cdedb.config import SecretsConfig, Config
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
+
 
 class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
@@ -51,10 +54,56 @@ class Application(BaseApp):
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets)
+        self.jinja_env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(os.path.join(
+                self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
+            extensions=['jinja2.ext.with_'],
+            finalize=sanitize_None)
+        self.jinja_env.filters.update(JINJA_FILTERS)
         if os.path.isfile("/DBVM"):
             ## Sanity checks for the live instance
             if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
                 raise RuntimeError("Refusing to start in debug mode.")
+
+    def make_error_page(self, error, request):
+        """Helper to format an error page.
+
+        This is similar to
+        :py:meth:`cdedb.frontend.common.AbstractFrontend.fill_template`,
+        but creates a Response instead of only a string.
+
+
+        :type error: :py:class:`werkzeug.exceptions.HTTPException`
+        :type request: :py:class:`werkzeug.wrappers.Request`
+        :rtype: :py:class:`Response`
+        """
+        if error.code not in (403, 404):
+            ## 
+            return error
+        urls = self.urlmap.bind_to_environ(request.environ)
+        def _cdedblink(endpoint, params=None):
+            return urls.build(endpoint, params or {})
+        begin = now()
+        lang = "de"
+        data = {
+            'ambience': {},
+            'cdedblink': _cdedblink,
+            'errors': {},
+            'generation_time': lambda: (now() - begin),
+            'glue': glue,
+            'i18n': lambda string: self.i18n(string, lang),
+            'notifications': tuple(),
+            'now': now,
+            'staticurl': staticurl,
+            'user': User(),
+            'values': {},
+            'error': error,
+        }
+        t = self.jinja_env.get_template(os.path.join("web", lang, "error.tmpl"))
+        html = t.render(**data)
+        response = Response(html, mimetype='text/html', status=error.code)
+        response.headers.add('X-Generation-Time', str(now() - begin))
+        return response
 
     @werkzeug.wrappers.Request.application
     def __call__(self, request):
@@ -146,10 +195,11 @@ class Application(BaseApp):
                 self.logger.error(cgitb.text(sys.exc_info(), context=7))
                 raise
         except PrivilegeError as e:
-            ## Convert permission errors from the backend to 503
-            return werkzeug.exceptions.Forbidden(e.args)
+            ## Convert permission errors from the backend to 403
+            return self.make_error_page(werkzeug.exceptions.Forbidden(e.args),
+                                        request)
         except werkzeug.exceptions.HTTPException as e:
-            return e
+            return self.make_error_page(e, request)
         except psycopg2.extensions.TransactionRollbackError:
             ## Serialization error
             return construct_redirect(
