@@ -30,11 +30,6 @@
 
     {# General information about ballot and personalized state info #}
     {{ ambience['ballot']['description']|rst }}
-    {% if is_admin and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
-            {{ ambience['ballot']['notes']|rst }}
-        {% endcall %}
-    {% endif %}
     
     <dl class="dl-horizontal">
         <dt>Abstimmungszeitraum</dt>
@@ -81,8 +76,13 @@
                 {% endif %}
             {% endif %}
         </dd>
-        
     </dl>
+    
+    {% if is_admin and ambience['ballot']['notes'] %}
+        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+            {{ ambience['ballot']['notes']|rst }}
+        {% endcall %}
+    {% endif %}
 
     {# Add candidate form #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
@@ -175,38 +175,55 @@
                 </ol>
             </p>
         {% endif %}
-    {% endif %}
-
-    {# Classical voting #}
-    {% if ambience['ballot']['votes'] %}
-        <p>
-            {% if not attends %}
-                Du nimmst nicht an der Versammlung teil.
-            {% elif not values['vote'] %}
-                {% if ambience['assembly']['is_active'] %}
+        
+        {# Show own vote under result: Classical vote #}
+        {% if ambience['ballot']['votes'] %}
+            <p>
+                {% if not attends %}
+                    Du nimmst nicht an der Versammlung teil.
+                {% elif not values['vote'] %}
+                    {% if ambience['assembly']['is_active'] %}
+                        Du hast noch nicht abgestimmt.
+                    {% endif %}
+                {% else %}
+                    {% if split_vote|length == 1 %}
+                        Du hast Dich enthalten.
+                    {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
+                        Du hast Dich gegen alle Kandidaten entschieden.
+                    {% else %}
+                        Du hast für folgende Kandidaten gestimmt:
+                        <ul>
+                            {% for voted in split_vote[0] %}
+                                <li>
+                                    {{ candidates[voted]['description']|e }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endif %}
+            </p>
+            
+        {# Show own vote under result: Classical vote #}
+        {% else %}
+            <p>
+                {% if not attends %}
+                    Du nimmst nicht an der Versammlung teil.
+                {% elif values['vote'] %}
+                    Du hast mit {{ values['vote']|e }} gestimmt.
+                {% elif ambience['assembly']['is_active'] %}
                     Du hast noch nicht abgestimmt.
                 {% endif %}
-            {% else %}
-                {% if split_vote|length == 1 %}
-                    Du hast Dich enthalten.
-                {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
-                    Du hast Dich gegen alle Kandidaten entschieden.
-                {% else %}
-                    Du hast für folgende Kandidaten gestimmt:
-                    <ul>
-                        {% for voted in split_vote[0] %}
-                            <li>
-                                {{ candidates[voted]['description']|e }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endif %}
-        </p>
+            </p>
+        {% endif %}
+    {% else %}
+    
+        {# Classical voting, not tallied #}
+        {% if ambience['ballot']['votes'] %}
 
-        {# Classical voting: Voting form #}
-        {% if ambience['ballot']['is_voting'] %}
-            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
+            {# Classical voting: Voting form #}
+            {% if ambience['ballot']['is_voting'] and attends %}
+                <h3>Abstimmung</h3>
+                <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
                     {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
@@ -226,35 +243,57 @@
                                  "Mehrheit dafür stimmen, so kann der Vorstand ggf. weitere Maßnahmen ergreifen.") }}
                     {% endif %}
                     {{ util.form_input_submit(value="Abstimmen", small=True) }}
-            </form>
+                </form>
 
-            <div class="form-horizontal">
-                <div class="form-group">
-                    <div class="col-sm-2 control-label">
-                        <strong>Weitere Optionen</strong>
-                    </div>
-                    <div class="col-sm-10">
-                        <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
-                                style="display: inline;">
-                            {{ util.input_hidden(name="vote", value="special: abstain") }}
-                            {{ util.input_submit(value="Enthalten", icon="stop") }}
-                        </form>
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <div class="col-sm-2 control-label">
+                            <strong>Weitere Optionen</strong>
+                        </div>
+                        <div class="col-sm-10">
+                            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
+                                    style="display: inline;">
+                                {{ util.input_hidden(name="vote", value="special: abstain") }}
+                                {{ util.input_submit(value="Enthalten", icon="stop") }}
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-        {# Classical voting: Presentation of candidates #}
+            {# Classical voting: Presentation of candidates #}
+            {% else %}
+                <h3>Kandidaten</h3>
+                <ul>
+                    {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
+                        <li>
+                            {{ candidate['description']|e }}
+                            {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                                <form action="{{ cdedblink('assembly/remove_candidate',
+                                                           {'candidate_id': candidate_id})|e }}"
+                                        method="POST" id="removecandidateform{{ candidate_id|e }}"
+                                        style="display: inline;">
+                                    {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
+                                                         title="Kandidaten löschen") }}
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
         {% else %}
+            {# Preferential voting: Presentation of candidates #}
             <h3>Kandidaten</h3>
             <ul>
                 {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                     <li>
+                        {% if attends %}<span class="label label-primary">{{ candidate['moniker']|e }}</span>{% endif %}
                         {{ candidate['description']|e }}
-                        {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                        {% if is_admin and now() < ambience['ballot']['vote_begin']
+                                and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
                             <form action="{{ cdedblink('assembly/remove_candidate',
                                                        {'candidate_id': candidate_id})|e }}"
-                                    method="POST" id="removecandidateform{{ candidate_id|e }}"
-                                    style="display: inline;">
+                                    method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;">
                                 {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
                                                      title="Kandidaten löschen") }}
                             </form>
@@ -262,47 +301,17 @@
                     </li>
                 {% endfor %}
             </ul>
-        {% endif %}
 
-    {# Preferential voting #}
-    {% else %}
-        {# Preferential voting: Presentation of candidates #}
-        <h3>Kandidaten</h3>
-        <ul>
-            {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
-                <li>
-                    <span class="label label-primary">{{ candidate['moniker']|e }}</span>
-                    {{ candidate['description']|e }}
-                    {% if is_admin and now() < ambience['ballot']['vote_begin']
-                            and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
-                        <form action="{{ cdedblink('assembly/remove_candidate',
-                                                   {'candidate_id': candidate_id})|e }}"
-                                method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;">
-                            {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
-                                                 title="Kandidaten löschen") }}
-                        </form>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-
-        {# Preferential voting: Voting form #}
-        {% if ambience['ballot']['is_voting'] %}
-            <p>
-                {% if not attends %}
-                    Du nimmst nicht an der Versammlung teil.
-                {% elif values['vote'] %}
-                    Du hast mit {{ values['vote']|e }} gestimmt.
-                {% elif ambience['assembly']['is_active'] %}
-                    Du hast noch nicht abgestimmt.
-                {% endif %}
-            </p>
-            {# TODO do something nice and interactive here (with drag and drop ...) #}
-            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
-                    class="form-horizontal">
-                {{ util.form_input_text(name="vote", label="Präferenzliste", small=True) }}
-                {{ util.form_input_submit(value="Abstimmen", small=True) }}
-            </form>
+            {# Preferential voting: Voting form #}
+            {% if ambience['ballot']['is_voting'] and attends %}
+                <h3>Abstimmung</h3>
+                {# TODO do something nice and interactive here (with drag and drop ...) #}
+                <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
+                        class="form-horizontal">
+                    {{ util.form_input_text(name="vote", label="Präferenzliste", small=True) }}
+                    {{ util.form_input_submit(value="Abstimmen", small=True) }}
+                </form>
+            {% endif %}
         {% endif %}
     {% endif %}
 
