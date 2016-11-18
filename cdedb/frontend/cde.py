@@ -522,7 +522,8 @@ class CdEFrontend(AbstractUserFrontend):
             'mobile', 'username', 'birthday')
         reader = csv.DictReader(
             accountlines, fieldnames=fields, delimiter=';',
-            quoting=csv.QUOTE_ALL, doublequote=True, quotechar='"')
+            quoting=csv.QUOTE_ALL, quotechar='"', doublequote=False,
+            escapechar='\\')
         data = []
         lineno = 0
         for raw_entry in reader:
@@ -697,10 +698,13 @@ class CdEFrontend(AbstractUserFrontend):
             for datum in data:
                 persona = personas[datum['persona_id']]
                 address = make_postal_address(persona)
+                new_balance = (personas[datum['persona_id']]['balance']
+                               + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
                               'Subject': 'CdE money transfer received',},
-                             {'persona': persona, 'address': address})
+                             {'persona': persona, 'address': address,
+                              'new_balance': new_balance})
         return True, count
 
     @access("cde_admin", modi={"POST"})
@@ -721,7 +725,8 @@ class CdEFrontend(AbstractUserFrontend):
         fields = ('persona_id', 'family_name', 'given_names', 'amount', 'note')
         reader = csv.DictReader(
             transferlines, fieldnames=fields, delimiter=';',
-            quoting=csv.QUOTE_ALL, doublequote=True, quotechar='"')
+            quoting=csv.QUOTE_ALL, quotechar='"', doublequote=False,
+            escapechar='\\')
         data = []
         lineno = 0
         for raw_entry in reader:
