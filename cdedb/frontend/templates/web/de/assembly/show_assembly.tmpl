@@ -19,6 +19,8 @@
         {% endif %}
     </div>
 
+    {{ ambience['assembly']['description']|rst }}
+
     <dl class="dl-horizontal">
         <dt>Anmeldeschluss</dt>
         <dd>{{ ambience['assembly']['signup_end']|datetime|e }}</dd>
@@ -37,11 +39,10 @@
         </dd>
     </dl>
 
-    {{ ambience['assembly']['description']|rst }}
-
     {% if is_admin and ambience['assembly']['notes'] %}
-        <h3>Admin-Notizen</h3>
-        {{ ambience['assembly']['notes']|rst }}
+        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+            {{ ambience['assembly']['notes']|rst }}
+        {% endcall %}
     {% endif %}
     
     {% if attachments or is_admin %}

@@ -28,7 +28,14 @@
         </div>
     {% endif %}
 
-    {# General information about ballot #}
+    {# General information about ballot and personalized state info #}
+    {{ ambience['ballot']['description']|rst }}
+    {% if is_admin and ambience['ballot']['notes'] %}
+        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+            {{ ambience['ballot']['notes']|rst }}
+        {% endcall %}
+    {% endif %}
+    
     <dl class="dl-horizontal">
         <dt>Abstimmungszeitraum</dt>
         <dd>
@@ -48,15 +55,34 @@
                 {% endif %}
             {% endif %}
         </dd>
-        {# TODO add information on state of ballot (including personal voting state) #}
+        <dt>Status</dt>
+        <dd>
+            {% if now() < ambience['ballot']['vote_begin'] %}
+                <strong>Diese Abstimmung hat noch nicht begonnen.</strong> Admins können noch Veränderungen
+                an der Beschreibung, den Dateien und der Liste der Kandidaten vornehmen.
+                {% if is_admin %}
+                    Alle CdE-Mitglieder und externe Teilnehmer der Veranstaltung können die Abstimmung und
+                    alle Details jedoch bereits sehen, um sich zu informieren.
+                {% endif %}
+            {% elif ambience['ballot']['is_tallied'] %}
+                <strong>Die Abstimmung ist beendet.</strong> Unten wird das Ergebnis angezeigt.
+            {% elif not attends %}
+                Du nimmst nicht an der Versammlung teil. Daher kannst Du nicht abstimmen.
+            {% elif ambience['ballot']['is_voting'] %}
+                <strong>Die Abstimmung läuft.</strong>
+                {% if values['vote'] %}
+                    {% if split_vote|length == 1 %}
+                        <span class="text-warning">Du hast dich enthalten.</span> Du kannst unten bis zum Ende des
+                        Abstimmungszeitraums noch eine Auswahl treffen.
+                    {% else %}
+                        <span class="text-success">Du hast bereits abgestimmt.</span> Du kannst Deine Auswahl
+                        unten überprüfen und bis zum Ende des Abstimmungszeitraums verändern.
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </dd>
+        
     </dl>
-
-    {{ ambience['ballot']['description']|rst }}
-    {% if is_admin and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag") %}
-            {{ ambience['ballot']['notes']|rst }}
-        {% endcall %}
-    {% endif %}
 
     {# Add candidate form #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
@@ -163,7 +189,7 @@
             {% else %}
                 {% if split_vote|length == 1 %}
                     Du hast Dich enthalten.
-                {% elif split_vote|length == 2 and split_vote[0] == (ASSEMBLY_BAR_MONIKER,) %}
+                {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
                     Du hast Dich gegen alle Kandidaten entschieden.
                 {% else %}
                     Du hast für folgende Kandidaten gestimmt:
@@ -192,6 +218,13 @@
                     {% else %}
                         {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, small=True) }}
                     {% endif %}
+                    {% if ambience['ballot']['use_bar'] %}
+                        {{ util.form_input_checkboxes(
+                            "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER,"Gegen alle Kandidaten")],
+                            small=True, radio=(ambience['ballot']['votes'] == 1),
+                            info="Mit dieser Option kannst Du Dein Ablehnung aller Kandidaten ausdrücken. Sollte eine "
+                                 "Mehrheit dafür stimmen, so kann der Vorstand ggf. weitere Maßnahmen ergreifen.") }}
+                    {% endif %}
                     {{ util.form_input_submit(value="Abstimmen", small=True) }}
             </form>
 
@@ -201,14 +234,6 @@
                         <strong>Weitere Optionen</strong>
                     </div>
                     <div class="col-sm-10">
-                        {% if ambience['ballot']['use_bar'] %}
-                            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="rejectionform"
-                                    style="display: inline;">
-                                {{ util.input_hidden(name="vote", value="special: none") }}
-                                {{ util.input_submit(value="Keiner der Kandidaten", icon="remove") }}
-                            </form>
-                            &emsp;
-                        {% endif %}
                         <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
                                 style="display: inline;">
                             {{ util.input_hidden(name="vote", value="special: abstain") }}
@@ -224,7 +249,6 @@
             <ul>
                 {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                     <li>
-                        <span class="label label-primary">{{ candidate['moniker']|e }}</span>
                         {{ candidate['description']|e }}
                         {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                             <form action="{{ cdedblink('assembly/remove_candidate',

@@ -99,6 +99,15 @@ hr.strong {
     }
 }
 
+.panel-condensed>.panel-heading {
+    padding: 8px 10px;
+}
+.panel-condensed>.panel-heading>.panel-title {
+    font-size: 14px;
+}
+.panel-condensed>.panel-body {
+    padding: 10px;
+}
 
 /* Better definition lists */
 dd {
