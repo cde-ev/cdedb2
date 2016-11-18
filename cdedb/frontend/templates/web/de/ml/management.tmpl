@@ -20,6 +20,11 @@
             {{ util.href(cdedblink('ml/check_states'), "Konsistenzcheck", aclass="btn btn-info btn-sm", icon="check") }}
         </div>
     {% endif %}
+    {% call util.bootstrap_panel() %}
+        Beachte, dass als Moderatoren und Abonennten nur DB-Accounts und
+        keine beliebigen Emailadressen eingetragen werden können. Bei der
+        Whitelist hingegen werden beliebige Emailadressen eingetragen.
+    {% endcall %}
 
     <div class="row">
         <div class="col-md-6">
