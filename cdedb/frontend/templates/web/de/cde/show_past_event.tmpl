@@ -39,9 +39,9 @@
 
     <h2>Teilnehmer</h2>
     {% if is_admin %}
-        <div class="panel panel-success">
+        <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
-                <h4 class="panel-title">Teilnehmer <u>ohne Kurs</u> hinzufügen</h4>
+                <h4 class="panel-title">{{util.make_icon('plus')}} Teilnehmer <u>ohne Kurs</u> hinzufügen</h4>
             </div>
             <div class="panel-body">
                 <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
@@ -50,7 +50,7 @@
                     <div class="row">
                         <div class="col-sm-7">
                             {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
-                                    anid="input-add-participant") }}
+                                    anid="input-add-participant", aclass="form-control input-sm") }}
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
                                     '{{ cdedblink('core/select_persona') + '?kind=cde_user&phrase=%s'}}',
@@ -60,12 +60,12 @@
                             {{ util.output_errors('persona_id') }}
                         </div>
                         <div class="col-sm-2">
-                            <div class="checkbox">
+                            <div class="checkbox input-sm">
                                 {{ util.input_checkbox(name="is_orga", label="Orga") }}
                             </div>
                         </div>
                         <div class="col-sm-3">
-                            {{ util.input_submit(value="hinzufügen", icon="plus") }}
+                            {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}
                         </div>
                     </div>
                 </form>

@@ -88,16 +88,17 @@
 
     {# Add candidate form #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
-        {% call util.bootstrap_panel(aclass="panel-success", title="Kandidaten hinzufügen") %}
+        {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title="Kandidaten hinzufügen",
+                icon='plus') %}
             <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform" class="row">
                 <div class="col-md-3">
-                    {{ util.input_text(name="moniker", placeholder="Kurzname") }}
+                    {{ util.input_text(name="moniker", placeholder="Kurzname", aclass="form-control input-sm") }}
                 </div>
                 <div class="col-md-6">
-                    {{ util.input_text(name="description", placeholder="Beschreibung") }}
+                    {{ util.input_text(name="description", placeholder="Beschreibung", aclass="form-control input-sm") }}
                 </div>
                 <div class="col-md-3">
-                    {{ util.input_submit(value="Hinzufügen") }}
+                    {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}
                 </div>
             </form>
         {% endcall %}
