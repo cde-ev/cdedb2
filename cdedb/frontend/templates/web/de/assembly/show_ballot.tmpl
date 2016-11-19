@@ -39,13 +39,15 @@
                 {% if ambience['ballot']['quorum'] %}
                     <br />
                     Verlängerung bis {{ ambience['ballot']['vote_extension_end']|datetime|e }} falls Quorum =
-                    {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht werden
+                    {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht werden.
                 {% endif %}
             {% else %}
                 {% if ambience['ballot']['extended'] %}
+                    <br />
                     Wurde bis {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert, da
                     {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht wurden.
                 {% elif ambience['ballot']['quorum'] %}
+                    <br />
                     Keine Verlängerung nötig, da {{ ambience['ballot']['quorum']|e }} Stimmen erreicht wurden.
                 {% endif %}
             {% endif %}
@@ -104,84 +106,62 @@
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
         <h3>Ergebnis</h3>
-        <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen", icon="download")}}</p>
-        {% if not ambience['ballot']['votes'] %}
-            <p>Zusammenfassung: {{ result['result']|e }}</p>
-        {% endif %}
-        {% if ambience['ballot']['use_bar'] %}
-            <h4>Gewählte Kandidaten</h4>
-            {% if result['winners'] %}
-                <p>
-                    <ol>
-                        {% for candidate_ids in result['winners'] %}
-                            {% set outer_loop = loop %}
-                            {% for candidate_id in candidate_ids %}
-                                <li value="{{ outer_loop.index|e }}">
-                                    {% if not ambience['ballot']['votes'] %}
-                                        <strong>
-                                            {{ ambience['ballot']['candidates'][candidate_id]['moniker']|e }}
-                                        </strong>
-                                        --
-                                    {% endif %}
-                                    {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
-                                </li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ol>
-                </p>
-            {% else %}
-                <p>Kein Kandidat wurde gewählt.</p>
-            {% endif %}
-            <h4>Abgelehnte Kandidaten</h4>
-            {% if result['loosers'] %}
-                <p>
-                    <ol>
-                        {% for candidate_ids in result['loosers'] %}
-                            {% set outer_loop = loop %}
-                            {% for candidate_id in candidate_ids %}
-                                <li value="{{ (outer_loop.index + result['winners']|length)|e }}">
-                                    {% if not ambience['ballot']['votes'] %}
-                                        <strong>
-                                            {{ ambience['ballot']['candidates'][candidate_id]['moniker']|e }}
-                                        </strong>
-                                        --
-                                    {% endif %}
-                                    {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
-                                </li>
-                            {% endfor %}
-                        {% endfor %}
-                    </ol>
-                </p>
-            {% else %}
-                <p>Kein Kandidat wurde abgelehnt.</p>
-            {% endif %}
-        {% else %}
-            <p>
-                <ol>
-                    {% for candidate_ids in result['winners'] %}
-                        {% set outer_loop = loop %}
+        {% if result['winners'] %}
+            <ol>
+                {% for candidate_ids in result['winners'] %}
+                    <li value="{{ loop.index|e }}">
                         {% for candidate_id in candidate_ids %}
-                            <li value="{{ (outer_loop.index)|e }}">
-                                {% if not ambience['ballot']['votes'] %}
-                                    <strong>
-                                        {{ ambience['ballot']['candidates'][candidate_id]['moniker']|e }}
-                                    </strong>
-                                    --
-                                {% endif %}
-                                {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
-                            </li>
+                            {% if not ambience['ballot']['votes'] %}
+                                <span class="label label-primary">
+                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker']|e -}}
+                                </span>
+                            {% endif %}
+                            {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
+                        {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
                         {% endfor %}
-                    {% endfor %}
-                </ol>
-            </p>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% endif %}
+        {% if ambience['ballot']['use_bar'] and result['loosers'] %}
+            <p class="text-info">
+                {% if ambience['ballot']['votes'] %}
+                    Die folgenden Kandidaten haben weniger Stimmen erhalten als die „Gegen alle
+                    Kandidaten“-Option.
+                {% else %}
+                    Die folgenden Kandidaten haben gegen die Ablehnungs-Grenze (<code>{{ ASSEMBLY_BAR_MONIKER }}</code>)
+                    verloren.
+                {% endif %}
+            <ol>
+                {% for candidate_ids in result['loosers'] %}
+                    <li value="{{ (loop.index + result['winners']|length)|e }}">
+                        {% for candidate_id in candidate_ids %}
+                            {% if not ambience['ballot']['votes'] %}
+                                <span class="label label-primary">
+                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker']|e -}}
+                                </span>
+                            {% endif %}
+                            {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
+                            {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
+                        {% endfor %}
+                    </li>
+                {% endfor %}
+            </ol>
         {% endif %}
         
-        {# Show own vote under result: Classical vote #}
-        {% if ambience['ballot']['votes'] %}
-            <p>
-                {% if not attends %}
-                    Du nimmst nicht an der Versammlung teil.
-                {% elif not values['vote'] %}
+        <h4>Zusammenfassung</h4>
+        {% if not ambience['ballot']['votes'] %}
+            <pre style="max-width: 500px;">{{ result['result']|e }}</pre>
+        {% endif %}
+        <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen", icon="download")}}</p>
+        
+        <h3>Deine Stimme</h3>
+        <p>
+            {# Show own vote under result: Classical vote #}
+            {% if not attends %}
+                Du nimmst nicht an der Versammlung teil.
+            {% elif ambience['ballot']['votes'] %}
+                {% if not values['vote'] %}
                     {% if ambience['assembly']['is_active'] %}
                         Du hast noch nicht abgestimmt.
                     {% endif %}
@@ -191,30 +171,22 @@
                     {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
                         Du hast Dich gegen alle Kandidaten entschieden.
                     {% else %}
-                        Du hast für folgende Kandidaten gestimmt:
-                        <ul>
-                            {% for voted in split_vote[0] %}
-                                <li>
-                                    {{ candidates[voted]['description']|e }}
-                                </li>
-                            {% endfor %}
-                        </ul>
+                        Du hast für folgende Kandidaten gestimmt:<br />
+                        {% for voted in split_vote[0] %}
+                            {{ candidates[voted]['description']|e }}{% if not loop.last %},{% endif %}
+                        {% endfor %}
                     {% endif %}
                 {% endif %}
-            </p>
-            
-        {# Show own vote under result: Classical vote #}
-        {% else %}
-            <p>
-                {% if not attends %}
-                    Du nimmst nicht an der Versammlung teil.
-                {% elif values['vote'] %}
-                    Du hast mit {{ values['vote']|e }} gestimmt.
+                
+            {# Show own vote under result: Classical vote #}
+            {% else %}
+                {% if values['vote'] %}
+                    Du hast mit <code>{{ values['vote']|e }}</code> gestimmt.
                 {% elif ambience['assembly']['is_active'] %}
-                    Du hast noch nicht abgestimmt.
+                    Du hast nicht abgestimmt.
                 {% endif %}
-            </p>
-        {% endif %}
+            {% endif %}
+        </p>
     {% else %}
     
         {# Classical voting, not tallied #}
