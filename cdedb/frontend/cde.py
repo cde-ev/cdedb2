@@ -1643,7 +1643,8 @@ class CdEFrontend(AbstractUserFrontend):
     @access("cde")
     def show_past_event(self, rs, pevent_id):
         """Display concluded event."""
-        courses = self.pasteventproxy.list_past_courses(rs, pevent_id)
+        course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
+        courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         institutions = self.pasteventproxy.list_institutions(rs)
         participants, personas, extra_participants = self.process_participants(
             rs, pevent_id)

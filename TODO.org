@@ -7,18 +7,13 @@
 *** have separate subscription policies for implicit and explicit members
 *** have an audience policy independent of the target audience of a mandatory list
 *** automatic unsubscription if the user leaves the audience
-** past course numbers fixup
-** merge profile pages
 ** streamline search forms/pages
-** Allow specification of TTL for ephemeral links
 ** continuous integration (after online VM is set up)
 ** move genesis to core realm and change the process to (i) user data input (ii) administrative confirmation.
 ** make more use of ambience (especially in existing code)
 ** maybe replace is_admin with is_priveleged (move checks for orga and moderator there)
 ** rename CDEDB_OFFLINE_DEPLOYMENT
-** Kill third datum in parameter entries of util.input_checkboxes and similar
 ** use util.persona_anchor in templates
-** get test suite to run in the VM
 ** run validator on all html output
 ** do css layout
 ** improve ui
@@ -28,8 +23,6 @@
 ** add ml test cases concerning assembly interaction
 ** add a nice UI for preferential voting (a la drag and drop with JS)
 ** make country choices into drop down menues
-** Add JS or python code to convert raw numbers to DB-IDs for the admin show-ID form in the sidebar
-** maybe move past_event to cde realm
 ** allow comma-separated list of ids to lodgement/manage (non-JS fallback)
 ** multi-edit formular (multiple ids, merge values and display only equal ones, activate fields by checkbox)
 ** maybe add crosstables for course choices
@@ -44,18 +37,6 @@
 ** allow arbitrary number of orderings in queries (only frontend needs to be beefed up)
 ** maybe allow storing of custom queries per event
 ** enhance checkin with more functionality (show fields, link to edit user)
-** return http code 500 for error pages
-** move member search to cde index page (maybe add statistics)
-** allow to set custom password on reset (after email validation)
-** add page detailing where to send membership fees
-** zap _data postfixes in many places (without them it gets shorter but not less legible)
-** untagle event/past_event functionality (choosing via the 'past' parameter is ugly)
-** add dash-board to index pages
-*** link to relevant events (orga, open to registration) [if event user]
-*** link to open assemblies
-*** web configurable text
-*** administration requests (account creation, data change reviews, ...) [number with link to list]
-*** quick links (whatever is useful)
 * abstract items
 ** Finalize SQL
 ** use framework for html? (maybe pure?) -- CSS is really rudimentary

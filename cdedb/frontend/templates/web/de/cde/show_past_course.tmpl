@@ -5,7 +5,7 @@
 {% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
 {% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}){% endblock %}
 {% block heading %}
-    <h1 class="title">{{ ambience['pcourse']['title']|e }} <small>({{ ambience['pevent']['title']|e }})</small></h1>
+    <h1 class="title">{{ ambience['pcourse']['nr']|e }}. {{ ambience['pcourse']['title']|e }} <small>({{ ambience['pevent']['title']|e }})</small></h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}

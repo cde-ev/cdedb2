@@ -31,8 +31,8 @@
     {% endif %}
     {% if courses %}
         <ul>
-            {% for anid, title in courses|dictsort %}
-                <li>{{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), title) }}</li>
+            {% for anid, acourse in courses|dictsort %}
+                <li>{{ acourse['nr']|e }}. {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), acourse['title']) }}</li>
             {% endfor %}
         </ul>
     {% endif %}
@@ -87,7 +87,7 @@
                         {%- for pcourse_id in participant['pcourse_ids'] %}
                             {%- if pcourse_id -%}
                                 {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
-                                    courses[pcourse_id]) }}
+                                    courses[pcourse_id]['title']) }}
                                 {%- if not loop.last %}, {% endif -%}
                             {% endif -%}
                         {% endfor -%}

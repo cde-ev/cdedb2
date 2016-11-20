@@ -45,8 +45,8 @@ class PastEventBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         query = glue(
             "SELECT p.persona_id, p.pevent_id, e.title AS event_name,",
-            "e.tempus, p.pcourse_id, c.title AS course_name, p.is_instructor,",
-            "p.is_orga",
+            "e.tempus, p.pcourse_id, c.title AS course_name, c.nr,",
+            "p.is_instructor, p.is_orga",
             "FROM past_event.participants AS p",
             "INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)",
             "LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)",

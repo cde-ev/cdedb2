@@ -308,6 +308,7 @@
                     {% else -%}
                         {% if info['course_name'] -%}
                             :
+                            {{ info['nr']|e }}.
                             {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": info['pevent_id'],
                                                                             "pcourse_id": info['pcourse_id']}),
                                          info['course_name']) }}
