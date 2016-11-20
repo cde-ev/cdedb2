@@ -1,7 +1,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
-{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% set jshint='strong' %}
 {% block title %}Unterkunft {{ ambience['lodgement']['moniker'] }} ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
     {% if problems %}

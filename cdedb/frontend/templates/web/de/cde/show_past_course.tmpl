@@ -2,7 +2,7 @@
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% set jshint='strong' %}
 {% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}){% endblock %}
 {% block heading %}
     <h1 class="title">{{ ambience['pcourse']['nr']|e }}. {{ ambience['pcourse']['title']|e }} <small>({{ ambience['pevent']['title']|e }})</small></h1>

@@ -338,6 +338,11 @@ h1.title {
     font-size: 1em;
 }
 
+.jshint {
+    margin-bottom: 10px;
+    text-align: right;
+}
+
 .profilepic {
     max-width: 150px;
 }

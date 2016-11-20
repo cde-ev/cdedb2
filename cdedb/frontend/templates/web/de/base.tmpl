@@ -24,8 +24,25 @@
     </head>
     <body>
         <div class="container page">
-            <div class="logo">
-                <img src="{{ staticurl("logo.jpg")|e }}" alt="CdE" />
+            <div class="clearfix">
+                <div class="logo pull-left">
+                    <img src="{{ staticurl("logo.jpg")|e }}" alt="CdE Datenbank" />
+                </div>
+                
+                {% if jshint %}
+                    <noscript>
+                        {% if jshint == 'strong' %}
+                            <div class="jshint pull-right text-danger">
+                                {{ util.make_icon('warning-sign') }} Diese Seite bietet mit JavaScript erweiterte
+                                Funktionalität.
+                            </div>
+                        {% else %}
+                            <div class="jshint pull-right text-warning">
+                                {{ util.make_icon('warning-sign') }} Diese Seite ist mit JavaScript einfacher nutzbar.
+                            </div>
+                        {% endif %}
+                    </noscript>
+                {% endif %}
             </div>
             <!-- main navigation bar -->
             <nav class="navbar navbar-default">

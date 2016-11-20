@@ -1,7 +1,7 @@
 {% set sidenav_active='event_checkin' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}Checkin ({{ ambience['event']['title']|e }}){% endblock %}
 {% block content %}
     <div>

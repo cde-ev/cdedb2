@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_past_events_org' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
 {% block title %}Organisationen der abg. Veranstaltungen verwalten{% endblock %}
 {% block breadcrumb %}

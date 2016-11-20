@@ -2,7 +2,7 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
-{% block javascripthint %}{{ util.javascript_hint() }}{% endblock %}
+{% set jshint='strong' %}
 {% block title %}{{ ambience['event']['title']|e }} Teile konfigurieren{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
