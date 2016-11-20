@@ -6,6 +6,7 @@ import webtest
 import email.parser
 from test.common import as_users, USER_DICT, FrontendTest
 
+from cdedb.common import ASSEMBLY_BAR_MONIKER
 from cdedb.query import QueryOperators
 
 class TestAssemblyFrontend(FrontendTest):
@@ -320,10 +321,10 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Bester Hof (Internationaler Kongress)")
         f = self.response.forms['voteform']
         self.assertEqual("Li", f['vote'].value)
-        f = self.response.forms['rejectionform']
+        f['vote'] = ASSEMBLY_BAR_MONIKER
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
-        self.assertEqual("special: none", f.get('vote', index=0).value)
+        self.assertEqual(ASSEMBLY_BAR_MONIKER, f['vote'].value)
         self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']
         self.submit(f)
@@ -352,11 +353,13 @@ class TestAssemblyFrontend(FrontendTest):
         tmp = {f.get('vote', index=0).value, f.get('vote', index=1).value}
         self.assertEqual({"W", "S"}, tmp)
         self.assertEqual(None, f.get('vote', index=2).value)
-        f = self.response.forms['rejectionform']
+        f['vote'] = [ASSEMBLY_BAR_MONIKER]
         self.submit(f)
         self.assertTitle("Akademie-Nachtisch (Internationaler Kongress)")
         f = self.response.forms['voteform']
+        self.assertEqual(ASSEMBLY_BAR_MONIKER, f.get('vote', index=5).value)
         self.assertEqual(None, f.get('vote', index=0).value)
+        self.assertEqual(None, f.get('vote', index=1).value)
         self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']
         self.submit(f)

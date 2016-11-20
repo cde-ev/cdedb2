@@ -24,10 +24,6 @@ from cdedb.database.connection import Atomizer
 #: of classical voting. This can not occur as a moniker since it contains
 #: forbidden characters.
 MAGIC_ABSTAIN = "special: abstain"
-#: Magic value to signal none of the above during voting. Used during the
-#: emulation of classical voting. This can not occur as a moniker since it
-#: contains forbidden characters.
-MAGIC_NONE_OF_THEM = "special: none"
 
 class AssemblyFrontend(AbstractUserFrontend):
     """Organize congregations and vote on ballots."""
@@ -592,7 +588,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 return self.show_ballot(rs, assembly_id, ballot_id)
             candidates = tuple(e['moniker']
                                for e in ballot['candidates'].values())
-            if voted == (MAGIC_NONE_OF_THEM,):
+            if voted == (ASSEMBLY_BAR_MONIKER,):
                 if not ballot['use_bar']:
                     raise ValueError("Not available.")
                 vote = "{}>{}".format(ASSEMBLY_BAR_MONIKER, "=".join(candidates))
@@ -600,8 +596,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                 vote = "=".join(candidates)
                 if ballot['use_bar']:
                     vote += "={}".format(ASSEMBLY_BAR_MONIKER)
-            elif MAGIC_NONE_OF_THEM in voted and len(voted) > 1:
-                rs.notify("warning", "Rejection is exclusive.")
+            elif ASSEMBLY_BAR_MONIKER in voted and len(voted) > 1:
+                rs.notify("error", "Rejection is exclusive.")
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
                 winners = "=".join(voted)
