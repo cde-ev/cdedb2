@@ -121,7 +121,7 @@ class Query:
 #:           the schema part does not survive querying and needs to be stripped
 #:           before output.
 QUERY_SPECS = {
-    "qview_cde_member" :
+    "qview_cde_member":
     collections.OrderedDict([
         ("personas.id", "id"),
         ("given_names,display_name", "str"),
@@ -137,7 +137,7 @@ QUERY_SPECS = {
         ("pcourse_id", "id"),
         ("fulltext", "str"),
         ]),
-    "qview_cde_user" :
+    "qview_cde_user":
     collections.OrderedDict([
         ("personas.id", "id"),
         ("given_names", "str"),
@@ -187,7 +187,7 @@ QUERY_SPECS = {
         ("notes", "str"),
         ("fulltext", "str"),
         ]),
-    "qview_archived_persona" :
+    "qview_archived_persona":
     collections.OrderedDict([
         ("personas.id", "id"),
         ("given_names", "str"),
@@ -199,7 +199,7 @@ QUERY_SPECS = {
         ("pevent_id", "id"),
         ("notes", "str"),
         ]),
-    "qview_event_user" :
+    "qview_event_user":
     collections.OrderedDict([
         ("personas.id", "id"),
         ("given_names", "str"),
@@ -228,7 +228,7 @@ QUERY_SPECS = {
         ("notes", "str"),
         ("fulltext", "str"),
         ]),
-    "qview_registration" :
+    "qview_registration":
     collections.OrderedDict([
         ("reg.id", "id"),
         ("persona.given_names", "str"),
@@ -256,7 +256,7 @@ QUERY_SPECS = {
         ("reg.checkin", "datetime"),
         ## This will be augmented with additional fields on the fly.
         ]),
-    "qview_core_user" :
+    "qview_core_user": ## query for a general user including past event infos
     collections.OrderedDict([
         ("personas.id", "id"),
         ("given_names", "str"),
@@ -281,7 +281,7 @@ QUERY_SPECS = {
         ("notes", "str"),
         ("fulltext", "str"),
         ]),
-    "qview_persona" :
+    "qview_persona": ## query for a persona without past event infos
     collections.OrderedDict([
         ("id", "id"),
         ("given_names", "str"),
