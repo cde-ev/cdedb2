@@ -20,8 +20,9 @@
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_text(name="address", label="Adresse") }}
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                info="Öffentlich für den gesamten Empfängerkreis sichtbar.") }}
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+                                    info="Unterstützt reStructuredText") }}
+        {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
+                                    info="Unterstützt reStructuredText") }}
 
 
         <h4 class="heading-underline">Moderation &amp; Abonnenten</h4>

@@ -29,7 +29,8 @@
             </script>
         </div>
     {% endif %}
-    {{ ambience['pcourse']['description']|e }}
+    
+    {{ ambience['pcourse']['description']|rst }}
 
     <h2>Teilnehmer</h2>
     {% if is_admin %}

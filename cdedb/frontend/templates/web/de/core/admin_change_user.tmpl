@@ -41,7 +41,8 @@
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
             {{ util.form_input_checkbox(name="cloud_account", label="Cloud Account") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="7") }}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="7",
+                                    info="Für alle Admins sichtbar, unterstützt reStructuredText) }}
 
         <h4 class="heading-underline">Kontakt</h4>
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}
@@ -76,7 +77,8 @@
             {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
             {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
             {{ util.form_input_textarea(name="interests", label="Interessen") }}
-            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
+            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5",
+                                        info="Unterstützt reStructuredText") }}
         {% endif %}
 
         {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(values['persona_id'])) }}

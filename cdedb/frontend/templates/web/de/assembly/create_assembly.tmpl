@@ -12,9 +12,11 @@
     <form action="{{ cdedblink('assembly/create_assembly')|e }}" method="POST" id="createassemblyform"
             class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
+                                    info="Unterstützt reStructuredText") }}
         {{ util.form_input_text(name="signup_end", label="Anmeldeschluss", placeholder="YYYY-MM-DD hh:ii+00:00") }}
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5", info="Nur für Admins sichtbar.") }}
+        {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
+                                    info="Unterstützt reStructuredText") }}
         {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink('assembly/index')) }}
     </form>
     <script type="text/javascript">

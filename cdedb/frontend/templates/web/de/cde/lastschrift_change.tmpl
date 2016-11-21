@@ -27,7 +27,8 @@
 	{{ util.form_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
 	{{ util.form_input_textarea(name="account_address", label="Adresse (falls abweichend)") }}
 	{{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
-	{{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+	{{ util.form_input_textarea(name="notes", label="Notizen", rows="5",
+								info="Unterstützt reStructuredText") }}
 	
 	{{ util.form_input_submit(value="Ändern",
 		cancellink=cdedblink("cde/lastschrift_show", {'persona_id': ambience['lastschrift']['persona_id']})) }}

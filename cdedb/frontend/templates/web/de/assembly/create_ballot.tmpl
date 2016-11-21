@@ -15,14 +15,16 @@
     <form action="{{ cdedblink('assembly/create_ballot')|e }}" method="POST" id="createballotform",
             class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
+                                    info="Unterstützt reStructuredText") }}
         {{ util.form_input_text(name="vote_begin", label="Beginn der Abstimmung") }}
         {{ util.form_input_text(name="vote_end", label="Ende der Abstimmung") }}
         {{ util.form_input_text(name="quorum", label="Quorum") }}
         {{ util.form_input_text(name="vote_extension_end", label="Ende der Verlängerung") }}
         {{ util.form_input_text(name="votes", label="Anzahl der Stimmen",
                                info="Leer lassen für vollständige Präferenzwahl.") }}
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+        {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
+                                    info="Unterstützt reStructuredText") }}
         {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink('assembly/list_ballots')) }}
     </form>
     <script type="text/javascript">

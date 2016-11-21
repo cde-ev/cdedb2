@@ -54,6 +54,12 @@
     </dl>
 
     {{ ambience['mailinglist']['description']|rst }}
+    
+    {% if is_admin and ambience['mailinglist']['notes'] %}
+        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+            {{ ambience['mailinglist']['notes']|rst }}
+        {% endcall %}
+    {% endif %}
 
     {% if not ambience['mailinglist']['is_active'] %}
         <p class="text-warning"><strong>Diese Liste ist nicht mehr aktiv.</strong></p>

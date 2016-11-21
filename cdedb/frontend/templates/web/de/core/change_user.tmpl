@@ -63,7 +63,8 @@
             {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
             {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
             {{ util.form_input_textarea(name="interests", label="Interessen") }}
-            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
+            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5",
+                                        info="Unterstützt reStructuredText") }}
         {% endif %}
 
         {{ util.form_input_submit(value="Speichern", cancellink=show_user_link(user.persona_id)) }}
