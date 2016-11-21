@@ -1,6 +1,8 @@
 {% set sidenav_active='cde_manage_users' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint = 'weak' %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Neues Mitglied anlegen{% endblock %}
 {% block breadcrumb %}

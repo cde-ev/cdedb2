@@ -70,6 +70,9 @@
 
         {{ util.form_input_submit(value="Nutzer anlegen", cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
+    <script type="text/javascript">
+        $('#newuserform').cdedbProtectChanges();
+    </script>
 {% endmacro %}
 
 {% macro genesis(realm) %}

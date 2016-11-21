@@ -1,6 +1,8 @@
 {% set sidenav_active='assembly_users' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint = 'weak' %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}Neuen Versammlungsnutzer anlegen{% endblock %}
 {% block breadcrumb %}
