@@ -123,11 +123,16 @@
 {% macro form_input_general(name='', label='', anid='', small=False, info='', displayerrors=True,
         horizontal=True) %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
-        <label{% if anid %} for="{{ anid|e }}"{% endif %}
-                class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
-            {{ label|e }}
-        </label>
-        <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
+        {% if label %}
+            <label{% if anid %} for="{{ anid|e }}"{% endif %}
+                    class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
+                {{ label|e }}
+            </label>
+        {% endif %}
+        <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
+                                       {% if not label %}
+                                           {% if small %}col-sm-offset-2{% else %}col-sm-offset-4{% endif %}
+                                       {% endif %}"{% endif %}>
             {{ caller() }}
             {{ output_errors(name, displayerrors) }}
             {{ output_info(info) }}

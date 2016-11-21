@@ -195,17 +195,17 @@
             {% if ambience['ballot']['is_voting'] and attends %}
                 <h3>Abstimmung</h3>
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
+                    {% if ambience['ballot']['votes'] > 1 %}
+                        {{ util.form_input_static(value='Du hast {} Stimmen'.format(ambience['ballot']['votes']),
+                                                  small=True) }}
+                    {% endif %}
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
                     {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                         {{ myentries.append((candidate['moniker'], candidate['description']))|e }}
                     {% endfor %}
-                    {% if ambience['ballot']['votes'] == 1 %}
-                        {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, radio=True,
-                                                      small=True) }}
-                    {% else %}
-                        {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries, small=True) }}
-                    {% endif %}
+                    {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries,
+                                                  radio=(ambience['ballot']['votes'] == 1), small=True) }}
                     {% if ambience['ballot']['use_bar'] %}
                         {{ util.form_input_checkboxes(
                             "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER,"Gegen alle Kandidaten")],
