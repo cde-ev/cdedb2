@@ -13,6 +13,7 @@ import decimal
 import importlib.machinery
 import logging
 import os.path
+import subprocess
 import uuid
 
 import pytz
@@ -26,6 +27,8 @@ _currentpath = os.path.dirname(os.path.abspath(__file__))
 if not _currentpath.startswith('/') or not _currentpath.endswith('/cdedb'):
     raise RuntimeError("Failed to locate repository")
 _repopath = _currentpath[:-6]
+_git_commit = subprocess.check_output(
+    ("git", "rev-parse", "HEAD"), cwd=_repopath).decode().strip()
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
@@ -41,6 +44,8 @@ _BASIC_DEFAULTS = {
     "GLOBAL_LOG": "/tmp/cdedb.log",
     ## file system path to this repository
     "REPOSITORY_PATH": _repopath,
+    ## hash id of the current HEAD/running version
+    "GIT_COMMIT": _git_commit,
     ## relative path to config file with settings for the test suite
     "TESTCONFIG_PATH": "test/localconfig.py",
     ## port on which the database listens, preferably a pooler like pgbouncer

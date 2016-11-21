@@ -553,6 +553,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'enums': ENUMS_DICT,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
             'CDEDB_DEV': self.conf.CDEDB_DEV,
+            'GIT_COMMIT': self.conf.GIT_COMMIT,
         }
         ## check that default values are not overridden
         assert(not set(data) & set(params))

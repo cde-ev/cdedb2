@@ -146,8 +146,10 @@
         </div>
         <div id="footer" class="container">
             {% block footer %}
+                Version {{ GIT_COMMIT|e }} — © Club der Ehemaligen e.V.
+                <a href="cdedb@lists.cde-ev.de">Datenbank-Entwicklungs-Team</a>
                 {% if CDEDB_DEV %}
-                    {{ debugstring|e }} ; time taken: {{ generation_time()|e }}
+                    <br /> {{ debugstring|e }} ; time taken: {{ generation_time()|e }}
                 {% endif %}
             {% endblock %}
         </div>
