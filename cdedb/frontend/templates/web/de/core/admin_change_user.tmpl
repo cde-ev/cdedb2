@@ -41,8 +41,8 @@
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
             {{ util.form_input_checkbox(name="cloud_account", label="Cloud Account") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="7",
-                                    info="Für alle Admins sichtbar, unterstützt reStructuredText) }}
+        {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="7",
+                                    info="Für alle Admins sichtbar, unterstützt reStructuredText") }}
 
         <h4 class="heading-underline">Kontakt</h4>
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}

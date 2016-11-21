@@ -21,6 +21,7 @@ class TestPastEventBackend(BackendTest):
                        2: ({'persona_id': 2,
                             'is_orga': False,
                             'is_instructor': True,
+                            'nr': '1a',
                             'course_name': 'Swish -- und alles ist gut',
                             'pevent_id': 1,
                             'event_name': 'PfingstAkademie 2014',
