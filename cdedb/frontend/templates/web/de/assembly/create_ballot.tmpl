@@ -2,6 +2,7 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block inner_navigation %}{{assembly_inner_navigation(ambience['assembly'])}}{% endblock %}
 {% block title %}Abstimmung anlegen{% endblock %}
 {% block breadcrumb %}

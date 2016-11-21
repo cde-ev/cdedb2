@@ -2,6 +2,7 @@
 {% extends "web/de/ml/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{% endblock %}
+{% set jshint='strong' %}
 {% block title %}{{ ambience['mailinglist']['title']|e }} -- Verwalten{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}

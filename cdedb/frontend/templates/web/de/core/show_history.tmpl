@@ -2,6 +2,7 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('historycollapse') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}Geschichte von {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}

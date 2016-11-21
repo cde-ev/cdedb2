@@ -2,6 +2,7 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}Versammlung anlegen{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}

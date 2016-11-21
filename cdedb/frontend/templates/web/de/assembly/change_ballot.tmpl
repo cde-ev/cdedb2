@@ -2,6 +2,7 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}{{ ambience['ballot']['title']|e }} bearbeiten ({{ ambience['assembly']['title']|e }}){% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
@@ -31,4 +32,7 @@
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
         {{ util.form_input_submit(value="Ändern", cancellink=cdedblink('assembly/show_ballot')) }}
     </form>
+    <script type="text/javascript">
+        $('#changeballotform').cdedbProtectChanges();
+    </script>
 {% endblock %}

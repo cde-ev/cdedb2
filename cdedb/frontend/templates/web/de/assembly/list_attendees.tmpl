@@ -1,6 +1,7 @@
 {% set sidenav_active='assembly_attendees' %}
 {% extends "web/de/assembly/base.tmpl" %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='strong' %}
 {% block title %}Anwesenheitsliste ({{ ambience['assembly']['title']|e }}){% endblock %}
 {% block heading %}
     <h1 class="title">

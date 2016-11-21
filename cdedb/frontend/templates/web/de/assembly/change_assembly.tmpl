@@ -2,6 +2,7 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}{{ ambience['assembly']['title']|e }} bearbeiten{% endblock %}
 {% block heading %}
     <h1 class="title">
