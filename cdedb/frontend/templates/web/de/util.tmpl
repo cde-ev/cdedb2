@@ -573,7 +573,7 @@
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
                             <th>
-                                {{ titles.get(field, field)|e }}
+                                {{ titles.get(field, field) }}
                                 {% if values.get("qop_{}".format(field)) %}
                                     <span class="label label-default" title="Gefilterte Spalte">
                                         {{ make_icon('filter') }}
@@ -614,7 +614,7 @@
                                         {{ href(cdedblink("event/show_registration",
                                                 {'registration_id': row[afield]}), row[afield]) }}
                                     {% elif query.spec[csvfield] == "bool" %}
-                                        {{ deko_checkbox(row.get(afield)) }}
+                                        {{ deko_checkbox(row.get(afield), titles=('falsch','wahr')) }}
                                     {% else %}
                                         {{ choices.get(csvfield, {}).get(row.get(afield),
                                                                          row.get(afield, "UNDEFINED"))|e }}

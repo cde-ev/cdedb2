@@ -147,11 +147,11 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_given_names'].checked = True
         f['qord_primary'] = "personas.id"
         self.response = f.submit("CSV")
-        expectation = '''personas.id;given_names;birthday;free_form;decided_search
-2;Bertålotta;1981-02-11;Jede Menge Gefasel         Gut verteilt        Über mehrere Zeilen;True
-3;Charly C.;1984-05-13;;True
-4;Daniel D.;1963-02-19;;False
-6;Ferdinand F.;1988-01-01;;True
+        expectation = '''personas.id;given_names;birthday;decided_search;free_form
+2;Bertålotta;1981-02-11;True;Jede Menge Gefasel         Gut verteilt        Über mehrere Zeilen
+3;Charly C.;1984-05-13;True;
+4;Daniel D.;1963-02-19;False;
+6;Ferdinand F.;1988-01-01;True;
 '''.encode('utf-8')
         self.assertEqual(expectation, self.response.body)
 
