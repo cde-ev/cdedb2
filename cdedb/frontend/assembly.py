@@ -614,7 +614,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             return self.show_ballot(rs, assembly_id, ballot_id)
         code = self.assemblyproxy.vote(rs, ballot_id, vote, secret=None)
         self.notify_return_code(rs, code)
-        return self.show_ballot(rs, assembly_id, ballot_id)
+        return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly")
     def get_result(self, rs, assembly_id, ballot_id):
