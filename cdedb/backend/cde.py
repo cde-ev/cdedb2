@@ -672,6 +672,7 @@ class CdEBackend(AbstractBackend):
                 ("is_cde_realm", QueryOperators.equal, True))
             query.constraints.append(
                 ("is_archived", QueryOperators.equal, False))
+            query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError("Bad scope.")

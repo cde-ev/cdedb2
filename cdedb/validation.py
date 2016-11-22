@@ -2634,6 +2634,8 @@ def _query(val, argname=None, *, _convert=None):
             errs.extend(ee)
     if errs:
         val = None
+    else:
+        val = copy.deepcopy(val)
     return val, errs
 
 def _enum_validator_maker(anenum, name=None):

@@ -295,6 +295,7 @@ class EventBackend(AbstractBackend):
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       False))
+            query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError("Bad scope.")

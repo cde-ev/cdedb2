@@ -124,6 +124,7 @@ class MlBackend(AbstractBackend):
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       False))
+            query.spec["is_ml_realm"] = "bool"
             query.spec["is_archived"] = "bool"
         else:
             raise RuntimeError("Bad scope.")

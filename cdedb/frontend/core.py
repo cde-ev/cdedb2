@@ -643,7 +643,6 @@ class CoreFrontend(AbstractFrontend):
             query_input = mangle_query_input(rs, spec)
             query = check(rs, "query_input", query_input, "query",
                           spec=spec, allow_empty=False)
-            query.scope = "qview_core_user"
         events = self.pasteventproxy.list_past_events(rs)
         choices = {'pevent_id': events}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
@@ -652,6 +651,7 @@ class CoreFrontend(AbstractFrontend):
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
+            query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
             if CSV:
