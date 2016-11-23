@@ -749,7 +749,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         for header in ("From", "Reply-To", "Subject", "Return-Path"):
             msg[header] = headers[header]
         msg["Message-ID"] = email.utils.make_msgid(domain=self.conf.MAIL_DOMAIN)
-        msg["Date"] = now().strftime("%Y-%m-%d %H:%M:%S%z")
+        msg["Date"] = email.utils.format_datetime(now())
         return msg
 
     @staticmethod
