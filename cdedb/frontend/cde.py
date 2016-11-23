@@ -186,7 +186,8 @@ class CdEFrontend(AbstractUserFrontend):
             result = self.cdeproxy.submit_general_query(rs, query)
             result = sorted(result, key=name_key)
             if len(result) == 1:
-                return self.redirect_show_user(rs, result[0]['id'])
+                return self.redirect_show_user(rs, result[0]['id'],
+                                               quote_me=True)
             if (len(result) > self.conf.MAX_QUERY_RESULTS
                     and not self.is_admin(rs)):
                 result = result[:self.conf.MAX_QUERY_RESULTS]

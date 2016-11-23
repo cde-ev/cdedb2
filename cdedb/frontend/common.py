@@ -517,6 +517,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             have this helper.
 
             :type persona_id: int
+            :type quote_me: bool or None
             :rtype: str
             """
             params = {
@@ -813,19 +814,22 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             msg['Subject'], msg['To']))
         return ret
 
-    def redirect_show_user(self, rs, persona_id):
+    def redirect_show_user(self, rs, persona_id, quote_me=None):
         """Convenience function to redirect to a user detail page.
 
         The point is, that encoding the ``confirm_id`` parameter is
         somewhat lengthy and only necessary because of our paranoia.
 
         :type rs: :py:class:`RequestState`
+        :type quote_me: bool or None
         :type persona_id: int
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         cid = self.encode_parameter(
             "core/show_user", "confirm_id", persona_id, timeout=None)
         params = {'confirm_id': cid, 'persona_id': persona_id}
+        if quote_me is not None:
+            params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
     @classmethod
