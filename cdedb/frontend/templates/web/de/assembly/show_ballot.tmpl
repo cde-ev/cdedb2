@@ -122,7 +122,11 @@
                                 </span>
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
-                        {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
+                            {% if result['counts'] %}
+                                ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
+                                 Stimmen)
+                            {% endif %}
+                            {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
                         {% endfor %}
                     </li>
                 {% endfor %}
@@ -147,6 +151,10 @@
                                 </span>
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
+                            {% if result['counts'] %}
+                                ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
+                                 Stimmen)
+                            {% endif %}
                             {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
                         {% endfor %}
                     </li>

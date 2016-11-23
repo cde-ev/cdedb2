@@ -304,9 +304,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         update = False
         for ballot_id, ballot in ballots.items():
             if (ballot['extended'] is None and ref > ballot['vote_end']):
-                tmp = self.assemblyproxy.check_voting_priod_extension(rs,
-                                                                      ballot_id)
-                update = update or tmp
+                self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
+                update = True
         if update:
             return self.redirect(rs, "assembly/list_ballots")
         future = {k: v for k, v in ballots.items()
@@ -506,6 +505,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     tmp = loosers
             result['winners'] = winners
             result['loosers'] = loosers
+            result['counts'] = None # Will be used for classical voting
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         vote = None
         if attends:
@@ -519,13 +519,20 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if len(split_vote) == 1:
                     ## abstention
                     rs.values['vote'] = MAGIC_ABSTAIN
-                elif (len(split_vote) == 2
-                          and split_vote[0] == (ASSEMBLY_BAR_MONIKER,)):
-                    ## none of the candidates
-                    rs.values['vote'] = MAGIC_NONE_OF_THEM
                 else:
                     ## select voted options
                     rs.values.setlist('vote', split_vote[0])
+            if result:
+                counts = {e['moniker']: 0
+                          for e in ballot['candidates'].values()}
+                for vote in result['votes']:
+                    raw = vote['vote']
+                    if '>' in raw:
+                        selected = raw.split('>')[0].split('=')
+                        for s in selected:
+                            if s in counts:
+                                counts[s] += 1
+                result['counts'] = counts
         candidates = {e['moniker']: e
                       for e in ballot['candidates'].values()}
         if ballot['use_bar']:
