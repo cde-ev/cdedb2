@@ -14,8 +14,8 @@ import tempfile
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, registration_is_open,
-    check_validation as check, event_guard,
+    REQUESTdata, REQUESTdatadict, access, registration_is_open, csv_output,
+    check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
@@ -159,8 +159,8 @@ class EventFrontend(AbstractUserFrontend):
         return super().genesis(rs, case_id, secret=secret, data=data)
 
     @access("event_admin")
-    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
-    def user_search(self, rs, CSV, is_search):
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    def user_search(self, rs, download, is_search):
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_event_user'])
         ## mangle the input, so we can prefill the form
@@ -182,11 +182,22 @@ class EventFrontend(AbstractUserFrontend):
             query.scope = "qview_event_user"
             result = self.eventproxy.submit_general_query(rs, query)
             params['result'] = result
-            if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result',
-                                          params)
-                return self.send_file(rs, data=data, inline=False,
-                                      filename=self.i18n("result.txt", rs.lang))
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    for field in csvfield.split(','):
+                        fields.append(field.split('.')[-1])
+                if download == "csv":
+                    csv_data = csv_output(result, fields, substitutions=choices)
+                    return self.send_file(
+                        rs, data=csv_data, inline=False,
+                        filename=self.i18n("result.csv", rs.lang))
+                elif download == "json":
+                    json_data = query_result_to_json(result, fields,
+                                                     substitutions=choices)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename=self.i18n("result.json", rs.lang))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -2172,9 +2183,9 @@ class EventFrontend(AbstractUserFrontend):
         return choices, titles
 
     @access("event")
-    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     @event_guard()
-    def registration_query(self, rs, event_id, CSV, is_search):
+    def registration_query(self, rs, event_id, download, is_search):
         """Generate custom data sets from registration data.
 
         This is a pretty versatile method building on the query module.
@@ -2216,11 +2227,22 @@ class EventFrontend(AbstractUserFrontend):
             result = self.eventproxy.submit_general_query(rs, query,
                                                           event_id=event_id)
             params['result'] = result
-            if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result',
-                                          params)
-                return self.send_file(rs, data=data, inline=False,
-                                      filename=self.i18n("result.txt", rs.lang))
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    for field in csvfield.split(','):
+                        fields.append(field.split('.')[-1])
+                if download == "csv":
+                    csv_data = csv_output(result, fields, substitutions=choices)
+                    return self.send_file(
+                        rs, data=csv_data, inline=False,
+                        filename=self.i18n("result.csv", rs.lang))
+                elif download == "json":
+                    json_data = query_result_to_json(result, fields,
+                                                     substitutions=choices)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename=self.i18n("result.json", rs.lang))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "registration_query", params)
@@ -2246,7 +2268,7 @@ class EventFrontend(AbstractUserFrontend):
         id_params = (("row_{}_id".format(i), "int") for i in range(num_rows))
         ids = request_extractor(rs, id_params)
         if rs.errors:
-            return self.registration_query(rs, event_id, CSV=False,
+            return self.registration_query(rs, event_id, download=None,
                                            is_search=True)
         code = 1
         for i in range(num_rows):
@@ -2267,7 +2289,7 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         params = {key: value for key, value in rs.request.values.items()
                   if key.startswith(("qsel_", "qop_", "qval_", "qord_"))}
-        params['CSV'] = False
+        params['download'] = None
         params['is_search'] = True
         return self.redirect(rs, "event/registration_query", params)
 

@@ -9,8 +9,8 @@ import os
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, REQUESTfile, access,
-    check_validation as check, request_extractor)
+    REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
+    check_validation as check, request_extractor, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
@@ -109,8 +109,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         raise NotImplementedError("Not available in assembly realm.")
 
     @access("assembly_admin")
-    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
-    def user_search(self, rs, CSV, is_search):
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    def user_search(self, rs, download, is_search):
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_persona'])
         ## mangle the input, so we can prefill the form
@@ -129,11 +129,21 @@ class AssemblyFrontend(AbstractUserFrontend):
             query.scope = "qview_persona"
             result = self.assemblyproxy.submit_general_query(rs, query)
             params['result'] = result
-            if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result',
-                                          params)
-                return self.send_file(rs, data=data, inline=False,
-                                      filename=self.i18n("result.txt", rs.lang))
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    for field in csvfield.split(','):
+                        fields.append(field.split('.')[-1])
+                if download == "csv":
+                    csv_data = csv_output(result, fields)
+                    return self.send_file(
+                        rs, data=csv_data, inline=False,
+                        filename=self.i18n("result.csv", rs.lang))
+                elif download == "json":
+                    json_data = query_result_to_json(result, fields)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename=self.i18n("result.json", rs.lang))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)

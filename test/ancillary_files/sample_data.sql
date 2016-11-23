@@ -254,7 +254,6 @@ INSERT INTO assembly.voter_register (persona_id, ballot_id, has_voted) VALUES
     (11, 4, False),
     (11, 5, False);
 
--- FIXME correct hashes
 INSERT INTO assembly.votes (ballot_id, vote, salt, hash) VALUES
     (1, '2>3>_bar_>1=4', 'rxt3x/jnl', 'd40aec7b54edf646991f100511fd19372f9d48445610b2e23ac59c7f2f0185175a78ef438f887794c7481c8dedb64a58c4be56fd67cc60c2ccbe66e2f5cd8b5e'),
     (1, '3>2=4>_bar_>1', 'et3[uh{kr', '6c9533ce039c6a89576574bf28e1df4ad3b5610c934d32216b2b3e188b2c635f6f3a47d7ce0a69be40ada6d8dce6c6ff406aaf4e2bc03006616d848ec868283b'),

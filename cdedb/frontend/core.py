@@ -4,7 +4,10 @@
 
 import collections
 import copy
+import csv
 import hashlib
+import io
+import json
 import os.path
 import uuid
 
@@ -13,7 +16,8 @@ import werkzeug
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, merge_dicts, request_extractor, REQUESTfile,
-    request_dict_extractor, event_usage, querytoparams_filter, ml_usage)
+    request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
+    csv_output, query_result_to_json)
 from cdedb.common import (
     ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
     PrivilegeError, name_key, now, glue)
@@ -433,7 +437,8 @@ class CoreFrontend(AbstractFrontend):
         elif len(result) > 0:
             params = querytoparams_filter(query)
             rs.values.update(params)
-            return self.user_search(rs, is_search=True, CSV=False, query=query)
+            return self.user_search(rs, is_search=True, download=None,
+                                    query=query)
         else:
             rs.notify("warning", "No account found.")
             return self.index(rs)
@@ -621,12 +626,13 @@ class CoreFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("core_admin")
-    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
-    def user_search(self, rs, CSV, is_search, query=None):
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    def user_search(self, rs, download, is_search, query=None):
         """Perform search.
 
-        CSV signals whether the output should be a csv-file or an
-        ordinary HTML-page.
+        The parameter ``download`` signals whether the output should be a
+        file. It can either be "csv" or "json" for a corresponding
+        file. Otherwise an ordinary HTML-page is served.
 
         is_search signals whether the page was requested by an actual
         query or just to display the search form.
@@ -654,18 +660,29 @@ class CoreFrontend(AbstractFrontend):
             query.scope = "qview_core_user"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
-            if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result',
-                                          params)
-                return self.send_file(rs, data=data, inline=False,
-                                      filename=self.i18n("result.txt", rs.lang))
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    for field in csvfield.split(','):
+                        fields.append(field.split('.')[-1])
+                if download == "csv":
+                    csv_data = csv_output(result, fields, substitutions=choices)
+                    return self.send_file(
+                        rs, data=csv_data, inline=False,
+                        filename=self.i18n("result.csv", rs.lang))
+                elif download == "json":
+                    json_data = query_result_to_json(result, fields,
+                                                     substitutions=choices)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename=self.i18n("result.json", rs.lang))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
 
     @access("core_admin")
-    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
-    def archived_user_search(self, rs, CSV, is_search):
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    def archived_user_search(self, rs, download, is_search):
         """Perform search.
 
         Archived users are somewhat special since they are not visible
@@ -691,11 +708,22 @@ class CoreFrontend(AbstractFrontend):
             query.scope = "qview_archived_persona"
             result = self.coreproxy.submit_general_query(rs, query)
             params['result'] = result
-            if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result',
-                                          params)
-                return self.send_file(rs, data=data, inline=False,
-                                      filename=self.i18n("result.txt", rs.lang))
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    for field in csvfield.split(','):
+                        fields.append(field.split('.')[-1])
+                if download == "csv":
+                    csv_data = csv_output(result, fields, substitutions=choices)
+                    return self.send_file(
+                        rs, data=csv_data, inline=False,
+                        filename=self.i18n("result.csv", rs.lang))
+                elif download == "json":
+                    json_data = query_result_to_json(result, fields,
+                                                     substitutions=choices)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename=self.i18n("result.json", rs.lang))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "archived_user_search", params)

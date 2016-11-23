@@ -343,8 +343,11 @@
             <!-- Non-JS form -->
             <p class="queryform-nojs">
                 <button type="submit" class="btn btn-primary">{{ make_icon('search') }} Suche</button>
-                <button type="submit" class="btn btn-default" name="CSV" value="True">
+                <button type="submit" class="btn btn-default" name="download" value="csv">
                     {{ make_icon('download') }} CSV-Datei
+                </button>
+                <button type="submit" class="btn btn-default" name="download" value="json">
+                    {{ make_icon('download') }} JSON-Datei
                 </button>
             </p>
             <div class="row queryform-nojs">
@@ -476,8 +479,11 @@
 
             <p class="text-right nosp">
                 <button type="submit" class="btn btn-primary">{{ make_icon('search') }} Suche</button>
-                <button type="submit" class="btn btn-default" name="CSV" value="True">
+                <button type="submit" class="btn btn-default" name="download" value="csv">
                     {{ make_icon('download') }} CSV-Datei
+                </button>
+                <button type="submit" class="btn btn-default" name="download" value="json">
+                    {{ make_icon('download') }} JSON-Datei
                 </button>
             </p>
         </form>
@@ -688,24 +694,6 @@
                               defaultvalue=defaultvalue, anid=anid) }}
         {% endif %}
    {% endif %}
-{% endmacro %}
-
-{% macro display_csv_query_result(result, query, choices) -%}
-{{ ";".join(query.fields_of_interest).replace(',', ';') }}
-{% for row in result -%}
-{% for csvfield in query.fields_of_interest -%}
-{% for field in csvfield.split(',') -%}
-{% with afield = field.split('.')[-1] -%}
-{% if row.get(afield) is not none -%}
-{{ (choices.get(csvfield, {}).get(row[afield], row[afield])|linebreaks(replacement="        ")).replace(';', ',') -}}
-{# else we print nothing -#}
-{% endif -%}
-{% endwith -%}
-{% if not loop.last %};{% endif -%}
-{% endfor -%}
-{% if not loop.last %};{% endif -%}
-{% endfor %}
-{% endfor -%}
 {% endmacro %}
 
 {% macro breadcrumb_link(ref, label, icon="", active=False) %}

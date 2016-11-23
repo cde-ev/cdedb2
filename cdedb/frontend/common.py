@@ -7,6 +7,7 @@ overall topic.
 import abc
 import collections
 import copy
+import csv
 import datetime
 import email
 import email.charset
@@ -44,7 +45,7 @@ from cdedb.internationalization import i18n_factory
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     glue, merge_dicts, compute_checkdigit, now, asciificator, roles_to_db_role,
-    RequestState, make_root_logger)
+    RequestState, make_root_logger, json_serialize)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -117,7 +118,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         nparams = nparams or {}
         message = "{}--{}--{}--{}".format(ntype, len(nmessage), nmessage,
-                                          json.dumps(nparams))
+                                          json_serialize(nparams))
         return self.encode_parameter('_/notification', 'displaynote', message)
 
     def decode_notification(self, note):
@@ -154,7 +155,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         if rs.notifications:
             notifications = [self.encode_notification(ntype, nmessage, nparams)
                              for ntype, nmessage, nparams in rs.notifications]
-            ret.set_cookie("displaynote", json.dumps(notifications))
+            ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
 
 def sanitize_None(data):
@@ -266,7 +267,7 @@ def json_filter(val):
     The result of this method does not need to be escaped -- more so if
     escaped, the javascript execution will probably fail.
     """
-    return json.dumps(val)
+    return json_serialize(val)
 
 def gender_filter(val):
     """Custom jinja filter to convert gender constants to something printable.
@@ -633,7 +634,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type params: {str: object}
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
-        rs.response = Response(json.dumps(data), mimetype='text/json')
+        rs.response = Response(json_serialize(data), mimetype='text/json')
         rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return rs.response
 
@@ -1122,7 +1123,7 @@ def access(*roles, modi=None):
                             "core/index", "wants", rs.request.url),
                         }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
-                    notifications = json.dumps([
+                    notifications = json_serialize([
                         rs._coders['encode_notification']("error",
                                                           "You must login.")])
                     ret.set_cookie("displaynote", notifications)
@@ -1594,3 +1595,59 @@ def registration_is_open(event):
             and event['registration_start'] <= today
             and (event['registration_hard_limit'] is None
                  or event['registration_hard_limit'] >= today))
+
+def csv_output(data, fields, replace_newlines=True, substitutions=None):
+    """Generate a csv representation of the passed data.
+
+    :type data: [{str: object}]
+    :type fields: [str]
+    :type replace_newlines: bool
+    :param replace_newlines: If True all line breaks are replaced by several
+      spaces.
+    :type substitutions: {str: {object: object}}
+    :param substitutions: Allow replacements of values with better
+      representations for output. The key of the outer dict is the field
+      name.
+    :rtype: str
+    """
+    substitutions = substitutions or {}
+    outfile = io.StringIO()
+    writer = csv.DictWriter(
+        outfile, fields, delimiter=';', quoting=csv.QUOTE_MINIMAL,
+        quotechar='"', doublequote=False, escapechar='\\',
+        lineterminator='\n')
+    writer.writeheader()
+    for original in data:
+        row = {}
+        for field in fields:
+            value = original[field]
+            if field in substitutions:
+                value = substitutions[field].get(value, value)
+            if replace_newlines and isinstance(value, str):
+                value = value.replace('\n', 14*' ')
+            row[field] = value
+        writer.writerow(row)
+    return outfile.getvalue()
+
+def query_result_to_json(data, fields, substitutions=None):
+    """Generate a json representation of the passed data.
+
+    :type data: [{str: object}]
+    :type fields: [str]
+    :type substitutions: {str: {object: object}}
+    :param substitutions: Allow replacements of values with better
+      representations for output. The key of the outer dict is the field
+      name.
+    :rtype: str
+    """
+    substitutions = substitutions or {}
+    json_data = []
+    for original in data:
+        row = {}
+        for field in fields:
+            value = original[field]
+            if field in substitutions:
+                value = substitutions[field].get(value, value)
+            row[field] = value
+        json_data.append(row)
+    return json_serialize(json_data)

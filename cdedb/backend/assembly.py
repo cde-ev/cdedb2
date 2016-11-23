@@ -28,7 +28,6 @@ do it.
 
 import copy
 import hashlib
-import json
 import os.path
 import string
 
@@ -38,7 +37,7 @@ from cdedb.backend.common import (
 from cdedb.common import (
     glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
-    extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER)
+    extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -850,7 +849,7 @@ class AssemblyBackend(AbstractBackend):
                 ballot['assembly_id'], additional_info=ballot['title'])
 
             ## now generate the result file
-            esc = json.dumps
+            esc = json_serialize
             assembly = unwrap(
                 self.get_assemblies(rs, (ballot['assembly_id'],)))
             candidates = ",\n        ".join(

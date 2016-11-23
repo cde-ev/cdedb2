@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import re
 import unittest
 import time
@@ -146,14 +147,60 @@ class TestCdEFrontend(FrontendTest):
         f['qsel_free_form'].checked = True
         f['qsel_given_names'].checked = True
         f['qord_primary'] = "personas.id"
-        self.response = f.submit("CSV")
-        expectation = '''personas.id;given_names;birthday;decided_search;free_form
-2;Bertålotta;1981-02-11;True;Jede Menge Gefasel         Gut verteilt        Über mehrere Zeilen
+        self.response = f.submit("download", value="csv")
+        expectation = '''id;given_names;birthday;decided_search;free_form
+2;Bertålotta;1981-02-11;True;Jede Menge Gefasel               Gut verteilt              Über mehrere Zeilen
 3;Charly C.;1984-05-13;True;
 4;Daniel D.;1963-02-19;False;
 6;Ferdinand F.;1988-01-01;True;
 '''.encode('utf-8')
         self.assertEqual(expectation, self.response.body)
+
+    @as_users("anton")
+    def test_user_search_json(self, user):
+        self.traverse({'href': '/cde/$'}, {'href': '/cde/search/user'})
+        self.assertTitle("CdE Nutzerverwaltung")
+        f = self.response.forms['queryform']
+        f['qop_address'] = QueryOperators.regex.value
+        f['qval_address'] = 'a[rm]'
+        f['qsel_personas.id'].checked = True
+        f['qsel_birthday'].checked = True
+        f['qsel_decided_search'].checked = True
+        f['qsel_free_form'].checked = True
+        f['qsel_given_names'].checked = True
+        f['qord_primary'] = "personas.id"
+        self.response = f.submit("download", value="json")
+        expectation = [
+            {
+                "birthday": "1981-02-11",
+                "decided_search": True,
+                "id": 2,
+                "given_names": "Bertålotta",
+                "free_form": "Jede Menge Gefasel \nGut verteilt\nÜber mehrere Zeilen"
+            },
+            {
+                "birthday": "1984-05-13",
+                "decided_search": True,
+                "id": 3,
+                "given_names": "Charly C.",
+                "free_form": None
+            },
+            {
+                "birthday": "1963-02-19",
+                "decided_search": False,
+                "id": 4,
+                "given_names": "Daniel D.",
+                "free_form": None
+            },
+            {
+                "birthday": "1988-01-01",
+                "decided_search": True,
+                "id": 6,
+                "given_names": "Ferdinand F.",
+                "free_form": None
+            }
+        ]
+        self.assertEqual(expectation, json.loads(self.response.body.decode('utf-8')))
 
     @as_users("anton")
     def test_toggle_activity(self, user):

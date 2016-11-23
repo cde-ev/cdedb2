@@ -27,9 +27,9 @@ from cdedb.common import (
     int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
     ProxyShim, diacritic_patterns)
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, Worker,
+    REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
-    make_postal_address, make_transaction_subject)
+    make_postal_address, make_transaction_subject, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 from cdedb.backend.event import EventBackend
@@ -195,8 +195,8 @@ class CdEFrontend(AbstractUserFrontend):
             'spec': spec, 'choices': choices, 'result': result})
 
     @access("cde_admin")
-    @REQUESTdata(("CSV", "bool"), ("is_search", "bool"))
-    def user_search(self, rs, CSV, is_search):
+    @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
+    def user_search(self, rs, download, is_search):
         """Perform search."""
         spec = copy.deepcopy(QUERY_SPECS['qview_cde_user'])
         ## mangle the input, so we can prefill the form
@@ -218,11 +218,22 @@ class CdEFrontend(AbstractUserFrontend):
             query.scope = "qview_cde_user"
             result = self.cdeproxy.submit_general_query(rs, query)
             params['result'] = result
-            if CSV:
-                data = self.fill_template(rs, 'web', 'csv_search_result',
-                                          params)
-                return self.send_file(rs, data=data, inline=False,
-                                      filename=self.i18n("result.txt", rs.lang))
+            if download:
+                fields = []
+                for csvfield in query.fields_of_interest:
+                    for field in csvfield.split(','):
+                        fields.append(field.split('.')[-1])
+                if download == "csv":
+                    csv_data = csv_output(result, fields, substitutions=choices)
+                    return self.send_file(
+                        rs, data=csv_data, inline=False,
+                        filename=self.i18n("result.csv", rs.lang))
+                elif download == "json":
+                    json_data = query_result_to_json(result, fields,
+                                                     substitutions=choices)
+                    return self.send_file(
+                        rs, data=json_data, inline=False,
+                        filename=self.i18n("result.json", rs.lang))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -522,7 +533,7 @@ class CdEFrontend(AbstractUserFrontend):
             'mobile', 'username', 'birthday')
         reader = csv.DictReader(
             accountlines, fieldnames=fields, delimiter=';',
-            quoting=csv.QUOTE_ALL, quotechar='"', doublequote=False,
+            quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,
             escapechar='\\')
         data = []
         lineno = 0
@@ -725,7 +736,7 @@ class CdEFrontend(AbstractUserFrontend):
         fields = ('persona_id', 'family_name', 'given_names', 'amount', 'note')
         reader = csv.DictReader(
             transferlines, fieldnames=fields, delimiter=';',
-            quoting=csv.QUOTE_ALL, quotechar='"', doublequote=False,
+            quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,
             escapechar='\\')
         data = []
         lineno = 0
@@ -1718,8 +1729,8 @@ class CdEFrontend(AbstractUserFrontend):
             courselines = courses.split('\n')
             reader = csv.DictReader(
                 courselines, fieldnames=("nr", "title", "description"),
-                delimiter=';', quoting=csv.QUOTE_ALL, doublequote=True,
-                quotechar='"')
+                delimiter=';', quoting=csv.QUOTE_MINIMAL,
+                quotechar='"', doublequote=False, escapechar='\\')
             lineno = 0
             for entry in reader:
                 lineno += 1
