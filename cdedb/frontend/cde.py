@@ -188,9 +188,9 @@ class CdEFrontend(AbstractUserFrontend):
             if len(result) == 1:
                 return self.redirect_show_user(rs, result[0]['id'],
                                                quote_me=True)
-            if (len(result) > self.conf.MAX_QUERY_RESULTS
+            if (len(result) > self.conf.MAX_MEMBER_SEARCH_RESULTS
                     and not self.is_admin(rs)):
-                result = result[:self.conf.MAX_QUERY_RESULTS]
+                result = result[:self.conf.MAX_MEMBER_SEARCH_RESULTS]
                 rs.notify("info", "Too many query results.")
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result})

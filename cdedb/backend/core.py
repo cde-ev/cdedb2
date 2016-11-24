@@ -989,7 +989,7 @@ class CoreBackend(AbstractBackend):
             else:
                 num = unwrap(num)
             new = tuple(i == rs.user.persona_id for i in ids).count(False)
-            if (num + new > self.conf.MAX_QUERIES_PER_DAY
+            if (num + new > self.conf.QUOTA_VIEWS_PER_DAY
                     and not {"cde_admin", "core_admin"} & rs.user.roles):
                 raise QuotaException("Too many queries.")
             if new:

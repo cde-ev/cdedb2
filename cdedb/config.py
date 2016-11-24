@@ -156,9 +156,9 @@ _DEFAULTS = {
     "CDE_BACKEND_LOG": "/tmp/cdedb-backend-cde.log",
 
     ## maximal number of data sets a normal user is allowed to view per day
-    "MAX_QUERIES_PER_DAY": 50,
+    "QUOTA_VIEWS_PER_DAY": 42,
     ## maximal number of results for a member search
-    "MAX_QUERY_RESULTS": 50,
+    "MAX_MEMBER_SEARCH_RESULTS": 42,
     ## amount deducted from balance each period (semester)
     "MEMBERSHIP_FEE": decimal.Decimal('2.50'),
     ## probably always 1 or 2

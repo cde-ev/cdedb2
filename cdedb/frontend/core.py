@@ -157,7 +157,7 @@ class CoreFrontend(AbstractFrontend):
         This may happen upon a database serialization failure during
         concurrent accesses. Other errors are bugs.
         """
-        if kind not in {"general", "database"}:
+        if kind not in {"general", "database", "quota"}:
             kind = "general"
         return self.render(rs, "error", {'kind': kind})
 

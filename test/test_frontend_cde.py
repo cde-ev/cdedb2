@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import itertools
 import json
 import re
 import unittest
@@ -74,7 +75,29 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         ## automatic check for success notification
 
-    @as_users("anton", "berta")
+    @as_users("berta")
+    def test_quota(self, user):
+        count = 42
+        for search, title in itertools.cycle((
+                ("Anton Armin", "Anton Armin A. Administrator"),
+                ("Inga Iota", "Inga Iota"))):
+            count -= 1
+            self.traverse({'href': '/cde/$'})
+            f = self.response.forms['membersearchform']
+            f['qval_fulltext'] = search
+            if count >= 0:
+                self.submit(f)
+                self.assertTitle(title)
+            else:
+                try:
+                    self.submit(f)
+                except AssertionError:
+                    pass
+                self.assertTitle("Fehler")
+                self.assertPresence("Limit für Zugriffe")
+                break
+
+    @as_users("anton", "berta", "inga")
     def test_member_search_one(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
