@@ -78,7 +78,7 @@ class Application(BaseApp):
         :rtype: :py:class:`Response`
         """
         if error.code not in (403, 404):
-            ## 
+            ## Only handle Forbidden and NotFound otherwise return a plain error
             return error
         urls = self.urlmap.bind_to_environ(request.environ)
         def _cdedblink(endpoint, params=None):
