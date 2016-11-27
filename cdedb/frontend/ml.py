@@ -219,10 +219,8 @@ class MlFrontend(AbstractUserFrontend):
     @access("ml")
     def show_mailinglist(self, rs, mailinglist_id):
         """Details of a list."""
-
-        state = self.mlproxy.lookup_subscription_states(
-            rs, [rs.user.persona_id], [mailinglist_id])[
-            (rs.user.persona_id, mailinglist_id)]
+        state = unwrap(self.mlproxy.lookup_subscription_states(
+            rs, [rs.user.persona_id], [mailinglist_id]))
         is_subscribed = state == SubscriptionStates.subscribed
         is_pending = state == SubscriptionStates.requested
         sub_address = None

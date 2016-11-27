@@ -219,7 +219,8 @@ class MlBackend(AbstractBackend):
                     and not policy(mdata['sub_policy'].is_additive())):
                 current = unwrap(self.get_mailinglists(rs, (data['id'],)))
                 if current['sub_policy'] != mdata['sub_policy']:
-                    raise PrivilegeError(_("Only admin may set opt out policies."))
+                    raise PrivilegeError(
+                        _("Only admin may set opt out policies."))
             if len(mdata) > 1:
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])

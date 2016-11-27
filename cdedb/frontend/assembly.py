@@ -6,16 +6,14 @@ import copy
 import json
 import os
 
-import werkzeug
-
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
     check_validation as check, request_extractor, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    _, merge_dicts, unwrap, now, ProxyShim, PrivilegeError, ASSEMBLY_BAR_MONIKER)
-import cdedb.database.constants as const
+    _, merge_dicts, unwrap, now, ProxyShim, PrivilegeError,
+    ASSEMBLY_BAR_MONIKER)
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.database.connection import Atomizer
@@ -312,7 +310,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         ref = now()
         update = False
         for ballot_id, ballot in ballots.items():
-            if (ballot['extended'] is None and ref > ballot['vote_end']):
+            if ballot['extended'] is None and ref > ballot['vote_end']:
                 self.assemblyproxy.check_voting_priod_extension(rs, ballot_id)
                 update = True
         if update:
@@ -326,9 +324,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                         and v['extended']
                         and v['vote_extension_end'] > ref)}
         done = {k: v for k, v in ballots.items()
-                   if (v['vote_end'] <= ref
-                       and (v['extended'] == False
-                            or v['vote_extension_end'] <= ref))}
+                if (v['vote_end'] <= ref
+                    and (v['extended'] is False
+                         or v['vote_extension_end'] <= ref))}
         assert(len(ballots)
                == len(future) + len(current) + len(extended) + len(done))
         votes = {}
@@ -603,7 +601,8 @@ class AssemblyFrontend(AbstractUserFrontend):
             if voted == (ASSEMBLY_BAR_MONIKER,):
                 if not ballot['use_bar']:
                     raise ValueError(_("Option not available."))
-                vote = "{}>{}".format(ASSEMBLY_BAR_MONIKER, "=".join(candidates))
+                vote = "{}>{}".format(
+                    ASSEMBLY_BAR_MONIKER, "=".join(candidates))
             elif voted == (MAGIC_ABSTAIN,):
                 vote = "=".join(candidates)
                 if ballot['use_bar']:

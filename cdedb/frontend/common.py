@@ -20,7 +20,6 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 import functools
-import gettext
 import hashlib
 import io
 import json
@@ -95,11 +94,11 @@ class BaseApp(metaclass=abc.ABCMeta):
         self.decode_parameter = (
             lambda target, name, param:
             decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
-        def my_encode(target, name, param,
-                      timeout=self.conf.ONLINE_PARAMETER_TIMEOUT):
+        def local_encode(target, name, param,
+                         timeout=self.conf.ONLINE_PARAMETER_TIMEOUT):
             return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
                                     param, timeout=timeout)
-        self.encode_parameter = my_encode
+        self.encode_parameter = local_encode
 
     def encode_notification(self, ntype, nmessage, nparams=None):
         """Wrapper around :py:meth:`encode_parameter` for notifications.
@@ -629,7 +628,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return Response(f, direct_passthrough=True, headers=headers,
                         **extra_args)
 
-    def send_json(self, rs, data):
+    @staticmethod
+    def send_json(rs, data):
         """Slim helper to create json responses.
 
         :type rs: :py:class:`RequestState`
@@ -834,7 +834,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    def enum_choice(self, rs, anenum):
+    @staticmethod
+    def enum_choice(rs, anenum):
         """Convert an enum into a dict suitable for consumption by the template
         code (this will turn into an HTML select in the end).
 
@@ -1026,7 +1027,7 @@ def reconnoitre_ambience(obj, rs):
     Scout = collections.namedtuple('Scout', ('getter', 'param_name',
                                              'object_name', 'dependencies'))
     t = tuple()
-    def myAssert(x):
+    def do_assert(x):
         if not x:
             raise werkzeug.exceptions.BadRequest("Inconsistent request.")
     def attachment_check(a):
@@ -1044,8 +1045,8 @@ def reconnoitre_ambience(obj, rs):
               'lastschrift_id', 'lastschrift', t),
         Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
               'transaction_id', 'transaction',
-              ((lambda a: myAssert(a['transaction']['lastschrift_id']
-                                   == a['lastschrift']['id'])),)),
+              ((lambda a: do_assert(a['transaction']['lastschrift_id']
+                                    == a['lastschrift']['id'])),)),
         Scout(lambda anid: obj.pasteventproxy.get_institution(rs, anid),
               'institution_id', 'institution', t),
         Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
@@ -1054,37 +1055,37 @@ def reconnoitre_ambience(obj, rs):
               'pevent_id', 'pevent', t),
         Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
               'course_id', 'course',
-              ((lambda a: myAssert(a['course']['event_id']
-                                   == a['event']['id'])),)),
+              ((lambda a: do_assert(a['course']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
-              ((lambda a: myAssert(a['pcourse']['pevent_id']
-                                   == a['pevent']['id'])),)),
+              ((lambda a: do_assert(a['pcourse']['pevent_id']
+                                    == a['pevent']['id'])),)),
         Scout(None, 'part_id', None,
-              ((lambda a: myAssert(rs.requestargs['part_id']
-                                   in a['event']['parts'])),)),
+              ((lambda a: do_assert(rs.requestargs['part_id']
+                                    in a['event']['parts'])),)),
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
               'registration_id', 'registration',
-              ((lambda a: myAssert(a['registration']['event_id']
-                                   == a['event']['id'])),)),
+              ((lambda a: do_assert(a['registration']['event_id']
+                                    == a['event']['id'])),)),
         Scout(lambda anid: obj.eventproxy.get_lodgement(rs, anid),
               'lodgement_id', 'lodgement',
-              ((lambda a: myAssert(a['lodgement']['event_id']
-                                   == a['event']['id'])),)),
+              ((lambda a: do_assert(a['lodgement']['event_id']
+                                    == a['event']['id'])),)),
         Scout(None, 'field_id', None,
-              ((lambda a: myAssert(rs.requestargs['field_id']
-                                   in a['event']['fields'])),)),
+              ((lambda a: do_assert(rs.requestargs['field_id']
+                                    in a['event']['fields'])),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
               'attachment_id', 'attachment', (attachment_check,)),
         Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
               'assembly_id', 'assembly', t),
         Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
               'ballot_id', 'ballot',
-              ((lambda a: myAssert(a['ballot']['assembly_id']
-                                   == a['assembly']['id'])),)),
+              ((lambda a: do_assert(a['ballot']['assembly_id']
+                                    == a['assembly']['id'])),)),
         Scout(None, 'candidate_id', None,
-              ((lambda a: myAssert(rs.requestargs['candidate_id']
-                                   in a['ballot']['candidates'])),)),
+              ((lambda a: do_assert(rs.requestargs['candidate_id']
+                                    in a['ballot']['candidates'])),)),
         Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
               'mailinglist_id', 'mailinglist', t),
     )

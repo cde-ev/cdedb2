@@ -47,7 +47,8 @@
 
     <p>Insgesamt {{ attendees|length|e }} Anwesende.</p>
     <div class="row">
-        {% for list in attendees | dictsort | slice(3 if attendees|length > 20 else 2 if attendees|length > 10 else 1) %}
+        {% for list in attendees | dictsort | slice(3 if attendees|length > 20 else
+                                                    2 if attendees|length > 10 else 1) %}
             <div class="col-sm-4">
                 <ul class="slim nosp">
                     {% for persona_id, persona in list %}

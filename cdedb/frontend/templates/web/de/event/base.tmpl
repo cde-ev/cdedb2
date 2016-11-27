@@ -83,7 +83,8 @@
         {% if is_admin %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("event/index"), "Übersicht",
-                             aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_index')) }}
+                             aclass="list-group-item", icon="triangle-right",
+                             active=(sidenav_active == 'event_index')) }}
                 {{ util.href(cdedblink("event/list_db_events"), "All Veranstaltungen",
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
             </div>

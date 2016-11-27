@@ -12,7 +12,8 @@
     {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up",
+                            active=True) }}
 {% endblock %}
 {% block content %}
     {# Admin modification options (delete and edit) #}
@@ -99,7 +100,8 @@
                     {{ util.input_text(name="moniker", placeholder="Kurzname", aclass="form-control input-sm") }}
                 </div>
                 <div class="col-md-6">
-                    {{ util.input_text(name="description", placeholder="Beschreibung", aclass="form-control input-sm") }}
+                    {{ util.input_text(name="description", placeholder="Beschreibung",
+                                       aclass="form-control input-sm") }}
                 </div>
                 <div class="col-md-3">
                     {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}

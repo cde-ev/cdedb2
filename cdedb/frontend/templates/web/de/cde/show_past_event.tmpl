@@ -33,7 +33,10 @@
     {% if courses %}
         <ul>
             {% for anid, acourse in courses|dictsort %}
-                <li>{{ acourse['nr']|e }}. {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), acourse['title']) }}</li>
+                <li>
+                    {{ acourse['nr']|e }}.
+                    {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), acourse['title']) }}
+                </li>
             {% endfor %}
         </ul>
     {% endif %}

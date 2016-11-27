@@ -898,7 +898,8 @@ class EventBackend(AbstractBackend):
             if 'choices' in data:
                 choices = data['choices']
                 if not(set(event['parts'].keys()) >= {x for x in choices}):
-                    raise ValueError(_("Non-existing parts specified in choices."))
+                    raise ValueError(
+                        _("Non-existing parts specified in choices."))
                 all_courses = {x for l in choices.values() for x in l}
                 courses = self.get_courses(rs, all_courses)
                 for part_id in choices:

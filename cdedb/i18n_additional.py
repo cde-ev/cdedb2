@@ -105,7 +105,7 @@ I18N_STRINGS = (
     _("LineResolutions.skip"),
     _("LineResolutions.renew_trial"),
     _("LineResolutions.update"),
-    _("LineResolutions.renew_and_update")
+    _("LineResolutions.renew_and_update"),
 
     _("MemberChangeStati.pending"),
     _("MemberChangeStati.committed"),

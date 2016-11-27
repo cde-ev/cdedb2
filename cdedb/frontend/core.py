@@ -4,10 +4,7 @@
 
 import collections
 import copy
-import csv
 import hashlib
-import io
-import json
 import os.path
 import uuid
 
@@ -17,8 +14,8 @@ from cdedb.frontend.common import (
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
     csv_output, query_result_to_json)
 from cdedb.common import (
-    _, ProxyShim, pairwise, extract_roles, privilege_tier, unwrap,
-    PrivilegeError, name_key, now, glue)
+    _, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
+    now)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
@@ -92,8 +89,9 @@ class CoreFrontend(AbstractFrontend):
                 events = self.eventproxy.get_events(rs, orga_info)
                 today = now().date()
                 for event_id, event in events.items():
-                    start = min(part['part_begin'] for part in event['parts'].values()) \
-                            if event['parts'] else None
+                    start = min((part['part_begin']
+                                 for part in event['parts'].values()),
+                                default=None)
                     if (not start or start >= today
                             or abs(start.year - today.year) < 2):
                         regs = self.eventproxy.list_registrations(rs,
@@ -117,12 +115,14 @@ class CoreFrontend(AbstractFrontend):
                 final = {}
                 for event_id, event in events.items():
                     if event_id not in orga_info:
-                        event['start'] = \
-                            min(part['part_begin'] for part in event['parts'].values()) \
-                            if event['parts'] else None
-                        event['end'] = \
-                            max(part['part_end'] for part in event['parts'].values()) \
-                            if event['parts'] else None
+                        event['start'] = min(
+                            (part['part_begin']
+                             for part in event['parts'].values()),
+                            default=None)
+                        event['end'] = max(
+                            (part['part_end']
+                             for part in event['parts'].values()),
+                            default=None)
                         registration = self.eventproxy.list_registrations(
                             rs, event_id, rs.user.persona_id)
                         event['registration'] = bool(registration)
@@ -139,7 +139,8 @@ class CoreFrontend(AbstractFrontend):
                 for assembly_id, assembly in assemblies.items():
                     assembly['does_attend'] = self.assemblyproxy.does_attend(
                         rs, assembly_id=assembly_id)
-                    if assembly['does_attend'] or assembly['signup_end'] > now():
+                    if (assembly['does_attend']
+                            or assembly['signup_end'] > now()):
                         final[assembly_id] = assembly
                 if final:
                     dashboard['assemblies'] = final
@@ -266,7 +267,6 @@ class CoreFrontend(AbstractFrontend):
                     break
         ## Mailinglist moderators get no special treatment since this wouldn't
         ## gain them anything
-        pass
 
         ## Retrieve data
         roles = extract_roles(rs.ambience['persona'])

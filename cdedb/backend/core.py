@@ -508,7 +508,7 @@ class CoreBackend(AbstractBackend):
         """
         persona_id = affirm("id", persona_id)
         if (persona_id != rs.user.persona_id
-                and not self.is_relative_admin(rs,persona_id)):
+                and not self.is_relative_admin(rs, persona_id)):
             raise PrivilegeError(_("Not privileged."))
         generations = affirm_set("int", generations, allow_None=True)
         fields = list(PERSONA_ALL_FIELDS)
@@ -650,7 +650,8 @@ class CoreBackend(AbstractBackend):
             change_note = rs.gettext("Unspecified change.")
 
         if not may_wait and generation is not None:
-            raise ValueError(_("Non-waiting change without generation override."))
+            raise ValueError(
+                _("Non-waiting change without generation override."))
         realm_keys = {'is_cde_realm', 'is_event_realm', 'is_ml_realm',
                       'is_assembly_realm'}
         if (set(data) & realm_keys

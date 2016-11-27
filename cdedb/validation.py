@@ -45,7 +45,7 @@ import pytz
 import werkzeug.datastructures
 
 from cdedb.common import (
-    _, EPSILON, compute_checkdigit, now, extract_roles, asciificator, glue,
+    _, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER)
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
@@ -268,7 +268,8 @@ def _float(val, argname=None, *, _convert=True):
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, float):
-        return None, [(argname, TypeError(_("Must be a floating point number.")))]
+        return None, [(argname,
+                       TypeError(_("Must be a floating point number.")))]
     return val, []
 
 @_addvalidator
@@ -524,7 +525,8 @@ def _restrictive_identifier(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if not _RESTRICTIVE_IDENTIFIER_REGEX.search(val):
-        errs.append((argname, ValueError(_("Must be a restrictive identifier."))))
+        errs.append((argname,
+                     ValueError(_("Must be a restrictive identifier."))))
     return val, errs
 
 _CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
@@ -613,12 +615,13 @@ def _password_strength(val, argname=None, *, _convert=True):
         if INPUT - (LOWER | UPPER | DIGITS):
             num_classes += 1
         if num_classes < 3:
-            errors.append((argname,
-                           ValueError(_("Must contain at least three character classes."))))
+            errors.append(
+                (argname, ValueError(
+                    _("Must contain at least three character classes."))))
         for entry in BLACKLIST:
             if entry in val.lower():
-                errors.append((argname,
-                               ValueError(_("Contains blacklisted substring."))))
+                errors.append(
+                    (argname, ValueError(_("Contains blacklisted substring."))))
     return val, errors
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
@@ -811,7 +814,8 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     if errs:
         return val, errs
     if creation and transition:
-        raise RuntimeError(_("Only one of creation, transition may be specified."))
+        raise RuntimeError(
+            _("Only one of creation, transition may be specified."))
     if creation:
         temp, errs = _examine_dictionary_fields(
             val, _PERSONA_TYPE_FIELDS, {}, allow_superfluous=True,
@@ -2490,7 +2494,8 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             ## Skip if invalid or empty operator
             continue
         if operator not in VALID_QUERY_OPERATORS[validator]:
-            errs.append((field, ValueError(_("Invalid operator for this field."))))
+            errs.append((field,
+                         ValueError(_("Invalid operator for this field."))))
             continue
         if operator in NO_VALUE_OPERATORS:
             constraints.append((field, operator, None))
@@ -2670,8 +2675,9 @@ def _enum_validator_maker(anenum, name=None):
                     except ValueError as e:
                         return None, [(argname, e)]
                 else:
-                    return None, [(argname,
-                                   TypeError(_("Must be a {type}."), {'type': anenum}))]
+                    return None, [
+                        (argname, TypeError(_("Must be a {type}."),
+                                            {'type': anenum}))]
         return val, []
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())

@@ -121,7 +121,7 @@ lint:
 	@echo "And now only errors and warnings"
 	@echo "================================================================================"
 	@echo ""
-	/usr/lib/python-exec/python3.5/pylint --rcfile='./lint.rc' cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
+	/usr/lib/python-exec/python3.5/pylint --rcfile='./lint.rc' --output-format=text cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
 
 check:
 	make sample-data-test &> /dev/null

@@ -19,7 +19,7 @@ import uuid
 import pytz
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import deduct_years, now
+from cdedb.common import _, deduct_years, now
 
 _LOGGER = logging.getLogger(__name__)
 

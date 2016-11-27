@@ -365,7 +365,8 @@ class CdEFrontend(AbstractUserFrontend):
                  != datum['resolution'].is_modification())):
             problems.append(
                 ("doppelganger",
-                 RuntimeError(_("Doppelganger choice doesn't fit resolution."))))
+                 RuntimeError(
+                     _("Doppelganger choice doesn't fit resolution."))))
         if datum['doppelganger_id']:
             if datum['doppelganger_id'] not in doppelgangers:
                 problems.append(
@@ -380,7 +381,8 @@ class CdEFrontend(AbstractUserFrontend):
                 rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
                 problems.append(
-                    ("pevent_id", KeyError(_("Participation already recorded."))))
+                    ("pevent_id",
+                     KeyError(_("Participation already recorded."))))
         datum.update({
             'persona': persona,
             'pevent_id': pevent_id,
@@ -587,7 +589,8 @@ class CdEFrontend(AbstractUserFrontend):
                               ValueError(_("Lines didn't match up."))))
         if not membership:
             rs.errors.append(("membership",
-                              ValueError(_("Only member admission supported."))))
+                              ValueError(
+                                  _("Only member admission supported."))))
         open_issues = any(
             e['resolution'] is None
             or (e['problems'] and e['resolution'] != LineResolutions.skip)

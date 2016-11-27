@@ -15,7 +15,6 @@ from cdedb.common import _, merge_dicts, ProxyShim, PERSONA_DEFAULTS
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.common import check_validation as check
 from cdedb.backend.core import CoreBackend
-import cdedb.database.constants as const
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.

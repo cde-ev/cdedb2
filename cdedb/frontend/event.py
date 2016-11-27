@@ -1793,8 +1793,8 @@ class EventFrontend(AbstractUserFrontend):
         def _reserve_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for reserve problems."""
             return (
-                _("Wrong number of reserve lodgers used."), lodgement_id, part_id,
-                tuple(
+                _("Wrong number of reserve lodgers used."), lodgement_id,
+                part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
                     if registrations[reg_id]['fields'].get(
                         'reserve_{}'.format(part_id))))
@@ -1848,7 +1848,6 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def show_lodgement(self, rs, event_id, lodgement_id):
         """Display details of one lodgement."""
-        # TODO check whether this is deletable
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = {
             k: v for k, v in self.eventproxy.get_registrations(
@@ -2157,11 +2156,13 @@ class EventFrontend(AbstractUserFrontend):
                 "part{0}.course_id{0}".format(part_id): rs.gettext(
                     "course (part {title})").format(title=part['title']),
                 "part{0}.status{0}".format(part_id): rs.gettext(
-                    "registration status (part {title})").format(title=part['title']),
+                    "registration status (part {title})").format(
+                        title=part['title']),
                 "part{0}.lodgement_id{0}".format(part_id): rs.gettext(
                     "lodgement (part {title})").format(title=part['title']),
                 "part{0}.course_instructor{0}".format(part_id): rs.gettext(
-                    "course instructor (part {title})").format(title=part['title']),
+                    "course instructor (part {title})").format(
+                        title=part['title']),
             })
         titles.update({
             ",".join("part{0}.course_id{0}".format(part_id)
@@ -2175,7 +2176,7 @@ class EventFrontend(AbstractUserFrontend):
                          "lodgement (any part)"),
             ",".join("part{0}.course_instructor{0}".format(part_id)
                      for part_id in event['parts']): rs.gettext(
-                             "course instuctor (any part)")})
+                         "course instuctor (any part)")})
 
         return choices, titles
 
@@ -2349,7 +2350,8 @@ class EventFrontend(AbstractUserFrontend):
             return self.render(rs, "field_set_select")
         else:
             if field_id not in rs.ambience['event']['fields']:
-                return werkzeug.exceptions.NotFound(_("Wrong associated event."))
+                return werkzeug.exceptions.NotFound(
+                    _("Wrong associated event."))
             return self.redirect(rs, "event/field_set_form",
                                  {'field_id': field_id})
 

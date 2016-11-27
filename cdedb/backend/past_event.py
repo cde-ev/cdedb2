@@ -486,7 +486,8 @@ class PastEventBackend(AbstractBackend):
         """
         moniker = affirm("str_or_None", moniker)
         if not moniker:
-            return None, [], [("pevent_id", ValueError(_("No input supplied.")))]
+            return None, [], [("pevent_id",
+                               ValueError(_("No input supplied.")))]
         query = glue("SELECT id FROM past_event.events",
                      "WHERE (title ~* %s OR shortname ~* %s) AND tempus >= %s")
         query2 = glue("SELECT id FROM past_event.events",
@@ -530,7 +531,8 @@ class PastEventBackend(AbstractBackend):
         """
         moniker = affirm("str_or_None", moniker)
         if not moniker:
-            return None, [], [("pcourse_id", ValueError(_("No input supplied.")))]
+            return None, [], [("pcourse_id",
+                               ValueError(_("No input supplied.")))]
         pevent_id = affirm("id", pevent_id)
         query = glue("SELECT id FROM past_event.courses",
                      "WHERE title ~* %s AND pevent_id = %s")

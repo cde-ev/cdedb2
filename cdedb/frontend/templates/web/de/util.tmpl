@@ -129,7 +129,8 @@
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {% if label %}
             <label{% if anid %} for="{{ anid|e }}"{% endif %}
-                    class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
+                    class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %}
+                           control-label">
                 {{ label|e }}
             </label>
         {% endif %}
@@ -572,7 +573,8 @@
                     {{ make_icon('expand') }} <span class="hidden-xs">umkehren</span>
                 </button>
             </div>
-            <button type="button" class="btn btn-sm btn-info" title="Filter auf ausgewählte setzen" id="btn-select-filter">
+            <button type="button" class="btn btn-sm btn-info" title="Filter auf ausgewählte setzen"
+              id="btn-select-filter">
                 {{ make_icon('share') }} <span class="hidden-xs">nur ausgewählte</span>
             </button>
         </div>

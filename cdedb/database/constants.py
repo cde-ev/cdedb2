@@ -9,6 +9,8 @@ their symbolic names provided by this module should be used.
 
 import enum
 
+from cdedb.common import _
+
 @enum.unique
 class Genders(enum.IntEnum):
     """Spec for field gender of core.personas."""
