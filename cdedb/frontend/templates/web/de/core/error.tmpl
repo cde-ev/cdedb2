@@ -14,6 +14,10 @@
         Es ist leider ein Fehler aufgetreten. Dies bedeutet vermutlich, dass
         sich irgendwo im Quelltext ein Bug versteckt, den Du gerade
         erfolgreich aufgespürt hast.
+
+        {% if message %}
+            Die Fehlermeldung war <strong>{{ message|e }}</strong>.
+        {% endif %}
     {% endif %}
 
     Sollte das Problem hartnäckig sein, so schreibe bitte eine Email an das

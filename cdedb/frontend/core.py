@@ -147,15 +147,15 @@ class CoreFrontend(AbstractFrontend):
             'meta_info': meta_info, 'dashboard': dashboard})
 
     @access("anonymous")
-    @REQUESTdata(("kind", "printable_ascii"))
-    def error(self, rs, kind):
+    @REQUESTdata(("kind", "printable_ascii"), ("message", "str_or_None"))
+    def error(self, rs, kind, message):
         """Fault page.
 
         This may happen upon a database serialization failure during
         concurrent accesses or because of a used up quota. Other errors are
         bugs.
         """
-        return self.render(rs, "error", {'kind': kind})
+        return self.render(rs, "error", {'kind': kind, 'message': message})
 
     @access("core_admin")
     def meta_info_form(self, rs):

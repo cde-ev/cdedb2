@@ -226,6 +226,6 @@ class Application(BaseApp):
             if request.base_url.endswith("error"):
                 raise
             ## generic errors
-            return construct_redirect(request,
-                                      urls.build("core/error",
-                                                 {'kind': "general"}))
+            return construct_redirect(
+                request, urls.build("core/error", {'kind': "general",
+                                                   'message': str(e)}))
