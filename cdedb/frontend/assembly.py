@@ -14,7 +14,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    merge_dicts, unwrap, now, ProxyShim, PrivilegeError, ASSEMBLY_BAR_MONIKER)
+    _, merge_dicts, unwrap, now, ProxyShim, PrivilegeError, ASSEMBLY_BAR_MONIKER)
 import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -99,14 +99,14 @@ class AssemblyFrontend(AbstractUserFrontend):
     @REQUESTdata(("secret", "str"))
     def genesis_form(self, rs, case_id, secret):
         """Assembly accounts cannot be requested."""
-        raise NotImplementedError("Not available in assembly realm.")
+        raise NotImplementedError(_("Not available in assembly realm."))
 
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("secret", "str"))
     @REQUESTdatadict("display_name",)
     def genesis(self, rs, case_id, secret, data):
         """Assembly accounts cannot be requested."""
-        raise NotImplementedError("Not available in assembly realm.")
+        raise NotImplementedError(_("Not available in assembly realm."))
 
     @access("assembly_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
@@ -138,12 +138,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                     csv_data = csv_output(result, fields)
                     return self.send_file(
                         rs, data=csv_data, inline=False,
-                        filename=self.i18n("result.csv", rs.lang))
+                        filename=rs.gettext("result.csv"))
                 elif download == "json":
                     json_data = query_result_to_json(result, fields)
                     return self.send_file(
                         rs, data=json_data, inline=False,
-                        filename=self.i18n("result.json", rs.lang))
+                        filename=rs.gettext("result.json"))
         else:
             rs.values['is_search'] = is_search = False
         return self.render(rs, "user_search", params)
@@ -175,7 +175,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def show_assembly(self, rs, assembly_id):
         """Present an assembly."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, assembly_id=assembly_id)
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
@@ -247,7 +247,7 @@ class AssemblyFrontend(AbstractUserFrontend):
             secret = self.assemblyproxy.signup(rs, assembly_id)
         persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
-            rs.notify("success", "Signed up.")
+            rs.notify("success", _("Signed up."))
             attachment = {
                 'path': os.path.join(self.conf.REPOSITORY_PATH,
                                      "bin/verify_votes.py"),
@@ -256,18 +256,17 @@ class AssemblyFrontend(AbstractUserFrontend):
             self.do_mail(
                 rs, "signup",
                 {'To': (persona['username'],),
-                 'Subject': 'Signed up for assembly {}'.format(
-                     rs.ambience['assembly']['title'])},
+                 'Subject': _('Signed up for assembly')},
                 {'secret': secret, 'persona': persona},
                 attachments=(attachment,))
         else:
-            rs.notify("info", "Already signed up.")
+            rs.notify("info", _("Already signed up."))
 
     @access("member", modi={"POST"})
     def signup(self, rs, assembly_id):
         """Join an assembly."""
         if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", "Signup already ended.")
+            rs.notify("warning", _("Signup already ended."))
             return self.redirect(rs, "assembly/show_assembly")
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
@@ -277,7 +276,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def external_signup(self, rs, assembly_id, persona_id):
         """Add an external participant to an assembly."""
         if now() > rs.ambience['assembly']['signup_end']:
-            rs.notify("warning", "Signup already ended.")
+            rs.notify("warning", _("Signup already ended."))
             return self.redirect(rs, "assembly/list_attendees")
         if rs.errors:
             return self.list_attendees(rs, assembly_id)
@@ -288,7 +287,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def list_attendees(self, rs, assembly_id):
         """Provide a list of who is/was present."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         attendee_ids = self.assemblyproxy.list_attendees(rs, assembly_id)
         attendees = self.coreproxy.get_assembly_users(rs, attendee_ids)
         return self.render(rs, "list_attendees", {"attendees": attendees})
@@ -307,7 +306,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def list_ballots(self, rs, assembly_id):
         """View available ballots for an assembly."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
         ref = now()
@@ -347,7 +346,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def create_ballot_form(self, rs, assembly_id):
         """Render form."""
         if not rs.ambience['assembly']['is_active']:
-            rs.notify("warning", "Assembly already concluded.")
+            rs.notify("warning", _("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
         return self.render(rs, "create_ballot")
 
@@ -370,7 +369,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def get_attachment(self, rs, assembly_id, attachment_id, ballot_id=None):
         """Retrieve an attachment."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         path = os.path.join(self.conf.STORAGE_DIR, "assembly_attachment",
                             str(attachment_id))
         return self.send_file(rs, path=path, mimetype="application/pdf",
@@ -380,7 +379,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def add_attachment_form(self, rs, assembly_id, ballot_id=None):
         """Render form."""
         if ballot_id and now() > rs.ambience['ballot']['vote_begin']:
-            rs.notify("warning", "Voting has begun.")
+            rs.notify("warning", _("Voting has already begun."))
             return self.redirect(rs, "assembly/show_ballot")
         return self.render(rs, "add_attachment")
 
@@ -414,7 +413,8 @@ class AssemblyFrontend(AbstractUserFrontend):
                             str(attachment_id))
         with open(path, 'wb') as f:
             f.write(attachment)
-        self.notify_return_code(rs, attachment_id, success="Attachment added.")
+        self.notify_return_code(rs, attachment_id,
+                                success=_("Attachment added."))
         if ballot_id:
             return self.redirect(rs, "assembly/show_ballot")
         else:
@@ -447,7 +447,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         votes).
         """
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         ballot = rs.ambience['ballot']
         attachment_ids = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id)
@@ -484,8 +484,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                     rs, "ballot_tallied",
                     {'To': (self.conf.MANAGEMENT_ADDRESS,),
                      'Bcc': mails,
-                     'Subject': "Ballot '{}' got tallied.".format(
-                         ballot['title'])},
+                     'Subject': _("CdE Ballot got tallied.")},
                     attachments=(attachment_script, attachment_result,))
             return self.redirect(rs, "assembly/show_ballot")
         ## initial checks done, present the ballot
@@ -546,8 +545,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         candidates = {e['moniker']: e
                       for e in ballot['candidates'].values()}
         if ballot['use_bar']:
-            candidates[ASSEMBLY_BAR_MONIKER] = self.i18n(
-                "FIXME bar description text", rs.lang)
+            candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
+                "FIXME bar description text")
         return self.render(rs, "show_ballot", {
             'attachments': attachments, 'split_vote': split_vote,
             'result': result, 'candidates': candidates, 'attends': attends,
@@ -557,7 +556,7 @@ class AssemblyFrontend(AbstractUserFrontend):
     def change_ballot_form(self, rs, assembly_id, ballot_id):
         """Render form"""
         if now() > rs.ambience['ballot']['vote_begin']:
-            rs.notify("warning", "Unable to modify active ballot.")
+            rs.notify("warning", _("Unable to modify active ballot."))
             return self.redirect(rs, "assembly/show_ballot")
         merge_dicts(rs.values, rs.ambience['ballot'])
         return self.render(rs, "change_ballot")
@@ -592,7 +591,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         votes).
         """
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         ballot = rs.ambience['ballot']
         if ballot['votes']:
             voted = unwrap(
@@ -603,14 +602,14 @@ class AssemblyFrontend(AbstractUserFrontend):
                                for e in ballot['candidates'].values())
             if voted == (ASSEMBLY_BAR_MONIKER,):
                 if not ballot['use_bar']:
-                    raise ValueError("Not available.")
+                    raise ValueError(_("Option not available."))
                 vote = "{}>{}".format(ASSEMBLY_BAR_MONIKER, "=".join(candidates))
             elif voted == (MAGIC_ABSTAIN,):
                 vote = "=".join(candidates)
                 if ballot['use_bar']:
                     vote += "={}".format(ASSEMBLY_BAR_MONIKER)
             elif ASSEMBLY_BAR_MONIKER in voted and len(voted) > 1:
-                rs.notify("error", "Rejection is exclusive.")
+                rs.notify("error", _("Rejection is exclusive."))
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
                 winners = "=".join(voted)
@@ -637,14 +636,14 @@ class AssemblyFrontend(AbstractUserFrontend):
     def get_result(self, rs, assembly_id, ballot_id):
         """Download the tallied stats of a ballot."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         if not rs.ambience['ballot']['is_tallied']:
-            rs.notify("warning", "Ballot not yet tallied.")
+            rs.notify("warning", _("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
         path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
                             str(ballot_id))
         return self.send_file(rs, path=path, inline=False,
-                              filename=self.i18n("result.json", rs.lang))
+                              filename=rs.gettext("result.json"))
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata(("moniker", "restrictive_identifier"), ("description", "str"))
@@ -653,7 +652,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         monikers = {c['moniker']
                     for c in rs.ambience['ballot']['candidates'].values()}
         if moniker in monikers:
-            rs.errors.append(("moniker", ValueError("Duplicate moniker.")))
+            rs.errors.append(("moniker", ValueError(_("Duplicate moniker."))))
         if rs.errors:
             return self.show_ballot(rs, assembly_id, ballot_id)
         data = {

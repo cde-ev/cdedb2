@@ -25,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 
 _currentpath = os.path.dirname(os.path.abspath(__file__))
 if not _currentpath.startswith('/') or not _currentpath.endswith('/cdedb'):
-    raise RuntimeError("Failed to locate repository")
+    raise RuntimeError(_("Failed to locate repository"))
 _repopath = _currentpath[:-6]
 _git_commit = subprocess.check_output(
     ("git", "rev-parse", "HEAD"), cwd=_repopath).decode().strip()
@@ -99,6 +99,8 @@ _DEFAULTS = {
     ## maximum length of personas presented for selection in an intelligent
     ## input field
     "NUM_PREVIEW_PERSONAS": 42,
+    ## Available languages
+    "I18N_LANGUAGES": ("de", "en"),
 
     ###
     ### email stuff

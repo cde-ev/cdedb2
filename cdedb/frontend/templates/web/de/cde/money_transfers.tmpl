@@ -35,14 +35,14 @@
                                 <li class="text-danger">
                                     {{ util.make_icon('exclamation-sign', title="Fehler") }}
                                     {% if key %}<em>{{ key|e }}</em>:{% endif %}
-                                    {{ i18n(problem|string)|e }}
+                                    {{ util.format_error(problem) }}
                                 </li>
                             {% endfor %}
                             {% for key, warning in dataset['warnings'] %}
                                 <li class="text-warning">
                                     {{ util.make_icon('warning-sign', title="Warnung") }}
                                     {% if key %}<em>{{ key|e }}</em>:{% endif %}
-                                    {{ i18n(warning|string)|e }}
+                                    {{ util.format_error(warning) }}
                                 </li>
                             {% endfor %}
                         </ul>

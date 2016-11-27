@@ -77,7 +77,7 @@
                                             {{ key|e -}}
                                         </em>:
                                     {% endif %}
-                                    {{ i18n(problem|string)|e }}
+                                    {{ util.format_error(problem) }}
                                 </li>
                             {% endfor %}
                             {% for key, warning in dataset['warnings'] %}
@@ -89,7 +89,7 @@
                                             {{ key|e -}}
                                         </em>:
                                     {% endif %}
-                                    {{ i18n(warning|string)|e }}
+                                    {{ util.format_error(warning) }}
                                 </li>
                             {% endfor %}
                         </ul>
@@ -101,7 +101,7 @@
                         {% set myentries = [] %}
                         {% for resolution in enums['LineResolutions'] %}
                             {% if dataset['doppelgangers'] or not resolution.is_modification() %}
-                                {{ myentries.append((resolution.value, i18n(resolution|string)))|e }}
+                                {{ myentries.append((resolution.value, gettext(resolution|string)))|e }}
                             {% endif %}
                         {% endfor %}
                         {{ util.input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, radio=True,

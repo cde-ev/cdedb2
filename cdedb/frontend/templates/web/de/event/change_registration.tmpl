@@ -30,7 +30,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for s in enums['RegistrationPartStati'] %}
-                    {{ myentries.append((s.value, i18n(s|string)))|e }}
+                    {{ myentries.append((s.value, gettext(s|string)))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
                 {# jinja does not support list comprehension ... #}

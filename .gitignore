@@ -18,7 +18,9 @@ cdedb/localconfig.py
 .coverage
 
 # autobuild temporary data
-
 related/auto-build/distfiles/**
 related/auto-build/images/**
 related/auto-build/work/**
+
+# i18n working data
+i18n/cdedb.pot

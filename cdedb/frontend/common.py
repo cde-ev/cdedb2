@@ -20,6 +20,7 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 import functools
+import gettext
 import hashlib
 import io
 import json
@@ -41,11 +42,10 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 
-from cdedb.internationalization import i18n_factory
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
-    glue, merge_dicts, compute_checkdigit, now, asciificator, roles_to_db_role,
-    RequestState, make_root_logger, json_serialize)
+    _, glue, merge_dicts, compute_checkdigit, now, asciificator,
+    roles_to_db_role, RequestState, make_root_logger, json_serialize)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -105,6 +105,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
         The message format is A--B--C--D, with
+
         * A is the notification type, conforming to '[a-z]+'
         * B is the length of the notification message
         * C is the notification message
@@ -149,7 +150,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         params = params or {}
         if rs.errors and not rs.notifications:
-            rs.notify("error", "Failed validation.")
+            rs.notify("error", _("Failed validation."))
         url = cdedburl(rs, target, params, force_external=True)
         ret = basic_redirect(rs, url)
         if rs.notifications:
@@ -434,7 +435,6 @@ JINJA_FILTERS = {
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
-    i18n = i18n_factory()
     #: to be overridden by children
     realm = None
 
@@ -446,7 +446,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(os.path.join(
                 self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
-            extensions=['jinja2.ext.with_'],
+            extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
+                        'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None)
         self.jinja_env.filters.update(JINJA_FILTERS)
 
@@ -543,7 +544,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
             'glue': glue,
-            'i18n': lambda string: self.i18n(string, rs.lang),
+            'gettext': rs.gettext,
+            'ngettext': rs.ngettext,
             'is_admin': self.is_admin(rs),
             'notifications': rs.notifications,
             'now': now,
@@ -599,11 +601,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         if not path and not afile and not data:
-            raise RuntimeError("No input specified.")
+            raise ValueError(_("No input specified."))
         if (path and afile) or (path and data) or (afile and data):
-            raise RuntimeError("Ambiguous input.")
+            raise ValueError(_("Ambiguous input."))
         if path and not os.path.isfile(path):
-            return werkzeug.exceptions.NotFound()
+            raise werkzeug.exceptions.NotFound()
         if path:
             # TODO Can we use a with context here or maybe close explicitly?
             afile = open(path, 'rb')
@@ -661,10 +663,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     rs.request.remote_addr, rs.request.values, rs.ambience)
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
-            rs.notify("error", "Failed validation.")
+            rs.notify("error", _("Failed validation."))
         if self.conf.LOCKDOWN:
-            rs.notify("info", glue("The database currently undergoes",
-                                   "maintenance and is unavailable."))
+            rs.notify("info", _("The database currently undergoes "
+                                "maintenance and is unavailable."))
         html = self.fill_template(rs, "web", templatename, params)
         if "<pre" not in html and "<textarea" not in html:
             ## eliminate multiple whitespace, since it doesn't matter
@@ -700,12 +702,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
         ## do i18n here, so _create_mail needs to know less context
-        headers['Subject'] = self.i18n(headers['Subject'], rs.lang)
+        headers['Subject'] = rs.gettext(headers['Subject'])
         msg = self._create_mail(text, headers, attachments)
         ret = self._send_mail(msg)
         if ret:
             ## This is mostly intended for the test suite.
-            rs.notify("info", "Stored email to hard drive at {path}",
+            rs.notify("info", _("Stored email to hard drive at {path}"),
                       {'path': ret})
         return ret
 
@@ -832,8 +834,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    @classmethod
-    def enum_choice(cls, rs, anenum):
+    def enum_choice(self, rs, anenum):
         """Convert an enum into a dict suitable for consumption by the template
         code (this will turn into an HTML select in the end).
 
@@ -841,7 +842,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type anenum: :py:class:`enum.Enum`
         :rtype: {int: str}
         """
-        return {case.value: cls.i18n(str(case), rs.lang)
+        return {case.value: rs.gettext(str(case))
                 for case in anenum}
 
     @staticmethod
@@ -868,7 +869,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif code < 0:
             rs.notify("info", pending)
         else:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(_("Impossible."))
 
     def latex_compile(self, data, runs=2):
         """Run LaTeX on the provided document.
@@ -911,12 +912,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not runs:
             return self.send_file(
                 rs, data=data, inline=False,
-                filename=self.i18n("{}.tex".format(filename), rs.lang))
+                filename=rs.gettext("{}.tex".format(filename)))
         else:
             pdf = self.latex_compile(data, runs=runs)
             return self.send_file(
                 rs, mimetype="application/pdf", data=pdf,
-                filename=self.i18n("{}.pdf".format(filename), rs.lang))
+                filename=rs.gettext("{}.pdf".format(filename)))
 
     def serve_complex_latex_document(self, rs, tmp_dir, work_dir_name,
                                      tex_file_name, runs=2):
@@ -977,7 +978,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return self.send_file(
                 rs, mimetype="application/pdf",
                 path=os.path.join(work_dir, pdf_file),
-                filename=self.i18n(pdf_file, rs.lang))
+                filename=rs.gettext(pdf_file))
 
 class Worker(threading.Thread):
     """Customization wrapper around ``threading.Thread``.
@@ -999,7 +1000,7 @@ class Worker(threading.Thread):
         rrs = RequestState(
             rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
             rs.requestargs, rs.urlmap, [], copy.deepcopy(rs.values),
-            rs.lang, rs._coders, rs.begin)
+            rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
             conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets)
@@ -1128,12 +1129,13 @@ def access(*roles, modi=None):
                         }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     notifications = json_serialize([
-                        rs._coders['encode_notification']("error",
-                                                          "You must login.")])
+                        rs._coders['encode_notification'](
+                            "error", _("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 raise werkzeug.exceptions.Forbidden(
-                    "Access denied to {}/{}.".format(obj, fun.__name__))
+                    _("Access denied to {realm}/{endpoint}.").format(
+                        realm=obj, endpoint=fun.__name__))
         new_fun.access_list = access_list
         new_fun.modi = modi
         return new_fun
@@ -1254,8 +1256,8 @@ def REQUESTdatadict(*proto_spec):
                     data[name] = tuple(
                         val.strip() for val in rs.request.values.getlist(name))
                 else:
-                    raise ValueError("Invalid argtype {} found.".format(
-                        argtype))
+                    raise ValueError(_("Invalid argtype {t} found.").format(
+                        t=argtype))
                 rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)
         return new_fun

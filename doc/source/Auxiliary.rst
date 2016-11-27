@@ -9,12 +9,6 @@ cdedb.config
 .. automodule:: cdedb.config
    :members:
 
-cdedb.internationalization
---------------------------
-
-.. automodule:: cdedb.internationalization
-   :members:
-
 cdedb.common
 ------------
 

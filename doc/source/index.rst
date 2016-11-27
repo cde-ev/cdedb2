@@ -11,6 +11,7 @@ Contents:
    Backend
    Database
    Auxiliary
+   Workflows
    Specification
    Paraphernalia
    Orga_Hints

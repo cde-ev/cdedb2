@@ -10,7 +10,7 @@
             {% for description, lodgement_id, part_id, affected_regs in problems %}
                 <li>
                     {{ ambience['event']['parts'][part_id]['title']|e }} --
-                    {{ i18n(description)|e }}
+                    {{ gettext(description)|e }}
                     {% if affected_regs %}
                         (
                             {% for reg_id in affected_regs %}

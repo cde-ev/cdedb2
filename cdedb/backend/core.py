@@ -23,7 +23,7 @@ from cdedb.backend.common import (
     access, internal_access, singularize,
     affirm_validation as affirm, affirm_set_validation as affirm_set)
 from cdedb.common import (
-    glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
+    _, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS)
@@ -380,12 +380,12 @@ class CoreBackend(AbstractBackend):
             else:
                 ret = -1
             if not may_wait and ret <= 0:
-                raise RuntimeError("Non-waiting change not committed.")
+                raise RuntimeError(_("Non-waiting change not committed."))
 
             ## pop the stashed change
             if diff:
                 if set(diff) & newly_changed_fields:
-                    raise RuntimeError("Conflicting pending change.")
+                    raise RuntimeError(_("Conflicting pending change."))
                 insert = copy.deepcopy(current_state)
                 insert.update(data)
                 insert.update(diff)
@@ -394,7 +394,7 @@ class CoreBackend(AbstractBackend):
                     "generation": next_generation + 1,
                     "change_status": const.MemberChangeStati.pending,
                     "persona_id": data['id'],
-                    "change_note": "Displaced change.",
+                    "change_note": rs.gettext("Displaced change."),
                 })
                 del insert['id']
                 self.sql_insert(rs, "core.changelog", insert)
@@ -453,10 +453,10 @@ class CoreBackend(AbstractBackend):
             ## commit changes
             ret = 0
             if len(udata) > 1:
-                ret = self.commit_persona(rs, udata,
-                                          change_note="Change committed.")
+                ret = self.commit_persona(
+                    rs, udata, change_note=rs.gettext("Change committed."))
                 if not ret:
-                    raise RuntimeError("Modification failed.")
+                    raise RuntimeError(_("Modification failed."))
         return ret
 
     @access("persona")
@@ -509,7 +509,7 @@ class CoreBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         if (persona_id != rs.user.persona_id
                 and not self.is_relative_admin(rs,persona_id)):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(_("Not privileged."))
         generations = affirm_set("int", generations, allow_None=True)
         fields = list(PERSONA_ALL_FIELDS)
         fields.remove('id')
@@ -598,7 +598,7 @@ class CoreBackend(AbstractBackend):
         with Atomizer(rs):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
-                raise ValueError("Nonexistant user.")
+                raise ValueError(_("Nonexistant user."))
             current = unwrap(self.retrieve_personas(
                 rs, (data['id'],), columns=PERSONA_ALL_FIELDS))
             fulltext = self.create_fulltext(current)
@@ -647,51 +647,51 @@ class CoreBackend(AbstractBackend):
         if not change_note:
             self.logger.info("No change note specified (persona_id={}).".format(
                 data['id']))
-            change_note = "Unspecified change."
+            change_note = rs.gettext("Unspecified change.")
 
         if not may_wait and generation is not None:
-            raise ValueError("Non-waiting change without generation override.")
+            raise ValueError(_("Non-waiting change without generation override."))
         realm_keys = {'is_cde_realm', 'is_event_realm', 'is_ml_realm',
                       'is_assembly_realm'}
         if (set(data) & realm_keys
                 and (not (rs.user.roles & {"core_admin", "admin"})
                      or "realms" not in allow_specials)):
-            raise PrivilegeError("Realm modification prevented.")
+            raise PrivilegeError(_("Realm modification prevented."))
         admin_keys = {'is_cde_admin', 'is_event_admin', 'is_ml_admin',
                       'is_assembly_admin', 'is_core_admin', 'is_admin'}
         if (set(data) & admin_keys
                 and ("admin" not in rs.user.roles
                      or "admins" not in allow_specials)):
-            raise PrivilegeError("Admin privelege modification prevented.")
+            raise PrivilegeError(_("Admin privelege modification prevented."))
         if ("is_member" in data
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or "membership" not in allow_specials)):
-            raise PrivilegeError("Membership modification prevented.")
+            raise PrivilegeError(_("Membership modification prevented."))
         if (not data.get("is_searchable", True)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles))):
-            raise PrivilegeError("Hiding prevented.")
+            raise PrivilegeError(_("Hiding prevented."))
         if ("is_archived" in data
                 and ("core_admin" not in rs.user.roles
                      or "archive" not in allow_specials)):
-            raise PrivilegeError("Archive modification prevented.")
+            raise PrivilegeError(_("Archive modification prevented."))
         if ("balance" in data
                 and ("cde_admin" not in rs.user.roles
                      or "finance" not in allow_specials)):
-            raise PrivilegeError("Modification of balance prevented.")
+            raise PrivilegeError(_("Modification of balance prevented."))
         if "username" in data and "username" not in allow_specials:
-            raise PrivilegeError("Modification of username prevented.")
+            raise PrivilegeError(_("Modification of username prevented."))
         if "foto" in data and "foto" not in allow_specials:
-            raise PrivilegeError("Modification of foto prevented.")
+            raise PrivilegeError(_("Modification of foto prevented."))
         if ("cloud_account" in data
                 and not ({"core_admin", "cde_admin"} & rs.user.roles)):
-            raise PrivilegeError("Modification of cloud access prevented.")
+            raise PrivilegeError(_("Modification of cloud access prevented."))
         if data.get("is_active") and rs.user.persona_id == data['id']:
-            raise PrivilegeError("Own activation prevented.")
+            raise PrivilegeError(_("Own activation prevented."))
 
         ## check for permission to edit
         if (rs.user.persona_id != data['id']
                 and not self.is_relative_admin(rs, data['id'])):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(_("Not privileged."))
 
         ## Prevent modification of archived members. This check (using
         ## is_archived) is sufficient since we can only edit our own data if
@@ -699,7 +699,7 @@ class CoreBackend(AbstractBackend):
         is_archived = unwrap(self.sql_select_one(rs, "core.personas",
                                                  ("is_archived",), data['id']))
         if is_archived and data.get('is_archived', True):
-            raise RuntimeError("Editing archived member impossible.")
+            raise RuntimeError(_("Editing archived member impossible."))
 
         with Atomizer(rs):
             ## reroute through the changelog if necessary
@@ -709,7 +709,7 @@ class CoreBackend(AbstractBackend):
                     rs, data, generation=generation,
                     may_wait=may_wait, change_note=change_note)
                 if allow_specials and ret < 0:
-                    raise RuntimeError("Special change not committed.")
+                    raise RuntimeError(_("Special change not committed."))
                 return ret
 
             return self.commit_persona(rs, data, change_note)
@@ -755,7 +755,8 @@ class CoreBackend(AbstractBackend):
                 else:
                     data['balance'] = tmp['balance']
             return self.set_persona(
-                rs, data, may_wait=False, change_note="Realms modified.",
+                rs, data, may_wait=False,
+                change_note=rs.gettext("Realms modified."),
                 allow_specials=("realms", "finance"))
 
     @access("persona")
@@ -774,7 +775,7 @@ class CoreBackend(AbstractBackend):
             'id': persona_id,
             'foto': foto}
         return self.set_persona(
-            rs, data, may_wait=False, change_note="Foto modified.",
+            rs, data, may_wait=False, change_note=rs.gettext("Foto modified."),
             allow_specials=("foto",))
 
     @access("admin")
@@ -788,7 +789,8 @@ class CoreBackend(AbstractBackend):
         """
         data = affirm("persona", data)
         return self.set_persona(
-            rs, data, may_wait=False, change_note="Admin bits modified.",
+            rs, data, may_wait=False,
+            change_note=rs.gettext("Admin bits modified."),
             allow_specials=("admins",))
 
     @access("core_admin", "cde_admin")
@@ -843,7 +845,7 @@ class CoreBackend(AbstractBackend):
             current = unwrap(self.retrieve_personas(
                 rs, (persona_id,), ('is_member', 'balance', 'is_cde_realm')))
             if not current['is_cde_realm']:
-                raise RuntimeError("Not a CdE-Account.")
+                raise RuntimeError(_("Not a CdE-Account."))
             if current['is_member'] == is_member:
                 return 0
             if not is_member:
@@ -857,7 +859,8 @@ class CoreBackend(AbstractBackend):
                 new_balance = None
                 code = const.FinanceLogCodes.gain_membership
             ret = self.set_persona(
-                rs, update, may_wait=False, change_note="Membership change.",
+                rs, update, may_wait=False,
+                change_note=rs.gettext("Membership change."),
                 allow_specials=("membership", "finance"))
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
@@ -865,12 +868,12 @@ class CoreBackend(AbstractBackend):
     @access("core_admin")
     def archive_persona(self, rs, persona_id):
         """TODO"""
-        raise NotImplementedError("To be done.")
+        raise NotImplementedError(_("To be done."))
 
     @access("core_admin")
     def dearchive_persona(self, rs, persona_id):
         """TODO"""
-        raise NotImplementedError("To be done.")
+        raise NotImplementedError(_("To be done."))
 
     @access("persona")
     def change_username(self, rs, persona_id, new_username, password):
@@ -886,11 +889,11 @@ class CoreBackend(AbstractBackend):
         new_username = affirm("email_or_None", new_username)
         password = affirm("str_or_None", password)
         if new_username is None and not self.is_relative_admin(rs, persona_id):
-            return False, "Only admins may unset a username."
+            return False, _("Only admins may unset a username.")
         with Atomizer(rs):
             if new_username and self.verify_existence(rs, new_username):
                 ## abort if there is already an account with this address
-                return False, "Name collision."
+                return False, _("Name collision.")
             authorized = False
             if self.is_relative_admin(rs, persona_id):
                 authorized = True
@@ -904,12 +907,12 @@ class CoreBackend(AbstractBackend):
                     'id': persona_id,
                     'username': new_username,
                 }
-                change_note = "Username change."
+                change_note = rs.gettext("Username change.")
                 if self.set_persona(
                         rs, new, change_note=change_note, may_wait=False,
                         allow_specials=("username",)):
                     return True, new_username
-        return False, "Failed."
+        return False, _("Failed.")
 
     @access("persona")
     def foto_usage(self, rs, foto):
@@ -960,9 +963,9 @@ class CoreBackend(AbstractBackend):
             ## correctness here.
             query = "SELECT event_id FROM event.orgas WHERE persona_id = %s"
             if not self.query_all(rs, query, (rs.user.persona_id,)):
-                raise PrivilegeError("Access to CdE data sets inhibited.")
+                raise PrivilegeError(_("Access to CdE data sets inhibited."))
         if any(not e['is_event_realm'] for e in ret.values()):
-            raise RuntimeError("Not an event user.")
+            raise RuntimeError(_("Not an event user."))
         return ret
 
     @access("cde")
@@ -991,18 +994,18 @@ class CoreBackend(AbstractBackend):
             new = tuple(i == rs.user.persona_id for i in ids).count(False)
             if (num + new > self.conf.QUOTA_VIEWS_PER_DAY
                     and not {"cde_admin", "core_admin"} & rs.user.roles):
-                raise QuotaException("Too many queries.")
+                raise QuotaException(_("Too many queries."))
             if new:
                 self.query_exec(rs, query,
                                 (num + new, rs.user.persona_id, today))
             ret = self.retrieve_personas(rs, ids, columns=PERSONA_CDE_FIELDS)
             if any(not e['is_cde_realm'] for e in ret.values()):
-                raise RuntimeError("Not a CdE user.")
+                raise RuntimeError(_("Not a CdE user."))
             if (not {"searchable", "cde_admin", "core_adimn"} & rs.user.roles
                     and any(
                         e['id'] != rs.user.persona_id and not e['is_searchable']
                         for e in ret.values())):
-                raise RuntimeError("Improper access to member data.")
+                raise RuntimeError(_("Improper access to member data."))
             return ret
 
     @access("ml")
@@ -1017,7 +1020,7 @@ class CoreBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_ML_FIELDS)
         if any(not e['is_ml_realm'] for e in ret.values()):
-            raise RuntimeError("Not an ml user.")
+            raise RuntimeError(_("Not an ml user."))
         return ret
 
     @access("assembly")
@@ -1032,7 +1035,7 @@ class CoreBackend(AbstractBackend):
         ids = affirm_set("id", ids)
         ret = self.retrieve_personas(rs, ids, columns=PERSONA_ASSEMBLY_FIELDS)
         if any(not e['is_assembly_realm'] for e in ret.values()):
-            raise RuntimeError("Not an assembly user.")
+            raise RuntimeError(_("Not an assembly user."))
         return ret
 
     @access("persona")
@@ -1049,7 +1052,7 @@ class CoreBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         if ids != {rs.user.persona_id} and not self.is_admin(rs):
-            raise PrivilegeError("Must be privileged.")
+            raise PrivilegeError(_("Must be privileged."))
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
@@ -1080,7 +1083,7 @@ class CoreBackend(AbstractBackend):
         })
         tier = privilege_tier(extract_roles(data))
         if not (tier & rs.user.roles):
-            raise PrivilegeError("Unable to create this sort of persona.")
+            raise PrivilegeError(_("Unable to create this sort of persona."))
         ## modified version of hash for 'secret' and thus safe/unknown plaintext
         data['password_hash'] = glue(
             "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/",
@@ -1107,7 +1110,7 @@ class CoreBackend(AbstractBackend):
                 "generation": 1,
                 "change_status": const.MemberChangeStati.committed,
                 "persona_id": new_id,
-                "change_note": "Persona creation.",
+                "change_note": rs.gettext("Persona creation."),
             })
             ## remove unlogged attributes
             del data['password_hash']
@@ -1274,7 +1277,7 @@ class CoreBackend(AbstractBackend):
             if not verify and not self.is_admin(rs):
                 roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
                 if any("admin" in role for role in roles):
-                    raise PrivilegeError("Preventing reset of admin.")
+                    raise PrivilegeError(_("Preventing reset of admin."))
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
             plain = "{}-{}-{}".format(password_hash, persona_id, salt)
@@ -1315,24 +1318,24 @@ class CoreBackend(AbstractBackend):
         :rtype: (bool, str)
         """
         if not old_password and not reset_cookie:
-            return False, "No authorization provided."
+            return False, _("No authorization provided.")
         if old_password:
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
             if not self.verify_password(old_password, password_hash):
-                return False, "Password verification failed."
+                return False, _("Password verification failed.")
         if reset_cookie:
             if not self.verify_reset_cookie(rs, persona_id, reset_cookie):
-                return False, "Reset verification failed."
+                return False, _("Reset verification failed.")
         if new_password and (not self.is_admin(rs)
                              or persona_id == rs.user.persona_id):
             if not validate.is_password_strength(new_password):
-                return False, "Password too weak."
+                return False, _("Password too weak.")
         ## escalate db privilige role in case of resetting passwords
         orig_conn = None
         if reset_cookie and not "persona" in rs.user.roles:
             if rs.conn.is_contaminated:
-                raise RuntimeError("Atomized -- impossible to escalate.")
+                raise RuntimeError(_("Atomized -- impossible to escalate."))
             orig_conn = rs.conn
             rs.conn = self.connpool['cdb_persona']
         if not new_password:
@@ -1381,7 +1384,7 @@ class CoreBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.password_change, persona_id)
             return ret
         else:
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(_("Not privileged."))
 
     @access("anonymous")
     def make_reset_cookie(self, rs, email):
@@ -1401,7 +1404,7 @@ class CoreBackend(AbstractBackend):
             rs, "core.personas", ("id",), email,
             entity_key="username")
         if not data:
-            return False, "Nonexistant user."
+            return False, _("Nonexistant user.")
         persona_id = unwrap(data)
         if not self.is_admin(rs):
             roles = unwrap(self.get_roles_multi(rs, (persona_id,)))
@@ -1409,7 +1412,7 @@ class CoreBackend(AbstractBackend):
                 ## do not allow password reset by anonymous for privileged
                 ## users, otherwise we incur a security degradation on the
                 ## RPC-interface
-                return False, "Privileged user may not reset."
+                return False, _("Privileged user may not reset.")
         ret = self.generate_reset_cookie(rs, persona_id)
         self.core_log(rs, const.CoreLogCodes.password_reset_cookie, persona_id)
         return True, ret
@@ -1434,9 +1437,9 @@ class CoreBackend(AbstractBackend):
             rs, "core.personas", ("id",), email,
             entity_key="username")
         if not data:
-            return False, "Nonexistant user."
+            return False, _("Nonexistant user.")
         if self.conf.LOCKDOWN and not self.is_admin(rs):
-            return False, "Lockdown active."
+            return False, _("Lockdown active.")
         persona_id = unwrap(data)
         ret = self.modify_password(rs, persona_id, new_password,
                                    reset_cookie=cookie)
@@ -1459,7 +1462,7 @@ class CoreBackend(AbstractBackend):
             rs, "core.personas", ("id",), email,
             entity_key="username")
         if not data:
-            return False, "Nonexistant user."
+            return False, _("Nonexistant user.")
         persona_id = unwrap(data)
         ret = self.modify_password(rs, persona_id, new_password=None,
                                    reset_cookie=cookie)
@@ -1530,10 +1533,10 @@ class CoreBackend(AbstractBackend):
         stati = stati or set()
         stati = affirm_set("enum_genesisstati", stati)
         if not realms and "core_admin" not in rs.user.roles:
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(_("Not privileged."))
         elif not all({"{}_admin".format(realm), "core_admin"} & rs.user.roles
                      for realm in realms):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(_("Not privileged."))
         query = glue("SELECT id, ctime, username, given_names, family_name,",
                      "case_status FROM core.genesis_cases")
         connector = " WHERE"
@@ -1585,7 +1588,7 @@ class CoreBackend(AbstractBackend):
         if ("core_admin" not in rs.user.roles
                 and any("{}_admin".format(e['realm']) not in rs.user.roles
                         for e in data)):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(_("Not privileged."))
         return {e['id']: e for e in data}
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
@@ -1605,11 +1608,11 @@ class CoreBackend(AbstractBackend):
                 data['id'])
             if not ({"core_admin", "{}_admin".format(current['realm'])}
                     & rs.user.roles):
-                raise PrivilegeError("Not privileged.")
+                raise PrivilegeError(_("Not privileged."))
             if ('realm' in data
                     and not ({"core_admin", "{}_admin".format(data['realm'])}
                              & rs.user.roles)):
-                raise PrivilegeError("Not privileged.")
+                raise PrivilegeError(_("Not privileged."))
             ret = self.sql_update(rs, "core.genesis_cases", data)
         if (data.get('case_status')
                 and data['case_status'] != current['case_status']):
@@ -1709,7 +1712,7 @@ class CoreBackend(AbstractBackend):
 
         ## escalate priviliges
         if rs.conn.is_contaminated:
-            raise RuntimeError("Atomized -- impossible to escalate.")
+            raise RuntimeError(_("Atomized -- impossible to escalate."))
         orig_conn = rs.conn
         rs.conn = self.connpool['cdb_admin']
         orig_roles = rs.user.roles
@@ -1720,12 +1723,12 @@ class CoreBackend(AbstractBackend):
             case = self.sql_select_one(rs, "core.genesis_cases",
                                        GENESIS_CASE_FIELDS, case_id)
             if not case or case['secret'] != secret:
-                return None, "Invalid case."
+                return None, _("Invalid genesis case.")
             if case['case_status'] != const.GenesisStati.approved:
-                return None, "Invalid state."
+                return None, _("Invalid genesis state.")
             tier = privilege_tier(extract_roles(data))
             if "{}_admin".format(case['realm']) not in tier:
-                return None, "Wrong target realm."
+                return None, _("Wrong target realm.")
             data['username'] = case['username']
             data['given_names'] = case['given_names']
             data['family_name'] = case['family_name']
@@ -1833,5 +1836,5 @@ class CoreBackend(AbstractBackend):
                                       True))
             query.spec["is_archived"] = "bool"
         else:
-            raise RuntimeError("Bad scope.")
+            raise RuntimeError(_("Bad scope."))
         return self.general_query(rs, query)

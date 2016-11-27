@@ -25,7 +25,7 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
             {% for entry in log %}
                 <tr>
                     <td>{{ entry['ctime']|datetime|e }}</td>
-                    <td>{{ i18n(enums['MemberChangeStati'](entry['change_status'])|string)|e }}</td>
+                    <td>{{ gettext(enums['MemberChangeStati'](entry['change_status'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.href(show_user_link(entry['submitted_by']),
@@ -69,7 +69,7 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for status in enums['MemberChangeStati1'] %}
-                {{ myentries.append((status.value, i18n(status|string)))|e }}
+                {{ myentries.append((status.value, gettext(status|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("stati", label="Status", info="Keine Auswahl entspricht allem.",
                                      entries=myentries, small=True) }}

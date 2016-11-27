@@ -3,6 +3,7 @@
 """The WSGI-application to tie it all together."""
 
 import cgitb
+import gettext
 import json
 import os.path
 import sys
@@ -20,7 +21,7 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
-    glue, make_root_logger, QuotaException, PrivilegeError, now,
+    _, glue, make_root_logger, QuotaException, PrivilegeError, now,
     roles_to_db_role, RequestState, User, extract_roles)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
@@ -30,7 +31,6 @@ from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.backend.session import SessionBackend
-
 
 class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
@@ -57,13 +57,19 @@ class Application(BaseApp):
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(os.path.join(
                 self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
-            extensions=['jinja2.ext.with_'],
+            extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
+                        'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None)
         self.jinja_env.filters.update(JINJA_FILTERS)
+        self.translations = {
+            lang: gettext.translation(
+                'cdedb', languages=(lang,),
+                localedir=os.path.join(self.conf.REPOSITORY_PATH, 'i18n'))
+            for lang in self.conf.I18N_LANGUAGES}
         if os.path.isfile("/DBVM"):
             ## Sanity checks for the live instance
             if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                raise RuntimeError("Refusing to start in debug mode.")
+                raise RuntimeError(_("Refusing to start in debug mode."))
 
     def make_error_page(self, error, request):
         """Helper to format an error page.
@@ -91,7 +97,8 @@ class Application(BaseApp):
             'errors': {},
             'generation_time': lambda: (now() - begin),
             'glue': glue,
-            'i18n': lambda string: self.i18n(string, lang),
+            'gettext': self.translations[lang].gettext,
+            'ngettext': self.translations[lang].ngettext,
             'notifications': tuple(),
             'now': now,
             'staticurl': staticurl,
@@ -129,7 +136,7 @@ class Application(BaseApp):
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
                     notifications = json.dumps([self.encode_notification(
-                        "error", "Session expired.")])
+                        "error", _("Session expired."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 coders = {
@@ -140,7 +147,8 @@ class Application(BaseApp):
                 }
                 rs = RequestState(
                     sessionkey, None, request, None, [], urls, args,
-                    self.urlmap, [], {}, "de", coders, begin)
+                    self.urlmap, [], {}, "de", self.translations["de"].gettext,
+                    self.translations["de"].ngettext, coders, begin)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")

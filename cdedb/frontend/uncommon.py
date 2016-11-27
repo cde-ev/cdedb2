@@ -11,7 +11,7 @@ dependencies.
 
 import abc
 
-from cdedb.common import merge_dicts, ProxyShim, PERSONA_DEFAULTS
+from cdedb.common import _, merge_dicts, ProxyShim, PERSONA_DEFAULTS
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.common import check_validation as check
 from cdedb.backend.core import CoreBackend
@@ -58,9 +58,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         new_id = self.coreproxy.create_persona(rs, data)
         self.do_mail(rs, "welcome",
                      {'To': (data['username'],),
-                      'Subject': 'CdEDB account creation',},
+                      'Subject': _('CdEDB account creation'),},
                      {'data': data})
-        self.notify_return_code(rs, new_id, success="User created.")
+        self.notify_return_code(rs, new_id, success=_("User created."))
         if new_id:
             return self.redirect_show_user(rs, new_id)
         else:
@@ -79,7 +79,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         """
         if not secret or not self.coreproxy.genesis_check(rs, case_id, secret,
                                                           self.realm):
-            rs.notify("error", "Broken link.")
+            rs.notify("error", _("Broken link."))
             return self.redirect(rs, "core/index")
         case = self.coreproxy.genesis_my_case(rs, case_id, secret)
         return self.render(rs, "genesis", {'case': case})
@@ -93,7 +93,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if rs.errors:
             return self.genesis_form(rs, case_id, secret=secret)
         if  not self.coreproxy.genesis_check(rs, case_id, secret, self.realm):
-            rs.notify("error", "Broken link.")
+            rs.notify("error", _("Broken link."))
             return self.redirect(rs, "core/index")
         case = self.coreproxy.genesis_my_case(rs, case_id, secret)
         for key in ("username", "given_names", "family_name"):
@@ -109,7 +109,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.genesis_form(rs, case_id, secret=secret)
         new_id = self.coreproxy.genesis(rs, case_id, secret, case['realm'],
                                         data)
-        self.notify_return_code(rs, new_id, success="User created.")
+        self.notify_return_code(rs, new_id, success=_("User created."))
         if new_id:
             success, message = self.coreproxy.make_reset_cookie(
                 rs, data['username'])

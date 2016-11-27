@@ -12,7 +12,7 @@ import enum
 import logging
 
 from cdedb.common import (
-    glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
+    _, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
 import cdedb.validation as validate
@@ -162,7 +162,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         realms = realms or {self.realm}
         actual_realms = self.core.get_realms_multi(rs, ids)
         if any(not x >= realms for x in actual_realms.values()):
-            raise ValueError("Wrong realm for personas.")
+            raise ValueError(_("Wrong realm for personas."))
         return
 
     @classmethod
@@ -514,7 +514,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 phrase = "{} > %s"
                 params.extend((value,)*len(columns))
             else:
-                raise RuntimeError("Impossible.")
+                raise RuntimeError(_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))
         if constraints:
             q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))

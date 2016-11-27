@@ -64,18 +64,22 @@
         <div class="input-error-block">
             {% for error in errors.get(name, []) %}
                 {% if error %}
-                    {% if error.args|length == 1 %}
-                        {{ i18n(error.args[0])|e }}<br />
-                    {% elif error.args|length == 2 %}
-                        {{ i18n(error.args[0]).format(**args[1])|e }}<br />
-                    {% elif error.args|length == 0 %}
-                        {# pass #}
-                    {% else %}
-                        Nicht wohlgeformter Fehler.<br />
-                    {% endif %}
+                    {{ format_error(error) }}
                 {% endif %}
             {% endfor %}
         </div>
+    {% endif %}
+{% endmacro %}
+
+{% macro format_error(error) %}
+    {% if error.args|length == 1 %}
+        {{ gettext(error.args[0]|string)|e }}<br />
+    {% elif error.args|length == 2 %}
+        {{ gettext(error.args[0]|string).format(**error.args[1])|e }}<br />
+    {% elif error.args|length == 0 %}
+        {{ gettext(error|string)|e }}
+    {% else %}
+        Nicht wohlgeformter Fehler.<br />
     {% endif %}
 {% endmacro %}
 

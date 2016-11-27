@@ -22,7 +22,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for pos in enums.CourseFilterPositions %}
-            {{ myentries.append((pos.value, i18n(pos|string)))|e }}
+            {{ myentries.append((pos.value, gettext(pos|string)))|e }}
         {% endfor %}
         {{ util.form_input_select(name="position", label="Position", entries=myentries, nulloption=True) }}
         {{ util.form_input_submit(value="Suchen") }}

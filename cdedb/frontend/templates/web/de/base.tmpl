@@ -33,12 +33,13 @@
                     <noscript>
                         {% if jshint == 'strong' %}
                             <div class="jshint pull-right text-danger">
-                                {{ util.make_icon('warning-sign') }} Diese Seite bietet mit JavaScript erweiterte
-                                Funktionalität.
+                                {{ util.make_icon('warning-sign') }}
+                                {% trans %}Diese Seite bietet mit JavaScript erweiterte Funktionalität.{% endtrans %}
                             </div>
                         {% else %}
                             <div class="jshint pull-right text-warning">
-                                {{ util.make_icon('warning-sign') }} Diese Seite ist mit JavaScript einfacher nutzbar.
+                                {{ util.make_icon('warning-sign') }}
+                                {% trans %}Diese Seite ist mit JavaScript einfacher nutzbar.{% endtrans %}
                             </div>
                         {% endif %}
                     </noscript>
@@ -130,7 +131,7 @@
                                 <div class="alert alert-{{ alerttypes[ntype] }}">
                                     <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
                                     <strong>{{ messagetypes[ntype] }}</strong>
-                                    <span class="notificationMessage">{{ i18n(message).format(**params)|e }}</span>
+                                    <span class="notificationMessage">{{ gettext(message).format(**params)|e }}</span>
                                 </div>
                             {% endfor %}
                         {% endwith %}

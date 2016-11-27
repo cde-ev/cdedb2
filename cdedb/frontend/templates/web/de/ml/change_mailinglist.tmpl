@@ -35,19 +35,19 @@
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for policy in enums['ModerationPolicy'] %}
-            {{ myentries.append((policy.value, i18n(policy|string)))|e }}
+            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
         {% endfor %}
         {{ util.form_input_select(name="mod_policy", label="Moderation", entries=myentries) }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for policy in enums['AudiencePolicy'] %}
-            {{ myentries.append((policy.value, i18n(policy|string)))|e }}
+            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
         {% endfor %}
         {{ util.form_input_select(name="audience_policy", label="Empfängerkreis", entries=myentries) }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for policy in enums['SubscriptionPolicy'] %}
-            {{ myentries.append((policy.value, i18n(policy|string)))|e }}
+            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
         {% endfor %}
         {{ util.form_input_select(name="sub_policy", label="Einschreibung", entries=myentries) }}
         {# jinja does not support list comprehension ... #}
@@ -60,7 +60,7 @@
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for status in enums['RegistrationPartStati'] %}
-            {{ myentries.append((status.value, i18n(status|string)))|e }}
+            {{ myentries.append((status.value, gettext(status|string)))|e }}
         {% endfor %}
         {{ util.form_input_checkboxes(name="registration_stati", label="Veranstaltungsempfänger",
                 entries=myentries, info="Keine Auswahl entspricht einer Orgaliste.") }}
@@ -84,7 +84,7 @@
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for policy in enums['AttachmentPolicy'] %}
-            {{ myentries.append((policy.value, i18n(policy|string)))|e }}
+            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
         {% endfor %}
         {{ util.form_input_select(name="attachment_policy", label="Anhänge", entries=myentries) }}
         {{ util.form_input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}

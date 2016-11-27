@@ -11,7 +11,7 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set, singularize)
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
-    glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
+    _, glue, PAST_EVENT_FIELDS, PAST_COURSE_FIELDS, PrivilegeError,
     unwrap, now, ProxyShim, INSTITUTION_FIELDS)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -179,7 +179,7 @@ class PastEventBackend(AbstractBackend):
         institution_id = affirm("id", institution_id)
         cascade = affirm("bool", cascade)
         if cascade:
-            raise NotImplementedError("Not available.")
+            raise NotImplementedError(_("Not available."))
 
         current = unwrap(self.get_institutions(rs, (institution_id,)))
         with Atomizer(rs):
@@ -455,9 +455,9 @@ class PastEventBackend(AbstractBackend):
         :rtype: {(int, int): {str: object}}
         """
         if pevent_id is None and pcourse_id is None:
-            raise ValueError("No input specified.")
+            raise ValueError(_("No input specified."))
         if pevent_id is not None and pcourse_id is not None:
-            raise ValueError("Too many inputs specified.")
+            raise ValueError(_("Too many inputs specified."))
         if pevent_id is not None:
             anid = affirm("id", pevent_id)
             entity_key = "pevent_id"
@@ -486,7 +486,7 @@ class PastEventBackend(AbstractBackend):
         """
         moniker = affirm("str_or_None", moniker)
         if not moniker:
-            return None, [], [("pevent_id", ValueError("No input supplied."))]
+            return None, [], [("pevent_id", ValueError(_("No input supplied.")))]
         query = glue("SELECT id FROM past_event.events",
                      "WHERE (title ~* %s OR shortname ~* %s) AND tempus >= %s")
         query2 = glue("SELECT id FROM past_event.events",
@@ -502,15 +502,15 @@ class PastEventBackend(AbstractBackend):
             ret = self.query_all(rs, query,
                                  (moniker, moniker, datetime.date.min))
         if len(ret) == 0:
-            warnings.append(("pevent_id", ValueError("Only fuzzy match.")))
+            warnings.append(("pevent_id", ValueError(_("Only fuzzy match."))))
             ret = self.query_all(rs, query2, (moniker, 0.5, reference))
         if len(ret) == 0:
             ret = self.query_all(rs, query2, (moniker, 0.5, datetime.date.min))
         if len(ret) == 0:
-            return None, [], [("pevent_id", ValueError("No event found."))]
+            return None, [], [("pevent_id", ValueError(_("No event found.")))]
         elif len(ret) > 1:
             return None, warnings, [("pevent_id",
-                                     ValueError("Ambiguous event."))]
+                                     ValueError(_("Ambiguous event.")))]
         else:
             return unwrap(unwrap(ret)), warnings, []
 
@@ -530,7 +530,7 @@ class PastEventBackend(AbstractBackend):
         """
         moniker = affirm("str_or_None", moniker)
         if not moniker:
-            return None, [], [("pcourse_id", ValueError("No input supplied."))]
+            return None, [], [("pcourse_id", ValueError(_("No input supplied.")))]
         pevent_id = affirm("id", pevent_id)
         query = glue("SELECT id FROM past_event.courses",
                      "WHERE title ~* %s AND pevent_id = %s")
@@ -541,13 +541,13 @@ class PastEventBackend(AbstractBackend):
         ## retry with less restrictive conditions until we find something or
         ## give up
         if len(ret) == 0:
-            warnings.append(("pcourse_id", ValueError("Only fuzzy match.")))
+            warnings.append(("pcourse_id", ValueError(_("Only fuzzy match."))))
             ret = self.query_all(rs, query2, (moniker, 0.5, pevent_id))
         if len(ret) == 0:
-            return None, [], [("pcourse_id", ValueError("No course found."))]
+            return None, [], [("pcourse_id", ValueError(_("No course found.")))]
         elif len(ret) > 1:
             return None, warnings, [("pcourse_id",
-                                     ValueError("Ambiguous course."))]
+                                     ValueError(_("Ambiguous course.")))]
         else:
             return unwrap(unwrap(ret)), warnings, []
 
@@ -570,7 +570,7 @@ class PastEventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         if ("cde_admin" not in rs.user.roles
                 or "event_admin" not in rs.user.roles):
-            raise PrivilegeError("Needs both admin privileges.")
+            raise PrivilegeError(_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
             if any(now().date() < part['part_end']

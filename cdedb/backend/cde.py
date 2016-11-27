@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
     affirm_set_validation as affirm_set, singularize, batchify)
 from cdedb.common import (
-    glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
+    _, glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
     LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -159,7 +159,7 @@ class CdEBackend(AbstractBackend):
         data = self.sql_select(rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, ids)
         if (not self.is_admin(rs)
                 and any(e['persona_id'] != rs.user.persona_id for e in data)):
-            raise PrivilegeError("Not privileged.")
+            raise PrivilegeError(_("Not privileged."))
         return {e['id']: e for e in data}
 
     @access("cde_admin")
@@ -280,14 +280,14 @@ class CdEBackend(AbstractBackend):
             lastschrift = unwrap(self.get_lastschrifts(
                 rs, (data['lastschrift_id'],)))
             if lastschrift['revoked_at']:
-                raise RuntimeError("Lastschrift already revoked.")
+                raise RuntimeError(_("Lastschrift already revoked."))
             period = self.current_period(rs)
             if check_unique:
                 transaction_ids = self.list_lastschrift_transactions(
                     rs, lastschrift_ids=(data['lastschrift_id'],),
                     periods=(period,), stati=(stati.issued,))
                 if transaction_ids:
-                    raise RuntimeError("Existing pending transaction.")
+                    raise RuntimeError(_("Existing pending transaction."))
             update = {
                 'submitted_by': rs.user.persona_id,
                 'period_id': period,
@@ -327,21 +327,21 @@ class CdEBackend(AbstractBackend):
         transaction_id = affirm("id", transaction_id)
         status = affirm("enum_lastschrifttransactionstati", status)
         if not status.is_finalized():
-            raise RuntimeError("Non-final target state.")
+            raise RuntimeError(_("Non-final target state."))
         tally = affirm("decimal_or_None", tally)
         with Atomizer(rs):
             transaction = unwrap(self.get_lastschrift_transactions(
                 rs, (transaction_id,)))
             current = const.LastschriftTransactionStati(transaction['status'])
             if current.is_finalized():
-                raise RuntimeError("Transaction already tallied.")
+                raise RuntimeError(_("Transaction already tallied."))
             if tally is None:
                 if status == const.LastschriftTransactionStati.success:
                     tally = transaction['amount']
                 elif status == const.LastschriftTransactionStati.cancelled:
                     tally = decimal.Decimal(0)
                 else:
-                    raise ValueError("Missing tally for failed transaction.")
+                    raise ValueError(_("Missing tally for failed transaction."))
             update = {
                 'id': transaction_id,
                 'processed_at': now(),
@@ -363,7 +363,8 @@ class CdEBackend(AbstractBackend):
                 self.core.change_persona_balance(
                     rs, persona_id, new_balance,
                     const.FinanceLogCodes.lastschrift_transaction_success,
-                    change_note="Successful direct debit transaction.")
+                    change_note=rs.gettext(
+                        "Successful direct debit transaction."))
                 ## Return early since change_persona_balance does the logging
                 return ret
             elif status == const.LastschriftTransactionStati.failure:
@@ -376,7 +377,7 @@ class CdEBackend(AbstractBackend):
             elif status == const.LastschriftTransactionStati.cancelled:
                 code = const.FinanceLogCodes.lastschrift_transaction_cancelled
             else:
-                raise RuntimeError("Impossible.")
+                raise RuntimeError(_("Impossible."))
             self.core.finance_log(rs, code, persona_id, delta, new_balance,
                                   additional_info=update['tally'])
             return ret
@@ -404,7 +405,7 @@ class CdEBackend(AbstractBackend):
             lastschrift = unwrap(self.get_lastschrifts(
                 rs, (transaction['lastschrift_id'],)))
             if transaction['status'] != stati.success:
-                raise RuntimeError("Transaction was not successful.")
+                raise RuntimeError(_("Transaction was not successful."))
             update = {
                 'id': transaction_id,
                 'processed_at': now(),
@@ -420,7 +421,7 @@ class CdEBackend(AbstractBackend):
             self.core.change_persona_balance(
                 rs, persona_id, new_balance,
                 const.FinanceLogCodes.lastschrift_transaction_revoked,
-                change_note="Revoked direct debit transaction")
+                change_note=rs.gettext("Revoked direct debit transaction"))
             lastschrift_update = {
                 'id': lastschrift['id'],
                 'revoked_at': now(),
@@ -475,7 +476,7 @@ class CdEBackend(AbstractBackend):
                 ## Skipping will invalidate permit.
                 return 0
             if lastschrift['revoked_at']:
-                raise RuntimeError("Lastschrift already revoked.")
+                raise RuntimeError(_("Lastschrift already revoked."))
             period = self.current_period(rs)
             insert = {
                 'submitted_by': rs.user.persona_id,
@@ -550,7 +551,7 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             current_id = self.current_period(rs)
             if period['id'] != current_id:
-                raise RuntimeError("Only able to modify current period.")
+                raise RuntimeError(_("Only able to modify current period."))
             return self.sql_update(rs, "cde.org_period", period)
 
     @access("cde_admin")
@@ -565,7 +566,7 @@ class CdEBackend(AbstractBackend):
             current_id = self.current_period(rs)
             current = self.get_period(rs, current_id)
             if not current['balance_done']:
-                raise RuntimeError("Current period not finalized.")
+                raise RuntimeError(_("Current period not finalized."))
             new_period = {
                 'id': current_id + 1,
                 'billing_state': None,
@@ -616,7 +617,7 @@ class CdEBackend(AbstractBackend):
         with Atomizer(rs):
             current_id = self.current_expuls(rs)
             if expuls['id'] != current_id:
-                raise RuntimeError("Only able to modify current expuls.")
+                raise RuntimeError(_("Only able to modify current expuls."))
             return self.sql_update(rs, "cde.expuls_period", expuls)
 
     @access("cde_admin")
@@ -631,7 +632,7 @@ class CdEBackend(AbstractBackend):
             current_id = self.current_expuls(rs)
             current = self.get_expuls(rs, current_id)
             if not current['addresscheck_done']:
-                raise RuntimeError("Current expuls not finalized.")
+                raise RuntimeError(_("Current expuls not finalized."))
             new_expuls = {
                 'id': current_id + 1,
                 'addresscheck_state': None,
@@ -667,7 +668,7 @@ class CdEBackend(AbstractBackend):
             query.spec["is_archived"] = "bool"
         elif query.scope == "qview_cde_user":
             if not self.is_admin(rs):
-                raise PrivilegeError("Admin only.")
+                raise PrivilegeError(_("Admin only."))
             query.constraints.append(
                 ("is_cde_realm", QueryOperators.equal, True))
             query.constraints.append(
@@ -675,5 +676,5 @@ class CdEBackend(AbstractBackend):
             query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
         else:
-            raise RuntimeError("Bad scope.")
+            raise RuntimeError(_("Bad scope."))
         return self.general_query(rs, query)

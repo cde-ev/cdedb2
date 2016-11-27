@@ -34,6 +34,15 @@ endif
 doc:
 	make -C doc html
 
+i18n-refresh:
+	pybabel extract -F ./babel.cfg -k "rs.gettext","rs.ngettext" -o ./i18n/cdedb.pot .
+	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l de -D cdedb
+	pybabel update -i ./i18n/cdedb.pot -d ./i18n/ -l en -D cdedb
+
+i18n-compile:
+	pybabel compile -d ./i18n/ -l de -D cdedb
+	pybabel compile -d ./i18n/ -l en -D cdedb
+
 sample-data:
 	make sql
 	make ldap

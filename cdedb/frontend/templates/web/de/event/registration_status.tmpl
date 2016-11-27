@@ -40,7 +40,7 @@
         {% for part_id, part in registration['parts']|dictsort %}
             <tr>
                 <td>{{ ambience['event']['parts'][part_id]['title']|e }}</td>
-                <td>{{ i18n(part['status']|enum(enums['RegistrationPartStati']))|e }}</td>
+                <td>{{ gettext(part['status']|enum(enums['RegistrationPartStati']))|e }}</td>
             </tr>
         {% endfor %}
         <tr><th colspan="2">Sonstige Angaben</th></tr>

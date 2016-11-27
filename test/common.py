@@ -2,6 +2,7 @@
 
 import datetime
 import functools
+import gettext
 import inspect
 import os.path
 import pytz
@@ -60,12 +61,16 @@ class BackendShim(ProxyShim):
             backend.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets)
         self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
+        self.translator = gettext.translation(
+            'cdedb', languages=('de',),
+            localedir=os.path.join(backend.conf.REPOSITORY_PATH, 'i18n'))
 
     def _setup_requeststate(self, key):
         data = self.sessionproxy.lookupsession(key, "127.0.0.0")
         rs = RequestState(
             key, None, None, None, [], None, None,
-            None, [], {}, "de", None, None)
+            None, [], {}, "de", self.translator.gettext,
+            self.translator.ngettext, None, None)
         vals = {k: data[k] for k in ('persona_id', 'username', 'given_names',
                                      'display_name', 'family_name')}
         rs.user = User(roles=extract_roles(data), **vals)

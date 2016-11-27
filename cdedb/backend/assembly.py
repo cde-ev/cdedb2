@@ -35,7 +35,7 @@ from cdedb.backend.common import (
     access, affirm_validation as affirm, affirm_set_validation as affirm_set,
     Silencer, singularize, AbstractBackend)
 from cdedb.common import (
-    glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
+    _, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize)
 from cdedb.query import QueryOperators
@@ -115,7 +115,7 @@ class AssemblyBackend(AbstractBackend):
         for v in all_votes:
             if v['hash'] == self.encrypt_vote(v['salt'], secret, v['vote']):
                 return v
-        raise ValueError("No vote found.")
+        raise ValueError(_("No vote found."))
 
     def assembly_log(self, rs, code, assembly_id, persona_id=None,
                      additional_info=None):
@@ -185,7 +185,7 @@ class AssemblyBackend(AbstractBackend):
             query.spec["is_assembly_realm"] = "bool"
             query.spec["is_archived"] = "bool"
         else:
-            raise RuntimeError("Bad scope.")
+            raise RuntimeError(_("Bad scope."))
         return self.general_query(rs, query)
 
     def check_attendance(self, rs, *, assembly_id=None, ballot_id=None,
@@ -206,9 +206,9 @@ class AssemblyBackend(AbstractBackend):
         :rtype: bool
         """
         if assembly_id is None and ballot_id is None:
-            raise ValueError("No input specified.")
+            raise ValueError(_("No input specified."))
         if assembly_id is not None and ballot_id is not None:
-            raise ValueError("Too many inputs specified.")
+            raise ValueError(_("Too many inputs specified."))
         if persona_id is None:
             persona_id = rs.user.persona_id
         with Atomizer(rs):
@@ -254,7 +254,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id", assembly_id)
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         attendees = self.sql_select(
             rs, "assembly.attendees", ("persona_id",), (assembly_id,),
             entity_key="assembly_id")
@@ -295,7 +295,7 @@ class AssemblyBackend(AbstractBackend):
         """
         ids = affirm_set("id", ids)
         if not all(self.may_assemble(rs, assembly_id=anid) for anid in ids):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         data = self.sql_select(rs, "assembly.assemblies", ASSEMBLY_FIELDS, ids)
         return {e['id']: e for e in data}
 
@@ -311,7 +311,7 @@ class AssemblyBackend(AbstractBackend):
         data = affirm("assembly", data)
         assembly = unwrap(self.get_assemblies(rs, (data['id'],)))
         if not assembly['is_active']:
-            raise ValueError("Assembly already concluded.")
+            raise ValueError(_("Assembly already concluded."))
         ret = self.sql_update(rs, "assembly.assemblies", data)
         self.assembly_log(rs, const.AssemblyLogCodes.assembly_changed,
                           data['id'])
@@ -342,7 +342,7 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm("id", assembly_id)
         if not self.may_assemble(rs, assembly_id=assembly_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
         data = self.sql_select(rs, "assembly.ballots", ("id", "title"),
                                (assembly_id,), entity_key="assembly_id")
         return {e['id']: e['title'] for e in data}
@@ -409,7 +409,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (data['id'],)))
             if now() > current['vote_begin']:
-                raise ValueError("Unable to modify active ballot.")
+                raise ValueError(_("Unable to modify active ballot."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             if len(bdata) > 1:
                 ret *= self.sql_update(rs, "assembly.ballots", bdata)
@@ -419,7 +419,7 @@ class AssemblyBackend(AbstractBackend):
             if 'candidates' in data:
                 existing = set(current['candidates'].keys())
                 if not(existing >= {x for x in data['candidates'] if x > 0}):
-                    raise ValueError("Non-existing candidates specified.")
+                    raise ValueError(_("Non-existing candidates specified."))
                 new = {x for x in data['candidates'] if x < 0}
                 updated = {x for x in data['candidates']
                            if x > 0 and data['candidates'][x] is not None}
@@ -471,7 +471,7 @@ class AssemblyBackend(AbstractBackend):
             assembly = unwrap(
                 self.get_assemblies(rs, (data['assembly_id'],)))
             if not assembly['is_active']:
-                raise ValueError("Assembly already concluded.")
+                raise ValueError(_("Assembly already concluded."))
             bdata = {k: v for k, v in data.items() if k in BALLOT_FIELDS}
             ## do a little dance, so that creating a running ballot does not
             ## throw an error
@@ -527,7 +527,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             current = unwrap(self.get_ballots(rs, (ballot_id,)))
             if now() > current['vote_begin']:
-                raise ValueError("Unable to remove active ballot.")
+                raise ValueError(_("Unable to remove active ballot."))
             if cascade:
                 with Silencer(rs):
                     if current['candidates']:
@@ -573,7 +573,7 @@ class AssemblyBackend(AbstractBackend):
             if ballot['extended'] is not None:
                 return ballot['extended']
             if now() < ballot['vote_end']:
-                raise ValueError("Normal voting still going on.")
+                raise ValueError(_("Normal voting still going on."))
             votes = self.sql_select(rs, "assembly.votes", ("id",),
                                     (ballot_id,), entity_key="ballot_id")
             update = {
@@ -607,7 +607,7 @@ class AssemblyBackend(AbstractBackend):
                 return None
             assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
             if now() > assembly['signup_end']:
-                raise ValueError("Signup already ended.")
+                raise ValueError(_("Signup already ended."))
 
             new_attendee = {
                 'assembly_id': assembly_id,
@@ -645,9 +645,9 @@ class AssemblyBackend(AbstractBackend):
 
         roles = extract_roles(self.core.get_persona(rs, persona_id))
         if "member" in roles:
-            raise ValueError("Not allowed for members.")
+            raise ValueError(_("Not allowed for members."))
         if "assembly" not in roles:
-            raise ValueError("Only allowed for assembly users.")
+            raise ValueError(_("Only allowed for assembly users."))
 
         return self.process_signup(rs, assembly_id, persona_id)
 
@@ -691,15 +691,15 @@ class AssemblyBackend(AbstractBackend):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             vote = affirm("vote", vote, ballot=ballot)
             if not self.check_attendance(rs, ballot_id=ballot_id):
-                raise ValueError("Must attend to vote.")
+                raise ValueError(_("Must attend to vote."))
             if ballot['extended']:
                 reference = ballot['vote_extension_end']
             else:
                 reference = ballot['vote_end']
             if now() > reference:
-                raise ValueError("Ballot already closed.")
+                raise ValueError(_("Ballot already closed."))
             if now() < ballot['vote_begin']:
-                raise ValueError("Ballot not yet open.")
+                raise ValueError(_("Ballot not yet open."))
 
             query = glue("SELECT has_voted FROM assembly.voter_register",
                          "WHERE ballot_id = %s and persona_id = %s")
@@ -754,7 +754,7 @@ class AssemblyBackend(AbstractBackend):
         secret = affirm("printable_ascii_or_None", secret)
 
         if not self.check_attendance(rs, ballot_id=ballot_id):
-            raise PrivilegeError("Must attend the ballot.")
+            raise PrivilegeError(_("Must attend the ballot."))
 
         with Atomizer(rs):
             query = glue("SELECT has_voted FROM assembly.voter_register",
@@ -815,20 +815,20 @@ class AssemblyBackend(AbstractBackend):
 }
 """)
         if not self.may_assemble(rs, ballot_id=ballot_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
 
         with Atomizer(rs):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
             if ballot['is_tallied']:
                 return False
             if ballot['extended'] is None:
-                raise ValueError("Extension unchecked.")
+                raise ValueError(_("Extension unchecked."))
             if ballot['extended']:
                 reference = ballot['vote_extension_end']
             else:
                 reference = ballot['vote_end']
             if now() < reference:
-                raise ValueError("Voting still going on.")
+                raise ValueError(_("Voting still going on."))
 
             votes = self.sql_select(
                 rs, "assembly.votes", ("vote", "salt", "hash"), (ballot_id,),
@@ -898,7 +898,7 @@ class AssemblyBackend(AbstractBackend):
         with Atomizer(rs):
             assembly = unwrap(self.get_assemblies(rs, (assembly_id,)))
             if not assembly['is_active']:
-                raise ValueError("Assembly not active.")
+                raise ValueError(_("Assembly not active."))
             ballots = self.get_ballots(rs, self.list_ballots(rs, assembly_id))
             timestamp = now()
             if any((ballot['extended'] is None
@@ -906,9 +906,9 @@ class AssemblyBackend(AbstractBackend):
                     or (ballot['extended']
                         and timestamp < ballot['vote_extension_end']))
                    for ballot in ballots.values()):
-                raise ValueError("Open ballots remain.")
+                raise ValueError(_("Open ballots remain."))
             if timestamp < assembly['signup_end']:
-                raise ValueError("Signup still possible.")
+                raise ValueError(_("Signup still possible."))
 
             update = {
                 'id': assembly_id,
@@ -941,12 +941,12 @@ class AssemblyBackend(AbstractBackend):
         :returns: dict mapping attachment ids to titles
         """
         if assembly_id is None and ballot_id is None:
-            raise ValueError("No input specified.")
+            raise ValueError(_("No input specified."))
         if assembly_id is not None and ballot_id is not None:
-            raise ValueError("Too many inputs specified.")
+            raise ValueError(_("Too many inputs specified."))
         if not self.may_assemble(rs, assembly_id=assembly_id,
                                  ballot_id=ballot_id):
-            raise PrivilegeError("Not authorized.")
+            raise PrivilegeError(_("Not privileged."))
 
         if assembly_id is not None:
             column = "assembly_id"
@@ -990,7 +990,7 @@ class AssemblyBackend(AbstractBackend):
         if data.get('ballot_id'):
             ballot = unwrap(self.get_ballots(rs, (data['ballot_id'],)))
             if now() > ballot['vote_begin']:
-                raise ValueError("Unable to modify active ballot.")
+                raise ValueError(_("Unable to modify active ballot."))
         ret = self.sql_insert(rs, "assembly.attachments", data)
         assembly_id = data.get('assembly_id')
         if not assembly_id:
@@ -1017,7 +1017,7 @@ class AssemblyBackend(AbstractBackend):
         if current['ballot_id']:
             ballot = unwrap(self.get_ballots(rs, (current['ballot_id'],)))
             if now() > ballot['vote_begin']:
-                raise ValueError("Unable to modify active ballot.")
+                raise ValueError(_("Unable to modify active ballot."))
         ret = self.sql_delete_one(rs, "assembly.attachments", attachment_id)
         assembly_id = current['assembly_id']
         if not assembly_id:

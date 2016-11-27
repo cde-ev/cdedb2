@@ -173,7 +173,7 @@ class AudiencePolicy(enum.IntEnum):
         elif self == AudiencePolicy.require_member:
             return "member" in roles
         else:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(_("Impossible."))
 
     def sql_test(self):
         """Provide SQL query to check this policy.
@@ -191,7 +191,7 @@ class AudiencePolicy(enum.IntEnum):
         elif self == AudiencePolicy.require_member:
             return "is_member = True"
         else:
-            raise RuntimeError("Impossible.")
+            raise RuntimeError(_("Impossible."))
 
 @enum.unique
 class LastschriftTransactionStati(enum.IntEnum):

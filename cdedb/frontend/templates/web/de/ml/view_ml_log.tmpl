@@ -25,7 +25,7 @@
             {% for entry in log %}
                 <tr>
                     <td>{{ entry['ctime']|datetime|e }}</td>
-                    <td>{{ i18n(enums['MlLogCodes'](entry['code'])|string)|e }}</td>
+                    <td>{{ gettext(enums['MlLogCodes'](entry['code'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
                             {{ util.persona_anchor(personas[entry['submitted_by']]) }}
@@ -51,7 +51,7 @@
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in enums['MlLogCodes'] %}
-                {{ myentries.append((code.value, i18n(code|string)))|e }}
+                {{ myentries.append((code.value, gettext(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                     entries=myentries, small=True) }}

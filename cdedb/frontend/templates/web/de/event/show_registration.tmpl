@@ -38,7 +38,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         <tr>
             <td>Geburtstag/Altersklasse</td>
             <td>
-                {{ persona['birthday']|e }} ({{ i18n(age|string)|e }})
+                {{ persona['birthday']|e }} ({{ gettext(age|string)|e }})
             </td>
         </tr>
         <tr>
@@ -123,7 +123,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
             <tr>
                 <td>Status</td>
                 <td>
-                    {{ i18n(ambience['registration']['parts'][part_id]['status']
+                    {{ gettext(ambience['registration']['parts'][part_id]['status']
                             |enum(enums['RegistrationPartStati']))|e }}
                 </td>
             </tr>

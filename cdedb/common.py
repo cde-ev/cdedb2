@@ -28,8 +28,8 @@ class RequestState:
     enough to not be non-nice).
     """
     def __init__(self, sessionkey, user, request, response, notifications,
-                 mapadapter, requestargs, urlmap, errors, values, lang, coders,
-                 begin):
+                 mapadapter, requestargs, urlmap, errors, values, lang, gettext,
+                 ngettext, coders, begin):
         """
         :type sessionkey: str or None
         :type user: :py:class:`User`
@@ -62,6 +62,10 @@ class RequestState:
           integration with the werkzeug provided data.
         :type lang: str
         :param lang: language code for i18n, currently only 'de' is valid
+        :type gettext: callable
+        :param gettext: translation function as in the gettext module
+        :type ngettext: callable
+        :param lang: translation function as in the gettext module
         :type coders: {str: callable}
         :param coders: Functions for encoding and decoding parameters primed
           with secrets. This is hacky, but sadly necessary.
@@ -82,6 +86,8 @@ class RequestState:
             values = werkzeug.datastructures.MultiDict(values)
         self.values = values
         self.lang = lang
+        self.gettext = gettext
+        self.ngettext = ngettext
         self._coders = coders
         self.begin = begin
         ## Visible version of the database connection
@@ -100,7 +106,8 @@ class RequestState:
         :type message: str
         """
         if ntype not in NOTIFICATION_TYPES:
-            raise ValueError("Invalid notification type {} found".format(ntype))
+            raise ValueError(_("Invalid notification type {t} found"),
+                             {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))
 
@@ -244,7 +251,7 @@ class ProxyShim:
                     if not self._internal:
                         rs.conn = None
             else:
-                raise PrivilegeError("Not in access list.")
+                raise PrivilegeError(_("Not in access list."))
         return new_fun
 
     def __getattr__(self, name):
@@ -423,7 +430,7 @@ def _small_int_to_words(num, lang):
     :rtype: str
     """
     if num < 0 or num > 999:
-        raise ValueError("Out of scope.")
+        raise ValueError(_("Out of scope."))
     digits = tuple((num // 10**i) % 10 for i in range(3))
     if lang == "de":
         atoms = ("null", "ein", "zwei", "drei", "vier", "fünf", "sechs",
@@ -447,7 +454,7 @@ def _small_int_to_words(num, lang):
             ret += tens[digits[1]]
         return ret
     else:
-        raise NotImplementedError("Not supported.")
+        raise NotImplementedError(_("Not supported."))
 
 def int_to_words(num, lang):
     """Convert an integer into a written representation.
@@ -460,7 +467,7 @@ def int_to_words(num, lang):
     :rtype: str
     """
     if num < 0 or num > 999999:
-        raise ValueError("Out of scope.")
+        raise ValueError(_("Out of scope."))
     if lang == "de":
         if num == 0:
             return "null"
@@ -477,7 +484,7 @@ def int_to_words(num, lang):
                 ret += number_word + multiplier
         return ret
     else:
-        raise NotImplementedError("Not supported.")
+        raise NotImplementedError(_("Not supported."))
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
@@ -581,7 +588,7 @@ def schulze_evaluate(votes, candidates):
         for index, sublist in enumerate(alist):
             if element in sublist:
                 return index
-        raise ValueError("Not in list.")
+        raise ValueError(_("Not in list."))
     ## First we count the number of votes prefering x to y
     counts = {(x, y): 0 for x in candidates for y in candidates}
     for vote in split_votes:
@@ -660,7 +667,7 @@ def unwrap(single_element_list, keys=False):
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
             or len(single_element_list) != 1):
-        raise RuntimeError("Unable to unwrap!")
+        raise RuntimeError(_("Unable to unwrap!"))
     if isinstance(single_element_list, collections.abc.Mapping):
         if keys:
             single_element_list = single_element_list.keys()
@@ -791,6 +798,10 @@ class SubscriptionStates(enum.IntEnum):
     unsubscribed = 1 #:
     subscribed = 2 #:
     requested = 10 #: A subscription request is waiting for moderation.
+
+def _(x):
+    """Alias of the identity for i18n."""
+    return x
 
 def asciificator(s):
     """Pacify a string.
