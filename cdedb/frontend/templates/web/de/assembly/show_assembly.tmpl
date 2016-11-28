@@ -1,5 +1,7 @@
 {% set sidenav_active='assembly_show' %}
 {% extends "web/de/assembly/base.tmpl" %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint = 'weak' %}
 {% block title %}{{ ambience['assembly']['title']|e }}{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
@@ -14,6 +16,11 @@
                 {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-sm btn-danger",
                         icon="ban-circle") }}
             </form>
+            <script type="text/javascript">
+                $(function() {
+                    $('#concludeassemblyform').cdedbProtectAction();
+                });
+            </script>
             {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), "Log",
                     icon="list-alt") }}
         {% endif %}
