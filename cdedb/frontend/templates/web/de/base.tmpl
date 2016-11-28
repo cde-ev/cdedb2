@@ -23,7 +23,7 @@
         {% block scripts %}{% endblock %}
     </head>
     <body>
-        <div class="container page">
+        <div class="container page" id="maincontainer">
             <div class="clearfix">
                 <div class="logo pull-left">
                     <img src="{{ staticurl("logo.jpg")|e }}" alt="CdE Datenbank" />
@@ -107,12 +107,12 @@
                 </div><!-- /.navbar-collapse -->
             </nav>
 
-            <div class="row row-wide">
-                <div class="col-md-3 col-wide-3" role="navigation">
+            <div class="row">
+                <div class="col-md-3" role="navigation">
                     {% block navigation %}
                     {% endblock %}
                 </div>
-                <div class="col-md-9 col-wide-auto" role="main">
+                <div class="col-md-9" role="main">
                     {% if self.breadcrumb %}
                         <ol class="breadcrumb breadcrumb-hanging">{% block breadcrumb %}{% endblock %}</ol>
                     {% endif %}

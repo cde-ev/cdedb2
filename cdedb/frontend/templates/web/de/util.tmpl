@@ -562,6 +562,7 @@
                     $('#queryform').data('cdedbQueryForm').setIdFilter(list);
                     $('#queryform').submit();
                 });
+                $('#result-container').cdedbMoveToWidePage($('.btn-trigger-wide'));
                 $('#js-button-group').show();
             });
         </script>
@@ -581,7 +582,11 @@
               id="btn-select-filter">
                 {{ make_icon('share') }} <span class="hidden-xs">nur ausgewählte</span>
             </button>
+            <button type="button" class="btn btn-sm btn-trigger-wide" title="Tabelle breiter darstellen">
+                {{ make_icon('resize-horizontal') }}
+            </button>
         </div>
+        <div class="table-container" id="result-container">
         <table class="table table-condensed table-hover ls-list" id="query-result">
             <thead>
                 <tr>
@@ -645,6 +650,7 @@
             {% endfor %}
             </tbody>
         </table>
+        </div>
     {% endif %}
 {% endmacro %}
 
