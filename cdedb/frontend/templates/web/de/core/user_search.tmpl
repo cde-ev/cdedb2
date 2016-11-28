@@ -25,12 +25,11 @@
         <div class="col-md-4">
             {% call util.bootstrap_panel(title="Aktionen", aclass="panel-warning") %}
                     <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
+                        <div class="sr-only">Benutzer nach ID suchen</div>
                         <div class="input-group">
                             <input type="text" name="phrase" class="form-control" id="input-showuser-id" />
                             <span class="input-group-btn">
-                                <button type="submit" class="btn btn-primary" title="Suchen">
-                                    <span class="glyphicon glyphicon-search"></span>
-                                </button>
+                                {{ util.input_submit("", icon='search', title='Suchen', arialabel="Suchen") }}
                             </span>
                         </div>
                     </form>

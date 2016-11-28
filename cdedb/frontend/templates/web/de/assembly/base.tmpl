@@ -22,15 +22,14 @@
 
 {% block navigation %}
     {% if ambience['assembly'] %}
-        <h2 class="sr-only">Navigation</h2>
         <p>
             {{ util.href(cdedblink("assembly/index"), "Zur Versammlungs-Übersicht", icon="circle-arrow-up") }}
         </p>
 
-        <h4>{{ util.make_icon('bullhorn')}} {{ ambience['assembly']['title'] }}</h4>
+        <h4>{{ util.make_icon('bullhorn', arialabel='Versammlung') }}
+            {{ ambience['assembly']['title'] }}</h4>
         {{ assembly_inner_navigation(ambience['assembly']) }}
     {% else %}
-        <h2 class="sr-only">Navigation</h2>
         <h4>Versammlungen</h4>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("assembly/index"), "Übersicht", icon="triangle-right",

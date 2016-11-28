@@ -87,9 +87,7 @@
                     <form action="{{ cdedblink('core/genesis_timeout', {'case_id': case_id})|e }}" method="POST"
                      id="genesistimeoutform{{ loop.index|e }}" style="display: inline;" class="timeout-form">
                         {{ util.input_hidden(name="case_id", value=case_id) }}
-                        <button type="submit" class="btn btn-danger btn-xs">
-                            <span class="glyphicon glyphicon-trash"></span> Widerrufen
-                        </button>
+                        {{ util.input_submit("Widerrufen", icon='trash', aclass='btn btn-danger btn-xs') }}
                     </form>
                 </li>
             {% endfor %}

@@ -3,7 +3,6 @@
 {% import "web/de/util.tmpl" as util with context %}
 {% block navigation %}
     {% if "persona" in user.roles %}
-        <h2 class="sr-only">Navigation</h2>
         <h4>Start</h4>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("core/index"), "Start", aclass="list-group-item",

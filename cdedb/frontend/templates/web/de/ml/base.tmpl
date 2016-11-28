@@ -21,7 +21,6 @@
 {% endmacro %}
 
 {% block navigation %}
-    <h2 class="sr-only">Navigation</h2>
     {% if ambience['mailinglist'] %}
         <p>
             {% if is_admin and not ambience['mailinglist']['is_active'] %}
@@ -32,7 +31,8 @@
             {% endif %}
         </p>
 
-        <h4><span class="glyphicon glyphicon-envelope"></span> {{ ambience['mailinglist']['title'] }}</h4>
+        <h4>{{ util.make_icon('envelope', arialabel='Mailingliste') }}
+            {{ ambience['mailinglist']['title'] }}</h4>
         {{ ml_inner_navigation(ambience['mailinglist']) }}
     {% else %}
         <h4>Mailinglisten</h4>

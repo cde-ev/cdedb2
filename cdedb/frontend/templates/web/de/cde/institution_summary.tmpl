@@ -83,7 +83,7 @@
         </table>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                <span class="glyphicon glyphicon-plus"></span> Organisation hinzufügen
+                {{ util.make_icon('plus') }} Organisation hinzufügen
             </button>
         </p>
         {{ util.input_submit(value="Speichern", readonly=is_locked) }}

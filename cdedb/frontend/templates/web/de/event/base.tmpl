@@ -70,13 +70,13 @@
 {% endmacro %}
 
 {% block navigation %}
-    <h2 class="sr-only">Navigation</h2>
     {% if ambience['event'] %}
         <p>
             {{ util.href(cdedblink("event/index"), "Zur Veranstaltungs-Übersicht", icon="circle-arrow-up") }}
         </p>
 
-        <h4><span class="glyphicon glyphicon-blackboard"></span> {{ ambience['event']['title'] }}</h4>
+        <h4>{{ util.make_icon('blackboard', arialabel='Veranstaltung') }}
+            {{ ambience['event']['title'] }}</h4>
         {{ one_event_links(ambience['event']) }}
     {% else %}
         <h4>Veranstaltungen</h4>

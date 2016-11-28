@@ -107,7 +107,8 @@
                 <dd>{{ data['id']|cdedbid|e }}</dd>
                 {% if is_relative_admin %}
                     <dt>Account aktiv</td>
-                    <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox') }}</dd>
+                    <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
+                                              titles=['nein', 'ja']) }}</dd>
                 {% endif %}
             </dl>
 

@@ -76,6 +76,12 @@ ul.slim {
 .list-group-condensed .list-group-item {
     padding: 4px 6px;
 }
+.list-group-item.row {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
 .list-group-hover .list-group-item:hover{
     background-color: #f5f5f5;
 }
@@ -352,6 +358,7 @@ p.textbox {
     padding: 5px 10px 5px 0;
     background: #fff;
     display: inline-block;
+    min-width: 100%;
 }
 .wide-content-page {
     display: inline-block;

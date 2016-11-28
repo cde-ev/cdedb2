@@ -128,10 +128,8 @@
 					class="success-form">
 				    {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
 				    {{ util.input_hidden(name="status",
-					    value=enums['LastschriftTransactionStati'].success.value) }}
-                                    <button type="submit" class="btn btn-xs btn-success">
-                                        <span class="glyphicon glyphicon-ok"></span> Erfolg
-                                    </button>
+					                     value=enums['LastschriftTransactionStati'].success.value) }}
+                    {{ util.input_submit(value='Erfolg', aclass="btn btn-xs btn-success", icon="ok") }}
 				</form>
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
 							   {'lastschrift_id': transaction['lastschrift_id'],
@@ -139,10 +137,8 @@
 					id="transactioncancelform{{ transaction_id|e }}" style="display: inline;">
 				    {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
 				    {{ util.input_hidden(name="status",
-					    value=enums['LastschriftTransactionStati'].cancelled.value) }}
-				    <button type="submit" class="btn btn-xs btn-warning">
-					<span class="glyphicon glyphicon-remove"></span> Abbruch
-				    </button>
+					                     value=enums['LastschriftTransactionStati'].cancelled.value) }}
+                    {{ util.input_submit(value='Abbruch', aclass="btn btn-xs btn-warning", icon="remove") }}
 				</form>
 				<form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
 							   {'lastschrift_id': transaction['lastschrift_id'],
@@ -151,9 +147,7 @@
 					class="failure-form">
 				    {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
 				    {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
-				    <button type="submit" class="btn btn-xs btn-danger">
-					<span class="glyphicon glyphicon-exclamation-sign"></span> Geplatzt
-				    </button>
+                    {{ util.input_submit(value='Geplatzt', aclass="btn btn-xs btn-danger", icon="exclamation-sign") }}
 				</form>
 			    {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
@@ -161,20 +155,18 @@
                                 <form action="{{ cdedblink('cde/lastschrift_receipt',
                                                            {'lastschrift_id': transaction['lastschrift_id'],
                                                             'transaction_id': transaction_id})|e }}"
-					method="GET" id="receiptform{{ transaction_id|e }}"
-					class="rollback-form">
-				    <button type="submit" class="btn btn-xs btn-default">
-					<span class="glyphicon glyphicon-download"></span> Spendenbescheinigung
-				    </button>
+                    					method="GET" id="receiptform{{ transaction_id|e }}"
+                    					class="rollback-form">
+                    {{ util.input_submit(value="Spendenbescheinigung", aclass="btn btn-xs btn-default",
+                                         icon='download') }}
                                 </form>
 				<form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
 							   {'lastschrift_id': transaction['lastschrift_id'],
                                                             'transaction_id': transaction_id})|e }}"
 					method="POST" id="transactionrollbackform{{ transaction_id|e }}">
 				    {{ util.input_hidden(name="persona_id", value=values['persona_id']) }}
-				    <button type="submit" class="btn btn-xs btn-warning">
-					<span class="glyphicon glyphicon-transfer"></span> Rückbuchung
-				    </button>
+                    {{ util.input_submit(value="Rückbuchung", aclass="btn btn-xs btn-warning",
+                                         icon='transfer') }}
 				</form>
                             {% endif %}
                         {% endif %}

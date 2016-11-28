@@ -24,7 +24,7 @@
     </head>
     <body>
         <div class="container page" id="maincontainer">
-            <div class="clearfix">
+            <div class="clearfix" role="banner">
                 <div class="logo pull-left">
                     <img src="{{ staticurl("logo.jpg")|e }}" alt="CdE Datenbank" />
                 </div>
@@ -51,27 +51,28 @@
                     <p class="navbar-collapse-header">Hauptmenü</p>
                     <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
                             data-target="#navbar-collapse-1" aria-expanded="false">
-                        <span class="sr-only">Toggle navigation</span>
+                        <span class="sr-only">Hauptmenü einblenden</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
                 </div>
 
-                <div class="collapse navbar-collapse" id="navbar-collapse-1" role="navigation">
+                <div class="collapse navbar-collapse" id="navbar-collapse-1">
                     {% if "persona" in user.roles %}
                         <ul class="nav navbar-nav navbar-right">
                             <li>
                                 <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform"
                                   class="navbar-form">
                                     <p class="navbar-text">
+                                        <span class="sr-only">Eingeloggt als</span>
                                         <span id="displayname">
                                             {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
                                         </span>
                                     </p>
                                     <button type="submit" name="submitlogout" value="Abmelden"
                                       class="btn navbar-button btn-default" title="Logout">
-                                        <span class="glyphicon glyphicon-off"></span>
+                                        <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
                                         <span class="visible-xs-inline-block">Logout</span>
                                     </button>
                                 </form>
@@ -109,11 +110,13 @@
 
             <div class="row">
                 <div class="col-md-3" role="navigation">
+                    <h4 class="sr-only">Seiten-Navigation</h4>
                     {% block navigation %}
                     {% endblock %}
                 </div>
                 <div class="col-md-9" role="main">
                     {% if self.breadcrumb %}
+                        <h6 id="bc-title" class="sr-only">Du bist hier:</h6>
                         <ol class="breadcrumb breadcrumb-hanging">{% block breadcrumb %}{% endblock %}</ol>
                     {% endif %}
                     {% block heading %}
@@ -128,8 +131,8 @@
                                 messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:",
                                                 "warning" : "Warnung!", "error" : "Fehler!"} %}
                             {% for ntype, message, params in notifications %}
-                                <div class="alert alert-{{ alerttypes[ntype] }}">
-                                    <span class="glyphicon glyphicon-{{ icontypes[ntype] }}"></span>
+                                <div class="alert alert-{{ alerttypes[ntype] }}" role="alert">
+                                    <span class="glyphicon glyphicon-{{ icontypes[ntype] }}" aria-hidden="true"></span>
                                     <strong>{{ messagetypes[ntype] }}</strong>
                                     <span class="notificationMessage">{{ gettext(message).format(**params)|e }}</span>
                                 </div>
@@ -151,7 +154,8 @@
                 <a href="mailto:cdedb@lists.cde-ev.de">&lt;cdedb@lists.cde-ev.de&gt;</a>
                 <br /> Version {{ GIT_COMMIT|e }}
                 {% if CDEDB_DEV %}
-                    <br /> {{ debugstring|e }} ; time taken: {{ generation_time()|e }}
+                    <br /><br />
+                    <div style="word-wrap: break-word;">{{ debugstring|e }} ; time taken: {{ generation_time()|e }}</div>
                 {% endif %}
             {% endblock %}
         </div>

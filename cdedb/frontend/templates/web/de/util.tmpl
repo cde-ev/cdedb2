@@ -36,17 +36,23 @@
     {% endif %}
 {% endmacro %}
 
-{% macro make_icon(icon, aclass='', title='') %}
-    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}" {% if title %}title="{{ title|e }}"{% endif %}></span>
-{% endmacro %}
+{% macro make_icon(icon, aclass='', title='', arialabel='') -%}
+    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}" {% if title %}title="{{ title|e }}"{% endif %}
+            aria-hidden="true"></span>
+    {%- if arialabel %}
+        <span class="sr-only">{{ arialabel|e }}</span>
+    {%- endif %}
+{%- endmacro %}
 
 {% macro deko_checkbox(checked, anid='', titles=[]) %}
     {% if checked %}
         <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"
-                {% if titles[1] %}title="{{ titles[1] }}"{% endif %}></span>
+                {% if titles[1] %}title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{{ '' -}}
+        <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
     {% else %}
-        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %}  data-checked="False"
-                {% if titles[0] %}title="{{ titles[0] }}"{% endif %}></span>
+        <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="False"
+                {% if titles[0] %}title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{{ '' -}}
+        <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
     {% endif %}
 {% endmacro %}
 
@@ -54,8 +60,8 @@
 {% if readonly %}<span {%- else -%}<a href="{{ ref|e }}"{% endif %}
 {% if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif %}{% if readonly %} link-disabled{% endif %}"
-{%- endif %} >
-{%- if icon %}{{ make_icon(icon) }}{% endif %}{{ label|e }}
+{%- endif %}>
+{%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
@@ -277,10 +283,11 @@
 {% endmacro %}
 
 {% macro input_submit(value='Speichern', name="submitform", anid='', aclass='btn btn-primary', icon="ok",
-        readonly=False, title='') %}
+        readonly=False, title='', arialabel='') %}
     <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
             id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}
-            {% if title %} title="{{ title|e }}"{% endif %} value="True">
+            {% if title %} title="{{ title|e }}"{% endif %} value="True"
+            {% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}>
             {% if icon %}{{ make_icon(icon) }} {% endif %}{{ value|e }}</button>
 {% endmacro %}
 
@@ -524,8 +531,11 @@
         <script type="text/javascript">
             $('.default-query').each(function(){
                 var url = $(this).attr('href');
-                var $link = $('<a></a>',{'href':'#', 'title':'im Formular anzeigen', 'class': 'btn btn-default btn-xs'})
-                    .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open'}))
+                var $link = $('<a></a>', {'href':'#',
+                                          'title':'im Formular anzeigen',
+                                          'aria-label':'im Formular anzeigen',
+                                          'class': 'btn btn-default btn-xs'})
+                    .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open', 'aria-hidden':'true'}))
                     .click(function(){
                         $('#queryform').data('cdedbQueryForm').queryFromURL(url);
                         return false;

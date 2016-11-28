@@ -10,15 +10,15 @@
 {% block content %}
     <form action="{{ cdedblink('cde/money_transfers')|e }}" method="POST" id="transfersform">
         {{ util.input_hidden("checksum") }}
-        {{ util.form_input_checkbox("sendmail", label="Benachritigung verschicken", horizontal=False) }}
+        {{ util.form_input_checkbox("sendmail", label="Benachrichtigung verschicken", horizontal=False) }}
         {{ util.form_input_textarea(name="transfers", label="Daten", horizontal=False, rows=8) }}
 
         <p class="help-block">
-            <span class="glyphicon glyphicon-info-sign"></span> Bitte einen Datensatz pro Zeile einfügen. Das Format ist
+            {{ util.make_icon('info-sign', arialabel="Info") }} Bitte einen Datensatz pro Zeile einfügen. Das Format ist
         </p>
         <pre>&quot;ID&quot;;&quot;Nachname&quot;;&quot;Vorname&quot;;&quot;Betrag&quot;;&quot;Kommentar&quot;</pre>
         <p class="help-block">
-            <span class="glyphicon glyphicon-info-sign"></span> Der Kommentar ist optional.
+            {{ util.make_icon('info-sign', arialabel="Info") }} Der Kommentar ist optional.
         </p>
 
         {% if data %}
@@ -30,7 +30,7 @@
                 </strong>
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}
-                        <ul class="list-unstyled"">
+                        <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
                                     {{ util.make_icon('exclamation-sign', title="Fehler") }}
@@ -53,7 +53,7 @@
 
         {% if values['checksum'] %}
             <p class="help-block">
-                <span class="glyphicon glyphicon-info-sign"></span>
+                {{ util.make_icon('info-sign', arialabel="Info") }}
                 Falls die Eingabe geändert wird, wird das Validierungsergebnis erneut angezeigt.
             </p>
             {{ util.form_input_submit(value="Abschicken", horizontal=False) }}

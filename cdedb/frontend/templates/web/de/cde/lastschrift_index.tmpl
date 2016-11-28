@@ -40,18 +40,14 @@
                         <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
                                 id="generatetransactionform{{ lastschrift_id|e }}">
                             {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                            <button type="submit" class="btn btn-xs btn-default">
-                                <span class="glyphicon glyphicon-download"></span> Einzeldatei
-                            </button>
+                            {{ util.input_submit("Einzeldatei", icon='download', aclass='btn btn-xs btn-default') }}
                         </form>
                     </td>
                     <td>
                         <form action="{{ cdedblink('cde/lastschrift_skip', {'lastschrift_id': lastschrift_id})|e }}"
                                 method="POST" id="skiptransactionform{{ lastschrift_id|e }}" class="skip-form">
                             {{ util.input_hidden(name="lastschrift_id", value=lastschrift_id) }}
-                            <button type="submit" class="btn btn-xs btn-warning">
-                                <span class="glyphicon glyphicon-pause"></span> Pausieren
-                            </button>
+                            {{ util.input_submit("Pausieren", icon='pause', aclass='btn btn-xs btn-warning') }}
                         </form>
                     </td>
                </tr>
@@ -62,9 +58,7 @@
 
     <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
       id="generatetransactionsform">
-        <button type="submit" class="btn btn-primary">
-            <span class="glyphicon glyphicon-download"></span> SEPA-Datei generieren
-        </button>
+        {{ util.input_submit("SEPA-Datei generieren", icon='download', aclass='btn btn-primary') }}
     </form>
 
     <h2>Offene Einzüge</h2>
