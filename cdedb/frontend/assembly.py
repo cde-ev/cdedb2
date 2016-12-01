@@ -350,7 +350,8 @@ class AssemblyFrontend(AbstractUserFrontend):
 
     @access("assembly_admin", modi={"POST"})
     @REQUESTdatadict("title", "description", "vote_begin", "vote_end",
-                     "vote_extension_end", "quorum", "votes", "notes")
+                     "vote_extension_end", "quorum", "votes", "notes",
+                     "use_bar")
     def create_ballot(self, rs, assembly_id, data):
         """Make a new ballot."""
         data['assembly_id'] = assembly_id
