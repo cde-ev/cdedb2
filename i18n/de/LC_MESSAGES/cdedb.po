@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2016-12-01 17:06+0100\n"
-"PO-Revision-Date: 2016-12-01 17:07+0100\n"
+"POT-Creation-Date: 2016-12-01 19:01+0100\n"
+"PO-Revision-Date: 2016-12-01 19:01+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1201,7 +1201,7 @@ msgstr "Admin-Privilegien geändert."
 
 #: cdedb/backend/core.py:849
 msgid "Not a CdE account."
-msgstr ""
+msgstr "Account ist nicht im CdE-Bereich."
 
 #: cdedb/backend/core.py:864
 msgid "Membership change."
@@ -1884,8 +1884,8 @@ msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 #: cdedb/frontend/core.py:1231
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
-"E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet werden und "
-"Du dann er E-Mail informiert werden."
+"E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet werden und"
+" Du dann per E-Mail informiert werden."
 
 #: cdedb/frontend/core.py:1282
 msgid "Case not to review."
@@ -2127,3 +2127,4 @@ msgstr "Diese Seite bietet mit JavaScript erweiterte Funktionalität."
 #: cdedb/frontend/templates/web/de/base.tmpl:42
 msgid "Diese Seite ist mit JavaScript einfacher nutzbar."
 msgstr "Diese Seite ist mit JavaScript einfacher nutzbar."
+
