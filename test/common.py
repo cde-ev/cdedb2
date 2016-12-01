@@ -370,7 +370,7 @@ class FrontendTest(unittest.TestCase):
     def fetch_mail(self):
         elements = self.response.lxml.xpath("//div[@class='alert alert-info']/span/text()")
         def _extract_path(s):
-            regex = r"Email als (.*) auf der Festplatte gespeichert."
+            regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
             ret = re.match(regex, s).group(1)
             return ret
         mails = [_extract_path(x) for x in elements if x.startswith("Email als ")]

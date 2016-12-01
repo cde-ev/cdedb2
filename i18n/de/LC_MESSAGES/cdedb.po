@@ -696,7 +696,7 @@ msgstr "Enthält eine verbotene Zeichenkette."
 
 #: cdedb/validation.py:647
 msgid "Must be a valid email address."
-msgstr "Muss eine valide E-Mailadresse sein."
+msgstr "Muss eine valide E-Mail-Adresse sein."
 
 #: cdedb/validation.py:821
 msgid "Only one of creation, transition may be specified."
@@ -1213,7 +1213,7 @@ msgstr "Noch zu erledigen."
 
 #: cdedb/backend/core.py:893
 msgid "Only admins may unset a username."
-msgstr "Löschen von E-Mailadressen nur durch Admins."
+msgstr "Löschen von E-Mail-Adressen nur durch Admins."
 
 #: cdedb/backend/core.py:897
 msgid "Name collision."
@@ -1221,7 +1221,7 @@ msgstr "E-Mail-Adresse bereits vorhanden. "
 
 #: cdedb/backend/core.py:911
 msgid "Username change."
-msgstr "Emailadresse geändert."
+msgstr "E-Mail-Adresse geändert."
 
 #: cdedb/backend/core.py:916 cdedb/frontend/core.py:1202
 #: cdedb/frontend/core.py:1295
@@ -1654,7 +1654,7 @@ msgstr "CdE-Mitgliedschaft verlängern"
 
 #: cdedb/frontend/cde.py:1290 cdedb/frontend/cde.py:1480
 msgid "Started sending mail."
-msgstr "Emailversand hat begonnen."
+msgstr "E-Mail-Versand hat begonnen."
 
 #: cdedb/frontend/cde.py:1299
 msgid "Wrong timing for ejection."
@@ -1698,7 +1698,7 @@ msgstr "Adresskontrollmail für den ExPuls-Versand"
 
 #: cdedb/frontend/cde.py:1476
 msgid "Not sending mail."
-msgstr "Keine Email verschickt."
+msgstr "Keine E-Mail verschickt."
 
 #: cdedb/frontend/cde.py:1489
 msgid "Addresscheck not done."
@@ -1745,7 +1745,7 @@ msgstr ""
 
 #: cdedb/frontend/common.py:710
 msgid "Stored email to hard drive at {path}"
-msgstr "Email als {path} auf der Festplatte gespeichert."
+msgstr "E-Mail als {path} auf der Festplatte gespeichert."
 
 #: cdedb/frontend/common.py:916
 msgid "{}.tex"
@@ -1843,7 +1843,7 @@ msgstr "CdEDB Passwort zurücksetzen"
 
 #: cdedb/frontend/core.py:1021
 msgid "Email sent."
-msgstr "Email abgeschickt."
+msgstr "E-Mail abgeschickt."
 
 #: cdedb/frontend/core.py:1066
 msgid "Password reset."
@@ -1851,11 +1851,11 @@ msgstr "Passwort zurückgesetzt."
 
 #: cdedb/frontend/core.py:1086
 msgid "CdEDB username change"
-msgstr "CdEDB Neue Emailadresse verifizieren"
+msgstr "CdEDB Neue E-Mail-Adresse verifizieren"
 
 #: cdedb/frontend/core.py:1117 cdedb/frontend/core.py:1147
 msgid "Username changed."
-msgstr "E-Mailadresse geändert."
+msgstr "E-Mail-Adresse geändert."
 
 #: cdedb/frontend/core.py:1171
 msgid "Toggling activity to {activity}."
@@ -1867,7 +1867,7 @@ msgstr "Begründung zu lang."
 
 #: cdedb/frontend/core.py:1198
 msgid "Email address already in DB. Reset password."
-msgstr "E-Mailadresse bereits vorhanden. Bitte das Passwort zurücksetzen."
+msgstr "E-Mail-Adresse bereits vorhanden. Bitte das Passwort zurücksetzen."
 
 #: cdedb/frontend/core.py:1206 cdedb/frontend/core.py:1242
 msgid "CdEDB account request"
@@ -1884,8 +1884,8 @@ msgstr "Verifikation fehlgeschlagen. Bitte an die Verwaltung wenden."
 #: cdedb/frontend/core.py:1231
 msgid "Email verified. Wait for moderation. You will be notified by mail."
 msgstr ""
-"Emailadresse verifiziert. Deine Anfrage wird bald bearbeitet werden und "
-"Du dann er Email informiert werden."
+"E-Mail-Adresse verifiziert. Deine Anfrage wird bald bearbeitet werden und "
+"Du dann er E-Mail informiert werden."
 
 #: cdedb/frontend/core.py:1282
 msgid "Case not to review."
@@ -2102,7 +2102,7 @@ msgstr "Adressänderung unzulässig."
 
 #: cdedb/frontend/ml.py:475
 msgid "Confirm email address for CdE mailing list"
-msgstr "Emailadresse für Mailingliste bestätigen"
+msgstr "E-Mail-Adresse für Mailingliste bestätigen"
 
 #: cdedb/frontend/ml.py:479
 msgid "Confirmation email sent."
