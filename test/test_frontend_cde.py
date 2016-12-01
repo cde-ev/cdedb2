@@ -525,8 +525,8 @@ class TestCdEFrontend(FrontendTest):
             (r"postal_code:\W*Ungültige Postleitzahl.",),
             (r"Zeilen 13 und 14 sind identisch.",),
             (r"Zeilen 13 und 14 sind identisch.",),
-            (r"pevent_id\W*Only fuzzy match.",
-             r"pcourse_id\W*Only fuzzy match.",),
+            (r"pevent_id\W*Nur unscharfer Treffer.",
+             r"pcourse_id\W*Nur unscharfer Treffer.",),
             )
         for ex, out in zip(expectation, output):
             for piece in ex:

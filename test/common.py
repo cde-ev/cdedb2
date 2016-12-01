@@ -373,7 +373,7 @@ class FrontendTest(unittest.TestCase):
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
             ret = re.match(regex, s).group(1)
             return ret
-        mails = [_extract_path(x) for x in elements if x.startswith("Email als ")]
+        mails = [_extract_path(x) for x in elements if x.startswith("E-Mail als ")]
         ret = []
         for path in mails:
             with open(path) as f:
