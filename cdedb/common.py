@@ -106,7 +106,7 @@ class RequestState:
         :type message: str
         """
         if ntype not in NOTIFICATION_TYPES:
-            raise ValueError(_("Invalid notification type {t} found"),
+            raise ValueError(_("Invalid notification type {t} found."),
                              {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))
@@ -430,7 +430,7 @@ def _small_int_to_words(num, lang):
     :rtype: str
     """
     if num < 0 or num > 999:
-        raise ValueError(_("Out of scope."))
+        raise ValueError(_("Out of supported scope."))
     digits = tuple((num // 10**i) % 10 for i in range(3))
     if lang == "de":
         atoms = ("null", "ein", "zwei", "drei", "vier", "fünf", "sechs",
@@ -467,7 +467,7 @@ def int_to_words(num, lang):
     :rtype: str
     """
     if num < 0 or num > 999999:
-        raise ValueError(_("Out of scope."))
+        raise ValueError(_("Out of supported scope."))
     if lang == "de":
         if num == 0:
             return "null"

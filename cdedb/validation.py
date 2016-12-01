@@ -505,7 +505,9 @@ def _identifier(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if not _IDENTIFIER_REGEX.search(val):
-        errs.append((argname, ValueError(_("Must be an identifier."))))
+        errs.append((argname, ValueError(_(
+            "Must be an identifier "
+            "(only letters, numbers, underscore, dot and hyphen)."))))
     return val, errs
 
 _RESTRICTIVE_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_]+$')
@@ -525,8 +527,9 @@ def _restrictive_identifier(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if not _RESTRICTIVE_IDENTIFIER_REGEX.search(val):
-        errs.append((argname,
-                     ValueError(_("Must be a restrictive identifier."))))
+        errs.append((argname, ValueError(_(
+            "Must be a restrictive identifier "
+            "(only letters, numbers and underscore)."))))
     return val, errs
 
 _CSV_IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+(,[a-zA-Z0-9_.-]+)*$')
@@ -1956,7 +1959,7 @@ def _registration_fields(val, argname=None, fields=None, *, _convert=True):
                         if entry['field_name'] == field)
         if fields[field_id]['entries'] is not None:
             if val[field] not in (x for x, _ in fields[field_id]['entries']):
-                errs.append((field, ValueError(_("Entry in definition list."))))
+                errs.append((field, ValueError(_("Entry not in definition list."))))
     return val, errs
 
 _LODGEMENT_COMMON_FIELDS = lambda: {

@@ -1110,7 +1110,7 @@ class CoreFrontend(AbstractFrontend):
     def do_username_change(self, rs, new_username, password):
         """Now we can do the actual change."""
         if rs.errors:
-            rs.notify("error", _("Link expired"))
+            rs.notify("error", _("Link expired."))
             return self.change_username_form(rs)
         code, message = self.coreproxy.change_username(
             rs, rs.user.persona_id, new_username, password)

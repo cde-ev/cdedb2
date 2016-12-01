@@ -846,7 +846,7 @@ class CoreBackend(AbstractBackend):
             current = unwrap(self.retrieve_personas(
                 rs, (persona_id,), ('is_member', 'balance', 'is_cde_realm')))
             if not current['is_cde_realm']:
-                raise RuntimeError(_("Not a CdE-Account."))
+                raise RuntimeError(_("Not a CdE account."))
             if current['is_member'] == is_member:
                 return 0
             if not is_member:
