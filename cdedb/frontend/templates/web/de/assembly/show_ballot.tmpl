@@ -1,6 +1,6 @@
 {% set sidenav_active='assembly_ballots' %}
 {% extends "web/de/assembly/base.tmpl" %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('voting') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['ballot']['title']|e }} ({{ ambience['assembly']['title']|e }}){% endblock %}
 {% block heading %}
@@ -231,6 +231,11 @@
                     {% endif %}
                     {{ util.form_input_submit(value="Abstimmen", small=True) }}
                 </form>
+                {% if ambience['ballot']['votes'] > 1 %}
+                    <script type="text/javascript">
+                        $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
+                    </script>
+                {% endif %}
 
                 <div class="form-horizontal">
                     <div class="form-group">

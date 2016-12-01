@@ -31,6 +31,8 @@
             <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js")|e }}"></script>
         {% elif script == 'change-mailinglist' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js")|e }}"></script>
+        {% elif script == 'voting' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_voting.js")|e }}"></script>
         {% endif %}
         {{ script_files.append(script) }}
     {% endif %}
