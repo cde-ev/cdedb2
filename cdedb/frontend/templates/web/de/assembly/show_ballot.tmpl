@@ -297,79 +297,127 @@
             {# Preferential voting: Voting form #}
             {% if ambience['ballot']['is_voting'] and attends %}
                 <h3>Abstimmung</h3>
-                {# TODO do something nice and interactive here (with drag and drop ...) #}
-                <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
-                        class="form-horizontal">
-                    {{ util.form_input_text(name="vote", label="Präferenzliste", small=True) }}
-                    {{ util.form_input_submit(value="Abstimmen", small=True) }}
-                </form>
-                {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
-                    <p>
-                        Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld eine Präferenzliste
-                        eintragen, um die Kandidaten in eine persönliche Rangfolge zu bringen. Später werden die
-                        Präferenzlisten aller Teilnehmer mit der
-                        <a href="https://de.wikipedia.org/wiki/Schulze-Methode">Schulze-Methode</a> ausgewertet, um die
-                        Wahlsieger zu bestimmen.
-                    </p>
-                    <p>
-                        Um die Präferenzliste einzugeben, verwende bitte die in der Kandidatenliste angegebenen
-                        Kurzbezeichnungen der Kandidaten und die Zeichen <code>&gt;</code> und <code>=</code>. Mit dem
-                        Größer-als-Zeichen <code>&gt;</code> bevorzugst Du die Kandidaten links des Zeichens gegenüber
-                        denen auf der rechten Seite. Mit dem Gleichheitszeichen <code>=</code> bewertest Du zwei
-                        Kandidaten gleich. In der Präferenzliste müssen alle Kandidaten genannt werden.
-                    </p>
-                    {% if ambience['ballot']['use_bar'] %}
-                        <p>
-                            Zusätzlich musst Du die Ablehnungsgrenze <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> in der
-                            Präferenzliste verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt an,
-                            welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet hältst, solltest Du höher als
-                            <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> bewerten, Kandidaten, die Du ablehnst, niedriger,
-                            d.h. rechts von <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code>. Sollte in der Auszählung kein
-                            Kandidat gegen die Ablehnungsgrenze gewinnen, so kann der Vorstand ggf. weitere Maßnahmen
-                            ergreifen.
-                        </p>
-                    {% endif %}
-                    <p>
-                        <strong>Beispiele:</strong> Wir nehmen folgende beispielhafte Kandidatenliste an:
-                    </p>
-                    <ul>
-                        <li>[Luke] Luke Skywalker</li>
-                        <li>[Leia] Princess Leia Organa von Alderaan</li>
-                        <li>[Han] Han Solo</li>
-                        <li>[ObiWan] Obi-Wan „Ben“ Kenobi</li>
-                    </ul>
-                    <p>
-                        Deine Wahl könnte dann z.B. so aussehen:
-                    </p>
-                    {% if ambience['ballot']['use_bar'] %}
-                        <ul>
-                            <li>Du hältst alle Kandidaten für geeignet, aber Leia ist die Beste, bei den anderen gibt
-                                es keinen Unterschied<br />
-                                <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
-                            <li>Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab und Han Solo
-                                geht echt gar nicht<br />
-                                <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}&gt;Luke&gt;Han</code></li>
-                            <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
-                                hast du keine Meinung<br />
-                                <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}=Han=Leia</code></li>
-                            <li>Du möchtest dich komplett enthalten<br />
-                                <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
-                        </ul>
-                    {% else %}
-                        <ul>
-                            <li>Du findest Leia am geeignetsten, bei den anderen gibt es keinen Unterschied<br />
-                                <code>Leia&gt;Luke=Han=ObiWan</code></li>
-                            <li>Du hältst Leia und Obi-Wan für (gleich) geeignet, Luke geht so und Han Solo eher nicht
-                                <br />
-                                <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
-                            <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
-                                hast du keine Meinung<br />
-                                <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
-                            <li>Du möchtest dich komplett enthalten<br />
-                                <code>Luke=ObiWan=Han=Leia</code></li>
-                        </ul>
-                    {% endif %}
-                {% endcall %}
+                
+                {# Tab controls to switch to javascript preferential voting form #}
+                <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
+                    <li role="presentation" class="active">
+                        <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab">
+                            {{ util.make_icon('console') }} Text-basierte Abstimmung</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
+                                id="tablink-jsform">
+                            {{ util.make_icon('flash') }} Interaktive Abstimmung
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    {# Text based preferential voting form #}
+                    <div role="tabpanel" class="tab-pane active" id="tab-textform">
+                        <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
+                                class="form-horizontal">
+                            {{ util.form_input_text(name="vote", label="Präferenzliste", small=True,
+                                                    anid='input-preferencelist') }}
+                            {{ util.form_input_submit(value="Abstimmen", small=True) }}
+                        </form>
+                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
+                            <p>
+                                Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld eine Präferenzliste
+                                eintragen, um die Kandidaten in eine persönliche Rangfolge zu bringen. Später werden die
+                                Präferenzlisten aller Teilnehmer mit der
+                                <a href="https://de.wikipedia.org/wiki/Schulze-Methode">Schulze-Methode</a> ausgewertet, um die
+                                Wahlsieger zu bestimmen.
+                            </p>
+                            <p>
+                                Um die Präferenzliste einzugeben, verwende bitte die in der Kandidatenliste angegebenen
+                                Kurzbezeichnungen der Kandidaten und die Zeichen <code>&gt;</code> und <code>=</code>. Mit dem
+                                Größer-als-Zeichen <code>&gt;</code> bevorzugst Du die Kandidaten links des Zeichens gegenüber
+                                denen auf der rechten Seite. Mit dem Gleichheitszeichen <code>=</code> bewertest Du zwei
+                                Kandidaten gleich. In der Präferenzliste müssen alle Kandidaten genannt werden.
+                            </p>
+                            {% if ambience['ballot']['use_bar'] %}
+                                <p>
+                                    Zusätzlich musst Du die Ablehnungsgrenze <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> in der
+                                    Präferenzliste verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt an,
+                                    welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet hältst, solltest Du höher als
+                                    <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> bewerten, Kandidaten, die Du ablehnst, niedriger,
+                                    d.h. rechts von <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code>. Sollte in der Auszählung kein
+                                    Kandidat gegen die Ablehnungsgrenze gewinnen, so kann der Vorstand ggf. weitere Maßnahmen
+                                    ergreifen.
+                                </p>
+                            {% endif %}
+                            <p>
+                                <strong>Beispiele:</strong> Wir nehmen folgende beispielhafte Kandidatenliste an:
+                            </p>
+                            <ul>
+                                <li>[Luke] Luke Skywalker</li>
+                                <li>[Leia] Princess Leia Organa von Alderaan</li>
+                                <li>[Han] Han Solo</li>
+                                <li>[ObiWan] Obi-Wan „Ben“ Kenobi</li>
+                            </ul>
+                            <p>
+                                Deine Wahl könnte dann z.B. so aussehen:
+                            </p>
+                            {% if ambience['ballot']['use_bar'] %}
+                                <ul>
+                                    <li>Du hältst alle Kandidaten für geeignet, aber Leia ist die Beste, bei den anderen gibt
+                                        es keinen Unterschied<br />
+                                        <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
+                                    <li>Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab und Han Solo
+                                        geht echt gar nicht<br />
+                                        <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}&gt;Luke&gt;Han</code></li>
+                                    <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
+                                        hast du keine Meinung<br />
+                                        <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}=Han=Leia</code></li>
+                                    <li>Du möchtest dich komplett enthalten<br />
+                                        <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
+                                </ul>
+                            {% else %}
+                                <ul>
+                                    <li>Du findest Leia am geeignetsten, bei den anderen gibt es keinen Unterschied<br />
+                                        <code>Leia&gt;Luke=Han=ObiWan</code></li>
+                                    <li>Du hältst Leia und Obi-Wan für (gleich) geeignet, Luke geht so und Han Solo eher nicht
+                                        <br />
+                                        <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
+                                    <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
+                                        hast du keine Meinung<br />
+                                        <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
+                                    <li>Du möchtest dich komplett enthalten<br />
+                                        <code>Luke=ObiWan=Han=Leia</code></li>
+                                </ul>
+                            {% endif %}
+                        {% endcall %}
+                    </div>
+                    
+                    {# Javascript preferential voting form #}
+                    <div role="tabpanel" class="tab-pane" id="tab-jsform">
+                        <div class="prefvote_container" id="prefvote_container">
+                        </div>
+                        <div class="p">
+                            <button class="btn btn-primary pull-right" id="button-jsvote">
+                                {{ util.make_icon('ok') }} Abstimmen
+                            </button>
+                            
+                        </div>
+                        <script type="text/javascript">
+                            /* Show tabs */
+                            $('#tablist-formselect').show();
+                            /* Initialize JS Fancy form */
+                            $('#prefvote_container').cdedbPrefVote(
+                                {{ ambience['ballot']['candidates']|dictsort|json }},
+                                {{ "'"+ASSEMBLY_BAR_MONIKER+"'" if ambience['ballot']['use_bar'] else "null" }},
+                                "Neutral",
+                                $('#input-preferencelist'));
+                            /* Register callback to refresh fancy form every time the tab is shown */
+                            $('#tablink-jsform').on('show.bs.tab',
+                                                    $('#prefvote_container').data('cdedbPrefVote').readPreferenceList);
+                            /* Show the tab */
+                            $('#tablink-jsform').tab('show');
+                            $('#button-jsvote').click(function(){$('#voteform').submit();});
+                        </script>
+                    </div>
+                </div>
             {% endif %}
         {% endif %}
     {% endif %}
