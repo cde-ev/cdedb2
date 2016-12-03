@@ -142,8 +142,10 @@
          */
         function getKeyboardHandler(callback) {
             return function(e) {
-                if (e.keyCode == 13 || e.keyCode == 32)
+                if (e.keyCode == 13 || e.keyCode == 32) {
                     callback.call(this,e);
+                    e.preventDefault();
+                }
             };
         }
         
