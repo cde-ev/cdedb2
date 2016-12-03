@@ -231,11 +231,12 @@
                     {% endif %}
                     {{ util.form_input_submit(value="Abstimmen", small=True) }}
                 </form>
-                {% if ambience['ballot']['votes'] > 1 %}
-                    <script type="text/javascript">
+                <script type="text/javascript">
+                    {% if ambience['ballot']['votes'] > 1 %}
                         $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
-                    </script>
-                {% endif %}
+                    {% endif %}
+                    $('#voteform').cdedbProtectChanges();
+                </script>
 
                 <div class="form-horizontal">
                     <div class="form-group">
@@ -321,6 +322,9 @@
                                                     anid='input-preferencelist') }}
                             {{ util.form_input_submit(value="Abstimmen", small=True) }}
                         </form>
+                        <script type="text/javascript">
+                            $('#voteform').cdedbProtectChanges();
+                        </script>
                         {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
                             <p>
                                 Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld eine Präferenzliste
