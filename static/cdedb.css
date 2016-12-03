@@ -464,11 +464,13 @@ tr.drow-delete>td {
 
 /* Fancy preferential voting with JavaScript */
 .prefvote_container {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     box-shadow: 0 1px 1px rgba(0,0,0,.05);
-    padding: 0 15px;
+    padding: 0 15px 0 30px;
+    position: relative;
+    min-height: 130px; /* So .indicator fits into box */
     /* Disable text selection: */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -476,6 +478,16 @@ tr.drow-delete>td {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+}
+.prefvote_container .indicator {
+    position: absolute;
+    top: 0;
+    right: 100%;
+    transform: rotate(-90deg);
+    transform-origin: right top;
+    padding: 6px 8px;
+    font-size: 0.8em;
+    white-space: nowrap;
 }
 .prefvote_stage {
     padding: 10px;
@@ -489,6 +501,7 @@ tr.drow-delete>td {
     min-height: 30px;
     transition: border .3s;
     position: relative;
+    line-height: 1.8em;
 }
 .prefvote_stage.dragover {
     border-color: #000;
@@ -560,22 +573,15 @@ tr.drow-delete>td {
     margin-top: -8px;
 }
 .prefvote_candidate {
-    background: #ccc;
+    background: rgba(175,175,175,.5);
     border: 1px solid rgba(127,127,127,.2);
     border-radius: 3px;
     padding: 2px 6px;
     cursor: default;
-    margin-right: 6px;
     white-space: nowrap;
 }
-.prefvote_stage.positive .prefvote_candidate {
-    background: #ccd7cc;
-}
-.prefvote_stage.negative .prefvote_candidate {
-    background: #d7cccc;
-}
 .prefvote_candidate.active {
-    background: #337ab7;
+    background: rgba(47,112,168,.7);
     color: #fff;
 }
 

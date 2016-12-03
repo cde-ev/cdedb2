@@ -397,8 +397,11 @@
                             zu bedienen. Verwende den obigen Link, um zum Text-basierten Formular zu wechseln.
                         </p>
                         <div class="prefvote_container" id="prefvote_container">
+                            <div class="indicator">
+                                steigende Präferenz →
+                            </div>
                         </div>
-                        <div class="p">
+                        <div class="p clearfix">
                             <button class="btn btn-primary pull-right" id="button-jsvote">
                                 {{ util.make_icon('ok') }} Abstimmen
                             </button>
@@ -419,6 +422,47 @@
                             $('#tablink-jsform').tab('show');
                             $('#button-jsvote').click(function(){$('#voteform').submit();});
                         </script>
+                        
+                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
+                            <p>
+                                Diese Abstimmung findet als Präferenzwahl statt. Du kannst die Kandidaten in dem oben
+                                angezeigten Feld in eine persönliche Rangfolge zu bringen. Später werden die
+                                Präferenzlisten aller Teilnehmer mit der
+                                <a href="https://de.wikipedia.org/wiki/Schulze-Methode">Schulze-Methode</a> ausgewertet,
+                                um die Wahlsieger zu bestimmen.
+                            </p>
+                            <p>
+                                Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. Eine Einordnung
+                                in einer höheren Box drückt eine höhere Präferenz dieses Kandidaten aus. Kandidaten, die
+                                sich in der gleichen Box befinden, werden mit gleicher Präferenz gewertet. Bewegst Du
+                                einen Kandidaten in den Zwischenraum ober- und unterhalb der Boxen, ensteht dort eine
+                                neue Box.
+                            </p>
+                            <p>
+                                Zum Bewegen der Kandidaten hast du drei Möglichkeiten: Verschiebe sie mit Drag’n’Drop in
+                                eine andere Box oder klicke zuerst den Kandidaten, dann die gewünschte Box an. Mit der
+                                Tastatur kannst Du Kandidaten und Boxen mit <kbd>TAB</kbd> fokussieren und so
+                                zunächst den Kandidaten und dann die Ziel-Box mit <kbd>ENTER</kbd> oder
+                                <kbd>Leertaste</kbd> auswählen.
+                            </p>
+                            {% if ambience['ballot']['use_bar'] %}
+                                <p>
+                                    Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne Kandidaten, die
+                                    Du für geeignet hältst, oberhalb dieser Box an (Boxen werden grün hinterlegt) und
+                                    Kandidaten die Du ablehnst unterhalb (Boxen werden rot hinterlegt). Sollten in der
+                                    Auszählung alle Kandidaten abgelehnt werden, so kann der Vorstand ggf. weitere
+                                    Maßnahmen ergreifen.
+                                </p>
+                                <p>
+                                    Um Dich zu enthalten, positioniere alle Kandidaten in der Neutral-Box.
+                                </p>
+                            {% else %}
+                                <p>
+                                    Um Dich zu enthalten, positioniere alle Kandidaten in einer Box.
+                                </p>
+                            {% endif %}
+                            
+                        {% endcall %}
                     </div>
                 </div>
             {% endif %}

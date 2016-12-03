@@ -175,6 +175,7 @@
         function moveCandidate($candidate, $destination) {
             $source = $candidate.parent();
             $destination.append($candidate);
+            $destination.append(' ');
             // If source stage is empty and not neutral stage ...
             if ($source.children('.prefvote_candidate').length == 0 && !$source.hasClass('neutral')) {
                 // ... remove spacer and source stage
@@ -241,7 +242,7 @@
                 candidate_list[moniker] = $cand;
                 $cand.on('dragstart',function(e) {
                     e.originalEvent.dataTransfer.setData('text', $(this).attr('data-moniker'));
-                    $container.find('.prefvote_candidate').removeClass('active');
+                    $container.removeClass('active').find('.prefvote_candidate').removeClass('active');
                 });
                 $cand.click(candidate_click);
                 $cand.on('keydown',getKeyboardHandler(candidate_click));
@@ -290,7 +291,7 @@
                 for (var j in stage_candidates) {
                     var $cand = candidate_list[stage_candidates[j]];
                     if ($cand) {
-                        $stage.append($cand);
+                        $stage.append($cand).append(' ');
                     } else if (bar_moniker && stage_candidates[j] == bar_moniker) {
                         bar_option = true;
                         is_neutral = true;
@@ -332,7 +333,7 @@
                 } else {
                     var $stage = createStage().appendTo($container);
                     for (var i in missing_candidates)
-                        $stage.append(missing_candidates[i]);
+                        $stage.append(missing_candidates[i]).append(' ');
                     var $sp = createSpacer().appendTo($container);
                     if (bar_moniker) {
                         $stage.addClass('neutral');
