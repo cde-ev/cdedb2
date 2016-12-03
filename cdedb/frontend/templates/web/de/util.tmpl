@@ -493,7 +493,7 @@
                 </div>
             </div>
 
-            <p class="text-right nosp">
+            <p class="pull-right nosp">
                 <button type="submit" class="btn btn-primary">{{ make_icon('search') }} Suche</button>
                 <span class="btn-group">
                     <button type="submit" class="btn btn-default" name="download" value="csv">
@@ -504,6 +504,7 @@
                     </button>
                 </span>
             </p>
+            {{ output_errors('query') }}
         </form>
         <script type="text/javascript">
             $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});
