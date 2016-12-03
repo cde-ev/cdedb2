@@ -488,9 +488,16 @@ tr.drow-delete>td {
     border-radius: 4px;
     min-height: 30px;
     transition: border .3s;
+    position: relative;
 }
 .prefvote_stage.dragover {
     border-color: #000;
+}
+.prefvote_container.active .prefvote_stage {
+    cursor: pointer;
+}
+.prefvote_container.active .prefvote_stage:hover {
+    border-color: #245782;
 }
 .prefvote_stage.positive {
     background: #e9ede9;
@@ -515,6 +522,10 @@ tr.drow-delete>td {
 }
 .prefvote_spacer {
     height: 21px;
+    position: relative;
+}
+.prefvote_container.active .prefvote_spacer {
+    cursor: pointer;
 }
 .prefvote_spacer:before {
     height: 12px;
@@ -527,9 +538,30 @@ tr.drow-delete>td {
 .prefvote_spacer.dragover:before {
     border-bottom-color: rgba(0,0,0,1);
 }
+.prefvote_container.active .prefvote_spacer:before {
+    border-bottom-color: rgba(0,0,0,.2);
+}
+.prefvote_container.active .prefvote_spacer:hover:before {
+    border-bottom-color: rgba(36,87,130,1);
+}
+.prefvote_spacer:focus, .prefvote_stage:focus {
+    outline: none;
+}
+.prefvote_spacer:focus:after, .prefvote_stage:focus:after {
+    content: "";
+    width: 0; 
+    height: 0; 
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 8px solid #ccc;
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    margin-top: -8px;
+}
 .prefvote_candidate {
     background: #ccc;
-    border: 1px solid #ddd;
+    border: 1px solid rgba(127,127,127,.2);
     border-radius: 3px;
     padding: 2px 6px;
     cursor: default;
@@ -541,6 +573,10 @@ tr.drow-delete>td {
 }
 .prefvote_stage.negative .prefvote_candidate {
     background: #d7cccc;
+}
+.prefvote_candidate.active {
+    background: #337ab7;
+    color: #fff;
 }
 
 /* ************** *

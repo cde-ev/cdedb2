@@ -392,13 +392,16 @@
                     
                     {# Javascript preferential voting form #}
                     <div role="tabpanel" class="tab-pane" id="tab-jsform">
+                        <p class="sr-only">
+                            Hier folgt das interaktive Absitummgs-Formular. Dieses ist mit der Tastatur nur mäßig gut
+                            zu bedienen. Verwende den obigen Link, um zum Text-basierten Formular zu wechseln.
+                        </p>
                         <div class="prefvote_container" id="prefvote_container">
                         </div>
                         <div class="p">
                             <button class="btn btn-primary pull-right" id="button-jsvote">
                                 {{ util.make_icon('ok') }} Abstimmen
                             </button>
-                            
                         </div>
                         <script type="text/javascript">
                             /* Show tabs */
