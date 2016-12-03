@@ -2,7 +2,11 @@
 {% extends "web/de/assembly/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Versammlung – Logs ({{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }})
+Versammlung – Logs [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ util.breadcrumb_link(cdedblink("assembly/view_log"), "Log", active=True) }}
 {% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">

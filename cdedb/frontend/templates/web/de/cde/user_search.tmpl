@@ -4,7 +4,7 @@
 {% import "web/de/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}CdE Nutzerverwaltung{% endblock %}
+{% block title %}CdE-Nutzerverwaltung{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten", active="True") }}

@@ -55,7 +55,7 @@ class TestMlFrontend(FrontendTest):
     @as_users("anton")
     def test_user_search(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
-        self.assertTitle("Mailinglistennutzersuche")
+        self.assertTitle("Mailinglisten-Nutzerverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.similar.value
         f['qval_username'] = 's@'
@@ -63,7 +63,7 @@ class TestMlFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Mailinglistennutzersuche")
+        self.assertTitle("Mailinglisten-Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Jalapeño")
 
