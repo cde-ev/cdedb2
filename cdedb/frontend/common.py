@@ -178,7 +178,7 @@ def date_filter(val, formatstr="%Y-%m-%d"):
     :type val: datetime.date
     :rtype: str
     """
-    if val is None:
+    if val is None or val == '':
         return None
     return val.strftime(formatstr)
 
@@ -188,7 +188,7 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)"):
     :type val: datetime.datetime
     :rtype: str
     """
-    if val is None:
+    if val is None or val == '':
         return None
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)

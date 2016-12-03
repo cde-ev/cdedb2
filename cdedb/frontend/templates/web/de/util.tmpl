@@ -158,8 +158,17 @@
     <input type="{{ type|e }}" {% if aclass %} class="{{ aclass|e }}"{% endif %}
             {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {% if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
-            {% if anid %} id="{{ anid|e }}"{% endif %} name="{{ name|e }}"
-            {% if type != 'password' %}value="{{ values.get(name, defaultvalue)|e }}"{% endif %}
+            {% if anid %} id="{{ anid|e }}"{% endif %}
+            name="{{ name|e }}"
+            {% if type != 'password' %}
+                {% if type == 'date' %}
+                    value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d') }}"
+                {% elif type == 'datetime-local' %}
+                    value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S.%f') }}"
+                {% else %}
+                    value="{{ values.get(name, defaultvalue)|e }}"
+                {% endif %}
+            {% endif %}
             {% if readonly %}disabled="disabled"{% endif %} {{ attributes }} />
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',

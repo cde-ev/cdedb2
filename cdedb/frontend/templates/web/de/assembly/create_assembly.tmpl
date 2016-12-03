@@ -14,7 +14,8 @@
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
                                     info="Unterstützt reStructuredText") }}
-        {{ util.form_input_text(name="signup_end", label="Anmeldeschluss", placeholder="YYYY-MM-DD hh:ii+00:00") }}
+        {{ util.form_input_text(name="signup_end", label="Anmeldeschluss", placeholder="YYYY-MM-DDThh:ii",
+                                type="datetime-local") }}
         {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
                                     info="Unterstützt reStructuredText") }}
         {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink('assembly/index')) }}
