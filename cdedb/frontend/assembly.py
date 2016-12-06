@@ -307,6 +307,12 @@ class AssemblyFrontend(AbstractUserFrontend):
             raise PrivilegeError(_("Not privileged."))
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        attachments = {}
+        for ballot_id in ballot_ids:
+            attachment_ids = self.assemblyproxy.list_attachments(
+                rs, ballot_id=ballot_id)
+            attachments[ballot_id] = self.assemblyproxy.get_attachments(
+                rs, attachment_ids)
         ref = now()
         update = False
         for ballot_id, ballot in ballots.items():
@@ -338,7 +344,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         current.update(extended)
         return self.render(rs, "list_ballots", {
             'ballots': ballots, 'future': future, 'current': current,
-            'done': done, 'votes': votes})
+            'done': done, 'votes': votes, 'attachments': attachments})
 
     @access("assembly_admin")
     def create_ballot_form(self, rs, assembly_id):
