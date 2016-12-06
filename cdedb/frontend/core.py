@@ -305,9 +305,15 @@ class CoreFrontend(AbstractFrontend):
             participation_info = self.pasteventproxy.participation_info(
                 rs, persona_id)
 
+
+        ## Check whether we should display an option for using the quota
+        quoteable = (not quote_me
+                     and "cde" not in access_levels
+                     and "searchable" in rs.user.roles
+                     and rs.ambience['persona']['is_searchable'])
         return self.render(rs, "show_user", {
             'data': data, 'participation_info': participation_info,
-            'is_relative_admin': is_relative_admin})
+            'is_relative_admin': is_relative_admin, 'quoteable': quoteable})
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")

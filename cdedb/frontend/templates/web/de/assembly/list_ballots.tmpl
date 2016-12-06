@@ -42,6 +42,7 @@
                                      aclass="btn btn-xs btn-warning", icon="pencil")}}
                     {% endif %}
                     {% if attachments[ballot_id] %}
+                        {# FIXME formatting #}
                         <br />
                         Dateien:
                         {% for attachment_id, attachment in attachments[ballot_id]|dictsort %}
