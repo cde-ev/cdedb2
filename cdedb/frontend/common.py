@@ -186,7 +186,7 @@ def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium"):
       following values: short, medium, long and full.
     :rtype: str
     """
-    if val is None or val == '':
+    if val is None or val == '' or not isinstance(val, datetime.date):
         return None
     if lang:
         return babel.dates.format_date(val, locale=lang, format=verbosity)
@@ -207,7 +207,7 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
       following values: short, medium, long and full.
     :rtype: str
     """
-    if val is None or val == '':
+    if val is None or val == '' or not isinstance(val, datetime.datetime):
         return None
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)

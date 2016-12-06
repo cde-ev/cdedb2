@@ -444,16 +444,16 @@ class TestAssemblyFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/log'})
-        self.assertTitle("\nVersammlung – Logs (0–16)\n")
+        self.assertTitle("\nVersammlung – Logs [0–16]\n")
         f = self.response.forms['logshowform']
         f['codes'] = [0, 1, 2, 10, 11, 12, 14]
         f['assembly_id'] = 1
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("\nVersammlung – Logs (1–7)\n")
+        self.assertTitle("\nVersammlung – Logs [1–7]\n")
 
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/1/show'},
                       {'href': '/assembly/log.*1'})
-        self.assertTitle("\nVersammlung – Logs (0–8)\n")
+        self.assertTitle("\nVersammlung – Logs [0–8]\n")
