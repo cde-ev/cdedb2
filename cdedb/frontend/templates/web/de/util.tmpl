@@ -85,7 +85,7 @@
     {% elif error.args|length == 2 %}
         {{ gettext(error.args[0]|string).format(**error.args[1])|e }}<br />
     {% elif error.args|length == 0 %}
-        {{ gettext(error|string)|e }}
+        {# Display nothing if no message was supplied. #}
     {% else %}
         Nicht wohlgeformter Fehler.<br />
     {% endif %}
