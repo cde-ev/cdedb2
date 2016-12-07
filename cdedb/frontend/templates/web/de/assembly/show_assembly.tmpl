@@ -83,7 +83,7 @@
     {# FIXME formatting #}
     {% for ballot_id, ballot in ballots|dictsort %}
         {% if ballot_attachments[ballot_id] %}
-            <h4>{{ ballot[title]|e }}</h4>
+            <h4>{{ ballot['title']|e }}</h4>
             <ul>
                 {% for battachment_id, battachment in ballot_attachments[ballot_id]|dictsort %}
                     <li>
