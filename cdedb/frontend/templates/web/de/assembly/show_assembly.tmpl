@@ -79,4 +79,19 @@
             {% endif %}
         {% endcall %}
     {% endif %}
+
+    {# FIXME formatting #}
+    {% for ballot_id, ballot in ballots|dictsort %}
+        {% if ballot_attachments[ballot_id] %}
+            <h4>{{ ballot[title]|e }}</h4>
+            <ul>
+                {% for battachment_id, battachment in ballot_attachments[ballot_id]|dictsort %}
+                    <li>
+                        {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': battachment_id}),
+                                     battachment['title'])}}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endfor %}
 {% endblock %}
