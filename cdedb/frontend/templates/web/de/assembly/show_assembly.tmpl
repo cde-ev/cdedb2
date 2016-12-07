@@ -52,46 +52,58 @@
         {% endcall %}
     {% endif %}
     
-    {% if attachments or is_admin %}
+    {% if attachments or is_admin or has_ballot_attachments %}
         {% call util.bootstrap_panel(title="Dateien", icon='file') %}
-            {% if attachments %}
-                <ul>
-                    {% for attachment_id, attachment in attachments|dictsort %}
-                        <li>
-                            {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                    attachment['title'])}}
-                            {% if is_admin %}
-                                <form action="{{ cdedblink('assembly/remove_attachment',
-                                                           {'attachment_id': attachment_id})|e }}"
-                                        method="POST" id="removeattachmentform{{ attachment_id|e }}",
-                                        style="display: inline;">
-                                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
-                                            title="Datei löschen") }}
-                                </form>
-                            {% endif %}
-                        </li>
+        <div class="row">
+            {% if attachments or is_admin %}
+                <div class="col-sm-6">
+                    <h4>Allgemeine Dateien</h4>
+                    <ul class="slim">
+                        {% for attachment_id, attachment in attachments|dictsort %}
+                            <li>
+                                {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
+                                        attachment['title'])}}
+                                {% if is_admin %}
+                                    <form action="{{ cdedblink('assembly/remove_attachment',
+                                                               {'attachment_id': attachment_id})|e }}"
+                                            method="POST" id="removeattachmentform{{ attachment_id|e }}",
+                                            style="display: inline;">
+                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
+                                                title="Datei löschen") }}
+                                    </form>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="p">
+                        {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
+                                     aclass="btn btn-success btn-sm", icon="plus") }}
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if has_ballot_attachments %}
+                <div class="col-sm-6">
+                <h4>Dateien zu Abstimmungen</h4>
+                    {% for ballot_id, ballot in ballots|dictsort %}
+                        {% if ballot_attachments[ballot_id] %}
+                            <ul class="slim">
+                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|dictsort %}
+                                    <li>
+                                        {{ util.href(cdedblink("assembly/get_attachment",
+                                                     {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
+                                                     battachment['title'])}}
+                                        (<small class="text-muted nowrap">
+                                            {{ util.make_icon('thumbs-up') }} {{ ballot['title']|e }}</small>)
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
                     {% endfor %}
-                </ul>
+                </div>
             {% endif %}
-            {% if is_admin %}
-                {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
-                             aclass="btn btn-success btn-sm", icon="plus") }}
-            {% endif %}
+        </div>
         {% endcall %}
     {% endif %}
-
-    {# FIXME formatting #}
-    {% for ballot_id, ballot in ballots|dictsort %}
-        {% if ballot_attachments[ballot_id] %}
-            <h4>{{ ballot['title']|e }}</h4>
-            <ul>
-                {% for battachment_id, battachment in ballot_attachments[ballot_id]|dictsort %}
-                    <li>
-                        {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': battachment_id}),
-                                     battachment['title'])}}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endfor %}
+    
 {% endblock %}

@@ -41,15 +41,6 @@
                         {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), "Bearbeiten",
                                      aclass="btn btn-xs btn-warning", icon="pencil")}}
                     {% endif %}
-                    {% if attachments[ballot_id] %}
-                        {# FIXME formatting #}
-                        <br />
-                        Dateien:
-                        {% for attachment_id, attachment in attachments[ballot_id]|dictsort %}
-                            {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
-                                         attachment['title'])}}
-                        {% endfor %}
-                    {% endif %}
                 </li>
             {% endfor %}
         </ul>

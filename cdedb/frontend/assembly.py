@@ -180,12 +180,15 @@ class AssemblyFrontend(AbstractUserFrontend):
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
         ballot_ids = self.assemblyproxy.list_ballots(rs, assembly_id)
         ballots = self.assemblyproxy.get_ballots(rs, ballot_ids)
+        has_ballot_attachments = False
         ballot_attachments = {}
         for ballot_id in ballot_ids:
             ballot_attachment_ids = self.assemblyproxy.list_attachments(
                 rs, ballot_id=ballot_id)
             ballot_attachments[ballot_id] = self.assemblyproxy.get_attachments(
                 rs, ballot_attachment_ids)
+            has_ballot_attachments = has_ballot_attachments or bool(
+                ballot_attachment_ids)
         timestamp = now()
         has_activity = False
         if timestamp < rs.ambience['assembly']['signup_end']:
@@ -199,7 +202,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "show_assembly", {
             "attachments": attachments, "attends": attends,
             "has_activity": has_activity, "ballots": ballots,
-            "ballot_attachments": ballot_attachments})
+            "ballot_attachments": ballot_attachments,
+            "has_ballot_attachments": has_ballot_attachments})
 
     @access("assembly_admin")
     def change_assembly_form(self, rs, assembly_id):
