@@ -2,21 +2,31 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Veranstaltungen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen", active=True) }}
+{% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href(cdedblink("event/create_event_form"), "Veranstaltung anlegen", aclass="btn btn-success btn-sm",
-                icon="plus") }}
-    </div>
-    Hier findest Du Akademien und andere Veranstaltungen.
-
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink("event/create_event_form"), "Veranstaltung anlegen", aclass="btn btn-success btn-sm",
+                    icon="plus") }}
+        </div>
+    {% endif %}
+    
     <h3>Aktuelle Veranstaltungen</h3>
-    <ul>
-        {% for event_id, event in open_events|dictsort|reverse %}
-            <li>
-                {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
-            </li>
-        {% endfor %}
-    </ul>
+    {% if open_events %}
+        <ul>
+            {% for event_id, event in open_events|dictsort|reverse %}
+                <li>
+                    {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">
+            Zur Zeit sind keine Veranstaltungen zur Anmeldung freigegeben.
+        </p>
+    {% endif %}
 
     {% if orga_events %}
         <h3>Organisierte Veranstaltungen</h3>

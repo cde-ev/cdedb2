@@ -80,21 +80,23 @@
         {{ one_event_links(ambience['event']) }}
     {% else %}
         <h4>Veranstaltungen</h4>
-        {% if is_admin %}
-            <div class="list-group tear-down">
-                {{ util.href(cdedblink("event/index"), "Übersicht",
-                             aclass="list-group-item", icon="triangle-right",
-                             active=(sidenav_active == 'event_index')) }}
-                {{ util.href(cdedblink("event/list_db_events"), "All Veranstaltungen",
+        <div class="list-group tear-down">
+            {% if is_admin %}
+                {{ util.href(cdedblink("event/index"), "Aktuelle Veranstaltungen", aclass="list-group-item",
+                             icon="triangle-right", active=(sidenav_active == 'event_index')) }}
+                {{ util.href(cdedblink("event/list_db_events"), "Alle Veranstaltungen",
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
             </div>
             <div class="list-group tear-down">
-                {{ util.href(cdedblink("event/user_search"), "Verantstaltungs-Nutzer verwalten",
+                {{ util.href(cdedblink("event/user_search"), "Nutzer verwalten",
                              aclass="list-group-item", icon="user", active=(sidenav_active == 'event_users')) }}
                 {{ util.href(cdedblink("event/view_log"), "Log", aclass="list-group-item", icon="list-alt",
                              active=(sidenav_active == 'event_log')) }}
-            </div>
-        {% endif %}
+            {% else %}
+                {{ util.href(cdedblink("event/index"), "Übersicht", aclass="list-group-item", icon="triangle-right",
+                             active=(sidenav_active == 'event_index')) }}
+            {% endif %}
+        </div>
     {% endif %}
     <hr class="strong visible-xs visible-sm" />
 {% endblock %}

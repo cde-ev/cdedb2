@@ -2,10 +2,15 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+Log: Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/view_log"), "Log", active="True") }}
 {% endblock %}
 {% block content %}
-    <table>
+    <table class="table table-condensed table-hover">
+        <thead>
         <tr>
             <th>Zeitstempel</th>
             <th>Code</th>
@@ -14,6 +19,7 @@ Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + 
             <th>Betroffen</th>
             <th>Zusatz</th>
         </tr>
+        </thead>
         {% for entry in log %}
             <tr>
                 <td>{{ entry['ctime']|datetime|e }}</td>
@@ -45,24 +51,24 @@ Veranstaltungen -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + 
             </tr>
         {% endfor %}
     </table>
-    <form action="{{ cdedblink('event/view_log')|e }}" method="GET" id="logshowform">
-        <div>
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
+        <form action="{{ cdedblink('event/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in enums['EventLogCodes'] %}
                 {{ myentries.append((code.value, gettext(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                                     entries=myentries) }}
+                                          entries=myentries, small=True) }}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for event_id, title in all_events|dictsort %}
                 {{ myentries.append((event_id, title))|e }}
             {% endfor %}
-            {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries) }}
-            {{ util.form_input_text(name="start", label="Anfang") }}
-            {{ util.form_input_text(name="stop", label="Ende") }}
-            {{ util.form_input_submit(value="Anzeigen") }}
-        </div>
-    </form>
+            {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries,
+                                      small=True) }}
+            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
+            {{ util.form_input_submit(value="Anzeigen", small=True) }}
+        </form>
+    {% endcall %}
 {% endblock %}
