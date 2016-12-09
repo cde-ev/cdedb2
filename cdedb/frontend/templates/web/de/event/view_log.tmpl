@@ -13,43 +13,44 @@ Log: Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + lo
         <thead>
         <tr>
             <th>Zeitstempel</th>
-            <th>Code</th>
+            <th>Kategorie</th>
             <th>Verantwortlich</th>
             <th>Veranstaltung</th>
             <th>Betroffen</th>
             <th>Zusatz</th>
         </tr>
         </thead>
+        <tbody>
         {% for entry in log %}
             <tr>
                 <td>{{ entry['ctime']|datetime|e }}</td>
                 <td>{{ gettext(enums['EventLogCodes'](entry['code'])|string)|e }}</td>
                 <td>
                     {% if entry['submitted_by'] %}
-                        {{ personas[entry['submitted_by']]['given_names']|e }}
-                        {{ personas[entry['submitted_by']]['family_name']|e }}
+                        {{ util.persona_anchor(personas[entry['submitted_by']]) }}
                     {% else %}
-                        -
+                        –
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['event_id'] %}
-                        {{ events[entry['event_id']]['title']|e }}
+                        {{ util.href(cdedblink('event/show_event', {'event_id': entry['event_id']}),
+                                     events[entry['event_id']]['title']) }}
                     {% else %}
-                        -
+                        –
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['persona_id'] %}
-                        {{ personas[entry['persona_id']]['given_names']|e }}
-                        {{ personas[entry['persona_id']]['family_name']|e }}
+                        {{ util.persona_anchor(personas[entry['persona_id']]) }}
                     {% else %}
-                        -
+                        –
                     {% endif %}
                 </td>
                 <td>{{ entry['additional_info']|e }}</td>
             </tr>
         {% endfor %}
+        </tbody>
     </table>
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('event/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">

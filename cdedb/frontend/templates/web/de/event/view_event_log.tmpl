@@ -2,53 +2,59 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}
-{{ ambience['event']['title']|e }} -- Logs ({{ values['start']|int|e }}--{{ (values['start']|int + log|length)|e }})
+Log: {{ ambience['event']['title']|e }} [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='blackboard') }}
+    {{ util.breadcrumb_link(cdedblink("event/view_event_log"), "Log", active="True") }}
 {% endblock %}
 {% block content %}
-    <table>
-        <tr>
-            <th>Zeitstempel</th>
-            <th>Code</th>
-            <th>Verantwortlich</th>
-            <th>Betroffen</th>
-            <th>Zusatz</th>
-        </tr>
+    <table class="table table-condensed table-hover">
+        <thead>
+            <tr>
+                <th>Zeitstempel</th>
+                <th>Kategorie</th>
+                <th>Verantwortlich</th>
+                <th>Betroffen</th>
+                <th>Zusatz</th>
+            </tr>
+        </thead>
+        <tbody>
         {% for entry in log %}
             <tr>
                 <td>{{ entry['ctime']|datetime|e }}</td>
                 <td>{{ gettext(enums['EventLogCodes'](entry['code'])|string)|e }}</td>
                 <td>
                     {% if entry['submitted_by'] %}
-                        {{ personas[entry['submitted_by']]['given_names']|e }}
-                        {{ personas[entry['submitted_by']]['family_name']|e }}
+                        {{ util.persona_anchor(personas[entry['submitted_by']]) }}
                     {% else %}
-                        -
+                        –
                     {% endif %}
                 </td>
                 <td>
                     {% if entry['persona_id'] %}
-                        {{ personas[entry['persona_id']]['given_names']|e }}
-                        {{ personas[entry['persona_id']]['family_name']|e }}
+                        {{ util.persona_anchor(personas[entry['persona_id']]) }}
                     {% else %}
-                        -
+                        –
                     {% endif %}
                 </td>
                 <td>{{ entry['additional_info']|e }}</td>
             </tr>
         {% endfor %}
+        </tbody>
     </table>
-    <form action="{{ cdedblink('event/view_event_log')|e }}" method="GET" id="logshowform">
-        <div>
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
+        <form action="{{ cdedblink('event/view_event_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for code in enums['EventLogCodes'] %}
                 {{ myentries.append((code.value, gettext(code|string)))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                                     entries=myentries) }}
-            {{ util.form_input_text(name="start", label="Anfang") }}
-            {{ util.form_input_text(name="stop", label="Ende") }}
-            {{ util.form_input_submit(value="Anzeigen") }}
-        </div>
-    </form>
+                                          entries=myentries, small=True) }}
+            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
+            {{ util.form_input_submit(value="Anzeigen", small=True) }}
+        </form>
+    {% endcall %}
 {% endblock %}

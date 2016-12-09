@@ -1148,16 +1148,16 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Log: Veranstaltungen [0–14]\n")
+        self.assertTitle("Log: Veranstaltungen [0–14]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Log: Veranstaltungen [1–6]\n")
+        self.assertTitle("Log: Veranstaltungen [1–6]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("\nGroße Testakademie 2222 -- Logs (0--11)\n")
+        self.assertTitle("Log: Große Testakademie 2222 [0–11]")
