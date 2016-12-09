@@ -218,9 +218,9 @@ class EventFrontend(AbstractUserFrontend):
         rs.ambience['event']['is_open'] = registration_is_open(
             rs.ambience['event'])
         params = {}
+        params['orgas'] = self.coreproxy.get_personas(
+            rs, rs.ambience['event']['orgas'])
         if event_id in rs.user.orga or self.is_admin(rs):
-            params['orgas'] = self.coreproxy.get_personas(
-                rs, rs.ambience['event']['orgas'])
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = os.path.isfile(os.path.join(
                 self.conf.STORAGE_DIR, 'minor_form', str(event_id)))

@@ -7,7 +7,7 @@
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Veranstaltungen verwalten") }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Veranstaltung anlegen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/create_event"), "Veranstaltung anlegen", active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform" class="form-horizontal">
@@ -26,7 +26,7 @@
         {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=(
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
             ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption=True) }}
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+        {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
         {{ util.form_input_text(name="orga_ids", label="Orgas", placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
         <script type="text/javascript">

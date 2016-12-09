@@ -1,6 +1,8 @@
 {% set sidenav_active='event_show' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint = 'strong' %}
 {% block title %}{{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -8,127 +10,167 @@
 {% endblock %}
 {% block content %}
     {% if ambience['event']['is_archived'] %}
-        <p>Diese Veranstaltung ist bereits abgeschlossen.</p>
+        <div class="alert alert-info">
+            {{ util.make_icon('info-sign') }} <strong>Info</strong> Diese Veranstaltung ist bereits archiviert.
+        </div>
     {% endif %}
-    {% if ambience['event']['id'] in user.orga or is_admin %}
-        {{ util.href(cdedblink('event/change_event'), "Konfiguration") }}
-        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=True) }}
-    {% endif %}
-    <p>{{ ambience['event']['description']|e }}</p>
-    {% if ambience['event']['is_open'] %}
-        {{ util.href(cdedblink("event/register"), "Zur Anmeldung", readonly=True) }}
-    {% endif %}
-    <h2>Rahmendaten</h2>
-    TODO
+
     {% if values['event_id'] in user.orga or is_admin %}
-        <h2>Konfiguration</h2>
-        <table>
-            <tr>
-                <td>Titel</td>
-                <td>{{ ambience['event']['title']|e }}</td>
-            </tr>
-            <tr>
-                <td>Organisator</td>
-                <td>{{ institutions[ambience['event']['institution']]|e }}</td>
-            </tr>
-            <tr>
-                <td>Beschreibung</td>
-                <td>{{ ambience['event']['description']|rst }}</td>
-            </tr>
-            <tr>
-                <td>Kürzel</td>
-                <td>{{ ambience['event']['shortname']|e }}</td>
-            </tr>
-            <tr>
-                <td>Anmeldebeginn</td>
-                <td>{{ ambience['event']['registration_start']|date|e }}</td>
-            </tr>
-            <tr>
-                <td>offizieller Anmeldeschluss</td>
-                <td>{{ ambience['event']['registration_soft_limit']|date|e }}</td>
-            </tr>
-            <tr>
-                <td>tatsächlicher Anmeldeschluss</td>
-                <td>{{ ambience['event']['registration_hard_limit']|date|e }}</td>
-            </tr>
-            <tr>
-                <td>CdE-Konto IBAN</td>
-                <td>{{ ambience['event']['iban']|e }}</td>
-            </tr>
-            <tr>
-                <td>Fragebogeneinsatz</td>
-                <td>{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire']) }}</td>
-            </tr>
-            <tr>
-                <td>Notizen</td>
-                <td>{{ ambience['event']['notes']|rst }}</td>
-            </tr>
-        </table>
-        {{ util.href(cdedblink('event/change_event_form'), "bearbeiten", readonly=is_locked) }}
-        <h2>Minderjährigenformular</h2>
-        {% if minor_form_present %}
-            {{ util.href(cdedblink('event/get_minor_form'), "aktuelles Formular") }}
-        {% else %}
-            <strong>Kein Formular vorhanden -- Minderjährige können sich nicht anmelden.</strong>
-        {% endif %}
-        <form action="{{ cdedblink('event/change_minor_form')|e }}" method="POST" enctype="multipart/form-data"
-         id="changeminorformform">
-            <div>
-                {{ util.form_input_file(name="minor_form", accept="application/pdf", info="Eine pdf-Datei.") }}
-                {{ util.form_input_submit(value="Hochladen", readonly=is_locked) }}
-            </div>
-        </form>
-        <h2>Orgas</h2>
-        <ul>
-            {% for anid, entry in orgas|dictsort %}
-                <li>
-                    {{ entry['given_names']|e }} {{ entry['family_name']|e }} ({{ anid|cdedbid|e }})
-                    <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST" id="removeorgaform{{ anid|e }}">
-                        <div>
-                            {{ util.input_hidden(name="orga_id", value=anid) }}
-                            {{ util.form_input_submit(value="Orga löschen", readonly=is_locked) }}
-                        </div>
-                    </form>
-                </li>
-            {% endfor %}
-        </ul>
-        <h3>Orga hinzufügen</h3>
-        <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform">
-            <div>
-                {{ util.form_input_text(name="orga_id", label="ID") }}
-                {{ util.form_input_submit(value="Orga hinzufügen", readonly=is_locked) }}
-            </div>
-        </form>
-        <h2>Offline Nutzung</h2>
-        {% if ambience['event']['offline_lock'] %}
-            {% if  CDEDB_OFFLINE_DEPLOYMENT %}
-                Die Veranstaltung befindet sich im Offline-Modus.
-            {% else %}
-                Die Veranstaltung ist zur Offline-Nutzung gesperrt.
-                <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data"
-                  id="unlockform">
-                    <div>
-                        {{ util.form_input_file(name="json", accept="text/json") }}
-                        {{ util.form_input_submit(value="Entsperren") }}
-                    </div>
+        <div class="p">
+            {{ util.href(cdedblink('event/change_event'), "Konfiguration", aclass="btn btn-sm btn-warning",
+                         icon="cog", readonly=is_locked) }}
+            {% if is_admin and "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
+                <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" id="archiveeventform"
+                        style="display: inline;">
+                    {{ util.input_submit(value="Archivieren", readonly=is_locked, aclass="btn btn-sm btn-danger",
+                                         icon="ban-circle") }}
                 </form>
+                <script type="text/javascript">
+                    $('#archiveeventform').cdedbProtectAction();
+                </script>
             {% endif %}
-        {% else %}
-            Die Veranstaltung ist nicht gesperrt.
-            <form action="{{ cdedblink('event/lock_event')|e }}" method="POST" id="lockform">
-                <div>
-                    {{ util.form_input_submit(value="Sperren") }}
-                </div>
-            </form>
+        </div>
+    {% endif %}
+    
+    {{ ambience['event']['description']|rst }}
+    
+    {# TODO: event dates and parts #}
+    <dl class="dl-horizontal">
+        <dt>Anmeldung</dt>
+        <dd>
+            {{ ambience['event']['registration_start']|date(lang=lang)|e }}–
+            {{- ambience['event']['registration_soft_limit']|date(lang=lang)|e }}
+            {% if (values['event_id'] in user.orga or is_admin) and
+                    ambience['event']['registration_hard_limit'] != ambience['event']['registration_hard_limit'] %}
+                (inoffiziell noch bis {{ ambience['event']['registration_hard_limit']|date(lang=lang)|e }})
+            {% endif %}
+        </dd>
+        <dt>Orgas</dt>
+        <dd>
+            {% for anid, entry in orgas|dictsort %}
+                {{util.persona_anchor(entry) }}{% if not loop.last %},{% endif %}
+            {% endfor %}
+        </dd>
+    </dl>
+    {% if values['event_id'] in user.orga or is_admin %}
+        <dl class="dl-horizontal">
+            <dt>Kürzel</dt>
+            <dd>{{ ambience['event']['shortname']|e }}</dd>
+            <dt>Organisation</dt>
+            <dd>{{ institutions[ambience['event']['institution']]|e }}</dd>
+            <dt>CdE-Konto IBAN</dt>
+            <dd>{{ ambience['event']['iban']|e }}</dd>
+            <dt>Fragebogen aktiv</dt>
+            <dd>{{ util.deko_checkbox(checked=ambience['event']['use_questionnaire'], titles=["nein","ja"]) }}</dd>
+        </dl>
+    {% endif %}
+
+    
+    {% if values['event_id'] in user.orga or is_admin %}
+        {% if ambience['event']['notes'] %}
+            {% call util.bootstrap_panel(title="Admin/Orga-Notizen", icon="tag",
+                                         aclass="panel-default panel-condensed") %}
+                {{ ambience['event']['notes']|rst }}
+            {% endcall %}
         {% endif %}
-        {% if is_admin and "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
-            <h2>Archivierung</h2>
-            <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" class="jsConfirmed"
-              id="archiveeventform">
-                <div>
-                    {{ util.form_input_submit(value="Archivieren", readonly=is_locked) }}
-                </div>
-            </form>
-        {% endif %}
+        
+        <div class="row">
+            <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Orgas", icon='user') %}
+                <ul>
+                    {% for anid, entry in orgas|dictsort %}
+                        <li>
+                            {{ util.persona_anchor(entry) }} ({{ anid|cdedbid|e }})
+                            <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST"
+                                    id="removeorgaform{{ anid|e }}" style="display: inline;">
+                                {{ util.input_hidden(name="orga_id", value=anid) }}
+                                {{ util.input_submit(value="", readonly=is_locked, title="Orga löschen", icon='trash',
+                                                     aclass='btn btn-xs btn-danger') }}
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform" class="p">
+                    <div class="input-group has-success">
+                        <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                        {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga') }}
+                        <script type="text/javascript">
+                            $('#input-add-orga').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') + '?kind=event_user&phrase=%s'}}',
+                                {{ ambience['event']['orgas']|list|json }}
+                            );
+                        </script>
+                        <div class="input-group-btn">
+                            {{ util.input_submit(value="Orga hinzufügen", readonly=is_locked,
+                                                 aclass='btn btn-success') }}
+                        </div>
+                    </div>
+                    {{ util.output_errors('orga_id') }}
+                </form>
+                {% endcall %}
+            </div>
+            
+            <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Minderjährigenformular", icon='file', aclass='panel-warning') %}
+                    <p>
+                        {% if minor_form_present %}
+                            Formular vorhanden: {{ util.href(cdedblink('event/get_minor_form'), "aktuelles Formular",
+                                                             icon='file') }}
+                        {% else %}
+                            <strong>{{ util.make_icon('warning-sign') }} Kein Formular vorhanden –
+                                Minderjährige können sich nicht anmelden.</strong>
+                        {% endif %}
+                    </p>
+                    <form action="{{ cdedblink('event/change_minor_form')|e }}" method="POST" enctype="multipart/form-data"
+                     id="changeminorformform">
+                        <div class="input-group">
+                            {{ util.input_file(name="minor_form", accept="application/pdf") }}
+                            <div class="input-group-btn">
+                                {{ util.input_submit(value="Hochladen", readonly=is_locked, icon='upload') }}
+                            </div>
+                        </div>
+                        {{ util.output_errors('minor_form') }}
+                    </form>
+                {% endcall %}
+            </div>
+            
+            <div class="col-md-6">
+                {% call util.bootstrap_panel(title="Offline-Nutzung", icon='cloud-download', aclass='panel-danger') %}
+                    {% if ambience['event']['offline_lock'] %}
+                        {% if  CDEDB_OFFLINE_DEPLOYMENT %}
+                            Die Veranstaltung befindet sich im Offline-Modus.
+                        {% else %}
+                            <p>
+                                Die Veranstaltung ist zur Offline-Nutzung gesperrt. Zum Entsperren bitte hier den
+                                Datenexport der Offline-Datenbank hochladen.
+                            </p>
+                            <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data"
+                              id="unlockform">
+                                <div class="input-group">
+                                    {{ util.input_file(name="json", accept="text/json") }}
+                                    <div class="input-group-btn">
+                                        {{ util.input_submit(value="Entsperren", icon='cloud-upload',
+                                                             aclass='btn btn-success') }}
+                                    </div>
+                                </div>
+                                {{ util.output_errors('json') }}
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <p>Die Veranstaltung ist nicht gesperrt.</p>
+                        <div class="p">
+                            <form action="{{ cdedblink('event/lock_event')|e }}" method="POST" id="lockform">
+                                {{ util.input_submit(value="Sperren", icon='lock', aclass="btn btn-danger") }}
+                            </form>
+                        </div>
+                        <p class="text-muted">
+                            {{ util.make_icon('info-sign') }} Durch die Sperrung sind keine Veränderungen an der
+                            Veranstaltung mehr möglich. So kann die Veranstaltung ohne Konflikte in einer
+                            Offline-Instanz der Datenbank verwendet werden.
+                        </p>
+                    {% endif %}
+                {% endcall %}
+            </div>
+        </div>
     {% endif %}
 {% endblock %}
