@@ -1,13 +1,18 @@
 {% set sidenav_active='event_list' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Alle DB-Veranstaltungen{% endblock %}
+{% block title %}Veranstaltungen verwalten{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
-{{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Alle Veranstaltungen", active="True") }}
+{{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Veranstaltungen verwalten", active="True") }}
 {% endblock %}
 {% block content %}
-    <h2>Aktuelle Veranstaltungen</h2>
+    <div class="p">
+        {{ util.href(cdedblink("event/create_event_form"), "Veranstaltung anlegen", aclass="btn btn-success btn-sm",
+                icon="plus") }}
+    </div>
+    
+    <h3>Aktuelle Veranstaltungen</h3>
     <ul>
         {% for event_id, entry in events|dictsort|reverse %}
             {% if not entry['is_archived'] %}
@@ -17,7 +22,7 @@
             {% endif %}
         {% endfor %}
     </ul>
-    <h2>Archivierte Veranstaltungen</h2>
+    <h3>Archivierte Veranstaltungen</h3>
     <ul>
         {% for event_id, entry in events|dictsort|reverse %}
             {% if entry['is_archived'] %}

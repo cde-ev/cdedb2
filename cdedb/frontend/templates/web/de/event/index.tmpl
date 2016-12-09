@@ -6,13 +6,6 @@
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen", active=True) }}
 {% endblock %}
 {% block content %}
-    {% if is_admin %}
-        <div class="p">
-            {{ util.href(cdedblink("event/create_event_form"), "Veranstaltung anlegen", aclass="btn btn-success btn-sm",
-                    icon="plus") }}
-        </div>
-    {% endif %}
-    
     <h3>Aktuelle Veranstaltungen</h3>
     {% if open_events %}
         <ul>

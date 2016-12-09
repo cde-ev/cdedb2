@@ -31,12 +31,13 @@
      * Adds selecizes to the given DOM elements to search personas via jQuerys ajax() function and the json api at the
      * given url provided by our python code.
      *
-     * The url parameter must contain '%s' wich will be replaced by the search pattern
-     * 'exclude' may contain an array of (unformatted) persona ids, which will be excluded from the fetched result list
+     * The url parameter must contain '%s' wich will be replaced by the search pattern.
+     * 'exclude' may contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
      * if 'freeform' is true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
      * added as option.
+     * If multi is true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
      */
-    $.fn.cdedbSearchPerson = function(url,exclude,freeform) {
+    $.fn.cdedbSearchPerson = function(url,exclude,freeform,multi) {
         $(this).selectize({
             'placeholder' : '',
             'valueField' : 'cdedb_id',
@@ -50,7 +51,7 @@
                 return (exclude.indexOf(parseInt(res[1])) == -1) && (compute_checkdigit(res[1]) == res[2]);
             },
             options: [],
-            maxItems: 1,
+            maxItems: (multi ? null : 1),
             copyClassesToDropdown: false,
             render: {
                 option: function(data, escape) {

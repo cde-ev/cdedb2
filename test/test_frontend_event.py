@@ -227,7 +227,7 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_list_events(self, user):
         self.traverse({'href': '/event/$'}, {'href': '/event/event/list'})
-        self.assertTitle("Alle DB-Veranstaltungen")
+        self.assertTitle("Veranstaltungen verwalten")
         self.assertPresence("Große Testakademie 2222")
         self.assertNonPresence("PfingstAkademie 2014")
 
@@ -371,8 +371,9 @@ etc;anything else""", f['entries_2'].value)
     @as_users("anton")
     def test_create_event(self, user):
         self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/list'},
                       {'href': '/event/event/create'})
-        self.assertTitle("DB-Veranstaltung anlegen")
+        self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
         f['institution'] = 1
