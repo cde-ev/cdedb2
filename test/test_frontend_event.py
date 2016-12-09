@@ -473,7 +473,7 @@ etc;anything else""", f['entries_2'].value)
         f['course_choice3_2'] = 1
         f['course_instructor3'] = 2
         self.submit(f)
-        self.assertTitle("Status der Anmeldung zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         mail = self.fetch_mail()[0]
         self.assertIn("461.49", mail)
         self.assertPresence("Ich freu mich schon so zu kommen")
@@ -492,7 +492,7 @@ etc;anything else""", f['entries_2'].value)
         f['course_choice3_2'] = 5
         f['course_instructor3'] = 1
         self.submit(f)
-        self.assertTitle("Status der Anmeldung zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
         self.assertPresence("Ich kann es kaum erwarten!")
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung zur Veranstaltung Große Testakademie 2222 aktualisieren")
@@ -511,7 +511,7 @@ etc;anything else""", f['entries_2'].value)
         f['use_questionnaire'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
-        self.assertTitle("Fragebogen zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
         self.assertEqual(False, f['brings_balls'].checked)
         f['brings_balls'].checked = True
@@ -521,7 +521,7 @@ etc;anything else""", f['entries_2'].value)
         f['lodge'] = "Bitte in ruhiger Lage.\nEcht."
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
-        self.assertTitle("Fragebogen zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
         self.assertEqual(True, f['brings_balls'].checked)
         self.assertEqual("etc", f['transportation'].value)
@@ -622,6 +622,7 @@ etc;anything else""", f['entries_2'].value)
     def test_add_registration(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/registration/add'})
         self.assertTitle("Neue Anmeldung (Große Testakademie 2222)")
         f = self.response.forms['addregistrationform']
@@ -696,6 +697,7 @@ etc;anything else""", f['entries_2'].value)
     def test_field_set(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/field/setselect'})
         self.assertTitle("Feld auswählen (Große Testakademie 2222)")
         f = self.response.forms['selectfieldform']
@@ -706,7 +708,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("pedes", f['input2'].value)
         f['input2'] = "etc"
         self.submit(f)
-        self.traverse({'href': '/event/event/1/field/setselect'})
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'href': '/event/event/1/field/setselect'})
         self.assertTitle("Feld auswählen (Große Testakademie 2222)")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
@@ -715,7 +718,8 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldform']
         self.assertEqual("etc", f['input2'].value)
 
-        self.traverse({'href': '/event/event/1/field/setselect'})
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'href': '/event/event/1/field/setselect'})
         self.assertTitle("Feld auswählen (Große Testakademie 2222)")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
@@ -725,7 +729,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("", f['input4'].value)
         f['input4'] = "Test\nmit\n\nLeerzeilen"
         self.submit(f)
-        self.traverse({'href': '/event/event/1/field/setselect'})
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'href': '/event/event/1/field/setselect'})
         self.assertTitle("Feld auswählen (Große Testakademie 2222)")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
@@ -747,7 +752,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/stats'},)
-        self.assertTitle("Kurse -- Übersicht (Große Testakademie 2222)")
+        self.assertTitle("Kurs-Übersicht (Große Testakademie 2222)")
         self.assertPresence("Planetenretten für Anfänger")
         self.assertPresence("1")
         self.assertPresence("δ")
@@ -954,7 +959,7 @@ etc;anything else""", f['entries_2'].value)
         f['use_questionnaire'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/registration/questionnaire'})
-        self.assertTitle("Fragebogen zur Veranstaltung Große Testakademie 2222")
+        self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
         self.assertIn("brings_balls", f.fields)
         self.assertNotIn("may_reserve", f.fields)

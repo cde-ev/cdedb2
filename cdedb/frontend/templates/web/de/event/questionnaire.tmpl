@@ -1,7 +1,12 @@
 {% set sidenav_active='event_quest' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Fragebogen zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
+{% block title %}Fragebogen ({{ ambience['event']['title']|e }}){% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/questionnaire"), "Fragebogen", active=True) }}
+{% endblock %}
 {% block content %}
     {{ util.href(cdedblink("event/registration_status"), "Abbrechen") }}
     <form action="{{ cdedblink('event/questionnaire')|e }}" method="POST" id="questionnaireform">

@@ -1,7 +1,12 @@
-{% set sidenav_active='event_course_choices' %}
+{% set sidenav_active='event_course_stats' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Kurse -- Übersicht ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}Kurs-Übersicht ({{ ambience['event']['title']|e }}){% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse", active=True) }}
+{% endblock %}
 {% block content %}
     {# TODO incorporate active_parts, max_size, min_size of courses #}
     <table>

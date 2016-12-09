@@ -10,14 +10,23 @@
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen", active=True) }}
 {% endblock %}
 {% block content %}
-    {% with TITLES = {
-        "all": "Alle Anmeldungen",
-        "minors": "Minderjährige",} %}
-
-        <div>
-            {{ util.place_default_queries("event/registration_query", default_queries, TITLES) }}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/add_registration_form"), "Neuer Teilnehmer",
+                             readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
+                {{ util.href(cdedblink("event/field_set_select"), "Datenfeld setzen",
+                              readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+            </div>
         </div>
-    {% endwith %}
+        <div class="col-md-8">
+            {% with TITLES = {
+                    "all": "Alle Anmeldungen",
+                    "minors": "Minderjährige",} %}
+                {{ util.place_default_queries("event/registration_query", default_queries, TITLES) }}
+            {% endwith %}
+        </div>
+    </div>
 
 
     {{ titles.update({

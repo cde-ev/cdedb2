@@ -4,6 +4,11 @@
 {% block title %}
 Kurswahlen ({{ ambience['event']['title']|e }})
 {% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/course_choices"), "Kurseinteilung", active=True) }}
+{% endblock %}
 {% block content %}
     {# TODO incorporate active_parts, max_size, min_size of courses #}
     <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">

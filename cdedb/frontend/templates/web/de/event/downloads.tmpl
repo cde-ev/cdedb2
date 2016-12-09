@@ -2,6 +2,11 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}Downloads zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/downloads"), "Downloads", active=True) }}
+{% endblock %}
 {% block content %}
     <ul>
         <li>
