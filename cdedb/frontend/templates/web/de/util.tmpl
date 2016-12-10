@@ -173,10 +173,10 @@
             {% if readonly %}disabled="disabled"{% endif %} {{ attributes }} />
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="") %}
+    maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='') %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
         {{ input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
-                aclass="form-control " + aclass) }}
+                aclass="form-control " + aclass, attributes=attributes) }}
     {% endcall %}
 {% endmacro %}
 
@@ -236,13 +236,13 @@
 {% endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
-        anid='', horizontal=True, small=False) %}
+        anid='', horizontal=True, small=False, attributes='') %}
     {# This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         <div {% if horizontal %}class="{% if small %}col-sm-6 col-sm-offset-2{% else -%}
                 col-sm-8 col-sm-offset-4{% endif %}"{% endif %}>
             <div class="checkbox {% if readonly %}disabled{% endif %}">
-                {{ input_checkbox(name, label, value, defaultvalue, readonly, anid) }}
+                {{ input_checkbox(name, label, value, defaultvalue, readonly, anid, attributes=attributes) }}
             </div>
             {{ output_errors(name, displayerrors) }}
             {{ output_info(info) }}
