@@ -407,6 +407,9 @@ tr.drow-new>td {
 tr.drow-delete>td {
     background-color: #f2dede;
 }
+.panel.shaded-info>.panel-body {
+    background-color: #e8e8e8;
+}
 .panel.drow-new, .panel.drow-new {
     border-color: #d6e9c6;
 }
@@ -430,6 +433,7 @@ tr.drow-delete>td {
 .drow-delete input, .drow-delete textarea, .drow-delete select {
     text-decoration: line-through;
 }
+
 
 /* Profile history */
 .history-row {

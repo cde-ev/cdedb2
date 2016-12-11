@@ -964,7 +964,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertIn("brings_balls", f.fields)
         self.assertNotIn("may_reserve", f.fields)
         self.traverse({'href': '/event/event/1/questionnaire/summary'})
-        self.assertTitle("Große Testakademie 2222 Fragebogenkonfiguration")
+        self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertEqual("3", f['field_id_5'].value)
         f['field_id_5'] = 5
@@ -979,7 +979,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("mit Text darunter", f['info_0'].value)
         f['info_0'] = "mehr Text darunter\nviel mehr"
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Fragebogenkonfiguration")
+        self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertEqual("5", f['field_id_5'].value)
         self.assertEqual("4", f['input_size_5'].value)
@@ -989,7 +989,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("mehr Text darunter\nviel mehr", f['info_0'].value)
         f['delete_1'].checked = True
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Fragebogenkonfiguration")
+        self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertNotIn("field_id_5", f.fields)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
@@ -1000,7 +1000,7 @@ etc;anything else""", f['entries_2'].value)
         f['readonly_-1'].checked = True
         f['input_size_-1'] = 4
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Fragebogenkonfiguration")
+        self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertIn("field_id_5", f.fields)
         self.assertEqual("3", f['field_id_5'].value)
@@ -1015,7 +1015,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Fragebogenkonfiguration")
+        self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertEqual("3", f['field_id_0'].value)
         self.assertEqual("2", f['field_id_5'].value)

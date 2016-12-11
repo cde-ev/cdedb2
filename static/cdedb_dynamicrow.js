@@ -9,6 +9,7 @@
         var obj = this;
         var settings = $.extend({
             addButton : $(),
+            callback : function () {}
         }, options || {});
 
 
@@ -97,6 +98,7 @@
             $prototype.before($row);
             $row.find('.drow-input').first().focus();
             obj.refreshInputNames();
+            settings.callback.call($row);
         };
         
         /**

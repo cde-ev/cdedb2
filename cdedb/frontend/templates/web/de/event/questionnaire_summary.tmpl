@@ -1,57 +1,110 @@
 {% set sidenav_active='event_quest_summary' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% set jshint='strong' %}
-{% block title %}{{ ambience['event']['title']|e }} Fragebogenkonfiguration{% endblock %}
-{% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), "Fragebogen konfigurieren", active=True) }}
+{% block scripts %}
+    {{ util.cdedb_script('helper') }}
+    {{ util.cdedb_script('dynamicrow') }}
+    {{ util.cdedb_script('questionnaire_config') }}
 {% endblock %}
-{% block content %}
-    {# jinja does not support list comprehension ... #}
-    {% set field_entries = [("", "nur Text")] %}
-    {% for field_id, field in ambience['event']['fields']|dictsort %}
-        {{ field_entries.append((field_id, field['field_name']))|e }}
-    {% endfor %}
-    <form action="{{ cdedblink('event/questionnaire_summary')|e }}" method="POST" id="questionnairesummaryform">
-        {% with INPUT_SIZE_LABELS = {0: "einzeilig",
-                                     2: "mehrzeilig",
-                                     3: "mehrzeilig+",
-                                     4: "mehrzeilig++",}%}
-            <ul>
-                {% for entry in questionnaire %}
-                    <li>
-                        <table>
-                            {{ util.form_input_checkbox("delete_{}".format(loop.index0), label="Löschen") }}
-                            {{ util.form_input_select("field_id_{}".format(loop.index0), label="Abfrage",
-                                                     entries=field_entries) }}
-                            {{ util.form_input_text(name="title_{}".format(loop.index0), label="Label/Überschrift") }}
-                            {{ util.form_input_textarea(name="info_{}".format(loop.index0), label="Text") }}
-                            {{ util.form_input_select(
-                                "input_size_{}".format(loop.index0), label="Eingabefeldgröße", entries=(
-                                    (0, INPUT_SIZE_LABELS[0]), (2, INPUT_SIZE_LABELS[2]),
-                                    (3, INPUT_SIZE_LABELS[3]), (4, INPUT_SIZE_LABELS[4]))) }}
-                            {{ util.form_input_checkbox("readonly_{}".format(loop.index0), label="Schreibgeschützt") }}
-                        </table>
-                    </li>
-                {% endfor %}
-                <li>
-                    {{ util.form_input_checkbox("create_-1", label="Hinzufügen") }}
-                    {{ util.form_input_select("field_id_-1", label="Abfrage", entries=field_entries) }}
-                    {{ util.form_input_text(name="title_-1", label="Label/Überschrift") }}
-                    {{ util.form_input_textarea(name="info_-1", label="Text") }}
-                    {{ util.form_input_select("input_size_-1", label="Eingabefeldgröße",
-                                              entries=((0, INPUT_SIZE_LABELS[0]), (2, INPUT_SIZE_LABELS[2]),
-                                                       (3, INPUT_SIZE_LABELS[3]), (4, INPUT_SIZE_LABELS[4]))) }}
-                    {{ util.form_input_checkbox("readonly_-1", label="Schreibgeschützt") }}
-                </li>
-            </ul>
-            <div>
-                {{ util.form_input_submit(value="Ändern", readonly=is_locked) }}
+{% block title %}Fragebogen-Konfiguration ({{ ambience['event']['title']|e }}){% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), "Fragebogen konfigurieren", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Fragebogen-Konfiguration
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+
+{# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
+   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
+{% macro print_part(part_id, aclass="", newrow) %}
+    <div class="panel panel-default {{ aclass }}">
+        <div class="panel-body">
+            {# jinja does not support list comprehension ... #}
+            {% set field_entries = [("", "— Nur Text —")] %}
+            {% for field_id, field in ambience['event']['fields']|dictsort %}
+                {{ field_entries.append((field_id, field['field_name']))|e }}
+            {% endfor %}
+            {{ util.form_input_select("field_id_{}".format(part_id), label="Abfrage", entries=field_entries,
+                                      attributes=('data-basename="field_id_-"' if newrow else ''),
+                                      aclass='input-field') }}
+            {{ util.form_input_text(name="title_{}".format(part_id), label="Titel",
+                                    attributes=('data-basename="title_-"' if newrow else '')) }}
+            {{ util.form_input_textarea(name="info_{}".format(part_id), label="Text",
+                                        attributes=('data-basename="info_-"' if newrow else '')) }}
+            {{ util.form_input_select(
+                "input_size_{}".format(part_id), label="Eingabefeldgröße", entries=(
+                    (0,"einzeilig"), (2, "mehrzeilig"),
+                    (3, "mehrzeilig+"), (4, "mehrzeilig++")),
+                attributes=('data-basename="input_size_-"' if newrow else ''), aclass='input-inputsize') }}
+            <div class="form-group">
+                <div class="col-sm-4 col-sm-offset-4">
+                    <div class="checkbox">
+                        {{ util.input_checkbox("readonly_{}".format(part_id), label="Schreibgeschützt",
+                                               attributes=('data-basename="readonly_-"' if newrow else ''),
+                                                aclass='input-readonly') }}
+                    </div>
+                </div>
+                <div class="col-sm-4 text-right">
+                    <span class="drow-buttonspace">
+                        {% if newrow %}
+                            {{ util.input_checkbox("create_{}".format(part_id), label="Hinzufügen",
+                                                   attributes='data-basename="create_-"', aclass='drow-indicator')}}
+                        {% else %}
+                            {{ util.input_checkbox("delete_{}".format(part_id), label="Löschen",
+                                                   aclass='drow-indicator') }}
+                        {% endif %}
+                    </span>
+                </div>
             </div>
-        {% endwith %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% block content %}
+    <div class="p">
+        {{ util.href(cdedblink('event/reorder_questionnaire_form'), "Anordnung ändern", readonly=is_locked,
+                     aclass="btn btn-info btn-sm", icon='sort') }}
+    </div>
+    <form action="{{ cdedblink('event/questionnaire_summary')|e }}" method="POST" id="questionnairesummaryform"
+          class="form-horizontal">
+        <div id="drow-container">
+            {# Old items, already stored in the database #}
+            {% for entry in questionnaire %}
+                {{ print_part(loop.index0, 'drow-row', False) }}
+            {% endfor %}
+            {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
+                {{ print_part(-i, 'drow-new', True) }}
+            {% endfor %}
+            {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+            {{ print_part(-values.get('create_last_index', 0) - 1, 'drow-prototype', True) }}
+        </div>
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} Teil hinzufügen
+            </button>
+        </p>
+        {{ util.input_submit(value="Speichern", readonly=is_locked) }}
     </form>
-    {{ util.href(cdedblink('event/reorder_questionnaire_form'), "umordnen", readonly=is_locked) }}
+    <script type="text/javascript">
+        (function() {
+            var field_list = {{ ambience['event']['fields']|json }};
+            $('#drow-container').cdedbDynamicRow(
+                {
+                    addButton: $('#drow-addbutton'),
+                    callback: function () {
+                        $(this).cdedbQuestionnaireConfig(field_list);
+                    }
+                });
+            $('#questionnairesummaryform').cdedbProtectChanges();
+            $('.drow-row').cdedbQuestionnaireConfig(field_list);
+        })()
+    </script>
 {% endblock %}
