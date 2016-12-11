@@ -178,6 +178,9 @@ ul.nosp, ol.nosp {
 .nav.nav-tabs.mosp {
     margin-bottom: 20px;
 }
+.panel-body>:last-child {
+    margin-bottom: 0;
+}
 
 
 /* Main navbar */
@@ -404,27 +407,27 @@ tr.drow-new>td {
 tr.drow-delete>td {
     background-color: #f2dede;
 }
-.panel.drow-new {
+.panel.drow-new, .panel.drow-new {
     border-color: #d6e9c6;
 }
-.panel.drow-new>.panel-heading {
+.panel.drow-new>.panel-heading, .drow-new .panel>.panel-heading {
     background-color: #dff0d8;
     border-color: #d6e9c6;
 }
-.panel.drow-new>.panel-body {
+.panel.drow-new>.panel-body, .drow-new .panel>.panel-body {
     background-color: #f0f4ee;
 }
-.panel.drow-delete {
+.panel.drow-delete, .drow-delete .panel {
     border-color: #ebccd1;
 }
-.panel.drow-delete>.panel-heading {
+.panel.drow-delete>.panel-heading, .drow-delete .panel>.panel-heading {
     background-color: #f2dede;
     border-color: #ebccd1;
 }
-.panel.drow-delete>.panel-body {
+.panel.drow-delete>.panel-body, .drow-delete .panel>.panel-body {
     background-color: #f3e8e8;
 }
-.panel.drow-delete input {
+.drow-delete input, .drow-delete textarea, .drow-delete select {
     text-decoration: line-through;
 }
 

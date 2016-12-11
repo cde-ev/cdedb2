@@ -1,41 +1,88 @@
 {% set sidenav_active='event_field_summary' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
 {% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
 {% block title %}Datenfelder konfigurieren ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/field_summary"), "Datenfelder konfigurieren", active=True) }}
 {% endblock %}
-{% block content %}
-    <form action="{{ cdedblink('event/field_summary')|e }}" method="POST" id="fieldsummaryform">
-        <ul>
-            {% for anid, entry in ambience['event']['fields']|dictsort %}
-                <li>
-                    {{ util.form_input_checkbox("delete_{}".format(anid), label="Löschen",
-                                                readonly=anid in is_referenced) }}
-                    {{ util.form_input_text(name="field_name_{}".format(anid), label="Name", readonly=True) }}
-                    {{ util.form_input_select(name="kind_{}".format(anid), label="Typ", entries=(
-                        ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
-                        ("date", "Datum"), ("datetime", "Datum mit Uhrzeit"))) }}
-                    {{ util.form_input_textarea(name="entries_{}".format(anid), label="Auswahlmöglichkeiten",
-                                                info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
-                </li>
-            {% endfor %}
-            <li>
-                {{ util.form_input_checkbox("create_-1", label="Anlegen") }}
-                {{ util.form_input_text(name="field_name_-1", label="Name") }}
-                {{ util.form_input_select(name="kind_-1", label="Typ", entries=(
-                    ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
-                    ("date", "Datum"), ("datetime", "Datum mit Uhrzeit"))) }}
-                {{ util.form_input_textarea(name="entries_-1", label="Auswahlmöglichkeiten",
-                                            info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.") }}
-            </li>
-        </ul>
-        <div>
-            {{ util.form_input_submit(value="Abschicken", readonly=is_locked) }}
+{% block heading %}
+    <h1 class="title">
+        Datenfelder konfigurieren
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+
+{# Macro for a general field, that can have each role in the DynamicRow workflow.
+   non-deletable rows have a disabled 'delete'-checkbox,
+   aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
+{% macro print_field(field_id, deletable, aclass="", newrow) %}
+    <div class="col-md-6 {{ aclass }}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                {{ util.input_text(name="field_name_{}".format(field_id), placeholder="Name des Datenfelds",
+                                   readonly=not newrow) }}
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">Datentyp</label>
+                    <div class="col-sm-5">
+                        {{ util.input_select(name="kind_{}".format(field_id), entries=(
+                                ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
+                                ("date", "Datum"), ("datetime", "Datum mit Uhrzeit")),
+                            attributes=('data-basename="kind_-"' if newrow else '')) }}
+                        {{ util.output_errors("kind_{}".format(field_id)) }}
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="text-right">
+                            <span class="drow-buttonspace">
+                                {% if newrow %}
+                                    {{ util.input_checkbox("create_{}".format(field_id), label="Hinzufügen",
+                                                           attributes='data-basename="create_-"', aclass='drow-indicator')}}
+                                {% else %}
+                                    {{ util.input_checkbox("delete_{}".format(field_id), label="Löschen",
+                                                           readonly=not deletable, aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {{ util.form_input_textarea(name="entries_{}".format(field_id), label="Optionen",
+                                            info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.",
+                                            attributes=('data-basename="entries_-"' if newrow else '')) }}
+            </div>
         </div>
+    </div>
+{% endmacro %}
+
+
+{% block content %}
+    <form action="{{ cdedblink('event/field_summary')|e }}" method="POST" id="fieldsummaryform" class="form-horizontal">
+        <div id="drow-container" class="row">
+            {# Old items, already stored in the database #}
+            {% for field_id, entry in ambience['event']['fields']|dictsort %}
+                {{ print_field(field_id, field_id not in is_referenced, 'drow-row', False) }}
+            {% endfor %}
+            {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
+                {{ print_field(-i, False, 'drow-new', True) }}
+            {% endfor %}
+            {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+            {{ print_field(-values.get('create_last_index', 0) - 1, False, 'drow-prototype', True) }}
+        </div>
+        <p>
+            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                {{ util.make_icon('plus') }} Feld hinzufügen
+            </button>
+        </p>
+        {{ util.input_submit(value="Speichern", readonly=is_locked) }}
     </form>
+    <script type="text/javascript">
+        $('#drow-container').cdedbDynamicRow({addButton: $('#drow-addbutton')});
+        $('#fieldsummaryform').cdedbProtectChanges();
+    </script>
 {% endblock %}

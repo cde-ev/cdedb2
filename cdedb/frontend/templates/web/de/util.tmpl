@@ -195,7 +195,8 @@
     {% endcall %}
 {% endmacro %}
 
-{% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3) %}
+{% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3,
+                        attributes='') %}
     <textarea {% if aclass %} class="{{ aclass|e }}"{% endif %} rows="{{ rows }}"
             {% if anid %} id="{{ anid|e }}"{% endif %} name="{{ name|e }}"
             {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
@@ -203,9 +204,9 @@
 {% endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
-        small=False, maxlength=0, rows=3, horizontal=True) %}
+        small=False, maxlength=0, rows=3, horizontal=True, attributes='') %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
-        {{ input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows) }}
+        {{ input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes) }}
     {% endcall %}
 {% endmacro %}
 
@@ -261,9 +262,10 @@
 
 
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
-        nulloption=False) %}
+        nulloption=False, attributes="") %}
     <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-      {% if aclass %} class="{{ aclass|e }}" {% endif %}{% if readonly %}disabled="disabled"{% endif %}>
+            {% if aclass %} class="{{ aclass|e }}" {% endif %}{% if readonly %}disabled="disabled"{% endif %}
+            {{ attributes }}>
         {% if nulloption %}
              <option value=""> </option>
         {% endif %}
@@ -277,10 +279,10 @@
 {% endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=False, anid='', small=False, horizontal=True, aclass="") %}
+        nulloption=False, anid='', small=False, horizontal=True, aclass="", attributes="") %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
         {{ input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
-                aclass="form-control " + aclass) }}
+                aclass="form-control " + aclass, attributes=attributes) }}
     {% endcall %}
 {% endmacro%}
 
