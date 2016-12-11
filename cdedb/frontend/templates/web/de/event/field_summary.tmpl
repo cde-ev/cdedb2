@@ -25,7 +25,8 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 {{ util.input_text(name="field_name_{}".format(field_id), placeholder="Name des Datenfelds",
-                                   readonly=not newrow) }}
+                                   readonly=not newrow, aclass='drow-input form-control',
+                                   attributes=('data-basename="field_name_-"' if newrow else '')) }}
             </div>
             <div class="panel-body">
                 <div class="form-group">
@@ -34,7 +35,7 @@
                         {{ util.input_select(name="kind_{}".format(field_id), entries=(
                                 ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
                                 ("date", "Datum"), ("datetime", "Datum mit Uhrzeit")),
-                            attributes=('data-basename="kind_-"' if newrow else '')) }}
+                            attributes=('data-basename="kind_-"' if newrow else ''), aclass='drow-input form-control') }}
                         {{ util.output_errors("kind_{}".format(field_id)) }}
                     </div>
                     <div class="col-sm-3">
@@ -53,7 +54,8 @@
                 </div>
                 {{ util.form_input_textarea(name="entries_{}".format(field_id), label="Optionen",
                                             info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.",
-                                            attributes=('data-basename="entries_-"' if newrow else '')) }}
+                                            attributes=('data-basename="entries_-"' if newrow else ''),
+                                            aclass='drow-input') }}
             </div>
         </div>
     </div>
