@@ -615,6 +615,106 @@ tr.drow-delete>td {
     color: #fff;
 }
 
+/* Fancy row sorting with JavaScript */
+.orderrow-container {
+    border: solid 1px #ddd;
+    border-radius: 4px;
+    padding: 0 6px 11px 6px;
+    margin-bottom: 10px;
+    max-width: 500px;
+}
+.orderrow-outer {
+    padding-top: 9px;
+    position: relative;
+}
+.orderrow-outer.dragover {
+    background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0) 50px);
+}
+.orderrow-outer:before {
+    content: ' ';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    box-sizing: border-box;
+    border-bottom: dashed 3px rgba(0,0,0,0);
+    transition: border-color .3s;
+}
+.orderrow-outer.dragover:before {
+    border-bottom-color: rgba(0,0,0,1);
+}
+.orderrow-container.active .orderrow-outer:before {
+    border-bottom-color: rgba(0,0,0,.2);
+}
+.orderrow-container.active .orderrow-outer:hover:before {
+    border-bottom-color: rgba(36,87,130,1);
+}
+.orderrow-inner {
+    border: solid 1px rgba(0,0,0,0);
+    border-radius: 3px;
+    transition: border-color .3s;
+    padding: 4px 6px;
+    cursor: default;
+    /* Disable text selection: */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.orderrow-inner:hover {
+    border-color: rgba(0,0,0,.3);
+}
+.orderrow-outer.dragover .orderrow-inner:hover {
+    border: solid 1px rgba(0,0,0,0);
+}
+.orderrow-indicator {
+    float: right;
+    margin-left: 10px;
+    padding-top: 3px;
+}
+.orderrow-indicator .label {
+    vertical-align: top;
+}
+.miniature-heading {
+    margin-top: 12px;
+    font-weight: bold;
+    font-size: 1.1em;
+    border-bottom: solid 1px #ddd;
+    margin-bottom: 2px;
+}
+.miniature-pre {
+    margin-bottom: 3px;
+    font-size: 0.6em;
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+.miniature-label {
+    font-size: 0.8em;
+    font-weight: bold;
+    width: 120px;
+    float: left;
+    padding: 2px 0;
+}
+.miniature-checkbox {
+    font-size: 0.8em;
+    padding: 1px 4px;
+}
+.miniature-text, .miniature-textarea {
+    border: solid 1px #ddd;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #f2f2f2;
+    font-size: 0.8em;
+    padding: 1px 6px;
+}
+.miniature-textarea {
+    min-height: 40px;
+}
+
 /* ************** *
  * Helper classes *
  * ************** */

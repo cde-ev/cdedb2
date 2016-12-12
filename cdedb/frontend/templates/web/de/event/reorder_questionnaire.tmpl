@@ -1,24 +1,66 @@
 {% extends "web/de/event/base.tmpl" %}
+{% set sidenav_active='event_quest_summary' %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
-{% set jshint='strong' %}
 {% block title %}Fragebogen umordnen ({{ ambience['event']['title']|e }}){% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), "Fragebogen konfigurieren") }}
+    {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), "Anordnung ändern", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Fragebogen umordnen
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
 {% block content %}
-    <ul id="rowlist">
+    <div class="orderrow-container" id="rowlist">
         {% for entry in questionnaire %}
-            <li id="{{ loop.index0|e }}">
-                {% if entry['field_id'] %}
-                    Abfrage: {{ ambience['event']['fields'][entry['field_id']]['field_name']|e }}
-                {% else %}
-                    Überschrift: {{ entry['title']|e }}<br>
-                    Text: {{ entry['info']|e }}
-                {% endif %}
-            </li>
+            <div class="orderrow-outer" data-id="{{ loop.index0|e }}">
+                <div class="orderrow-inner">
+                    <div class="orderrow-indicator"><span class="label label-primary">{{ loop.index0|e }}</span></div>
+                    {% if entry['field_id'] %}
+                        <div class="miniature-label">{{ entry['title']|e }}</div>
+                        {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
+                            {% if FIELD['entries'] %}
+                                <div class="miniature-text">
+                                    {{ util.make_icon('menu-down', aclass='pull-right') }}
+                                    → [{{ FIELD['field_name']|e }}]
+                                </div>
+                            {% else %}
+                                {% if FIELD['kind'] == "bool" %}
+                                    <div class="miniature-checkbox">
+                                        {{ util.make_icon('check') }} → [{{ FIELD['field_name']|e }}]
+                                    </div>
+                                {% else %}
+                                    {% if entry['input_size'] %}
+                                        <div class="miniature-textarea">→ [{{ FIELD['field_name']|e }}]</div>
+                                    {% else %}
+                                        <div class="miniature-text">→ [{{ FIELD['field_name']|e }}]</div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% endwith %}
+
+                    {# Text-only entry #}
+                    {% else %}
+                        {% if entry['title'] %}
+                            <div class="miniature-heading">{{ entry['title']|e }}</div>
+                        {% endif %}
+                        {% if entry['info'] %}
+                            <div class="miniature-pre">{{ entry['info']|truncate(200,True,' …')|e }}</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
         {% endfor %}
-    </ul>
-    <form action="{{ cdedblink('event/reorder_questionnaire')|e }}" method="POST" id="reorderquestionnaireform">
-        {{ util.input_hidden(name="order", value="", anid="orderinput") }}
-        {{ util.form_input_submit(value="Umordnen", readonly=True, aclass="jsEnabled") }}
+    </div>
+    <form action="{{ cdedblink('event/reorder_questionnaire')|e }}" method="POST" id="reorderquestionnaireform"
+          class="form-horizontal">
+        {{ util.form_input_text(name="order", anid="orderinput", label="Reihenfolge", placeholder="Nr,Nr,Nr,…",
+                                defaultvalue=range(0,questionnaire|length)|join(','), small=True) }}
+        {{ util.form_input_submit(value="Umordnen", small=True, cancellink=cdedblink('event/questionnaire_summary')) }}
     </form>
     <script type="text/javascript">
         $(document).ready(function(){
