@@ -187,6 +187,8 @@ def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium"):
     :rtype: str
     """
     if val is None or val == '' or not isinstance(val, datetime.date):
+        if isinstance(val, str) and val:
+            return val
         return None
     if lang:
         return babel.dates.format_date(val, locale=lang, format=verbosity)
@@ -208,6 +210,8 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
     :rtype: str
     """
     if val is None or val == '' or not isinstance(val, datetime.datetime):
+        if isinstance(val, str) and val:
+            return val
         return None
     if val.tzinfo is not None:
         val = val.astimezone(_BASICCONF.DEFAULT_TIMEZONE)
