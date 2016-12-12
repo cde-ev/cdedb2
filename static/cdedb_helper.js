@@ -32,9 +32,7 @@
     /**
      * jQuery plugin to prevent users from accidentally leave forms without saving.
      */
-    $.fn.cdedbProtectChanges = function(message) {
-        // Message seems to be ignored in most current browsers
-        message = message || "Wenn Du die Seite verlässt, gehen Deine ungespeicherten Änderungen verloren.";
+    $.fn.cdedbProtectChanges = function() {
         $forms = $(this);
 
         // For each form
@@ -54,18 +52,17 @@
 
         // BeforeUnload event handler
         // From http://stackoverflow.com/a/155812
-        window.onbeforeunload = function(e) {
+        window.addEventListener('beforeunload', function(e) {
             var changed = false;
             $forms.each(function(){
                 changed = $(this).serialize() != $(this).data('serialize') && !$(this).data('clean_exit');
                 return !changed;
             });
             if (changed) {
-                e = e || window.event;
-                if (e) e.returnValue = message;
-                return message;
+                e.returnValue = true;
+                return true;
             }
-        };
+        });
 
         return this;
     };
@@ -74,7 +71,7 @@
      * jQuery plugin to prevent users from accidentally doing irreversible actions.
      */
     $.fn.cdedbProtectAction = function(message, is_safe_callback) {
-        message = message || "Diese Aktion kann nicht rückgängig gemacht werden.";
+        message = message || "This action is not revertable.";
         is_safe_callback = is_safe_callback || function(){ return false; };
 
         // Submit handler

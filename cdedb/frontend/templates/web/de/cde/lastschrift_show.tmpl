@@ -23,10 +23,10 @@
         {% if is_admin %}
 	    <script type="text/javascript">
 		$(function() {
-		    $('#revokeform').cdedbProtectAction();
-		    $('#skiptransactionform').cdedbProtectAction();
-		    $('.failure-form').cdedbProtectAction();
-		    $('.success-form').cdedbProtectAction();
+		    $('#revokeform').cdedbProtectAction("Diese Aktion kann nicht rückgängig gemacht werden.");
+		    $('#skiptransactionform').cdedbProtectAction("Diese Aktion kann nicht rückgängig gemacht werden.");
+		    $('.failure-form').cdedbProtectAction("Diese Aktion kann nicht rückgängig gemacht werden.");
+		    $('.success-form').cdedbProtectAction("Diese Aktion kann nicht rückgängig gemacht werden.");
 		});
 	    </script>
 	

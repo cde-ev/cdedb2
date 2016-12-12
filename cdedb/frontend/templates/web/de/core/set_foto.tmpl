@@ -23,7 +23,7 @@
 
                 <script type="text/javascript">
                     $(function() {
-                        $('#resetfotoform').cdedbProtectAction();
+                        $('#resetfotoform').cdedbProtectAction("Das Foto wird irreversibel gelöscht.");
                     });
                 </script>
                 <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" id="resetfotoform">

@@ -36,7 +36,8 @@
                 </div>
             </form>
             <script type="text/javascript">
-                $('#addattendeeform').cdedbProtectAction();
+                $('#addattendeeform').cdedbProtectAction(
+                    "Der Benutzer wird als Teilnehmer hinzugefügt. Das kann nicht rückgängig gemacht werden.");
                 $('#input-add-attendee').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') + '?kind=pure_assembly_user&phrase=%s'}}',
                     {{ attendees|list|json }}

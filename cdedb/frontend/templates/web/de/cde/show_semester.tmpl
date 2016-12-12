@@ -24,16 +24,22 @@
 
     <script type="text/javascript">
         $(function() {
-            $('#billform').cdedbProtectAction(null, function() {
+            $('#billform').cdedbProtectAction(
+                "Der Versand der Zahlungsaufforderungen wird gestartet.",
+                function() {
                     return $(this).find('[name="testrun"]').prop('checked');
                 });
-            $('#ejectform').cdedbProtectAction();
-            $('#balanceform').cdedbProtectAction();
-            $('#proceedform').cdedbProtectAction();
-            $('#addresscheckform').cdedbProtectAction(null, function() {
+            $('#ejectform').cdedbProtectAction(
+                "Die inaktiven Mitglieder werden gestrichen. Das ist irreversibel und nur einmal im Semester möglich.");
+            $('#balanceform').cdedbProtectAction(
+                "Das Guthaben aller Mitglieder wird aktualisert. Diese Aktion ist irreversibel.");
+            $('#proceedform').cdedbProtectAction("Das neue Semester wird angelegt.");
+            $('#addresscheckform').cdedbProtectAction(
+                "Der Versand der Adress-Check-Mails wird gestartet.",
+                function() {
                     return $(this).find('[name="testrun"]').prop('checked');
                 });
-            $('#proceedexpulsform').cdedbProtectAction();
+            $('#proceedexpulsform').cdedbProtectAction("Das neue Expuls-Semester wird angelegt.");
         });
     </script>
 

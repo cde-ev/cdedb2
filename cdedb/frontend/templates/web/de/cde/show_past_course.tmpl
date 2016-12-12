@@ -28,7 +28,7 @@
                 {{ util.input_submit(value="Gesamten Kurs löschen", icon="trash", aclass="btn btn-danger btn-sm") }}
             </form>
             <script type="text/javascript">
-                $('#deletecourseform').cdedbProtectAction();
+                $('#deletecourseform').cdedbProtectAction("Der Kurs wird mit allen Daten irreversibel gelöscht.");
             </script>
         </div>
     {% endif %}

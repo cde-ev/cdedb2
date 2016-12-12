@@ -10,8 +10,9 @@
 {% block content %}
     <script type="text/javascript">
         $(function() {
-            $('.skip-form').cdedbProtectAction();
-            $('#finalizationform').cdedbProtectAction(null,
+            $('.skip-form').cdedbProtectAction(
+                "Der Bankeinzug wird für dieses Semester übersprungen. Das kann nicht rückgängig gemacht werden.");
+            $('#finalizationform').cdedbProtectAction("Diese Aktion kann nicht rückgängig gemacht werden.",
                     function(){return $('#finalization-cancel')[0] == document.activeElement;});
         });
     </script>

@@ -18,7 +18,7 @@
             </form>
             <script type="text/javascript">
                 $(function() {
-                    $('#concludeassemblyform').cdedbProtectAction();
+                    $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
                 });
             </script>
             {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), "Log",
