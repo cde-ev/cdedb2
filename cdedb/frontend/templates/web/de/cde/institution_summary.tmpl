@@ -11,7 +11,9 @@
 {% block content %}
     <script type="text/javascript">
         $(function() {
-            $('#drow-table').cdedbDynamicRow({addButton: $('#drow-addbutton')});
+            $('#drow-table').cdedbDynamicRow({
+                addButton: $('#drow-addbutton'),
+                delButtonTitle: "Zeile löschen"});
             $('#institutionsummaryform').cdedbProtectChanges();
         });
     </script>

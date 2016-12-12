@@ -9,12 +9,13 @@
         var obj = this;
         var settings = $.extend({
             addButton : $(),
-            callback : function () {}
+            callback : function () {},
+            delButtonTitle: "delete row"
         }, options || {});
 
 
         /**
-         * Private to generate delete button with appropriate onclick handler and append to a given row.
+         * Private function to generate delete button with appropriate onclick handler and append to a given row.
          * Also corrects the visual delete state of the row.
          * 
          * @param $row jQuery object of row.
@@ -23,7 +24,7 @@
          */
         var addDeleteButton = function($row, newrow) {
             var $deleteButton = $('<button />', {'type': 'button',
-                                                 'title': 'Löschen',
+                                                 'title': settings.delButtonTitle,
                                                  'class': 'btn btn-danger btn-sm' })
                     .append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}))
                     
@@ -118,6 +119,12 @@
     /**
      * The actual "jQuery plugin" - a function to be used on the jQuery object of form table or list.
      * It constructs and initializes the above defined object which does everything neccessary for the fancy js form.
+     *
+     * options may contain the following:
+     * addButton: jQuery wrapper of Button to add a new row. It will be unhidden and get an onclick handler.
+     * callback: A callback method to be called after adding a new row. It will be bound to a jQuery object wrapping the
+     *           new row.
+     * delButtonTitle: A string to be used as title attribute on the delete row button. Defaults to "delete row".
      */
     $.fn.cdedbDynamicRow = function(options) {
         $(this).each(function() {

@@ -27,6 +27,7 @@
                 {{ util.input_text(name="field_name_{}".format(field_id), placeholder="Name des Datenfelds",
                                    readonly=not newrow, aclass='drow-input form-control',
                                    attributes=('data-basename="field_name_-"' if newrow else '')) }}
+                {{ util.output_errors("field_name_{}".format(field_id)) }}
             </div>
             <div class="panel-body">
                 <div class="form-group">
@@ -84,7 +85,9 @@
         {{ util.input_submit(value="Speichern", readonly=is_locked) }}
     </form>
     <script type="text/javascript">
-        $('#drow-container').cdedbDynamicRow({addButton: $('#drow-addbutton')});
+        $('#drow-container').cdedbDynamicRow({
+            addButton: $('#drow-addbutton'),
+            delButtonTitle: "Datenfeld löschen"});
         $('#fieldsummaryform').cdedbProtectChanges();
     </script>
 {% endblock %}

@@ -20,6 +20,7 @@
             {{ util.input_text(name="title_{}".format(part_id), placeholder="Name des Teils",
                                attributes=('data-basename="part_end_-"' if newrow else ''),
                                aclass='drow-input form-control') }}
+            {{ util.output_errors("title_{}".format(part_id)) }}
         </div>
         <div class="panel-body row">
             <div class="col-md-6">
@@ -79,7 +80,9 @@
         {{ util.input_submit(value="Speichern", readonly=is_locked) }}
     </form>
     <script type="text/javascript">
-        $('#drow-container').cdedbDynamicRow({addButton: $('#drow-addbutton')});
+        $('#drow-container').cdedbDynamicRow({
+            addButton: $('#drow-addbutton'),
+            delButtonTitle: "Teil löschen"});
         $('#partsummaryform').cdedbProtectChanges();
     </script>
 {% endblock %}
