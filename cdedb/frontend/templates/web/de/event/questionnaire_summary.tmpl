@@ -23,7 +23,7 @@
 {# Macro for a general questionnaire part, that can have each role in the DynamicRow workflow.
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro print_part(part_id, aclass="", newrow) %}
+{% macro print_part(part_id, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}">
         <div class="panel-body">
             {# jinja does not support list comprehension ... #}
@@ -77,14 +77,14 @@
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for entry in questionnaire %}
-                {{ print_part(loop.index0, 'drow-row', False) }}
+                {{ print_part(loop.index0, 'drow-row') }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
             {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ print_part(-i, 'drow-new', True) }}
+                {{ print_part(-i, 'drow-new', newrow=True) }}
             {% endfor %}
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ print_part(-values.get('create_last_index', 0) - 1, 'drow-prototype', True) }}
+            {{ print_part(-values.get('create_last_index', 0) - 1, 'drow-prototype', newrow=True) }}
         </div>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">

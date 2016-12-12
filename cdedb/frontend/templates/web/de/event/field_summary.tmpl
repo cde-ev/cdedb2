@@ -20,7 +20,7 @@
    non-deletable rows have a disabled 'delete'-checkbox,
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro print_field(field_id, deletable, aclass="", newrow) %}
+{% macro print_field(field_id, deletable, aclass="", newrow=False) %}
     <div class="col-md-6 {{ aclass }}">
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -67,14 +67,14 @@
         <div id="drow-container" class="row">
             {# Old items, already stored in the database #}
             {% for field_id, entry in ambience['event']['fields']|dictsort %}
-                {{ print_field(field_id, field_id not in is_referenced, 'drow-row', False) }}
+                {{ print_field(field_id, field_id not in is_referenced, 'drow-row') }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
             {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ print_field(-i, False, 'drow-new', True) }}
+                {{ print_field(-i, False, 'drow-new', newrow=True) }}
             {% endfor %}
             {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ print_field(-values.get('create_last_index', 0) - 1, False, 'drow-prototype', True) }}
+            {{ print_field(-values.get('create_last_index', 0) - 1, False, 'drow-prototype', newrow=True) }}
         </div>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
