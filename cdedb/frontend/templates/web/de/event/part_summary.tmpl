@@ -18,7 +18,7 @@
     <div class="panel panel-default {{ aclass }}">
         <div class="panel-heading">
             {{ util.input_text(name="title_{}".format(part_id), placeholder="Name des Teils",
-                               attributes=('data-basename="part_end_-"' if newrow else ''),
+                               attributes=('data-basename="title_-"' if newrow else ''),
                                aclass='drow-input form-control') }}
             {{ util.output_errors("title_{}".format(part_id)) }}
         </div>
