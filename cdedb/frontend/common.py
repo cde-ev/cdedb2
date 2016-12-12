@@ -173,7 +173,8 @@ def sanitize_None(data):
     else:
         return data
 
-def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium"):
+def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium",
+                passthrough=False):
     """Custom jinja filter to format ``datetime.date`` objects.
 
     :type val: datetime.date
@@ -184,10 +185,12 @@ def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium"):
     :type verbosity: str
     :param verbosity: Controls localized formatting. Takes one of the
       following values: short, medium, long and full.
+    :type passthrough: bool
+    :param passthrough: If True return strings unmodified.
     :rtype: str
     """
     if val is None or val == '' or not isinstance(val, datetime.date):
-        if isinstance(val, str) and val:
+        if passthrough and isinstance(val, str) and val:
             return val
         return None
     if lang:
@@ -196,7 +199,7 @@ def date_filter(val, formatstr="%Y-%m-%d", lang=None, verbosity="medium"):
         return val.strftime(formatstr)
 
 def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
-                    verbosity="medium"):
+                    verbosity="medium", passthrough=False):
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
     :type val: datetime.datetime
@@ -207,10 +210,12 @@ def datetime_filter(val, formatstr="%Y-%m-%d %H:%M (%Z)", lang=None,
     :type verbosity: str
     :param verbosity: Controls localized formatting. Takes one of the
       following values: short, medium, long and full.
+    :type passthrough: bool
+    :param passthrough: If True return strings unmodified.
     :rtype: str
     """
     if val is None or val == '' or not isinstance(val, datetime.datetime):
-        if isinstance(val, str) and val:
+        if passthrough and isinstance(val, str) and val:
             return val
         return None
     if val.tzinfo is not None:
