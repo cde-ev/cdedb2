@@ -65,7 +65,11 @@
         {{ util.form_input_submit(value="Umordnen", small=True, cancellink=cdedblink('event/questionnaire_summary')) }}
     </form>
     <script type="text/javascript">
-        $('#rowlist').cdedbOrderRow($('#input-roworder')).find('.orderrow-indicator').hide();
-        $('#reorderquestionnaireform').cdedbProtectChanges();
+        var input = $('#input-roworder');
+        var form = $('#reorderquestionnaireform');
+        $('#rowlist').cdedbOrderRow(input).find('.orderrow-indicator').hide();
+        form.cdedbProtectChanges();
+        input.closest('.form-group').hide();
+        form.find('.col-sm-offset-2').removeClass('col-sm-offset-2');
     </script>
 {% endblock %}
