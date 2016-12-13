@@ -82,6 +82,7 @@
             $(this).removeClass('dragover');
             var data = e.originalEvent.dataTransfer.getData("text");
             moveCandidate(candidate_list[data], $(this));
+            e.preventDefault();
         }
         /**
          * To be used as ondrop on .prefvote_spacer
@@ -95,6 +96,7 @@
             if (!$candidate)
                 return;
             splitSpacer($(this), $candidate);
+            e.preventDefault();
         }
         /**
          * To be used as onclick on .prefvote_stage

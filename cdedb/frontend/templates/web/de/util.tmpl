@@ -35,6 +35,8 @@
             <script type="text/javascript" src="{{ staticurl("cdedb_voting.js")|e }}"></script>
         {% elif script == 'questionnaire_config' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_questionnaire_config.js")|e }}"></script>
+        {% elif script == 'orderrow' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_orderrow.js")|e }}"></script>
         {% endif %}
         {{ script_files.append(script) }}
     {% endif %}

@@ -1,6 +1,8 @@
 {% extends "web/de/event/base.tmpl" %}
 {% set sidenav_active='event_quest_summary' %}
 {% import "web/de/util.tmpl" as util with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('orderrow') }}{% endblock %}
 {% block title %}Fragebogen umordnen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -17,8 +19,8 @@
 {% block content %}
     <div class="orderrow-container" id="rowlist">
         {% for entry in questionnaire %}
-            <div class="orderrow-outer" data-id="{{ loop.index0|e }}">
-                <div class="orderrow-inner">
+            <div class="orderrow-outer" data-id="{{ loop.index0|e }}" tabindex="0">
+                <div class="orderrow-inner" draggable="true">
                     <div class="orderrow-indicator"><span class="label label-primary">{{ loop.index0|e }}</span></div>
                     {% if entry['field_id'] %}
                         <div class="miniature-label">{{ entry['title']|e }}</div>
@@ -58,18 +60,12 @@
     </div>
     <form action="{{ cdedblink('event/reorder_questionnaire')|e }}" method="POST" id="reorderquestionnaireform"
           class="form-horizontal">
-        {{ util.form_input_text(name="order", anid="orderinput", label="Reihenfolge", placeholder="Nr,Nr,Nr,…",
+        {{ util.form_input_text(name="order", anid="input-roworder", label="Reihenfolge", placeholder="Nr,Nr,Nr,…",
                                 defaultvalue=range(0,questionnaire|length)|join(','), small=True) }}
         {{ util.form_input_submit(value="Umordnen", small=True, cancellink=cdedblink('event/questionnaire_summary')) }}
     </form>
     <script type="text/javascript">
-        $(document).ready(function(){
-            $("#rowlist").sortable();
-            $("#rowlist").disableSelection();
-            $("#reorderquestionnaireform").submit(function(){
-                var sorted = $("#rowlist").sortable("toArray")
-                $("#orderinput").val(sorted.join(","))
-            });
-        });
+        $('#rowlist').cdedbOrderRow($('#input-roworder')).find('.orderrow-indicator').hide();
+        $('#reorderquestionnaireform').cdedbProtectChanges();
     </script>
 {% endblock %}

@@ -627,8 +627,23 @@ tr.drow-delete>td {
     padding-top: 9px;
     position: relative;
 }
-.orderrow-outer.dragover {
-    background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0) 50px);
+.orderrow-container.active .orderrow-outer, .orderrow-container.active .orderrow-inner {
+    cursor: pointer;
+}
+.orderrow-outer:focus {
+    outline: none;
+}
+.orderrow-outer:focus:after {
+    content: "";
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 8px solid #ccc;
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    margin-top: -4px;
 }
 .orderrow-outer:before {
     content: ' ';
@@ -654,7 +669,7 @@ tr.drow-delete>td {
 .orderrow-inner {
     border: solid 1px rgba(0,0,0,0);
     border-radius: 3px;
-    transition: border-color .3s;
+    transition: border-color .3s, background-color .3s;
     padding: 4px 6px;
     cursor: default;
     /* Disable text selection: */
@@ -668,7 +683,11 @@ tr.drow-delete>td {
 .orderrow-inner:hover {
     border-color: rgba(0,0,0,.3);
 }
-.orderrow-outer.dragover .orderrow-inner:hover {
+.orderrow-outer.active .orderrow-inner {
+    background-color: rgba(51,122,183,.2);
+    border-color: rgba(51,122,183,.3);
+}
+.orderrow-outer.dragover .orderrow-inner:hover, .orderrow-container.active .orderrow-inner:hover {
     border: solid 1px rgba(0,0,0,0);
 }
 .orderrow-indicator {
