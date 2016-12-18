@@ -45,7 +45,7 @@ import werkzeug.wrappers
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     _, glue, merge_dicts, compute_checkdigit, now, asciificator,
-    roles_to_db_role, RequestState, make_root_logger, json_serialize)
+    roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -291,6 +291,18 @@ def tex_escape_filter(val):
             val = pattern.sub(replacement, val)
         return val
 
+class CustomEscapingJSONEncoder (CustomJSONEncoder):
+    """Extension to CustomJSONEncoder defined in cdedb.common, that also
+    escapes strings inside the provided object for safely embedding the
+    resulting JSON string into an HTML <script> tag."""
+    def default(self, obj):
+        if isinstance(obj, str):
+            # TODO Improve escaping: All non-alphanumerical characters or at
+            #      least all special characters to Unicode escape sequences
+            #      More info: https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet#Output_Encoding_Rules_Summary
+            obj = obj.replace('/', '\\x2f')
+        return super().default(self, obj)
+
 def json_filter(val):
     """Custom jinja filter to create json representation of objects. This is
     intended to allow embedding of values into generated javascript code.
@@ -298,7 +310,7 @@ def json_filter(val):
     The result of this method does not need to be escaped -- more so if
     escaped, the javascript execution will probably fail.
     """
-    return json_serialize(val)
+    return json.dumps(val, cls=CustomEscapingJSONEncoder)
 
 def gender_filter(val):
     """Custom jinja filter to convert gender constants to something printable.
