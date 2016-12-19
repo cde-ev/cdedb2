@@ -1,28 +1,42 @@
 {% extends "web/de/event/base.tmpl" %}
+{% set sidenav_active='event_course_stats' %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block title %}{{ ambience['course']['title']|e }} ({{ ambience['event']['title']|e }}) bearbeiten{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
+    {{ util.breadcrumb_link(cdedblink("event/change_course"), "bearbeiten", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Kurs {{ ambience['course']['shortname']|e }} bearbeiten
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+
 {% block content %}
-    {{ util.href(cdedblink("event/show_course"), "Abbrechen") }}
-    <form action="{{ cdedblink('event/change_course')|e }}" method="POST" id="changecourseform">
-        <table>
-            {{ util.form_input_text(name="title", label="Titel") }}
-            {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
-            {{ util.form_input_text(name="nr", label="Nummer") }}
-            {{ util.form_input_text(name="shortname", label="Kürzel") }}
-            {{ util.form_input_text(name="instructors", label="Kursleiter") }}
-            {{ util.form_input_text(name="min_size", label="Minimalgröße") }}
-            {{ util.form_input_text(name="max_size", label="Maximalgröße") }}
-            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
-                {{ myentries.append((part_id, part['title']))|e }}
-            {% endfor %}
-            {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
-            {{ util.form_input_checkboxes(name="active_parts", label="Veranstaltungsteile", entries=myentries) }}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Speichern") }}
-        </div>
+    <form action="{{ cdedblink('event/change_course')|e }}" method="POST" id="changecourseform", class="form-horizontal">
+        <h4 class="heading-underline">Metadaten</h4>
+        {{ util.form_input_text(name="nr", label="Kursnummer") }}
+        {{ util.form_input_text(name="shortname", label="Kurzname") }}
+        {{ util.form_input_text(name="title", label="Langer Titel") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        <h4 class="heading-underline">Kurs-Angebot</h4>
+        {{ util.form_input_text(name="instructors", label="Kursleiter") }}
+        {{ util.form_input_text(name="min_size", label="Minimalgröße") }}
+        {{ util.form_input_text(name="max_size", label="Maximalgröße") }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for part_id, part in ambience['event']['parts']|dictsort %}
+            {{ myentries.append((part_id, part['title']))|e }}
+        {% endfor %}
+        {{ util.form_input_checkboxes(name="parts", label="Angeboten in", entries=myentries) }}
+        <h4 class="heading-underline">Status</h4>
+        {{ util.form_input_checkboxes(name="active_parts", label="Findet statt in", entries=myentries) }}
+        {# TODO JS to deactivate invalid options #}
+        {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
+        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_course")) }}
     </form>
 {% endblock %}
