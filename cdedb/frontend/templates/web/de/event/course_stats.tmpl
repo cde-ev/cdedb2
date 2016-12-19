@@ -1,46 +1,76 @@
 {% set sidenav_active='event_course_stats' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Kurs-Übersicht ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}Kurse werwalten ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
-{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
-{{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse", active=True) }}
 {% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Kurse verwalten
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+
 {% block content %}
+    <div class="p">
+        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=is_locked, icon='plus',
+                     aclass='btn btn-success btn-sm') }}
+    </div>
     {# TODO incorporate active_parts, max_size, min_size of courses #}
-    <table>
-        <tr>
-            <th>Nummer</th>
-            <th>Kurs</th>
-            <th>Kurzname</th>
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
-                <th colspan="4">{{ part['title']|e }}</th>
-            {% endfor %}
-        </tr>
-        <tr>
-            <th></th>
-            <th></th>
-            <th></th>
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
-                <th>zugewiesen</th>
-                <th>Erstwahl</th>
-                <th>Zweitwahl</th>
-                <th>Drittwahl</th>
-            {% endfor %}
-        </tr>
-        {% for course_id, course in courses|dictsort %}
+    <table class="table table-condensed">
+        <thead>
             <tr>
-                <td>{{ course['nr']|e }}</td>
-                <td>{{ course['title']|e }}</td>
-                <td>{{ course['shortname']|e }}</td>
+                <th rowspan="2" colspan="2">Kurs</th>
                 {% for part_id, part in ambience['event']['parts']|dictsort %}
-                     <td> {{ assign_counts[course_id][part_id]|e }} </td>
-                     {% for i in range(3) %}
-                         <td> {{ choice_counts[course_id][(part_id, i)]|e }} </td>
-                     {% endfor %}
+                    <th colspan="4" class="b-left">{{ part['title']|e }}</th>
                 {% endfor %}
+                <th colspan="2" class="b-left">Grenzen</th>
             </tr>
-        {% endfor %}
+            <tr>
+                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                    <th class="b-left text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
+                    <th class="text-right">1</th>
+                    <th class="text-right">2</th>
+                    <th class="text-right">3</th>
+                {% endfor %}
+                <th class="b-left text-right">Min</th>
+                <th class="text-right">Max</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course_id, course in courses|dictsort %}
+                <tr>
+                    <td>{{ course['nr']|e }}</td>
+                    <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
+                                     course['shortname']) }}</td>
+                    {% for part_id, part in ambience['event']['parts']|dictsort %}
+                        {% if part_id in course['parts'] %}
+                            <td class="b-left text-right">
+                                {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
+                                                                                'course_id': course_id,
+                                                                                'position': 6,
+                                                                                'submitform': True}),
+                                             assign_counts[course_id][part_id]) }}
+                            </td>
+                            {% for i in range(3) %}
+                                <td class="text-right">
+                                    {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
+                                                                                'course_id': course_id,
+                                                                                'position': i + 2,
+                                                                                'submitform': True}),
+                                             choice_counts[course_id][(part_id, i)]) }}
+                            {% endfor %}
+                        {% else %}
+                            <td class="b-left"></td><td></td><td></td><td></td>
+                        {% endif %}
+                    {% endfor %}
+                    <td class="b-left text-right">{{ course['min_size']|e }}</td>
+                    <td class="text-right">{{ course['max_size']|e }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
 {% endblock %}
