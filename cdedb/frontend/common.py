@@ -45,7 +45,8 @@ import werkzeug.wrappers
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     _, glue, merge_dicts, compute_checkdigit, now, asciificator,
-    roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder)
+    roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
+    json_serialize)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -292,16 +293,30 @@ def tex_escape_filter(val):
         return val
 
 class CustomEscapingJSONEncoder (CustomJSONEncoder):
-    """Extension to CustomJSONEncoder defined in cdedb.common, that also
-    escapes strings inside the provided object for safely embedding the
-    resulting JSON string into an HTML <script> tag."""
-    def default(self, obj):
-        if isinstance(obj, str):
-            # TODO Improve escaping: All non-alphanumerical characters or at
-            #      least all special characters to Unicode escape sequences
-            #      More info: https://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet#Output_Encoding_Rules_Summary
-            obj = obj.replace('/', '\\x2f')
-        return super().default(self, obj)
+    """Extension to CustomJSONEncoder defined in cdedb.common, that
+    escapes all strings for safely embedding the
+    resulting JSON string into an HTML <script> tag.
+
+    Inspired by https://github.com/simplejson/simplejson/blob/dd0f99d6431b5e75293369f5554a1396f8ae6251/simplejson/encoder.py#L378
+    """
+    def encode(self, o):
+        # Override JSONEncoder.encode to avoid bypasses of interencode()
+        # in original version
+        chunks = self.iterencode(o, True)
+        if self.ensure_ascii:
+            return ''.join(chunks)
+        else:
+            return u''.join(chunks)
+
+    def iterencode(self, o, _one_shot=False):
+        chunks = super().iterencode(o, _one_shot)
+        for chunk in chunks:
+            chunk = chunk.replace('/', '\\x2f')
+            chunk = chunk.replace(']', '\\x5d')
+            chunk = chunk.replace('&', '\\x26')
+            chunk = chunk.replace('<', '\\x3c')
+            chunk = chunk.replace('>', '\\x3e')
+            yield chunk
 
 def json_filter(val):
     """Custom jinja filter to create json representation of objects. This is
