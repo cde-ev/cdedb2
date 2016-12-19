@@ -696,7 +696,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type params: {str: object}
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
-        rs.response = Response(json_serialize(data), mimetype='text/json')
+        rs.response = Response(json_serialize(data),
+                               mimetype='application/json')
         rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return rs.response
 
