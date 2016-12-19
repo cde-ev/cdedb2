@@ -340,7 +340,10 @@ class EventFrontend(AbstractUserFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         for course in courses.values():
             is_referenced.update(course['parts'])
-        return self.render(rs, "part_summary", {'is_referenced': is_referenced})
+        has_registrations = bool(registrations)
+        return self.render(rs, "part_summary", {
+            'is_referenced': is_referenced,
+            'has_registrations': has_registrations})
 
     @staticmethod
     def process_part_input(rs, parts):
@@ -402,6 +405,10 @@ class EventFrontend(AbstractUserFrontend):
             if parts.get(part_id) == part:
                 ## remove unchanged
                 del parts[part_id]
+        for part_id, part in parts.items():
+            if part_id < 0:
+                if self.eventproxy.list_registrations(rs, event_id):
+                    raise ValueError(_("Already registrations present."))
         event = {
             'id': event_id,
             'parts': parts

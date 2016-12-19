@@ -69,14 +69,18 @@
             {% for i in range(1, values.get('create_last_index', 0) + 1) %}
                 {{ print_part(-i, False, 'drow-new', newrow=True) }}
             {% endfor %}
-            {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ print_part(-values.get('create_last_index', 0) - 1, False, 'drow-prototype', newrow=True) }}
+            {% if not has_registrations %}
+                {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+                {{ print_part(-values.get('create_last_index', 0) - 1, False, 'drow-prototype', newrow=True) }}
+            {% endif %}
         </div>
-        <p>
-            <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} Teil hinzufügen
-            </button>
-        </p>
+        {% if not has_registrations %}
+            <p>
+                <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
+                    {{ util.make_icon('plus') }} Teil hinzufügen
+                </button>
+            </p>
+        {% endif %}
         {{ util.input_submit(value="Speichern", readonly=is_locked) }}
     </form>
     <script type="text/javascript">

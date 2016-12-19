@@ -287,14 +287,33 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Bertålotta")
 
     @as_users("anton", "garcia")
-    def test_part_summary(self, user):
+    def test_part_summary_trivial(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/part/summary'})
-        ## parts
         self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Warmup", f['title_1'].value)
+
+    @as_users("anton")
+    def test_part_summary_complex(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/list'},
+                      {'href': '/event/event/create'})
+        f = self.response.forms['createeventform']
+        f['title'] = "Universale Akademie"
+        f['institution'] = 1
+        f['description'] = "Mit Co und Coco."
+        f['shortname'] = "UnAka"
+        f['registration_start'] = "2000-01-01"
+        f['notes'] = "Die spinnen die Orgas."
+        f['orga_ids'] = "DB-2-H, DB-7-I"
+        self.submit(f)
+        self.assertTitle("Universale Akademie")
+        ## Here we go
+        self.traverse({'href': '/event/event/2/part/summary'})
+        self.assertTitle("Universale Akademie Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
         self.assertNotIn('title_4', f.fields)
         f['create_-1'].checked = True
         f['title_-1'] = "Cooldown"
@@ -302,18 +321,18 @@ class TestEventFrontend(FrontendTest):
         f['part_end_-1'] = "2233-6-7"
         f['fee_-1'] = "23456.78"
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Cooldown", f['title_4'].value)
-        f['title_3'] = "Größere Hälfte"
-        f['fee_3'] = "99.99"
+        f['title_4'] = "Größere Hälfte"
+        f['fee_4'] = "99.99"
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
-        self.assertEqual("Größere Hälfte", f['title_3'].value)
+        self.assertEqual("Größere Hälfte", f['title_4'].value)
         f['delete_4'].checked = True
         self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('title_4', f.fields)
 
