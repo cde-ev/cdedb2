@@ -394,7 +394,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'},
                       {'href': '/event/event/1/course/1/change'})
-        self.assertTitle("Planetenretten für Anfänger (Große Testakademie 2222) bearbeiten")
+        self.assertTitle("Heldentum (Große Testakademie 2222) bearbeiten")
         f = self.response.forms['changecourseform']
         self.assertEqual("1", f.get('parts', index=0).value)
         self.assertEqual(None, f.get('parts', index=1).value)
@@ -430,8 +430,9 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Kursliste Große Testakademie 2222")
         self.assertPresence("Planetenretten für Anfänger")
         self.assertNonPresence("Abstract Nonsense")
-        self.traverse({'href': '/event/event/1/course/create'})
-        self.assertTitle("DB-Kurs hinzufügen (Große Testakademie 2222)")
+        self.traverse({'href': '/event/event/1/course/stats'},
+                      {'href': '/event/event/1/course/create'})
+        self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
         f = self.response.forms['createcourseform']
         self.assertEqual("1", f.get('parts', index=0).value)
         self.assertEqual("2", f.get('parts', index=1).value)
@@ -448,7 +449,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Lots of arrows.")
         self.assertPresence("Alexander Grothendieck")
         self.traverse({'href': '/event/event/1/course/6/change'})
-        self.assertTitle("Abstract Nonsense (Große Testakademie 2222) bearbeiten")
+        self.assertTitle("math (Große Testakademie 2222) bearbeiten")
         f = self.response.forms['changecourseform']
         self.assertEqual("1", f.get('parts', index=0).value)
         self.assertEqual(None, f.get('parts', index=1).value)
@@ -752,8 +753,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/stats'},)
-        self.assertTitle("Kurs-Übersicht (Große Testakademie 2222)")
-        self.assertPresence("Planetenretten für Anfänger")
+        self.assertTitle("Kurse verwalten (Große Testakademie 2222)")
+        self.assertPresence("Heldentum")
         self.assertPresence("1")
         self.assertPresence("δ")
 

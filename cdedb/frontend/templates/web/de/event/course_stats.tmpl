@@ -1,7 +1,7 @@
 {% set sidenav_active='event_course_stats' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block title %}Kurse werwalten ({{ ambience['event']['title']|e }}){% endblock %}
+{% block title %}Kurse verwalten ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
