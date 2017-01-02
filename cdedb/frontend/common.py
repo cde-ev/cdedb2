@@ -312,7 +312,6 @@ class CustomEscapingJSONEncoder (CustomJSONEncoder):
         chunks = super().iterencode(o, _one_shot)
         for chunk in chunks:
             chunk = chunk.replace('/', '\\x2f')
-            chunk = chunk.replace(']', '\\x5d')
             chunk = chunk.replace('&', '\\x26')
             chunk = chunk.replace('<', '\\x3c')
             chunk = chunk.replace('>', '\\x3e')
