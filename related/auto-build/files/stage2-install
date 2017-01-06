@@ -28,19 +28,19 @@ echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
 cat > /etc/apt/sources.list <<EOF
-deb ftp://ftp.de.debian.org/debian jessie main contrib non-free
-deb-src ftp://ftp.de.debian.org/debian jessie main contrib non-free
+deb http://ftp.de.debian.org/debian jessie main contrib non-free
+deb-src http://ftp.de.debian.org/debian jessie main contrib non-free
 
 deb http://security.debian.org/ jessie/updates main contrib non-free
 deb-src http://security.debian.org/ jessie/updates main contrib non-free
 
 # jessie-updates, previously known as 'volatile'
-deb ftp://ftp.de.debian.org/debian jessie-updates main contrib non-free
-deb-src ftp://ftp.de.debian.org/debian jessie-updates main contrib non-free
+deb http://ftp.de.debian.org/debian jessie-updates main contrib non-free
+deb-src http://ftp.de.debian.org/debian jessie-updates main contrib non-free
 
 # jessie-backports, previously on backports.debian.org
-deb ftp://ftp.de.debian.org/debian jessie-backports main contrib non-free
-deb-src ftp://ftp.de.debian.org/debian jessie-backports main contrib non-free
+deb http://ftp.de.debian.org/debian jessie-backports main contrib non-free
+deb-src http://ftp.de.debian.org/debian jessie-backports main contrib non-free
 EOF
 
 sleep 3
