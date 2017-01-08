@@ -12,7 +12,8 @@
 {% block content %}
     {% if quoteable %}
         {# FIXME formatting #}
-        {{ util.href(show_user_link(ambience['persona']['id'], quote_me=True), "Gesamtes Profil anzeigen") }}
+        {{ util.href(show_user_link(ambience['persona']['id'], quote_me=True), "Gesamtes Profil anzeigen",
+                     aclass="btn btn-info btn-sm") }}
     {% endif %}
     {% if data['id'] == user.persona_id or is_relative_admin %}
         <div class="p">
