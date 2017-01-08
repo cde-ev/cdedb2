@@ -1,4 +1,9 @@
 * actionable items
+** some pages have to much whitespace/too tiny font (esp. forms)
+** Rename CdE-section to "Mitglieder" and event-section to "Anmeldung"?
+** Rename "abgeschlossene Veranstaltungen"
+** Audit data protection w.r.t. persona select API
+** Perform load testing
 ** allow realm admins to ack changes for their users
 ** make not yet active ballots invisible to normal users?
 ** make active assemblies invisible to non-participants?
