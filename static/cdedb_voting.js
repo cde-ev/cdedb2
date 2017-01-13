@@ -6,7 +6,7 @@
         var $checkboxes = $(this).find('input[name="vote"]');
         var $barbox = $checkboxes.filter('[value="'+ bar +'"]');
 
-        $checkboxes.change(function() {
+        var handler = function() {
             var num_selected = $checkboxes.filter(':checked').length;
             // Disable all unchecked boxes if barbox was checked or maximum number of votes reached
             if (($barbox && $barbox.prop('checked')) || num_selected >= num_votes)
@@ -20,7 +20,10 @@
             // Disable barbox additionally if any other was selected
             if (num_selected > 0 && $barbox && !$barbox.prop('checked'))
                 $barbox.prop('disabled', true);
-        });
+        };
+        $checkboxes.change(handler);
+
+        handler();
 
         return this;
     };
