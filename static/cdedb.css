@@ -280,7 +280,7 @@ h1.title {
     min-height: 30px;
 }
 .selectize-control.multi.input-sm .selectize-input.has-items {
-    padding: 3px 6px 0px;
+    padding: 3px 6px 0;
 }
 .selectize-control.multi.input-sm .selectize-input > div {
     margin: 0 3px 3px 0;
@@ -289,10 +289,10 @@ h1.title {
     border-color: #3d763d;
 }
 .input-group .selectize-input {
-    border-radius: none;
+    border-radius: 0;
 }
 .input-group .selectize-input {
-    border-radius: none;
+    border-radius: 0;
 }
 .input-group .selectize-control:not(:last-child) .selectize-input {
     border-top-right-radius: 0;
@@ -437,7 +437,7 @@ tr.drow-delete>td {
 
 /* Profile history */
 .history-row {
-    border: solid 1px #ddd;
+    border: 1px #ddd;
     border-style: solid none;
     margin-top: -1px;
     position: relative;
@@ -615,7 +615,8 @@ tr.drow-delete>td {
     color: #fff;
 }
 
-/* Fancy row sorting with JavaScript */
+/* Fancy row sorting with JavaScript
+   Quite similar to preferential voting. */
 .orderrow-container {
     border: solid 1px #ddd;
     border-radius: 4px;
@@ -738,23 +739,27 @@ tr.drow-delete>td {
  * Helper classes *
  * ************** */
 .softhide {
+    /* Similar to bootstrap's .hide but without !important */
     display: none;
 }
 .p {
+    /* Give elements the spacing of a paragraph */
     margin-bottom: 10px;
 }
 .nowrap {
     white-space: nowrap;
 }
 .link-disabled {
+    /* Make text look like a disabled link */
     color: #777;
     cursor: not-allowed;
 }
+.button-par {
+    /* A div containing buttons, which may be wrapped with nice spacing in between */
+    margin-bottom: -8px;
+}
 .button-par .btn {
     margin-bottom: 8px;
-}
-.button-par {
-    margin-bottom: -8px;
 }
 .clickable {
     cursor: pointer;
