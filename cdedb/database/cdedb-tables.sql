@@ -919,7 +919,9 @@ CREATE TABLE ml.subscription_states (
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         address                 varchar,
-        is_subscribed           boolean
+        is_subscribed           boolean,
+        -- may subscribe even if not in audience
+        is_override             boolean DEFAULT False
 );
 CREATE UNIQUE INDEX idx_subscription_constraint ON ml.subscription_states(mailinglist_id, persona_id);
 GRANT SELECT, INSERT, UPDATE ON ml.subscription_states TO cdb_persona;

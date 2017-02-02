@@ -686,7 +686,7 @@ class MlBackend(AbstractBackend):
                 address=None)
 
     @access("ml_admin")
-    @singularize("check_states_one")
+    @singularize("check_states_single")
     def check_states(self, rs, mailinglist_ids):
         """Verify that all explicit subscriptions are by the target audience.
 
@@ -700,8 +700,8 @@ class MlBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type mailinglist_ids: [int]
-        :rtype: {int: [int]}
-        :returns: A dict mapping list ids to offending personas.
+        :rtype: {int: [{str: object}]}
+        :returns: A dict mapping list ids to lists of dicts of offenders.
         """
         mailinglist_ids = affirm_set("id", mailinglist_ids)
 
@@ -710,7 +710,7 @@ class MlBackend(AbstractBackend):
             e['id']: const.AudiencePolicy(e['audience_policy']).sql_test()
             for e in mailinglists.values()}
         query = glue(
-            "SELECT subs.mailinglist_id, subs.persona_id",
+            "SELECT subs.mailinglist_id, subs.persona_id, subs.is_override",
             "FROM ml.subscription_states AS subs",
             "JOIN core.personas AS p ON subs.persona_id = p.id",
             "JOIN ml.mailinglists AS lists ON subs.mailinglist_id = lists.id",
@@ -721,8 +721,37 @@ class MlBackend(AbstractBackend):
             data = self.query_all(
                 rs, query.format(test=sql_tests[mailinglist_id]),
                 (mailinglist_id,))
-            ret[mailinglist_id] = tuple(e['persona_id'] for e in data)
+            ret[mailinglist_id] = tuple(data)
         return ret
+
+    @access("ml_admin")
+    def mark_override(self, rs, mailinglist_id, persona_id):
+        """Allow non-matching (w.r.t. audience) subscriptions.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type mailinglist_id: int
+        :type persona_id: int
+        :returns: default return code
+        """
+        mailinglist_id = affirm("id", mailinglist_id)
+        persona_id = affirm("id", persona_id)
+
+        with Atomizer(rs):
+            ml = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            query = glue("SELECT id FROM ml.subscription_states",
+                         "WHERE mailinglist_id = %s AND persona_id = %s")
+            current = self.query_one(rs, query, (mailinglist_id, persona_id))
+            if not ml['is_active'] or not current:
+                return 0
+            self.ml_log(rs, const.MlLogCodes.marked_override,
+                        mailinglist_id, persona_id=persona_id)
+            update = {
+                'id': unwrap(current),
+                'mailinglist_id': mailinglist_id,
+                'persona_id': persona_id,
+                'is_override': True
+            }
+            return self.sql_update(rs, "ml.subscription_states", update)
 
     @access("ml_script")
     def export(self, rs, mailinglist_id):

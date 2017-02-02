@@ -326,6 +326,7 @@ class MlLogCodes(enum.IntEnum):
     subscribed = 21 #:
     subscription_changed = 22 #:
     unsubscribed = 23 #:
+    marked_override = 24 #:
     request_approved = 30 #:
     request_denied = 31 #:
     request_cancelled = 32 #:

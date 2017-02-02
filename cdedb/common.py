@@ -1126,6 +1126,11 @@ MAILINGLIST_FIELDS = (
     "maxsize", "is_active", "gateway", "event_id", "registration_stati",
     "assembly_id")
 
+#: Fields of a mailing list subscription
+MAILINGLIST_SUBSCRIPTION_FIELDS = (
+    "id", "mailinglist_id", "persona_id", "address", "is_subscribed",
+    "is_override")
+
 #: Fields of an assembly
 ASSEMBLY_FIELDS = ("id", "title", "description", "signup_end", "is_active",
                    "notes")

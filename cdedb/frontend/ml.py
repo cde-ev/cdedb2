@@ -507,11 +507,23 @@ class MlFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/show_mailinglist")
 
-    @access("ml")
-    @mailinglist_guard()
+    @access("ml_admin")
     def check_states(self, rs, mailinglist_id):
         """Test all explicit subscriptions for consistency with audience."""
-        problems = self.mlproxy.check_states_one(rs, mailinglist_id)
-        personas = self.coreproxy.get_personas(rs, problems)
+        problems = self.mlproxy.check_states_single(rs, mailinglist_id)
+        overrides = tuple(e['persona_id'] for e in problems if e['is_override'])
+        problems = tuple(e['persona_id'] for e in problems
+                         if not e['is_override'])
+        personas = self.coreproxy.get_personas(rs, problems+overrides)
         return self.render(rs, "check_states", {
-            'problems': problems, 'personas': personas})
+            'problems': problems, 'overrides': overrides, 'personas': personas})
+
+    @access("ml_admin", modi={"POST"})
+    @REQUESTdata(("subscriber_id", "id"))
+    def mark_override(self, rs, mailinglist_id, subscriber_id):
+        """Allow a subscription even though not in audience."""
+        if rs.errors:
+            return self.management(rs, mailinglist_id)
+        code = self.mlproxy.mark_override(rs, mailinglist_id, subscriber_id)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "ml/check_states")
