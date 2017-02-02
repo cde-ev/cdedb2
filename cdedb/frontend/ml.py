@@ -523,7 +523,7 @@ class MlFrontend(AbstractUserFrontend):
     def mark_override(self, rs, mailinglist_id, subscriber_id):
         """Allow a subscription even though not in audience."""
         if rs.errors:
-            return self.management(rs, mailinglist_id)
+            return self.check_states(rs, mailinglist_id)
         code = self.mlproxy.mark_override(rs, mailinglist_id, subscriber_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/check_states")
