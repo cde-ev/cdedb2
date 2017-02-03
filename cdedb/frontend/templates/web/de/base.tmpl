@@ -14,13 +14,12 @@
         <script type="text/javascript" src="{{ staticurl("jquery-2.min.js")|e }}"></script>
         <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
         <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js")|e }}"></script>
-
-        <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css")|e }}" media="all" />
-        <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css")|e }}" media="print" />
-
         <script type="text/javascript" src="{{ staticurl("cdedb-general.js")|e }}"></script>
 
         {% block scripts %}{% endblock %}
+
+        <link rel="stylesheet" type="text/css" href="{{ staticurl("cdedb.css")|e }}" media="all" />
+        <link rel="stylesheet" type="text/css" href="{{ staticurl("print.css")|e }}" media="print" />
     </head>
     <body>
         <div class="container page" id="maincontainer">

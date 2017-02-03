@@ -1,0 +1,49 @@
+{
+  "vars": {
+    "@font-size-small": "13px",
+    "@line-height-base": "1.3",
+    "@padding-base-vertical": "6px",
+    "@padding-base-horizontal": "10px",
+    "@padding-large-vertical": "8px",
+    "@padding-large-horizontal": "16px",
+    "@padding-small-vertical": "4px",
+    "@padding-small-horizontal": "8px",
+    "@padding-xs-vertical": "1px",
+    "@padding-xs-horizontal": "5px",
+    "@table-cell-padding": "6px",
+    "@table-condensed-cell-padding": "3px",
+    "@form-group-margin-bottom": "10px",
+    "@panel-body-padding": "15px",
+    "@panel-heading-padding": "8px 10px"
+  },
+  "css": [
+    "print.less",
+    "type.less",
+    "code.less",
+    "grid.less",
+    "tables.less",
+    "forms.less",
+    "buttons.less",
+    "responsive-utilities.less",
+    "glyphicons.less",
+    "button-groups.less",
+    "input-groups.less",
+    "navs.less",
+    "navbar.less",
+    "breadcrumbs.less",
+    "labels.less",
+    "thumbnails.less",
+    "alerts.less",
+    "media.less",
+    "list-group.less",
+    "panels.less",
+    "responsive-embed.less",
+    "component-animations.less"
+  ],
+  "js": [
+    "tab.js",
+    "collapse.js",
+    "transition.js"
+  ],
+  "customizerUrl": "http://getbootstrap.com/customize/?id=04fd1e5dc8e8e549f1e5c9a382d4d16d"
+}

@@ -2,9 +2,9 @@
  * Page layout *
  * *********** */
 body{
-    margin: 0px;
+    margin: 0;
     background-color: #7c868e;
-    background: url(bg-pattern.png)
+    background: url(bg-pattern.png);
 }
 
 #footer {
@@ -48,7 +48,9 @@ body{
     display: block;
     color: #a94442;
 }
-
+.input-group-addon {
+    font-size: 13px;
+}
 .table-slim {
     width: auto;
 }
@@ -64,6 +66,9 @@ body{
 }
 ul.slim {
     padding-left: 15px;
+}
+.list-group-item {
+    padding: 7px 8px;
 }
 .list-group-item-muted {
     color: #777;
@@ -264,6 +269,15 @@ h1.title {
 }
 
 /* Selectize Bootstrap enhancements */
+.selectize-dropdown, .selectize-input, .selectize-input input {
+    line-height: 18px;
+}
+.selectize-input {
+    min-height: 32px;
+}
+.selectize-input input {
+    line-height: 18px;
+}
 .selectize-control.input-slim {
     vertical-align: top;
     line-height: 0.5;
@@ -273,14 +287,14 @@ h1.title {
 }
 .selectize-control.input-sm .selectize-input {
     min-height: 30px;
-    padding: 4px 12px;
+    padding: 3px 12px;
 }
 .selectize-control.input-sm .selectize-input.has-items {
-    padding: 3px 9px;
+    padding: 2px 9px;
     min-height: 30px;
 }
 .selectize-control.multi.input-sm .selectize-input.has-items {
-    padding: 3px 6px 0;
+    padding: 2px 6px 0;
 }
 .selectize-control.multi.input-sm .selectize-input > div {
     margin: 0 3px 3px 0;
