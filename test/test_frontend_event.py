@@ -248,10 +248,6 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("Everybody come!")
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
-        self.traverse({'href': '/event/event/1/course/1/show'})
-        self.assertTitle("Planetenretten für Anfänger (Große Testakademie 2222)")
-        self.assertPresence("ToFi")
-        self.assertPresence("Wir werden die Bäume drücken.")
 
     @as_users("anton", "garcia")
     def test_change_event(self, user):
@@ -423,13 +419,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("3", f.get('active_parts', index=2).value)
         self.assertEqual("10", f['max_size'].value)
         self.assertEqual("3", f['min_size'].value)
-        f['title'] = "Planetenretten für Fortgeschrittene"
+        f['shortname'] = "Helden"
         f['nr'] = "ω"
         f['max_size'] = "21"
         f['parts'] = ['2', '3']
         f['active_parts'] = ['2']
         self.submit(f)
-        self.assertTitle("Planetenretten für Fortgeschrittene (Große Testakademie 2222)")
+        self.assertTitle("Kurs Helden (Große Testakademie 2222)")
         self.traverse({'href': '/event/event/1/course/1/change'})
         f = self.response.forms['changecourseform']
         self.assertEqual(f['nr'].value, "ω")
@@ -464,7 +460,7 @@ etc;anything else""", f['entries_2'].value)
         f['notes'] = "transcendental appearence"
         f['parts'] = ['1', '3']
         self.submit(f)
-        self.assertTitle("Abstract Nonsense (Große Testakademie 2222)")
+        self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("Lots of arrows.")
         self.assertPresence("Alexander Grothendieck")
         self.traverse({'href': '/event/event/1/course/6/change'})
@@ -1058,14 +1054,15 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'},
-                      {'href': '/event/event/1/course/1/show'},
-                      {'href': '/event/event/1/course/1/manage'})
+                      {'href': '/event/event/1/course/1/show'})
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        self.traverse({'href': '/event/event/1/course/1/manage'})
         self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger verwalten (Große Testakademie 2222)\n")
         f = self.response.forms['manageattendeesform']
         f['attendees_1'] = ""
         f['attendees_3'] = "2,3"
         self.submit(f)
-        self.assertTitle("Planetenretten für Anfänger (Große Testakademie 2222)")
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
         self.assertPresence("Garcia G.")
         self.assertNonPresence("Inga")
 

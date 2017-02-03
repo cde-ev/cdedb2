@@ -6,31 +6,49 @@
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), "Kursliste", active=True) }}
-{% endblock %}n
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Kursliste
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
 {% block content %}
     {% if courses %}
-        <h2>Kurse</h2>
-        <ul>
-            {% for anid, entry in courses|dictsort %}
-                <li>
-                    {{ util.href(cdedblink('event/show_course', {'course_id' : anid}),
-                                 "{} -- {}".format(entry['nr'], entry['title'])) }}
-                    {% if ambience['event']['id'] in user.orga or is_admin %}
+        {% for anid, entry in courses|dictsort %}
+            <div class="hide-hover-container">
+                <h3>{{ entry['nr'] }}. {{ entry['title']|e }}</h3>
+                {% if ambience['event']['id'] in user.orga or is_admin %}
+                    <div class="pull-right">
+                        {{ util.href(cdedblink('event/show_course', {'course_id' : anid}), "Details",
+                                     readonly=is_locked, icon='list', aclass='btn btn-xs btn-info hide-hover') }}
                         {{ util.href(cdedblink('event/change_course_form', {'course_id' : anid}), "Bearbeiten",
-                                     readonly=is_locked) }}
+                                     readonly=is_locked, icon='pencil', aclass='btn btn-xs btn-warning hide-hover') }}
+                    </div>
+                {% endif %}
+                <p class="heading-supplement">
+                    {% if ambience['event']['id'] in user.orga or is_admin %}
+                        <span class="label label-primary">{{ entry['shortname']|e }}</span>
                     {% endif %}
-                    <p>Kursleiter: {{ entry['instructors']|e }}</p>
-                    <p>Maximalgröße: {{ entry['max_size']|e }}</p>
-                    <p>Minimalgröße: {{ entry['min_size']|e }}</p>
-                    <p>{{ entry['description']|e }}</p>
-                </li>
-            {% endfor %}
-        </ul>
+                    von {{ entry['instructors']|e }}
+                    {% if ambience['event']['parts']|length > 1 %}
+                        {% set myentries = [] %}
+                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                            {% if part_id in entry['parts'] %}
+                                {{ myentries.append(part['title'])|e }}
+                            {% endif %}
+                        {% endfor %}
+                        – <span class="text-info">
+                        {% for partname in myentries -%}
+                            {% if not loop.first %}{% if loop.last %} und {% else %}, {% endif %}{% endif %}
+                            <i>{{ partname|e }}</i>
+                        {%- endfor %}</span>.
+                    {% endif %}
+                </p>
+                {{ entry['description']|rst }}
+            </div>
+        {% endfor %}
     {% else %}
         <p>Diese Veranstaltung hat keine Kurse.</p>
-    {% endif %}
-    {% if ambience['event']['id'] in user.orga or is_admin %}
-        <h2>Kurs hinzufügen</h2>
-        {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=is_locked) }}
     {% endif %}
 {% endblock %}

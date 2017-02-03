@@ -535,6 +535,7 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
     @access("event")
+    @event_guard()
     def show_course(self, rs, event_id, course_id):
         """Display course associated to event organized via DB."""
         params = {}

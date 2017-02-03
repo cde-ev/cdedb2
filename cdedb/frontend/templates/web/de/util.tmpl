@@ -62,12 +62,13 @@
     {% endif %}
 {% endmacro %}
 
-{% macro href(ref, label, readonly=False, icon="", aclass='', active=False) -%}
+{% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='') -%}
 {% if readonly %}<span {%- else -%}<a href="{{ ref|e }}"{% endif %}
 {% if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
            {% if readonly %} {% if not 'btn' in aclass %}link-{% endif%}disabled{% endif %}"
-{%- endif %}>
+{%- endif %}
+{%- if title %} title="{{ title|e }}"{% endif %}>
 {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}

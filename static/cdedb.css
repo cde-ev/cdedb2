@@ -213,6 +213,12 @@ ul.nosp, ol.nosp {
 .navbar-collapse.collapse .navbar-form .navbar-text, .navbar-collapse.collapsing .navbar-form .navbar-text {
     display: inline-block;
 }
+@media (max-width: 782px) {
+    .navbar {
+        margin: 0 -15px 10px -15px;
+        padding: 0;
+    }
+}
 @media (max-width: 767px) {
     .navbar-form {
         margin-right: 0;
@@ -749,6 +755,12 @@ tr.drow-delete>td {
     min-height: 40px;
 }
 
+
+/* Course assignment */
+td.b-left, th.b-left {
+    border-left: solid 1px #ddd;
+}
+
 /* ************** *
  * Helper classes *
  * ************** */
@@ -759,6 +771,10 @@ tr.drow-delete>td {
 .p {
     /* Give elements the spacing of a paragraph */
     margin-bottom: 10px;
+}
+.heading-supplement {
+    /* Subheading without to much space above */
+    margin-top: -10px;
 }
 .nowrap {
     white-space: nowrap;
@@ -781,4 +797,12 @@ tr.drow-delete>td {
 ul.styleless {
     list-style: none;
     padding-left: 15px;
+}
+.hide-hover {
+    /* Hide elements until superior container element is hovered */
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+.hide-hover-container:hover .hide-hover, .hide-hover:focus {
+    opacity: 1;
 }
