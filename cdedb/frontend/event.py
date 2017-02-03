@@ -2219,9 +2219,11 @@ class EventFrontend(AbstractUserFrontend):
         default_queries["minors"] = Query(
             "qview_registration", spec,
             ("reg.id", "persona.given_names", "persona.family_name",
-             "birthday"),
-            (("birthday", QueryOperators.greater,
-              deduct_years(now().date(), 18)),),
+             "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(min(p['part_begin']
+                               for p in rs.ambience['event']['parts'].values()),
+                           18)),),
             (("persona.birthday", True), ("reg.id", True)),)
         params = {
             'spec': spec, 'choices': choices, 'query': query,
