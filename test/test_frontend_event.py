@@ -895,59 +895,46 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/download'},)
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         save = self.response
-        f = save.forms['coursepuzzletexform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=0')
         self.assertPresence('documentclass')
         self.assertPresence('Planetenretten für Anfänger')
-        f = save.forms['coursepuzzlepdfform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/coursepuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
-        f = save.forms['lodgementpuzzletexform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=0')
         self.assertPresence('documentclass')
         self.assertPresence('Kalte Kammer')
-        f = save.forms['lodgementpuzzlepdfform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/lodgementpuzzle\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
-        f = save.forms['lodgementliststexform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
         self.assertTrue(len(self.response.body) > 1000)
-        f = save.forms['lodgementlistspdfform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/lodgementlists\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
-        f = save.forms['courseliststexform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/courselists\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
         self.assertTrue(len(self.response.body) > 1000)
-        f = save.forms['courselistspdfform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/courselists\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
-        f = save.forms['expulsform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/expuls')
         self.assertPresence('\\kurs')
         self.assertPresence('Planetenretten für Anfänger')
-        f = save.forms['participantlisttexform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=0')
         self.assertPresence('documentclass')
         self.assertPresence('Heldentum')
         self.assertPresence('Emilia E.')
-        f = save.forms['participantlistpdfform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/participantlist\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
-        f = save.forms['nametagtexform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/nametag\\?runs=0')
         self.assertTrue(self.response.body.startswith(b"\x1f\x8b"))
         self.assertTrue(len(self.response.body) > 1000)
         with open("/tmp/output.tar.gz", 'wb') as f:
             f.write(self.response.body)
-        f = save.forms['nametagpdfform']
-        self.submit(f)
+        self.response = save.click(href='/event/event/1/download/nametag\\?runs=2')
         self.assertTrue(self.response.body.startswith(b"%PDF"))
         self.assertTrue(len(self.response.body) > 1000)
 
@@ -957,8 +944,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/download'},)
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
-        f = self.response.forms['exportform']
-        self.submit(f)
+        self.traverse({'href': '/event/event/1/download/export$'})
         with open("/tmp/cdedb-store/testfiles/event_export.json") as datafile:
             expectation = json.load(datafile)
         result = json.loads(self.response.text)
@@ -1108,9 +1094,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/download'},)
         self.assertTitle("Downloads zur Veranstaltung Große Testakademie 2222")
         saved = self.response
-        f = self.response.forms['exportform']
-        self.submit(f)
-        data = self.response.body
+        data = saved.click(href='/event/event/1/download/export$').body
         data = data.replace(b"Gro\\u00dfe Testakademie 2222",
                             b"Mittelgro\\u00dfe Testakademie 2222")
         self.response = saved

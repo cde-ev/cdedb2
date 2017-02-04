@@ -348,7 +348,7 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/archive", methods=_POST,
                      endpoint="archive_event"),
                 sub("/download", (
-                    rule("/namtag", methods=_GET,
+                    rule("/nametag", methods=_GET,
                          endpoint="download_nametags"),
                     rule("/coursepuzzle", methods=_GET,
                          endpoint="download_course_puzzle"),
