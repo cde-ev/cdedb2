@@ -10,6 +10,9 @@
 {{ util.breadcrumb_link(cdedblink("event/create_event"), "Veranstaltung anlegen", active=True) }}
 {% endblock %}
 {% block content %}
+    {% call util.bootstrap_panel(aclass="panel-warning") %}
+        Vergiss nicht mindestens einen Veranstaltungsteil anzulegen!
+    {% endcall %}
     <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform" class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}
         {# jinja does not support list comprehension ... #}
