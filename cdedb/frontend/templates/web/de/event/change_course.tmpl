@@ -37,6 +37,12 @@
         {{ util.form_input_checkboxes(name="active_parts", label="Findet statt in", entries=myentries) }}
         {# TODO JS to deactivate invalid options #}
         {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
+        <tr><th colspan="2">Felder</th></tr>
+        {% for field_id, field in ambience['event']['fields']|dictsort %}
+            {% if field['association'] == enums['FieldAssociations'].course %}
+                {{ util.tab_event_field_input(field) }}
+            {% endif %}
+        {% endfor %}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_course")) }}
     </form>
 {% endblock %}

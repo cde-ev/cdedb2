@@ -552,6 +552,25 @@ CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
 
+CREATE TABLE event.field_definitions (
+        id                      serial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        field_name              varchar NOT NULL,
+        -- anything allowed as type in a query spec
+        kind                    varchar NOT NULL,
+        -- see cdedb.database.constants.FieldAssociations
+        association             integer NOT NULL,
+        -- the following array describes the available selections
+        -- first entry of each tuple is the value, second entry the description
+        -- the whole thing may be NULL, if the field does not enforce a
+        -- particular selection and is free-form instead
+        entries                 varchar[][2]
+);
+-- make event/name combinations unique to avoid surprises
+CREATE UNIQUE INDEX idx_field_definitions_event_id ON event.field_definitions(event_id, field_name);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.field_definitions TO cdb_persona;
+GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
+
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
@@ -566,7 +585,9 @@ CREATE TABLE event.courses (
         instructors             varchar,
         min_size                integer,
         max_size                integer,
-        notes                   varchar
+        notes                   varchar,
+        -- additional data, customized by each orga team
+        fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX idx_courses_event_id ON event.courses(event_id);
 GRANT SELECT, INSERT, UPDATE ON event.courses TO cdb_persona;
@@ -593,22 +614,6 @@ CREATE INDEX idx_orgas_event_id ON event.orgas(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.orgas TO cdb_persona;
 GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_persona;
 
-CREATE TABLE event.field_definitions (
-        id                      serial PRIMARY KEY,
-        event_id                integer NOT NULL REFERENCES event.events(id),
-        field_name              varchar NOT NULL,
-        -- anything allowed as type in a query spec
-        kind                    varchar NOT NULL,
-        -- the following array describes the available selections
-        -- first entry of each tuple is the value, second entry the description
-        -- the whole thing may be NULL, if the field does not enforce a
-        -- particular selection and is free-form instead
-        entries                 varchar[][2]
-);
-CREATE INDEX idx_field_definitions_event_id ON event.field_definitions(event_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.field_definitions TO cdb_persona;
-GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
-
 CREATE TABLE event.lodgements (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
@@ -616,7 +621,9 @@ CREATE TABLE event.lodgements (
         capacity                integer NOT NULL,
         -- number of people which can be accommodated with reduced comfort
         reserve                 integer NOT NULL DEFAULT 0,
-        notes                   varchar
+        notes                   varchar,
+        -- additional data, customized by each orga team
+        fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX idx_lodgements_event_id ON event.lodgements(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.lodgements TO cdb_persona;

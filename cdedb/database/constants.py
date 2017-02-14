@@ -59,6 +59,13 @@ class RegistrationPartStati(enum.IntEnum):
                         RegistrationPartStati.guest,)
 
 @enum.unique
+class FieldAssociations(enum.IntEnum):
+    """Coordinates fields to the entities they are attached to."""
+    registration = 1 #:
+    course = 2 #:
+    lodgement = 3 #:
+
+@enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
     #: created, email unconfirmed

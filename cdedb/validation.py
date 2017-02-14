@@ -1651,8 +1651,9 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
 
-_EVENT_FIELD_COMMON_FIELDS = {
+_EVENT_FIELD_COMMON_FIELDS = lambda: {
     'kind': _str,
+    'association': _enum_fieldassociations,
     'entries': _any,
 }
 @_addvalidator
@@ -1671,12 +1672,12 @@ def _event_field(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_EVENT_FIELD_COMMON_FIELDS,
+        mandatory_fields = dict(_EVENT_FIELD_COMMON_FIELDS(),
                                 field_name=_restrictive_identifier)
         optional_fields = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_FIELD_COMMON_FIELDS
+        optional_fields = _EVENT_FIELD_COMMON_FIELDS()
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
@@ -1778,7 +1779,7 @@ def _course(val, argname=None, *, creation=False, _convert=True):
     else:
         ## no event_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
-        optional_fields = dict(_COURSE_COMMON_FIELDS(),
+        optional_fields = dict(_COURSE_COMMON_FIELDS(), fields=_any,
                                **_COURSE_OPTIONAL_FIELDS)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
@@ -1815,6 +1816,7 @@ def _course(val, argname=None, *, creation=False, _convert=True):
         if not val['active_parts'] <= val['parts']:
             errs.append(('parts',
                          ValueError(_("Must be a superset of active parts."))))
+    ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
 _REGISTRATION_COMMON_FIELDS = lambda: {
@@ -1855,9 +1857,9 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
     else:
         ## no event_id/persona_id, since associations should be fixed
         mandatory_fields = {'id': _id}
-        optional_fields = dict(_REGISTRATION_COMMON_FIELDS(),
-                               fields=_any,
-                               **_REGISTRATION_OPTIONAL_FIELDS())
+        optional_fields = dict(
+            _REGISTRATION_COMMON_FIELDS(), fields=_any,
+            **_REGISTRATION_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
@@ -1903,7 +1905,7 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
                     else:
                         newchoices[part_id] = new_list
             val['choices'] = newchoices
-    ## the check of fields is delegated to _registration_fields
+    ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
 @_addvalidator
@@ -1932,14 +1934,22 @@ def _registration_part(val, argname=None, *, _convert=True):
                                       _convert=_convert)
 
 @_addvalidator
-def _registration_fields(val, argname=None, fields=None, *, _convert=True):
-    """
+def _event_associated_fields(val, argname=None, fields=None, association=None,
+                             *, _convert=True):
+    """Check fields associated to an event entity.
+
+    This can be used for all different kinds of entities (currently
+    registration, courses and lodgements) via the multiplexing in form of
+    the ``association`` parameter.
+
     :type val: object
     :type argname: str or None
     :type fields: {int: dict}
+    :type association: cdedb.constants.FieldAssociations
     :param fields: definition of the event specific fields which are available
     :type _convert: bool
     :rtype: (dict or None, [(str or None, exception)])
+
     """
     argname = argname or "fields"
     val, errs = _mapping(val, argname, _convert=_convert)
@@ -1948,15 +1958,15 @@ def _registration_fields(val, argname=None, fields=None, *, _convert=True):
     optional_fields = {
         field['field_name']: getattr(current_module,
                                      "_{}_or_None".format(field['kind']))
-        for field in fields.values()
+        for field in fields.values() if field['association'] == association
     }
     val, errs = _examine_dictionary_fields(val, {}, optional_fields,
                                            _convert=_convert)
     if errs:
         return val, errs
+    lookup = {v['field_name']: k for k, v in fields.items()}
     for field in val:
-        field_id = next(anid for anid, entry in fields.items()
-                        if entry['field_name'] == field)
+        field_id = lookup[field]
         if fields[field_id]['entries'] is not None:
             if val[field] not in (x for x, _ in fields[field_id]['entries']):
                 errs.append((field, ValueError(_("Entry not in definition list."))))
@@ -1989,7 +1999,8 @@ def _lodgement(val, argname=None, *, creation=False, _convert=True):
     else:
         ## no event_id, since the associated event should be fixed
         mandatory_fields = {'id': _id}
-        optional_fields = _LODGEMENT_COMMON_FIELDS()
+        optional_fields = dict(_LODGEMENT_COMMON_FIELDS(), fields=_any)
+    ## the check of fields is delegated to _event_associated_fields
     return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
 

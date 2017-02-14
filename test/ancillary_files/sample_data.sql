@@ -94,12 +94,22 @@ INSERT INTO event.event_parts (id, event_id, title, part_begin, part_end, fee) V
     (1, 1, 'Warmup', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', date '2222-11-01', date '2222-11-11', 123.00),
     (3, 1, 'Zweite Hälfte', date '2222-11-11', date '2222-11-30', 450.99);
-INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes) VALUES
-    (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.'),
-    (2, 1, 'Lustigsein für Fortgeschrittene', 'Inklusive Post, Backwaren und frühzeitigem Ableben.', 'β', 'Kabarett', 'Bernd Lucke', 20, 10, 'Kursleiter hat Sekt angefordert.'),
-    (3, 1, 'Kurzer Kurs', 'mit hoher Leistung.', 'γ', 'Kurz', 'Heinrich und Thomas Mann', 14, 5, NULL),
-    (4, 1, 'Langer Kurs', 'mit hohem Umsatz.', 'δ', 'Lang', 'Stephen Hawking und Richard Feynman', NULL, NULL, NULL),
-    (5, 1, 'Backup-Kurs', 'damit wir Auswahl haben', 'ε', 'Backup', 'TBA', NULL, NULL, NULL);
+INSERT INTO event.field_definitions (id, event_id, field_name, kind, association, entries) VALUES
+    (1, 1, 'brings_balls', 'bool', 1, NULL),
+    (2, 1, 'transportation', 'str', 1, '{{"pedes", "by feet"}, {"car", "own car available"}, {"etc", "anything else"}}'),
+    (3, 1, 'lodge', 'str', 1, NULL),
+    (4, 1, 'may_reserve', 'bool', 1, NULL),
+    (5, 1, 'reserve_1', 'bool', 1, NULL),
+    (6, 1, 'reserve_2', 'bool', 1, NULL),
+    (7, 1, 'reserve_3', 'bool', 1, NULL),
+    (8, 1, 'room', 'str', 2, NULL),
+    (9, 1, 'contamination', 'str', 3, '{{"high", "lots of radiation"}, {"medium", "elevated level of radiation"}, {"low", "some radiation"}, {"none", "no radiation"}}');
+INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes, fields) VALUES
+    (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.', '{"course_id": 1, "room": "Wald"}'::jsonb),
+    (2, 1, 'Lustigsein für Fortgeschrittene', 'Inklusive Post, Backwaren und frühzeitigem Ableben.', 'β', 'Kabarett', 'Bernd Lucke', 20, 10, 'Kursleiter hat Sekt angefordert.', '{"course_id": 2, "room": "Theater"}'::jsonb),
+    (3, 1, 'Kurzer Kurs', 'mit hoher Leistung.', 'γ', 'Kurz', 'Heinrich und Thomas Mann', 14, 5, NULL, '{"course_id": 3, "room": "Seminarraum 42"}'::jsonb),
+    (4, 1, 'Langer Kurs', 'mit hohem Umsatz.', 'δ', 'Lang', 'Stephen Hawking und Richard Feynman', NULL, NULL, NULL, '{"course_id": 4, "room": "Seminarraum 23"}'::jsonb),
+    (5, 1, 'Backup-Kurs', 'damit wir Auswahl haben', 'ε', 'Backup', 'TBA', NULL, NULL, NULL, '{"course_id": 5, "room": "Nirwana"}'::jsonb);
 INSERT INTO event.course_parts (course_id, part_id, is_active) VALUES
     (1, 1, True),
     (1, 3, True),
@@ -114,19 +124,11 @@ INSERT INTO event.course_parts (course_id, part_id, is_active) VALUES
     (5, 3, False);
 INSERT INTO event.orgas (persona_id, event_id) VALUES
     (7, 1);
-INSERT INTO event.field_definitions (id, event_id, field_name, kind, entries) VALUES
-    (1, 1, 'brings_balls', 'bool', NULL),
-    (2, 1, 'transportation', 'str', '{{"pedes", "by feet"}, {"car", "own car available"}, {"etc", "anything else"}}'),
-    (3, 1, 'lodge', 'str', NULL),
-    (4, 1, 'may_reserve', 'bool', NULL),
-    (5, 1, 'reserve_1', 'bool', NULL),
-    (6, 1, 'reserve_2', 'bool', NULL),
-    (7, 1, 'reserve_3', 'bool', NULL);
-INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes) VALUES
-    (1, 1, 'Warme Stube', 5, 1, NULL),
-    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.'),
-    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.'),
-    (4, 1, 'Einzelzelle', 1, 0, NULL);
+INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, fields) VALUES
+    (1, 1, 'Warme Stube', 5, 1, NULL, '{"lodgement_id": 1, "contamination": "high"}'::jsonb),
+    (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', '{"lodgement_id": 2, "contamination": "none"}'::jsonb),
+    (3, 1, 'Kellerverlies', 0, 100, 'Nur für Notfälle.', '{"lodgement_id": 3, "contamination": "low"}'::jsonb),
+    (4, 1, 'Einzelzelle', 1, 0, NULL, '{"lodgement_id": 4, "contamination": "high"}'::jsonb);
 INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, payment, parental_agreement, mixed_lodging, checkin, foto_consent, fields) VALUES
     (1, 1, 1, NULL, NULL, NULL, NULL, True, NULL, True, '{"registration_id": 1, "lodge": "Die üblichen Verdächtigen :)"}'::jsonb),
     (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', NULL, True, NULL, True, '{"registration_id": 2, "brings_balls": true, "transportation": "pedes"}'::jsonb),
@@ -326,7 +328,7 @@ SELECT setval('past_event.institutions_id_seq', 1);
 SELECT setval('event.events_id_seq', 1);
 SELECT setval('event.event_parts_id_seq', 3);
 SELECT setval('event.courses_id_seq', 5);
-SELECT setval('event.field_definitions_id_seq', 7);
+SELECT setval('event.field_definitions_id_seq', 9);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('ml.mailinglists_id_seq', 10);

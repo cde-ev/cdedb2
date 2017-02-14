@@ -28,6 +28,7 @@
     "event.field_definitions": [
         {
             "id": 1,
+            "association": 1,
             "kind": "bool",
             "entries": null,
             "event_id": 1,
@@ -35,6 +36,7 @@
         },
         {
             "id": 2,
+            "association": 1,
             "kind": "str",
             "entries": [
                 [
@@ -55,6 +57,7 @@
         },
         {
             "id": 3,
+            "association": 1,
             "kind": "str",
             "entries": null,
             "event_id": 1,
@@ -62,6 +65,7 @@
         },
         {
             "id": 4,
+            "association": 1,
             "kind": "bool",
             "entries": null,
             "event_id": 1,
@@ -69,6 +73,7 @@
         },
         {
             "id": 5,
+            "association": 1,
             "kind": "bool",
             "entries": null,
             "event_id": 1,
@@ -76,6 +81,7 @@
         },
         {
             "id": 6,
+            "association": 1,
             "kind": "bool",
             "entries": null,
             "event_id": 1,
@@ -83,11 +89,29 @@
         },
         {
             "id": 7,
+            "association": 1,
             "kind": "bool",
             "entries": null,
             "event_id": 1,
             "field_name": "reserve_3"
-        }
+        },
+        {
+            "association": 2,
+            "entries": null,
+            "event_id": 1,
+            "field_name": "room",
+            "id": 8,
+            "kind": "str"},
+        {"association": 3,
+         "entries": [["high", "lots of radiation"],
+                     ["medium",
+                      "elevated level of radiation"],
+                     ["low", "some radiation"],
+                     ["none", "no radiation"]],
+         "event_id": 1,
+         "field_name": "contamination",
+         "id": 9,
+         "kind": "str"}
     ],
     "event.courses": [
         {
@@ -98,6 +122,7 @@
             "max_size": 10,
             "min_size": 3,
             "event_id": 1,
+            "fields": {"course_id": 1, "room": "Wald"},
             "description": "Wir werden die B\u00e4ume dr\u00fccken.",
             "id": 1,
             "notes": "Promotionen in Mathematik und Ethik f\u00fcr Teilnehmer notwendig."
@@ -110,6 +135,7 @@
             "max_size": 20,
             "min_size": 10,
             "event_id": 1,
+            "fields": {"course_id": 2, "room": "Theater"},
             "description": "Inklusive Post, Backwaren und fr\u00fchzeitigem Ableben.",
             "id": 2,
             "notes": "Kursleiter hat Sekt angefordert."
@@ -122,6 +148,7 @@
             "max_size": 14,
             "min_size": 5,
             "event_id": 1,
+            "fields": {"course_id": 3, "room": "Seminarraum 42"},
             "description": "mit hoher Leistung.",
             "id": 3,
             "notes": null
@@ -134,6 +161,7 @@
             "max_size": null,
             "min_size": null,
             "event_id": 1,
+            "fields": {"course_id": 4, "room": "Seminarraum 23"},
             "description": "mit hohem Umsatz.",
             "id": 4,
             "notes": null
@@ -146,6 +174,7 @@
             "max_size": null,
             "min_size": null,
             "event_id": 1,
+            "fields": {"course_id": 5, "room": "Nirwana"},
             "description": "damit wir Auswahl haben",
             "id": 5,
             "notes": null
@@ -307,6 +336,7 @@
             "notes": null,
             "moniker": "Warme Stube",
             "id": 1,
+            "fields": {"contamination": "high", "lodgement_id": 1},
             "event_id": 1
         },
         {
@@ -315,6 +345,7 @@
             "notes": "Daf\u00fcr mit Frischluft.",
             "moniker": "Kalte Kammer",
             "id": 2,
+            "fields": {"contamination": "none", "lodgement_id": 2},
             "event_id": 1
         },
         {
@@ -323,6 +354,7 @@
             "notes": "Nur f\u00fcr Notf\u00e4lle.",
             "moniker": "Kellerverlies",
             "id": 3,
+            "fields": {"contamination": "low", "lodgement_id": 3},
             "event_id": 1
         },
         {
@@ -331,6 +363,7 @@
             "notes": null,
             "moniker": "Einzelzelle",
             "id": 4,
+            "fields": {"contamination": "high", "lodgement_id": 4},
             "event_id": 1
         }
     ],

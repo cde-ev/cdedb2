@@ -340,9 +340,10 @@ class TestEventFrontend(FrontendTest):
         ## fields
         f = self.response.forms['fieldsummaryform']
         self.assertEqual('transportation', f['field_name_2'].value)
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_10', f.fields)
         f['create_-1'].checked = True
         f['field_name_-1'] = "food_stuff"
+        f['association_-1'] = "1"
         f['kind_-1'] = "str"
         f['entries_-1'] = """all;everything goes
         vegetarian;no meat
@@ -350,7 +351,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertEqual('food_stuff', f['field_name_8'].value)
+        self.assertEqual('food_stuff', f['field_name_10'].value)
         self.assertEqual("""pedes;by feet
 car;own car available
 etc;anything else""", f['entries_2'].value)
@@ -363,11 +364,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("""pedes;by feet
 broom;flying implements
 etc;anything else""", f['entries_2'].value)
-        f['delete_8'].checked = True
+        f['delete_10'].checked = True
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertNotIn('field_name_8', f.fields)
+        self.assertNotIn('field_name_10', f.fields)
 
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):
@@ -419,11 +420,13 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("3", f.get('active_parts', index=2).value)
         self.assertEqual("10", f['max_size'].value)
         self.assertEqual("3", f['min_size'].value)
+        self.assertEqual("Wald", f['fields.room'].value)
         f['shortname'] = "Helden"
         f['nr'] = "ω"
         f['max_size'] = "21"
         f['parts'] = ['2', '3']
         f['active_parts'] = ['2']
+        f['fields.room'] = "Canyon"
         self.submit(f)
         self.assertTitle("Kurs Helden (Große Testakademie 2222)")
         self.traverse({'href': '/event/event/1/course/1/change'})
@@ -436,6 +439,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("2", f.get('active_parts', index=1).value)
         self.assertEqual(None, f.get('active_parts', index=2).value)
         self.assertEqual("21", f['max_size'].value)
+        self.assertEqual("Canyon", f['fields.room'].value)
 
     @as_users("anton")
     def test_create_course(self, user):
@@ -682,12 +686,15 @@ etc;anything else""", f['entries_2'].value)
         f['capacity'] = 3
         self.assertEqual("", f['notes'].value)
         f['notes'] = "neu mit Anbau"
+        self.assertEqual("high", f['fields.contamination'].value)
+        f['fields.contamination'] = "medium"
         self.submit(f)
         self.traverse({'href': '/event/event/1/lodgement/4/change'})
         self.assertTitle("Unterkunft Einzelzelle bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changelodgementform']
         self.assertEqual("3", f['capacity'].value)
         self.assertEqual("neu mit Anbau", f['notes'].value)
+        self.assertEqual("medium", f['fields.contamination'].value)
         self.traverse({'href': '/event/event/1/lodgement/overview'})
         self.traverse({'href': '/event/event/1/lodgement/3/show'})
         self.assertTitle("Unterkunft Kellerverlies (Große Testakademie 2222)")

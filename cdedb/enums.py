@@ -18,6 +18,7 @@ ALL_ENUMS = (
     const.LastschriftTransactionStati, const.CoreLogCodes,
     const.CdeLogCodes, const.FinanceLogCodes, const.EventLogCodes,
     const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,
+    const.FieldAssociations,
     QueryOperators, AgeClasses, LineResolutions, CourseFilterPositions,
     SubscriptionStates)
 

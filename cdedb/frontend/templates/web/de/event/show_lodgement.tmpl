@@ -60,4 +60,32 @@
             {% endfor %}
         </ul>
     {% endfor %}
+    <tr><th colspan="2">Felder</th></tr>
+    {% for field_id, field in ambience['event']['fields']|dictsort %}
+        {% if field['association'] == enums['FieldAssociations'].lodgement %}
+            <tr>
+                <td>{{ field['field_name']|e }}</td>
+                <td>
+                    {% if field['entries'] %}
+                        {% for value, description in field['entries'] %}
+                            {% if ambience['lodgement']['fields'].get(field['field_name']) == value %}
+                                {{ description|e }}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        {% if field['kind'] == "bool" %}
+                            {{ util.deko_checkbox(
+                                checked=ambience['lodgement']['fields'].get(field['field_name'])) }}
+                        {% elif field['kind'] == "date" %}
+                            {{ ambience['lodgement']['fields'].get(field['field_name'])|date|e }}
+                        {% elif field['kind'] == "datetime" %}
+                            {{ ambience['lodgement']['fields'].get(field['field_name'])|datetime|e }}
+                        {% else %}
+                            {{ ambience['lodgement']['fields'].get(field['field_name'])|e|linebreaks }}
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endif %}
+    {% endfor %}
 {% endblock %}

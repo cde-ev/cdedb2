@@ -88,15 +88,17 @@ class EventFrontend(AbstractUserFrontend):
         return event['offline_lock'] != self.conf.CDEDB_OFFLINE_DEPLOYMENT
 
     @staticmethod
-    def event_has_field(event, field_name):
-        """Shorthand to check whether a field with given name is defined for
-        an event.
+    def event_has_field(event, field_name, association):
+        """Shorthand to check whether a field with given name and
+        association is defined for an event.
 
         :type event: {str: object}
         :type field_name: str
+        :type association: cdedb.constants.FieldAssociations
         :rtype: bool
         """
-        return any(field['field_name'] == field_name
+        return any((field['field_name'] == field_name
+                    and field['association'] == field_name)
                    for field in event['fields'].values())
 
     @access("persona")
@@ -454,12 +456,14 @@ class EventFrontend(AbstractUserFrontend):
                    if delete_flags['delete_{}'.format(field_id)]}
         ret = {}
         params = lambda anid: (("kind_{}".format(anid), "str"),
+                               ("association_{}".format(anid), "enum_fieldassociations"),
                                ("entries_{}".format(anid), "str_or_None"))
         for field_id in fields:
             if field_id not in deletes:
                 tmp = request_extractor(rs, params(field_id))
                 temp = {}
                 temp['kind'] = tmp["kind_{}".format(field_id)]
+                temp['association'] = tmp["association_{}".format(field_id)]
                 temp['entries'] = tmp["entries_{}".format(field_id)]
                 temp = check(rs, "event_field", temp)
                 if temp:
@@ -469,6 +473,7 @@ class EventFrontend(AbstractUserFrontend):
         marker = 1
         params = lambda anid: (("field_name_-{}".format(anid), "str"),
                                ("kind_-{}".format(anid), "str"),
+                               ("association_-{}".format(anid), "enum_fieldassociations"),
                                ("entries_-{}".format(anid), "str_or_None"))
         while marker < 2**10:
             will_create = unwrap(request_extractor(
@@ -478,6 +483,7 @@ class EventFrontend(AbstractUserFrontend):
                 temp = {}
                 temp['field_name'] = tmp["field_name_-{}".format(marker)]
                 temp['kind'] = tmp["kind_-{}".format(marker)]
+                temp['association'] = tmp["association_-{}".format(marker)]
                 temp['entries'] = tmp["entries_-{}".format(marker)]
                 temp = check(rs, "event_field", temp, creation=True)
                 if temp:
@@ -566,7 +572,10 @@ class EventFrontend(AbstractUserFrontend):
         if 'active_parts' not in rs.values:
             rs.values.setlist('active_parts',
                               rs.ambience['course']['active_parts'])
-        merge_dicts(rs.values, rs.ambience['course'])
+        field_values = {
+            "fields.{}".format(key): value
+            for key, value in rs.ambience['course']['fields'].items()}
+        merge_dicts(rs.values, rs.ambience['course'], field_values)
         return self.render(rs, "change_course")
 
     @access("event", modi={"POST"})
@@ -579,6 +588,14 @@ class EventFrontend(AbstractUserFrontend):
         data['id'] = course_id
         data['parts'] = parts
         data['active_parts'] = active_parts
+        field_params = tuple(
+            ("fields.{}".format(field['field_name']),
+             "{}_or_None".format(field['kind']))
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.course)
+        raw_fields = request_extractor(rs, field_params)
+        data['fields'] = {
+            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
         data = check(rs, "course", data)
         if rs.errors:
             return self.change_course_form(rs, event_id, course_id)
@@ -995,10 +1012,14 @@ class EventFrontend(AbstractUserFrontend):
                 self.event_begin(event))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodge_present = any(field['field_name'] == "lodge"
-                            for field in event['fields'].values())
-        may_reserve_present = any(field['field_name'] == "may_reserve"
-                                  for field in event['fields'].values())
+        lodge_present = any(
+            (field['field_name'] == "lodge"
+             and field['association'] == const.FieldAssociations.registration)
+            for field in event['fields'].values())
+        may_reserve_present = any(
+            (field['field_name'] == "may_reserve"
+             and field['association'] == const.FieldAssociations.registration)
+            for field in event['fields'].values())
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas, 'lodge_present': lodge_present,
@@ -1428,11 +1449,15 @@ class EventFrontend(AbstractUserFrontend):
             for i, entry in enumerate(questionnaire)
             for key, value in entry.items()}
         merge_dicts(rs.values, current)
+        registration_fields = {
+            k: v for k, v in rs.ambience['event']['fields'].items()
+            if v['association'] == const.FieldAssociations.registration}
         return self.render(rs, "questionnaire_summary", {
-            'questionnaire': questionnaire,})
+            'questionnaire': questionnaire,
+            'registration_fields': registration_fields})
 
     @staticmethod
-    def process_questionnaire_input(rs, num):
+    def process_questionnaire_input(rs, num, reg_fields):
         """This handles input to configure the questionnaire.
 
         Since this covers a variable number of rows, we cannot do this
@@ -1441,6 +1466,8 @@ class EventFrontend(AbstractUserFrontend):
         :type rs: :py:class:`FrontendRequestState`
         :type num: int
         :param num: number of rows to expect
+        :type reg_fields: [int]
+        :param reg_fields: Available field ids
         :rtype: [{str: object}]
         """
         delete_flags = request_extractor(
@@ -1475,6 +1502,10 @@ class EventFrontend(AbstractUserFrontend):
                 break
             marker += 1
         rs.values['create_last_index'] = marker - 1
+        for i, row in enumerate(questionnaire):
+            if row['field_id'] and row['field_id'] not in reg_fields:
+                rs.errors.append(("field_id_{}".format(i),
+                                  ValueError(_("Invalid field."))))
         return questionnaire
 
     @access("event", modi={"POST"})
@@ -1486,8 +1517,11 @@ class EventFrontend(AbstractUserFrontend):
         administrator.
         """
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        registration_fields = {
+            k for k, v in rs.ambience['event']['fields'].items()
+            if v['association'] == const.FieldAssociations.registration}
         new_questionnaire = self.process_questionnaire_input(
-            rs, len(questionnaire))
+            rs, len(questionnaire), registration_fields)
         if rs.errors:
             return self.questionnaire_summary_form(rs, event_id)
         code = self.eventproxy.set_questionnaire(rs, event_id,
@@ -1626,7 +1660,8 @@ class EventFrontend(AbstractUserFrontend):
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
              "{}_or_None".format(field['kind']))
-            for field in event['fields'].values())
+            for field in event['fields'].values()
+            if field['association'] == const.FieldAssociations.registration)
         raw_fields = request_extractor(rs, field_params)
 
         new_parts = {
@@ -1819,7 +1854,8 @@ class EventFrontend(AbstractUserFrontend):
                         not registrations[reg_id]['mixed_lodging']
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
-                if (cls.event_has_field(event, 'reserve')
+                if (cls.event_has_field(event, 'reserve',
+                                        const.FieldAssociations.registration)
                         and (len(group) - lodgement['capacity']
                              != _reserve(group, part_id))
                         and ((len(group) - lodgement['capacity'] > 0)
@@ -1904,7 +1940,10 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_lodgement_form(self, rs, event_id, lodgement_id):
         """Render form."""
-        merge_dicts(rs.values, rs.ambience['lodgement'])
+        field_values = {
+            "fields.{}".format(key): value
+            for key, value in rs.ambience['lodgement']['fields'].items()}
+        merge_dicts(rs.values, rs.ambience['lodgement'], field_values)
         return self.render(rs, "change_lodgement")
 
     @access("event", modi={"POST"})
@@ -1916,6 +1955,14 @@ class EventFrontend(AbstractUserFrontend):
         This does not enable changing the inhabitants of this lodgement.
         """
         data['id'] = lodgement_id
+        field_params = tuple(
+            ("fields.{}".format(field['field_name']),
+             "{}_or_None".format(field['kind']))
+            for field in rs.ambience['event']['fields'].values()
+            if field['association'] == const.FieldAssociations.lodgement)
+        raw_fields = request_extractor(rs, field_params)
+        data['fields'] = {
+            key.split('.', 1)[1]: value for key, value in raw_fields.items()}
         data = check(rs, "lodgement", data)
         if rs.errors:
             return self.change_lodgement_form(rs, event_id, lodgement_id)
@@ -2121,7 +2168,8 @@ class EventFrontend(AbstractUserFrontend):
                       for part_id in event['parts'])] = "id"
         for e in sorted(event['fields'].values(),
                         key=lambda e: e['field_name']):
-            spec["fields.{}".format(e['field_name'])] = e['kind']
+            if e['association'] == const.FieldAssociations.registration:
+                spec["fields.{}".format(e['field_name'])] = e['kind']
         return spec
 
     def make_registracion_query_aux(self, rs, event, courses,
@@ -2154,11 +2202,14 @@ class EventFrontend(AbstractUserFrontend):
         choices.update({
             "fields.{}".format(field['field_name']): {
                 value: desc for value, desc in field['entries']}
-            for field in event['fields'].values() if field['entries']})
+            for field in event['fields'].values()
+            if (field['association'] == const.FieldAssociations.registration
+                and field['entries'])})
 
         titles = {
             "fields.{}".format(field['field_name']): field['field_name']
-            for field in event['fields'].values()}
+            for field in event['fields'].values()
+            if field['association'] == const.FieldAssociations.registration}
         for part_id, part in event['parts'].items():
             titles.update({
                 "part{0}.course_id{0}".format(part_id): rs.gettext(
@@ -2362,6 +2413,10 @@ class EventFrontend(AbstractUserFrontend):
             if field_id not in rs.ambience['event']['fields']:
                 return werkzeug.exceptions.NotFound(
                     _("Wrong associated event."))
+            field = rs.ambience['event']['fields'][field_id]
+            if field['association'] != const.FieldAssociations.registration:
+                return werkzeug.exceptions.NotFound(
+                    _("Wrong associated field."))
             return self.redirect(rs, "event/field_set_form",
                                  {'field_id': field_id})
 
@@ -2373,6 +2428,9 @@ class EventFrontend(AbstractUserFrontend):
         if field_id not in rs.ambience['event']['fields']:
             ## also catches field_id validation errors
             return werkzeug.exceptions.NotFound(_("Wrong associated event."))
+        field = rs.ambience['event']['fields'][field_id]
+        if field['association'] != const.FieldAssociations.registration:
+            return werkzeug.exceptions.NotFound(_("Wrong associated field."))
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(
@@ -2381,10 +2439,9 @@ class EventFrontend(AbstractUserFrontend):
             registrations.keys(),
             key=lambda anid: name_key(
                 personas[registrations[anid]['persona_id']]))
-        field_name = rs.ambience['event']['fields'][field_id]['field_name']
         values = {
             "input{}".format(registration_id):
-            registration['fields'].get(field_name)
+            registration['fields'].get(field['field_name'])
             for registration_id, registration in registrations.items()}
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
@@ -2396,12 +2453,14 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def field_set(self, rs, event_id, field_id):
         """Modify a specific field on all registrations."""
-        event = rs.ambience['event']
-        if field_id not in event['fields']:
+        if field_id not in rs.ambience['event']['fields']:
             ## also catches field_id validation errors
             return werkzeug.exceptions.NotFound(_("Wrong associated event."))
+        field = rs.ambience['event']['fields'][field_id]
+        if field['association'] != const.FieldAssociations.registration:
+            return werkzeug.exceptions.NotFound(_("Wrong associated field."))
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        kind = "{}_or_None".format(event['fields'][field_id]['kind'])
+        kind = "{}_or_None".format(field['kind'])
         data_params = tuple(("input{}".format(registration_id), kind)
                             for registration_id in registration_ids)
         data = request_extractor(rs, data_params)
@@ -2410,14 +2469,14 @@ class EventFrontend(AbstractUserFrontend):
 
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         code = 1
-        field_name = event['fields'][field_id]['field_name']
         for registration_id, registration in registrations.items():
             if (data["input{}".format(registration_id)]
-                    != registration['fields'].get(field_name)):
+                    != registration['fields'].get(field['field_name'])):
                 new = {
                     'id': registration_id,
                     'fields': {
-                        field_name: data["input{}".format(registration_id)]
+                        field['field_name']:
+                        data["input{}".format(registration_id)]
                     }
                 }
                 code *= self.eventproxy.set_registration(rs, new)
