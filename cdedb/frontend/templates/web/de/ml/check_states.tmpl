@@ -15,19 +15,49 @@
     </h1>
 {% endblock %}
 {% block content %}
-    Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe.
-    <ul>
-        {% for problem in problems|sort %}
-            <li>
-                {{ util.persona_anchor(personas[problem]) }}
-                <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
-                        id="removeproblemform{{ problem|e }}" style="display: inline;">
-                    {{ util.input_hidden(name="subscriber_id", value=problem) }}
-                    {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="trash",
-                            title=personas[problem]['given_names'] + " " + personas[problem]['family_name'] +
-                            " als Abonnent entfernen") }}
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
+    <h2>Problematische Abonennten</h2>
+    {% if not problems%}
+        Alle Abonennten gehören zur konfigurierten Zielgruppe.
+    {% else %}
+        Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe.
+        <ul>
+            {% for problem in problems|sort %}
+                <li>
+                    {{ util.persona_anchor(personas[problem]) }}
+                    <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
+                            id="removeproblemform{{ problem|e }}" style="display: inline;">
+                        {{ util.input_hidden(name="subscriber_id", value=problem) }}
+                        {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="trash",
+                                title=personas[problem]['given_names'] + " " + personas[problem]['family_name'] +
+                                " als Abonnent entfernen") }}
+                    </form>
+                    <form action="{{ cdedblink('ml/mark_override')|e }}" method="POST"
+                            id="markoverrideform{{ problem|e }}" style="display: inline;">
+                        {{ util.input_hidden(name="subscriber_id", value=problem) }}
+                        {{ util.input_submit(value='', aclass="btn btn-xs btn-success", icon="flag",
+                                title=personas[problem]['given_names'] + " " + personas[problem]['family_name'] +
+                                " als Ausnahme markieren") }}
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if overrides %}
+        <h2>Ausnahmen</h2>
+        Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe, wurden aber explizit markiert.
+        <ul>
+            {% for problem in overrides|sort %}
+                <li>
+                    {{ util.persona_anchor(personas[problem]) }}
+                    <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
+                            id="removeproblemform{{ problem|e }}" style="display: inline;">
+                        {{ util.input_hidden(name="subscriber_id", value=problem) }}
+                        {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="trash",
+                                title=personas[problem]['given_names'] + " " + personas[problem]['family_name'] +
+                                " als Abonnent entfernen") }}
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 {% endblock %}

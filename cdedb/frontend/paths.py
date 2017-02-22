@@ -537,6 +537,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                 rule("/subaddress/confirm", methods=_GET,
                      endpoint="do_address_change"),
                 rule("/check", methods=_GET,
-                     endpoint="check_states"),)),
+                     endpoint="check_states"),
+                rule("/override", methods=_POST,
+                     endpoint="mark_override"),)),
         )),)),
     ), converters={'filename': FilenameConverter})

@@ -337,6 +337,27 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Witz des Tages – Konsistenzcheck")
         self.assertPresence("Janis Jalapeño")
 
+    @as_users("anton")
+    def test_overrides(self, user):
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list$'},
+                      {'href': '/ml/mailinglist/3'},
+                      {'href': '/ml/mailinglist/3/change'},)
+        self.assertTitle("Witz des Tages – Konfiguration")
+        f = self.response.forms['changelistform']
+        f['audience_policy'] = 5
+        self.submit(f)
+        self.traverse({'href': '/ml/mailinglist/3/management'},
+                      {'href': '/ml/mailinglist/3/check'},)
+        self.assertTitle("Witz des Tages – Konsistenzcheck")
+        self.assertPresence("Janis Jalapeño")
+        self.assertNonPresence("Ausnahmen")
+        f = self.response.forms['markoverrideform10']
+        self.submit(f)
+        self.assertTitle("Witz des Tages – Konsistenzcheck")
+        self.assertPresence("Janis Jalapeño")
+        self.assertPresence("Ausnahmen")
+
     def test_log(self):
         ## First: generate data
         self.test_mailinglist_management()

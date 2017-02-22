@@ -393,15 +393,16 @@ class TestMlBackend(BackendTest):
         self.ml.change_subscription_state(self.key, 7, 8, True)
         self.ml.change_subscription_state(self.key, 8, 10, True)
         lists = self.ml.list_mailinglists(self.key)
-        expectation = {1: (5,),
+        expectation = {1: ({'is_override': False, 'mailinglist_id': 1, 'persona_id': 5},),
                        2: (),
                        3: (),
                        4: (),
                        5: (),
-                       7: (8,),
-                       8: (10,),
+                       7: ({'is_override': False, 'mailinglist_id': 7, 'persona_id': 8},),
+                       8: ({'is_override': False, 'mailinglist_id': 8, 'persona_id': 10},),
                        9: (),
                        10: ()}
+
         self.assertEqual(expectation,
                          self.ml.check_states(self.key, lists.keys()))
 
