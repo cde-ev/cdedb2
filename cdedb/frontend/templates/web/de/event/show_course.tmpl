@@ -101,7 +101,7 @@
         {% endfor %}
     </div>
 
-    <tr><th colspan="2">Felder</th></tr>
+    <h2>Felder</h2>
     {% for field_id, field in ambience['event']['fields']|dictsort %}
         {% if field['association'] == enums['FieldAssociations'].course %}
             <tr>

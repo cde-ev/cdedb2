@@ -12,10 +12,10 @@
             {{ util.form_input_text(name="capacity", label="normale Plätze") }}
             {{ util.form_input_text(name="reserve", label="Reserveplätze") }}
             {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-            <tr><th colspan="2">Felder</th></tr>
+            <h4 class="heading-underline">Felder</h4>
             {% for field_id, field in ambience['event']['fields']|dictsort %}
                 {% if field['association'] == enums['FieldAssociations'].lodgement %}
-                    {{ util.tab_event_field_input(field) }}
+                    {{ util.event_field_input(field) }}
                 {% endif %}
             {% endfor %}
         </table>

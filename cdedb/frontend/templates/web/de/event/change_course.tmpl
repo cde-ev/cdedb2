@@ -37,10 +37,10 @@
         {{ util.form_input_checkboxes(name="active_parts", label="Findet statt in", entries=myentries) }}
         {# TODO JS to deactivate invalid options #}
         {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
-        <tr><th colspan="2">Felder</th></tr>
+        <h4 class="heading-underline">Felder</h4>
         {% for field_id, field in ambience['event']['fields']|dictsort %}
             {% if field['association'] == enums['FieldAssociations'].course %}
-                {{ util.tab_event_field_input(field) }}
+                {{ util.event_field_input(field) }}
             {% endif %}
         {% endfor %}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_course")) }}
