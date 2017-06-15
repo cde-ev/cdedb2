@@ -88,8 +88,8 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 --
 -- events
 --
-INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, iban, notes, offline_lock) VALUES
-    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', date '2000-10-30', date '2200-10-30', date '2220-10-30', 'DE96 3702 0500 0008 0689 01', 'Todoliste ... just kidding ;)', False);
+INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, iban, mail_text, notes, offline_lock) VALUES
+    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', date '2000-10-30', date '2200-10-30', date '2220-10-30', 'DE96 3702 0500 0008 0689 01', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False);
 INSERT INTO event.event_parts (id, event_id, title, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', date '2222-11-01', date '2222-11-11', 123.00),

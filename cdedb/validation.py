@@ -1530,6 +1530,7 @@ _EVENT_COMMON_FIELDS = lambda: {
     'registration_soft_limit': _date_or_None,
     'registration_hard_limit': _date_or_None,
     'iban': _str_or_None,
+    'mail_text': _str_or_None,
     'use_questionnaire': _bool,
     'notes': _str_or_None,
 }

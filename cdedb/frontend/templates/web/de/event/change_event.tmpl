@@ -32,6 +32,7 @@
         {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=(
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
             ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption=True) }}
+        {{ util.form_input_textarea(name="mail_text", label="Freitext Anmeldungsbestätigung", rows="5") }}
         {{ util.form_input_checkbox(name="use_questionnaire", label="Fragebogen anzeigen") }}
         {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/show_event')) }}

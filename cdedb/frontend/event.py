@@ -250,7 +250,8 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
-        "registration_hard_limit", "iban", "use_questionnaire", "notes")
+        "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
+        "notes")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -518,8 +519,8 @@ class EventFrontend(AbstractUserFrontend):
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
-        "registration_hard_limit", "iban", "use_questionnaire", "notes",
-        "orga_ids")
+        "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
+        "notes", "orga_ids")
     def create_event(self, rs, data):
         """Create a new event organized via DB."""
         if data['orga_ids'] is not None:

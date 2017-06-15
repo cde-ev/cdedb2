@@ -709,6 +709,7 @@
             "institution": 1,
             "offline_lock": false,
             "is_archived": false,
+            "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.",
             "registration_soft_limit": "2200-10-30",
             "shortname": "TestAka",
             "iban": "DE96 3702 0500 0008 0689 01",

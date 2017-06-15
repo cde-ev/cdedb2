@@ -5,18 +5,18 @@ angekommen. Beachte bitte, dass Deine Anmeldung erst mit Überweisung des
 Teilnehmerbeitrags gültig wird.
 
 {% if ambience['event']['iban'] %}
-Überweise dazu bitte {{ fee|e }}€ auf folgendes Konto. Achte bitte bei
+Überweise dazu bitte {{ fee }}€ auf folgendes Konto. Achte bitte bei
 internationalen Überweisungen darauf, dass der Empfänger keine Gebühren
 zahlen muss.
 
 Kontoinhaber: CdE e.V.
-IBAN: {{ ambience['event']['iban']|e }}
+IBAN: {{ ambience['event']['iban'] }}
 BIC:  BFSWDE33XXX (BIC = SWIFT-Code)
 Bank: Bank für Sozialwirtschaft
 Verwendungszweck: {{ user['given_names'] }} {{ user['family_name'] }}, {{ user['persona_id']|cdedbid }}
                   {{ ambience['event']['title'] }}
 {% else %}
-Die Orgas werden Dir separat mitteilen, wie Du den Beitrag von {{ fee|e }}€
+Die Orgas werden Dir separat mitteilen, wie Du den Beitrag von {{ fee }}€
 bezahlen kannst.
 {% endif%}
 
@@ -25,6 +25,11 @@ Da Du zur Veranstaltung nicht volljährig sein wirs, musst Du außerdem noch
 die Einverständniserklärung Deiner Erziehungsberechtigten an uns
 schicken. Du findest das Formular mit allen weiteren notwendigen
 Informationen unter [1].
+{% endif %}
+
+{% if ambience['event']['mail_text'] %}
+{{ ambience['event']['mail_text'] }}
+
 {% endif %}
 
 Liebe Grüße von den Orgas

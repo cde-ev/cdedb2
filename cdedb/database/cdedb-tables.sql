@@ -529,6 +529,7 @@ CREATE TABLE event.events (
         -- automatically warned about registering late
         registration_hard_limit date,
         iban                    varchar,
+        mail_text               varchar,
         use_questionnaire       boolean NOT NULL DEFAULT False,
         notes                   varchar,
         offline_lock            boolean NOT NULL DEFAULT False,
