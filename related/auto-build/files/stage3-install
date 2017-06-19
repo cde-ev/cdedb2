@@ -11,8 +11,8 @@ echo "--------------------------------------------"
 cd /
 sleep 3
 
-aptitude -y update
-aptitude -y safe-upgrade
+apt-get -y update
+apt-get -y upgrade
 
 echo ""
 echo "Getting a copy of the cdedb sources..."
@@ -60,8 +60,8 @@ echo ""
 echo "Setting up the database..."
 echo "--------------------------------------------"
 
-cp /cdedb2/related/auto-build/files/stage3/postgresql.conf /etc/postgresql/9.4/main/
-cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/9.4/main/
+cp /cdedb2/related/auto-build/files/stage3/postgresql.conf /etc/postgresql/9.6/main/
+cp /cdedb2/related/auto-build/files/stage3/pg_hba.conf /etc/postgresql/9.6/main/
 /etc/init.d/postgresql restart
 sleep 3
 

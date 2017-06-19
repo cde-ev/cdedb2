@@ -28,25 +28,25 @@ echo ""
 echo "Getting the system up to date..."
 echo "--------------------------------------------"
 cat > /etc/apt/sources.list <<EOF
-deb http://ftp.de.debian.org/debian jessie main contrib non-free
-deb-src http://ftp.de.debian.org/debian jessie main contrib non-free
+deb http://ftp.de.debian.org/debian stretch main contrib non-free
+deb-src http://ftp.de.debian.org/debian stretch main contrib non-free
 
-deb http://security.debian.org/ jessie/updates main contrib non-free
-deb-src http://security.debian.org/ jessie/updates main contrib non-free
+deb http://security.debian.org/ stretch/updates main contrib non-free
+deb-src http://security.debian.org/ stretch/updates main contrib non-free
 
-# jessie-updates, previously known as 'volatile'
-deb http://ftp.de.debian.org/debian jessie-updates main contrib non-free
-deb-src http://ftp.de.debian.org/debian jessie-updates main contrib non-free
+# stretch-updates, previously known as 'volatile'
+deb http://ftp.de.debian.org/debian stretch-updates main contrib non-free
+deb-src http://ftp.de.debian.org/debian stretch-updates main contrib non-free
 
-# jessie-backports, previously on backports.debian.org
-deb http://ftp.de.debian.org/debian jessie-backports main contrib non-free
-deb-src http://ftp.de.debian.org/debian jessie-backports main contrib non-free
+# stretch-backports, previously on backports.debian.org
+deb http://ftp.de.debian.org/debian stretch-backports main contrib non-free
+deb-src http://ftp.de.debian.org/debian stretch-backports main contrib non-free
 EOF
 
 sleep 3
 
-aptitude -y update
-aptitude -y safe-upgrade
+apt-get -y update
+apt-get -y upgrade
 
 echo ""
 echo "Setting up packets..."
@@ -55,7 +55,7 @@ echo "--------------------------------------------"
 echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
 echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
 
-aptitude -y install --without-recommends                            \
+apt-get -y install                                                  \
     openssh-server sudo git joe file mc emacs vim htop make         \
     apache2 libapache2-mod-wsgi-py3 fail2ban                        \
     slapd ldap-utils                                                \
@@ -63,19 +63,14 @@ aptitude -y install --without-recommends                            \
     texlive texlive-latex-extra texlive-lang-german cm-super        \
     python3 python3-psycopg2 python3-dateutil python3-babel         \
     python3-jinja2 python3-tz python3-sphinx python3-lxml           \
-    python3-pil
+    python3-pil python3-webtest python3-werkzeug python3-ldap3      \
+    python3-passlib
 # this is not the python-magic module, but some debian fubar
 #   python3-magic
-# newer version than packaged necessary
-#   python3-webtest python3-werkzeug python3-ldap3
-# unpackaged
-#   python3-passlib
+# maybe newer version than packaged necessary
+#   python3-ldap3
 
-aptitude -y install --without-recommends python3-pip
-pip3 install passlib
-pip3 install WebTest
-pip3 install Werkzeug
-pip3 install ldap3
+apt-get -y install python3-pip
 pip3 install python-magic
 
 for file in /var/cache/apt/archives/*.deb
