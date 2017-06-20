@@ -139,6 +139,13 @@ exit 0
 EOF
 
 echo ""
+echo "Wait for stuff to settle..."
+echo "--------------------------------------------"
+
+sleep 5
+sync
+
+echo ""
 echo "Shrink image size..."
 echo "--------------------------------------------"
 
