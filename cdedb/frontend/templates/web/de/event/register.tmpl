@@ -85,8 +85,10 @@
             {% if course_list %}
                 <div id="course_choice_container-{{ part_id }}">
                     <h4>
-                        Kurswahl für
-                        {% if course_choices|length > 1 %}{{ ambience['event']['parts'][part_id]['title']|e }}{% endif %}
+                        Kurswahl
+                        {% if course_choices|length > 1 %}
+                            für {{ ambience['event']['parts'][part_id]['title']|e }}
+                        {% endif %}
                     </h4>
 
                     {# jinja does not support list comprehension ... #}
