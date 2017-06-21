@@ -279,7 +279,7 @@
         {% for value, label in entries %}
             <option value="{{ value|e }}"
               {% if values.get(name, defaultvalue)|string == value|string %} selected="selected" {% endif %}>
-                {{ label|e }}
+                {{- label|e -}}
             </option>
         {% endfor %}
     </select>
