@@ -457,7 +457,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("2", f.get('parts', index=1).value)
         self.assertEqual("3", f.get('parts', index=2).value)
         f['title'] = "Abstract Nonsense"
-        f['description'] = "Lots of arrows."
         f['nr'] = "ω"
         f['shortname'] = "math"
         f['instructors'] = "Alexander Grothendieck"
@@ -465,7 +464,7 @@ etc;anything else""", f['entries_2'].value)
         f['parts'] = ['1', '3']
         self.submit(f)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
-        self.assertPresence("Lots of arrows.")
+        self.assertPresence("transcendental appearence")
         self.assertPresence("Alexander Grothendieck")
         self.traverse({'href': '/event/event/1/course/6/change'})
         self.assertTitle("math (Große Testakademie 2222) bearbeiten")
