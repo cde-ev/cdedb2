@@ -17,7 +17,7 @@ from cdedb.common import (
     _, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_PART_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
-    CourseFilterPositions)
+    CourseFilterPositions, FIELD_DEFINITION_FIELDS)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -284,7 +284,9 @@ class EventBackend(AbstractBackend):
                 json_fields=", ".join(("registration_id int", ", ".join(
                     "{} {}".format(e['field_name'],
                                    PYTHON_TO_SQL_MAP[e['kind']])
-                    for e in event['fields'].values()))))
+                    for e in event['fields'].values()
+                    if e['association'] == const.FieldAssociations.registration)
+                )))
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
@@ -335,9 +337,8 @@ class EventBackend(AbstractBackend):
                 assert('orgas' not in ret[anid])
                 ret[anid]['orgas'] = orgas
             data = self.sql_select(
-                rs, "event.field_definitions",
-                ("id", "event_id", "field_name", "kind", "entries"), ids,
-                entity_key="event_id")
+                rs, "event.field_definitions", FIELD_DEFINITION_FIELDS,
+                ids, entity_key="event_id")
             for anid in ids:
                 fields = {d['id']: d for d in data if d['event_id'] == anid}
                 assert('fields' not in ret[anid])
@@ -562,9 +563,30 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             current = self.sql_select_one(rs, "event.courses",
                                           ("title", "event_id"), data['id'])
-            cdata = {k: v for k, v in data.items() if k in COURSE_FIELDS}
+            event = self.get_event(rs, current['event_id'])
+            if 'fields' in data:
+                data['fields'] = affirm(
+                    "event_associated_fields", data['fields'],
+                    fields=event['fields'],
+                    association=const.FieldAssociations.course)
+
+            cdata = {k: v for k, v in data.items()
+                     if k in COURSE_FIELDS and k != "fields"}
+            changed = False
             if len(cdata) > 1:
                 ret *= self.sql_update(rs, "event.courses", cdata)
+                changed = True
+            if 'fields' in data:
+                fdata = unwrap(self.sql_select_one(rs, "event.courses",
+                                                   ("fields",), data['id']))
+                fdata.update(data['fields'])
+                new = {
+                    'id': data['id'],
+                    'fields': psycopg2.extras.Json(fdata),
+                }
+                ret *= self.sql_update(rs, "event.courses", new)
+                changed = True
+            if changed:
                 self.event_log(
                     rs, const.EventLogCodes.course_changed, current['event_id'],
                     additional_info=current['title'])
@@ -666,6 +688,12 @@ class EventBackend(AbstractBackend):
                 if 'active_parts' in data:
                     pdata['active_parts'] = data['active_parts']
                 self.set_course(rs, pdata)
+            ## fix fields to contain course id
+            fdata = {
+                'id': new_id,
+                'fields': psycopg2.extras.Json({'course_id': new_id})
+            }
+            self.sql_update(rs, "event.courses", fdata)
         self.event_log(rs, const.EventLogCodes.course_created,
                        data['event_id'], additional_info=data['title'])
         return new_id
@@ -852,8 +880,9 @@ class EventBackend(AbstractBackend):
             event = self.get_event(rs, event_id)
             if 'fields' in data:
                 data['fields'] = affirm(
-                    "registration_fields", data['fields'],
-                    fields=event['fields'])
+                    "event_associated_fields", data['fields'],
+                    fields=event['fields'],
+                    association=const.FieldAssociations.registration)
 
             ## now we get to do the actual work
             rdata = {k: v for k, v in data.items()
@@ -1028,7 +1057,28 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
-            ret = self.sql_update(rs, "event.lodgements", data)
+            event = self.get_event(rs, event_id)
+            if 'fields' in data:
+                data['fields'] = affirm(
+                    "event_associated_fields", data['fields'],
+                    fields=event['fields'],
+                    association=const.FieldAssociations.lodgement)
+
+            ## now we get to do the actual work
+            ret = 1
+            ldata = {k: v for k, v in data.items()
+                     if k in LODGEMENT_FIELDS and k != "fields"}
+            if len(ldata) > 1:
+                ret *= self.sql_update(rs, "event.lodgements", ldata)
+            if 'fields' in data:
+                fdata = unwrap(self.sql_select_one(rs, "event.lodgements",
+                                                   ("fields",), data['id']))
+                fdata.update(data['fields'])
+                new = {
+                    'id': data['id'],
+                    'fields': psycopg2.extras.Json(fdata),
+                }
+                ret *= self.sql_update(rs, "event.lodgements", new)
             self.event_log(
                 rs, const.EventLogCodes.lodgement_changed, event_id,
                 additional_info=moniker)
@@ -1048,11 +1098,18 @@ class EventBackend(AbstractBackend):
                 and not self.is_admin(rs)):
             raise PrivilegeError(_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
-        ret = self.sql_insert(rs, "event.lodgements", data)
-        self.event_log(
-            rs, const.EventLogCodes.lodgement_created, data['event_id'],
-            additional_info=data['moniker'])
-        return ret
+        with Atomizer(rs):
+            new_id = self.sql_insert(rs, "event.lodgements", data)
+            ## fix fields to contain lodgement id
+            fdata = {
+                'id': new_id,
+                'fields': psycopg2.extras.Json({'lodgement_id': new_id})
+            }
+            self.sql_update(rs, "event.lodgements", fdata)
+            self.event_log(
+                rs, const.EventLogCodes.lodgement_created, data['event_id'],
+                additional_info=data['moniker'])
+        return new_id
 
     @access("event")
     def delete_lodgement(self, rs, lodgement_id, cascade=False):
@@ -1195,8 +1252,8 @@ class EventBackend(AbstractBackend):
                     'id', 'course_id', 'part_id', 'is_active')),
                 ('event.orgas', "event_id", (
                     'id', 'persona_id', 'event_id',)),
-                ('event.field_definitions', "event_id", (
-                    'id', 'event_id', 'field_name', 'kind', 'entries',)),
+                ('event.field_definitions', "event_id",
+                 FIELD_DEFINITION_FIELDS),
                 ('event.lodgements', "event_id", LODGEMENT_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 ('event.registration_parts', "part_id",
@@ -1351,13 +1408,16 @@ class EventBackend(AbstractBackend):
                     rs, table, data[table], current[table], translations,
                     entity=entity, extra_translations=extra_translations)
             ## Third fix the ids embedded in json
-            for reg_id in translations['registration_id'].values():
-                json = self.sql_select_one(
-                    rs, 'event.registrations', ('id', 'fields'), reg_id)
-                if json['fields']['registration_id'] != reg_id:
-                    json['fields']['registration_id'] = reg_id
-                    json['fields'] = psycopg2.extras.Json(json['fields'])
-                    self.sql_update(rs, 'event.registrations', json)
+            for entity in ('registration', 'lodgement', 'course'):
+                id_string = '{}_id'.format(entity)
+                table_string = 'event.{}s'.format(entity)
+                for entity_id in translations[id_string].values():
+                    json = self.sql_select_one(
+                        rs, table_string, ('id', 'fields'), entity_id)
+                    if json['fields'][id_string] != entity_id:
+                        json['fields'][id_string] = entity_id
+                        json['fields'] = psycopg2.extras.Json(json['fields'])
+                        self.sql_update(rs, table_string, json)
             ## Fourth unlock the event
             update = {
                 'id': data['id'],

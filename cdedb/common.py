@@ -1097,12 +1097,16 @@ EVENT_FIELDS = (
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
 
+#: Fields of an extended attribute associated to an event entity
+FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",
+                           "association", "entries")
+
 #: Fields of a concluded course
 PAST_COURSE_FIELDS = ("id", "pevent_id", "nr", "title", "description")
 
 #: Fields of a course associated to an event organized via the CdEDB
 COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
-                 "instructors", "max_size", "min_size", "notes")
+                 "instructors", "max_size", "min_size", "notes", "fields")
 
 #: Fields specifying in which part a course is available
 COURSE_PART_FIELDS = ("course_id", "part_id", "is_active")
@@ -1118,7 +1122,8 @@ REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "course_id",
                             "status", "lodgement_id", "course_instructor")
 
 #: Fields of a lodgement entry (one house/room)
-LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes")
+LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",
+                    "fields")
 
 #: Fields of a mailing list entry (that is one mailinglist)
 MAILINGLIST_FIELDS = (

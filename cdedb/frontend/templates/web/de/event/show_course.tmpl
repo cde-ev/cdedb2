@@ -25,18 +25,40 @@
                      aclass="btn btn-sm btn-warning", icon="user") }}
     </div>
 
-    {% if ambience['course']['description'] %}
-        {% call util.bootstrap_panel("Kursbeschreibung", aclass='panel panel-default panel-condensed') %}
-            {{ ambience['course']['description']|rst }}
-        {% endcall %}
-    {% endif %}
-
     <div class="row">
         <div class="col-md-6">
             <dl class="dl-horizontal">
                 <dt>Kursleiter</dt><dd>{{ ambience['course']['instructors']|e }}</dd>
                 <dt>Maximalgröße</dt><dd>{{ ambience['course']['max_size']|e }}</dd>
                 <dt>Minimalgröße</dt><dd>{{ ambience['course']['min_size']|e }}</dd>
+            </dl>
+
+            <dl class="dl-horizontal">
+                {% for field_id, field in ambience['event']['fields']|dictsort %}
+                    {% if field['association'] == enums['FieldAssociations'].course %}
+                        <dt>{{ field['field_name']|e }}</dt>
+                        <dd>
+                            {% if field['entries'] %}
+                                {% for value, description in field['entries'] %}
+                                    {% if ambience['course']['fields'].get(field['field_name']) == value %}
+                                        {{ description|e }}
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {% if field['kind'] == "bool" %}
+                                    {{ util.deko_checkbox(
+                                        checked=ambience['course']['fields'].get(field['field_name'])) }}
+                                {% elif field['kind'] == "date" %}
+                                    {{ ambience['course']['fields'].get(field['field_name'])|date|e }}
+                                {% elif field['kind'] == "datetime" %}
+                                    {{ ambience['course']['fields'].get(field['field_name'])|datetime|e }}
+                                {% else %}
+                                    {{ ambience['course']['fields'].get(field['field_name'])|e|linebreaks }}
+                                {% endif %}
+                            {% endif %}
+                        </dd>
+                    {% endif %}
+                {% endfor %}
             </dl>
         </div>
 

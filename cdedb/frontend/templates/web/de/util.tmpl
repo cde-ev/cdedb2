@@ -700,7 +700,7 @@
         {% for value, description in fields['entries'] %}
             {{ myentries.append((value, description))|e }}
         {% endfor %}
-        {{ form_input_select(name=name, title=label, entries=myentries, nulloption=True,
+        {{ form_input_select(name=name, label=label, entries=myentries, nulloption=True,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
    {% else %}
         {% if fields['kind'] == "bool" %}

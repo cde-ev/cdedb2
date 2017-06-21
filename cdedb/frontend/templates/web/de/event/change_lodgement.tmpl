@@ -12,6 +12,12 @@
             {{ util.form_input_text(name="capacity", label="normale Plätze") }}
             {{ util.form_input_text(name="reserve", label="Reserveplätze") }}
             {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+            <h4 class="heading-underline">Felder</h4>
+            {% for field_id, field in ambience['event']['fields']|dictsort %}
+                {% if field['association'] == enums['FieldAssociations'].lodgement %}
+                    {{ util.event_field_input(field) }}
+                {% endif %}
+            {% endfor %}
         </table>
         <div>
             {{ util.form_input_submit(value="Speichern") }}

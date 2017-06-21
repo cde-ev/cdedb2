@@ -137,11 +137,13 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
+                    'association': 1,
                     'field_name': "instrument",
                     'kind': "str",
                     'entries': None,
                 },
                 -2: {
+                    'association': 1,
                     'field_name': "preferred_excursion_date",
                     'kind': "date",
                     'entries': [["2109-8-16", "In the first coming"],
@@ -194,11 +196,13 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23")}
         newfield = {
+            'association': 3,
             'field_name': "kuea",
             'kind': "str",
             'entries': None,
         }
         changed_field = {
+            'association': 2,
             'kind': "date",
             'entries': [["2110-8-15", "early second coming"],
                         ["2110-8-17", "late second coming"],],
@@ -266,6 +270,7 @@ class TestEventBackend(BackendTest):
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
         cdata['active_parts'] = cdata['parts']
+        cdata['fields'] = {'course_id': new_course_id}
         self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
 
@@ -290,6 +295,7 @@ class TestEventBackend(BackendTest):
         }
         new_id = self.event.create_course(self.key, data)
         data['id'] = new_id
+        data['fields'] = {'course_id': new_id}
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
         data['title'] = "Alternate Universes"
@@ -618,6 +624,7 @@ class TestEventBackend(BackendTest):
             1: {
                 'capacity': 5,
                 'event_id': 1,
+                'fields': {'contamination': 'high', 'lodgement_id': 1},
                 'id': 1,
                 'moniker': 'Warme Stube',
                 'notes': None,
@@ -625,6 +632,7 @@ class TestEventBackend(BackendTest):
             4: {
                 'capacity': 1,
                 'event_id': 1,
+                'fields': {'contamination': 'high', 'lodgement_id': 4},
                 'id': 4,
                 'moniker': 'Einzelzelle',
                 'notes': None,
@@ -641,6 +649,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_lodgement(self.key, new)
         self.assertLess(0, new_id)
         new['id'] = new_id
+        new['fields'] = {'lodgement_id': new_id}
         self.assertEqual(new, self.event.get_lodgement(self.key, new_id))
         update = {
             'capacity': 21,
@@ -1098,6 +1107,7 @@ class TestEventBackend(BackendTest):
             'event.courses': ({'description': 'Wir werden die Bäume drücken.',
                                'event_id': 1,
                                'id': 1,
+                               'fields': {'course_id': 1, 'room': 'Wald'},
                                'instructors': 'ToFi & Co',
                                'max_size': 10,
                                'min_size': 3,
@@ -1109,6 +1119,7 @@ class TestEventBackend(BackendTest):
                               {'description': 'Inklusive Post, Backwaren und '
                                               'frühzeitigem Ableben.',
                                'event_id': 1,
+                               'fields': {'course_id': 2, 'room': 'Theater'},
                                'id': 2,
                                'instructors': 'Bernd Lucke',
                                'max_size': 20,
@@ -1119,6 +1130,7 @@ class TestEventBackend(BackendTest):
                                'title': 'Lustigsein für Fortgeschrittene'},
                               {'description': 'mit hoher Leistung.',
                                'event_id': 1,
+                               'fields': {'course_id': 3, 'room': 'Seminarraum 42'},
                                'id': 3,
                                'instructors': 'Heinrich und Thomas Mann',
                                'max_size': 14,
@@ -1129,6 +1141,7 @@ class TestEventBackend(BackendTest):
                                'title': 'Kurzer Kurs'},
                               {'description': 'mit hohem Umsatz.',
                                'event_id': 1,
+                               'fields': {'course_id': 4, 'room': 'Seminarraum 23'},
                                'id': 4,
                                'instructors': 'Stephen Hawking und Richard Feynman',
                                'max_size': None,
@@ -1139,6 +1152,7 @@ class TestEventBackend(BackendTest):
                                'title': 'Langer Kurs'},
                               {'description': 'damit wir Auswahl haben',
                                'event_id': 1,
+                               'fields': {'course_id': 5, 'room': 'Nirwana'},
                                'id': 5,
                                'instructors': 'TBA',
                                'max_size': None,
@@ -1179,63 +1193,91 @@ class TestEventBackend(BackendTest):
                               'shortname': 'TestAka',
                               'title': 'Große Testakademie 2222',
                               'use_questionnaire': False},),
-            'event.field_definitions': ({'entries': None,
+            'event.field_definitions': ({'association': 1,
+                                         'entries': None,
                                          'event_id': 1,
                                          'field_name': 'brings_balls',
                                          'id': 1,
                                          'kind': 'bool'},
-                                        {'entries': [['pedes', 'by feet'],
+                                        {'association': 1,
+                                         'entries': [['pedes', 'by feet'],
                                                      ['car', 'own car available'],
                                                      ['etc', 'anything else']],
                                          'event_id': 1,
                                          'field_name': 'transportation',
                                          'id': 2,
                                          'kind': 'str'},
-                                        {'entries': None,
+                                        {'association': 1,
+                                         'entries': None,
                                          'event_id': 1,
                                          'field_name': 'lodge',
                                          'id': 3,
                                          'kind': 'str'},
-                                        {'entries': None,
+                                        {'association': 1,
+                                         'entries': None,
                                          'event_id': 1,
                                          'field_name': 'may_reserve',
                                          'id': 4,
                                          'kind': 'bool'},
-                                        {'entries': None,
+                                        {'association': 1,
+                                         'entries': None,
                                          'event_id': 1,
                                          'field_name': 'reserve_1',
                                          'id': 5,
                                          'kind': 'bool'},
-                                        {'entries': None,
+                                        {'association': 1,
+                                         'entries': None,
                                          'event_id': 1,
                                          'field_name': 'reserve_2',
                                          'id': 6,
                                          'kind': 'bool'},
-                                        {'entries': None,
+                                        {'association': 1,
+                                         'entries': None,
                                          'event_id': 1,
                                          'field_name': 'reserve_3',
                                          'id': 7,
-                                         'kind': 'bool'}),
+                                         'kind': 'bool'},
+                                        {'association': 2,
+                                         'entries': None,
+                                         'event_id': 1,
+                                         'field_name': 'room',
+                                         'id': 8,
+                                         'kind': 'str'},
+                                        {'association': 3,
+                                         'entries': [['high', 'lots of radiation'],
+                                                     ['medium',
+                                                      'elevated level of radiation'],
+                                                     ['low', 'some radiation'],
+                                                     ['none', 'no radiation']],
+                                         'event_id': 1,
+                                         'field_name': 'contamination',
+                                         'id': 9,
+                                         'kind': 'str'}),
+
             'event.lodgements': ({'capacity': 5,
                                   'event_id': 1,
+                                  'fields': {'contamination': 'high', 'lodgement_id': 1},
                                   'id': 1,
                                   'moniker': 'Warme Stube',
                                   'notes': None,
                                   'reserve': 1},
                                  {'capacity': 10,
                                   'event_id': 1,
+                                  'fields': {'contamination': 'none', 'lodgement_id': 2},
                                   'id': 2,
                                   'moniker': 'Kalte Kammer',
                                   'notes': 'Dafür mit Frischluft.',
                                   'reserve': 2},
                                  {'capacity': 0,
                                   'event_id': 1,
+                                  'fields': {'contamination': 'low', 'lodgement_id': 3},
                                   'id': 3,
                                   'moniker': 'Kellerverlies',
                                   'notes': 'Nur für Notfälle.',
                                   'reserve': 100},
                                  {'capacity': 1,
                                   'event_id': 1,
+                                  'fields': {'contamination': 'high', 'lodgement_id': 4},
                                   'id': 4,
                                   'moniker': 'Einzelzelle',
                                   'notes': None,
@@ -1463,6 +1505,7 @@ class TestEventBackend(BackendTest):
         new_data['event.lodgements'].append(
             {'capacity': 1,
              'event_id': 1,
+             'fields': {'lodgement_id': 6000},
              'id': 6000,
              'moniker': 'Matte im Orgabüro',
              'notes': None,
@@ -1499,6 +1542,7 @@ class TestEventBackend(BackendTest):
         new_data['event.courses'].append(
             {'description': 'Spontankurs',
              'event_id': 1,
+             'fields': {'course_id': 3000},
              'id': 3000,
              'instructors': 'Alle',
              'max_size': 111,
@@ -1523,7 +1567,8 @@ class TestEventBackend(BackendTest):
                == len(data['event.course_choices']) + 1)
         ## field definitions
         new_data['event.field_definitions'].append(
-            {'entries': [['good', 'good'],
+            {'association': 1,
+             'entries': [['good', 'good'],
                          ['neutral', 'so so'],
                          ['bad', 'not good']],
              'event_id': 1,
@@ -1561,7 +1606,7 @@ class TestEventBackend(BackendTest):
         new_data['event.registration_parts'][-1]['part_id'] = 4
         new_data['event.registration_parts'][-1]['registration_id'] = 5
         new_data['event.courses'][-1]['id'] = 6
-        new_data['event.courses'][-1]['id'] = 6
+        new_data['event.courses'][-1]['fields']['course_id'] = 6
         new_data['event.course_choices'][-2]['id'] = 34
         new_data['event.course_choices'][-1]['id'] = 35
         new_data['event.course_choices'][-1]['course_id'] = 6
@@ -1571,9 +1616,10 @@ class TestEventBackend(BackendTest):
         new_data['event.course_parts'][-1]['course_id'] = 6
         new_data['event.course_parts'][-1]['part_id'] = 4
         new_data['event.lodgements'][-1]['id'] = 5
-        new_data['event.field_definitions'][-1]['id'] = 8
+        new_data['event.lodgements'][-1]['fields']['lodgement_id'] = 5
+        new_data['event.field_definitions'][-1]['id'] = 10
         new_data['event.questionnaire_rows'][-1]['id'] = 7
-        new_data['event.questionnaire_rows'][-1]['field_id'] = 8
+        new_data['event.questionnaire_rows'][-1]['field_id'] = 10
         ## make tuples again
         for table in ('event.events', 'event.event_parts', 'event.courses',
                       'event.course_parts', 'event.orgas',
@@ -1623,11 +1669,13 @@ class TestEventBackend(BackendTest):
             },
             'fields': {
                 -1: {
+                    'association': 1,
                     'field_name': "instrument",
                     'kind': "str",
                     'entries': None,
                 },
                 -2: {
+                    'association': 1,
                     'field_name': "preferred_excursion_date",
                     'kind': "date",
                     'entries': [["2109-8-16", "In the first coming"],
@@ -1673,11 +1721,13 @@ class TestEventBackend(BackendTest):
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23")}
         newfield = {
+            'association': 1,
             'field_name': "kuea",
             'kind': "str",
             'entries': None,
         }
         changed_field = {
+            'association': 1,
             'kind': "date",
             'entries': [["2110-8-15", "early second coming"],
                         ["2110-8-17", "late second coming"],],

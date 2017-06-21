@@ -20,9 +20,9 @@
    non-deletable rows have a disabled 'delete'-checkbox,
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
-{% macro print_field(field_id, deletable, aclass="", newrow=False) %}
+{% macro print_field(field_id, association, deletable, aclass="", newrow=False) %}
     <div class="col-md-6 {{ aclass }}">
-        <div class="panel panel-default">
+        <div class="panel panel-default panel-condensed">
             <div class="panel-heading">
                 {{ util.input_text(name="field_name_{}".format(field_id), placeholder="Name des Datenfelds",
                                    readonly=not newrow, aclass='drow-input form-control',
@@ -53,8 +53,23 @@
                         </div>
                     </div>
                 </div>
+                {% if "association_{}".format(field_id) not in values %}
+                    <div class="association-input-container">
+                        {{ util.form_input_select(label="Feld für",
+                                                  name="association_{}".format(field_id),
+                                                  entries=(
+                                                      (enums['FieldAssociations'].registration.value, "Anmeldung"),
+                                                      (enums['FieldAssociations'].course.value, "Kurs"),
+                                                      (enums['FieldAssociations'].lodgement.value, "Unterkunft"),),
+                                                  attributes=('data-basename="association_-"' if newrow else ''),
+                                                  aclass='drow-input form-control association-input')
+                        }}
+                    </div>
+                {% else %}
+                    {{ util.input_hidden(name="association_{}".format(field_id), value=association.value) }}
+                {% endif %}
                 {{ util.form_input_textarea(name="entries_{}".format(field_id), label="Optionen",
-                                            info="Format ist 'Wert;langer Beschreibungstext' pro Zeile.",
+                                            info="Format ist 'Wert;Beschreibungstext' pro Zeile.",
                                             attributes=('data-basename="entries_-"' if newrow else ''),
                                             aclass='drow-input') }}
             </div>
@@ -65,29 +80,69 @@
 
 {% block content %}
     <form action="{{ cdedblink('event/field_summary')|e }}" method="POST" id="fieldsummaryform" class="form-horizontal">
-        <div id="drow-container" class="row">
-            {# Old items, already stored in the database #}
-            {% for field_id, entry in ambience['event']['fields']|dictsort %}
-                {{ print_field(field_id, field_id not in is_referenced, 'drow-row') }}
+        {% set associations = (("Anmeldungsfelder", enums['FieldAssociations'].registration, 'user'),
+                               ("Kursfelder", enums['FieldAssociations'].course, 'book'),
+                               ("Unterkunftsfelder", enums['FieldAssociations'].lodgement, 'home')) %}
+        <ul class="nav nav-tabs mosp" role="tablist" id="associations_tablist">
+            {% for title, association, icon in associations -%}
+                <li role="presentation"{% if loop.first %} class="active"{% endif %}>
+                    <a href="#tab_{{ association.name }}" data-toggle="tab">{{ util.make_icon(icon) }} {{ title }}</a>
+                </li>
+            {%- endfor %}
+        </ul>
+        <div class="tab-content" id="associations_tabcontent">
+            {% for title, association, icon in associations %}
+                <div class="tab-pane active" role="tabpanel" id="tab_{{ association.name }}"
+                        data-association-id="{{ association.value }}">
+                    <h3 class="heading-underline">{{ util.make_icon(icon) }} {{ title|e }}</h3>
+                    <div class="row">
+                        {# Old items, already stored in the database #}
+                        {% for field_id, entry in ambience['event']['fields']|dictsort %}
+                            {% if entry['association'] == association %}
+                                {{ print_field(field_id, association, field_id not in is_referenced, 'drow-row') }}
+                            {% endif %}
+                        {% endfor %}
+
+                        {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+                        {% for i in range(1, values.get('create_last_index', 0) + 1) %}
+                            {% if values.get("association_{}".format(-i), '')|int == association.value %}
+                                {{ print_field(-i, association, False, 'drow-new', newrow=True) }}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
             {% endfor %}
-            {# Items that were added by the user but failed validation. They are still new and have no official id. #}
-            {% for i in range(1, values.get('create_last_index', 0) + 1) %}
-                {{ print_field(-i, False, 'drow-new', newrow=True) }}
-            {% endfor %}
-            {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
-            {{ print_field(-values.get('create_last_index', 0) - 1, False, 'drow-prototype', newrow=True) }}
         </div>
+
+        <h3 class="heading-underline">Neues Feld</h3>
+        {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
+        <div class="row">
+            {{ print_field(-values.get('create_last_index', 0) - 1, None, False, 'drow-prototype', newrow=True) }}
+        </div>
+
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
                 {{ util.make_icon('plus') }} Feld hinzufügen
             </button>
+            {{ util.input_submit(value="Speichern", readonly=is_locked) }}
         </p>
-        {{ util.input_submit(value="Speichern", readonly=is_locked) }}
     </form>
     <script type="text/javascript">
-        $('#drow-container').cdedbDynamicRow({
+        /* Hide tabs except first one and headings and enable tab switching */
+        $('#associations_tabcontent').children('.tab-pane').not(':eq(0)').removeClass('active');
+        $('#fieldsummaryform').find('h3').hide();
+        $('#associations_tablist').tab();
+        $('#fieldsummaryform').cdedbDynamicRow({
             addButton: $('#drow-addbutton'),
-            delButtonTitle: "Datenfeld löschen"});
+            delButtonTitle: "Datenfeld löschen",
+            callback: function() {
+                var container = $('#associations_tabcontent').children('.tab-pane.active');
+                /* Move new row to currently active tab */
+                $(this).appendTo(container.children('.row'));
+                /* Select association according to active tab and hide select box */
+                $(this).find('.association-input').val(container.attr('data-association-id'));
+                $(this).find('.association-input-container').hide();
+            }});
         $('#fieldsummaryform').cdedbProtectChanges();
     </script>
 {% endblock %}
