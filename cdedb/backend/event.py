@@ -296,6 +296,12 @@ class EventBackend(AbstractBackend):
             track_columns_gen = lambda track_id: ", ".join(
                 "{col} AS {col}{track_id}".format(col=col, track_id=track_id)
                 for col in track_atoms)
+            fields = {
+                e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.registration
+            }
+            fields['registration_id'] = PYTHON_TO_SQL_MAP["int"]
             view = _REGISTRATION_VIEW_TEMPLATE.format(
                 part_tables=" ".join(
                     part_table_template.format(
@@ -307,12 +313,9 @@ class EventBackend(AbstractBackend):
                         track_id=track_id)
                     for part in event['parts'].values()
                     for track_id in part['tracks']),
-                json_fields=", ".join(("registration_id int", ", ".join(
-                    "{} {}".format(e['field_name'],
-                                   PYTHON_TO_SQL_MAP[e['kind']])
-                    for e in event['fields'].values()
-                    if e['association'] == const.FieldAssociations.registration)
-                )))
+                json_fields=", ".join(
+                    "{} {}".format(name, kind) for name, kind in fields.items())
+            )
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
             query.spec['event_id'] = "id"
