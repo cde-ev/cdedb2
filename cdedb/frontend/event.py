@@ -1594,7 +1594,7 @@ class EventFrontend(AbstractUserFrontend):
     def change_registration_form(self, rs, event_id, registration_id):
         """Render form."""
         registration = rs.ambience['registration']
-        persona = self.coreproxy.get_persona(rs, registration['persona_id'])
+        persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {

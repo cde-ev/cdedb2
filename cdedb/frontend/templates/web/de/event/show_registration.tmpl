@@ -32,7 +32,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
             {{ persona['name_supplement']|e }}
         </dd>
         <dt>CdEDB-ID</dt>
-        <dd>{{ persona['id']|cdedbid|e }}</dd>
+        <dd>{{ util.href(show_user_link(persona['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
             <dt>Online CdEDB-ID</dt>
             <dd>{{ ambience['registration']['real_persona_id']|cdedbid|e }}</dd>
@@ -41,7 +41,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         <dd>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</dd>
         <dt>Geburtstag</dt>
         <dd>
-            {{ persona['birthday']|e }} (<em>{{ gettext(age|string)|e }}</em>)
+            {{ persona['birthday']|date|e }} (<em>{{ gettext(age|string)|e }}</em>)
         </dd>
         <dt>Geschlecht</dt>
         <dd>{{ persona['gender']|gender|e }}</dd>
@@ -69,6 +69,11 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         {{ persona['given_names']|e }} ist Orga dieser Veranstaltung.
     </p>
     {% endif %}
+
+    {% call util.bootstrap_panel(title="Orga-Notizen", icon="tag",
+                                 aclass="panel-default panel-condensed") %}
+        {{ ambience['registration']['orga_notes']|rst }}
+    {% endcall %}
 
     <h3 class="heading-underline">Status</h3>
     <dl class="dl-horizontal">
@@ -136,11 +141,6 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
             </div>
         {% endfor %}
     </div>
-
-    {% call util.bootstrap_panel(title="Orga-Notizen", icon="tag",
-                                 aclass="panel-default panel-condensed") %}
-        {{ ambience['registration']['orga_notes']|rst }}
-    {% endcall %}
 
     <h3 class="heading-underline">Anmeldedaten</h3>
         <dl class="dl-horizontal">
