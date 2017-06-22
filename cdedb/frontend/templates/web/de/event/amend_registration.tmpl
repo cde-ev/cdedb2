@@ -1,6 +1,8 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}Anmeldung für {{ ambience['event']['title']|e }} ändern{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -74,4 +76,7 @@
         {{ util.form_input_submit(value="Daten aktualisieren", readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}
     </form>
+    <script type="text/javascript">
+        $('#amendregistrationform').cdedbProtectChanges();
+    </script>
 {% endblock %}

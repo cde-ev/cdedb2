@@ -1,6 +1,8 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}
 Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bearbeiten
 ({{ ambience['event']['title']|e }})
@@ -104,4 +106,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
 
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_registration")) }}
     </form>
+    <script type="text/javascript">
+        $('#changeregistrationform').cdedbProtectChanges();
+    </script>
 {% endblock %}
