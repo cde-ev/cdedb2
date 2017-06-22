@@ -4,6 +4,7 @@
 
 from collections import OrderedDict
 import copy
+import decimal
 import itertools
 import os
 import os.path
@@ -522,17 +523,27 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "create_event", {'institutions': institutions})
 
     @access("event_admin", modi={"POST"})
+    @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
+                 ("orga_ids", "str"))
     @REQUESTdatadict(
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
-        "notes", "orga_ids")
-    def create_event(self, rs, data):
+        "notes")
+    def create_event(self, rs, event_begin, event_end, orga_ids, data):
         """Create a new event organized via DB."""
-        if data['orga_ids'] is not None:
-            data['orgas'] = {check(rs, "cdedbid", x.strip(), "orga_ids")
-                             for x in data['orga_ids'].split(",")}
-        del data['orga_ids']
+        if orga_ids:
+            data['orgas'] = {check(rs, "cdedbid", anid.strip(), "orga_ids")
+                             for anid in orga_ids.split(",")}
+        ## multi part events will have to edit this later on
+        data['parts'] = {
+            -1: {
+                'title': data['title'],
+                'part_begin': event_begin,
+                'part_end': event_end,
+                'fee': decimal.Decimal(0),
+            }
+        }
         data = check(rs, "event", data, creation=True)
         if rs.errors:
             return self.create_event_form(rs)

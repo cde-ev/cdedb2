@@ -8,7 +8,7 @@ import collections
 import copy
 
 from cdedb.backend.common import (
-    access, affirm_validation as affirm, AbstractBackend,
+    access, affirm_validation as affirm, AbstractBackend, Silencer,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
@@ -416,6 +416,8 @@ class EventBackend(AbstractBackend):
                            if x > 0 and parts[x] is not None}
                 deleted = {x for x in parts
                            if x > 0 and parts[x] is None}
+                if deleted >= existing | new:
+                    raise ValueError(_("At least one event part required."))
                 for x in new:
                     new_part = copy.deepcopy(parts[x])
                     new_part['event_id'] = data['id']
@@ -495,6 +497,8 @@ class EventBackend(AbstractBackend):
         :returns: the id of the new event
         """
         data = affirm("event", data, creation=True)
+        if 'parts' not in data:
+            raise ValueError(_("At least one event part required."))
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)

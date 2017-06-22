@@ -301,6 +301,8 @@ class TestEventFrontend(FrontendTest):
         f['institution'] = 1
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
+        f['event_begin'] = "2345-01-01"
+        f['event_end'] = "2345-6-7"
         f['registration_start'] = "2000-01-01"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-H, DB-7-I"
@@ -310,7 +312,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/event/2/part/summary'})
         self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
-        self.assertNotIn('title_4', f.fields)
+        self.assertNotIn('title_5', f.fields)
         f['create_-1'].checked = True
         f['title_-1'] = "Cooldown"
         f['part_begin_-1'] = "2233-4-5"
@@ -319,18 +321,18 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
-        self.assertEqual("Cooldown", f['title_4'].value)
-        f['title_4'] = "Größere Hälfte"
-        f['fee_4'] = "99.99"
+        self.assertEqual("Cooldown", f['title_5'].value)
+        f['title_5'] = "Größere Hälfte"
+        f['fee_5'] = "99.99"
         self.submit(f)
         self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
-        self.assertEqual("Größere Hälfte", f['title_4'].value)
-        f['delete_4'].checked = True
+        self.assertEqual("Größere Hälfte", f['title_5'].value)
+        f['delete_5'].checked = True
         self.submit(f)
         self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
-        self.assertNotIn('title_4', f.fields)
+        self.assertNotIn('title_5', f.fields)
 
     @as_users("anton", "garcia")
     def test_change_event_fields(self, user):
@@ -395,6 +397,8 @@ etc;anything else""", f['entries_2'].value)
         f['institution'] = 1
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
+        f['event_begin'] = "2345-01-01"
+        f['event_end'] = "2345-6-7"
         f['registration_start'] = "2000-01-01"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-H, DB-7-I"
@@ -1160,7 +1164,7 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Log: Veranstaltungen [0–14]")
+        self.assertTitle("Log: Veranstaltungen [0–15]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
