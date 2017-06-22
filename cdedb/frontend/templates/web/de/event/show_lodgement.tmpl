@@ -77,9 +77,9 @@
                             {{ util.deko_checkbox(
                                 checked=ambience['lodgement']['fields'].get(field['field_name'])) }}
                         {% elif field['kind'] == "date" %}
-                            {{ ambience['lodgement']['fields'].get(field['field_name'])|date|e }}
+                            {{ ambience['lodgement']['fields'].get(field['field_name'])|date(passthrough=True)|e }}
                         {% elif field['kind'] == "datetime" %}
-                            {{ ambience['lodgement']['fields'].get(field['field_name'])|datetime|e }}
+                            {{ ambience['lodgement']['fields'].get(field['field_name'])|datetime(passthrough=True)|e }}
                         {% else %}
                             {{ ambience['lodgement']['fields'].get(field['field_name'])|e|linebreaks }}
                         {% endif %}

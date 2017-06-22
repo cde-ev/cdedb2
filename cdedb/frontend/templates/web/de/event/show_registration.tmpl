@@ -206,9 +206,9 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                             {{ util.deko_checkbox(
                                 checked=ambience['registration']['fields'].get(field['field_name'])) }}
                         {% elif field['kind'] == "date" %}
-                            {{ ambience['registration']['fields'].get(field['field_name'])|date|e }}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|date(passthrough=True)|e }}
                         {% elif field['kind'] == "datetime" %}
-                            {{ ambience['registration']['fields'].get(field['field_name'])|datetime|e }}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|datetime(passthrough=True)|e }}
                         {% else %}
                             {{ ambience['registration']['fields'].get(field['field_name'])|e|linebreaks }}
                         {% endif %}
