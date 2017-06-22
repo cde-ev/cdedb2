@@ -291,6 +291,29 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['partsummaryform']
         self.assertEqual("Warmup", f['title_1'].value)
 
+    @as_users("anton", "garcia")
+    def test_part_summary_tracks(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/part/summary'})
+        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertNotIn('track_3_4', f.fields)
+        f['track_3_-1'] = "Spätschicht"
+        f['track_create_3_-1'].checked = True
+        self.submit(f)
+        f = self.response.forms['partsummaryform']
+        self.assertEqual("Spätschicht", f['track_3_4'].value)
+        f['track_3_4'] = "Nachtschicht"
+        self.submit(f)
+        f = self.response.forms['partsummaryform']
+        self.assertEqual("Nachtschicht", f['track_3_4'].value)
+        f['track_delete_3_4'].checked = True
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertNotIn('track_3_4', f.fields)
+
     @as_users("anton")
     def test_part_summary_complex(self, user):
         self.traverse({'href': '/event/$'},
@@ -316,10 +339,13 @@ class TestEventFrontend(FrontendTest):
         f['part_begin_-1'] = "2233-4-5"
         f['part_end_-1'] = "2233-6-7"
         f['fee_-1'] = "23456.78"
+        f['track_create_-1_-1'].checked = True
+        f['track_-1_-1'] = "Chillout"
         self.submit(f)
         self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Cooldown", f['title_4'].value)
+        self.assertEqual("Chillout", f['track_4_4'].value)
         f['title_4'] = "Größere Hälfte"
         f['fee_4'] = "99.99"
         self.submit(f)
@@ -412,32 +438,32 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/course/1/change'})
         self.assertTitle("Heldentum (Große Testakademie 2222) bearbeiten")
         f = self.response.forms['changecourseform']
-        self.assertEqual("1", f.get('parts', index=0).value)
-        self.assertEqual(None, f.get('parts', index=1).value)
-        self.assertEqual("3", f.get('parts', index=2).value)
-        self.assertEqual("1", f.get('active_parts', index=0).value)
-        self.assertEqual(None, f.get('active_parts', index=1).value)
-        self.assertEqual("3", f.get('active_parts', index=2).value)
+        self.assertEqual("1", f.get('segments', index=0).value)
+        self.assertEqual(None, f.get('segments', index=1).value)
+        self.assertEqual("3", f.get('segments', index=2).value)
+        self.assertEqual("1", f.get('active_segments', index=0).value)
+        self.assertEqual(None, f.get('active_segments', index=1).value)
+        self.assertEqual("3", f.get('active_segments', index=2).value)
         self.assertEqual("10", f['max_size'].value)
         self.assertEqual("3", f['min_size'].value)
         self.assertEqual("Wald", f['fields.room'].value)
         f['shortname'] = "Helden"
         f['nr'] = "ω"
         f['max_size'] = "21"
-        f['parts'] = ['2', '3']
-        f['active_parts'] = ['2']
+        f['segments'] = ['2', '3']
+        f['active_segments'] = ['2']
         f['fields.room'] = "Canyon"
         self.submit(f)
         self.assertTitle("Kurs Helden (Große Testakademie 2222)")
         self.traverse({'href': '/event/event/1/course/1/change'})
         f = self.response.forms['changecourseform']
         self.assertEqual(f['nr'].value, "ω")
-        self.assertEqual(None, f.get('parts', index=0).value)
-        self.assertEqual("2", f.get('parts', index=1).value)
-        self.assertEqual("3", f.get('parts', index=2).value)
-        self.assertEqual(None, f.get('active_parts', index=0).value)
-        self.assertEqual("2", f.get('active_parts', index=1).value)
-        self.assertEqual(None, f.get('active_parts', index=2).value)
+        self.assertEqual(None, f.get('segments', index=0).value)
+        self.assertEqual("2", f.get('segments', index=1).value)
+        self.assertEqual("3", f.get('segments', index=2).value)
+        self.assertEqual(None, f.get('active_segments', index=0).value)
+        self.assertEqual("2", f.get('active_segments', index=1).value)
+        self.assertEqual(None, f.get('active_segments', index=2).value)
         self.assertEqual("21", f['max_size'].value)
         self.assertEqual("Canyon", f['fields.room'].value)
 
@@ -453,15 +479,15 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/course/create'})
         self.assertTitle("Kurs hinzufügen (Große Testakademie 2222)")
         f = self.response.forms['createcourseform']
-        self.assertEqual("1", f.get('parts', index=0).value)
-        self.assertEqual("2", f.get('parts', index=1).value)
-        self.assertEqual("3", f.get('parts', index=2).value)
+        self.assertEqual("1", f.get('segments', index=0).value)
+        self.assertEqual("2", f.get('segments', index=1).value)
+        self.assertEqual("3", f.get('segments', index=2).value)
         f['title'] = "Abstract Nonsense"
         f['nr'] = "ω"
         f['shortname'] = "math"
         f['instructors'] = "Alexander Grothendieck"
         f['notes'] = "transcendental appearence"
-        f['parts'] = ['1', '3']
+        f['segments'] = ['1', '3']
         self.submit(f)
         self.assertTitle("Kurs math (Große Testakademie 2222)")
         self.assertPresence("transcendental appearence")
@@ -469,9 +495,9 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/course/6/change'})
         self.assertTitle("math (Große Testakademie 2222) bearbeiten")
         f = self.response.forms['changecourseform']
-        self.assertEqual("1", f.get('parts', index=0).value)
-        self.assertEqual(None, f.get('parts', index=1).value)
-        self.assertEqual("3", f.get('parts', index=2).value)
+        self.assertEqual("1", f.get('segments', index=0).value)
+        self.assertEqual(None, f.get('segments', index=1).value)
+        self.assertEqual("3", f.get('segments', index=2).value)
 
     @as_users("berta")
     def test_register(self, user):
@@ -484,12 +510,10 @@ etc;anything else""", f['entries_2'].value)
         f['mixed_lodging'] = 'True'
         f['foto_consent'].checked = True
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
-        f['course_choice1_0'] = 1
-        f['course_choice1_1'] = 4
-        f['course_choice1_2'] = 5
         f['course_choice3_0'] = 2
         f['course_choice3_1'] = 4
         f['course_choice3_2'] = 1
+        self.assertNotIn('5', tuple(o for o, _, _ in f['course_choice3_2'].options))
         f['course_instructor3'] = 2
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
@@ -498,17 +522,16 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
-        self.assertPresence("Warmup")
-        self.assertNonPresence("Erste Hälfte")
-        self.assertPresence("Zweite Hälfte")
+        self.assertNonPresence("Morgenkreis")
+        self.assertNonPresence("Kaffeekränzchen")
+        self.assertPresence("Arbeitssitzung")
         f = self.response.forms['amendregistrationform']
-        self.assertEqual("4", f['course_choice1_1'].value)
         self.assertEqual("1", f['course_choice3_2'].value)
-        self.assertEqual("", f['course_instructor1'].value)
         self.assertEqual("2", f['course_instructor3'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         f['notes'] = "Ich kann es kaum erwarten!"
-        f['course_choice3_2'] = 5
+        f['course_choice3_1'] = 1
+        f['course_choice3_2'] = 4
         f['course_instructor3'] = 1
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
@@ -516,7 +539,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
-        self.assertEqual("5", f['course_choice3_2'].value)
+        self.assertEqual("4", f['course_choice3_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
 
@@ -618,8 +641,8 @@ etc;anything else""", f['entries_2'].value)
         f['part1.status'] = 2
         self.assertEqual("4", f['part2.lodgement_id'].value)
         f['part2.lodgement_id'] = 3
-        self.assertEqual("2", f['part3.course_choice_1'].value)
-        f['part3.course_choice_1'] = 5
+        self.assertEqual("2", f['track3.course_choice_1'].value)
+        f['track3.course_choice_1'] = 5
         self.assertEqual("pedes", f['fields.transportation'].value)
         f['fields.transportation'] = "etc"
         self.assertEqual("", f['fields.lodge'].value)
@@ -633,7 +656,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(False, f['reg.mixed_lodging'].checked)
         self.assertEqual("2", f['part1.status'].value)
         self.assertEqual("3", f['part2.lodgement_id'].value)
-        self.assertEqual("5", f['part3.course_choice_1'].value)
+        self.assertEqual("5", f['track3.course_choice_1'].value)
         self.assertEqual("etc", f['fields.transportation'].value)
         self.assertEqual("Om nom nom nom", f['fields.lodge'].value)
 
@@ -652,8 +675,8 @@ etc;anything else""", f['entries_2'].value)
         f['part2.status'] = 3
         f['part3.status'] = 2
         f['part1.lodgement_id'] = 4
-        f['part1.course_id'] = 5
-        f['part1.course_choice_0'] = 5
+        f['track1.course_id'] = 5
+        f['track1.course_choice_0'] = 5
         self.submit(f)
         self.assertTitle("\nAnmeldung von Bertålotta Beispiel (Große Testakademie 2222)\n")
         self.assertPresence("Du entkommst uns nicht.")
@@ -665,8 +688,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("3", f['part2.status'].value)
         self.assertEqual("2", f['part3.status'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
-        self.assertEqual("5", f['part1.course_id'].value)
-        self.assertEqual("5", f['part1.course_choice_0'].value)
+        self.assertEqual("5", f['track1.course_id'].value)
+        self.assertEqual("5", f['track1.course_choice_0'].value)
 
     @as_users("garcia")
     def test_lodgements(self, user):
@@ -791,21 +814,21 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Garcia")
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
-        f['part_id'] = 3
+        f['track_id'] = 3
         self.submit(f)
         self.assertPresence("Anton Armin")
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
-        f['part_id'] = 1
+        f['track_id'] = 1
         self.submit(f)
         self.assertNonPresence("Anton Armin")
         self.assertNonPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
         f = self.response.forms['choicefilterform']
-        f['part_id'] = ''
+        f['track_id'] = ''
         f['course_id'] = 2
         self.submit(f)
         self.assertNonPresence("Anton Armin")
@@ -823,7 +846,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
         f['position'] = 4
-        f['part_id'] = 3
+        f['track_id'] = 3
         self.submit(f)
         self.assertNonPresence("Anton Armin")
         self.assertNonPresence("Emilia")
@@ -832,17 +855,17 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choicefilterform']
         f['course_id'] = ''
         f['position'] = ''
-        f['part_id'] = ''
+        f['track_id'] = ''
         self.submit(f)
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2]
-        f['part_ids'] = [3]
-        f['action'] = 0
+        f['track_ids'] = [3]
+        f['action'] = 1
         self.submit(f)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 1
         f['position'] = 6
-        f['part_id'] = 3
+        f['track_id'] = 3
         self.submit(f)
         self.assertPresence("Anton Armin")
         self.assertNonPresence("Emilia")
@@ -851,7 +874,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
         f['position'] = 6
-        f['part_id'] = 3
+        f['track_id'] = 3
         self.submit(f)
         self.assertNonPresence("Anton Armin")
         self.assertPresence("Emilia")
@@ -860,12 +883,12 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choicefilterform']
         f['course_id'] = ''
         f['position'] = ''
-        f['part_id'] = ''
+        f['track_id'] = ''
         self.submit(f)
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [3]
-        f['part_ids'] = [2, 3]
-        f['action'] = -1
+        f['track_ids'] = [2, 3]
+        f['action'] = 4
         f['course_id'] = 5
         self.submit(f)
         f = self.response.forms['choicefilterform']
@@ -890,8 +913,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Inga")
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2, 3, 4]
-        f['part_ids'] = [1,2, 3]
-        f['action'] = -2
+        f['track_ids'] = [1,2, 3]
+        f['action'] = 5
         self.submit(f)
 
     @as_users("garcia")
@@ -1160,16 +1183,16 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Log: Veranstaltungen [0–14]")
+        self.assertTitle("Log: Veranstaltungen [0–12]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Log: Veranstaltungen [1–6]")
+        self.assertTitle("Log: Veranstaltungen [1–4]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("Log: Große Testakademie 2222 [0–11]")
+        self.assertTitle("Log: Große Testakademie 2222 [0–9]")

@@ -74,41 +74,41 @@
 
     <h2>Teilnehmer</h2>
     <div class="row">
-        {% for part_id in ambience['course']['parts']|sort %}
-            {% set num_part_attendees = attendees[(ambience['course']['id'], part_id)]|length %}
+        {% for track_id in ambience['course']['segments']|sort %}
+            {% set num_track_attendees = attendees[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
                         <div class="pull-right">
-                            {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
+                            {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                             'course_id': ambience['course']['id'],
                                                                             'position': 6,
                                                                             'submitform': True}),
-                                         num_part_attendees,
+                                         num_track_attendees,
                                          title="Kurswahlen der Teilnehmer") }}
                         </div>
-                        <h3 class="panel-title">{{ ambience['event']['parts'][part_id]['title']|e }}</h3>
+                        <h3 class="panel-title">{{ ambience['event']['tracks'][track_id]|e }}</h3>
                     </div>
                     <div class="panel-body">
-                        {% if part_id not in ambience['course']['active_parts'] %}
+                        {% if track_id not in ambience['course']['active_segments'] %}
                             <p class="text-danger">
                                 <strong>Kurs fällt aus.</strong>
                             </p>
                         {% elif ambience['course']['min_size'] != None and
-                                num_part_attendees < ambience['course']['min_size'] %}
+                                num_track_attendees < ambience['course']['min_size'] %}
                             <p class="text-warning">
-                                <strong>Kurs hat {{ (ambience['course']['min_size'] - num_part_attendees)|e }}
+                                <strong>Kurs hat {{ (ambience['course']['min_size'] - num_track_attendees)|e }}
                                     Teilnehmer zu wenig.</strong>
                             </p>
                         {% elif ambience['course']['max_size'] != None and
-                                num_part_attendees > ambience['course']['max_size'] %}
+                                num_track_attendees > ambience['course']['max_size'] %}
                             <p class="text-warning">
-                                <strong>Kurs hat {{ (num_part_attendees - ambience['course']['max_size'])|e }}
+                                <strong>Kurs hat {{ (num_track_attendees - ambience['course']['max_size'])|e }}
                                     Teilnehmer zu viel.</strong>
                             </p>
                         {% endif %}
                         <ul class="slim">
-                            {% for registration_id in attendees[(ambience['course']['id'], part_id)] %}
+                            {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
                                 <li>
                                     {{ util.href(cdedblink('event/show_registration',
                                                            {'registration_id': registration_id}),

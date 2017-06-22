@@ -128,10 +128,21 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                 </td>
             </tr>
             <tr>
+                <td>Unterkunft</td>
+                <td>
+                    {% if ambience['registration']['parts'][part_id]['lodgement_id'] %}
+                        {{ lodgements[ambience['registration']['parts'][part_id]['lodgement_id']]['moniker']|e }}
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            <tr><th colspan="2">{{ track['title']|e }}</th></tr>
+            <tr>
                 <td>Kurs</td>
                 <td>
-                    {% if ambience['registration']['parts'][part_id]['course_id'] %}
-                        {{ courses[ambience['registration']['parts'][part_id]['course_id']]['title']|e }}
+                    {% if ambience['registration']['tracks'][track_id]['course_id'] %}
+                        {{ courses[ambience['registration']['tracks'][track_id]['course_id']]['title']|e }}
                     {% endif %}
                 </td>
             </tr>
@@ -139,8 +150,8 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                 <tr>
                     <td>{{ prio|e }}</td>
                     <td>
-                        {% if ambience['registration']['choices'].get(part_id, [])|length > loop.index0  %}
-                            {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['title']|e }}
+                        {% if ambience['registration']['tracks'][track_id]['choices']|length > loop.index0  %}
+                            {{ courses[ambience['registration']['tracks'][track_id]['choices'][loop.index0]]['title']|e }}
                         {% endif %}
                     </td>
                 </tr>
@@ -148,16 +159,8 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
             <tr>
                 <td>Kursleiter</td>
                 <td>
-                    {% if ambience['registration']['parts'][part_id]['course_instructor'] %}
-                        {{ courses[ambience['registration']['parts'][part_id]['course_instructor']]['title']|e }}
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td>Unterkunft</td>
-                <td>
-                    {% if ambience['registration']['parts'][part_id]['lodgement_id'] %}
-                        {{ lodgements[ambience['registration']['parts'][part_id]['lodgement_id']]['moniker']|e }}
+                    {% if ambience['registration']['tracks'][track_id]['course_instructor'] %}
+                        {{ courses[ambience['registration']['tracks'][track_id]['course_instructor']]['title']|e }}
                     {% endif %}
                 </td>
             </tr>

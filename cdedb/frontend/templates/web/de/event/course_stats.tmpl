@@ -19,18 +19,18 @@
         {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=is_locked, icon='plus',
                      aclass='btn btn-success btn-sm') }}
     </div>
-    {# TODO incorporate active_parts, max_size, min_size of courses #}
+    {# TODO incorporate active_segments, max_size, min_size of courses #}
     <table class="table table-condensed">
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">Kurs</th>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    <th colspan="4" class="b-left">{{ part['title']|e }}</th>
+                {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    <th colspan="4" class="b-left">{{ track['title']|e }}</th>
                 {% endfor %}
                 <th colspan="2" class="b-left">Grenzen</th>
             </tr>
             <tr>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                {% for track_id, track in ambience['event']['tracks']|dictsort %}
                     <th class="b-left text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
                     <th class="text-right">1</th>
                     <th class="text-right">2</th>
@@ -46,22 +46,22 @@
                     <td>{{ course['nr']|e }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                      course['shortname']) }}</td>
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        {% if part_id in course['parts'] %}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {% if track_id in course['segments'] %}
                             <td class="b-left text-right">
-                                {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
+                                {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                                 'course_id': course_id,
                                                                                 'position': 6,
                                                                                 'submitform': True}),
-                                             assign_counts[course_id][part_id]) }}
+                                             assign_counts[course_id][track_id]) }}
                             </td>
                             {% for i in range(3) %}
                                 <td class="text-right">
-                                    {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
+                                    {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                                 'course_id': course_id,
                                                                                 'position': i + 2,
                                                                                 'submitform': True}),
-                                             choice_counts[course_id][(part_id, i)]) }}
+                                             choice_counts[course_id][(track_id, i)]) }}
                             {% endfor %}
                         {% else %}
                             <td class="b-left"></td><td></td><td></td><td></td>

@@ -12,6 +12,7 @@
 {% block content %}
     {% call util.bootstrap_panel(aclass="panel-warning") %}
         Vergiss nicht mindestens einen Veranstaltungsteil anzulegen!
+        Soll Deine Veranstaltung Kurse haben, so braucht es außerdem noch eine Kursschiene.
     {% endcall %}
     <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform" class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}

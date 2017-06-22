@@ -10,14 +10,14 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 {{ util.breadcrumb_link(cdedblink("event/course_choices"), "Kurseinteilung", active=True) }}
 {% endblock %}
 {% block content %}
-    {# TODO incorporate active_parts, max_size, min_size of courses #}
+    {# TODO incorporate active_segments, max_size, min_size of courses #}
     <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {{ myentries.append((part_id, part['title']))|e }}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {{ myentries.append((track_id, track['title']))|e }}
         {% endfor %}
-        {{ util.form_input_select(name="part_id", label="Teil", entries=myentries, nulloption=True) }}
+        {{ util.form_input_select(name="track_id", label="Schiene", entries=myentries, nulloption=True) }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for course_id, course in courses|dictsort %}
@@ -38,12 +38,12 @@ Kurswahlen ({{ ambience['event']['title']|e }})
             <tr>
                 <th></th>
                 <th>Teilnehmer</th>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    <th>Kurs ({{ part['title']|e }})</th>
-                    <th>Leiter ({{ part['title']|e }})</th>
-                    <th>Erstwahl ({{ part['title']|e }})</th>
-                    <th>Zweitwahl ({{ part['title']|e }})</th>
-                    <th>Drittwahl ({{ part['title']|e }})</th>
+                {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    <th>Kurs ({{ track['title']|e }})</th>
+                    <th>Leiter ({{ track['title']|e }})</th>
+                    <th>Erstwahl ({{ track['title']|e }})</th>
+                    <th>Zweitwahl ({{ track['title']|e }})</th>
+                    <th>Drittwahl ({{ track['title']|e }})</th>
                 {% endfor %}
             </tr>
             {% for reg_id, registration in registrations|dictsort %}
@@ -57,22 +57,22 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                         {% endwith %}
                     </td>
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
                             <td>
-                               {% if registration['parts'][part_id]['course_id'] %}
-                                   {{ courses[registration['parts'][part_id]['course_id']]['shortname']|e }}
+                               {% if registration['tracks'][track_id]['course_id'] %}
+                                   {{ courses[registration['tracks'][track_id]['course_id']]['shortname']|e }}
                                {% endif %}
                             </td>
                             <td>
-                               {% if registration['parts'][part_id]['course_instructor'] %}
-                                   {{ courses[registration['parts'][part_id]['course_instructor']]['shortname']|e }}
+                               {% if registration['tracks'][track_id]['course_instructor'] %}
+                                   {{ courses[registration['tracks'][track_id]['course_instructor']]['shortname']|e }}
                                {% endif %}
                             </td>
                             {% for j in range(3) %}
                                 <td>
-                                    {% if registration['choices'][part_id]|length > j %}
-                                       {{ courses[registration['choices'][part_id][j]]['shortname']|e }}
+                                    {% if registration['tracks'][track_id]['choices']|length > j %}
+                                       {{ courses[registration['tracks'][track_id]['choices'][j]]['shortname']|e }}
                                     {% endif %}
                                 </td>
                             {% endfor %}
@@ -87,16 +87,20 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 </tr>
             {% endfor %}
         </table>
-        Kurszuteilung ändern für markierte Personen in den Teilen
+        Kurszuteilung ändern für markierte Personen in den Schienen
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {{ myentries.append((part_id, part['title']))|e }}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {{ myentries.append((track_id, track['title']))|e }}
         {% endfor %}
-        {{ util.form_input_checkboxes(name="part_ids", entries=myentries) }}
+        {{ util.form_input_checkboxes(name="track_ids", entries=myentries) }}
         nach
         {{ util.form_input_checkboxes(name="action", label="Kurs", radio=True, entries=(
-            (0, "Erstwahl"), (1, "Zweitwahl"), (2, "Drittwahl"), (-1, "Kurs aus Liste"), (-2, "Automatisch"))) }}
+            (enums.CourseChoiceToolActions.assign_first_choice.value, "Erstwahl"),
+            (enums.CourseChoiceToolActions.assign_second_choice.value, "Zweitwahl"),
+            (enums.CourseChoiceToolActions.assign_third_choice.value, "Drittwahl"),
+            (enums.CourseChoiceToolActions.assign_fixed.value, "Kurs aus Liste"),
+            (enums.CourseChoiceToolActions.assign_auto.value, "Automatisch"))) }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for course_id, course in courses|dictsort %}

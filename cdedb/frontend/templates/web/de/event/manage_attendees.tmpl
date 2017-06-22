@@ -6,13 +6,13 @@
 Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block content %}
-    {% for part_id in ambience['course']['parts']|sort %}
-        <h2>{{ ambience['event']['parts'][part_id]['title']|e }}</h2>
+    {% for track_id in ambience['course']['active_segments']|sort %}
+        <h2>{{ ambience['event']['tracks'][track_id]['title']|e }}</h2>
         <div>
             Kursteilnehmer
-            <ul id="attendees_{{ part_id|e }}" class="connect_{{ part_id|e }} nonVanish">
-                {% for registration_id in attendees[(ambience['course']['id'], part_id)] %}
-                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
+            <ul id="attendees_{{ track_id|e }}" class="connect_{{ track_id|e }} nonVanish">
+                {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
+                    <li class="selectee_{{ track_id|e }}" id="{{ registration_id|e }}_{{ track_id|e }}"
                      regid="{{ registration_id|e }}">
                         {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
                         {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
@@ -23,11 +23,11 @@ Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambie
         <div>
             Personen ohne Kurs
             (Namen suchen
-             <input type="text" name="selector_without_{{ part_id|e }}" id="selector_without_{{ part_id|e }}"
+             <input type="text" name="selector_without_{{ track_id|e }}" id="selector_without_{{ track_id|e }}"
               class="jsEnabled" value="" disabled>)
-            <ul id="without_{{ part_id|e }}" class="scrollList connect_{{ part_id|e }} nonVanish">
-                {% for registration_id in without_course[part_id] %}
-                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
+            <ul id="without_{{ track_id|e }}" class="scrollList connect_{{ track_id|e }} nonVanish">
+                {% for registration_id in without_course[track_id] %}
+                    <li class="selectee_{{ track_id|e }}" id="{{ registration_id|e }}_{{ track_id|e }}"
                      regid="{{ registration_id|e }}">
                         {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
                         {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
@@ -38,11 +38,11 @@ Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambie
         <div>
             Personen mit Kurs
             (Namen suchen
-             <input type="text" name="selector_with_{{ part_id|e }}" id="selector_with_{{ part_id|e }}"
+             <input type="text" name="selector_with_{{ track_id|e }}" id="selector_with_{{ track_id|e }}"
               class="jsEnabled" value="" disabled>)
-            <ul id="with_{{ part_id|e }}"  class="shortScrollList connect_{{ part_id|e }} nonVanish">
-                {% for registration_id in with_course[part_id] %}
-                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
+            <ul id="with_{{ track_id|e }}"  class="shortScrollList connect_{{ track_id|e }} nonVanish">
+                {% for registration_id in with_course[track_id] %}
+                    <li class="selectee_{{ track_id|e }}" id="{{ registration_id|e }}_{{ track_id|e }}"
                      regid="{{ registration_id|e }}">
                         {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
                         {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
@@ -52,32 +52,32 @@ Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambie
         </div>
         <script type="text/javascript">
             $(document).ready(function(){
-                $("#attendees_{{ part_id|e }}, #with_{{ part_id|e }}, #without_{{ part_id|e }}").sortable(
-                    {connectWith: ".connect_{{ part_id|e }}"}).disableSelection();
-                $("#selector_without_{{ part_id|e }}").keyup(function(){
-                    $("#without_{{ part_id|e }} .selectee_{{ part_id|e }}").hide();
-                    $("#without_{{ part_id|e }} .selectee_{{ part_id|e }}:contains('" + $(this).val() + "')").show();
+                $("#attendees_{{ track_id|e }}, #with_{{ track_id|e }}, #without_{{ track_id|e }}").sortable(
+                    {connectWith: ".connect_{{ track_id|e }}"}).disableSelection();
+                $("#selector_without_{{ track_id|e }}").keyup(function(){
+                    $("#without_{{ track_id|e }} .selectee_{{ track_id|e }}").hide();
+                    $("#without_{{ track_id|e }} .selectee_{{ track_id|e }}:contains('" + $(this).val() + "')").show();
                 });
-                $("#selector_with_{{ part_id|e }}").keyup(function(){
-                    $("#with_{{ part_id|e }} .selectee_{{ part_id|e }}").hide();
-                    $("#with_{{ part_id|e }} .selectee_{{ part_id|e }}:contains('" + $(this).val() + "')").show();
+                $("#selector_with_{{ track_id|e }}").keyup(function(){
+                    $("#with_{{ track_id|e }} .selectee_{{ track_id|e }}").hide();
+                    $("#with_{{ track_id|e }} .selectee_{{ track_id|e }}:contains('" + $(this).val() + "')").show();
                 });
             });
         </script>
     {% endfor %}
     <form action="{{ cdedblink('event/manage_attendees')|e }}" method="POST" id="manageattendeesform">
-        {% for part_id in ambience['course']['parts']|sort %}
-            {{ util.input_hidden(name="attendees_{}".format(part_id), value="",
-                                 anid="attendeesinput_{}".format(part_id)) }}
+        {% for track_id in ambience['course']['active_segments']|sort %}
+            {{ util.input_hidden(name="attendees_{}".format(track_id), value="",
+                                 anid="attendeesinput_{}".format(track_id)) }}
         {% endfor %}
         {{ util.form_input_submit(value="Speichern", readonly=True, aclass="jsEnabled") }}
     </form>
     <script type="text/javascript">
         $(document).ready(function(){
             $("#manageattendeesform").submit(function(){
-                {% for part_id in ambience['course']['parts']|sort %}
-                    var sorted = $("#attendees_{{ part_id|e }}").sortable("toArray", { attribute: "regid" })
-                    $("#attendeesinput_{{ part_id|e }}").val(sorted.join(","))
+                {% for track_id in ambience['course']['active_segments']|sort %}
+                    var sorted = $("#attendees_{{ track_id|e }}").sortable("toArray", { attribute: "regid" })
+                    $("#attendeesinput_{{ track_id|e }}").val(sorted.join(","))
                 {% endfor %}
             });
         });

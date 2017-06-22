@@ -113,23 +113,22 @@
         </dd>
     </dl>
 
-    {% for part_id, part in registration['parts']|dictsort %}
-        {% if enums['RegistrationPartStati'](part['status']).is_involved()
-              and registration['choices'].get(part_id) %}
+    {% for track_id, track in registration['tracks']|dictsort %}
+        {% if enums['RegistrationPartStati'](registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status']).is_involved() %}
             <h4>
                 Kurswahl
-                {% if course_choices|length > 1 %}
-                    für {{ ambience['event']['parts'][part_id]['title']|e }}
+                {% if ambience['event']['tracks']|length > 1 %}
+                    für {{ ambience['event']['tracks'][track_id]['title']|e }}
                 {% endif %}
             </h4>
 
             <dl class="dl-horizontal">
-                {% if part['course_instructor'] %}
-                    <dd>Ich bin Kursleiter von <em>{{ courses[part['course_instructor']]['title']|e }}</em>.</dd>
+                {% if track['course_instructor'] %}
+                    <dd>Ich bin Kursleiter von <em>{{ courses[track['course_instructor']]['title']|e }}</em>.</dd>
                 {% endif %}
                 {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}
                     <dt>{{ prio|e }}</dt>
-                    <dd>{{ courses[registration['choices'][part_id][loop.index0]]['title']|e }}</dd>
+                    <dd>{{ courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|e }}</dd>
                 {% endfor %}
             </dl>
         {% endif %}

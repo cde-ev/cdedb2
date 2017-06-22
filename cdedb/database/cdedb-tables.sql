@@ -553,6 +553,16 @@ CREATE INDEX idx_event_parts_event_id ON event.event_parts(event_id);
 GRANT INSERT, SELECT, UPDATE, DELETE ON event.event_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.event_parts_id_seq TO cdb_persona;
 
+-- each course can take place in an arbitrary number of tracks
+CREATE TABLE event.course_tracks (
+        id                      serial PRIMARY KEY,
+        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
+        title                   varchar NOT NULL
+);
+CREATE INDEX idx_course_tracks_part_id ON event.course_tracks(part_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_tracks TO cdb_persona;
+GRANT SELECT, UPDATE ON event.course_tracks_id_seq TO cdb_persona;
+
 CREATE TABLE event.field_definitions (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
@@ -595,15 +605,15 @@ GRANT SELECT, INSERT, UPDATE ON event.courses TO cdb_persona;
 GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_persona;
 
 -- not an array inside event.courses since no ELEMENT REFERENCES in postgres
-CREATE TABLE event.course_parts (
+CREATE TABLE event.course_segments (
         id                      serial PRIMARY KEY,
         course_id               integer NOT NULL REFERENCES event.courses(id),
-        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
+        track_id                integer NOT NULL REFERENCES event.course_tracks(id),
         is_active               boolean NOT NULL DEFAULT True
 );
-CREATE INDEX idx_course_parts_course_id ON event.course_parts(course_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_parts TO cdb_persona;
-GRANT SELECT, UPDATE ON event.course_parts_id_seq TO cdb_persona;
+CREATE INDEX idx_course_segments_course_id ON event.course_segments(course_id);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_segments TO cdb_persona;
+GRANT SELECT, UPDATE ON event.course_segments_id_seq TO cdb_persona;
 
 CREATE TABLE event.orgas (
         id                      serial PRIMARY KEY,
@@ -665,26 +675,35 @@ CREATE TABLE event.registration_parts (
         id                      serial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
         part_id                 integer NOT NULL REFERENCES event.event_parts(id),
-        course_id               integer REFERENCES event.courses(id) DEFAULT NULL,
         -- enum for status of this registration part
         -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL,
-        lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL,
-        -- this is NULL if not an instructor
-        course_instructor       integer REFERENCES event.courses(id)
+        lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL
 );
 CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
 GRANT SELECT, INSERT, UPDATE ON event.registration_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registration_parts_id_seq TO cdb_persona;
 
+CREATE TABLE event.registration_tracks (
+        id                      serial PRIMARY KEY,
+        registration_id         integer NOT NULL REFERENCES event.registrations(id),
+	track_id		integer NOT NULL REFERENCES event.course_tracks(id),
+        course_id               integer REFERENCES event.courses(id),
+        -- this is NULL if not an instructor
+        course_instructor       integer REFERENCES event.courses(id)
+);
+CREATE INDEX idx_registration_tracks_registration_id ON event.registration_tracks(registration_id);
+GRANT SELECT, INSERT, UPDATE ON event.registration_tracks TO cdb_persona;
+GRANT SELECT, UPDATE ON event.registration_tracks_id_seq TO cdb_persona;
+
 CREATE TABLE event.course_choices (
         id                      bigserial PRIMARY KEY,
         registration_id         integer NOT NULL REFERENCES event.registrations(id),
-        part_id                 integer NOT NULL REFERENCES event.event_parts(id),
+        track_id                integer NOT NULL REFERENCES event.course_tracks(id),
         course_id               integer NOT NULL REFERENCES event.courses(id),
         rank                    integer NOT NULL
 );
-CREATE UNIQUE INDEX idx_course_choices_constraint ON event.course_choices(registration_id, part_id, course_id);
+CREATE UNIQUE INDEX idx_course_choices_constraint ON event.course_choices(registration_id, track_id, course_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.course_choices TO cdb_persona;
 GRANT SELECT, UPDATE ON event.course_choices_id_seq TO cdb_persona;
 

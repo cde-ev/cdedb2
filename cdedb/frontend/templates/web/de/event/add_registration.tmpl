@@ -33,26 +33,29 @@
                 {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for course_id in course_choices[part_id] %}
-                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
-                {% endfor %}
-                {{ util.form_input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
-                                         nulloption=True) }}
-                {{ util.form_input_select(name="part{}.course_choice_0".format(part_id), label="Erstwahl",
-                                         entries=myentries, nulloption=True) }}
-                {{ util.form_input_select(name="part{}.course_choice_1".format(part_id), label="Zweitwahl",
-                                         entries=myentries, nulloption=True) }}
-                {{ util.form_input_select(name="part{}.course_choice_2".format(part_id), label="Drittwahl",
-                                         entries=myentries, nulloption=True) }}
-                {{ util.form_input_select(name="part{}.course_instructor".format(part_id), label="Kursleiter",
-                                         entries=myentries, nulloption=True) }}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
                 {% for lodgement_id, lodgement in lodgements|dictsort %}
                     {{ myentries.append((lodgement_id, lodgement['moniker']))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                          entries=myentries, nulloption=True) }}
+                {% for track_id in ambience['event']['parts'][part_id]['tracks']|sort %}
+                    <tr><th colspan="2">{{ ambience['event']['tracks'][track_id]['title']|e }}</th></tr>
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
+                    {% for course_id in course_choices[track_id] %}
+                        {{ myentries.append((course_id, courses[course_id]['title']))|e }}
+                    {% endfor %}
+                    {{ util.form_input_select(name="track{}.course_id".format(track_id), label="Kurs", entries=myentries,
+                                             nulloption=True) }}
+                    {{ util.form_input_select(name="track{}.course_choice_0".format(track_id), label="Erstwahl",
+                                             entries=myentries, nulloption=True) }}
+                    {{ util.form_input_select(name="track{}.course_choice_1".format(track_id), label="Zweitwahl",
+                                             entries=myentries, nulloption=True) }}
+                    {{ util.form_input_select(name="track{}.course_choice_2".format(track_id), label="Drittwahl",
+                                             entries=myentries, nulloption=True) }}
+                    {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter",
+                                             entries=myentries, nulloption=True) }}
+                {% endfor %}
             {% endfor %}
         </table>
         <div>
