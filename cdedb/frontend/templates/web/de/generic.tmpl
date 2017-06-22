@@ -127,7 +127,7 @@
             {% with TITLES = {
                 "all": "Alle Accounts",} %}
                 <div>
-                    {{ util.place_default_queries("{}/user_search".format(realm), default_queries, TITLES) }}
+                    {{ place_default_queries("{}/user_search".format(realm), default_queries, TITLES) }}
                 </div>
             {% endwith %}
         </div>
@@ -196,12 +196,12 @@
         'is_admin': "Admin: Super",
     } %}
 
-        {% if realm == "archived" %}
-            {% set target=cdedblink('core/archived_user_search') %}
-        {% else %}
-            {% set target=cdedblink('{}/user_search'.format(realm)) %}
-        {% endif %}
-            {{ util.format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist) }}
+            {% if realm == "archived" %}
+                {% set target=cdedblink('core/archived_user_search') %}
+            {% else %}
+                {% set target=cdedblink('{}/user_search'.format(realm)) %}
+            {% endif %}
+            {{ format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist) }}
         </form>
 
     {% endwith %}
@@ -262,6 +262,347 @@
         'is_admin': "Admin " + util.make_icon('wrench', title="Admin: Super"),
     } %}
 
-        {{ util.display_query_result(result, query, TITLES, choices) }}
+        {{ display_query_result(result, query, TITLES, choices) }}
     {% endwith %}
+{% endmacro %}
+
+
+
+
+{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
+                      heading='Suchmaske') %}
+    {% call util.bootstrap_panel(title=heading, icon="search", aclass="panel-primary") %}
+    {% with OPERATOR_LABELS = {1: "ist leer",
+                               2: "ist nicht leer",
+                               3: "ist gleich",
+                               4: "ist ungleich",
+                               5: "ist eines aus",
+                               6: "ist keines aus",
+                               10: "ist ähnlich zu",
+                               11: "ist nicht ähnlich zu",
+                               12: "passt auf RegEx",
+                               13: "passt nicht auf RegEx",
+                               14: "enthält alle aus",
+                               15: "enthält keines aus",
+                               16: "enthält min. eines aus",
+                               17: "fuzzy Vergleich",
+                               20: "ist kleiner",
+                               21: "ist kleinergleich",
+                               22: "liegt zwischen",
+                               23: "liegt nicht zwischen",
+                               24: "ist größergleich",
+                               25: "ist größer",} %}
+        <form action="{{ target|e }}" method="GET" id="queryform">
+            {{ util.input_hidden(name="is_search", value=True) }}
+            <!-- Non-JS form -->
+            <p class="queryform-nojs">
+                <button type="submit" class="btn btn-primary">{{ util.make_icon('search') }} Suche</button>
+                <span class="btn-group">
+                    <button type="submit" class="btn btn-default" name="download" value="csv">
+                        {{ util.make_icon('download') }} CSV-Datei
+                    </button>
+                    <button type="submit" class="btn btn-default" name="download" value="json">
+                        {{ util.make_icon('download') }} JSON-Datei
+                    </button>
+                </span>
+            </p>
+            <div class="row queryform-nojs">
+                <div class="col-lg-7">
+                    <table class="query-form-cols table table-superdense">
+                        <thead>
+                            <tr>
+                                <th>{{ util.make_icon('eye-open') }}</th>
+                                <th>Felder</th>
+                                <th colspan="2">Filter</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for field in spec %}
+                            <tr class="query_field {% if field in errors %}errorInput{% endif %}
+                                       {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
+                                    data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
+                                <td>
+                                    {# multi-fields are not reliably selectable, so we disable selection #}
+                                    {% if ',' not in field and field not in selection_blacklist %}
+                                        {% with name = "qsel_{}".format(field) %}
+                                            {% if output_selection %}
+                                                {{ util.input_checkbox(name, aclass='outputSelector', value=True) }}
+                                            {% else %}
+                                                {{ util.input_hidden(name, value=True) }}
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
+                                </td>
+                                <td class="name">{{ titles.get(field, field)|e }}</td>
+                                <td>
+                                    {% with name = "qop_{}".format(field) %}
+                                        {% with theid = "qop_{}".format(field) %}
+                                            {# jinja does not support list comprehension ... #}
+                                            {% set myentries = [] %}
+                                            {% for op in query_mod.VALID_QUERY_OPERATORS[spec[field]] %}
+                                                {% if field not in choices
+                                                        or op in query_mod.SELECTION_VALUE_OPERATORS %}
+                                                    {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {{ util.input_select(name, entries=myentries, nulloption=True,
+                                                                 aclass='form-control input-sm filter-op', anid=theid) }}
+                                        {% endwith %}
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    {% with name = "qval_{}".format(field) %}
+                                        {% if spec[field] == 'bool' %}
+                                            {# Boolean fields are the only ones that don't need a text input field,
+                                               for none of their filter operators. So we can provide a select box
+                                               for none-javascript users. #}
+                                            {{ util.input_select(name, anid="qinput_{}".format(field),
+                                                    aclass='form-control input-sm filter-value',
+                                                    entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
+                                        {% else %}
+                                            {{ util.input_text(name, anid="qinput_{}".format(field),
+                                                    aclass='form-control input-sm filter-value') }}
+                                        {% endif %}
+                                        {{ util.output_errors(field, True) }}
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-lg-5">
+                    <table class="query-form-sort table table-superdense">
+                        <thead>
+                            <tr><th colspan="3">Sortierung</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
+                                               ("3.", "qord_tertiary"))%}
+                            <tr class="query_sort">
+                                <td> {{ title|e }} </td>
+                                <td>
+                                    {# jinja does not support list comprehension ... #}
+                                    {% set myentries = [] %}
+                                    {% for field in spec %}
+                                        {% if ',' not in field %}
+                                            {{ myentries.append((field, titles.get(field,field)))|e }}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {{ util.input_select(name, entries=myentries, nulloption=True,
+                                                         aclass="form-control input-sm sort-field" )}}
+                                </td>
+                                <td>
+                                    {{ util.input_select(name + "_ascending", defaultvalue=True,
+                                                         aclass="form-control input-sm sort-order",
+                                                         entries=((True, "A→Z"), (False, "Z→A"))) }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- JS Form -->
+            <div class="queryform-js softhide">
+                <h4 class="filter-title nosp">{{ util.make_icon('filter') }} Filter</h4>
+                <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
+                <div class="input-group has-success queryform-add">
+                    <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                    <select class="form-control input-sm input-slim addfilter"></select>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <h4 class="filter-title">{{ util.make_icon('eye-open') }} Angezeigte Felder</h4>
+                        <p class="viewfield-list"></p>
+                        <div class="input-group has-success">
+                            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                            <select class="form-control input-sm addviewfield"></select>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <h4 class="filter-title">{{ util.make_icon('sort-by-alphabet') }} Sortierung</h4>
+                        <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
+                        <div class="input-group has-success queryform-add">
+                            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                            <select class="form-control input-sm addsortfield"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="pull-right nosp">
+                <button type="submit" class="btn btn-primary">{{ util.make_icon('search') }} Suche</button>
+                <span class="btn-group">
+                    <button type="submit" class="btn btn-default" name="download" value="csv">
+                        {{ util.make_icon('download') }} CSV-Datei
+                    </button>
+                    <button type="submit" class="btn btn-default" name="download" value="json">
+                        {{ util.make_icon('download') }} JSON-Datei
+                    </button>
+                </span>
+            </p>
+            {{ util.output_errors('query') }}
+        </form>
+        <script type="text/javascript">
+            $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});
+        </script>
+    {% endwith %}
+    {% endcall %}
+{% endmacro %}
+
+{% macro place_default_queries(target, queries, titles, title="Standardabfragen") %}
+    {% if queries %}
+        {% call util.bootstrap_panel(title=title) %}
+            <div class="row">
+                {% for list in queries | slice(2) %}
+                <div class="col-sm-6">
+                    <ul>
+                        {% for query in list %}
+                            <li>
+                                {{ util.href(cdedblink(target, queries[query]|querytoparams),
+                                        titles.get(query, query), aclass="default-query") }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        {% endcall %}
+        <script type="text/javascript">
+            $('.default-query').each(function(){
+                var url = $(this).attr('href');
+                var $link = $('<a></a>', {'href':'#',
+                                          'title':'im Formular anzeigen',
+                                          'aria-label':'im Formular anzeigen',
+                                          'class': 'btn btn-default btn-xs'})
+                    .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open', 'aria-hidden':'true'}))
+                    .click(function(){
+                        $('#queryform').data('cdedbQueryForm').queryFromURL(url);
+                        return false;
+                    });
+                $(this).after($link).after(' ');
+            });
+        </script>
+    {% endif %}
+{% endmacro %}
+
+{% macro display_query_result(result, query, titles, choices) %}
+    {% if not result|length %}
+        Keine Ergebnisse!
+    {% else %}
+        <script type="text/javascript">
+            $(function(){
+                $('.ls-list').cdedbListSelect();
+                $('#btn-select-all').click(function(){
+                    $('#query-result').data('listSelect').selectAll();
+                });
+                $('#btn-select-none').click(function(){
+                    $('#query-result').data('listSelect').selectNone();
+                });
+                $('#btn-select-swap').click(function(){
+                    $('#query-result').data('listSelect').invertSelection();
+                });
+                $('#btn-select-filter').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    $('#queryform').data('cdedbQueryForm').setIdFilter(list);
+                    $('#queryform').submit();
+                });
+                $('#result-container').cdedbMoveToWidePage($('.btn-trigger-wide'));
+                $('#js-button-group').show();
+            });
+        </script>
+        <div class="p softhide" id="js-button-group">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">alle</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                </button>
+            </div>
+            <button type="button" class="btn btn-sm btn-info" title="Filter auf ausgewählte setzen"
+              id="btn-select-filter">
+                {{ util.make_icon('share') }} <span class="hidden-xs">nur ausgewählte</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-trigger-wide" title="Tabelle breiter darstellen">
+                {{ util.make_icon('resize-horizontal') }}
+            </button>
+        </div>
+        <div class="table-container" id="result-container">
+        <table class="table table-condensed table-hover ls-list" id="query-result">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for csvfield in query.fields_of_interest %}
+                        {% for field in csvfield.split(',') %}
+                            <th>
+                                {{ titles.get(field, field) }}
+                                {% if values.get("qop_{}".format(field)) %}
+                                    <span class="label label-default" title="Gefilterte Spalte">
+                                        {{ util.make_icon('filter') }}
+                                    </span>
+                                {% endif %}
+                                {% if values.get("qord_primary") == field or
+                                        values.get("qord_secondary") == field or
+                                        values.get("qord_tertiary") == field %}
+                                    <span class="label label-default" title="Sortierte Spalte">
+                                        {{ util.make_icon('sort-by-alphabet') }}
+                                    </span>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in result %}
+                {% set outerloopindex = loop.index0 %}
+                <tr class="ls-item" data-id="{{ row[query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1]]|e }}">
+                    <td>
+                        {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
+                                               aclass="rowSelector") }}
+                    </td>
+                    {% for csvfield in query.fields_of_interest %}
+                        {% for field in csvfield.split(',') %}
+                            {# NOTE that we split off any possible schema specification since they're not preserved
+                                    by the query #}
+                            {% with afield = field.split('.')[-1] %}
+                                <td>
+                                    {% if field == "personas.id" or (query.scope == "qview_persona"
+                                                                     and field == "id") %}
+                                        {{ util.href(show_user_link(row[afield]), row[afield]|cdedbid,
+                                                aclass='nowrap') }}
+                                    {% elif field == "reg.id" %}
+                                        {# This should occur only if the context allows the following link. #}
+                                        {{ util.href(cdedblink("event/show_registration",
+                                                {'registration_id': row[afield]}), row[afield]) }}
+                                    {% elif query.spec[csvfield] == "bool" %}
+                                        {{ util.deko_checkbox(row.get(afield), titles=('falsch','wahr')) }}
+                                    {% else %}
+                                        {{ choices.get(csvfield, {}).get(row.get(afield),
+                                                                         row.get(afield, "UNDEFINED"))|e }}
+                                    {% endif %}
+                                    {{ util.input_hidden("row_{}_{}".format(outerloopindex, afield), row.get(afield),
+                                                         anid="row_{}_{}".format(outerloopindex, afield)) }}
+                                </td>
+                            {% endwith %}
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
 {% endmacro %}

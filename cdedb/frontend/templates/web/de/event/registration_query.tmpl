@@ -1,6 +1,7 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% import "web/de/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Anmeldungen ({{ ambience['event']['title']|e }}){% endblock %}
@@ -23,7 +24,7 @@
             {% with TITLES = {
                     "all": "Alle Anmeldungen",
                     "minors": "Minderjährige",} %}
-                {{ util.place_default_queries("event/registration_query", default_queries, TITLES) }}
+                {{ generic.place_default_queries("event/registration_query", default_queries, TITLES) }}
             {% endwith %}
         </div>
     </div>
@@ -55,7 +56,7 @@
             "persona.location": "Ort",
             "persona.country": "Land",})|e }}
 
-    {{ util.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
+    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
 
     {% if values['is_search'] %}
         <h3>Ergebnis [{{ result|length|e }}]</h3>
@@ -87,7 +88,7 @@
                 "persona.location": "Ort",
                 "persona.country": "Land",})|e }}
 
-                {{ util.display_query_result(result, query, titles, choices) }}
+                {{ generic.display_query_result(result, query, titles, choices) }}
 
             <div>
                 Ausgewählte Anmeldungen modifizieren

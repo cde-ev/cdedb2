@@ -15,7 +15,7 @@
             {% with TITLES = {
                     "trial members": "Probemitglieder",} %}
                 <div>
-                    {{ util.place_default_queries("cde/user_search", default_queries, TITLES) }}
+                    {{ generic.place_default_queries("cde/user_search", default_queries, TITLES) }}
                 </div>
             {% endwith %}
         </div>

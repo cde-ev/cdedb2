@@ -12,7 +12,7 @@
 {% block content %}
     {% with TITLES = {} %}
         <div>
-            {{ util.place_default_queries("core/archived_user_search", default_queries, TITLES) }}
+            {{ generic.place_default_queries("core/archived_user_search", default_queries, TITLES) }}
         </div>
     {% endwith %}
 
