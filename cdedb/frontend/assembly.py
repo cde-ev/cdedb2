@@ -562,7 +562,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                       for e in ballot['candidates'].values()}
         if ballot['use_bar']:
             candidates[ASSEMBLY_BAR_MONIKER] = rs.gettext(
-                "FIXME bar description text")
+                "bar (options below this are declined)")
         return self.render(rs, "show_ballot", {
             'attachments': attachments, 'split_vote': split_vote,
             'result': result, 'candidates': candidates, 'attends': attends,
