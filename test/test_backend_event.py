@@ -299,7 +299,7 @@ class TestEventBackend(BackendTest):
         self.event.set_registration(self.key, update_registration)
         data = self.event.get_registration(self.key, reg_id)
         expectation = {
-            'arrival': '2222-11-09T08:55:44+00:00',
+            'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
             'lodge': 'Die üblichen Verdächtigen :)',
             'registration_id': 1
         }

@@ -9,7 +9,8 @@ import copy
 
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend, Silencer,
-    affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP)
+    affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP,
+    cast_fields)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
     _, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
@@ -517,8 +518,8 @@ class EventBackend(AbstractBackend):
     def get_courses(self, rs, ids):
         """Retrieve data for some courses organized via DB.
 
-        They do not need to be associated to the same event. This contains
-        additional information on the parts in which the course takes place.
+        They must be associated to the same event. This contains additional
+        information on the parts in which the course takes place.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type ids: [int]
@@ -528,6 +529,13 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             data = self.sql_select(rs, "event.courses", COURSE_FIELDS, ids)
             ret = {e['id']: e for e in data}
+            event = None
+            if ret:
+                events = {e['event_id'] for e in data}
+                if len(events) != 1:
+                    raise ValueError(_(
+                        "Only courses from exactly one event allowed!"))
+                event = self.get_event(rs, unwrap(events))
             data = self.sql_select(
                 rs, "event.course_parts", COURSE_PART_FIELDS, ids,
                 entity_key="course_id")
@@ -539,6 +547,8 @@ class EventBackend(AbstractBackend):
                                 if p['course_id'] == anid and p['is_active']}
                 assert('active_parts' not in ret[anid])
                 ret[anid]['active_parts'] = active_parts
+                ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
+                                                  event['fields'])
         return ret
 
     @access("event")
@@ -823,27 +833,29 @@ class EventBackend(AbstractBackend):
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
-            data = self.sql_select(
+            event = self.get_event(rs, event_id)
+            pdata = self.sql_select(
                 rs, "event.registration_parts", REGISTRATION_PART_FIELDS, ids,
                 entity_key="registration_id")
-            for anid in ret:
-                assert('parts' not in ret[anid])
-                ret[anid]['parts'] = {e['part_id']: e for e in data
-                                      if e['registration_id'] == anid}
-            data = self.sql_select(
+            cdata = self.sql_select(
                 rs, "event.course_choices",
                 ("registration_id", "part_id", "course_id", "rank"), ids,
                 entity_key="registration_id")
-            parts = {e['part_id'] for e in data}
+            parts = {e['part_id'] for e in cdata}
             for anid in ret:
+                assert('parts' not in ret[anid])
+                ret[anid]['parts'] = {e['part_id']: e for e in pdata
+                                      if e['registration_id'] == anid}
                 assert('choices' not in ret[anid])
                 choices = {}
                 for part_id in parts:
-                    ranks = {e['course_id']: e['rank'] for e in data
+                    ranks = {e['course_id']: e['rank'] for e in cdata
                              if (e['registration_id'] == anid
                                  and e['part_id'] == part_id)}
                     choices[part_id] = sorted(ranks.keys(), key=ranks.get)
                 ret[anid]['choices'] = choices
+                ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
+                                                  event['fields'])
         return ret
 
     @access("event")
@@ -1039,6 +1051,10 @@ class EventBackend(AbstractBackend):
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
                 raise PrivilegeError(_("Not privileged."))
+            event = self.get_event(rs, event_id)
+            ret = {e['id']: e for e in data}
+            for entry in ret.values():
+                entry['fields'] = cast_fields(entry['fields'], event['fields'])
         return {e['id']: e for e in data}
 
     @access("event")

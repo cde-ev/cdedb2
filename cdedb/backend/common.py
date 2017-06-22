@@ -13,6 +13,7 @@ import logging
 
 from cdedb.common import (
     _, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
+from cdedb.validation import parse_date, parse_datetime
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
 import cdedb.validation as validate
@@ -664,6 +665,34 @@ def affirm_set_validation(assertion, values, allow_None=False, **kwargs):
         return None
     checker = getattr(validate, "assert_{}".format(assertion))
     return {checker(value, **kwargs) for value in values}
+
+def cast_fields(data, spec):
+    """Helper to deserialize json fields.
+
+    We serialize some classes as strings and need to undo this upon
+    retrieval from the database.
+
+    :type data: {str: object}
+    :type spec: {int: {str: object}}
+    :rtype: {str: object}
+    """
+    spec = {v['field_name']: v['kind'] for v in spec.values()}
+    casters = {
+        "int": lambda x: x,
+        "str": lambda x: x,
+        "float": lambda x: x,
+        "date": parse_date,
+        "datetime": parse_datetime,
+        "bool": lambda x: x,
+    }
+    def _do_cast(key, val):
+        if val is None:
+            return None
+        if key in spec:
+            return casters[spec[key]](val)
+        return val
+
+    return {key: _do_cast(key, val) for key, val in data.items()}
 
 #: Translate between validator names and sql data types.
 #:

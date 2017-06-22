@@ -872,7 +872,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
             errs.extend(e)
     return val, errs
 
-def _parse_date(val):
+def parse_date(val):
     """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
 
     By default :py:mod:`dateutil` substitutes todays values if anything
@@ -904,7 +904,7 @@ def _date(val, argname=None, *, _convert=True):
     """
     if _convert and isinstance(val, str) and len(val.strip()) >= 6:
         try:
-            val = _parse_date(val)
+            val = parse_date(val)
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, datetime.date):
@@ -915,7 +915,7 @@ def _date(val, argname=None, *, _convert=True):
         val = val.date()
     return val, []
 
-def _parse_datetime(val, default_date=None):
+def parse_datetime(val, default_date=None):
     """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
 
     By default :py:mod:`dateutil` substitutes values from now if anything
@@ -964,7 +964,7 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None):
     """
     if _convert and isinstance(val, str) and len(val.strip()) >= 5:
         try:
-            val = _parse_datetime(val, default_date)
+            val = parse_datetime(val, default_date)
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, datetime.datetime):
