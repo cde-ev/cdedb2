@@ -7,8 +7,6 @@ variant for external participants.
 import collections
 import copy
 
-import psycopg2.extras
-
 from cdedb.backend.common import (
     access, affirm_validation as affirm, AbstractBackend,
     affirm_set_validation as affirm_set, singularize, PYTHON_TO_SQL_MAP)
@@ -17,7 +15,7 @@ from cdedb.common import (
     _, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_PART_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
-    CourseFilterPositions, FIELD_DEFINITION_FIELDS)
+    CourseFilterPositions, FIELD_DEFINITION_FIELDS, PsycoJson)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -582,7 +580,7 @@ class EventBackend(AbstractBackend):
                 fdata.update(data['fields'])
                 new = {
                     'id': data['id'],
-                    'fields': psycopg2.extras.Json(fdata),
+                    'fields': PsycoJson(fdata),
                 }
                 ret *= self.sql_update(rs, "event.courses", new)
                 changed = True
@@ -691,7 +689,7 @@ class EventBackend(AbstractBackend):
             ## fix fields to contain course id
             fdata = {
                 'id': new_id,
-                'fields': psycopg2.extras.Json({'course_id': new_id})
+                'fields': PsycoJson({'course_id': new_id})
             }
             self.sql_update(rs, "event.courses", fdata)
         self.event_log(rs, const.EventLogCodes.course_created,
@@ -896,7 +894,7 @@ class EventBackend(AbstractBackend):
                 fdata.update(data['fields'])
                 new = {
                     'id': data['id'],
-                    'fields': psycopg2.extras.Json(fdata),
+                    'fields': PsycoJson(fdata),
                 }
                 ret *= self.sql_update(rs, "event.registrations", new)
             if 'parts' in data:
@@ -988,7 +986,7 @@ class EventBackend(AbstractBackend):
             ## fix fields to contain registration id
             fdata = {
                 'id': new_id,
-                'fields': psycopg2.extras.Json({'registration_id': new_id})
+                'fields': PsycoJson({'registration_id': new_id})
             }
             self.sql_update(rs, "event.registrations", fdata)
         self.event_log(
@@ -1076,7 +1074,7 @@ class EventBackend(AbstractBackend):
                 fdata.update(data['fields'])
                 new = {
                     'id': data['id'],
-                    'fields': psycopg2.extras.Json(fdata),
+                    'fields': PsycoJson(fdata),
                 }
                 ret *= self.sql_update(rs, "event.lodgements", new)
             self.event_log(
@@ -1103,7 +1101,7 @@ class EventBackend(AbstractBackend):
             ## fix fields to contain lodgement id
             fdata = {
                 'id': new_id,
-                'fields': psycopg2.extras.Json({'lodgement_id': new_id})
+                'fields': PsycoJson({'lodgement_id': new_id})
             }
             self.sql_update(rs, "event.lodgements", fdata)
             self.event_log(
@@ -1300,7 +1298,7 @@ class EventBackend(AbstractBackend):
             if isinstance(ret[x], collections.Mapping):
                 ## All mappings have to be JSON columns in the database
                 ## (nothing else should be possible).
-                ret[x] = psycopg2.extras.Json(
+                ret[x] = PsycoJson(
                     cls.translate(ret[x], translations, extra_translations))
         if ret.get('real_persona_id'):
             ret['real_persona_id'] = None
@@ -1416,7 +1414,7 @@ class EventBackend(AbstractBackend):
                         rs, table_string, ('id', 'fields'), entity_id)
                     if json['fields'][id_string] != entity_id:
                         json['fields'][id_string] = entity_id
-                        json['fields'] = psycopg2.extras.Json(json['fields'])
+                        json['fields'] = PsycoJson(json['fields'])
                         self.sql_update(rs, table_string, json)
             ## Fourth unlock the event
             update = {

@@ -59,6 +59,8 @@ def populate_table(cur, table, data):
             entry.update(defaults[table])
         for k, v in entry.items():
             if isinstance(v, collections.Mapping):
+                ## No special care for serialization needed, since the data
+                ## comes from a json load operation
                 entry[k] = psycopg2.extras.Json(v)
         keys = tuple(key for key in entry)
         query = "INSERT INTO {table} ({keys}) VALUES ({placeholders})"

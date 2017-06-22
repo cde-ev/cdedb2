@@ -18,6 +18,7 @@ import random
 import string
 import sys
 
+import psycopg2.extras
 import pytz
 import werkzeug.datastructures
 
@@ -502,6 +503,15 @@ def json_serialize(data):
     :rtype: str
     """
     return json.dumps(data, indent=4, cls=CustomJSONEncoder)
+
+class PsycoJson(psycopg2.extras.Json):
+    """Json encoder for consumption by psycopg.
+
+    This is the official way of customizing the serialization process by
+    subclassing the appropriate class.
+    """
+    def dumps(self, obj):
+        return json_serialize(obj)
 
 def pairwise(iterable):
     """Iterate over adjacent pairs of values of an iterable.

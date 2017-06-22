@@ -16,7 +16,6 @@ import uuid
 
 import ldap3
 from passlib.hash import sha512_crypt
-import psycopg2.extras
 
 from cdedb.backend.common import AbstractBackend
 from cdedb.backend.common import (
@@ -26,7 +25,7 @@ from cdedb.common import (
     _, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
-    privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS)
+    privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson)
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -1815,8 +1814,7 @@ class CoreBackend(AbstractBackend):
             data = affirm("meta_info", data, keys=meta_info.keys())
             meta_info.update(data)
             query = "UPDATE core.meta_info SET info = %s"
-            return self.query_exec(rs, query,
-                                   (psycopg2.extras.Json(meta_info),))
+            return self.query_exec(rs, query, (PsycoJson(meta_info),))
 
     @access("core_admin")
     def submit_general_query(self, rs, query):

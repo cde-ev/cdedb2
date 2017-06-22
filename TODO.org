@@ -1,4 +1,5 @@
 * actionable items
+** Audit operations on event fields with date/datetime types (storing is fixed)
 ** Add global consistency check page where we see all mailinglists at once.
 ** include a "remove all inconsistent subscriptions" button on the consistency check page of a mailing list
 ** some pages have to much whitespace/too tiny font (esp. forms)

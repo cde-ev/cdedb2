@@ -275,6 +275,37 @@ class TestEventBackend(BackendTest):
             self.key, new_course_id))
 
     @as_users("anton", "garcia")
+    def test_json_fields_with_dates(self, user):
+        event_id = 1
+        update_event = {
+            'id': event_id,
+            'fields': {
+                -1: {
+                    'association': 1,
+                    'field_name': "arrival",
+                    'kind': "datetime",
+                    'entries': None,
+                }
+            }
+        }
+        self.event.set_event(self.key, update_event)
+        reg_id = 1
+        update_registration = {
+            'id': reg_id,
+            'fields': {
+                'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44, tzinfo=pytz.utc),
+            }
+        }
+        self.event.set_registration(self.key, update_registration)
+        data = self.event.get_registration(self.key, reg_id)
+        expectation = {
+            'arrival': '2222-11-09T08:55:44+00:00',
+            'lodge': 'Die üblichen Verdächtigen :)',
+            'registration_id': 1
+        }
+        self.assertEqual(expectation, data['fields'])
+
+    @as_users("anton", "garcia")
     def test_entity_course(self, user):
         event_id = 1
         old_courses = self.event.list_db_courses(self.key, event_id)
