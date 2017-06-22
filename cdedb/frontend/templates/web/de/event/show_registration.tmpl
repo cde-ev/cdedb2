@@ -11,189 +11,210 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
 {{ util.breadcrumb_link(cdedblink("event/show_registration"),
     persona['given_names']|e + " " + persona['family_name']|e, active=True, icon="user") }}
 {% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {{ persona['given_names']|e }} {{ persona['family_name']|e }}
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
 {% block content %}
-    <table>
-        <tr><th colspan="2">Personendaten</th></tr>
-        <tr>
-            <td>Name</td>
-            <td>
-                {{ persona['title']|e }}
-                {{ persona['given_names']|e }}
-                {{ persona['family_name']|e }}
-                {{ persona['name_supplement']|e }}
-            </td>
-        </tr>
-        <tr>
-            <td>CdEDB-ID</td>
-            <td>{{ persona['id']|cdedbid|e }}</td>
-        </tr>
-        <tr>
-            <td>Online CdEDB-ID (für Offline-Registrierungen))</td>
-            <td>{{ ambience['registration']['real_persona_id']|cdedbid|e }}</td>
-        </tr>
-        <tr>
-            <td>Mitglied</td>
-            <td>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</td>
-        </tr>
-        <tr>
-            <td>Geburtstag/Altersklasse</td>
-            <td>
-                {{ persona['birthday']|e }} ({{ gettext(age|string)|e }})
-            </td>
-        </tr>
-        <tr>
-            <td>Geschlecht</td>
-            <td>{{ persona['gender']|gender|e }}</td>
-        </tr>
-        <tr>
-            <td>E-Mail</td>
-            <td> {{ persona['username']|e }} </td>
-        </tr>
-        <tr>
-            <td>Telefon</td>
-            <td>{{ persona['telephone']|e }}</td>
-        </tr>
-        <tr>
-            <td>Mobiltelefon</td>
-            <td>{{ persona['mobile']|e }}</td>
-        </tr>
-        <tr>
-            <td>Straße</td>
-            <td>{{ persona['address']|e }}</td>
-        </tr>
-        <tr>
-            <td>Adresszusatz</td>
-            <td>{{ persona['address_supplement']|e }}</td>
-        </tr>
-        <tr>
-            <td>Stadt</td>
-            <td>{{ persona['postal_code']|e }} {{ persona['location']|e }}</td>
-        </tr>
-        <tr>
-            <td>Land</td>
-            <td>{{ persona['country']|e }}</td>
-        </tr>
-        <tr><th colspan="2">Allgemeine Angaben</th></tr>
-        <tr>
-            <td>Orga</td>
-            <td>
-                {{ util.deko_checkbox(checked=(persona['id'] in ambience['event']['orgas'])) }}
-            </td>
-        </tr>
-        <tr>
-            <td>Anmerkungen</td>
-            <td>{{ ambience['registration']['notes']|rst }}</td>
-        </tr>
-        <tr>
-            <td>Orga-Notizen</td>
-            <td>{{ ambience['registration']['orga_notes']|rst }}</td>
-        </tr>
-        <tr>
-            <td>Teilnehmerbeitrag bezahlt am</td>
-            <td>{{ ambience['registration']['payment']|date|e }}</td>
-        </tr>
-        <tr>
-            <td>Einverständniserklärung der Eltern</td>
-            <td>
-                {% if not age.is_minor() %}
-                    volljährig
-                {% else %}
-                    {{ util.deko_checkbox(checked=ambience['registration']['parental_agreement']) }}
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td>Gemischte Unterbringung</td>
-            <td>
-                {{ util.deko_checkbox(checked=ambience['registration']['mixed_lodging']) }}
-            </td>
-        </tr>
-        <tr>
-            <td>Checkin</td>
-            <td>{{ ambience['registration']['checkin']|datetime|e }}</td>
-        </tr>
-        <tr>
-            <td>Foto-Einwilligung</td>
-            <td>
-                {{ util.deko_checkbox(checked=ambience['registration']['foto_consent']) }}
-            </td>
-        </tr>
+    <div class="p">
+        {{ util.href(cdedblink("event/change_registration_form"), "Bearbeiten", readonly=is_locked,
+                     aclass="btn btn-warning btn-sm", icon="pencil") }}
+    </div>
+    <h3 class="heading-underline">Personendaten</h3>
+    <dl class="dl-horizontal">
+        <dt>Name</dt>
+        <dd>
+            {{ persona['title']|e }}
+            {{ persona['given_names']|e }}
+            {{ persona['family_name']|e }}
+            {{ persona['name_supplement']|e }}
+        </dd>
+        <dt>CdEDB-ID</dt>
+        <dd>{{ persona['id']|cdedbid|e }}</dd>
+        {% if ambience['registration']['real_persona_id'] %}
+            <dt>Online CdEDB-ID</dt>
+            <dd>{{ ambience['registration']['real_persona_id']|cdedbid|e }}</dd>
+        {% endif %}
+        <dt>CdE-Mitglied</dt>
+        <dd>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</dd>
+        <dt>Geburtstag</dt>
+        <dd>
+            {{ persona['birthday']|e }} (<em>{{ gettext(age|string)|e }}</em>)
+        </dd>
+        <dt>Geschlecht</dt>
+        <dd>{{ persona['gender']|gender|e }}</dd>
+    </dl>
+    <dl class="dl-horizontal">
+        <dt>E-Mail</dt>
+        <dd>{{ persona['username']|e }} </dd>
+        <dt>Telefon</dt>
+        <dd>{{ persona['telephone']|e }}</dd>
+        <dt>Mobiltelefon</dt>
+        <dd>{{ persona['mobile']|e }}</dd>
+    </dl>
+    <dl class="dl-horizontal">
+        <dt>Straße</dt>
+        <dd>{{ persona['address']|e }}</dd>
+        <dt>Adresszusatz</dt>
+        <dd>{{ persona['address_supplement']|e }}</dd>
+        <dt>Stadt</dt>
+        <dd>{{ persona['postal_code']|e }} {{ persona['location']|e }}</dd>
+        <dt>Land</dt>
+        <dd>{{ persona['country']|e }}</dd>
+    </dl>
+    {% if persona['id'] in ambience['event']['orgas'] %}
+    <p class="text-info">
+        {{ persona['given_names']|e }} ist Orga dieser Veranstaltung.
+    </p>
+    {% endif %}
+
+    <h3 class="heading-underline">Status</h3>
+    <dl class="dl-horizontal">
+        <dt>Teilnehmerbeitrag</dt>
+        <dd>
+            {% if ambience['registration']['payment'] %}
+                bezahlt am {{ ambience['registration']['payment'] |date|e }}
+            {% else %}
+                <em>ausstehend</em>
+            {% endif %}
+        </dd>
+
+        <dt>Einverständniserklärung der Eltern</dt>
+        <dd>
+            {% if not age.is_minor() %}
+                <em>volljährig</em>
+            {% else %}
+                {{ util.deko_checkbox(checked=ambience['registration']['parental_agreement']) }}
+            {% endif %}
+        </dd>
+
+        <dt>Eingecheckt</dt>
+        <dd>
+            {% if ambience['registration']['checkin'] %}
+                bezahlt am {{ ambience['registration']['checkin'] |date|e }}
+            {% else %}
+                —
+            {% endif %}
+        </dd>
+    </dl>
+
+    <div class="row">
         {% for part_id, part in ambience['event']['parts']|dictsort %}
-            <tr><th colspan="2">{{ part['title']|e }}</th></tr>
-            <tr>
-                <td>Status</td>
-                <td>
-                    {{ gettext(ambience['registration']['parts'][part_id]['status']
-                            |enum(enums['RegistrationPartStati']))|e }}
-                </td>
-            </tr>
-            <tr>
-                <td>Kurs</td>
-                <td>
-                    {% if ambience['registration']['parts'][part_id]['course_id'] %}
-                        {{ courses[ambience['registration']['parts'][part_id]['course_id']]['title']|e }}
+            <div class="col-md-6">
+                {% if ambience['event']['parts']|length > 0 %}
+                    <h4>{{ part['title']|e }}</h4>
+                {% endif %}
+                <dl class="dl-horizontal">
+                    <dt>Status</dt>
+                    <dd>
+                        {{ gettext(ambience['registration']['parts'][part_id]['status']
+                                |enum(enums['RegistrationPartStati']))|e }}
+                    </dd>
+                    {% if enums['RegistrationPartStati'](ambience['registration']['parts'][part_id]['status'])
+                            .is_involved() %}
+                        <dt>Kurs</dt>
+                        <dd>
+                            {% if ambience['registration']['parts'][part_id]['course_id'] %}
+                                {{ courses[ambience['registration']['parts'][part_id]['course_id']]['nr']|e }}.
+                                {{ courses[ambience['registration']['parts'][part_id]['course_id']]['shortname']|e }}
+                        {% else %}
+                            —
+                            {% endif %}
+                        </dd>
                     {% endif %}
-                </td>
-            </tr>
-            {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl",) %}
-                <tr>
-                    <td>{{ prio|e }}</td>
-                    <td>
-                        {% if ambience['registration']['choices'].get(part_id, [])|length > loop.index0  %}
-                            {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['title']|e }}
+                    <dt>Unterkunft</dt>
+                    <dd>
+                        {% if ambience['registration']['parts'][part_id]['lodgement_id'] %}
+                            {{ lodgements[ambience['registration']['parts'][part_id]['lodgement_id']]['moniker']|e }}
+                        {% else %}
+                            —
                         {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-            <tr>
-                <td>Kursleiter</td>
-                <td>
-                    {% if ambience['registration']['parts'][part_id]['course_instructor'] %}
-                        {{ courses[ambience['registration']['parts'][part_id]['course_instructor']]['title']|e }}
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td>Unterkunft</td>
-                <td>
-                    {% if ambience['registration']['parts'][part_id]['lodgement_id'] %}
-                        {{ lodgements[ambience['registration']['parts'][part_id]['lodgement_id']]['moniker']|e }}
-                    {% endif %}
-                </td>
-            </tr>
+                    </dd>
+                </dl>
+            </div>
         {% endfor %}
-        <tr><th colspan="2">Felder</th></tr>
+    </div>
+
+    {% call util.bootstrap_panel(title="Orga-Notizen", icon="tag",
+                                 aclass="panel-default panel-condensed") %}
+        {{ ambience['registration']['orga_notes']|rst }}
+    {% endcall %}
+
+    <h3 class="heading-underline">Anmeldedaten</h3>
+        <dl class="dl-horizontal">
+            <dt>Gemischte Unterbringung</dt>
+            <dd>
+                {{ util.deko_checkbox(checked=ambience['registration']['mixed_lodging']) }}
+            </dd>
+            <dt>Foto-Einwilligung</dt>
+            <dd>
+                {{ util.deko_checkbox(checked=ambience['registration']['foto_consent']) }}
+            </dd>
+        </dl>
+        <h4>Kurswahl</h4>
+        <div class="row">
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                <div class="col-md-6">
+                    {% if ambience['event']['parts']|length > 0 %}
+                        <h5>{{ part['title']|e }}</h5>
+                    {% endif %}
+
+                    <dl class="dl-horizontal">
+                        <dt>Kursleiter von</dt>
+                        <dd>
+                            {% if ambience['registration']['parts'][part_id]['course_instructor'] %}
+                                {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['nr']|e }}.
+                                {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['shortname']|e }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </dd>
+                        {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl",) %}
+                            <dt>{{ prio|e }}</dt>
+                            <dd>
+                                {% if ambience['registration']['choices'].get(part_id, [])|length > loop.index0  %}
+                                    {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['nr']|e }}.
+                                    {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['shortname']|e }}
+                                {% endif %}
+                            </dd>
+                        {% endfor %}
+                    </dl>
+                </div>
+            {% endfor %}
+        </div>
+    {% call util.bootstrap_panel(title="Anmerkungen", aclass="panel-default panel-condensed") %}
+        {{ ambience['registration']['notes']|rst }}
+    {% endcall %}
+
+
+    <h3 class="heading-underline">Datenfelder</h3>
+    <dl class="dl-horizontal">
         {% for field_id, field in ambience['event']['fields']|dictsort %}
             {% if field['association'] == enums['FieldAssociations'].registration %}
-                <tr>
-                    <td>{{ field['field_name']|e }}</td>
-                    <td>
-                        {% if field['entries'] %}
-                            {% for value, description in field['entries'] %}
-                                {% if ambience['registration']['fields'].get(field['field_name']) == value %}
-                                    {{ description|e }}
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            {% if field['kind'] == "bool" %}
-                                {{ util.deko_checkbox(
-                                    checked=ambience['registration']['fields'].get(field['field_name'])) }}
-                            {% elif field['kind'] == "date" %}
-                                {{ ambience['registration']['fields'].get(field['field_name'])|date|e }}
-                            {% elif field['kind'] == "datetime" %}
-                                {{ ambience['registration']['fields'].get(field['field_name'])|datetime|e }}
-                            {% else %}
-                                {{ ambience['registration']['fields'].get(field['field_name'])|e|linebreaks }}
+                <dt>{{ field['field_name']|e }}</dt>
+                <dd>
+                    {% if field['entries'] %}
+                        {% for value, description in field['entries'] %}
+                            {% if ambience['registration']['fields'].get(field['field_name']) == value %}
+                                {{ description|e }}
                             {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        {% if field['kind'] == "bool" %}
+                            {{ util.deko_checkbox(
+                                checked=ambience['registration']['fields'].get(field['field_name'])) }}
+                        {% elif field['kind'] == "date" %}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|date|e }}
+                        {% elif field['kind'] == "datetime" %}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|datetime|e }}
+                        {% else %}
+                            {{ ambience['registration']['fields'].get(field['field_name'])|e|linebreaks }}
                         {% endif %}
-                    </td>
-                </tr>
+                    {% endif %}
+                </dd>
             {% endif %}
         {% endfor %}
-    </table>
-    {% if not is_locked %}
-        <p>
-            {{ util.href(cdedblink("event/change_registration_form"), "Ändern") }}
-        </p>
-    {% endif %}
+    </dl>
 {% endblock %}

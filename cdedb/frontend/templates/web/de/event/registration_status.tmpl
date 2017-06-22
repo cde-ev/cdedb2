@@ -106,12 +106,14 @@
             passwortgeschützte Fotogalerie verwendet werden.
         </dd>
     </dl>
-    <dl class="dl-horizontal">
-        <dt>Anmerkungen</dt>
-        <dd>
-            {{ registration['notes']|rst }}
-        </dd>
-    </dl>
+    {% if registration['notes'] %}
+        <dl class="dl-horizontal">
+            <dt>Anmerkungen</dt>
+            <dd>
+                {{ registration['notes']|rst }}
+            </dd>
+        </dl>
+    {% endif %}
 
     {% for part_id, part in registration['parts']|dictsort %}
         {% if enums['RegistrationPartStati'](part['status']).is_involved()
@@ -125,7 +127,8 @@
 
             <dl class="dl-horizontal">
                 {% if part['course_instructor'] %}
-                    <dd>Ich bin Kursleiter von <em>{{ courses[part['course_instructor']]['title']|e }}</em>.</dd>
+                    <dt>Kursleiter von</dt>
+                    <dd><em>{{ courses[part['course_instructor']]['title']|e }}</em>.</dd>
                 {% endif %}
                 {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}
                     <dt>{{ prio|e }}</dt>
