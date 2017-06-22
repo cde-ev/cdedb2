@@ -596,7 +596,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("\nAnmeldung von Emilia E. Eventis (Große Testakademie 2222)\n")
         self.assertPresence("56767 Wolkenkuckuksheim")
         self.assertPresence("Einzelzelle")
-        self.assertPresence("Planetenretten für Anfänger")
+        self.assertPresence("α. Heldentum")
         self.assertPresence("Extrawünsche: Meerblick, Weckdienst")
 
     @as_users("garcia")
