@@ -36,14 +36,14 @@
                                 name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                 readonly=(entry['readonly'] or is_locked)) }}
                         {% else %}
-                            {% if entry['input_size'] %}
+                            {% if FIELD['kind'] == "str" and entry['input_size'] %}
                                 {{ util.form_input_textarea(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or is_locked),
                                     rows=(2 + entry['input_size']*2)) }}
                             {% else %}
-                                {{ util.form_input_text(
-                                    name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                                {{ util.form_event_field_input(
+                                    FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or is_locked)) }}
                             {% endif %}
                         {% endif %}

@@ -686,13 +686,9 @@
     {% endif %}
 {% endmacro %}
 
-{% macro event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-                           anid='') %}
+{% macro event_field_input(fields, name='', readonly=False, defaultvalue='', anid='') %}
     {% if not name %}
         {% set name = "fields.{}".format(fields['field_name']) %}
-    {% endif %}
-    {% if not label %}
-        {% set label = fields['field_name'] %}
     {% endif %}
     {% if fields['entries'] %}
         {# jinja does not support list comprehension ... #}
@@ -700,48 +696,38 @@
         {% for value, description in fields['entries'] %}
             {{ myentries.append((value, description))|e }}
         {% endfor %}
-        {{ form_input_select(name=name, label=label, entries=myentries, nulloption=True,
+        {{ input_select(name=name, entries=myentries, nulloption=True,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-   {% else %}
+    {% else %}
         {% if fields['kind'] == "bool" %}
-            {{ form_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+            {{ input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
         {% elif fields['kind'] == "str" %}
-            {{ form_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                              defaultvalue=defaultvalue, anid=anid, rows=5) }}
+            {{ input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
+        {% elif fields['kind'] == "int" %}
+            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="number",
+                          placeholder="0") }}
+        {% elif fields['kind'] == "float" %}
+            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, placeholder="0.0") }}
+        {% elif fields['kind'] == "date" %}
+            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="date",
+                          placeholder="YYYY-MM-DD") }}
+        {% elif fields['kind'] == "datetime" %}
+            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="datetime-local",
+                          placeholder="YYYY-MM-DDThh:ii:ss") }}
         {% else %}
-            {{ form_input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                          defaultvalue=defaultvalue, anid=anid) }}
+            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
         {% endif %}
-   {% endif %}
+    {% endif %}
 {% endmacro %}
 
-{% macro tab_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
+{% macro form_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
                                defaultvalue='', anid='') %}
-    {% if not name %}
-        {% set name = "fields.{}".format(fields['field_name']) %}
-    {% endif %}
     {% if not label %}
         {% set label = fields['field_name'] %}
     {% endif %}
-    {% if fields['entries'] %}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for value, description in fields['entries'] %}
-            {{ myentries.append((value, description))|e }}
-        {% endfor %}
-        {{ form_input_select(name=name, label=label, entries=myentries, nulloption=True,
-                            readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-   {% else %}
-        {% if fields['kind'] == "bool" %}
-            {{ form_input_checkbox(name=name, label=label, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-        {% elif fields['kind'] == "str" %}
-            {{ form_input_textarea(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                                  defaultvalue=defaultvalue, anid=anid, rows=5) }}
-        {% else %}
-            {{ form_input_text(name=name, label=label, displayerrors=displayerrors, readonly=readonly,
-                              defaultvalue=defaultvalue, anid=anid) }}
-        {% endif %}
-   {% endif %}
+    {% call form_input_general(name, label, anid, False, info, displayerrors, True) %}
+        {{ event_field_input(fields, name, readonly, anid) }}
+    {% endcall %}
 {% endmacro %}
 
 {% macro breadcrumb_link(ref, label, icon="", active=False) %}

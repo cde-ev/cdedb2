@@ -10,7 +10,7 @@
     <form action="{{ cdedblink('event/field_set')|e }}" method="POST" id="fieldform">
         <table>
             {% for registration_id in ordered %}
-                {{ util.tab_event_field_input(
+                {{ util.form_event_field_input(
                     ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),
                     label="{} {}".format(
                         personas[registrations[registration_id]['persona_id']]['given_names'],

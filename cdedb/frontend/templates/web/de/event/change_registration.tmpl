@@ -98,7 +98,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
         <h3 class="heading-underline">Datenfelder</h3>
         {% for field_id, field in ambience['event']['fields']|dictsort %}
             {% if field['association'] == enums['FieldAssociations'].registration %}
-                {{ util.tab_event_field_input(field) }}
+                {{ util.form_event_field_input(field) }}
             {% endif %}
         {% endfor %}
 
