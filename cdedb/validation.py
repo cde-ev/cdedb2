@@ -1968,7 +1968,7 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
     lookup = {v['field_name']: k for k, v in fields.items()}
     for field in val:
         field_id = lookup[field]
-        if fields[field_id]['entries'] is not None:
+        if fields[field_id]['entries'] is not None and val[field] is not None:
             if val[field] not in (x for x, _ in fields[field_id]['entries']):
                 errs.append((field, ValueError(_("Entry not in definition list."))))
     return val, errs
