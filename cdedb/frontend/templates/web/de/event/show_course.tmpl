@@ -122,4 +122,7 @@
             </div>
         {% endfor %}
     </div>
+    {% call util.bootstrap_panel(title="Beschreibung", icon="pushpin", aclass="panel-default panel-condensed") %}
+        {{ ambience['course']['description']|rst }}
+    {% endcall %}
 {% endblock %}
