@@ -69,7 +69,6 @@
                     {{ util.input_hidden(name="association_{}".format(field_id), value=association.value) }}
                 {% endif %}
                 {{ util.form_input_textarea(name="entries_{}".format(field_id), label="Optionen",
-                                            info="Format ist 'Wert;Beschreibungstext' pro Zeile.",
                                             attributes=('data-basename="entries_-"' if newrow else ''),
                                             aclass='drow-input') }}
             </div>
@@ -145,4 +144,16 @@
             }});
         $('#fieldsummaryform').cdedbProtectChanges();
     </script>
+
+    <hr />
+    <p class="help-block">
+        {{ util.make_icon('info-sign') }}
+        Das Eingabeformat für die Optionen ist<br />
+        <code style="padding: 2px 0;">Wert1;Beschreibungstext<br />
+              Wert2;Beschreibungstext<br />
+              …</code><br />
+        Der Beschreibungstext wird im Auswahlfeld angezeigt; der Wert wird bei Auswahl der Option in der Datenbank
+        abgespeichert. Er muss kompatibel zum eingestellten Datentyp sein. Ein leeres Optionen-Feld führt zu einem
+        Freitext/zahl/datum-Feld.
+    </p>
 {% endblock %}
