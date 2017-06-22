@@ -108,7 +108,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
     <div class="row">
         {% for part_id, part in ambience['event']['parts']|dictsort %}
             <div class="col-md-6">
-                {% if ambience['event']['parts']|length > 0 %}
+                {% if ambience['event']['parts']|length > 1 %}
                     <h4>{{ part['title']|e }}</h4>
                 {% endif %}
                 <dl class="dl-horizontal">
@@ -157,7 +157,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         <div class="row">
             {% for part_id, part in ambience['event']['parts']|dictsort %}
                 <div class="col-md-6">
-                    {% if ambience['event']['parts']|length > 0 %}
+                    {% if ambience['event']['parts']|length > 1 %}
                         <h5>{{ part['title']|e }}</h5>
                     {% endif %}
 
@@ -188,33 +188,34 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         {{ ambience['registration']['notes']|rst }}
     {% endcall %}
 
-
-    <h3 class="heading-underline">Datenfelder</h3>
-    <dl class="dl-horizontal">
-        {% for field_id, field in ambience['event']['fields']|dictsort %}
-            {% if field['association'] == enums['FieldAssociations'].registration %}
-                <dt>{{ field['field_name']|e }}</dt>
-                <dd>
-                    {% if field['entries'] %}
-                        {% for value, description in field['entries'] %}
-                            {% if ambience['registration']['fields'].get(field['field_name']) == value %}
-                                {{ description|e }}
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        {% if field['kind'] == "bool" %}
-                            {{ util.deko_checkbox(
-                                checked=ambience['registration']['fields'].get(field['field_name'])) }}
-                        {% elif field['kind'] == "date" %}
-                            {{ ambience['registration']['fields'].get(field['field_name'])|date(passthrough=True)|e }}
-                        {% elif field['kind'] == "datetime" %}
-                            {{ ambience['registration']['fields'].get(field['field_name'])|datetime(passthrough=True)|e }}
+    {% if ambience['event']['fields']|length > 0 %}
+        <h3 class="heading-underline">Datenfelder</h3>
+        <dl class="dl-horizontal">
+            {% for field_id, field in ambience['event']['fields']|dictsort %}
+                {% if field['association'] == enums['FieldAssociations'].registration %}
+                    <dt>{{ field['field_name']|e }}</dt>
+                    <dd>
+                        {% if field['entries'] %}
+                            {% for value, description in field['entries'] %}
+                                {% if ambience['registration']['fields'].get(field['field_name']) == value %}
+                                    {{ description|e }}
+                                {% endif %}
+                            {% endfor %}
                         {% else %}
-                            {{ ambience['registration']['fields'].get(field['field_name'])|e|linebreaks }}
+                            {% if field['kind'] == "bool" %}
+                                {{ util.deko_checkbox(
+                                    checked=ambience['registration']['fields'].get(field['field_name'])) }}
+                            {% elif field['kind'] == "date" %}
+                                {{ ambience['registration']['fields'].get(field['field_name'])|date(passthrough=True)|e }}
+                            {% elif field['kind'] == "datetime" %}
+                                {{ ambience['registration']['fields'].get(field['field_name'])|datetime(passthrough=True)|e }}
+                            {% else %}
+                                {{ ambience['registration']['fields'].get(field['field_name'])|e|linebreaks }}
+                            {% endif %}
                         {% endif %}
-                    {% endif %}
-                </dd>
-            {% endif %}
-        {% endfor %}
-    </dl>
+                    </dd>
+                {% endif %}
+            {% endfor %}
+        </dl>
+    {% endif %}
 {% endblock %}

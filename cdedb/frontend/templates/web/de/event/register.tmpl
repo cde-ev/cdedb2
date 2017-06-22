@@ -74,13 +74,21 @@
             {{ util.href(cdedblink('core/change_user'), "Formular zum Bearbeiten des Profils") }}.
         </p>
 
-        <h3 class="heading-underline">Anmeldung</h3>
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {{ myentries.append((part_id, part['title']))|e }}
-        {% endfor %}
-        {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
+        {% if ambience['event']['parts']|length > 1
+                or (ambience['event']['parts']|length == 1 and course_choices[(course_choices|list)[0]]|length > 0) %}
+            <h3 class="heading-underline">Anmeldung</h3>
+        {% endif %}
+        {% if ambience['event']['parts']|length > 1 %}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                {{ myentries.append((part_id, part['title']))|e }}
+            {% endfor %}
+            {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
+        {% elif ambience['event']['parts']|length == 1 %}
+            {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
+        {% endif %}
+
         {% for part_id, course_list in course_choices|dictsort %}
             {% if course_list %}
                 <div id="course_choice_container-{{ part_id }}">
@@ -95,7 +103,8 @@
                     {% set myentries = [] %}
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id,
-                                             "{}. {}".format(courses[course_id]['nr'], courses[course_id]['title'])))|e }}
+                                             "{}. {}".format(courses[course_id]['nr'],
+                                                             courses[course_id]['title'])))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
                                              label="Erstwahl") }}
@@ -143,7 +152,7 @@
     </form>
     <script type="text/javascript">
         var form = $('#registerform');
-        var checkboxes = form.find('[name=parts]');
+        var checkboxes = form.find('[type="checkbox",name="parts"]');
         var updateCourseChoiceContainers = function() {
             checkboxes.each(function(){
                var container = $('#course_choice_container-' + $(this).val());

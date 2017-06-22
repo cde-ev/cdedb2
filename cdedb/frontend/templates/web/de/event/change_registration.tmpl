@@ -47,7 +47,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
         {{ util.form_input_text(name="reg.checkin", label="Eingecheckt am") }}
 
         {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {% if ambience['event']['parts']|length > 0 %}
+            {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title']|e }}</h4>
             {% endif %}
             {# jinja does not support list comprehension ... #}
@@ -56,14 +56,16 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
                 {{ myentries.append((s.value, gettext(s|string)))|e }}
             {% endfor %}
             {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for course_id in course_choices[part_id] %}
-                {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                courses[course_id]['shortname'])))|e }}
-            {% endfor %}
-            {{ util.form_input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
-                                     nulloption=True) }}
+            {% if course_choices[part_id]|length > 0 %}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id in course_choices[part_id] %}
+                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                    courses[course_id]['shortname'])))|e }}
+                {% endfor %}
+                {{ util.form_input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
+                                         nulloption=True) }}
+            {% endif %}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for lodgement_id, lodgement in lodgements|dictsort %}
@@ -78,31 +80,38 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
         {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
         {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
         {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {% if ambience['event']['parts']|length > 0 %}
-                <h4>Kurswahl {{ part['title']|e }}</h4>
+            {% if course_choices[part_id]|length > 0 %}
+                <h4>
+                    Kurswahl
+                    {% if ambience['event']['parts']|length > 1 %}
+                    {{ part['title']|e }}
+                    {% endif %}
+                </h4>
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id in course_choices[part_id] %}
+                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                    courses[course_id]['shortname'])))|e }}
+                {% endfor %}
+                {{ util.form_input_select(name="part{}.course_instructor".format(part_id), label="Kursleiter von",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.form_input_select(name="part{}.course_choice_0".format(part_id), label="Erstwahl",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.form_input_select(name="part{}.course_choice_1".format(part_id), label="Zweitwahl",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.form_input_select(name="part{}.course_choice_2".format(part_id), label="Drittwahl",
+                                         entries=myentries, nulloption=True) }}
             {% endif %}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for course_id in course_choices[part_id] %}
-                {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                courses[course_id]['shortname'])))|e }}
-            {% endfor %}
-            {{ util.form_input_select(name="part{}.course_instructor".format(part_id), label="Kursleiter von",
-                                     entries=myentries, nulloption=True) }}
-            {{ util.form_input_select(name="part{}.course_choice_0".format(part_id), label="Erstwahl",
-                                     entries=myentries, nulloption=True) }}
-            {{ util.form_input_select(name="part{}.course_choice_1".format(part_id), label="Zweitwahl",
-                                     entries=myentries, nulloption=True) }}
-            {{ util.form_input_select(name="part{}.course_choice_2".format(part_id), label="Drittwahl",
-                                     entries=myentries, nulloption=True) }}
         {% endfor %}
 
-        <h3 class="heading-underline">Datenfelder</h3>
-        {% for field_id, field in ambience['event']['fields']|dictsort %}
-            {% if field['association'] == enums['FieldAssociations'].registration %}
-                {{ util.form_event_field_input(field) }}
-            {% endif %}
-        {% endfor %}
+        {% if ambience['event']['fields']|length > 0 %}
+            <h3 class="heading-underline">Datenfelder</h3>
+            {% for field_id, field in ambience['event']['fields']|dictsort %}
+                {% if field['association'] == enums['FieldAssociations'].registration %}
+                    {{ util.form_event_field_input(field) }}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
 
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_registration")) }}
     </form>

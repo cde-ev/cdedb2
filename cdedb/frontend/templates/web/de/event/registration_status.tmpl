@@ -66,7 +66,13 @@
     <h3 class="heading-underline">Status</h3>
     <dl class="dl-horizontal">
         {% for part_id, part in registration['parts']|dictsort %}
-            <dt>{{ ambience['event']['parts'][part_id]['title']|e }}</dt>
+            <dt>
+                {% if ambience['event']['parts']|length > 1 %}
+                    {{ ambience['event']['parts'][part_id]['title']|e }}
+                {% else %}
+                    Anmeldestatus
+                {% endif %}
+            </dt>
             <dd>{{ gettext(part['status']|enum(enums['RegistrationPartStati']))|e }}</dd>
         {% endfor %}
     </dl>
