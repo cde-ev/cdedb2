@@ -279,7 +279,8 @@ h1.title {
     line-height: 18px;
 }
 .selectize-input {
-    min-height: 32px;
+    min-height: 30px;
+    padding: 5px 12px;
 }
 .selectize-input input {
     line-height: 18px;
@@ -292,12 +293,12 @@ h1.title {
     min-width: 128px;
 }
 .selectize-control.input-sm .selectize-input {
-    min-height: 30px;
+    min-height: 28px;
     padding: 3px 12px;
 }
 .selectize-control.input-sm .selectize-input.has-items {
     padding: 2px 9px;
-    min-height: 30px;
+    min-height: 28px;
 }
 .selectize-control.multi.input-sm .selectize-input.has-items {
     padding: 2px 6px 0;
