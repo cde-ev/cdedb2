@@ -1,6 +1,8 @@
 {% extends "web/de/event/base.tmpl" %}
 {% set sidenav_active='event_course_stats' %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}{{ ambience['course']['shortname']|e }} ({{ ambience['event']['title']|e }}) bearbeiten{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -45,4 +47,7 @@
         {% endfor %}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_course")) }}
     </form>
+    <script type="text/javascript">
+        $('#changecourseform').cdedbProtectChanges();
+    </script>
 {% endblock %}

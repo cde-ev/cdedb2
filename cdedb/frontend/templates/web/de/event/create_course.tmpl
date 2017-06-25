@@ -1,6 +1,8 @@
 {% set sidenav_active='event_course_stats' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}Kurs hinzufügen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -36,4 +38,7 @@
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
         {{ util.form_input_submit(value="Kurs hinzufügen", cancellink=cdedblink('event/course_stats')) }}
     </form>
+    <script type="text/javascript">
+        $('#createcourseform').cdedbProtectChanges();
+    </script>
 {% endblock %}
