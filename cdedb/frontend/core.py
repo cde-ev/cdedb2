@@ -96,6 +96,7 @@ class CoreFrontend(AbstractFrontend):
                             or abs(start.year - today.year) < 2):
                         regs = self.eventproxy.list_registrations(rs,
                                                                   event['id'])
+                        event['start'] = start
                         event['registrations'] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga
