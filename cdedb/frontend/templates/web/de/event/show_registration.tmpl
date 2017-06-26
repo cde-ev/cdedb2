@@ -121,22 +121,28 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                             .is_involved() %}
                         <dt>Kurs</dt>
                         <dd>
-                            {% if ambience['registration']['parts'][part_id]['course_id'] %}
-                                {{ courses[ambience['registration']['parts'][part_id]['course_id']]['nr']|e }}.
-                                {{ courses[ambience['registration']['parts'][part_id]['course_id']]['shortname']|e }}
-                        {% else %}
-                            —
-                            {% endif %}
+                            {% with course_id = ambience['registration']['parts'][part_id]['course_id'] %}
+                                {% if course_id %}
+                                    {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
+                                                 "{}. {}".format(courses[course_id]['nr'],
+                                                                 courses[course_id]['shortname'])) }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            {% endwith %}
                         </dd>
-                    {% endif %}
                     <dt>Unterkunft</dt>
                     <dd>
-                        {% if ambience['registration']['parts'][part_id]['lodgement_id'] %}
-                            {{ lodgements[ambience['registration']['parts'][part_id]['lodgement_id']]['moniker']|e }}
-                        {% else %}
-                            —
-                        {% endif %}
+                        {% with lodgement_id = ambience['registration']['parts'][part_id]['lodgement_id'] %}
+                            {% if lodgement_id %}
+                                {{ util.href(cdedblink('event/show_lodgement', {'lodgement_id': lodgement_id}),
+                                             lodgements[lodgement_id]['moniker']) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        {% endwith %}
                     </dd>
+                    {% endif %}
                 </dl>
             </div>
         {% endfor %}
