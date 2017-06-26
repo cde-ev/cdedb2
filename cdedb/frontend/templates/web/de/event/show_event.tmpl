@@ -2,7 +2,9 @@
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% set jshint = 'strong' %}
+{% if values['event_id'] in user.orga or is_admin %}
+    {% set jshint = 'strong' %}
+{% endif %}
 {% block title %}{{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
