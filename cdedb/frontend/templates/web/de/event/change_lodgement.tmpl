@@ -1,26 +1,41 @@
-{% set sidenav_active='event_lodgement' %}
+{% set sidenav_active='event_lodgements' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}
-    Unterkunft {{ ambience['lodgement']['moniker'] }} bearbeiten ({{ ambience['event']['title']|e }})
+    Unterkunft {{ ambience['lodgement']['moniker']|e }} bearbeiten ({{ ambience['event']['title']|e }})
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker']|e, icon='home') }}
+    {{ util.breadcrumb_link(cdedblink("event/change_lodgement"), "Bearbeiten", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Unterkunft {{ ambience['lodgement']['moniker']|e }} bearbeiten
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
 {% endblock %}
 {% block content %}
-    {{ util.href(cdedblink("event/show_lodgement"), "Abbrechen") }}
-    <form action="{{ cdedblink('event/change_lodgement')|e }}" method="POST" id="changelodgementform">
-        <table>
-            {{ util.form_input_text(name="moniker", label="Bezeichnung") }}
-            {{ util.form_input_text(name="capacity", label="normale Plätze") }}
-            {{ util.form_input_text(name="reserve", label="Reserveplätze") }}
-            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-            <h4 class="heading-underline">Felder</h4>
-            {% for field_id, field in ambience['event']['fields']|dictsort %}
-                {% if field['association'] == enums['FieldAssociations'].lodgement %}
-                    {{ util.form_event_field_input(field) }}
-                {% endif %}
-            {% endfor %}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Speichern") }}
-        </div>
+    <form action="{{ cdedblink('event/change_lodgement')|e }}" method="POST" id="changelodgementform"
+          class="form-horizontal">
+        {{ util.form_input_text(name="moniker", label="Bezeichnung") }}
+        {{ util.form_input_text(name="capacity", label="normale Plätze") }}
+        {{ util.form_input_text(name="reserve", label="Reserveplätze") }}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+
+        <h4 class="heading-underline">Felder</h4>
+        {% for field_id, field in ambience['event']['fields']|dictsort %}
+            {% if field['association'] == enums['FieldAssociations'].lodgement %}
+                {{ util.form_event_field_input(field) }}
+            {% endif %}
+        {% endfor %}
+        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("event/show_lodgement")) }}
     </form>
+    <script type="text/javascript">
+        $('#changelodgementform').cdedbProtectChanges();
+    </script>
 {% endblock %}

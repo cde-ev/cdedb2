@@ -1,18 +1,31 @@
-{% set sidenav_active='event_lodgement' %}
+{% set sidenav_active='event_lodgements' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
 {% block title %}Neue Unterkunft anlegen ({{ ambience['event']['title']|e }}){% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft") }}
+    {{ util.breadcrumb_link(cdedblink("event/create_lodgement"), "Unterkunft hinzufügen", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Unterkunft hinzufügen
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
 {% block content %}
-    {{ util.href(cdedblink("event/lodgements"), "Abbrechen") }}
-    <form action="{{ cdedblink('event/create_lodgement')|e }}" method="POST" id="createlodgementform">
-        <table>
-            {{ util.form_input_text(name="moniker", label="Bezeichnung") }}
-            {{ util.form_input_text(name="capacity", label="normale Plätze") }}
-            {{ util.form_input_text(name="reserve", label="Reserveplätze") }}
-            {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
-        </table>
-        <div>
-            {{ util.form_input_submit(value="Anlegen") }}
-        </div>
+    <form action="{{ cdedblink('event/create_lodgement')|e }}" method="POST" id="createlodgementform"
+          class="form-horizontal">
+        {{ util.form_input_text(name="moniker", label="Bezeichnung") }}
+        {{ util.form_input_text(name="capacity", label="normale Plätze", type="number") }}
+        {{ util.form_input_text(name="reserve", label="Reserveplätze", type="number") }}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("event/lodgements")) }}
     </form>
+    <script type="text/javascript">
+        $('#createlodgementform').cdedbProtectChanges();
+    </script>
 {% endblock %}
