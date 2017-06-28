@@ -32,13 +32,13 @@ import datetime
 import decimal
 import functools
 import io
+import itertools
 import json
 import logging
 import re
 import string
 import sys
 
-import dateutil.parser
 import magic
 import PIL.Image
 import pytz
@@ -873,26 +873,27 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     return val, errs
 
 def parse_date(val):
-    """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
+    """Make a string into a date.
 
-    By default :py:mod:`dateutil` substitutes todays values if anything
-    is missing from the input. We want no auto-magic defaults so we
-    check whether this behaviour happens and raise an exeption if so.
+    We only support a limited set of formats to avoid any surprises
 
     :type val: str
     :rtype: datetime.date
     """
-    default1 = datetime.datetime(1, 1, 1)
-    default2 = datetime.datetime(2, 2, 2)
-    val1 = dateutil.parser.parse(val, dayfirst=True, default=default1).date()
-    val2 = dateutil.parser.parse(val, dayfirst=True, default=default2).date()
-    if val1.year == 1 and val2.year == 2:
-        raise ValueError(_("Year missing."))
-    if val1.month == 1 and val2.month == 2:
-        raise ValueError(_("Month missing."))
-    if val1.day == 1 and val2.day == 2:
-        raise ValueError(_("Day missing."))
-    return dateutil.parser.parse(val, dayfirst=True).date()
+    formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
+               ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
+    for fmt, _ in formats:
+        try:
+            return datetime.datetime.strptime(val, fmt).date()
+        except ValueError:
+            pass
+    ## Shorten strings to allow datetimes as inputs
+    for fmt, length in formats:
+        try:
+            return datetime.datetime.strptime(val[:length], fmt).date()
+        except ValueError:
+            pass
+    raise ValueError(_("Invalid date string."))
 
 @_addvalidator
 def _date(val, argname=None, *, _convert=True):
@@ -916,36 +917,49 @@ def _date(val, argname=None, *, _convert=True):
     return val, []
 
 def parse_datetime(val, default_date=None):
-    """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
+    """Make a string into a datetime.
 
-    By default :py:mod:`dateutil` substitutes values from now if anything
-    is missing from the input. We want no auto-magic defaults so we
-    check whether this behaviour happens and raise an exeption if so.
+    We only support a limited set of formats to avoid any surprises
 
     :type val: str
     :type default_date: datetime.date or None
     :rtype: datetime.datetime
     """
-    default1 = datetime.datetime(1, 1, 1, 1, 1)
-    default2 = datetime.datetime(2, 2, 2, 2, 2)
-    val1 = dateutil.parser.parse(val, dayfirst=True, default=default1)
-    val2 = dateutil.parser.parse(val, dayfirst=True, default=default2)
-    if not default_date and val1.year == 1 and val2.year == 2:
-        raise ValueError(_("Year missing."))
-    if not default_date and val1.month == 1 and val2.month == 2:
-        raise ValueError(_("Month missing."))
-    if not default_date and val1.day == 1 and val2.day == 2:
-        raise ValueError(_("Day missing."))
-    if val1.hour == 1 and val2.hour == 2:
-        raise ValueError(_("Hours missing."))
-    if val1.minute == 1 and val2.minute == 2:
-        raise ValueError(_("Minutes missing."))
-    if default_date:
-        dd = default_date
-    else:
-        dd = now()
-    default = datetime.datetime(dd.year, dd.month, dd.day)
-    ret = dateutil.parser.parse(val, dayfirst=True, default=default)
+    date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
+    connectors = ("T", " ")
+    time_formats = ("%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
+    formats = itertools.chain(
+        ("{}{}{}".format(d, c, t)
+         for d in date_formats for c in connectors for t in time_formats),
+        ("{} {}".format(t, d) for t in time_formats for d in date_formats))
+    ret = None
+    for fmt in formats:
+        try:
+            ret = datetime.datetime.strptime(val, fmt)
+            break
+        except ValueError:
+            pass
+    if ret is None and default_date:
+        for fmt in time_formats:
+            try:
+                ret = datetime.datetime.strptime(val, fmt)
+                ret = ret.replace(
+                    year=default_date.year, month=default_date.month,
+                    day=default_date.day)
+                break
+            except ValueError:
+                pass
+    if ret is None:
+        ## Fix braindead datetime. The datetime.isoformat() method outputs
+        ## timezone offsets as +HH:MM but the strptime() code %z only
+        ## understand +HHMM. Thus the equivalent of
+        ## datetime.strptime(datetime.isoformat()) is guaranteed to cause an
+        ## exception. *sigh*
+        if (len(val) > 5 and val[-6] in '+-' and val[-3] == ':'
+                and val[-5:-3].isdecimal() and val[-2:].isdecimal()):
+            new_val = val[:-3] + val[-2:]
+            return parse_datetime(new_val, default_date=default_date)
+        raise ValueError(_("Invalid datetime string ({}).".format(val)))
     if ret.tzinfo is None:
         ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
     return ret.astimezone(pytz.utc)
