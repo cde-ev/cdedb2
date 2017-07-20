@@ -26,41 +26,51 @@
 {% macro print_part(part_id, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}">
         <div class="panel-body">
-            {# jinja does not support list comprehension ... #}
-            {% set field_entries = [("", "— Nur Text —")] %}
-            {% for field_id, field in registration_fields|dictsort %}
-                {{ field_entries.append((field_id, field['field_name']))|e }}
-            {% endfor %}
-            {{ util.form_input_select("field_id_{}".format(part_id), label="Abfrage", entries=field_entries,
-                                      attributes=('data-basename="field_id_-"' if newrow else ''),
-                                      aclass='input-field drow-input') }}
-            {{ util.form_input_text(name="title_{}".format(part_id), label="Titel", aclass='drow-input',
-                                    attributes=('data-basename="title_-"' if newrow else '')) }}
-            {{ util.form_input_textarea(name="info_{}".format(part_id), label="Text", aclass='drow-input',
-                                        attributes=('data-basename="info_-"' if newrow else '')) }}
-            {{ util.form_input_select(
-                "input_size_{}".format(part_id), label="Eingabefeldgröße", entries=(
-                    (0,"einzeilig"), (2, "mehrzeilig"),
-                    (3, "mehrzeilig+"), (4, "mehrzeilig++")),
-                attributes=('data-basename="input_size_-"' if newrow else ''), aclass='input-inputsize drow-input') }}
-            <div class="form-group">
-                <div class="col-sm-4 col-sm-offset-4">
-                    <div class="checkbox">
-                        {{ util.input_checkbox("readonly_{}".format(part_id), label="Schreibgeschützt",
-                                               attributes=('data-basename="readonly_-"' if newrow else ''),
-                                               aclass='input-readonly drow-input') }}
-                    </div>
+            <div class="row">
+                <div class="col-md-6">
+                    {{ util.form_input_text(name="title_{}".format(part_id), label="Titel", aclass='drow-input',
+                                            attributes=('data-basename="title_-"' if newrow else ''),
+                                            horizontal=false) }}
+                    {{ util.form_input_textarea(name="info_{}".format(part_id), label="Text", aclass='drow-input',
+                                                attributes=('data-basename="info_-"' if newrow else ''),
+                                                horizontal=false) }}
                 </div>
-                <div class="col-sm-4 text-right">
-                    <span class="drow-buttonspace">
-                        {% if newrow %}
-                            {{ util.input_checkbox("create_{}".format(part_id), label="Hinzufügen",
-                                                   attributes='data-basename="create_-"', aclass='drow-indicator')}}
-                        {% else %}
-                            {{ util.input_checkbox("delete_{}".format(part_id), label="Löschen",
-                                                   aclass='drow-indicator') }}
-                        {% endif %}
-                    </span>
+                <div class="col-md-6">
+                    {# jinja does not support list comprehension ... #}
+                    {% set field_entries = [("", "— Nur Text —")] %}
+                    {% for field_id, field in registration_fields|dictsort %}
+                        {{ field_entries.append((field_id, field['field_name']))|e }}
+                    {% endfor %}
+                    {{ util.form_input_select("field_id_{}".format(part_id), label="Abfrage", entries=field_entries,
+                                              attributes=('data-basename="field_id_-"' if newrow else ''),
+                                              aclass='input-field drow-input', horizontal=False) }}
+                    {{ util.form_input_select(
+                        "input_size_{}".format(part_id), label="Eingabefeldgröße", entries=(
+                            (0,"einzeilig"), (2, "mehrzeilig"),
+                            (3, "mehrzeilig+"), (4, "mehrzeilig++")),
+                        attributes=('data-basename="input_size_-"' if newrow else ''),
+                        aclass='input-inputsize drow-input', horizontal=False) }}
+                    <div class="form-group row">
+                        <div class="col-sm-8">
+                            <div class="checkbox">
+                                {{ util.input_checkbox("readonly_{}".format(part_id), label="Schreibgeschützt",
+                                                       attributes=('data-basename="readonly_-"' if newrow else ''),
+                                                       aclass='input-readonly drow-input') }}
+                            </div>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <span class="drow-buttonspace">
+                                {% if newrow %}
+                                    {{ util.input_checkbox("create_{}".format(part_id), label="Hinzufügen",
+                                                           attributes='data-basename="create_-"',
+                                                           aclass='drow-indicator')}}
+                                {% else %}
+                                    {{ util.input_checkbox("delete_{}".format(part_id), label="Löschen",
+                                                           aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,8 +82,7 @@
         {{ util.href(cdedblink('event/reorder_questionnaire_form'), "Anordnung ändern", readonly=is_locked,
                      aclass="btn btn-info btn-sm", icon='sort') }}
     </div>
-    <form action="{{ cdedblink('event/questionnaire_summary')|e }}" method="POST" id="questionnairesummaryform"
-          class="form-horizontal">
+    <form action="{{ cdedblink('event/questionnaire_summary')|e }}" method="POST" id="questionnairesummaryform">
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for entry in questionnaire %}
