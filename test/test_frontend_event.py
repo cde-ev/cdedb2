@@ -1055,8 +1055,8 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/course/1/manage'})
         self.assertTitle("\nKursteilnehmer für Kurs Planetenretten für Anfänger verwalten (Große Testakademie 2222)\n")
         f = self.response.forms['manageattendeesform']
-        f['attendees_1'] = ""
-        f['attendees_3'] = "2,3"
+        f['new_1'] = "3"
+        f['delete_3_4'] = True
         self.submit(f)
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
         self.assertPresence("Garcia G.")

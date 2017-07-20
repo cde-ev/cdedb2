@@ -25,13 +25,13 @@ Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ a
             {% for part_id, part in ambience['event']['parts']|dictsort %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=part['title'], aclass="panel-info") %}
-                        <ul id="inhabitants_{{ part_id|e }}" class="slim">
+                        <ul class="slim">
                             {% for registration_id in inhabitants[(ambience['lodgement']['id'], part_id)] %}
-                                <li class="list-item-colorable">
+                                <li>
                                     {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
                                     {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
                                     &ensp;{{ util.input_checkbox('delete_'+part_id|e+'_'+registration_id|e, "Entf.",
-                                                                 aclass="del-box") }}
+                                                            aclass="del-box") }}
                                 </li>
                             {% endfor %}
                         </ul>

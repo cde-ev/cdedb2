@@ -1,85 +1,67 @@
 {% extends "web/de/event/base.tmpl" %}
+{% set sidenav_active='event_course_stats' %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.jquery_with_ui_preamble() }}{% endblock %}
-{% set jshint='weak' %}
+{% block scripts %}{{ util.cdedb_script('manage_participants') }}{% endblock %}
+{% set jshint='strong' %}
 {% block title %}
 Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambience['event']['title']|e }})
 {% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
+    {{ util.breadcrumb_link(cdedblink("event/manage_attendees"), "Kursteilnehmer verwalten", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Teilnehmer von {{ ambience['course']['shortname']|e }}
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
 {% block content %}
-    {% for part_id in ambience['course']['parts']|sort %}
-        <h2>{{ ambience['event']['parts'][part_id]['title']|e }}</h2>
-        <div>
-            Kursteilnehmer
-            <ul id="attendees_{{ part_id|e }}" class="connect_{{ part_id|e }} nonVanish">
-                {% for registration_id in attendees[(ambience['course']['id'], part_id)] %}
-                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
-                     regid="{{ registration_id|e }}">
-                        {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
-                        {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div>
-            Personen ohne Kurs
-            (Namen suchen
-             <input type="text" name="selector_without_{{ part_id|e }}" id="selector_without_{{ part_id|e }}"
-              class="jsEnabled" value="" disabled>)
-            <ul id="without_{{ part_id|e }}" class="scrollList connect_{{ part_id|e }} nonVanish">
-                {% for registration_id in without_course[part_id] %}
-                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
-                     regid="{{ registration_id|e }}">
-                        {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
-                        {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <div>
-            Personen mit Kurs
-            (Namen suchen
-             <input type="text" name="selector_with_{{ part_id|e }}" id="selector_with_{{ part_id|e }}"
-              class="jsEnabled" value="" disabled>)
-            <ul id="with_{{ part_id|e }}"  class="shortScrollList connect_{{ part_id|e }} nonVanish">
-                {% for registration_id in with_course[part_id] %}
-                    <li class="selectee_{{ part_id|e }}" id="{{ registration_id|e }}_{{ part_id|e }}"
-                     regid="{{ registration_id|e }}">
-                        {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
-                        {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <script type="text/javascript">
-            $(document).ready(function(){
-                $("#attendees_{{ part_id|e }}, #with_{{ part_id|e }}, #without_{{ part_id|e }}").sortable(
-                    {connectWith: ".connect_{{ part_id|e }}"}).disableSelection();
-                $("#selector_without_{{ part_id|e }}").keyup(function(){
-                    $("#without_{{ part_id|e }} .selectee_{{ part_id|e }}").hide();
-                    $("#without_{{ part_id|e }} .selectee_{{ part_id|e }}:contains('" + $(this).val() + "')").show();
-                });
-                $("#selector_with_{{ part_id|e }}").keyup(function(){
-                    $("#with_{{ part_id|e }} .selectee_{{ part_id|e }}").hide();
-                    $("#with_{{ part_id|e }} .selectee_{{ part_id|e }}:contains('" + $(this).val() + "')").show();
-                });
-            });
-        </script>
-    {% endfor %}
     <form action="{{ cdedblink('event/manage_attendees')|e }}" method="POST" id="manageattendeesform">
-        {% for part_id in ambience['course']['parts']|sort %}
-            {{ util.input_hidden(name="attendees_{}".format(part_id), value="",
-                                 anid="attendeesinput_{}".format(part_id)) }}
-        {% endfor %}
-        {{ util.form_input_submit(value="Speichern", readonly=True, aclass="jsEnabled") }}
-    </form>
-    <script type="text/javascript">
-        $(document).ready(function(){
-            $("#manageattendeesform").submit(function(){
-                {% for part_id in ambience['course']['parts']|sort %}
-                    var sorted = $("#attendees_{{ part_id|e }}").sortable("toArray", { attribute: "regid" })
-                    $("#attendeesinput_{{ part_id|e }}").val(sorted.join(","))
+        <div class="row">
+            {% for part_id, part in ambience['event']['parts']|dictsort if part_id in ambience['course']['parts']%}
+                <div class="col-md-6">
+                    {% call util.bootstrap_panel(title=part['title'], aclass="panel-info") %}
+                        <ul class="slim">
+                            {% for registration_id in attendees[(ambience['course']['id'], part_id)] %}
+                                <li>
+                                    {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
+                                    {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
+                                    &ensp;{{ util.input_checkbox('delete_'+part_id|e+'_'+registration_id|e, "Entf.",
+                                                            aclass="del-box") }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+
+                        <label for="input_new_{{ part_id|e }}">
+                            {{ util.make_icon('plus') }} Teilnehmer hinzufügen
+                        </label>
+                        <select multiple="multiple" id="input_new_{{ part_id|e }}" class="form-control"
+                                name="new_{{ part_id|e }}">
+                            <option value="">— keine —</option>
+                            {% for registration_id in without_course[part_id] %}
+                                <option id="{{ registration_id|e }}_{{ part_id|e }}" value="{{ registration_id|e }}">
+                                    {{ personas[registrations[registration_id]['persona_id']]['given_names']|e }}
+                                    {{ personas[registrations[registration_id]['persona_id']]['family_name']|e }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    {% endcall %}
+                </div>
+            {% endfor %}
+            <script type="text/javascript">
+                var course_names = {{ course_names|json }};
+                {% for part_id in ambience['event']['parts'] %}
+                    $('#input_new_{{ part_id }}').cdedbSearchParticipant(
+                        {{ selectize_data[part_id]|json }}, course_names, "aktuell: ");
                 {% endfor %}
-            });
-        });
-    </script>
+                $('.del-box').cdedbRemoveParticipantButton('Teilnehmer aus Kurs entfernen');
+            </script>
+        </div>
+        {{ util.input_submit(value="Speichern") }}&emsp;
+        {{ util.href(cdedblink('event/show_course'), "Abbrechen", icon='remove', aclass="btn btn-default") }}
+    </form>
 {% endblock %}

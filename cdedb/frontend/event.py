@@ -2109,6 +2109,8 @@ class EventFrontend(AbstractUserFrontend):
         attendees = self.calculate_groups(
             (course_id,), rs.ambience['event'], registrations, key="course_id",
             personas=personas)
+
+        # Generate options for the multi select boxes
         def _check_without_course(registration_id, part_id):
             """Un-inlined check for registration without course."""
             part = registrations[registration_id]['parts'][part_id]
@@ -2124,51 +2126,80 @@ class EventFrontend(AbstractUserFrontend):
             )
             for part_id in rs.ambience['event']['parts']
         }
-        def _check_with_course(registration_id, part_id):
+
+        # Generate data to be encoded to json and used by the
+        # cdedbSearchParticipant() javascript function
+        def _check_not_this_course(registration_id, part_id):
             """Un-inlined check for registration with different course."""
             part = registrations[registration_id]['parts'][part_id]
             return (part['status'] == const.RegistrationPartStati.participant
-                    and part['course_id']
                     and part['course_id'] != course_id)
-        with_course = {
+        selectize_data = {
             part_id: sorted(
-                (registration_id
-                 for registration_id in registrations
-                 if _check_with_course(registration_id, part_id)),
-                key=lambda anid: name_key(
-                    personas[registrations[anid]['persona_id']])
+                [{'name': personas[registration['persona_id']]['given_names'] + " "
+                          + personas[registration['persona_id']]['family_name'],
+                  'current': registration['parts'][part_id]['course_id'],
+                  'id': registration_id}
+                 for registration_id, registration in registrations.items()
+                 if _check_not_this_course(registration_id, part_id)],
+                key=lambda x: (
+                    x['current'] is not None,
+                    name_key(personas[registrations[x['id']]['persona_id']]))
             )
             for part_id in rs.ambience['event']['parts']
         }
+        courses = self.eventproxy.list_db_courses(rs, event_id)
+        course_names = {
+            course['id']: "{}. {}".format(course['nr'], course['shortname'])
+            for course_id, course
+            in self.eventproxy.get_courses(rs, courses.keys()).items()
+        }
+
         return self.render(rs, "manage_attendees", {
             'registrations': registrations,
             'personas': personas, 'attendees': attendees,
-            'without_course': without_course, 'with_course': with_course})
+            'without_course': without_course,
+            'selectize_data': selectize_data, 'course_names': course_names})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
     def manage_attendees(self, rs, event_id, course_id):
         """Alter who is assigned to this course."""
-        params = tuple(("attendees_{}".format(part_id), "int_csv_list")
-                       for part_id in rs.ambience['course']['parts'])
+        # Get all registrations and especially current attendees of this course
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        current_attendees = {
+            part_id: [reg_id for reg_id, registration in registrations.items()
+                      if registration['parts'][part_id]['course_id']
+                      == course_id]
+            for part_id in rs.ambience['course']['parts']}
+
+        # Parse request data
+        params = tuple(("new_{}".format(part_id), "[id]")
+                       for part_id in rs.ambience['course']['parts']) \
+                 + tuple(itertools.chain(
+            *[(("delete_{}_{}".format(part_id, reg_id), "bool")
+               for reg_id in current_attendees[part_id])
+              for part_id in rs.ambience['course']['parts']]))
         data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_attendees_form(rs, event_id, course_id)
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+
+        # Iterate all registrations to find changed ones
         code = 1
         for registration_id, registration in registrations.items():
             new_reg = {
                 'id': registration_id,
                 'parts': {},
             }
+            # Check if registration is new attendee or deleted attendee
+            # in any part of the course
             for part_id in rs.ambience['course']['parts']:
-                attends = (registration_id
-                           in data["attendees_{}".format(part_id)])
-                part = registration['parts'][part_id]
-                if attends != (course_id == part['course_id']):
+                new_attendee = (registration_id in data["new_{}".format(part_id)])
+                deleted_attendee = data.get("delete_{}_{}".format(part_id, registration_id), False)
+                if new_attendee or deleted_attendee:
                     new_reg['parts'][part_id] = {
-                        'course_id': (course_id if attends else None)
+                        'course_id': (course_id if new_attendee else None)
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg)
