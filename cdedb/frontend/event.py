@@ -2006,6 +2006,7 @@ class EventFrontend(AbstractUserFrontend):
         inhabitants = self.calculate_groups(
             (lodgement_id,), rs.ambience['event'], registrations,
             key="lodgement_id", personas=personas)
+
         def _check_without_lodgement(registration_id, part_id):
             """Un-inlined check for registration without lodgement."""
             part = registrations[registration_id]['parts'][part_id]
@@ -2021,27 +2022,35 @@ class EventFrontend(AbstractUserFrontend):
             )
             for part_id in rs.ambience['event']['parts']
         }
-        def _check_with_lodgement(registration_id, part_id):
+
+        # Generate data to be encoded to json and used by the
+        # cdedbSearchParticipant() javascript function
+        def _check_not_this_lodgement(registration_id, part_id):
             """Un-inlined check for registration with different lodgement."""
             part = registrations[registration_id]['parts'][part_id]
             return (const.RegistrationPartStati(part['status']).is_present()
-                    and part['lodgement_id']
                     and part['lodgement_id'] != lodgement_id)
-        with_lodgement = {
+        selectize_data = {
             part_id: sorted(
-                (registration_id
-                 for registration_id in registrations
-                 if _check_with_lodgement(registration_id, part_id)),
-                key=lambda anid: name_key(
-                    personas[registrations[anid]['persona_id']])
+                [{'name': personas[registration['persona_id']]['given_names'] + " "
+                          + personas[registration['persona_id']]['family_name'],
+                  'current': registration['parts'][part_id]['lodgement_id'],
+                  'id': registration_id}
+                 for registration_id, registration in registrations.items()
+                 if _check_not_this_lodgement(registration_id, part_id)],
+                key=lambda x: (
+                    x['current'] is not None,
+                    name_key(personas[registrations[x['id']]['persona_id']]))
             )
             for part_id in rs.ambience['event']['parts']
         }
+        lodgement_names = self.eventproxy.list_lodgements(rs, event_id)
         return self.render(rs, "manage_inhabitants", {
             'registrations': registrations,
             'personas': personas, 'inhabitants': inhabitants,
             'without_lodgement': without_lodgement,
-            'with_lodgement': with_lodgement})
+            'selectize_data': selectize_data,
+            'lodgement_names': lodgement_names})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)
@@ -2050,27 +2059,39 @@ class EventFrontend(AbstractUserFrontend):
 
         This tries to be a bit smart and write only changed state.
         """
-        params = tuple(("inhabitants_{}".format(part_id), "int_csv_list")
-                       for part_id in rs.ambience['event']['parts'])
+        # Get all registrations and current inhabitants
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        current_inhabitants = {
+            part_id: [reg_id for reg_id, registration in registrations.items()
+                      if registration['parts'][part_id]['lodgement_id']
+                          == lodgement_id]
+            for part_id in rs.ambience['event']['parts']}
+        # Parse request data
+        params = tuple(("new_{}".format(part_id), "[id]")
+                       for part_id in rs.ambience['event']['parts']) \
+            + tuple(itertools.chain(
+                *[(("delete_{}_{}".format(part_id, reg_id), "bool")
+                   for reg_id in current_inhabitants[part_id])
+                  for part_id in rs.ambience['event']['parts']]))
         data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        # Iterate all registrations to find changed ones
         code = 1
         for registration_id, registration in registrations.items():
             new_reg = {
                 'id': registration_id,
                 'parts': {},
             }
+            # Check if registration is new inhabitant or deleted inhabitant
+            # in any part
             for part_id in rs.ambience['event']['parts']:
-                inhabits = (registration_id
-                            in data["inhabitants_{}".format(part_id)])
-                if (inhabits
-                        != (lodgement_id
-                            == registration['parts'][part_id]['lodgement_id'])):
+                new_inhabitant = (registration_id in data["new_{}".format(part_id)])
+                deleted_inhabitant = data.get("delete_{}_{}".format(part_id, registration_id), False)
+                if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
-                        'lodgement_id': (lodgement_id if inhabits else None)
+                        'lodgement_id': (lodgement_id if new_inhabitant else None)
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg)

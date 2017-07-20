@@ -1074,12 +1074,15 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/lodgement/2/manage'})
         self.assertTitle("\nBewohner der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)\n")
         f = self.response.forms['manageinhabitantsform']
-        f['inhabitants_1'] = ""
-        f['inhabitants_2'] = "3"
-        f['inhabitants_3'] = "2,3"
+        f['new_1'] = ""
+        f['delete_1_3'] = True
+        f['new_2'] = ""
+        f['new_3'].force_value(2)
+        f['delete_3_4'] = True
         self.submit(f)
         self.assertTitle("Unterkunft Kalte Kammer (Große Testakademie 2222)")
         self.assertPresence("Emilia")
+        self.assertPresence("Garcia")
         self.assertNonPresence("Inga")
 
     @as_users("anton", "garcia")
