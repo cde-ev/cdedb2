@@ -7,9 +7,68 @@
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft", active=True) }}
 {% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Unterkünfte
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
 {% block content %}
+    <div class="p">
+        {{ util.href(cdedblink("event/create_lodgement_form"), "Unterkunft hinzufügen", readonly=is_locked,
+                     aclass='btn btn-sm btn-success', icon='plus') }}
+    </div>
+
+    <table class="table table-condensed table-hover">
+        <thead>
+            {# TODO: One row-header for one-part-events #}
+            <tr>
+                <th rowspan="2">Unterkunft</th>
+                <th colspan="{{ ambience['event']['parts']|length }}" class="b-left">Belegung</th>
+                <th colspan="2" class="b-left">Kapazität</th>
+                <th colspan="2" rowspan="2" class="b-left"></th>
+            </tr>
+            <tr>
+                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                    <th class="text-right{% if loop.first %} b-left{% endif %}">
+                        {{ part['title']|e }}
+                    </th>
+                {% endfor %}
+                <th class="b-left text-right">Plätze</th>
+                <th class="text-right">Reserveplätze</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lodgement_id, lodgement in lodgements|dictsort %}
+                <tr>
+                    <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
+                                     lodgement['moniker']) }}</td>
+                    {# TODO show reserve assignments #}
+                    {# TODO show problems as background color #}
+                    {% for part_id in ambience['event']['parts']|sort %}
+                        <td class="text-right {% if loop.first %} b-left{% endif %}">
+                            {{ inhabitants[(lodgement_id, part_id)]|length|e }}
+                        </td>
+                    {% endfor %}
+                    <td class="b-left text-right">{{ lodgement['capacity']|e }}</td>
+                    <td class=" text-right">{{ lodgement['reserve']|e }}</td>
+                    <td class="b-left">
+                        {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
+                                     readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
+                                     title="Bearbeiten") }}
+                    </td>
+                    <td>
+                        {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}),
+                                     readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                     title="Belegung ändern") }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
     {% if problems %}
-        <h2>Probleme</h2>
+        <h3>Probleme</h3>
         <ul>
             {% for description, lodgement_id, part_id, affected_regs in problems %}
                 <li>
@@ -28,35 +87,4 @@
             {% endfor %}
         </ul>
     {% endif %}
-    <h2>Neue Unterkunft anlegen</h2>
-    {{ util.href(cdedblink("event/create_lodgement_form"), "anlegen", readonly=is_locked) }}
-    <h2>Alle Unterkünfte</h2>
-    <table class="checkeredTable">
-        <tr>
-            <th>Unterkunft</th>
-            <th>Plätze</th>
-            <th>Reserveplätze</th>
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
-                <th>Belegung {{ part['title']|e }}</th>
-            {% endfor %}
-            <th>Aktionen</th>
-        </tr>
-        {% for lodgement_id, lodgement in lodgements|dictsort %}
-            <tr>
-                <td>{{ lodgement['moniker']|e }}</td>
-                <td>{{ lodgement['capacity']|e }}</td>
-                <td>{{ lodgement['reserve']|e }}</td>
-                {% for part_id in ambience['event']['parts']|sort %}
-                    <td>{{ inhabitants[(lodgement_id, part_id)]|length|e }}</td>
-                {% endfor %}
-                <td>
-                    {{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}), "Details") }}
-                    {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}), "bearbeiten",
-                                 readonly=is_locked) }}
-                    {{ util.href(cdedblink("event/manage_inhabitants_form", {'lodgement_id': lodgement_id}), "Belegung",
-                                 readonly=is_locked) }}
-                </td>
-            </tr>
-        {% endfor %}
-    </table>
 {% endblock %}
