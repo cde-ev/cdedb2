@@ -4,7 +4,7 @@
      * See compute_checkdigit() in common.py for reference implementation and more details.
      */
     function compute_checkdigit(num) {
-        digits = []
+        var digits = [];
         while (num > 0) {
             digits.push(num % 10);
             num = Math.floor(num / 10);
@@ -48,7 +48,7 @@
             createFilter: freeform ? null : function(string) {
                 var res = string.match(/^DB-(\d+)-(\w)$/);
                 if (!res) return false;
-                return (exclude.indexOf(parseInt(res[1])) == -1) && (compute_checkdigit(res[1]) == res[2]);
+                return (exclude.indexOf(parseInt(res[1])) === -1) && (compute_checkdigit(res[1]) === res[2]);
             },
             options: [],
             maxItems: (multi ? null : 1),
@@ -78,7 +78,7 @@
                         var i = res.personas.length - 1;
                         while (i >= 0) {
                             var persona = res.personas[i];
-                            if (exclude.indexOf(persona.id) != -1)
+                            if (exclude.indexOf(persona.id) !== -1)
                                 res.personas.splice(i, 1);
                             persona.cdedb_id = cdedb_id(persona.id);
                             i -= 1;
@@ -91,4 +91,4 @@
         });
         return this;
     };
-})(jQuery)
+})(jQuery);

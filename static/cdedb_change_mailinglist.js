@@ -2,7 +2,7 @@
     $.fn.cdedbChangeMailinglist = function() {
         var names = ['audience_policy','event_id','assembly_id','gateway'];
         var fields = {};
-        for (var i in names) {
+        for (var i = 0; i < names.length; i++) {
             fields[names[i]] = $(this).find('[name="'+ names[i] +'"]');
         }
         var boxes = $(this).find('[name="registration_stati"]');
@@ -25,7 +25,7 @@
             };
 
             // Change visibility of event/assembly/gateway select boxes and clear boxes
-            for (var i in visible) {
+            for (var i = 0; i < visible.length; i++) {
                 if (visible[i]) {
                     fields[i].closest('.form-group').show();
                 } else {
@@ -45,11 +45,11 @@
         }
 
         // Add event handler and call function once on document load
-        for (var i in fields) {
+        for (var i = 0; i < fields.length; i++) {
             fields[i].change(update_view);
         }
         update_view();
 
         return this;
     }
-})(jQuery)
+})(jQuery);

@@ -95,7 +95,7 @@
             $(this).removeClass('dragover');
             
             var data = e.originalEvent.dataTransfer.getData("text");
-            $candidate = candidate_list[data];
+            var $candidate = candidate_list[data];
             if (!$candidate)
                 return;
             splitSpacer($(this), $candidate);
@@ -159,8 +159,8 @@
          * To be called by spacer_drop() and spacer_click()
          */
         function splitSpacer($spacer, $candidate) {
-            $new_stage = createStage();
-            $new_spacer = createSpacer();
+            var $new_stage = createStage();
+            var $new_spacer = createSpacer();
             if ($spacer.hasClass('positive')) {
                 $new_stage.addClass('positive');
                 $new_spacer.addClass('positive');
@@ -180,7 +180,7 @@
          * Afterwards calls updatePreferenceList() to update the text form.
          */
         function moveCandidate($candidate, $destination) {
-            $source = $candidate.parent();
+            var $source = $candidate.parent();
             $destination.append($candidate);
             $destination.append(' ');
             // If source stage is empty and not neutral stage ...
@@ -238,7 +238,7 @@
          * (Createing stages and adding candidate boxes will be done by readPreferenceList() later.)
          */
         function init() {
-            for (var i in candidates) {
+            for (var i = 0; i < candidates.length; i++) {
                 var moniker = candidates[i][1].moniker;
                 var $cand = $('<span></span>', {'class': 'prefvote_candidate',
                                                 'draggable': 'true',
@@ -289,13 +289,13 @@
             }
             
             // Create stage boxes and spacers
-            for (var i in stages) {
+            for (var i = 0; i < stages.length; i++) {
                 if (stages[i] == '')
                     continue;
                 var $stage = createStage().appendTo($container);
                 var is_neutral = false;
                 var stage_candidates = stages[i].split('=');
-                for (var j in stage_candidates) {
+                for (var j = 0; j < stage_candidates.length; j++) {
                     var $cand = candidate_list[stage_candidates[j]];
                     if ($cand) {
                         $stage.append($cand).append(' ');
@@ -324,7 +324,7 @@
             
             // Find missing candidates by checking if they are in the DOM tree
             var missing_candidates = [];
-            for (var i in candidate_list) {
+            for (var i = 0; i < candidate_list.length; i++) {
                 if (candidate_list[i].closest(document.documentElement).length == 0) 
                     missing_candidates.push(candidate_list[i])
             }
@@ -332,14 +332,14 @@
             if (missing_candidates.length > 0 || (bar_moniker && !bar_option)) {
                 // If use_bar and bar has been added yet, add missing_candidates to neutral stage
                 if (bar_moniker && bar_option) {
-                    $neutral_stage = $container.children('.prefvote_stage.neutral');
-                    for (var i in missing_candidates)
+                    var $neutral_stage = $container.children('.prefvote_stage.neutral');
+                    for (var i = 0; i < missing_candidates.length; i++)
                         $neutral_stage.append(missing_candidates[i]);
                         
                 // else create new stage under all other stages (and make it neutral)
                 } else {
                     var $stage = createStage().appendTo($container);
-                    for (var i in missing_candidates)
+                    for (var i = 0; i < missing_candidates.length; i++)
                         $stage.append(missing_candidates[i]).append(' ');
                     var $sp = createSpacer().appendTo($container);
                     if (bar_moniker) {

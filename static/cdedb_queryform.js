@@ -10,7 +10,7 @@
         var settings = $.extend({
             choices : {},
             separator : ',',
-            escapechar : '\\\\', //double escaped backslash for usage in regex
+            escapechar : '\\\\' //double escaped backslash for usage in regex
         }, options || {});
         /**
          * List of all data fields listed in the query form. Each element has the following attributes:
@@ -37,7 +37,7 @@
          */
         var idField = -1;
 
-        /* Scan formular rows and initialize field list */
+        /* Scan form rows and initialize field list */
         $element.find('.query_field').each(function() {
             var id = $(this).attr('data-id');
             var input_select = $(this).find('.outputSelector');
@@ -52,14 +52,14 @@
                 input_select: input_select.length ? input_select : null,
                 input_filter_op: $(this).find('.filter-op'),
                 input_filter_value: $(this).find('.filter-value'),
-                error: error_block.length ? error_block.html() : null,
+                error: error_block.length ? error_block.html() : null
             });
 
             if ($(this).hasClass('id-field'))
                 idField = fieldList.length - 1;
         });
 
-        /* Find formular sort fields */
+        /* Find form sort fields */
         $element.find('.query_sort').each(function() {
             sortInputs.push({
                 input_field : $(this).find('.sort-field'),
@@ -69,7 +69,7 @@
 
         /* Scan sort field options and mark sortable fields */
         sortInputs[0].input_field.children('option').each(function() {
-            for (i in fieldList) {
+            for (var i = 0; i < fieldList.length; i++) {
                 if (fieldList[i].id == $(this).attr('value')) {
                     fieldList[i].sortable = true;
                     break;
@@ -90,7 +90,7 @@
             $element.find('.queryform-js').show();
 
             // Add currently selected and filtered fields to dynamic lists
-            for (var i=0; i < fieldList.length; i++) {
+            for (var i = 0; i < fieldList.length; i++) {
                 var f = fieldList[i];
 
                 if (f.input_filter_op.val() !== '')
@@ -100,11 +100,11 @@
                     this.addViewRow(i);
             }
             // Add current sort fields
-            for (var i=0; i < sortInputs.length; i++) {
+            for (var i = 0; i < sortInputs.length; i++) {
                 if (sortInputs[i].input_field.val() !== '') {
                     //Search field in fieldList
                     var field = -1;
-                    for (j in fieldList) {
+                    for (var j = 0; j < fieldList.length; j++) {
                         if (fieldList[j].id == sortInputs[i].input_field.val()) {
                             field = j;
                             break;
@@ -231,9 +231,9 @@
 
                 if (f.type == 'bool' || f.type == 'list') {
                     var $s = $('<select>',{class : "form-control input-sm input-slim", type: inputTypes[f.type]})
-                            .change(changeFunction)
+                            .change(changeFunction);
                     if (f.type == 'list') {
-                        for (var i in f.choices)
+                        for (var i = 0; i < f.choices.length; i++)
                             $s.append($('<option>',{'value' : i}).text(f.choices[i]))
                     } else {
                         $s.append($('<option>',{'value' : 'True'}).text('wahr'))
@@ -265,11 +265,11 @@
                 var escape = function(v) {
                     return v.replace(settings.escapechar,settings.escapechar+settings.escapechar)
                             .replace(settings.separator,settings.escapechar+settings.separator);
-                }
+                };
                 var unescape = function(v) {
                     return v.replace(settings.escapechar+settings.separator,settings.separator)
                             .replace(settings.escapechar+settings.escapechar,settings.escapechar);
-                }
+                };
 
                 //Split value at separator but not at escapechar+separator
                 var values = f.input_filter_value.val()
@@ -277,12 +277,12 @@
                 if (values && values.length > 1)
                     values = values.map(unescape);
                 else
-                    values=["",""]
+                    values=["",""];
 
-                $i1 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
-                        .val(values[0]);
-                $i2 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
-                        .val(values[1]);
+                var $i1 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
+                            .val(values[0]);
+                var $i2 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
+                            .val(values[1]);
 
                 if (f.type == 'date')
                     $i1.add($i2).attr('placeholder','YYYY-MM-DD');
@@ -320,7 +320,7 @@
 
                 if (f.type == 'list') {
                     var options = [];
-                    for (var i in f.choices)
+                    for (var i = 0; i < f.choices.length; i++)
                         options.push({value: i, text: f.choices[i]});
                     $i.attr('placeholder','');
                     $i.selectize({
@@ -330,7 +330,7 @@
 
                 break;
             }
-        }
+        };
 
         /**
          * Add a row to the dynamic view list. The new field is specified by the entry id in the field list array.
@@ -427,7 +427,7 @@
                 }
             }
             $box.val('');
-        }
+        };
 
         /**
          * Refresh the list of options in the .addviewfield select box.
@@ -450,7 +450,7 @@
                 }
             }
             $box.val('');
-        }
+        };
 
         /**
          * Refresh the list of options in the .addsortfield select box.
@@ -481,7 +481,7 @@
                 }
             }
             $box.val('');
-        }
+        };
 
         /**
          * Write back the sort selection and ordering into the input fields of the non-js form.
@@ -498,33 +498,33 @@
             for (;i<sortInputs.length;i++) {
                 sortInputs[i].input_field.val('');
             }
-        }
+        };
 
         /**
          * Public API: Remove all filters
          */
         this.clearFilters = function() {
-            for (var i in fieldList) {
+            for (var i = 0; i < fieldList.length; i++) {
                 f = fieldList[i];
                 f.input_filter_op.val('');
                 f.input_filter_value.val('');
             }
             $element.find('.filterfield-list').children().detach();
             obj.refreshFilterFieldSelect();
-        }
+        };
 
         /**
          * Public API: Remove all view fields
          */
         this.clearViewFields = function() {
-            for (var i in fieldList) {
+            for (var i = 0; i < fieldList.length; i++) {
                 f = fieldList[i];
                 if (f.input_select)
                     f.input_select.prop('checked',false);
             }
             $element.find('.viewfield-list').children().detach();
             obj.refreshViewFieldSelect();
-        }
+        };
 
         /**
          * Public API: Remove all sort fields
@@ -533,7 +533,7 @@
             $element.find('.sortfield-list').children().detach();
             obj.updateSortInputs();
             obj.refreshSortFieldSelect();
-        }
+        };
 
         /**
          * Public API: Remove all filters and add an 'one of filter' for the id field (if an id field is existent)
@@ -553,7 +553,7 @@
             f.input_filter_value.val(ids.join(settings.separator));
             // Add filter rot to js-form
             this.addFilterRow(idField)
-        }
+        };
 
         /**
          * Public API: Reset query form to parameters from query url.
@@ -566,7 +566,7 @@
             parts = parts[parts.length-1].split('#');
             parts = parts[0].split('&');
             var parameters = {};
-            for (var i in parts) {
+            for (var i = 0; i < parts.length; i++) {
                 var s = parts[i].split('=');
                 parameters[s[0]] = s[1];
             }
@@ -577,7 +577,7 @@
             this.clearSortFields();
 
             // Scan for filters and view fields
-            for (var i in fieldList) {
+            for (var i = 0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (parameters[f.input_filter_op.attr('name')]) {
                     f.input_filter_op.val(parameters[f.input_filter_op.attr('name')]);
@@ -590,12 +590,12 @@
                 }
             }
             // Scan for sort fields
-            for (var i in sortInputs) {
+            for (var i = 0; i < sortInputs.length; i++) {
                 if (parameters[sortInputs[i].input_field.attr('name')]) {
                     sortInputs[i].input_field.val(parameters[sortInputs[i].input_field.attr('name')]);
                     //Search field in fieldList
                     var field = -1;
-                    for (var j in fieldList) {
+                    for (var i = 0; i < fieldList.length; i++) {
                         if (fieldList[j].id == sortInputs[i].input_field.val()) {
                             field = j;
                             break;
@@ -677,7 +677,7 @@
      * This plugin creates the wide container and applys event handlers to the trigger buttons.
      */
     $.fn.cdedbMoveToWidePage = function($triggers) {
-        $box = $(this);
+        var $box = $(this);
         
         // Construct wide page container
         var $widecontainer = $('<div></div>',{'class': 'wide-content-page'});
@@ -687,11 +687,11 @@
         // Add event handlers
         $triggers.click(function() {
             if (!$(this).hasClass('active')) {
-                $widecontainer.append($box.contents())
+                $widecontainer.append($box.contents());
                 $widecontainer.show();
                 $triggers.addClass('active');
             } else {
-                $box.append($widecontainer.contents())
+                $box.append($widecontainer.contents());
                 $widecontainer.hide();
                 $triggers.removeClass('active');
             }

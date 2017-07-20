@@ -26,7 +26,7 @@
             var $deleteButton = $('<button />', {'type': 'button',
                                                  'title': settings.delButtonTitle,
                                                  'class': 'btn btn-danger btn-sm' })
-                    .append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}))
+                    .append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}));
                     
             if (newrow) {
                 $deleteButton.click(function() {
@@ -56,7 +56,7 @@
                 });
             }
             $row.find('.drow-buttonspace').after($deleteButton);
-        }
+        };
         
         /**
          * Init function.

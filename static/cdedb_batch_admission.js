@@ -50,8 +50,8 @@ function jumpCsvPosition(row,col) {
 $(function() {
     $('.row-col-key').addClass('clickable').click(function() {
         jumpCsvPosition($(this).attr('data-row'),$(this).attr('data-col'));
-    })
+    });
     $('.row-key').addClass('clickable').click(function() {
         jumpCsvPosition($(this).attr('data-row'),-1);
-    })
-})
+    });
+});

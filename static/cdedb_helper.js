@@ -9,7 +9,7 @@
         else if (offset < 0)
             $(window).scrollTop(top - 10);
         return this;
-    }
+    };
 
     /**
      * Simple jQuery plugin to hide unimportant things and unhide them on button click.
@@ -18,7 +18,7 @@
      * unhides them. The button will be 'shown' onload, in case it was hidden by css rules.
      */
     $.fn.cdedbHideUnimportant = function($button) {
-        $elements = $(this).find('.unimportant');
+        var $elements = $(this).find('.unimportant');
         $elements.hide();
         $button
             .click(function() {
@@ -55,7 +55,7 @@
         window.addEventListener('beforeunload', function(e) {
             var changed = false;
             $forms.each(function(){
-                changed = $(this).serialize() != $(this).data('serialize') && !$(this).data('clean_exit');
+                changed = $(this).serialize() !== $(this).data('serialize') && !$(this).data('clean_exit');
                 return !changed;
             });
             if (changed) {
@@ -89,7 +89,6 @@
      */
     var ListSelect = function(element,options) {
         var $element = $(element);
-        var obj = this;
         var settings = $.extend({
             mouse : true,
             keyboard : true,
@@ -99,7 +98,7 @@
             startClass: 'ls-start',
             focusFirst: true,
             callback: function() {},
-            rowCallback: function() {},
+            rowCallback: function() {}
         }, options || {});
 
         /* Private methods */
@@ -108,15 +107,15 @@
             $element.find('.'+settings.itemClass+'.'+settings.selectedClass)
                 .removeClass(settings.selectedClass)
                 .each(settings.rowCallback);
-        };
+        }
         /** Toggle selection of the given item */
         function toggleSelection($item) {
             $item.toggleClass(settings.selectedClass).each(settings.rowCallback);
-        };
+        }
         /** Select the given item */
         function selectSingle($item) {
             $item.addClass(settings.selectedClass).each(settings.rowCallback);
-        };
+        }
         /** Select items between selection start pointer and cursor */
         function selectRange() {
             var $c = $element.find('.'+settings.cursorClass);
@@ -129,7 +128,7 @@
                 // Break when cursor is reached
                 return !($(this).hasClass(settings.cursorClass));
             });
-        };
+        }
         /** Set cursor (and possibly) selection start pointer to given item */
         function setCursor($item,setStart) {
             $element.find('.'+settings.itemClass)
@@ -141,7 +140,7 @@
                 $item
                     .addClass(settings.startClass);
             }
-        };
+        }
 
         // Add event handlers
         if (settings.mouse)
