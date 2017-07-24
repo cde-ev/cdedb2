@@ -915,8 +915,7 @@ class EventFrontend(AbstractUserFrontend):
                     1 for reg in registrations.values()
                     if (reg['parts'][part_id]['course_id'] == course_id
                         and (reg['parts'][part_id]['status']
-                             == const.RegistrationPartStati.participant)
-                        and reg['persona_id'] not in event['orgas']))
+                             == const.RegistrationPartStati.participant)))
                 for part_id in event['parts']
             }
             for course_id in course_ids
