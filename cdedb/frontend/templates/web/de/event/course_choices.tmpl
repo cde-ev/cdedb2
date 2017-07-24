@@ -9,100 +9,188 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/course_choices"), "Kurseinteilung", active=True) }}
 {% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Kurseinteilung
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% macro course_cell(course_id, part_id, border_left=False, complain_empty=False, primary=False, filtered=False) %}
+    {% if course_id %}
+        {% with course = courses[course_id] %}
+            {% set attendees = course_infos[(course_id, part_id)]['assigned'] %}
+            {% set aclass = 'course-cancelled' if part_id not in course['active_parts'] else
+                           ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
+                            ('course-fewp' if course['min_size'] and attendees < course['min_size'] else '')) %}
+            <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
+                       {% if filtered %}filtered_column{% endif %} {{ aclass }}">
+                <span title="{{ course['nr'] }}. {{ course['shortname'] }}
+                             ({{ attendees|e }}
+                              {% if course['max_size']|e %} von {{ course['max_size']|e }}{% endif %} TN)"
+                      data-id="{{ course_id|e }}"
+                      class="event_course_id">
+                   {{ course['nr']|e }}
+                </span>
+            </td>
+        {% endwith %}
+    {% else %}
+        {% set aclass = 'course-cancelled' if complain_empty else '' %}
+        <td class="{% if border_left %}b-left{% endif %} {% if primary %}course-primary{% endif %} {{ aclass }}
+                   {% if filtered %}filtered_column{% endif %}">
+        </td>
+    {% endif %}
+{% endmacro %}
+
 {% block content %}
-    {# TODO incorporate active_parts, max_size, min_size of courses #}
-    <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {{ myentries.append((part_id, part['title']))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="part_id", label="Teil", entries=myentries, nulloption=True) }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for course_id, course in courses|dictsort %}
-            {{ myentries.append((course_id, course['title']))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="course_id", label="Kurs", entries=myentries, nulloption=True) }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for pos in enums.CourseFilterPositions %}
-            {{ myentries.append((pos.value, gettext(pos|string)))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="position", label="Position", entries=myentries, nulloption=True) }}
-        {{ util.form_input_submit(value="Suchen") }}
-    </form>
-    ~
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
+        <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
+            Teilnehmer, die in Teil
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [('', '— egal —')] %}
+            {% for part_id, part in ambience['event']['parts']|dictsort %}
+                {{ myentries.append((part_id, part['title']))|e }}
+            {% endfor %}
+            {{ util.input_select(name="part_id", entries=myentries, aclass="form-control input-slim") }}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for course_id, course in courses|dictsort %}
+                {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
+            {% endfor %}
+            den Kurs
+            {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim") }}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [('', "— kein Filter —"),
+                                (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
+                                (enums.CourseFilterPositions.assigned.value, "besuchen"),
+                                (enums.CourseFilterPositions.instructor.value, "anbieten"),
+                                (enums.CourseFilterPositions.any_choice.value, "gewählt haben"),
+                                (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
+                                (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
+                                (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
+            {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim") }}
+            {# TODO allow filtering by registration_id (esp. to add hyperlink from query page) #}
+            {# TODO Link to query page with matching query (if possible) #}
+            {{ util.input_submit(value="anzeigen", icon="search") }}<br />
+            oder
+            {{ util.href(cdedblink("event/course_choices",{}), "alle anzeigen", icon="remove",
+                         aclass="btn btn-default") }}
+        </form>
+    {% endcall %}
+
     <form action="{{ cdedblink('event/course_choices')|e }}" method="POST" id="choiceactionform">
-        <table>
-            <tr>
-                <th></th>
-                <th>Teilnehmer</th>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    <th>Kurs ({{ part['title']|e }})</th>
-                    <th>Leiter ({{ part['title']|e }})</th>
-                    <th>Erstwahl ({{ part['title']|e }})</th>
-                    <th>Zweitwahl ({{ part['title']|e }})</th>
-                    <th>Drittwahl ({{ part['title']|e }})</th>
-                {% endfor %}
-            </tr>
-            {% for reg_id, registration in registrations|dictsort %}
-                <tr>
-                    <td>
-                        {{ util.form_input_checkbox("registration_ids", value=reg_id) }}
-                    </td>
-                    <td>
-                        {% with persona = personas[registration['persona_id']] %}
-                            {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
-                                         "{} {}".format(persona['given_names'], persona['family_name'])) }}
-                        {% endwith %}
-                    </td>
+        {% call util.bootstrap_panel(title="Zuteilen", icon="screenshot", aclass='panel-warning') %}
+            <div class="row">
+                <div class="col-md-3">
+                    Markierte Personen in
+                </div>
+                <div class="col-md-3 strip-inner-space">
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
                     {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %}
-                            <td>
-                               {% if registration['parts'][part_id]['course_id'] %}
-                                   {{ courses[registration['parts'][part_id]['course_id']]['shortname']|e }}
-                               {% endif %}
-                            </td>
-                            <td>
-                               {% if registration['parts'][part_id]['course_instructor'] %}
-                                   {{ courses[registration['parts'][part_id]['course_instructor']]['shortname']|e }}
-                               {% endif %}
-                            </td>
-                            {% for j in range(3) %}
-                                <td>
-                                    {% if registration['choices'][part_id]|length > j %}
-                                       {{ courses[registration['choices'][part_id][j]]['shortname']|e }}
-                                    {% endif %}
-                                </td>
-                            {% endfor %}
-                        {% else %}
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        {% endif %}
+                        {{ myentries.append((part_id, part['title']))|e }}
+                    {% endfor %}
+                    {{ util.input_checkboxes(name="part_ids", entries=myentries) }}
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ util.input_select(name="action", anid="input-action", entries=(
+                            (0, "in ihre Erstwahl"), (1, "in ihre Zweitwahl"), (2, "in ihre Drittwahl"),
+                            (-1, "in den Kurs "), (-2, "automatisch"))) }}
+                    </div>
+                    <div class="form-group">
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for course_id, course in courses|dictsort %}
+                            {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname'])))|e }}
+                        {% endfor %}
+                        {{ util.input_select(name="course_id", anid="input-course_id", entries=myentries, nulloption=True) }}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    {{ util.input_submit(value="einteilen.") }}
+                </div>
+                <script type="text/javascript">
+                    {
+                        var $actionSelect = $('#input-action');
+                        var $courseSelect = $('#input-course_id');
+                        var updateCourseVisibility = function() {
+                            if ($actionSelect.val() == -1)
+                                $courseSelect.show();
+                            else
+                                $courseSelect.hide();
+                        };
+                        $actionSelect.change(updateCourseVisibility);
+                        updateCourseVisibility();
+                        $courseSelect.find("option").eq(0).remove();
+                    }
+                </script>
+            </div>
+        {% endcall %}
+
+        <table class="table table-condensed table-hover">
+            <thead>
+                <tr>
+                    <th rowspan="2"></th>
+                    <th rowspan="2">Name</th>
+                    {% for part_id, part in ambience['event']['parts']|dictsort %}
+                        <th colspan="5" class="b-left">{{ part['title']|e }}</th>
                     {% endfor %}
                 </tr>
-            {% endfor %}
+                <tr>
+                    {# TODO markup filtered columns with th.filtered_column #}
+                    {% for part_id in ambience['event']['parts']|sort %}
+                        <th class="b-left text-center">
+                            {{ util.make_icon('screenshot') }}
+                        </th>
+                        <th class="b-left text-center">KL</th>
+                        <th class="text-center">1.</th>
+                        <th class="text-center">2.</th>
+                        <th class="text-center">3.</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg_id, registration in registrations|dictsort %}
+                    <tr>
+                        <td>
+                            {{ util.input_checkbox("registration_ids", value=reg_id) }}
+                        </td>
+                        <td>
+                            {% with persona = personas[registration['persona_id']] %}
+                                {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
+                                             "{} {}".format(persona['given_names'], persona['family_name'])) }}
+                            {% endwith %}
+                        </td>
+                        {# TODO markup filtered columns with td.filtered_column #}
+                        {% for part_id, part in ambience['event']['parts']|dictsort %}
+                            {% set part_is_filtered = (values['part_id'] in ('', part_id)) %}
+                            {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %}
+                                {{ course_cell(registration['parts'][part_id]['course_id'], part_id, border_left=True,
+                                               complain_empty=True, primary=True) }}
+                                {{ course_cell(registration['parts'][part_id]['course_instructor'], part_id,
+                                               border_left=True) }}
+                                {% for j in range(3) %}
+                                    {{ course_cell(registration['choices'][part_id][j]
+                                                   if registration['choices'][part_id]|length > j else None,
+                                                   part_id) }}
+                                {% endfor %}
+                            {% else %}
+                                <td class="b-left"></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
         </table>
-        Kurszuteilung ändern für markierte Personen in den Teilen
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {{ myentries.append((part_id, part['title']))|e }}
-        {% endfor %}
-        {{ util.form_input_checkboxes(name="part_ids", entries=myentries) }}
-        nach
-        {{ util.form_input_checkboxes(name="action", label="Kurs", radio=True, entries=(
-            (0, "Erstwahl"), (1, "Zweitwahl"), (2, "Drittwahl"), (-1, "Kurs aus Liste"), (-2, "Automatisch"))) }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for course_id, course in courses|dictsort %}
-            {{ myentries.append((course_id, course['title']))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="course_id", label="Kurs", entries=myentries, nulloption=True) }}
-        {{ util.form_input_submit(value="Zuweisen") }}
     </form>
+    <script type="text/javascript">
+        $('.event_course_id').dblclick(function() {
+            location.href =
+                "{{ cdedblink('event/show_course', {'course_id': 12345}) }}".replace('12345', $(this).attr('data-id'));
+        });
+    </script>
 {% endblock %}

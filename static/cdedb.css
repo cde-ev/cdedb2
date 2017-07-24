@@ -186,6 +186,12 @@ ul.nosp, ol.nosp {
 .panel-body>:last-child {
     margin-bottom: 0;
 }
+.strip-inner-space>:first-child {
+    margin-top: 0;
+}
+.strip-inner-space>:last-child {
+    margin-bottom: 0;
+}
 
 
 /* Main navbar */
@@ -761,6 +767,49 @@ tr.drow-delete>td {
 td.b-left, th.b-left {
     border-left: solid 1px #ddd;
 }
+.event_course_id {
+    display: inline-block;
+    background-color: rgba(0, 0, 0, .6);
+    color: #fff;
+    padding: 1px 4px;
+    min-width: 25px;
+    text-align: center;
+    cursor: default;
+}
+td.course-primary {
+    background-color: #e6e6e6;
+}
+td.course-manyp {
+    background-color: #f2b3b3;
+}
+td.course-manyp.course-primary {
+    background-color: #e08282;
+}
+td.course-fewp {
+    background-color: #f2e8b3;
+
+}
+td.course-fewp.course-primary {
+    background-color: #dfd181;
+}
+td.course-cancelled {
+    background-color: #e0b2f2;
+}
+td.course-cancelled.course-primary {
+    background-color: #cb86e6;
+}
+td.course-cancelled-ok {
+    background-color: #b8ceef;
+}
+th.filtered_column {
+    background-color: #31708f;
+    color: #fff;
+}
+td.filtered_column {
+    border-left: solid 1px #31708f;
+    border-right: solid 1px #31708f;
+}
+
 
 /* ************** *
  * Helper classes *

@@ -19,19 +19,19 @@
         {{ util.href(cdedblink('event/create_course_form'), "Kurs hinzufügen", readonly=is_locked, icon='plus',
                      aclass='btn btn-success btn-sm') }}
     </div>
-    {# TODO incorporate active_parts, max_size, min_size of courses #}
     <table class="table table-condensed">
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">Kurs</th>
                 {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    <th colspan="4" class="b-left">{{ part['title']|e }}</th>
+                    <th colspan="5" class="b-left">{{ part['title']|e }}</th>
                 {% endfor %}
                 <th colspan="2" class="b-left">Grenzen</th>
             </tr>
             <tr>
                 {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    <th class="b-left text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
+                    <th class="b-left"></th>
+                    <th class="text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
                     <th class="text-right">1</th>
                     <th class="text-right">2</th>
                     <th class="text-right">3</th>
@@ -48,7 +48,17 @@
                                      course['shortname']) }}</td>
                     {% for part_id, part in ambience['event']['parts']|dictsort %}
                         {% if part_id in course['parts'] %}
-                            <td class="b-left text-right">
+                            {% set attendees = assign_counts[course_id][part_id] %}
+                            {% set aclass = 'course-cancelled' if part_id not in course['active_parts'] and attendees > 0 else
+                                            ('course-cancelled-ok' if part_id not in course['active_parts'] else
+                                             ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
+                                              ('course-fewp' if course['min_size'] and attendees < course['min_size'] else ''))) %}
+                            <td class="b-left course-primary {{ aclass }}">
+                                {% if part_id not in course['active_parts'] %}
+                                    {{ util.make_icon('ban-circle', title="Findet nicht statt") }}
+                                {% endif %}
+                            </td>
+                            <td class="text-right course-primary {{ aclass }}">
                                 {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
                                                                                 'course_id': course_id,
                                                                                 'position': 6,
@@ -64,7 +74,8 @@
                                              choice_counts[course_id][(part_id, i)]) }}
                             {% endfor %}
                         {% else %}
-                            <td class="b-left"></td><td></td><td></td><td></td>
+                            <td class="b-left">{{ util.make_icon('remove-sign', title="Nicht angeboten") }}</td>
+                            <td colspan="4"></td>
                         {% endif %}
                     {% endfor %}
                     <td class="b-left text-right">{{ course['min_size']|e }}</td>
