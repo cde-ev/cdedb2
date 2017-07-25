@@ -233,7 +233,7 @@
                     var $s = $('<select>',{class : "form-control input-sm input-slim", type: inputTypes[f.type]})
                             .change(changeFunction);
                     if (f.type == 'list') {
-                        for (var i = 0; i < f.choices.length; i++)
+                        for (var i in f.choices)
                             $s.append($('<option>',{'value' : i}).text(f.choices[i]))
                     } else {
                         $s.append($('<option>',{'value' : 'True'}).text('wahr'))
@@ -320,7 +320,7 @@
 
                 if (f.type == 'list') {
                     var options = [];
-                    for (var i = 0; i < f.choices.length; i++)
+                    for (var i in f.choices)
                         options.push({value: i, text: f.choices[i]});
                     $i.attr('placeholder','');
                     $i.selectize({
