@@ -4,6 +4,12 @@
 {% block title %}
 Log: {{ ambience['event']['title']|e }} [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Log
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='blackboard') }}

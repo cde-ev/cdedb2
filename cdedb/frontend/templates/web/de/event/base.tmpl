@@ -29,7 +29,6 @@
             {{ util.href(cdedblink("event/stats", {"event_id": data['id']}), "Teilnehmer-Statistik",
                     aclass="list-group-item", icon="stats", active=(sidenav_active == 'event_stats')) }}
 
-            {# TODO #}
             {{ util.href(cdedblink("event/course_stats", {"event_id": data['id']}), "Kurse",
                          aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_stats')) }}
             {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), "Kurseinteilung",
@@ -40,6 +39,9 @@
                     icon="download", active=(sidenav_active == 'event_downloads')) }}
         </div>
         <div class="list-group tear-down">
+            {{ util.href(cdedblink("event/change_event", {"event_id": data['id']}), "Konfiguration",
+                     readonly=is_locked, icon='cog', aclass="list-group-item",
+                     active=(sidenav_active == 'event_config')) }}
             {{ util.href(cdedblink("event/part_summary", {"event_id": data['id']}), "Veranstaltungs-Teile",
                      readonly=is_locked, icon='time', aclass="list-group-item",
                      active=(sidenav_active == 'event_parts')) }}
