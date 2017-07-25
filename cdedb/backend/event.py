@@ -737,7 +737,7 @@ class EventBackend(AbstractBackend):
 
     @access("event")
     def registrations_by_course(self, rs, event_id, course_id=None,
-                                part_id=None, position=None):
+                                part_id=None, position=None, reg_ids=None):
         """List registrations of an pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
@@ -747,12 +747,15 @@ class EventBackend(AbstractBackend):
         :type part_id: int or None
         :type course_id: int or None
         :type position: :py:class:`cdedb.common.CourseFilterPositions`
+        :param reg_ids: List of registration ids to filter for
+        :type reg_ids: [int]
         :rtype: {int: int}
         """
         event_id = affirm("id", event_id)
         part_id = affirm("id_or_None", part_id)
         course_id = affirm("id_or_None", course_id)
         position = affirm("enum_coursefilterpositions_or_None", position)
+        reg_ids = affirm_set("id", reg_ids)
         if (not self.is_admin(rs)
                 and not self.is_orga(rs, event_id=event_id)):
             raise PrivilegeError(_("Not privileged."))
@@ -795,6 +798,9 @@ class EventBackend(AbstractBackend):
                 params += (course_id,)
             condition = " OR ".join(conditions)
             query = glue(query, "AND (", condition, ")")
+        if reg_ids:
+            query = glue(query, "AND regs.id = ANY(%s)")
+            params += (reg_ids,)
         data = self.query_all(rs, query, params)
         return {e['id']: e['persona_id'] for e in data}
 

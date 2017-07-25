@@ -768,9 +768,10 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("part_id", "id_or_None"),
-                 ("position", "enum_coursefilterpositions_or_None"))
+                 ("position", "enum_coursefilterpositions_or_None"),
+                 ("ids", "int_csv_list_or_None"))
     @event_guard()
-    def course_choices_form(self, rs, event_id, course_id, part_id, position):
+    def course_choices_form(self, rs, event_id, course_id, part_id, position, ids):
         """Provide an overview of course choices.
 
         This allows flexible filtering of the displayed registrations.
@@ -778,7 +779,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.show_event(rs, event_id)
         registration_ids = self.eventproxy.registrations_by_course(
-            rs, event_id, course_id, part_id, position)
+            rs, event_id, course_id, part_id, position, ids)
         registrations = self.eventproxy.get_registrations(
             rs, registration_ids.keys())
         personas = self.coreproxy.get_personas(rs, registration_ids.values())

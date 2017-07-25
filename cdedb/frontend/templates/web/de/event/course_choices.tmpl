@@ -44,36 +44,41 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 {% block content %}
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
-            Teilnehmer, die in Teil
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [('', '— egal —')] %}
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
-                {{ myentries.append((part_id, part['title']))|e }}
-            {% endfor %}
-            {{ util.input_select(name="part_id", entries=myentries, aclass="form-control input-slim") }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for course_id, course in courses|dictsort %}
-                {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
-            {% endfor %}
-            den Kurs
-            {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim") }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [('', "— kein Filter —"),
-                                (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
-                                (enums.CourseFilterPositions.assigned.value, "besuchen"),
-                                (enums.CourseFilterPositions.instructor.value, "anbieten"),
-                                (enums.CourseFilterPositions.any_choice.value, "gewählt haben"),
-                                (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
-                                (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
-                                (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
-            {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim") }}
-            {# TODO allow filtering by registration_id (esp. to add hyperlink from query page) #}
-            {# TODO Link to query page with matching query (if possible) #}
-            {{ util.input_submit(value="anzeigen", icon="search") }}<br />
-            oder
-            {{ util.href(cdedblink("event/course_choices",{}), "alle anzeigen", icon="remove",
-                         aclass="btn btn-default") }}
+            <p>
+                Teilnehmer, die in Teil
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [('', '— egal —')] %}
+                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                    {{ myentries.append((part_id, part['title']))|e }}
+                {% endfor %}
+                {{ util.input_select(name="part_id", entries=myentries, aclass="form-control input-slim") }}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id, course in courses|dictsort %}
+                    {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
+                {% endfor %}
+                den Kurs
+                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim") }}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [('', "— kein Filter —"),
+                                    (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
+                                    (enums.CourseFilterPositions.assigned.value, "besuchen"),
+                                    (enums.CourseFilterPositions.instructor.value, "anbieten"),
+                                    (enums.CourseFilterPositions.any_choice.value, "gewählt haben"),
+                                    (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
+                                    (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
+                                    (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
+                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim") }}<br />
+                {# TODO Link to query page with matching query (if possible) #}
+                mit einer der folgenden IDs:
+                {{ util.input_text(name='ids', aclass="form-control input-slim") }}
+            </p>
+            <p class="nosp">
+                {{ util.input_submit(value="anzeigen", icon="search") }}
+                &emsp;oder
+                {{ util.href(cdedblink("event/course_choices",{}), "alle anzeigen", icon="remove",
+                             aclass="btn btn-default") }}
+            </p>
         </form>
     {% endcall %}
 
