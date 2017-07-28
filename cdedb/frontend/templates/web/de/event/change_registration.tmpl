@@ -42,9 +42,11 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
         {{ util.form_input_textarea(name="reg.orga_notes", label="Orga-Notizen", rows="5") }}
 
         <h3 class="heading-underline">Status</h3>
-        {{ util.form_input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am") }}
+        {{ util.form_input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am", type="date",
+                                placeholder="YYYY-MM-DD") }}
         {{ util.form_input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern") }}
-        {{ util.form_input_text(name="reg.checkin", label="Eingecheckt am") }}
+        {{ util.form_input_text(name="reg.checkin", label="Eingecheckt am", type="datetime-local",
+                                placeholder="YYYY-MM-DDThh:ii") }}
 
         {% for part_id, part in ambience['event']['parts']|dictsort %}
             {% if ambience['event']['parts']|length > 1 %}
