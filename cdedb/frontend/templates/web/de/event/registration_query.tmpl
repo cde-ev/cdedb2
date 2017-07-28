@@ -98,6 +98,9 @@
                     <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
                         {{ util.make_icon('screenshot') }} Kurseinteilung
                     </button>
+                    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
+                        {{ util.make_icon('edit') }} Feld setzen
+                    </button>
                     <script type="text/javascript">
                         $('#btn-course-choices').click(function(){
                             var list = [];
@@ -108,6 +111,17 @@
                                 return;
                             location.href =
                                 "{{ cdedblink('event/course_choices_form', {'ids': 12345}) }}"
+                                    .replace('12345', list.join(','));
+                        });
+                        $('#btn-set-field').click(function(){
+                            var list = [];
+                            $('#query-result').find('.ls-selected').each(function(){
+                                list.push($(this).attr('data-id'));
+                            });
+                            if (list.length == 0)
+                                return;
+                            location.href =
+                                "{{ cdedblink('event/field_set_select', {'reg_ids': 12345}) }}"
                                     .replace('12345', list.join(','));
                         });
                     </script>

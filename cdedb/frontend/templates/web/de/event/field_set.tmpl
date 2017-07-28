@@ -29,6 +29,7 @@
                     personas[registrations[registration_id]['persona_id']]['family_name'])) }}
         {% endfor %}
         {{ util.input_hidden(name="field_id") }}
+        {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/registration_query')) }}
     </form>
 {% endblock %}

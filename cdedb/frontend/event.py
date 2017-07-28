@@ -2467,12 +2467,19 @@ class EventFrontend(AbstractUserFrontend):
         return self.checkin_form(rs, event_id)
 
     @access("event")
-    @REQUESTdata(("field_id", "id_or_None"))
+    @REQUESTdata(("field_id", "id_or_None"),
+                 ("reg_ids", "int_csv_list_or_None"))
     @event_guard(check_offline=True)
-    def field_set_select(self, rs, event_id, field_id):
+    def field_set_select(self, rs, event_id, field_id, reg_ids):
         """Select a field for manipulation across all registrations."""
         if field_id is None:
-            return self.render(rs, "field_set_select")
+            registrations = self.eventproxy.get_registrations(rs, reg_ids)
+            personas = self.coreproxy.get_personas(
+                rs, tuple(e['persona_id'] for e in registrations.values()))
+            return self.render(rs, "field_set_select",
+                               {'reg_ids': reg_ids,
+                                'registrations': registrations,
+                                'personas': personas})
         else:
             if field_id not in rs.ambience['event']['fields']:
                 return werkzeug.exceptions.NotFound(
@@ -2482,12 +2489,14 @@ class EventFrontend(AbstractUserFrontend):
                 return werkzeug.exceptions.NotFound(
                     _("Wrong associated field."))
             return self.redirect(rs, "event/field_set_form",
-                                 {'field_id': field_id})
+                                 {'field_id': field_id,
+                                  'reg_ids': (','.join(str(i) for i in reg_ids) if reg_ids else None)})
 
     @access("event")
-    @REQUESTdata(("field_id", "id"))
+    @REQUESTdata(("field_id", "id"),
+                 ("reg_ids", "int_csv_list_or_None"))
     @event_guard(check_offline=True)
-    def field_set_form(self, rs, event_id, field_id):
+    def field_set_form(self, rs, event_id, field_id, reg_ids):
         """Render form."""
         if field_id not in rs.ambience['event']['fields']:
             ## also catches field_id validation errors
@@ -2495,7 +2504,10 @@ class EventFrontend(AbstractUserFrontend):
         field = rs.ambience['event']['fields'][field_id]
         if field['association'] != const.FieldAssociations.registration:
             return werkzeug.exceptions.NotFound(_("Wrong associated field."))
-        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        if reg_ids:
+            registration_ids = reg_ids
+        else:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in registrations.values()))
@@ -2510,12 +2522,14 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, values)
         return self.render(rs, "field_set", {
             'registrations': registrations, 'personas': personas,
-            'ordered': ordered})
+            'ordered': ordered,
+            'reg_ids': reg_ids})
 
     @access("event", modi={"POST"})
-    @REQUESTdata(("field_id", "id"))
+    @REQUESTdata(("field_id", "id"),
+                 ("reg_ids", "int_csv_list_or_None"))
     @event_guard(check_offline=True)
-    def field_set(self, rs, event_id, field_id):
+    def field_set(self, rs, event_id, field_id, reg_ids):
         """Modify a specific field on all registrations."""
         if field_id not in rs.ambience['event']['fields']:
             ## also catches field_id validation errors
@@ -2529,7 +2543,14 @@ class EventFrontend(AbstractUserFrontend):
                             for registration_id in registration_ids)
         data = request_extractor(rs, data_params)
         if rs.errors:
-            return self.field_set_form(rs, event_id, field_id)
+            return self.field_set_form(rs, event_id, field_id, reg_ids)
+
+        # If no list of registration_ids is given as parameter get all
+        # registrations
+        if reg_ids:
+            registration_ids = reg_ids
+        else:
+            registration_ids = self.eventproxy.list_registrations(rs, event_id)
 
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         code = 1
@@ -2545,7 +2566,7 @@ class EventFrontend(AbstractUserFrontend):
                 }
                 code *= self.eventproxy.set_registration(rs, new)
         self.notify_return_code(rs, code)
-        return self.redirect(rs, "event/show_event")
+        return self.redirect(rs, "event/registration_query")
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

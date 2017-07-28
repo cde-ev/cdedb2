@@ -721,11 +721,9 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_field_set(self, user):
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'},
-                      {'href': '/event/event/1/field/setselect'})
+        self.get('/event/event/1/field/setselect?reg_ids=1,2')
         self.assertTitle("Feld auswählen (Große Testakademie 2222)")
+        self.assertNonPresence("Inga")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
         self.submit(f)
@@ -734,8 +732,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("pedes", f['input2'].value)
         f['input2'] = "etc"
         self.submit(f)
-        self.traverse({'href': '/event/event/1/registration/query'},
-                      {'href': '/event/event/1/field/setselect'})
+        self.traverse({'href': '/event/event/1/field/setselect'})
         self.assertTitle("Feld auswählen (Große Testakademie 2222)")
         f = self.response.forms['selectfieldform']
         f['field_id'] = 2
@@ -743,6 +740,8 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Feld transportation setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("etc", f['input2'].value)
+        # Value of Inga should not have changed
+        self.assertEqual("etc", f['input4'].value)
 
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'href': '/event/event/1/field/setselect'})

@@ -25,6 +25,17 @@
             {% endif %}
         {% endfor %}
         {{ util.form_input_select("field_id", label="Feld", entries=myentries, small=True) }}
+        {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
         {{ util.form_input_submit(value="Anzeigen", cancellink=cdedblink('event/registration_query'), icon="", small=True) }}
     </form>
+
+    {% if reg_ids %}
+        <h4 class="mosp">Zu ändernde Teilnehmer/Anmeldungen</h4>
+        <ul>
+            {% for reg_id, registration in registrations|dictsort %}
+                <li>{{ personas[registration['persona_id']]['given_names']|e }}
+                    {{ personas[registration['persona_id']]['family_name']|e }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 {% endblock %}
