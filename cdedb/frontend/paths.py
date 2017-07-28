@@ -385,7 +385,11 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/questionnaire", methods=_GET,
                          endpoint="questionnaire_form"),
                     rule("/questionnaire", methods=_POST,
-                         endpoint="questionnaire"),)),
+                         endpoint="questionnaire"),
+                    rule("/multiedit", methods=_GET,
+                         endpoint="change_registrations_form"),
+                    rule("/multiedit", methods=_POST,
+                         endpoint="change_registrations"),)),
                 sub('/registration/<int:registration_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_registration"),

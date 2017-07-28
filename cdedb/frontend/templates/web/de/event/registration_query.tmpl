@@ -101,6 +101,9 @@
                     <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
                         {{ util.make_icon('edit') }} Feld setzen
                     </button>
+                    <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
+                        {{ util.make_icon('pencil') }} Bearbeiten
+                    </button>
                     <script type="text/javascript">
                         $('#btn-course-choices').click(function(){
                             var list = [];
@@ -123,6 +126,22 @@
                             location.href =
                                 "{{ cdedblink('event/field_set_select', {'reg_ids': 12345}) }}"
                                     .replace('12345', list.join(','));
+                        });
+                        $('#btn-edit').click(function(){
+                            var list = [];
+                            $('#query-result').find('.ls-selected').each(function(){
+                                list.push($(this).attr('data-id'));
+                            });
+                            if (list.length == 0)
+                                return;
+                            if (list.length == 1)
+                                location.href =
+                                    "{{ cdedblink('event/change_registration', {'registration_id': 12345}) }}"
+                                        .replace('12345', list.join(','));
+                            else
+                                location.href =
+                                    "{{ cdedblink('event/change_registrations', {'reg_ids': 12345}) }}"
+                                        .replace('12345', list.join(','));
                         });
                     </script>
                 </div>

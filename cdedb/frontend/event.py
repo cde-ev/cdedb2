@@ -1640,7 +1640,8 @@ class EventFrontend(AbstractUserFrontend):
             'course_choices': course_choices, 'lodgements': lodgements})
 
     @staticmethod
-    def process_orga_registration_input(rs, event, do_fields=True):
+    def process_orga_registration_input(rs, event, do_fields=True,
+                                        check_enabled=False):
         """Helper to handle input by orgas.
 
         This takes care of extracting the values and validating them. Which
@@ -1650,16 +1651,30 @@ class EventFrontend(AbstractUserFrontend):
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}
         :type do_fields: bool
+        :param check_enabled: Check if the "enable" checkboxes, corresponding
+                              to the fields are set. This is required for the
+                              multiedit page.
+        :type check_enabled: bool
         :rtype: {str: object}
         :returns: registration data set
         """
+        def filter_parameters(params):
+            if not check_enabled:
+                return params
+            enable_params = tuple(("enable_{}".format(i), "bool")
+                                  for i, t in params)
+            enable = request_extractor(rs, enable_params)
+            return tuple(x for x in params
+                           if enable["enable_{}".format(x[0])])
+
         reg_params = (
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
             ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
             ("reg.mixed_lodging", "bool"), ("reg.checkin", "date_or_None"),
             ("reg.foto_consent", "bool"),
             ("reg.real_persona_id", "cdedbid_or_None"))
-        raw_reg = request_extractor(rs, reg_params)
+        raw_reg = request_extractor(rs, filter_parameters(reg_params))
+
         part_params = []
         for part_id in event['parts']:
             prefix = "part{}".format(part_id)
@@ -1670,26 +1685,28 @@ class EventFrontend(AbstractUserFrontend):
                 for suffix in ("course_id", "course_choice_0",
                                "course_choice_1", "course_choice_2",
                                "course_instructor", "lodgement_id"))
-        raw_parts = request_extractor(rs, part_params)
+        raw_parts = request_extractor(rs, filter_parameters(part_params))
+
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
              "{}_or_None".format(field['kind']))
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration)
-        raw_fields = request_extractor(rs, field_params)
+        raw_fields = request_extractor(rs, filter_parameters(field_params))
 
         new_parts = {
             part_id: {
                 key: raw_parts["part{}.{}".format(part_id, key)]
                 for key in ("status", "course_id", "course_instructor",
                             "lodgement_id")
+                if "part{}.{}".format(part_id, key) in raw_parts
             }
             for part_id in event['parts']
         }
         new_choices = {}
         for part_id in event['parts']:
-            extractor = lambda i: raw_parts["part{}.course_choice_{}".format(
-                part_id, i)]
+            extractor = lambda i: raw_parts.get("part{}.course_choice_{}"
+                                                .format(part_id, i), False)
             new_choices[part_id] = tuple(extractor(i)
                                          for i in range(3) if extractor(i))
         new_fields = {
@@ -1769,6 +1786,82 @@ class EventFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, new_id)
         return self.redirect(rs, "event/show_registration",
                              {'registration_id': new_id})
+
+    @access("event")
+    @REQUESTdata(("reg_ids", "int_csv_list"))
+    @event_guard(check_offline=True)
+    def change_registrations_form(self, rs, event_id, reg_ids):
+        """Render form for changing multiple registrations."""
+        # Get information about registrations, courses and lodgements
+        registrations = self.eventproxy.get_registrations(rs, reg_ids)
+        # TODO add error and show registration_query if 0 registrations found
+        personas = self.coreproxy.get_event_users(
+            rs, (r['persona_id'] for r in registrations.values()))
+        for reg_id, reg in registrations.items():
+            reg['gender'] = personas[reg['persona_id']]['gender']
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        course_choices = {
+            part_id: sorted(course_id for course_id in courses
+                            if part_id in courses[course_id]['parts'])
+            for part_id in rs.ambience['event']['parts']}
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+
+        # iterate registrations to check for differing values
+        reg_values = {}
+        for key, value in next(iter(registrations.values())).items():
+            if all(r[key] == value for r in registrations.values()):
+                reg_values['reg.{}'.format(key)] = value
+                reg_values['enable_reg.{}'.format(key)] = True
+
+        # do the same for registration parts' and field values
+        for part_id in rs.ambience['event']['parts']:
+            for key, value in next(iter(registrations.values()))['parts'][part_id].items():
+                if all(r['parts'][part_id][key] == value for r in registrations.values()):
+                    reg_values['part{}.{}'.format(part_id, key)] = value
+                    reg_values['enable_part{}.{}'.format(part_id, key)] = True
+
+        for field_id in rs.ambience['event']['fields']:
+            key = rs.ambience['event']['fields'][field_id]['field_name']
+            try:
+                value = next(r['fields'][key] for r in registrations.values()
+                             if key in r['fields'])
+            except StopIteration:
+                reg_values['enable_fields.{}'.format(key)] = True
+                continue
+            if all(key in r['fields'] and r['fields'][key] == value for r in registrations.values()):
+                reg_values['fields.{}'.format(key)] = value
+                reg_values['enable_fields.{}'.format(key)] = True
+
+        merge_dicts(rs.values, reg_values)
+        return self.render(rs, "change_registrations", {
+            'registrations': registrations, 'personas': personas,
+            'courses': courses, 'course_choices': course_choices,
+            'lodgements': lodgements})
+
+    @access("event", modi={"POST"})
+    @REQUESTdata(("reg_ids", "int_csv_list"))
+    @event_guard(check_offline=True)
+    def change_registrations(self, rs, event_id, reg_ids):
+        """Make privileged changes to any information pertaining to multiple
+        registrations.
+        """
+        registration = self.process_orga_registration_input(
+            rs, rs.ambience['event'], check_enabled=True)
+        if rs.errors:
+            return self.change_registrations_form(rs, event_id)
+
+        del registration['choices']
+
+        code = 1
+        self.logger.info("Updating registrations {} with data {}".format(reg_ids, registration))
+        for reg_id in reg_ids:
+            registration['id'] = reg_id
+            code *= self.eventproxy.set_registration(rs, registration)
+        self.notify_return_code(rs, code)
+        # TODO redirect to query filtered by reg_ids
+        return self.redirect(rs, "event/registration_query")
 
     @staticmethod
     def calculate_groups(entity_ids, event, registrations, key,
