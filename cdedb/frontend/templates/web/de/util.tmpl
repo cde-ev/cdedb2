@@ -223,9 +223,7 @@
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
         radio=False, attributes='') %}
-    {% if label %}
-        <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
-    {% endif %}
+    <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name|e }}" value="{{ value|e }}"
             {% if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue)  %}
                 checked="checked"
@@ -233,7 +231,7 @@
             {% if readonly %} disabled="disabled" {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
             {% if aclass %} class="{{ aclass|e }}"{% endif %} {{ attributes }} />
         {{ label|e }}
-    {% if label %}</label>{% endif %}
+    </label>
 {% endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False) %}
@@ -364,7 +362,9 @@
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
     {% else %}
         {% if fields['kind'] == "bool" %}
-            {{ input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+            <div class="checkbox">
+                {{ input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, label=fields['field_name']) }}
+            </div>
         {% elif fields['kind'] == "str" %}
             {{ input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
         {% elif fields['kind'] == "int" %}
@@ -385,11 +385,12 @@
 {% endmacro %}
 
 {% macro form_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
-                               defaultvalue='', anid='') %}
+                                defaultvalue='', anid='') %}
     {% if not label %}
         {% set label = fields['field_name'] %}
     {% endif %}
-    {% call form_input_general(name, label, anid, False, info, displayerrors, True) %}
+    {% call form_input_general(name, (None if fields['kind'] == "bool" else label), anid, False, info,
+                               displayerrors, True) %}
         {{ event_field_input(fields, name, readonly, anid) }}
     {% endcall %}
 {% endmacro %}
