@@ -12,6 +12,8 @@
             {% for event_id, event in open_events|dictsort|reverse %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
+                    <br />
+                    {{ event['begin']|date|e }}–{{ event['end']|date|e }}
                 </li>
             {% endfor %}
         </ul>
@@ -27,6 +29,19 @@
             {% for event_id, entry in orga_events|dictsort|reverse %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
+                    <br />
+                    {{ entry['begin']|date|e }}–{{ entry['end']|date|e }}
+                    <br />
+                    <span class="small">
+                        {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
+                                     "Anmeldungen", icon='list') }}
+                        &bull;
+                        {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
+                                     "Statistik", icon='stats') }}
+                        &bull;
+                        {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
+                                     "Kurse", icon='book') }}
+                    </span>
                 </li>
             {% endfor %}
         </ul>

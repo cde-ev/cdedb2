@@ -213,6 +213,8 @@ class EventFrontend(AbstractUserFrontend):
         for event in events.values():
             event['begin'] = self.event_begin(event)
             event['end'] = self.event_end(event)
+            regs = self.eventproxy.list_registrations(rs, event['id'])
+            event['registrations'] = len(regs)
         return self.render(rs, "list_db_events", {'events': events})
 
     @access("event")

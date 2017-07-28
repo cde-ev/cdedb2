@@ -99,14 +99,14 @@
                                 {% endif %}
                                 <br />
                                 <span class="small">
-                                    {{ util.href(cdedblink('event/change_event', {'event_id': event_id}),
-                                                 "Konfiguration", icon='cog') }}
+                                    {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
+                                                 "Anmeldungen", icon='list') }}
+                                    &bull;
+                                    {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
+                                                 "Statistik", icon='stats') }}
                                     &bull;
                                     {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
-                                            "Kurse", icon='book') }}
-                                    &bull;
-                                    {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),
-                                            "Anmeldungen", icon='list') }}
+                                                 "Kurse", icon='book') }}
                                 </span>
                             </li>
                         {% endfor %}
