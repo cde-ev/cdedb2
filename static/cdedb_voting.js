@@ -324,7 +324,7 @@
             
             // Find missing candidates by checking if they are in the DOM tree
             var missing_candidates = [];
-            for (var i = 0; i < candidate_list.length; i++) {
+            for (i in candidate_list) {
                 if (candidate_list[i].closest(document.documentElement).length == 0) 
                     missing_candidates.push(candidate_list[i])
             }
