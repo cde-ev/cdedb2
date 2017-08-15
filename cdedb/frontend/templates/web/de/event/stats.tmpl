@@ -8,7 +8,7 @@
 {{ util.breadcrumb_link(cdedblink("event/stats"), "Teilnehmer-Statistik", active=True) }}
 {% endblock %}
 {% block content %}
-    <h2>Statistik</h2>
+    <h2>Statistik (pro Veranstaltungsteil</h2>
         {% with HEADINGS = {
             'total': "Anmeldungen gesamt",
             'pending': "Offene Anmeldungen",
@@ -19,11 +19,6 @@
             ' checked in': "Eingecheckt",
             ' not checked in': "Noch nicht da",
             ' orgas': "Orgas",
-            ' instructors': "Kursleiter",
-            ' attendees': "Kursteilnehmer",
-            ' first choice': "Erstwahl zugeteilt",
-            ' second choice': "Zweitwahl zugeteilt",
-            ' third choice': "Drittwahl zugeteilt",
             'waitlist': "Wareliste",
             'guest': "Gast",
             'cancelled': "Abgemeldet",
@@ -37,7 +32,7 @@
                         <th>{{ part['title']|e }}</th>
                     {% endfor %}
                 </tr>
-                {% for key, row in statistics.items() %}
+                {% for key, row in per_part_statistics.items() %}
                     <tr>
                         {% if key.startswith(" ") %}
                             <th></th>
@@ -52,21 +47,72 @@
                 {% endfor %}
             </table>
         {% endwith %}
-    {% for key, course_only, heading in (
-        ('not payed', False, "Unbezahlte Anmeldungen"),
-        ('pending', False, "Offene Anmeldungen"),
-        ('no parental agreement', False, "Einverständniserklärung fehlt"),
-        ('no lodgement', False, "Ohne Unterkunft"),
-        ('no course', True, "Ohne Kurs"),
-        ('wrong choice', True, "Ungewählter Kurs zugeteilt"),) %}
-        {% if not course_only or courses %}
+    {% if ambience['event']['tracks'] %}
+        <h2>Statistik (pro Kursschiene) </h2>
+            {% with HEADINGS = {
+                'instructors': "Kursleiter",
+                'attendees': "Kursteilnehmer",
+                'first choice': "Erstwahl zugeteilt",
+                'second choice': "Zweitwahl zugeteilt",
+                'third choice': "Drittwahl zugeteilt",
+            } %}
+                <table>
+                    <tr>
+                        <th>Angabe</th>
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            <th>{{ track['title']|e }}</th>
+                        {% endfor %}
+                    </tr>
+                    {% for key, row in per_track_statistics.items() %}
+                        <tr>
+                            <th>{{ HEADINGS.get(key, key)|e }}</th>
+                            {% for track_id, datum in row|dictsort %}
+                                <td>{{ datum|e }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endwith %}
+    {% endif %}
+    {% for key, heading in (
+        ('not payed', "Unbezahlte Anmeldungen"),
+        ('pending', "Offene Anmeldungen"),
+        ('no parental agreement', "Einverständniserklärung fehlt"),
+        ('no lodgement', "Ohne Unterkunft"),) %}
+
+        <h2>{{ heading|e }}</h2>
+        {% for part_id, part in ambience['event']['parts']|dictsort %}
+            <h3>{{ part['title']|e }} -- {{ per_part_listings[key][part_id]|length|e }}
+                Anmeldung{{ per_part_listings[key][part_id]|length|numerus("", "en")|e }} </h3>
+            {% if 3*(per_part_listings[key][part_id]|length) < registrations|length %}
+                <ul>
+                    {% for registration_id in per_part_listings[key][part_id] %}
+                        <li>
+                            {% with ud = personas[registrations[registration_id]['persona_id']] %}
+                                {{ util.href(cdedblink("event/show_registration",
+                                                       {'registration_id': registration_id}),
+                                             "{} {}".format(ud['given_names'], ud['family_name'])) }}
+                            {% endwith %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                Mindestens ein Drittel -- wir sparen uns die Liste.
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    {% if ambience['event']['tracks'] %}
+        {% for key, heading in (
+            ('no course', "Ohne Kurs"),
+            ('wrong choice', "Ungewählter Kurs zugeteilt"),) %}
+
             <h2>{{ heading|e }}</h2>
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
-                <h3>{{ part['title']|e }} -- {{ listings[key][part_id]|length|e }}
-                    Anmeldung{{ listings[key][part_id]|length|numerus("", "en")|e }} </h3>
-                {% if 3*(listings[key][part_id]|length) < registrations|length %}
+            {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                <h3>{{ track['title']|e }} -- {{ per_track_listings[key][track_id]|length|e }}
+                    Anmeldung{{ per_track_listings[key][track_id]|length|numerus("", "en")|e }} </h3>
+                {% if 3*(per_track_listings[key][track_id]|length) < registrations|length %}
                     <ul>
-                        {% for registration_id in listings[key][part_id] %}
+                        {% for registration_id in per_track_listings[key][track_id] %}
                             <li>
                                 {% with ud = personas[registrations[registration_id]['persona_id']] %}
                                     {{ util.href(cdedblink("event/show_registration",
@@ -80,6 +126,6 @@
                     Mindestens ein Drittel -- wir sparen uns die Liste.
                 {% endif %}
             {% endfor %}
-        {% endif %}
-    {% endfor %}
+        {% endfor %}
+    {% endif %}
 {% endblock %}

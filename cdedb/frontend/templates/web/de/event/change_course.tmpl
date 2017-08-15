@@ -31,12 +31,12 @@
         {{ util.form_input_text(name="max_size", label="Maximalgröße") }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {{ myentries.append((part_id, part['title']))|e }}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {{ myentries.append((track_id, track['title']))|e }}
         {% endfor %}
-        {{ util.form_input_checkboxes(name="parts", label="Angeboten in", entries=myentries) }}
+        {{ util.form_input_checkboxes(name="segments", label="Angeboten in", entries=myentries) }}
         <h4 class="heading-underline">Status</h4>
-        {{ util.form_input_checkboxes(name="active_parts", label="Findet statt in", entries=myentries) }}
+        {{ util.form_input_checkboxes(name="active_segments", label="Findet statt in", entries=myentries) }}
         {# TODO JS to deactivate invalid options #}
         {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
         <h4 class="heading-underline">Felder</h4>

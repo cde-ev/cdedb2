@@ -30,10 +30,10 @@
         {{ util.form_input_text(name="max_size", label="Maximalgröße") }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {{ myentries.append((part_id, part['title']))|e }}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {{ myentries.append((track_id, track['title']))|e }}
         {% endfor %}
-        {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
+        {{ util.form_input_checkboxes(name="segments", label="Veranstaltungsteile", entries=myentries) }}
         <h4 class="heading-underline">Status</h4>
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
         {{ util.form_input_submit(value="Kurs hinzufügen", cancellink=cdedblink('event/course_stats')) }}

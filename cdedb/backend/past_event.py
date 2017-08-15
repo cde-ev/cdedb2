@@ -580,6 +580,8 @@ class PastEventBackend(AbstractBackend):
                 return None, "Event not concluded."
             if event['offline_lock']:
                 return None, "Event locked."
+            tracks = tuple(t for part in event['parts'].values()
+                           for t in part['tracks'])
             self.event.set_event(rs, {'id': event_id, 'is_archived': True})
             pevent = {k: v for k, v in event.items() if k in PAST_EVENT_FIELDS}
             ## Use random day of the event as tempus
@@ -598,26 +600,44 @@ class PastEventBackend(AbstractBackend):
                 course_map[course_id] = pcourse_id
             reg_ids = self.event.list_registrations(rs, event_id)
             registrations = self.event.get_registrations(rs, reg_ids.keys())
+            ## we want to later delete empty courses
             courses_seen = set()
+            ## we want to add each participant/course combination at most once
+            combinations_seen = set() 
             for reg in registrations.values():
-                for reg_part in reg['parts'].values():
-                    if (reg_part['status']
+                present_tracks = []
+                for rpart in reg['parts'].values():
+                    if (rpart['status']
                             == const.RegistrationPartStati.participant):
+                        present_tracks.extend(
+                            event['parts'][rpart['part_id']]['tracks'].keys())
+                if tracks:
+                    ## events with courses
+                    for track_id in present_tracks:
+                        rtrack = reg['tracks'][track_id]
                         is_instructor = False
-                        if reg_part['course_id']:
-                            is_instructor = (reg_part['course_id']
-                                             == reg_part['course_instructor'])
-                            courses_seen.add(reg_part['course_id'])
+                        if rtrack['course_id']:
+                            is_instructor = (rtrack['course_id']
+                                             == rtrack['course_instructor'])
+                            courses_seen.add(rtrack['course_id'])
                         is_orga = reg['persona_id'] in event['orgas']
-                        self.add_participant(
-                            rs, new_id, course_map.get(reg_part['course_id']),
-                            reg['persona_id'], is_instructor, is_orga)
+                        combination = (reg['persona_id'],
+                                       course_map.get(rtrack['course_id']))
+                        if combination not in combinations_seen:
+                            combinations_seen.add(combination)
+                            self.add_participant(
+                                rs, new_id, course_map.get(rtrack['course_id']),
+                                reg['persona_id'], is_instructor, is_orga)
+                else:
+                    ## events without courses
+                    self.add_participant(rs, new_id, None, reg['persona_id'],
+                                         is_instructor, is_orga)
             ## Delete empty courses because they were cancelled
             for course_id in courses.keys():
                 if course_id not in courses_seen:
                     self.delete_past_course(rs, course_map[course_id])
                 else:
-                    if not courses[course_id]['active_parts']:
+                    if not courses[course_id]['active_segments']:
                         self.logger.warning(
                             "Course {} remains without active parts.".format(
                                 course_id))

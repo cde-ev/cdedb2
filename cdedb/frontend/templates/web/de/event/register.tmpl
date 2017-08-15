@@ -33,39 +33,39 @@
                 {{ persona['family_name']|e }}
                 {{ persona['name_supplement']|e }}
             </dd>
-        
+
             <dt>Geburtstag</dt>
             <dd>{{ persona['birthday']|e }}</dd>
-        
-        
+
+
             <dt>Geschlecht</dt>
             <dd>{{ persona['gender']|gender|e }}</dd>
-        
-        
+
+
             <dt>E-Mail</dt>
             <dd> {{ persona['username']|e }} </dd>
-        
-        
+
+
             <dt>Telefon</dt>
             <dd>{{ persona['telephone']|e }}</dd>
-        
-        
+
+
             <dt>Mobiltelefon</dt>
             <dd>{{ persona['mobile']|e }}</dd>
-        
-        
+
+
             <dt>Straße</dt>
             <dd>{{ persona['address']|e }}</dd>
-        
-        
+
+
             <dt>Adresszusatz</dt>
             <dd>{{ persona['address_supplement']|e }}</dd>
-        
-        
+
+
             <dt>Stadt</dt>
             <dd>{{ persona['postal_code']|e }} {{ persona['location']|e }}</dd>
-        
-        
+
+
             <dt>Land</dt>
             <dd>{{ persona['country']|e }}</dd>
         </dl>
@@ -89,13 +89,13 @@
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
-        {% for part_id, course_list in course_choices|dictsort %}
+        {% for track_id, course_list in course_choices|dictsort %}
             {% if course_list %}
-                <div id="course_choice_container-{{ part_id }}">
+                <div id="course_choice_container-{{ track_id }}">
                     <h4>
                         Kurswahl
                         {% if course_choices|length > 1 %}
-                            für {{ ambience['event']['parts'][part_id]['title']|e }}
+                            für {{ ambience['event']['tracks'][track_id]['title']|e }}
                         {% endif %}
                     </h4>
 
@@ -106,11 +106,11 @@
                                              "{}. {}".format(courses[course_id]['nr'],
                                                              courses[course_id]['title'])))|e }}
                     {% endfor %}
-                    {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=myentries,
                                              label="Erstwahl") }}
-                    {{ util.form_input_select(name="course_choice{}_1".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_1".format(track_id), entries=myentries,
                                              label="Zweitwahl") }}
-                    {{ util.form_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_choice{}_2".format(track_id), entries=myentries,
                                              label="Drittwahl") }}
 
                     {# jinja does not support list comprehension ... #}
@@ -118,9 +118,9 @@
                     {% for course_id in course_list %}
                         {{ myentries.append((course_id, courses[course_id]['title']))|e }}
                     {% endfor %}
-                    {{ util.form_input_select(name="course_instructor{}".format(part_id), entries=myentries,
+                    {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=myentries,
                                              label="Kursleiter",
-                                             info="Falls Du einen Kurs angeboten hast, gebe bitte an, welchen.") }}
+                                             info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
                 </div>
             {% endif %}
         {% endfor %}
@@ -155,11 +155,15 @@
         var checkboxes = form.find('[type="checkbox",name="parts"]');
         var updateCourseChoiceContainers = function() {
             checkboxes.each(function(){
-               var container = $('#course_choice_container-' + $(this).val());
-               if (this.checked)
-                   container.show();
-               else
-                   container.hide();
+               var tracks = {{ part_track_association|e }}[$(this).val()];
+               var length = tracks.length;
+               for (var i = 0; i < length; i++) {
+                   var container = $('#course_choice_container-' + tracks[i]);
+                   if (this.checked)
+                       container.show();
+                   else
+                       container.hide();
+               }
             });
         };
 

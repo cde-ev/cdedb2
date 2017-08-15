@@ -78,7 +78,7 @@
                         <<%- if registration['parts'][part_id]['course_id'] -%>>
                             <<%- if (registration['parts'][part_id]['course_id']
                                      == registration['parts'][part_id]['course_instructor']) -%>>
-                                \emph{<<< courses[registration['parts'][part_id]['course_id']]['title']|te >>>}
+                                \emph{<<< courses[registration['parts'][part_id]['course_id']]['title']|te >>>} FIXME repair part<->track
                             <<%- else -%>>
                                 <<< courses[registration['parts'][part_id]['course_id']]['title']|te >>>
                             <<%- endif -%>>

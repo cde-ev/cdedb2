@@ -125,11 +125,13 @@ class TestEventBackend(BackendTest):
             'orgas': {2, 7},
             'parts': {
                 -1: {
+                    'tracks': {-1: "First lecture"},
                     'title': "First coming",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
                 -2: {
+                    'tracks': {-1: "Second lecture"},
                     'title': "Second coming",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
@@ -167,6 +169,9 @@ class TestEventBackend(BackendTest):
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
+                    self.assertEqual(set(data['parts'][part]['tracks'].values()),
+                                     set(tmp['parts'][part]['tracks'].values()))
+                    data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
                     break
             del data['parts'][oldpart]
         field_map = {}
@@ -186,6 +191,7 @@ class TestEventBackend(BackendTest):
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
         newpart = {
+            'tracks': {-1: "Third lecture"},
             'title': "Third coming",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
@@ -194,7 +200,8 @@ class TestEventBackend(BackendTest):
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
-            'fee': decimal.Decimal("1.23")}
+            'fee': decimal.Decimal("1.23"),
+            'tracks': {4: "Second lecture v2"}} # hardcoded value 4
         newfield = {
             'association': 3,
             'field_name': "kuea",
@@ -230,6 +237,9 @@ class TestEventBackend(BackendTest):
                 data['parts'][part] = newpart
                 data['parts'][part]['id'] = part
                 data['parts'][part]['event_id'] = new_id
+                self.assertEqual(set(data['parts'][part]['tracks'].values()),
+                                 set(tmp['parts'][part]['tracks'].values()))
+                data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
@@ -265,11 +275,11 @@ class TestEventBackend(BackendTest):
             'max_size': 12,
             'min_size': None,
             'notes': "Beware of dragons.",
-            'parts': {part_map["Second coming"]},
+            'segments': {part_map["Second coming"]},
         }
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
-        cdata['active_parts'] = cdata['parts']
+        cdata['active_segments'] = cdata['segments']
         cdata['fields'] = {'course_id': new_course_id}
         self.assertEqual(cdata, self.event.get_course(
             self.key, new_course_id))
@@ -319,8 +329,8 @@ class TestEventBackend(BackendTest):
             'shortname': "Topos",
             'instructors': "Alexander Grothendieck",
             'notes': "Beware of dragons.",
-            'parts': {2, 3},
-            'active_parts': {2},
+            'segments': {2, 3},
+            'active_segments': {2},
             'max_size': 42,
             'min_size': 23,
         }
@@ -330,19 +340,19 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
         data['title'] = "Alternate Universes"
-        data['parts'] = {1, 3}
-        data['active_parts'] = {1, 3}
+        data['segments'] = {1, 3}
+        data['active_segments'] = {1, 3}
         self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'parts': data['parts'],
-            'active_parts': data['active_parts']})
+            'id': new_id, 'title': data['title'], 'segments': data['segments'],
+            'active_segments': data['active_segments']})
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
         self.assertNotIn(new_id, old_courses)
         new_courses = self.event.list_db_courses(self.key, event_id)
         self.assertIn(new_id, new_courses)
-        data['active_parts'] = {1}
+        data['active_segments'] = {1}
         self.event.set_course(self.key, {
-            'id': new_id, 'active_parts': data['active_parts']})
+            'id': new_id, 'active_segments': data['active_segments']})
         self.assertEqual(data,
                          self.event.get_course(self.key, new_id))
 
@@ -355,7 +365,6 @@ class TestEventBackend(BackendTest):
     def test_registration_participant(self, user):
         expectation = {
             'checkin': None,
-            'choices': {1: [5, 4, 1], 2: [3, 4, 2], 3: [4, 2, 1]},
             'event_id': 1,
             'fields': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
             'foto_consent': True,
@@ -365,24 +374,34 @@ class TestEventBackend(BackendTest):
             'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
             'parental_agreement': None,
             'parts': {
-                1: {'course_id': None,
-                    'course_instructor': None,
-                    'lodgement_id': None,
+                1: {'lodgement_id': None,
                     'part_id': 1,
                     'registration_id': 2,
                     'status': 3},
-                2: {'course_id': None,
-                    'course_instructor': None,
-                    'lodgement_id': 4,
+                2: {'lodgement_id': 4,
                     'part_id': 2,
                     'registration_id': 2,
                     'status': 4},
-                3: {'course_id': 1,
-                    'course_instructor': 1,
-                    'lodgement_id': 4,
+                3: {'lodgement_id': 4,
                     'part_id': 3,
                     'registration_id': 2,
                     'status': 2}},
+            'tracks': {
+                1: {'choices': [5, 4, 1],
+                    'course_id': None,
+                    'course_instructor': None,
+                    'registration_id': 2,
+                    'track_id': 1,},
+                2: {'choices': [3, 4, 2],
+                    'course_id': None,
+                    'course_instructor': None,
+                    'registration_id': 2,
+                    'track_id': 2,},
+                3: {'choices': [4, 2, 1],
+                    'course_id': 1,
+                    'course_instructor': 1,
+                    'registration_id': 2,
+                    'track_id': 3,},},
             'payment': datetime.date(2014, 2, 2),
             'persona_id': 5,
             'real_persona_id': None}
@@ -390,12 +409,12 @@ class TestEventBackend(BackendTest):
                          self.event.get_registration(self.key, 2))
         data = {
             'id': 2,
-            'choices': {2: [2, 3, 4]},
+            'tracks': {2: {'choices': [2, 3, 4]}},
             'fields': {'transportation': 'etc'},
             'mixed_lodging': False,
         }
         self.assertLess(0, self.event.set_registration(self.key, data))
-        expectation['choices'][2] = [2, 3, 4]
+        expectation['tracks'][2]['choices'] = [2, 3, 4]
         expectation['fields']['transportation'] = 'etc'
         expectation['mixed_lodging'] = False
         self.assertEqual(expectation,
@@ -405,27 +424,32 @@ class TestEventBackend(BackendTest):
     def test_registering(self, user):
         new_reg = {
             'checkin': None,
-            'choices': {1: [1, 4, 5]},
             'event_id': 1,
             'foto_consent': True,
             'mixed_lodging': False,
             'orga_notes': None,
             'parental_agreement': None,
             'parts': {
-                1: {'course_id': None,
-                    'course_instructor': None,
-                    'lodgement_id': None,
+                1: {'lodgement_id': None,
                     'status': 1
+                },
+                2: {'lodgement_id': None,
+                    'status': 1
+                },
+                3: {'lodgement_id': None,
+                    'status': 1
+                },
+            },
+            'tracks': {
+                1: {'choices': [1, 4, 5],
+                    'course_id': None,
+                    'course_instructor': None,
                 },
                 2: {'course_id': None,
                     'course_instructor': None,
-                    'lodgement_id': None,
-                    'status': 1
                 },
                 3: {'course_id': None,
                     'course_instructor': None,
-                    'lodgement_id': None,
-                    'status': 1
                 },
             },
             'notes': "Some bla.",
@@ -442,6 +466,14 @@ class TestEventBackend(BackendTest):
         new_reg['parts'][2]['registration_id'] = new_id
         new_reg['parts'][3]['part_id'] = 3
         new_reg['parts'][3]['registration_id'] = new_id
+        new_reg['tracks'][1]['track_id'] = 1
+        new_reg['tracks'][1]['registration_id'] = new_id
+        new_reg['tracks'][2]['track_id'] = 2
+        new_reg['tracks'][2]['registration_id'] = new_id
+        new_reg['tracks'][2]['choices'] = []
+        new_reg['tracks'][3]['track_id'] = 3
+        new_reg['tracks'][3]['registration_id'] = new_id
+        new_reg['tracks'][3]['choices'] = []
         self.assertEqual(new_reg,
                          self.event.get_registration(self.key, new_id))
 
@@ -452,7 +484,6 @@ class TestEventBackend(BackendTest):
                          self.event.list_registrations(self.key, event_id))
         expectation = {
             1: {'checkin': None,
-                'choices': {1: [], 2: [2, 3, 4], 3: [1, 4, 5]},
                 'event_id': 1,
                 'fields': {'registration_id': 1,
                                'lodge': 'Die üblichen Verdächtigen :)'},
@@ -463,29 +494,38 @@ class TestEventBackend(BackendTest):
                 'notes': None,
                 'parental_agreement': None,
                 'parts': {
-                    1: {'course_id': None,
-                        'course_instructor': None,
-                        'lodgement_id': None,
+                    1: {'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 1,
                         'status': -1},
-                    2: {'course_id': None,
-                        'course_instructor': None,
-                        'lodgement_id': None,
+                    2: {'lodgement_id': None,
                         'part_id': 2,
                         'registration_id': 1,
                         'status': 1},
-                    3: {'course_id': None,
-                        'course_instructor': None,
-                        'lodgement_id': 1,
+                    3: {'lodgement_id': 1,
                         'part_id': 3,
                         'registration_id': 1,
                         'status': 2}},
+                'tracks': {
+                    1: {'choices': [1, 3, 4],
+                        'course_id': None,
+                        'course_instructor': None,
+                        'registration_id': 1,
+                        'track_id': 1},
+                    2: {'choices': [2, 3, 4],
+                        'course_id': None,
+                        'course_instructor': None,
+                        'registration_id': 1,
+                        'track_id': 2},
+                    3: {'choices': [1, 4, 5],
+                        'course_id': None,
+                        'course_instructor': None,
+                        'registration_id': 1,
+                        'track_id': 3}},
                 'payment': None,
                 'persona_id': 1,
                 'real_persona_id': None},
             2: {'checkin': None,
-                'choices': {1: [5, 4, 1], 2: [3, 4, 2], 3: [4, 2, 1]},
                 'event_id': 1,
                 'fields': {'registration_id': 2, 'brings_balls': True, 'transportation': 'pedes'},
                 'foto_consent': True,
@@ -495,29 +535,38 @@ class TestEventBackend(BackendTest):
                 'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
                 'parental_agreement': None,
                 'parts': {
-                    1: {'course_id': None,
-                        'course_instructor': None,
-                        'lodgement_id': None,
+                    1: {'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 2,
                         'status': 3},
-                    2: {'course_id': None,
-                        'course_instructor': None,
-                        'lodgement_id': 4,
+                    2: {'lodgement_id': 4,
                         'part_id': 2,
                         'registration_id': 2,
                         'status': 4},
-                    3: {'course_id': 1,
-                        'course_instructor': 1,
-                        'lodgement_id': 4,
+                    3: {'lodgement_id': 4,
                         'part_id': 3,
                         'registration_id': 2,
                         'status': 2}},
+                'tracks': {
+                    1: {'choices': [5, 4, 1],
+                        'course_id': None,
+                        'course_instructor': None,
+                        'registration_id': 2,
+                        'track_id': 1},
+                    2: {'choices': [3, 4, 2],
+                        'course_id': None,
+                        'course_instructor': None,
+                        'registration_id': 2,
+                        'track_id': 2},
+                    3: {'choices': [4, 2, 1],
+                        'course_id': 1,
+                        'course_instructor': 1,
+                        'registration_id': 2,
+                        'track_id': 3}},
                 'payment': datetime.date(2014, 2, 2),
                 'persona_id': 5,
                 'real_persona_id': None},
             4: {'checkin': None,
-                'choices': {1: [1, 4, 5], 2: [4, 2, 3], 3: [1, 2, 4]},
                 'event_id': 1,
                 'fields': {'registration_id': 4,
                                'brings_balls': False,
@@ -530,24 +579,34 @@ class TestEventBackend(BackendTest):
                 'notes': None,
                 'parental_agreement': None,
                 'parts': {
-                    1: {'course_id': None,
-                        'course_instructor': None,
-                        'lodgement_id': None,
+                    1: {'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 4,
                         'status': 6},
-                    2: {'course_id': None,
-                        'course_instructor': None,
-                        'lodgement_id': None,
+                    2: {'lodgement_id': None,
                         'part_id': 2,
                         'registration_id': 4,
                         'status': 5},
-                    3: {'course_id': 1,
-                        'course_instructor': None,
-                        'lodgement_id': 2,
+                    3: {'lodgement_id': 2,
                         'part_id': 3,
                         'registration_id': 4,
                         'status': 2}},
+                'tracks': {
+                    1: {'choices': [1, 4, 5],
+                        'course_id': None,
+                        'course_instructor': None,
+                        'registration_id': 4,
+                        'track_id': 1},
+                    2: {'choices': [4, 2, 3],
+                        'course_id': None,
+                        'course_instructor': None,
+                        'registration_id': 4,
+                        'track_id': 2},
+                    3: {'choices': [1, 2, 4],
+                        'course_id': 1,
+                        'course_instructor': None,
+                        'registration_id': 4,
+                        'track_id': 3}},
                 'payment': datetime.date(2014, 4, 4),
                 'persona_id': 9,
                 'real_persona_id': None}}
@@ -555,36 +614,48 @@ class TestEventBackend(BackendTest):
                          self.event.get_registrations(self.key, (1, 2, 4)))
         data = {
             'id': 4,
-            'choices': {1:[5, 4, 1], 2: [2, 3, 4]},
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
             'checkin': datetime.datetime.now(pytz.utc),
             'parts': {
                 1: {
                     'status': 2,
-                    'course_id': 5,
                     'lodgement_id': 2,
                 },
                 3: {
                     'status': 6,
-                    'course_id': None,
                     'lodgement_id': None,
+                }
+            },
+            'tracks': {
+                1: {
+                    'course_id': 5,
+                    'choices': [5, 4, 1],
+                },
+                2: {
+                    'choices': [2, 3, 4],
+                },
+                3: {
+                    'course_id': None,
                 }
             }
         }
         self.assertLess(0, self.event.set_registration(self.key, data))
-        expectation[4]['choices'].update(data['choices'])
+        expectation[4]['tracks'][1]['choices'] = data['tracks'][1]['choices']
+        expectation[4]['tracks'][2]['choices'] = data['tracks'][2]['choices']
         expectation[4]['fields'].update(data['fields'])
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
         expectation[4]['checkin'] = nearly_now()
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
                 value.update(data['parts'][key])
+        for key, value in expectation[4]['tracks'].items():
+            if key in data['tracks']:
+                value.update(data['tracks'][key])
         data = self.event.get_registrations(self.key, (1, 2, 4))
         self.assertEqual(expectation, data)
         new_reg = {
             'checkin': None,
-            'choices': {1: [1, 4, 5]},
             'event_id': event_id,
             'foto_consent': True,
             'mixed_lodging': False,
@@ -592,20 +663,26 @@ class TestEventBackend(BackendTest):
             'notes': None,
             'parental_agreement': None,
             'parts': {
-                1: {'course_id': None,
-                    'course_instructor': None,
-                    'lodgement_id': None,
+                1: {'lodgement_id': None,
                     'status': 1
+                },
+                2: {'lodgement_id': None,
+                    'status': 1
+                },
+                3: {'lodgement_id': None,
+                    'status': 1
+                },
+            },
+            'tracks': {
+                1: {'choices': [1, 4, 5],
+                    'course_id': None,
+                    'course_instructor': None
                 },
                 2: {'course_id': None,
-                    'course_instructor': None,
-                    'lodgement_id': None,
-                    'status': 1
+                    'course_instructor': None
                 },
                 3: {'course_id': None,
-                    'course_instructor': None,
-                    'lodgement_id': None,
-                    'status': 1
+                    'course_instructor': None
                 },
             },
             'payment': None,
@@ -622,6 +699,14 @@ class TestEventBackend(BackendTest):
         new_reg['parts'][2]['registration_id'] = new_id
         new_reg['parts'][3]['part_id'] = 3
         new_reg['parts'][3]['registration_id'] = new_id
+        new_reg['tracks'][1]['track_id'] = 1
+        new_reg['tracks'][1]['registration_id'] = new_id
+        new_reg['tracks'][2]['track_id'] = 2
+        new_reg['tracks'][2]['registration_id'] = new_id
+        new_reg['tracks'][2]['choices'] = []
+        new_reg['tracks'][3]['track_id'] = 3
+        new_reg['tracks'][3]['registration_id'] = new_id
+        new_reg['tracks'][3]['choices'] = []
         self.assertEqual(new_reg,
                          self.event.get_registration(self.key, new_id))
         self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9, new_id: 2},
@@ -633,7 +718,7 @@ class TestEventBackend(BackendTest):
         expectation={1: 1, 2: 5, 3: 7, 4: 9}
         self.assertEqual(expectation, self.event.registrations_by_course(self.key, event_id))
         self.assertEqual(expectation, self.event.registrations_by_course(
-            self.key, event_id, part_id=3))
+            self.key, event_id, track_id=3))
         expectation={1: 1, 2: 5, 3: 7, 4: 9}
         self.assertEqual(expectation, self.event.registrations_by_course(
             self.key, event_id, course_id=1))
@@ -959,182 +1044,206 @@ class TestEventBackend(BackendTest):
                                'telephone': None,
                                'title': None,
                                'username': 'inga@example.cde'}),
-            'event.course_choices': ({'course_id': 2,
+            'event.course_choices': ({'course_id': 1,
                                       'id': 1,
-                                      'part_id': 2,
                                       'rank': 0,
-                                      'registration_id': 1},
+                                      'registration_id': 1,
+                                      'track_id': 1},
                                      {'course_id': 3,
                                       'id': 2,
-                                      'part_id': 2,
                                       'rank': 1,
-                                      'registration_id': 1},
+                                      'registration_id': 1,
+                                      'track_id': 1},
                                      {'course_id': 4,
                                       'id': 3,
-                                      'part_id': 2,
                                       'rank': 2,
-                                      'registration_id': 1},
-                                     {'course_id': 1,
+                                      'registration_id': 1,
+                                      'track_id': 1},
+                                     {'course_id': 2,
                                       'id': 4,
-                                      'part_id': 3,
                                       'rank': 0,
-                                      'registration_id': 1},
-                                     {'course_id': 4,
+                                      'registration_id': 1,
+                                      'track_id': 2},
+                                     {'course_id': 3,
                                       'id': 5,
-                                      'part_id': 3,
                                       'rank': 1,
-                                      'registration_id': 1},
-                                     {'course_id': 5,
+                                      'registration_id': 1,
+                                      'track_id': 2},
+                                     {'course_id': 4,
                                       'id': 6,
-                                      'part_id': 3,
                                       'rank': 2,
-                                      'registration_id': 1},
-                                     {'course_id': 5,
+                                      'registration_id': 1,
+                                      'track_id': 2},
+                                     {'course_id': 1,
                                       'id': 7,
-                                      'part_id': 1,
                                       'rank': 0,
-                                      'registration_id': 2},
+                                      'registration_id': 1,
+                                      'track_id': 3},
                                      {'course_id': 4,
                                       'id': 8,
-                                      'part_id': 1,
                                       'rank': 1,
-                                      'registration_id': 2},
-                                     {'course_id': 1,
+                                      'registration_id': 1,
+                                      'track_id': 3},
+                                     {'course_id': 5,
                                       'id': 9,
-                                      'part_id': 1,
                                       'rank': 2,
-                                      'registration_id': 2},
-                                     {'course_id': 3,
+                                      'registration_id': 1,
+                                      'track_id': 3},
+                                     {'course_id': 5,
                                       'id': 10,
-                                      'part_id': 2,
                                       'rank': 0,
-                                      'registration_id': 2},
+                                      'registration_id': 2,
+                                      'track_id': 1},
                                      {'course_id': 4,
                                       'id': 11,
-                                      'part_id': 2,
                                       'rank': 1,
-                                      'registration_id': 2},
-                                     {'course_id': 2,
-                                      'id': 12,
-                                      'part_id': 2,
-                                      'rank': 2,
-                                      'registration_id': 2},
-                                     {'course_id': 4,
-                                      'id': 13,
-                                      'part_id': 3,
-                                      'rank': 0,
-                                      'registration_id': 2},
-                                     {'course_id': 2,
-                                      'id': 14,
-                                      'part_id': 3,
-                                      'rank': 1,
-                                      'registration_id': 2},
+                                      'registration_id': 2,
+                                      'track_id': 1},
                                      {'course_id': 1,
-                                      'id': 15,
-                                      'part_id': 3,
+                                      'id': 12,
                                       'rank': 2,
-                                      'registration_id': 2},
+                                      'registration_id': 2,
+                                      'track_id': 1},
+                                     {'course_id': 3,
+                                      'id': 13,
+                                      'rank': 0,
+                                      'registration_id': 2,
+                                      'track_id': 2},
+                                     {'course_id': 4,
+                                      'id': 14,
+                                      'rank': 1,
+                                      'registration_id': 2,
+                                      'track_id': 2},
+                                     {'course_id': 2,
+                                      'id': 15,
+                                      'rank': 2,
+                                      'registration_id': 2,
+                                      'track_id': 2},
                                      {'course_id': 4,
                                       'id': 16,
-                                      'part_id': 1,
                                       'rank': 0,
-                                      'registration_id': 3},
-                                     {'course_id': 1,
-                                      'id': 17,
-                                      'part_id': 1,
-                                      'rank': 1,
-                                      'registration_id': 3},
-                                     {'course_id': 5,
-                                      'id': 18,
-                                      'part_id': 1,
-                                      'rank': 2,
-                                      'registration_id': 3},
+                                      'registration_id': 2,
+                                      'track_id': 3},
                                      {'course_id': 2,
-                                      'id': 19,
-                                      'part_id': 2,
-                                      'rank': 0,
-                                      'registration_id': 3},
-                                     {'course_id': 3,
-                                      'id': 20,
-                                      'part_id': 2,
+                                      'id': 17,
                                       'rank': 1,
-                                      'registration_id': 3},
-                                     {'course_id': 4,
-                                      'id': 21,
-                                      'part_id': 2,
+                                      'registration_id': 2,
+                                      'track_id': 3},
+                                     {'course_id': 1,
+                                      'id': 18,
                                       'rank': 2,
-                                      'registration_id': 3},
+                                      'registration_id': 2,
+                                      'track_id': 3},
+                                     {'course_id': 4,
+                                      'id': 19,
+                                      'rank': 0,
+                                      'registration_id': 3,
+                                      'track_id': 1},
+                                     {'course_id': 1,
+                                      'id': 20,
+                                      'rank': 1,
+                                      'registration_id': 3,
+                                      'track_id': 1},
+                                     {'course_id': 5,
+                                      'id': 21,
+                                      'rank': 2,
+                                      'registration_id': 3,
+                                      'track_id': 1},
                                      {'course_id': 2,
                                       'id': 22,
-                                      'part_id': 3,
                                       'rank': 0,
-                                      'registration_id': 3},
-                                     {'course_id': 4,
+                                      'registration_id': 3,
+                                      'track_id': 2},
+                                     {'course_id': 3,
                                       'id': 23,
-                                      'part_id': 3,
                                       'rank': 1,
-                                      'registration_id': 3},
-                                     {'course_id': 1,
+                                      'registration_id': 3,
+                                      'track_id': 2},
+                                     {'course_id': 4,
                                       'id': 24,
-                                      'part_id': 3,
                                       'rank': 2,
-                                      'registration_id': 3},
-                                     {'course_id': 1,
+                                      'registration_id': 3,
+                                      'track_id': 2},
+                                     {'course_id': 2,
                                       'id': 25,
-                                      'part_id': 1,
                                       'rank': 0,
-                                      'registration_id': 4},
+                                      'registration_id': 3,
+                                      'track_id': 3},
                                      {'course_id': 4,
                                       'id': 26,
-                                      'part_id': 1,
                                       'rank': 1,
-                                      'registration_id': 4},
-                                     {'course_id': 5,
-                                      'id': 27,
-                                      'part_id': 1,
-                                      'rank': 2,
-                                      'registration_id': 4},
-                                     {'course_id': 4,
-                                      'id': 28,
-                                      'part_id': 2,
-                                      'rank': 0,
-                                      'registration_id': 4},
-                                     {'course_id': 2,
-                                      'id': 29,
-                                      'part_id': 2,
-                                      'rank': 1,
-                                      'registration_id': 4},
-                                     {'course_id': 3,
-                                      'id': 30,
-                                      'part_id': 2,
-                                      'rank': 2,
-                                      'registration_id': 4},
+                                      'registration_id': 3,
+                                      'track_id': 3},
                                      {'course_id': 1,
-                                      'id': 31,
-                                      'part_id': 3,
+                                      'id': 27,
+                                      'rank': 2,
+                                      'registration_id': 3,
+                                      'track_id': 3},
+                                     {'course_id': 1,
+                                      'id': 28,
                                       'rank': 0,
-                                      'registration_id': 4},
+                                      'registration_id': 4,
+                                      'track_id': 1},
+                                     {'course_id': 4,
+                                      'id': 29,
+                                      'rank': 1,
+                                      'registration_id': 4,
+                                      'track_id': 1},
+                                     {'course_id': 5,
+                                      'id': 30,
+                                      'rank': 2,
+                                      'registration_id': 4,
+                                      'track_id': 1},
+                                     {'course_id': 4,
+                                      'id': 31,
+                                      'rank': 0,
+                                      'registration_id': 4,
+                                      'track_id': 2},
                                      {'course_id': 2,
                                       'id': 32,
-                                      'part_id': 3,
                                       'rank': 1,
-                                      'registration_id': 4},
-                                     {'course_id': 4,
+                                      'registration_id': 4,
+                                      'track_id': 2},
+                                     {'course_id': 3,
                                       'id': 33,
-                                      'part_id': 3,
                                       'rank': 2,
-                                      'registration_id': 4}),
-            'event.course_parts': ({'course_id': 1, 'id': 1, 'part_id': 1, 'is_active': True},
-                                   {'course_id': 1, 'id': 2, 'part_id': 3, 'is_active': True},
-                                   {'course_id': 2, 'id': 3, 'part_id': 2, 'is_active': False},
-                                   {'course_id': 2, 'id': 4, 'part_id': 3, 'is_active': True},
-                                   {'course_id': 3, 'id': 5, 'part_id': 2, 'is_active': True},
-                                   {'course_id': 4, 'id': 6, 'part_id': 1, 'is_active': True},
-                                   {'course_id': 4, 'id': 7, 'part_id': 2, 'is_active': True},
-                                   {'course_id': 4, 'id': 8, 'part_id': 3, 'is_active': True},
-                                   {'course_id': 5, 'id': 9, 'part_id': 1, 'is_active': True},
-                                   {'course_id': 5, 'id': 10, 'part_id': 2, 'is_active': True},
-                                   {'course_id': 5, 'id': 11, 'part_id': 3, 'is_active': False}),
+                                      'registration_id': 4,
+                                      'track_id': 2},
+                                     {'course_id': 1,
+                                      'id': 34,
+                                      'rank': 0,
+                                      'registration_id': 4,
+                                      'track_id': 3},
+                                     {'course_id': 2,
+                                      'id': 35,
+                                      'rank': 1,
+                                      'registration_id': 4,
+                                      'track_id': 3},
+                                     {'course_id': 4,
+                                      'id': 36,
+                                      'rank': 2,
+                                      'registration_id': 4,
+                                      'track_id': 3}),
+            'event.course_segments': ({'course_id': 1, 'id': 1, 'track_id': 1, 'is_active': True},
+                                      {'course_id': 1, 'id': 2, 'track_id': 3, 'is_active': True},
+                                      {'course_id': 2, 'id': 3, 'track_id': 2, 'is_active': False},
+                                      {'course_id': 2, 'id': 4, 'track_id': 3, 'is_active': True},
+                                      {'course_id': 3, 'id': 5, 'track_id': 2, 'is_active': True},
+                                      {'course_id': 4, 'id': 6, 'track_id': 1, 'is_active': True},
+                                      {'course_id': 4, 'id': 7, 'track_id': 2, 'is_active': True},
+                                      {'course_id': 4, 'id': 8, 'track_id': 3, 'is_active': True},
+                                      {'course_id': 5, 'id': 9, 'track_id': 1, 'is_active': True},
+                                      {'course_id': 5, 'id': 10, 'track_id': 2, 'is_active': True},
+                                      {'course_id': 5, 'id': 11, 'track_id': 3, 'is_active': False}),
+            'event.course_tracks': ({'id': 1,
+                                     'part_id': 2,
+                                     'title': 'Morgenkreis (Erste Hälfte)'},
+                                    {'id': 2,
+                                     'part_id': 2,
+                                    'title': 'Kaffeekränzchen (Erste Hälfte)'},
+                                    {'id': 3,
+                                     'part_id': 3,
+                                     'title': 'Arbeitssitzung (Zweite Hälfte)'}),
             'event.courses': ({'description': 'Wir werden die Bäume drücken.',
                                'event_id': 1,
                                'id': 1,
@@ -1363,90 +1472,126 @@ class TestEventBackend(BackendTest):
                                           'pos': 5,
                                           'readonly': False,
                                           'title': 'Hauswunsch'}),
-            'event.registration_parts': ({'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 1,
+            'event.registration_parts': ({'id': 1,
                                           'lodgement_id': None,
                                           'part_id': 1,
                                           'registration_id': 1,
                                           'status': -1},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 2,
+                                         {'id': 2,
                                           'lodgement_id': None,
                                           'part_id': 2,
                                           'registration_id': 1,
                                           'status': 1},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 3,
+                                         {'id': 3,
                                           'lodgement_id': 1,
                                           'part_id': 3,
                                           'registration_id': 1,
                                           'status': 2},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 4,
+                                         {'id': 4,
                                           'lodgement_id': None,
                                           'part_id': 1,
                                           'registration_id': 2,
                                           'status': 3},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 5,
+                                         {'id': 5,
                                           'lodgement_id': 4,
                                           'part_id': 2,
                                           'registration_id': 2,
                                           'status': 4},
-                                         {'course_id': 1,
-                                          'course_instructor': 1,
-                                          'id': 6,
+                                         {'id': 6,
                                           'lodgement_id': 4,
                                           'part_id': 3,
                                           'registration_id': 2,
                                           'status': 2},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 7,
+                                         {'id': 7,
                                           'lodgement_id': 2,
                                           'part_id': 1,
                                           'registration_id': 3,
                                           'status': 2},
-                                         {'course_id': 2,
-                                          'course_instructor': None,
-                                          'id': 8,
+                                         {'id': 8,
                                           'lodgement_id': None,
                                           'part_id': 2,
                                           'registration_id': 3,
                                           'status': 2},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 9,
+                                         {'id': 9,
                                           'lodgement_id': 2,
                                           'part_id': 3,
                                           'registration_id': 3,
                                           'status': 2},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 10,
+                                         {'id': 10,
                                           'lodgement_id': None,
                                           'part_id': 1,
                                           'registration_id': 4,
                                           'status': 6},
-                                         {'course_id': None,
-                                          'course_instructor': None,
-                                          'id': 11,
+                                         {'id': 11,
                                           'lodgement_id': None,
                                           'part_id': 2,
                                           'registration_id': 4,
                                           'status': 5},
-                                         {'course_id': 1,
-                                          'course_instructor': None,
-                                          'id': 12,
+                                         {'id': 12,
                                           'lodgement_id': 2,
                                           'part_id': 3,
                                           'registration_id': 4,
                                           'status': 2}),
+            'event.registration_tracks': ({'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 1,
+                                           'registration_id': 1,
+                                           'track_id': 1},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 2,
+                                           'registration_id': 1,
+                                           'track_id': 2},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 3,
+                                           'registration_id': 1,
+                                           'track_id': 3},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 4,
+                                           'registration_id': 2,
+                                           'track_id': 1},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 5,
+                                           'registration_id': 2,
+                                           'track_id': 2},
+                                          {'course_id': 1,
+                                           'course_instructor': 1,
+                                           'id': 6,
+                                           'registration_id': 2,
+                                           'track_id': 3},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 7,
+                                           'registration_id': 3,
+                                           'track_id': 1},
+                                          {'course_id': 2,
+                                           'course_instructor': None,
+                                           'id': 8,
+                                           'registration_id': 3,
+                                           'track_id': 2},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 9,
+                                           'registration_id': 3,
+                                           'track_id': 3},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 10,
+                                           'registration_id': 4,
+                                           'track_id': 1},
+                                          {'course_id': None,
+                                           'course_instructor': None,
+                                           'id': 11,
+                                           'registration_id': 4,
+                                           'track_id': 2},
+                                          {'course_id': 1,
+                                           'course_instructor': None,
+                                           'id': 12,
+                                           'registration_id': 4,
+                                           'track_id': 3}),
             'event.registrations': ({'checkin': None,
                                      'event_id': 1,
                                      'fields': {'lodge': 'Die üblichen '
@@ -1516,10 +1661,11 @@ class TestEventBackend(BackendTest):
         ##
         ## Apply some changes
         ##
-        for table in ('event.events', 'event.event_parts', 'event.courses',
-                      'event.course_parts', 'event.orgas',
+        for table in ('event.events', 'event.event_parts', 'event.course_tracks',
+                      'event.courses', 'event.course_segments', 'event.orgas',
                       'event.field_definitions', 'event.lodgements',
                       'event.registrations', 'event.registration_parts',
+                      'event.registration_tracks',
                       'event.course_choices', 'event.questionnaire_rows'):
             new_data[table] = list(new_data[table])
         ## event
@@ -1532,6 +1678,11 @@ class TestEventBackend(BackendTest):
              'part_begin': datetime.date(2345, 1, 1),
              'part_end': datetime.date(2345, 12, 31),
              'title': 'Aftershowparty'})
+        ## course tracks
+        new_data['event.course_tracks'].append(
+            {'part_id': 4000,
+             'id': 1100,
+             'title': 'Enlightnment'})
         ## lodgements
         new_data['event.lodgements'].append(
             {'capacity': 1,
@@ -1559,13 +1710,18 @@ class TestEventBackend(BackendTest):
              'real_persona_id': 2})
         ## registration parts
         new_data['event.registration_parts'].append(
-            {'course_id': 3000,
-             'course_instructor': None,
-             'id': 5000,
+            {'id': 5000,
              'lodgement_id': 6000,
              'part_id': 4000,
              'registration_id': 1000,
              'status': 1})
+        ## registration parts
+        new_data['event.registration_tracks'].append(
+            {'course_id': 3000,
+             'course_instructor': None,
+             'id': 1200,
+             'track_id': 1100,
+             'registration_id': 1000})
         ## orgas
         new_data['event.orgas'].append(
             {'event_id': 1, 'id': 7000, 'persona_id': 2000})
@@ -1583,15 +1739,15 @@ class TestEventBackend(BackendTest):
              'shortname': 'Spontan',
              'title': 'Spontankurs'})
         ## course parts
-        new_data['event.course_parts'].append(
-            {'course_id': 3000, 'id': 8000, 'part_id': 4000, 'is_active': True})
+        new_data['event.course_segments'].append(
+            {'course_id': 3000, 'id': 8000, 'track_id': 1100, 'is_active': True})
         ## course choices
         choices = new_data['event.course_choices'][:-2]
-        choices.append({'course_id': 5, 'id': 32, 'part_id': 3, 'rank': 1,
+        choices.append({'course_id': 5, 'id': 35, 'track_id': 3, 'rank': 1,
                         'registration_id': 4}) ## an update
-        choices.append({'course_id': 4, 'id': 9000, 'part_id': 3, 'rank': 2,
+        choices.append({'course_id': 4, 'id': 9000, 'track_id': 3, 'rank': 2,
                         'registration_id': 4}) ## a delete and an insert
-        choices.append({'course_id': 3000, 'id': 10000, 'part_id': 4000, 'rank': 0,
+        choices.append({'course_id': 3000, 'id': 10000, 'track_id': 1100, 'rank': 0,
                         'registration_id': 1000}) ## an insert
         new_data['event.course_choices'] = choices
         assert(len(new_data['event.course_choices'])
@@ -1625,6 +1781,8 @@ class TestEventBackend(BackendTest):
         new_data['timestamp'] = nearly_now()
         ## Fix IDs in a static way, everything else is overkill
         new_data['event.event_parts'][-1]['id'] = 4
+        new_data['event.course_tracks'][-1]['id'] = 4
+        new_data['event.course_tracks'][-1]['part_id'] = 4
         new_data['event.orgas'][-1]['id'] = 2
         new_data['event.orgas'][-1]['persona_id'] = 2
         new_data['event.registrations'][-1]['id'] = 5
@@ -1632,37 +1790,42 @@ class TestEventBackend(BackendTest):
         new_data['event.registrations'][-1]['persona_id'] = 2
         new_data['event.registrations'][-1]['real_persona_id'] = None
         new_data['event.registration_parts'][-1]['id'] = 13
-        new_data['event.registration_parts'][-1]['course_id'] = 6
         new_data['event.registration_parts'][-1]['lodgement_id'] = 5
         new_data['event.registration_parts'][-1]['part_id'] = 4
         new_data['event.registration_parts'][-1]['registration_id'] = 5
+        new_data['event.registration_tracks'][-1]['id'] = 13
+        new_data['event.registration_tracks'][-1]['course_id'] = 6
+        new_data['event.registration_tracks'][-1]['registration_id'] = 5
+        new_data['event.registration_tracks'][-1]['track_id'] = 4
         new_data['event.courses'][-1]['id'] = 6
         new_data['event.courses'][-1]['fields']['course_id'] = 6
-        new_data['event.course_choices'][-2]['id'] = 34
-        new_data['event.course_choices'][-1]['id'] = 35
+        new_data['event.course_choices'][-2]['id'] = 37
+        new_data['event.course_choices'][-1]['id'] = 38
         new_data['event.course_choices'][-1]['course_id'] = 6
-        new_data['event.course_choices'][-1]['part_id'] = 4
+        new_data['event.course_choices'][-1]['track_id'] = 4
         new_data['event.course_choices'][-1]['registration_id'] = 5
-        new_data['event.course_parts'][-1]['id'] = 12
-        new_data['event.course_parts'][-1]['course_id'] = 6
-        new_data['event.course_parts'][-1]['part_id'] = 4
+        new_data['event.course_segments'][-1]['id'] = 12
+        new_data['event.course_segments'][-1]['course_id'] = 6
+        new_data['event.course_segments'][-1]['track_id'] = 4
         new_data['event.lodgements'][-1]['id'] = 5
         new_data['event.lodgements'][-1]['fields']['lodgement_id'] = 5
         new_data['event.field_definitions'][-1]['id'] = 10
         new_data['event.questionnaire_rows'][-1]['id'] = 7
         new_data['event.questionnaire_rows'][-1]['field_id'] = 10
         ## make tuples again
-        for table in ('event.events', 'event.event_parts', 'event.courses',
-                      'event.course_parts', 'event.orgas',
+        for table in ('event.events', 'event.event_parts',
+                      'event.course_tracks', 'event.courses',
+                      'event.course_segments', 'event.orgas',
                       'event.field_definitions', 'event.lodgements',
                       'event.registrations', 'event.registration_parts',
-                      'event.course_choices', 'event.questionnaire_rows'):
+                      'event.registration_tracks', 'event.course_choices',
+                      'event.questionnaire_rows'):
             new_data[table] = tuple(new_data[table])
 
         result = self.event.export_event(self.key, 1)
-        ## this comes out in the wrong order, most probably this is not
+        ## these comes out in the wrong order, most probably this is not
         ## guaranteed by Postgres
-        for table in ('event.field_definitions', 'event.orgas'):
+        for table in ('event.field_definitions', 'event.orgas', 'event.course_tracks'):
             result[table] = tuple(sorted(result[table], key=lambda x: x['id']))
         ## because it's irrelevant anyway simply paste the result
         new_data['core.personas'] = result['core.personas']
@@ -1688,11 +1851,13 @@ class TestEventBackend(BackendTest):
             'orgas': {2, 7},
             'parts': {
                 -1: {
+                    'tracks': {-1: 'First lecture'},
                     'title': "First coming",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
                 -2: {
+                    'tracks': {-1: 'Second lecture'},
                     'title': "Second coming",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
@@ -1742,6 +1907,7 @@ class TestEventBackend(BackendTest):
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
         newpart = {
+            'tracks': {-1: "Third lecture"},
             'title': "Third coming",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
@@ -1750,7 +1916,9 @@ class TestEventBackend(BackendTest):
             'title': "Second coming",
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
-            'fee': decimal.Decimal("1.23")}
+            'fee': decimal.Decimal("1.23"),
+            'tracks': {4: "Second lecture v2"}, # hardcoded value 4
+        }
         newfield = {
             'association': 1,
             'field_name': "kuea",
@@ -1790,36 +1958,41 @@ class TestEventBackend(BackendTest):
             'max_size': 14,
             'min_size': 5,
             'notes': "Beware of dragons.",
-            'parts': {2, 3},
+            'segments': {2, 3},
         }
         new_id = self.event.create_course(self.key, data)
         data['title'] = "Alternate Universes"
-        data['parts'] = {1, 3}
+        data['segments'] = {1, 3}
         self.event.set_course(self.key, {
-            'id': new_id, 'title': data['title'], 'parts': data['parts']})
+            'id': new_id, 'title': data['title'], 'segments': data['segments']})
         new_reg = {
             'checkin': None,
-            'choices': {1: [1, 4, 5]},
             'event_id': 1,
             'foto_consent': True,
             'mixed_lodging': False,
             'orga_notes': None,
             'parental_agreement': None,
             'parts': {
-                1: {'course_id': None,
-                    'course_instructor': None,
-                    'lodgement_id': None,
+                1: {'lodgement_id': None,
                     'status': 1
+                },
+                2: {'lodgement_id': None,
+                    'status': 1
+                },
+                3: {'lodgement_id': None,
+                    'status': 1
+                },
+            },
+            'tracks': {
+                1: {'choices': {1: [1, 4, 5]},
+                    'course_id': None,
+                    'course_instructor': None,
                 },
                 2: {'course_id': None,
                     'course_instructor': None,
-                    'lodgement_id': None,
-                    'status': 1
                 },
                 3: {'course_id': None,
                     'course_instructor': None,
-                    'lodgement_id': None,
-                    'status': 1
                 },
             },
             'notes': "Some bla.",
@@ -1829,20 +2002,29 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         data = {
             'id': 4,
-            'choices': {1:[5, 4, 1], 2: [2, 3, 4]},
             'fields': {'transportation': 'pedes'},
             'mixed_lodging': True,
             'checkin': datetime.datetime.now(pytz.utc),
             'parts': {
                 1: {
                     'status': 2,
-                    'course_id': 5,
                     'lodgement_id': 2,
                 },
                 3: {
                     'status': 6,
-                    'course_id': None,
                     'lodgement_id': None,
+                }
+            },
+            'tracks': {
+                1: {
+                    'choices': [5, 4, 1],
+                    'course_id': 5,
+                },
+                2: {
+                    'choices': [2, 3, 4],
+                },
+                3: {
+                    'course_id': None,
                 }
             }
         }
@@ -1928,18 +2110,6 @@ class TestEventBackend(BackendTest):
              'event_id': 1,
              'persona_id': 2,
              'submitted_by': 1},
-            {'additional_info': None,
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': 2,
-             'submitted_by': 1},
-            {'additional_info': None,
-             'code': 51,
-             'ctime': nearly_now(),
-             'event_id': 1,
-             'persona_id': 2,
-             'submitted_by': 1},
             {'additional_info': 'Topos theory for the kindergarden',
              'code': 42,
              'ctime': nearly_now(),
@@ -1988,14 +2158,32 @@ class TestEventBackend(BackendTest):
              'event_id': 2,
              'persona_id': None,
              'submitted_by': 1},
+            {'additional_info': None,
+             'code': 37,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
             {'additional_info': 'Second coming',
              'code': 16,
              'ctime': nearly_now(),
              'event_id': 2,
              'persona_id': None,
              'submitted_by': 1},
+            {'additional_info': 'Second lecture v2',
+             'code': 36,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
             {'additional_info': 'Third coming',
              'code': 15,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
+            {'additional_info': 'Third lecture',
+             'code': 35,
              'ctime': nearly_now(),
              'event_id': 2,
              'persona_id': None,
@@ -2054,10 +2242,22 @@ class TestEventBackend(BackendTest):
              'event_id': 2,
              'persona_id': None,
              'submitted_by': 1},
+            {'additional_info': 'First lecture',
+             'code': 35,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},
             {'additional_info': 'Second coming',
              'code': 15,
              'ctime': nearly_now(),
              'event_id': 2,
              'persona_id': None,
-             'submitted_by': 1})
+             'submitted_by': 1},
+            {'additional_info': 'Second lecture',
+             'code': 35,
+             'ctime': nearly_now(),
+             'event_id': 2,
+             'persona_id': None,
+             'submitted_by': 1},)
         self.assertEqual(expectation, self.event.retrieve_log(self.key))

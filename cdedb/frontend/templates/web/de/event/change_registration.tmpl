@@ -58,16 +58,6 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
                 {{ myentries.append((s.value, gettext(s|string)))|e }}
             {% endfor %}
             {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
-            {% if course_choices[part_id]|length > 0 %}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id in course_choices[part_id] %}
-                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                    courses[course_id]['shortname'])))|e }}
-                {% endfor %}
-                {{ util.form_input_select(name="part{}.course_id".format(part_id), label="Kurs", entries=myentries,
-                                         nulloption=True) }}
-            {% endif %}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for lodgement_id, lodgement in lodgements|dictsort %}
@@ -76,32 +66,47 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                      entries=myentries, nulloption=True) }}
         {% endfor %}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {% if ambience['event']['tracks']|length > 1 %}
+                <h4>{{ track['title']|e }}</h4>
+            {% endif %}
+            {% if course_choices[track_id]|length > 0 %}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id in course_choices[track_id] %}
+                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                    courses[course_id]['shortname'])))|e }}
+                {% endfor %}
+                {{ util.form_input_select(name="track{}.course_id".format(track_id), label="Kurs", entries=myentries,
+                                         nulloption=True) }}
+            {% endif %}
+        {% endfor %}
 
         <h3 class="heading-underline">Anmeldedaten</h3>
         {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
         {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
         {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {% if course_choices[part_id]|length > 0 %}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {% if course_choices[track_id]|length > 0 %}
                 <h4>
                     Kurswahl
-                    {% if ambience['event']['parts']|length > 1 %}
-                    {{ part['title']|e }}
+                    {% if ambience['event']['tracks']|length > 1 %}
+                    {{ track['title']|e }}
                     {% endif %}
                 </h4>
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for course_id in course_choices[part_id] %}
+                {% for course_id in course_choices[track_id] %}
                     {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
                                                                     courses[course_id]['shortname'])))|e }}
                 {% endfor %}
-                {{ util.form_input_select(name="part{}.course_instructor".format(part_id), label="Kursleiter von",
+                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter von",
                                          entries=myentries, nulloption=True) }}
-                {{ util.form_input_select(name="part{}.course_choice_0".format(part_id), label="Erstwahl",
+                {{ util.form_input_select(name="track{}.course_choice_0".format(track_id), label="Erstwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.form_input_select(name="part{}.course_choice_1".format(part_id), label="Zweitwahl",
+                {{ util.form_input_select(name="track{}.course_choice_1".format(track_id), label="Zweitwahl",
                                          entries=myentries, nulloption=True) }}
-                {{ util.form_input_select(name="part{}.course_choice_2".format(part_id), label="Drittwahl",
+                {{ util.form_input_select(name="track{}.course_choice_2".format(track_id), label="Drittwahl",
                                          entries=myentries, nulloption=True) }}
             {% endif %}
         {% endfor %}

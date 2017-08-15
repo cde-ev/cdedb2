@@ -161,18 +161,18 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         </dl>
         <h4>Kurswahl</h4>
         <div class="row">
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
+            {% for track_id, track in ambience['event']['tracks']|dictsort %}
                 <div class="col-md-6">
-                    {% if ambience['event']['parts']|length > 1 %}
-                        <h5>{{ part['title']|e }}</h5>
+                    {% if ambience['event']['tracks']|length > 1 %}
+                        <h5>{{ track['title']|e }}</h5>
                     {% endif %}
 
                     <dl class="dl-horizontal">
                         <dt>Kursleiter von</dt>
                         <dd>
-                            {% if ambience['registration']['parts'][part_id]['course_instructor'] %}
-                                {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['nr']|e }}.
-                                {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['shortname']|e }}
+                            {% if ambience['registration']['tracks'][track_id]['course_instructor'] %}
+                                {{ courses[ambience['registration']['tracks'][track_id]['choices'][loop.index0]]['nr']|e }}.
+                                {{ courses[ambience['registration']['tracks'][track_id]['choices'][loop.index0]]['shortname']|e }}
                             {% else %}
                                 —
                             {% endif %}
@@ -180,9 +180,9 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                         {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl",) %}
                             <dt>{{ prio|e }}</dt>
                             <dd>
-                                {% if ambience['registration']['choices'].get(part_id, [])|length > loop.index0  %}
-                                    {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['nr']|e }}.
-                                    {{ courses[ambience['registration']['choices'][part_id][loop.index0]]['shortname']|e }}
+                                {% if ambience['registration']['tracks'][track_id]['choices']|length > loop.index0  %}
+                                    {{ courses[ambience['registration']['tracks'][track_id]['choices'][loop.index0]]['nr']|e }}.
+                                    {{ courses[ambience['registration']['tracks'][track_id]['choices'][loop.index0]]['shortname']|e }}
                                 {% endif %}
                             </dd>
                         {% endfor %}

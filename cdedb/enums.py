@@ -8,7 +8,7 @@ one list instead of two.
 import cdedb.database.constants as const
 from cdedb.query import QueryOperators
 from cdedb.common import (AgeClasses, LineResolutions, CourseFilterPositions,
-                          SubscriptionStates)
+                          SubscriptionStates, CourseChoiceToolActions)
 
 #: The list.
 ALL_ENUMS = (
@@ -20,7 +20,7 @@ ALL_ENUMS = (
     const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,
     const.FieldAssociations,
     QueryOperators, AgeClasses, LineResolutions, CourseFilterPositions,
-    SubscriptionStates)
+    CourseChoiceToolActions, SubscriptionStates)
 
 #: A dict for enum lookup in the templates.
 ENUMS_DICT = {e.__name__: e for e in ALL_ENUMS}

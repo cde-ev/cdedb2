@@ -15,11 +15,11 @@ Kurswahlen ({{ ambience['event']['title']|e }})
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
-{% macro course_cell(course_id, part_id, border_left=False, complain_empty=False, primary=False, filtered=False) %}
+{% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False) %}
     {% if course_id %}
         {% with course = courses[course_id] %}
-            {% set attendees = course_infos[(course_id, part_id)]['assigned'] %}
-            {% set aclass = 'course-cancelled' if part_id not in course['active_parts'] else
+            {% set attendees = course_infos[(course_id, track_id)]['assigned'] %}
+            {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] else
                            ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
                             ('course-fewp' if course['min_size'] and attendees < course['min_size'] else '')) %}
             <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
@@ -48,10 +48,10 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 Teilnehmer, die in Teil
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [('', '— egal —')] %}
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    {{ myentries.append((part_id, part['title']))|e }}
+                {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    {{ myentries.append((track_id, track['title']))|e }}
                 {% endfor %}
-                {{ util.input_select(name="part_id", entries=myentries, aclass="form-control input-slim") }}
+                {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim") }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id, course in courses|dictsort %}
@@ -91,16 +91,19 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 <div class="col-md-3 strip-inner-space">
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        {{ myentries.append((part_id, part['title']))|e }}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {{ myentries.append((track_id, track['title']))|e }}
                     {% endfor %}
-                    {{ util.input_checkboxes(name="part_ids", entries=myentries) }}
+                    {{ util.input_checkboxes(name="track_ids", entries=myentries) }}
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
                         {{ util.input_select(name="action", anid="input-action", entries=(
-                            (0, "in ihre Erstwahl"), (1, "in ihre Zweitwahl"), (2, "in ihre Drittwahl"),
-                            (-1, "in den Kurs "), (-2, "automatisch"))) }}
+                            (enums.CourseChoiceToolActions.assign_first_choice.value, "Erstwahl"),
+                            (enums.CourseChoiceToolActions.assign_second_choice.value, "Zweitwahl"),
+                            (enums.CourseChoiceToolActions.assign_third_choice.value, "Drittwahl"),
+                            (enums.CourseChoiceToolActions.assign_fixed.value, "Kurs aus Liste"),
+                            (enums.CourseChoiceToolActions.assign_auto.value, "Automatisch"))) }}
                     </div>
                     <div class="form-group">
                         {# jinja does not support list comprehension ... #}
@@ -137,13 +140,13 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 <tr>
                     <th rowspan="2"></th>
                     <th rowspan="2">Name</th>
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        <th colspan="5" class="b-left">{{ part['title']|e }}</th>
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        <th colspan="5" class="b-left">{{ track['title']|e }}</th>
                     {% endfor %}
                 </tr>
                 <tr>
                     {# TODO markup filtered columns with th.filtered_column #}
-                    {% for part_id in ambience['event']['parts']|sort %}
+                    {% for track_id in ambience['event']['tracks']|sort %}
                         <th class="b-left text-center">
                             {{ util.make_icon('screenshot') }}
                         </th>
@@ -167,17 +170,17 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             {% endwith %}
                         </td>
                         {# TODO markup filtered columns with td.filtered_column #}
-                        {% for part_id, part in ambience['event']['parts']|dictsort %}
-                            {% set part_is_filtered = (values['part_id'] in ('', part_id)) %}
-                            {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %}
-                                {{ course_cell(registration['parts'][part_id]['course_id'], part_id, border_left=True,
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
+                            {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
+                                {{ course_cell(registration['tracks'][track_id]['course_id'], track_id, border_left=True,
                                                complain_empty=True, primary=True) }}
-                                {{ course_cell(registration['parts'][part_id]['course_instructor'], part_id,
+                                {{ course_cell(registration['tracks'][track_id]['course_instructor'], track_id,
                                                border_left=True) }}
                                 {% for j in range(3) %}
-                                    {{ course_cell(registration['choices'][part_id][j]
-                                                   if registration['choices'][part_id]|length > j else None,
-                                                   part_id) }}
+                                    {{ course_cell(registration['tracks'][track_id]['choices'][j]
+                                                   if registration['tracks'][track_id]['choices']|length > j else None,
+                                                   track_id) }}
                                 {% endfor %}
                             {% else %}
                                 <td class="b-left"></td>

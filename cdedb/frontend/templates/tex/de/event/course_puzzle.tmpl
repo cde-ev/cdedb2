@@ -19,31 +19,31 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for course_id, course in courses|dictsort %>>
-        <<% for part_id in course['parts']|sort %>>
-            \course{<<< course['title']|te >>>}{<<< ambience['event']['parts'][part_id]['title']|te >>>}%
+        <<% for track_id in course['active_segments']|sort %>>
+            \course{<<< course['title']|te >>>}{<<< ambience['event']['tracks'][track_id]['title']|te >>>}%
                    {<<< course['instructors']|te >>>}{<<< course['min_size']|te >>>}{<<< course['max_size']|te >>>}%
-                   {<<< course['notes']|te >>>}{<<< counts[course_id][(part_id, 0)] >>>/%
-                                                <<< counts[course_id][(part_id, 1)] >>>/%
-                                                <<< counts[course_id][(part_id, 2)] >>>}
+                   {<<< course['notes']|te >>>}{<<< counts[course_id][(track_id, 0)] >>>/%
+                                                <<< counts[course_id][(track_id, 1)] >>>/%
+                                                <<< counts[course_id][(track_id, 2)] >>>}
         <<% endfor %>>
     <<% endfor %>>
     \clearpage
     <<% for registration_id, registration in registrations|dictsort %>>
         <<% if registration['persona_id'] not in ambience['event']['orgas'] %>>
-            <<% for part_id, part in ambience['event']['parts']|dictsort %>>
-                <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %>>
+            <<% for track_id, track in ambience['event']['tracks']|dictsort %>>
+                <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant %>>
                     \participant{<<< personas[registration['persona_id']]['given_names']|te >>>
                                  <<< personas[registration['persona_id']]['family_name']|te >>>}%
-                                {<<< part['title']|te >>>}%
-                                {<<% if registration['parts'][part_id]['course_instructor'] -%>>
+                                {<<< track['title']|te >>>}%
+                                {<<% if registration['tracks'][track_id]['course_instructor'] -%>>
                                     Kursleiter:
-                                    <<< courses[registration['parts'][part_id]['course_instructor']]['title']|te >>>
+                                    <<< courses[registration['tracks'][track_id]['course_instructor']]['title']|te >>>
                                     \par
                                 <<%- endif %>>}%
                     <<% for label in ("Erstwahl", "Zweitwahl", "Drittwahl") -%>>
-                                {<<% if registration['choices'][part_id]|length > loop.index0 -%>>
+                                {<<% if registration['tracks'][track_id]['choices']|length > loop.index0 -%>>
                                     <<< label|te >>>:
-                                    <<< courses[registration['choices'][part_id][loop.index0]]['title']|te >>>
+                                    <<< courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|te >>>
                                     \par
                                  <<% endif %>>}%
                     <<% endfor %>>

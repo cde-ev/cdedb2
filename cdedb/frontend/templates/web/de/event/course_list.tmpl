@@ -31,23 +31,23 @@
                         <span class="label label-primary">{{ entry['shortname']|e }}</span>
                     {% endif %}
                     von {{ entry['instructors']|e }}
-                    {% if ambience['event']['parts']|length > 1 %}
+                    {% if ambience['event']['tracks']|length > 1 %}
                         {% set myentries = [] %}
-                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                            {% if part_id in entry['parts'] %}
-                                {{ myentries.append(part['title'])|e }}
-                            {% endif %}
+                        {% for track_id in entry['active_tracks']|sort %}
+                            {{ myentries.append(ambience['event']['tracks'][track_id]['title'])|e }}
                         {% endfor %}
                         – <span class="text-info">
-                        {% for partname in myentries -%}
+                        {% for trackname in myentries -%}
                             {% if not loop.first %}{% if loop.last %} und {% else %}, {% endif %}{% endif %}
-                            <i>{{ partname|e }}</i>
+                            <i>{{ trackname|e }}</i>
                         {%- endfor %}</span>.
                     {% endif %}
                 </p>
                 {{ entry['description']|rst }}
             </div>
         {% endfor %}
+    {% elif ambience['event']['tracks'] %}
+        <p>Es wurden noch keine Kurse angelegt.</p>
     {% else %}
         <p>Diese Veranstaltung hat keine Kurse.</p>
     {% endif %}
