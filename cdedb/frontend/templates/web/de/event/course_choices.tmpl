@@ -194,6 +194,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
     </form>
     <script type="text/javascript">
         $('.event_course_id').dblclick(function() {
+            /* FIXME This is going to break horribly as soon as we have 12345 events */
             location.href =
                 "{{ cdedblink('event/show_course', {'course_id': 12345}) }}".replace('12345', $(this).attr('data-id'));
         });

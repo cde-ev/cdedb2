@@ -1664,8 +1664,8 @@ class EventFrontend(AbstractUserFrontend):
             enable_params = tuple(("enable_{}".format(i), "bool")
                                   for i, t in params)
             enable = request_extractor(rs, enable_params)
-            return tuple(x for x in params
-                           if enable["enable_{}".format(x[0])])
+            return tuple((key, kind) for key, kind in params
+                           if enable["enable_{}".format(key)])
 
         reg_params = (
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
@@ -1705,8 +1705,8 @@ class EventFrontend(AbstractUserFrontend):
         }
         new_choices = {}
         for part_id in event['parts']:
-            extractor = lambda i: raw_parts.get("part{}.course_choice_{}"
-                                                .format(part_id, i), False)
+            extractor = lambda i: raw_parts.get(
+                "part{}.course_choice_{}".format(part_id, i))
             new_choices[part_id] = tuple(extractor(i)
                                          for i in range(3) if extractor(i))
         new_fields = {
@@ -1808,31 +1808,30 @@ class EventFrontend(AbstractUserFrontend):
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
 
+        representative = next(iter(registrations.values()))
+
         # iterate registrations to check for differing values
         reg_values = {}
-        for key, value in next(iter(registrations.values())).items():
+        for key, value in representative.items():
             if all(r[key] == value for r in registrations.values()):
                 reg_values['reg.{}'.format(key)] = value
                 reg_values['enable_reg.{}'.format(key)] = True
 
         # do the same for registration parts' and field values
         for part_id in rs.ambience['event']['parts']:
-            for key, value in next(iter(registrations.values()))['parts'][part_id].items():
+            for key, value in representative['parts'][part_id].items():
                 if all(r['parts'][part_id][key] == value for r in registrations.values()):
                     reg_values['part{}.{}'.format(part_id, key)] = value
                     reg_values['enable_part{}.{}'.format(part_id, key)] = True
 
         for field_id in rs.ambience['event']['fields']:
             key = rs.ambience['event']['fields'][field_id]['field_name']
-            try:
-                value = next(r['fields'][key] for r in registrations.values()
-                             if key in r['fields'])
-            except StopIteration:
+            present = {r['fields'][key] for r in registrations.values()
+                       if key in r['fields']}
+            if len(present) <= 1:
                 reg_values['enable_fields.{}'.format(key)] = True
-                continue
-            if all(key in r['fields'] and r['fields'][key] == value for r in registrations.values()):
-                reg_values['fields.{}'.format(key)] = value
-                reg_values['enable_fields.{}'.format(key)] = True
+            if len(present) == 1:
+                reg_values['fields.{}'.format(key)] = unwrap(present)
 
         merge_dicts(rs.values, reg_values)
         return self.render(rs, "change_registrations", {

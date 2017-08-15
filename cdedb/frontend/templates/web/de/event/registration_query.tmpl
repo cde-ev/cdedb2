@@ -112,6 +112,7 @@
                             });
                             if (list.length == 0)
                                 return;
+                            /* FIXME This is going to break horribly as soon as we have 12345 events */
                             location.href =
                                 "{{ cdedblink('event/course_choices_form', {'ids': 12345}) }}"
                                     .replace('12345', list.join(','));
