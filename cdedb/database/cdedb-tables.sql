@@ -533,7 +533,12 @@ CREATE TABLE event.events (
         use_questionnaire       boolean NOT NULL DEFAULT False,
         notes                   varchar,
         offline_lock            boolean NOT NULL DEFAULT False,
-        is_archived             boolean NOT NULL DEFAULT False
+        is_archived             boolean NOT NULL DEFAULT False,
+        -- JSON field for lodgement preference functionality
+        lodge_field             integer DEFAULT NULL, -- REFERENCES event.field_definitions(id)
+        -- JSON field for reserve functionality
+        reserve_field           integer DEFAULT NULL -- REFERENCES event.field_definitions(id)
+        -- The references above are not yet possible, but will be added later on.
 );
 GRANT SELECT, UPDATE ON event.events TO cdb_persona;
 GRANT INSERT ON event.events TO cdb_admin;
@@ -581,6 +586,10 @@ CREATE TABLE event.field_definitions (
 CREATE UNIQUE INDEX idx_field_definitions_event_id ON event.field_definitions(event_id, field_name);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.field_definitions TO cdb_persona;
 GRANT SELECT, UPDATE ON event.field_definitions_id_seq TO cdb_persona;
+
+-- create previously impossible reference
+ALTER TABLE event.events ADD FOREIGN KEY (lodge_field) REFERENCES event.field_definitions(id);
+ALTER TABLE event.events ADD FOREIGN KEY (reserve_field) REFERENCES event.field_definitions(id);
 
 CREATE TABLE event.courses (
         id                      serial PRIMARY KEY,
@@ -678,7 +687,8 @@ CREATE TABLE event.registration_parts (
         -- enum for status of this registration part
         -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL,
-        lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL
+        lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL,
+        is_reserve              boolean DEFAULT False
 );
 CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
 GRANT SELECT, INSERT, UPDATE ON event.registration_parts TO cdb_persona;

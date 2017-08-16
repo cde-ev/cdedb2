@@ -44,25 +44,6 @@ lodgement_id, mixed_lodging, mobile, name_supplement, notes, orga_notes,
 parental_agreement, payment, persona_id, postal_code, real_persona_id,
 registration_id, status, telephone, title, username.
 
-Now there are some fields which enable additional behaviour which could be
-useful.
-
-lodge
-    This should be a string. It is intended to hold the lodgement wishes of
-    the participants (e.g. with who they would like to be accomodated
-    together).
-
-may_reserve
-    This should be a boolean. It is intended to signal willingness to sleep
-    with sleeping pad and bag (and thus take a reserve space in a
-    lodgement).
-
-reserve_xxx
-    This should be a boolean with one value per part and xxx should be
-    replaced with the parts id number. It is intended to contain the
-    information whether a participant is actually scheduled to take a
-    reserve space in a lodgement.
-
 Mailing lists
 -------------
 

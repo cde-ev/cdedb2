@@ -265,7 +265,7 @@ class EventFrontend(AbstractUserFrontend):
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
-        "notes")
+        "notes", "lodge_field", "reserve_field")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""
@@ -1123,7 +1123,8 @@ class EventFrontend(AbstractUserFrontend):
         """Aggregate lodgement information.
 
         This can be printed and cut to help with distribution of
-        participants. This make use of the fields 'lodge' and 'may_reserve'.
+        participants. This make use of the lodge_field and the
+        reserve_field.
         """
         event = rs.ambience['event']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -1136,18 +1137,9 @@ class EventFrontend(AbstractUserFrontend):
                 self.event_begin(event))
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        lodge_present = any(
-            (field['field_name'] == "lodge"
-             and field['association'] == const.FieldAssociations.registration)
-            for field in event['fields'].values())
-        may_reserve_present = any(
-            (field['field_name'] == "may_reserve"
-             and field['association'] == const.FieldAssociations.registration)
-            for field in event['fields'].values())
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
             'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'lodge_present': lodge_present,
-            'may_reserve_present': may_reserve_present})
+            'personas': personas})
         return self.serve_latex_document(rs, tex, "lodgement_puzzle", runs)
 
     @access("event")
@@ -1974,8 +1966,6 @@ class EventFrontend(AbstractUserFrontend):
         """Un-inlined code to examine the current lodgements of an event for
         spots with room for improvement.
 
-        This makes use of the 'reserve' field.
-
         :type event: {str: object}
         :type lodgements: {int: {str: object}}
         :type registrations: {int: {str: object}}
@@ -2004,17 +1994,15 @@ class EventFrontend(AbstractUserFrontend):
             """Un-inlined code to count the number of registrations assigned
             to a lodgement as reserve lodgers."""
             return sum(
-                1 for reg_id in group
-                if registrations[reg_id]['fields'].get(
-                    'reserve_{}'.format(part_id)))
+                registrations[reg_id]['parts'][part_id]['is_reserve']
+                for reg_id in group)
         def _reserve_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for reserve problems."""
             return (
                 _("Wrong number of reserve lodgers used."), lodgement_id,
                 part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
-                    if registrations[reg_id]['fields'].get(
-                        'reserve_{}'.format(part_id))))
+                    if registrations[reg_id]['parts'][part_id]['is_reserve']))
 
         ## now the actual work
         for lodgement_id in lodgements:
@@ -2028,8 +2016,7 @@ class EventFrontend(AbstractUserFrontend):
                         not registrations[reg_id]['mixed_lodging']
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
-                if (cls.event_has_field(event, 'reserve',
-                                        const.FieldAssociations.registration)
+                if (event['reserve_field']
                         and (len(group) - lodgement['capacity']
                              != _reserve(group, part_id))
                         and ((len(group) - lodgement['capacity'] > 0)

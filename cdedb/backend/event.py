@@ -50,7 +50,7 @@ import cdedb.database.constants as const
 #:        AS track3 ON reg.id = track3.registration_id
 #:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array( SELECT fields FROM event.registrations)))
 #:                     AS X(registration_id int, brings_balls boolean, transportation varchar, lodge varchar,
-#:                          may_reserve boolean, reserve_1 boolean, reserve_2 boolean, reserve_3 boolean))
+#:                          may_reserve boolean))
 #:        AS fields ON reg.id = fields.registration_id
 _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations AS reg",
@@ -489,6 +489,31 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             if len(edata) > 1:
+                indirect_fields = filter(
+                    lambda x: x,
+                    [edata.get('lodge_field'), edata.get('reserve_field')])
+                if indirect_fields:
+                    indirect_data = self.sql_select(
+                        rs, "event.field_definitions",
+                        ("id", "event_id", "kind", "association"),
+                        indirect_fields)
+                    correct_assoc = const.FieldAssociations.registration
+                    if edata.get('lodge_field'):
+                        lodge_data = unwrap(
+                            [x for x in indirect_data
+                             if x['id'] == edata['lodge_field']])
+                        if (lodge_data['event_id'] != data['id']
+                               or lodge_data['kind'] != "str"
+                               or lodge_data['association'] != correct_assoc):
+                            raise ValueError(_("Unfit field for lodge_field"))
+                    if edata.get('reserve_field'):
+                        reserve_data = unwrap(
+                            [x for x in indirect_data
+                             if x['id'] == edata['reserve_field']])
+                        if (reserve_data['event_id'] != data['id']
+                               or reserve_data['kind'] != "bool"
+                               or reserve_data['association'] != correct_assoc):
+                            raise ValueError(_("Unfit field for reserve_field"))
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])

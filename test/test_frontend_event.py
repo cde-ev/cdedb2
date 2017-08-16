@@ -379,7 +379,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertEqual('food_stuff', f['field_name_10'].value)
+        self.assertEqual('food_stuff', f['field_name_7'].value)
         self.assertEqual("""pedes;by feet
 car;own car available
 etc;anything else""", f['entries_2'].value)
@@ -392,11 +392,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("""pedes;by feet
 broom;flying implements
 etc;anything else""", f['entries_2'].value)
-        f['delete_10'].checked = True
+        f['delete_7'].checked = True
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['fieldsummaryform']
-        self.assertNotIn('field_name_10', f.fields)
+        self.assertNotIn('field_name_7', f.fields)
 
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):
@@ -1001,7 +1001,6 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertEqual("3", f['field_id_5'].value)
-        f['field_id_5'] = 5
         self.assertEqual("3", f['input_size_5'].value)
         f['input_size_5'] = 4
         self.assertEqual("2", f['field_id_4'].value)
@@ -1015,7 +1014,7 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
-        self.assertEqual("5", f['field_id_5'].value)
+        self.assertEqual("3", f['field_id_5'].value)
         self.assertEqual("4", f['input_size_5'].value)
         self.assertEqual("", f['field_id_4'].value)
         self.assertEqual("Immernoch Überschrift", f['title_3'].value)

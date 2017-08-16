@@ -40,11 +40,11 @@
                     {<<% if registration['age'] == enums['AgeClasses'].u16 %>>U18<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u16 %>>U16<<% endif -%>>
                      <<% if registration['age'] == enums['AgeClasses'].u14 %>>U14<<% endif -%>>}%
-                    {<<% if may_reserve_present and registration['fields'].get('may_reserve') -%>>
+                    {<<% if ambience['event']['reserve_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['reserve_field']]['name']) -%>>
                         Reserveplatz
-                     <<%- endif %>>}%
-                    {<<% if lodge_present and registration['fields'].get('lodge') -%>>
-                        Wunsch: <<< registration['fields'].get('lodge')|te >>>\par
+                     <<%- endif %>>}
+                    {<<% if ambience['event']['lodge_field'] and registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['name']) -%>>
+                        Wunsch: <<< registration['fields'].get(ambience['event']['fields'][ambience['event']['lodge_field']]['name']) >>>\par
                      <<% endif -%>>}
             <<% endif %>>
         <<% endfor %>>

@@ -159,6 +159,8 @@ class TestEventBackend(BackendTest):
         data['id'] = new_id
         data['offline_lock'] = False
         data['is_archived'] = False
+        data['lodge_field'] = None
+        data['reserve_field'] = None
         ## correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -374,15 +376,18 @@ class TestEventBackend(BackendTest):
             'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
             'parental_agreement': None,
             'parts': {
-                1: {'lodgement_id': None,
+                1: {'is_reserve': False,
+                    'lodgement_id': None,
                     'part_id': 1,
                     'registration_id': 2,
                     'status': 3},
-                2: {'lodgement_id': 4,
+                2: {'is_reserve': False,
+                    'lodgement_id': 4,
                     'part_id': 2,
                     'registration_id': 2,
                     'status': 4},
-                3: {'lodgement_id': 4,
+                3: {'is_reserve': False,
+                    'lodgement_id': 4,
                     'part_id': 3,
                     'registration_id': 2,
                     'status': 2}},
@@ -430,13 +435,16 @@ class TestEventBackend(BackendTest):
             'orga_notes': None,
             'parental_agreement': None,
             'parts': {
-                1: {'lodgement_id': None,
+                1: {'is_reserve': False,
+                    'lodgement_id': None,
                     'status': 1
                 },
-                2: {'lodgement_id': None,
+                2: {'is_reserve': False,
+                    'lodgement_id': None,
                     'status': 1
                 },
-                3: {'lodgement_id': None,
+                3: {'is_reserve': False,
+                    'lodgement_id': None,
                     'status': 1
                 },
             },
@@ -494,15 +502,18 @@ class TestEventBackend(BackendTest):
                 'notes': None,
                 'parental_agreement': None,
                 'parts': {
-                    1: {'lodgement_id': None,
+                    1: {'is_reserve': False,
+                        'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 1,
                         'status': -1},
-                    2: {'lodgement_id': None,
+                    2: {'is_reserve': False,
+                        'lodgement_id': None,
                         'part_id': 2,
                         'registration_id': 1,
                         'status': 1},
-                    3: {'lodgement_id': 1,
+                    3: {'is_reserve': False,
+                        'lodgement_id': 1,
                         'part_id': 3,
                         'registration_id': 1,
                         'status': 2}},
@@ -535,15 +546,18 @@ class TestEventBackend(BackendTest):
                 'notes': 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett',
                 'parental_agreement': None,
                 'parts': {
-                    1: {'lodgement_id': None,
+                    1: {'is_reserve': False,
+                        'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 2,
                         'status': 3},
-                    2: {'lodgement_id': 4,
+                    2: {'is_reserve': False,
+                        'lodgement_id': 4,
                         'part_id': 2,
                         'registration_id': 2,
                         'status': 4},
-                    3: {'lodgement_id': 4,
+                    3: {'is_reserve': False,
+                        'lodgement_id': 4,
                         'part_id': 3,
                         'registration_id': 2,
                         'status': 2}},
@@ -579,15 +593,18 @@ class TestEventBackend(BackendTest):
                 'notes': None,
                 'parental_agreement': None,
                 'parts': {
-                    1: {'lodgement_id': None,
+                    1: {'is_reserve': False,
+                        'lodgement_id': None,
                         'part_id': 1,
                         'registration_id': 4,
                         'status': 6},
-                    2: {'lodgement_id': None,
+                    2: {'is_reserve': False,
+                        'lodgement_id': None,
                         'part_id': 2,
                         'registration_id': 4,
                         'status': 5},
-                    3: {'lodgement_id': 2,
+                    3: {'is_reserve': True,
+                        'lodgement_id': 2,
                         'part_id': 3,
                         'registration_id': 4,
                         'status': 2}},
@@ -695,10 +712,13 @@ class TestEventBackend(BackendTest):
         new_reg['fields'] = {'registration_id': new_id}
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
+        new_reg['parts'][1]['is_reserve'] = False
         new_reg['parts'][2]['part_id'] = 2
         new_reg['parts'][2]['registration_id'] = new_id
+        new_reg['parts'][2]['is_reserve'] = False
         new_reg['parts'][3]['part_id'] = 3
         new_reg['parts'][3]['registration_id'] = new_id
+        new_reg['parts'][3]['is_reserve'] = False
         new_reg['tracks'][1]['track_id'] = 1
         new_reg['tracks'][1]['registration_id'] = new_id
         new_reg['tracks'][2]['track_id'] = 2
@@ -1325,11 +1345,13 @@ class TestEventBackend(BackendTest):
                               'notes': 'Todoliste ... just kidding ;)',
                               'offline_lock': False,
                               'is_archived': False,
+                              'lodge_field': 3,
                               'mail_text': 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.',
                               'institution': 1,
                               'registration_hard_limit': datetime.date(2220, 10, 30),
                               'registration_soft_limit': datetime.date(2200, 10, 30),
                               'registration_start': datetime.date(2000, 10, 30),
+                              'reserve_field': 4,
                               'shortname': 'TestAka',
                               'title': 'Große Testakademie 2222',
                               'use_questionnaire': False},),
@@ -1359,29 +1381,11 @@ class TestEventBackend(BackendTest):
                                          'field_name': 'may_reserve',
                                          'id': 4,
                                          'kind': 'bool'},
-                                        {'association': 1,
-                                         'entries': None,
-                                         'event_id': 1,
-                                         'field_name': 'reserve_1',
-                                         'id': 5,
-                                         'kind': 'bool'},
-                                        {'association': 1,
-                                         'entries': None,
-                                         'event_id': 1,
-                                         'field_name': 'reserve_2',
-                                         'id': 6,
-                                         'kind': 'bool'},
-                                        {'association': 1,
-                                         'entries': None,
-                                         'event_id': 1,
-                                         'field_name': 'reserve_3',
-                                         'id': 7,
-                                         'kind': 'bool'},
                                         {'association': 2,
                                          'entries': None,
                                          'event_id': 1,
                                          'field_name': 'room',
-                                         'id': 8,
+                                         'id': 5,
                                          'kind': 'str'},
                                         {'association': 3,
                                          'entries': [['high', 'lots of radiation'],
@@ -1391,7 +1395,7 @@ class TestEventBackend(BackendTest):
                                                      ['none', 'no radiation']],
                                          'event_id': 1,
                                          'field_name': 'contamination',
-                                         'id': 9,
+                                         'id': 6,
                                          'kind': 'str'}),
 
             'event.lodgements': ({'capacity': 5,
@@ -1473,61 +1477,73 @@ class TestEventBackend(BackendTest):
                                           'readonly': False,
                                           'title': 'Hauswunsch'}),
             'event.registration_parts': ({'id': 1,
+                                          'is_reserve': False,
                                           'lodgement_id': None,
                                           'part_id': 1,
                                           'registration_id': 1,
                                           'status': -1},
                                          {'id': 2,
+                                          'is_reserve': False,
                                           'lodgement_id': None,
                                           'part_id': 2,
                                           'registration_id': 1,
                                           'status': 1},
                                          {'id': 3,
+                                          'is_reserve': False,
                                           'lodgement_id': 1,
                                           'part_id': 3,
                                           'registration_id': 1,
                                           'status': 2},
                                          {'id': 4,
+                                          'is_reserve': False,
                                           'lodgement_id': None,
                                           'part_id': 1,
                                           'registration_id': 2,
                                           'status': 3},
                                          {'id': 5,
+                                          'is_reserve': False,
                                           'lodgement_id': 4,
                                           'part_id': 2,
                                           'registration_id': 2,
                                           'status': 4},
                                          {'id': 6,
+                                          'is_reserve': False,
                                           'lodgement_id': 4,
                                           'part_id': 3,
                                           'registration_id': 2,
                                           'status': 2},
                                          {'id': 7,
+                                          'is_reserve': False,
                                           'lodgement_id': 2,
                                           'part_id': 1,
                                           'registration_id': 3,
                                           'status': 2},
                                          {'id': 8,
+                                          'is_reserve': False,
                                           'lodgement_id': None,
                                           'part_id': 2,
                                           'registration_id': 3,
                                           'status': 2},
                                          {'id': 9,
+                                          'is_reserve': False,
                                           'lodgement_id': 2,
                                           'part_id': 3,
                                           'registration_id': 3,
                                           'status': 2},
                                          {'id': 10,
+                                          'is_reserve': False,
                                           'lodgement_id': None,
                                           'part_id': 1,
                                           'registration_id': 4,
                                           'status': 6},
                                          {'id': 11,
+                                          'is_reserve': False,
                                           'lodgement_id': None,
                                           'part_id': 2,
                                           'registration_id': 4,
                                           'status': 5},
                                          {'id': 12,
+                                          'is_reserve': True,
                                           'lodgement_id': 2,
                                           'part_id': 3,
                                           'registration_id': 4,
@@ -1790,6 +1806,7 @@ class TestEventBackend(BackendTest):
         new_data['event.registrations'][-1]['persona_id'] = 2
         new_data['event.registrations'][-1]['real_persona_id'] = None
         new_data['event.registration_parts'][-1]['id'] = 13
+        new_data['event.registration_parts'][-1]['is_reserve'] = False
         new_data['event.registration_parts'][-1]['lodgement_id'] = 5
         new_data['event.registration_parts'][-1]['part_id'] = 4
         new_data['event.registration_parts'][-1]['registration_id'] = 5
@@ -1809,9 +1826,9 @@ class TestEventBackend(BackendTest):
         new_data['event.course_segments'][-1]['track_id'] = 4
         new_data['event.lodgements'][-1]['id'] = 5
         new_data['event.lodgements'][-1]['fields']['lodgement_id'] = 5
-        new_data['event.field_definitions'][-1]['id'] = 10
+        new_data['event.field_definitions'][-1]['id'] = 7
         new_data['event.questionnaire_rows'][-1]['id'] = 7
-        new_data['event.questionnaire_rows'][-1]['field_id'] = 10
+        new_data['event.questionnaire_rows'][-1]['field_id'] = 7
         ## make tuples again
         for table in ('event.events', 'event.event_parts',
                       'event.course_tracks', 'event.courses',

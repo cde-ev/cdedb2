@@ -1151,7 +1151,7 @@ EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname",
     "registration_start", "registration_soft_limit", "registration_hard_limit",
     "iban", "mail_text", "use_questionnaire", "notes", "offline_lock",
-    "is_archived")
+    "is_archived", "lodge_field", "reserve_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
@@ -1181,7 +1181,7 @@ REGISTRATION_FIELDS = (
 
 #: Fields of a registration which are specific for each part of the event
 REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
-                            "lodgement_id")
+                            "lodgement_id", "is_reserve")
 
 #: Fields of a registration which are specific for each course track
 REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",

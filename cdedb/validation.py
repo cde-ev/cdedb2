@@ -1534,12 +1534,14 @@ _EVENT_COMMON_FIELDS = lambda: {
     'use_questionnaire': _bool,
     'notes': _str_or_None,
 }
-_EVENT_OPTIONAL_FIELDS = {
+_EVENT_OPTIONAL_FIELDS = lambda: {
     'offline_lock': _bool,
     'is_archived': _bool,
     'orgas': _any,
     'parts': _any,
     'fields': _any,
+    'lodge_field': _id_or_None,
+    'reserve_field': _id_or_None,
 }
 @_addvalidator
 def _event(val, argname=None, *, creation=False, _convert=True):
@@ -1558,11 +1560,11 @@ def _event(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _EVENT_COMMON_FIELDS()
-        optional_fields = _EVENT_OPTIONAL_FIELDS
+        optional_fields = _EVENT_OPTIONAL_FIELDS()
     else:
         mandatory_fields = {'id': _id}
         optional_fields = dict(_EVENT_COMMON_FIELDS(),
-                               **_EVENT_OPTIONAL_FIELDS)
+                               **_EVENT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
@@ -1945,6 +1947,7 @@ def _registration_part(val, argname=None, *, _convert=True):
     optional_fields = {
         'status': _enum_registrationpartstati,
         'lodgement_id': _id_or_None,
+        'is_reserve': _bool,
     }
     return _examine_dictionary_fields(val, {}, optional_fields,
                                       _convert=_convert)
