@@ -1230,7 +1230,7 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
             for i, name in enumerate(magic_placeholders):
                 ## Generate a hopefully unique integer to replace
                 newparams[name] = (
-                    2**i * 10**(9*run + 1)
+                    i * 10**(9*run + 1)
                     + 123456789*sum(10**(9*j) for j in range(run)))
             attempt = cdedburl(rs, endpoint, newparams,
                                force_external=force_external)
@@ -1242,6 +1242,9 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
                     attempt = attempt.replace(
                         str(newparams[name]),
                         "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i))
+                if any(attempt.count("_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i)) != 1
+                       for i in range(len(magic_placeholders))):
+                    continue
                 return attempt
         raise RuntimeError(_("Magic URL parameter replacement failed."))
     ## Second we come to the normal case
