@@ -1201,7 +1201,8 @@ def access(*roles, modi=None):
         return new_fun
     return decorator
 
-def cdedburl(rs, endpoint, params=None, force_external=False):
+def cdedburl(rs, endpoint, params=None, force_external=False,
+             magic_placeholders=None):
     """Construct an HTTP URL.
 
     :type rs: :py:class:`RequestState`
@@ -1209,9 +1210,41 @@ def cdedburl(rs, endpoint, params=None, force_external=False):
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
     :type params: {str: object}
     :type force_external: bool
+    :type magic_placeholders: [str]
+    :param magic_placeholders: These are parameter names which behave as if
+      the following code would be executed::
+          for i, name in enumerate(magic_placeholders):
+              params[name] = "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i)
+
+      The use case is that we want to generate string templates of URLs for
+      consumption by Javascript code with the possibility of inserting some
+      parameters at execution time.
     :rtype: str
     """
     params = params or {}
+    ## First handle magic placeholders, this is kind of a hack, but sadly
+    ## necessary
+    if magic_placeholders:
+        newparams = copy.deepcopy(params)
+        for run in range(1,10):
+            for i, name in enumerate(magic_placeholders):
+                ## Generate a hopefully unique integer to replace
+                newparams[name] = (
+                    2**i * 10**(9*run + 1)
+                    + 123456789*sum(10**(9*j) for j in range(run)))
+            attempt = cdedburl(rs, endpoint, newparams,
+                               force_external=force_external)
+            if any(attempt.count(str(newparams[name])) != 1
+                   for name in magic_placeholders):
+                continue
+            else:
+                for i, name in enumerate(magic_placeholders):
+                    attempt = attempt.replace(
+                        str(newparams[name]),
+                        "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i))
+                return attempt
+        raise RuntimeError(_("Magic URL parameter replacement failed."))
+    ## Second we come to the normal case
     allparams = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
         if rs.urlmap.is_endpoint_expecting(endpoint, arg):
