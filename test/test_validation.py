@@ -217,10 +217,9 @@ class TestValidation(unittest.TestCase):
         self.do_validator_test("_date", (
             (now.date(), now.date(), None, True),
             (now, now.date(), None, True),
-            ("2014-04-20", datetime.date(2014, 4, 20), None, False),
+            ("2014-04-2", datetime.date(2014, 4, 2), None, False),
             ("01.02.2014", datetime.date(2014, 2, 1), None, False),
-            ("2014-04-20T20:48:25.808240+00:00",
-             datetime.date(2014, 4, 20), None, False),
+            ("2014-04-02T20:48:25.808240+00:00", datetime.date(2014, 4, 2), None, False),
             ## the following fails with inconsistent exception type
             ## TypeError on Gentoo
             ## ValueError on Debian
@@ -237,18 +236,18 @@ class TestValidation(unittest.TestCase):
             (now_other, now_other, None, True),
             (now.date(), None, TypeError, False),
             ("2014-04-20", None, ValueError, False),
-            ("2014-04-20 21:53",
-             datetime.datetime(2014, 4, 20, 19, 53, 0,
+            ("2014-04-02 21:53",
+             datetime.datetime(2014, 4, 2, 19, 53, 0,
                                tzinfo=pytz.utc), None, False),
             ("01.02.2014 21:53",
              datetime.datetime(2014, 2, 1, 20, 53, 0,
                                tzinfo=pytz.utc), None, False),
             ("21:53", None, ValueError, False),
-            ("2014-04-20T20:48:25.808240+00:00",
-             datetime.datetime(2014, 4, 20, 20, 48, 25, 808240,
+            ("2014-04-02T20:48:25.808240+00:00",
+             datetime.datetime(2014, 4, 2, 20, 48, 25, 808240,
                                tzinfo=pytz.utc), None, False),
-            ("2014-04-20T20:48:25.808240+03:00",
-             datetime.datetime(2014, 4, 20, 17, 48, 25, 808240,
+            ("2014-04-02T20:48:25.808240+03:00",
+             datetime.datetime(2014, 4, 2, 17, 48, 25, 808240,
                                tzinfo=pytz.utc), None, False),
             ## see above
             # ("more garbage", None, TypeError, False),
