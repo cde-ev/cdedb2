@@ -1,5 +1,4 @@
 * actionable items
-** Audit operations on event fields with date/datetime types (storing is fixed)
 ** Add course and lodgement fields to query
 ** Add global consistency check page where we see all mailinglists at once.
 ** include a "remove all inconsistent subscriptions" button on the consistency check page of a mailing list
@@ -29,7 +28,6 @@
 ** add translations
 ** adjust LDAP indices
 ** add ml test cases concerning assembly interaction
-** add a nice UI for preferential voting (a la drag and drop with JS)
 ** make country choices into drop down menues
 ** allow comma-separated list of ids to lodgement/manage (non-JS fallback)
 ** multi-edit formular (multiple ids, merge values and display only equal ones, activate fields by checkbox)
