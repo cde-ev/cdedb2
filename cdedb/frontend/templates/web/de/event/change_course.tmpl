@@ -19,12 +19,13 @@
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/change_course')|e }}" method="POST" id="changecourseform", class="form-horizontal">
+    <form action="{{ cdedblink('event/change_course')|e }}" method="POST" id="changecourseform" class="form-horizontal">
         <h4 class="heading-underline">Metadaten</h4>
         {{ util.form_input_text(name="nr", label="Kursnummer") }}
         {{ util.form_input_text(name="shortname", label="Kurzname") }}
         {{ util.form_input_text(name="title", label="Langer Titel") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
+                                    info="Unterstützt reStructuredText") }}
         <h4 class="heading-underline">Kurs-Angebot</h4>
         {{ util.form_input_text(name="instructors", label="Kursleiter") }}
         {{ util.form_input_text(name="min_size", label="Minimalgröße") }}

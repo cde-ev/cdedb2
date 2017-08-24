@@ -89,6 +89,7 @@
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
+        {# TODO: Hide course choice fields for parts not registered #}
         {% for track_id, course_list in course_choices|dictsort %}
             {% if course_list %}
                 <div id="course_choice_container-{{ track_id }}">

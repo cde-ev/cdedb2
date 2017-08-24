@@ -88,22 +88,26 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 <div class="col-md-3">
                     Markierte Personen in
                 </div>
-                <div class="col-md-3 strip-inner-space">
-                    {# jinja does not support list comprehension ... #}
-                    {% set myentries = [] %}
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                        {{ myentries.append((track_id, track['title']))|e }}
-                    {% endfor %}
-                    {{ util.input_checkboxes(name="track_ids", entries=myentries) }}
-                </div>
+                {% if ambience['event']['tracks']|length == 1 %}
+                    {{ util.input_hidden(name="track_ids", value=(ambience['event']['tracks']|list)[0]) }}
+                {% else %}
+                    <div class="col-md-3 strip-inner-space">
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            {{ myentries.append((track_id, track['title']))|e }}
+                        {% endfor %}
+                        {{ util.input_checkboxes(name="track_ids", entries=myentries) }}
+                    </div>
+                {% endif %}
                 <div class="col-md-4">
                     <div class="form-group">
                         {{ util.input_select(name="action", anid="input-action", entries=(
-                            (enums.CourseChoiceToolActions.assign_first_choice.value, "Erstwahl"),
-                            (enums.CourseChoiceToolActions.assign_second_choice.value, "Zweitwahl"),
-                            (enums.CourseChoiceToolActions.assign_third_choice.value, "Drittwahl"),
-                            (enums.CourseChoiceToolActions.assign_fixed.value, "Kurs aus Liste"),
-                            (enums.CourseChoiceToolActions.assign_auto.value, "Automatisch"))) }}
+                            (enums.CourseChoiceToolActions.assign_first_choice.value, "in ihre Erstwahl"),
+                            (enums.CourseChoiceToolActions.assign_second_choice.value, "in ihre Zweitwahl"),
+                            (enums.CourseChoiceToolActions.assign_third_choice.value, "in ihre Drittwahl"),
+                            (enums.CourseChoiceToolActions.assign_fixed.value, "in den Kurs …"),
+                            (enums.CourseChoiceToolActions.assign_auto.value, "automatisch"))) }}
                     </div>
                     <div class="form-group">
                         {# jinja does not support list comprehension ... #}
@@ -122,14 +126,13 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                         var $actionSelect = $('#input-action');
                         var $courseSelect = $('#input-course_id');
                         var updateCourseVisibility = function() {
-                            if ($actionSelect.val() == -1)
+                            if ($actionSelect.val() == {{ enums.CourseChoiceToolActions.assign_fixed.value|e }})
                                 $courseSelect.show();
                             else
                                 $courseSelect.hide();
                         };
                         $actionSelect.change(updateCourseVisibility);
                         updateCourseVisibility();
-                        $courseSelect.find("option").eq(0).remove();
                     }
                 </script>
             </div>

@@ -65,21 +65,20 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
             {% endfor %}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                      entries=myentries, nulloption=True) }}
-        {% endfor %}
-        {% for track_id, track in ambience['event']['tracks']|dictsort %}
-            {% if ambience['event']['tracks']|length > 1 %}
-                <h4>{{ track['title']|e }}</h4>
-            {% endif %}
-            {% if course_choices[track_id]|length > 0 %}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id in course_choices[track_id] %}
-                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                    courses[course_id]['shortname'])))|e }}
-                {% endfor %}
-                {{ util.form_input_select(name="track{}.course_id".format(track_id), label="Kurs", entries=myentries,
-                                         nulloption=True) }}
-            {% endif %}
+
+            {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
+                {% if course_choices[track_id]|length > 0 %}
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
+                    {% for course_id in course_choices[track_id] %}
+                        {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                        courses[course_id]['shortname'])))|e }}
+                    {% endfor %}
+                    {{ util.form_input_select(name="track{}.course_id".format(track_id),
+                                              label="Kurs {}".format(track['title']), entries=myentries,
+                                              nulloption=True) }}
+                {% endif %}
+            {% endfor %}
         {% endfor %}
 
         <h3 class="heading-underline">Anmeldedaten</h3>

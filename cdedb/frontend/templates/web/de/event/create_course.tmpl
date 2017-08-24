@@ -23,7 +23,8 @@
         {{ util.form_input_text(name="nr", label="Nummer") }}
         {{ util.form_input_text(name="shortname", label="Kurzname") }}
         {{ util.form_input_text(name="title", label="Langer Titel") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
+                                    info="Unterstützt reStructuredText") }}
         <h4 class="heading-underline">Kurs-Angebot</h4>
         {{ util.form_input_text(name="instructors", label="Kursleiter") }}
         {{ util.form_input_text(name="min_size", label="Minimalgröße") }}
@@ -35,7 +36,7 @@
         {% endfor %}
         {{ util.form_input_checkboxes(name="segments", label="Veranstaltungsteile", entries=myentries) }}
         <h4 class="heading-underline">Status</h4>
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
+        {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
         {{ util.form_input_submit(value="Kurs hinzufügen", cancellink=cdedblink('event/course_stats')) }}
     </form>
     <script type="text/javascript">

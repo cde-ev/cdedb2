@@ -119,29 +119,32 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                     </dd>
                     {% if enums['RegistrationPartStati'](ambience['registration']['parts'][part_id]['status'])
                             .is_involved() %}
-                        <dt>Kurs</dt>
+                        {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
+                            <dt>Kurs {{ track['title']|e }}</dt>
+                            <dd>
+                                {% with course_id = ambience['registration']['tracks'][track_id]['course_id'] %}
+                                    {% if course_id %}
+                                        {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
+                                                     "{}. {}".format(courses[course_id]['nr'],
+                                                                     courses[course_id]['shortname'])) }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                {% endwith %}
+                            </dd>
+                        {% endfor %}
+
+                        <dt>Unterkunft</dt>
                         <dd>
-                            {% with course_id = ambience['registration']['parts'][part_id]['course_id'] %}
-                                {% if course_id %}
-                                    {{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
-                                                 "{}. {}".format(courses[course_id]['nr'],
-                                                                 courses[course_id]['shortname'])) }}
+                            {% with lodgement_id = ambience['registration']['parts'][part_id]['lodgement_id'] %}
+                                {% if lodgement_id %}
+                                    {{ util.href(cdedblink('event/show_lodgement', {'lodgement_id': lodgement_id}),
+                                                 lodgements[lodgement_id]['moniker']) }}
                                 {% else %}
                                     —
                                 {% endif %}
                             {% endwith %}
                         </dd>
-                    <dt>Unterkunft</dt>
-                    <dd>
-                        {% with lodgement_id = ambience['registration']['parts'][part_id]['lodgement_id'] %}
-                            {% if lodgement_id %}
-                                {{ util.href(cdedblink('event/show_lodgement', {'lodgement_id': lodgement_id}),
-                                             lodgements[lodgement_id]['moniker']) }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        {% endwith %}
-                    </dd>
                     {% endif %}
                 </dl>
             </div>
