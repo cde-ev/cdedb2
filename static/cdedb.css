@@ -90,6 +90,12 @@ ul.slim {
 .list-group-hover .list-group-item:hover{
     background-color: #f5f5f5;
 }
+.form-group.bg-success {
+    margin-left: -19px;
+    border-left: solid 4px #3c763d;
+    background-color: #a4eba4;
+    background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
+}
 hr.strong {
     border-top: 1px solid #ddd;
 }
