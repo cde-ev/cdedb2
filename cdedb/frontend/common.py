@@ -554,17 +554,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type params: {str: object}
         :rtype: str
         """
-        def _cdedblink(endpoint, params=None):
+        def _cdedblink(endpoint, params=None, magic_placeholders=None):
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
 
             :type endpoint: str
             :type params: {str: object}
+            :param magic_placeholders: parameter names to insert as magic
+                                       placeholders in url
+            :type magic_placeholders: [str]
             :rtype: str
             """
             params = params or {}
             return cdedburl(rs, endpoint, params,
-                            force_external=(modus != "web"))
+                            force_external=(modus != "web"),
+                            magic_placeholders=magic_placeholders)
 
         def _show_user_link(persona_id, quote_me=None):
             """Convenience method to create link to user data page.
