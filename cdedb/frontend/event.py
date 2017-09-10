@@ -1828,10 +1828,17 @@ class EventFrontend(AbstractUserFrontend):
             key = rs.ambience['event']['fields'][field_id]['field_name']
             present = {r['fields'][key] for r in registrations.values()
                        if key in r['fields']}
-            if len(present) <= 1:
+            # If none of the registration has a value for this field yet, we
+            # consider them equal
+            if len(present) == 0:
                 reg_values['enable_fields.{}'.format(key)] = True
-            if len(present) == 1:
-                reg_values['fields.{}'.format(key)] = unwrap(present)
+            # If all registrations have a value, we have to compare them
+            elif len(present) == len(registrations):
+                value = representative['fields'][key]
+                if all(key in r['fields'] and r['fields'][key] == value
+                       for r in registrations.values()):
+                    reg_values['enable_fields.{}'.format(key)] = True
+                    reg_values['fields.{}'.format(key)] = unwrap(present)
 
         merge_dicts(rs.values, reg_values)
         return self.render(rs, "change_registrations", {
