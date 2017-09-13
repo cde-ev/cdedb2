@@ -73,15 +73,26 @@
     <<% for part_id, part in ambience['event']['parts']|dictsort -%>>
         <<% for registration_id, registration in registrations|dictsort -%>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() -%>>
+                <<# jinja does not support list comprehension ... -#>>
+                <<% set mycourses = [] -%>>
+                <<% for track_id, track in registration['tracks'].items() -%>>
+                    <<% if ambience['event']['tracks'][track_id]['part_id'] == part_id and track['course_id'] -%>>
+                        <<< mycourses.append((track_id, track['course_id']))|te ->>>
+                    <<% endif -%>>
+                <<% endfor -%>>
                 \nametag{<<< personas[registration['persona_id']]['given_names']|te >>>}%
                     {<<< personas[registration['persona_id']]['family_name']|te >>>}{
-                        <<%- if registration['parts'][part_id]['course_id'] -%>>
-                            <<%- if (registration['parts'][part_id]['course_id']
-                                     == registration['parts'][part_id]['course_instructor']) -%>>
-                                \emph{<<< courses[registration['parts'][part_id]['course_id']]['title']|te >>>} FIXME repair part<->track
-                            <<%- else -%>>
-                                <<< courses[registration['parts'][part_id]['course_id']]['title']|te >>>
-                            <<%- endif -%>>
+                        <<%- if mycourses -%>>
+                            <<%- for track_id, course_id in mycourses -%>>
+                                <<%- if (course_id == registration['tracks'][track_id]['course_instructor']) -%>>
+                                    \emph{<<< courses[course_id]['title']|te >>>}
+                                <<%- else -%>>
+                                    <<< courses[course_id]['title']|te >>>
+                                <<%- endif -%>>
+                                <<%- if not loop.last -%>>
+                                    \\
+                                <<%- endif -%>>
+                            <<%- endfor -%>>
                         <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
                             \emph{Orga}
                         <<%- endif -%>>
@@ -90,8 +101,10 @@
                             <<< lodgements[registration['parts'][part_id]['lodgement_id']]['moniker']|te >>>
                         <<%- endif -%>>
                     }{
-                        <<%- if registration['parts'][part_id]['course_id'] -%>>
-                            ./logo-<<< registration['parts'][part_id]['course_id']|te >>>
+                        <<%- if mycourses|length == 1 -%>>
+                            ./logo-<<< mycourses[0][1]|te >>>
+                        <<%- elif mycourses|length > 1 -%>>
+                            ./multicourse-logo
                         <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
                             ./orga-logo
                         <<%- endif -%>>
@@ -99,7 +112,7 @@
                         <<%- if registration['age'].is_minor() -%>>
                             ./minor-pictogram
                         <<%- endif -%>>
-                    }% <<< registration_id|te >>>
+                    }% <<< registration_id|te >>> / <<< mycourses|te >>>
             <<% endif -%>>
         <<% endfor -%>>
         \clearpage

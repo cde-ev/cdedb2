@@ -1068,12 +1068,14 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = os.path.join(tmp_dir, rs.ambience['event']['shortname'])
             os.mkdir(work_dir)
-            with open(os.path.join(work_dir, "nametags.tex"), 'w') as f:
+            ## FIXME quick hack: add encoding against unicode errors
+            with open(os.path.join(work_dir, "nametags.tex"), 'w', encoding="utf-8") as f:
                 f.write(tex)
             src = os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png")
             shutil.copy(src, os.path.join(work_dir, "aka-logo.png"))
             shutil.copy(src, os.path.join(work_dir, "orga-logo.png"))
             shutil.copy(src, os.path.join(work_dir, "minor-pictogram.png"))
+            shutil.copy(src, os.path.join(work_dir, "multicourse-logo.png"))
             for course_id in courses:
                 shutil.copy(src, os.path.join(
                     work_dir, "logo-{}.png".format(course_id)))
