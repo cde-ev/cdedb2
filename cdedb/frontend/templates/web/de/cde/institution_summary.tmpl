@@ -16,19 +16,19 @@
     <tr class="{{ aclass }}">
         <td>
             {{ util.input_text('title_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="title_-"' if newrow else '')) }}
+                    attributes=('data-basename="title_"' if newrow else '')) }}
             {{ util.output_errors('title_{}'.format(institution_id)) }}
         </td>
         <td>
             {{ util.input_text('moniker_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="moniker_-"' if newrow else '')) }}
+                    attributes=('data-basename="moniker_"' if newrow else '')) }}
             {{ util.output_errors('moniker_{}'.format(institution_id)) }}
         </td>
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
                     {{ util.input_checkbox("create_{}".format(institution_id), label="Hinzufügen",
-                                           attributes='data-basename="create_-"', aclass='drow-indicator')}}
+                                           attributes='data-basename="create_"', aclass='drow-indicator')}}
                 {% else %}
                     {{ util.input_checkbox("delete_{}".format(institution_id), label="Löschen",
                                            readonly=not deletable, aclass='drow-indicator') }}
