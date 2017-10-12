@@ -16,6 +16,26 @@
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), "Veranstaltungs-Teile", active=True) }}
 {% endblock %}
 
+{% macro print_track(part_id, track_id, aclass="", newrow=False) %}
+    <div class="input-group {{ aclass }}">
+        {{ util.input_text(name="track_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
+                           attributes=('data-basename="track_" data-basename1="_"' if newrow else '')) }}
+        {# FIXME: error output #}
+        <div class="input-group-btn">
+            {# FIXME: Design when no delete button shown #}
+            <div class="drow-buttonspace1">
+                {% if newrow %}
+                    {{ util.input_checkbox("track_create_{}_{}".format(part_id, track_id), label="Hinzufügen",
+                                           attributes='data-basename="create_"', aclass='drow-indicator1') }}
+                {% else %}
+                    {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Löschen",
+                                           readonly=(track_id in referenced_tracks), aclass='drow-indicator1') }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
 {# Macro for a general part, that can have each role in the DynamicRow workflow.
    non-deletable rows have a disabled 'delete'-checkbox,
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
@@ -24,36 +44,33 @@
     <div class="panel panel-default {{ aclass }}">
         <div class="panel-heading">
             {{ util.input_text(name="title_{}".format(part_id), placeholder="Name des Teils",
-                               attributes=('data-basename="title_-"' if newrow else ''),
+                               attributes=('data-basename="title_"' if newrow else ''),
                                aclass='drow-input form-control') }}
             {{ util.output_errors("title_{}".format(part_id)) }}
         </div>
         <div class="panel-body row">
             <div class="col-md-6">
-                 {# FIXME styling #}
-                 Kursschienen<br>
-                {% for track_id, title in tracks|dictsort %}
-                    {{ util.form_input_text(name="track_{}_{}".format(part_id, track_id), label="Schiene") }}
-                    {% if track_id not in referenced_tracks %}
-                        {{ util.form_input_checkbox(name="track_delete_{}_{}".format(part_id, track_id), label="Löschen") }}
-                    {% endif %}
-                {% endfor%}
-                {{ util.form_input_text(name="track_{}_-1".format(part_id), label="Neue Schiene") }}
-                {{ util.form_input_checkbox(name="track_create_{}_-1".format(part_id), label="Hinzufügen") }}
+                <label>Kursschienen</label>
+                <div class="drow-container1 course-tracks-container" data-outerid0="{{ part_id }}">
+                    {% for track_id, title in tracks|dictsort %}
+                        {{ print_track(part_id, track_id, aclass='drow-row1') }}
+                    {% endfor%}
+                    {# TODO: output new rows when validation failed #}
+                    {{ print_track(part_id, -1, aclass='drow-prototype1', newrow=True) }}
+                    <button type="button" class="btn btn-success btn-xs add-button">{{ util.make_icon('plus') }}</button>
+                </div>
             </div>
             <div class="col-md-6">
                 {{ util.form_input_text(name="part_begin_{}".format(part_id), label="Beginn", type='date',
-                                        attributes=('data-basename="part_begin_-"' if newrow else ''),
+                                        attributes=('data-basename="part_begin_"' if newrow else ''),
                                         aclass='drow-input') }}
                 {{ util.form_input_text(name="part_end_{}".format(part_id), label="Ende", type='date',
-                                        attributes=('data-basename="part_end_-"' if newrow else ''),
+                                        attributes=('data-basename="part_end_"' if newrow else ''),
                                         aclass='drow-input') }}
-            </div>
-            <div class="col-md-6">
                 {% call util.form_input_general("fee_{}".format(part_id), "Teilnehmerbeitrag") %}
                     <div class="input-group">
                         {{ util.input_text(name="fee_{}".format(part_id),
-                                           attributes=('data-basename="fee_-"' if newrow else ''),
+                                           attributes=('data-basename="fee_"' if newrow else ''),
                                            aclass='drow-input form-control') }}
                         <span class="input-group-addon">
                             €
@@ -64,7 +81,7 @@
                     <span class="drow-buttonspace">
                         {% if newrow %}
                             {{ util.input_checkbox("create_{}".format(part_id), label="Hinzufügen",
-                                                   attributes='data-basename="create_-"', aclass='drow-indicator') }}
+                                                   attributes='data-basename="create_"', aclass='drow-indicator') }}
                         {% else %}
                             {{ util.input_checkbox("delete_{}".format(part_id), label="Löschen",
                                                    readonly=not deletable, aclass='drow-indicator') }}
@@ -104,7 +121,22 @@
     <script type="text/javascript">
         $('#drow-container').cdedbDynamicRow({
             addButton: $('#drow-addbutton'),
-            delButtonTitle: "Teil löschen"});
+            delButtonTitle: "Teil löschen",
+            callback: function() {
+                $(this).find('.course-tracks-container').cdedbDynamicRow({
+                    addButton: $(this).find('.add-button'),
+                    delButtonTitle: "Schiene löschen",
+                    nestingLevel: 1
+                });
+            }
+        });
+        $('.course-tracks-container').each(function() {
+            $(this).cdedbDynamicRow({
+                addButton: $(this).find('.add-button'),
+                delButtonTitle: "Schiene löschen",
+                nestingLevel: 1
+            });
+        });
         $('#partsummaryform').cdedbProtectChanges();
     </script>
 {% endblock %}
