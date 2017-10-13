@@ -17,22 +17,23 @@
 {% endblock %}
 
 {% macro print_track(part_id, track_id, aclass="", newrow=False) %}
-    <div class="input-group {{ aclass }}">
-        {{ util.input_text(name="track_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
-                           attributes=('data-basename="track_" data-basename1="_"' if newrow else '')) }}
-        {# FIXME: error output #}
-        <div class="input-group-btn">
-            {# FIXME: Design when no delete button shown #}
-            <div class="drow-buttonspace1">
-                {% if newrow %}
-                    {{ util.input_checkbox("track_create_{}_{}".format(part_id, track_id), label="Hinzufügen",
-                                           attributes='data-basename="create_"', aclass='drow-indicator1') }}
-                {% else %}
-                    {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Löschen",
-                                           readonly=(track_id in referenced_tracks), aclass='drow-indicator1') }}
-                {% endif %}
+    <div class="p {{ aclass }}">
+        <div class="input-group">
+            {{ util.input_text(name="track_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
+                               attributes=('data-basename="track_" data-basename1="_"' if newrow else '')) }}
+            <div class="input-group-addon">
+                <div class="drow-buttonspace1">
+                    {% if newrow %}
+                        {{ util.input_checkbox("track_create_{}_{}".format(part_id, track_id), label="Hinzufügen",
+                                               attributes='data-basename="track_create_"', aclass='drow-indicator1') }}
+                    {% else %}
+                        {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Löschen",
+                                               readonly=(track_id in referenced_tracks), aclass='drow-indicator1') }}
+                    {% endif %}
+                </div>
             </div>
         </div>
+        {{ util.output_errors("track_{}_{}".format(part_id, track_id)) }}
     </div>
 {% endmacro %}
 
@@ -57,7 +58,8 @@
                     {% endfor%}
                     {# TODO: output new rows when validation failed #}
                     {{ print_track(part_id, -1, aclass='drow-prototype1', newrow=True) }}
-                    <button type="button" class="btn btn-success btn-xs add-button">{{ util.make_icon('plus') }}</button>
+                    <button type="button" class="btn btn-success btn-xs add-track-button softhide">
+                        {{ util.make_icon('plus') }} Schiene hinzufügen</button>
                 </div>
             </div>
             <div class="col-md-6">
@@ -124,7 +126,7 @@
             delButtonTitle: "Teil löschen",
             callback: function() {
                 $(this).find('.course-tracks-container').cdedbDynamicRow({
-                    addButton: $(this).find('.add-button'),
+                    addButton: $(this).find('.add-track-button'),
                     delButtonTitle: "Schiene löschen",
                     nestingLevel: 1
                 });
@@ -132,7 +134,7 @@
         });
         $('.course-tracks-container').each(function() {
             $(this).cdedbDynamicRow({
-                addButton: $(this).find('.add-button'),
+                addButton: $(this).find('.add-track-button'),
                 delButtonTitle: "Schiene löschen",
                 nestingLevel: 1
             });

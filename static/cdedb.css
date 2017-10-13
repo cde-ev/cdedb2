@@ -51,6 +51,14 @@ body{
 .input-group-addon {
     font-size: 13px;
 }
+.input-group-addon:last-child .btn {
+    /* dirty workaround. Normally you should choose input-group-btn */
+    margin: -5px -10px;
+    border-radius: 0 3px 3px 0;
+}
+.input-group-addon label {
+    margin-bottom: 0;
+}
 .table-slim {
     width: auto;
 }
