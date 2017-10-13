@@ -416,6 +416,8 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 break
             marker += 1
+        # Return index of last new row to template to generate all inputs
+        # previously added by JS
         rs.values['create_last_index'] = marker - 1
 
         ## Handle track data
@@ -433,6 +435,7 @@ class EventFrontend(AbstractUserFrontend):
                        for track_id in part['tracks']
                        if track_id not in track_deletes)
         data = request_extractor(rs, params)
+        rs.values['track_create_last_index'] = {}
         for part_id, part in parts.items():
             if part_id in deletes:
                 continue
@@ -454,7 +457,7 @@ class EventFrontend(AbstractUserFrontend):
                 else:
                     break
                 marker += 1
-            rs.values['track_{}_create_last_index'.format(part_id)] = marker - 1
+            rs.values['track_create_last_index'][part_id] = marker - 1
 
         ## And now track data for newly created parts
         for new_part_id in range(1, rs.values['create_last_index'] + 1):
@@ -471,7 +474,7 @@ class EventFrontend(AbstractUserFrontend):
                 else:
                     break
                 marker += 1
-            rs.values['track_-{}_create_last_index'.format(new_part_id)] = marker - 1
+            rs.values['track_create_last_index'][-new_part_id] = marker - 1
 
         ## Handle deleted parts
         for part_id in deletes:

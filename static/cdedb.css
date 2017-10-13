@@ -468,6 +468,15 @@ tr.drow-delete>td {
 .drow-delete input, .drow-delete textarea, .drow-delete select {
     text-decoration: line-through;
 }
+.drow-new1>.input-group input {
+    border-color: #3c763d;
+    background-color: #dff0d8;
+}
+.drow-delete1>.input-group input {
+    border-color: #a94442;
+    background-color: #f2dede;
+    text-decoration: line-through;
+}
 
 
 /* Profile history */

@@ -56,8 +56,12 @@
                     {% for track_id, title in tracks|dictsort %}
                         {{ print_track(part_id, track_id, aclass='drow-row1') }}
                     {% endfor%}
-                    {# TODO: output new rows when validation failed #}
-                    {{ print_track(part_id, -1, aclass='drow-prototype1', newrow=True) }}
+                    {# Items that were added by the user but failed validation. They are still new and have no official id. #}
+                    {% for i in range(1, values.get('track_create_last_index', {}).get(part_id, 0) + 1) %}
+                        {{ print_track(part_id, -i, aclass='drow-new1', newrow=True) }}
+                    {% endfor %}
+                    {{ print_track(part_id, values.get('track_create_last_index', {}).get(part_id, 0) - 1,
+                                   aclass='drow-prototype1', newrow=True) }}
                     <button type="button" class="btn btn-success btn-xs add-track-button softhide">
                         {{ util.make_icon('plus') }} Schiene hinzufügen</button>
                 </div>
