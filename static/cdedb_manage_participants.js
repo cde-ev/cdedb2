@@ -64,7 +64,7 @@
                 'type': 'button',
                 'title': title
             });
-            $button.append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}));
+            $button.append($('<span></span>', {'class': 'glyphicon glyphicon-minus'}));
             $button.append($('<span></span>', {'class': 'sr-only'}).append(title));
             $button.click(function () {
                 $(this).toggleClass('active');
