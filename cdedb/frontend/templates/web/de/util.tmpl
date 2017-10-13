@@ -385,12 +385,12 @@
 {% endmacro %}
 
 {% macro form_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
-                                defaultvalue='', anid='') %}
+                                defaultvalue='', anid='', force_label=False) %}
     {% if not label %}
         {% set label = fields['field_name'] %}
     {% endif %}
-    {% call form_input_general(name, (None if fields['kind'] == "bool" else label), anid, False, info,
-                               displayerrors, True) %}
+    {% call form_input_general(name, (None if fields['kind'] == "bool" and not force_label else label), anid, False,
+                               info, displayerrors, True) %}
         {{ event_field_input(fields, name, readonly, anid) }}
     {% endcall %}
 {% endmacro %}
