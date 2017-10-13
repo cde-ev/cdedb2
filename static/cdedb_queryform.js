@@ -544,7 +544,7 @@
             if (idField == -1)
                 return;
 
-            this.clearFilters()
+            this.clearFilters();
 
             var f = fieldList[idField];
             // Set filter operator in nonjs-form to 'one of'
@@ -595,7 +595,7 @@
                     sortInputs[i].input_field.val(parameters[sortInputs[i].input_field.attr('name')]);
                     //Search field in fieldList
                     var field = -1;
-                    for (var i = 0; i < fieldList.length; i++) {
+                    for (var j = 0; j < fieldList.length; j++) {
                         if (fieldList[j].id == sortInputs[i].input_field.val()) {
                             field = j;
                             break;
@@ -661,6 +661,17 @@
                 setTimeout(function(){
                     $toDisable.removeAttr("disabled");
                 },100);
+            });
+            var $form = $(this);
+            $(this).find('button[type="submit"],input[type="submit"]').click(function() {
+                // Add submit button value as a hidden input to pass it through the above submit handler
+                if ($(this).attr('name')) {
+                    $form.append($('<input />', {
+                        'type': 'hidden',
+                        'name': $(this).attr('name'),
+                        'value': $(this).attr('value')
+                    }));
+                }
             });
 
             obj.init();
