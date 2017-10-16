@@ -285,9 +285,9 @@
                             .val(values[1]);
 
                 if (f.type == 'date')
-                    $i1.add($i2).attr('placeholder','YYYY-MM-DD');
+                    $i1.add($i2).attr('placeholder','YYYY-MM-DD').attr('type', 'date');
                 else if (f.type == 'datetime')
-                    $i1.add($i2).attr('placeholder','YYYY-MM-DDThh:mm');
+                    $i1.add($i2).attr('placeholder','YYYY-MM-DDThh:mm').attr('type', 'datetime-local');
 
                 $i1.add($i2).change(function() {
                     var val = escape($i1.val()) + ',' + escape($i2.val());
