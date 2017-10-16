@@ -2471,52 +2471,6 @@ class EventFrontend(AbstractUserFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "registration_query", params)
 
-    @access("event", modi={"POST"})
-    @REQUESTdata(("column", "str"), ("num_rows", "int"))
-    @event_guard(check_offline=True)
-    def registration_action(self, rs, event_id, column, num_rows):
-        """Apply changes to a selection of registrations.
-
-        This works in conjunction with the query method above.
-        """
-        spec = self.make_registration_query_spec(rs.ambience['event'])
-        ## The following should be safe, as there are no columns which
-        ## forbid NULL and are settable this way. If the aforementioned
-        ## sentence is wrong all we get is a validation error in the
-        ## backend.
-        value = unwrap(request_extractor(
-            rs, (("value", "{}_or_None".format(spec[column])),)))
-        selection_params = (("row_{}".format(i), "bool")
-                            for i in range(num_rows))
-        selection = request_extractor(rs, selection_params)
-        id_params = (("row_{}_id".format(i), "int") for i in range(num_rows))
-        ids = request_extractor(rs, id_params)
-        if rs.errors:
-            return self.registration_query(rs, event_id, download=None,
-                                           is_search=True)
-        code = 1
-        for i in range(num_rows):
-            if selection["row_{}".format(i)]:
-                new = {'id': ids["row_{}_id".format(i)]}
-                field = column.split('.', 1)[1]
-                if column.startswith("part"):
-                    mo = re.search(r"^part([0-9]+)\.([a-zA-Z_]+)[0-9]+$",
-                                   column)
-                    part_id = int(mo.group(1))
-                    field = mo.group(2)
-                    new['parts'] = {part_id: {field: value}}
-                elif column.startswith("fields."):
-                    new['fields'] = {field: value}
-                else:
-                    new[field] = value
-                code *= self.eventproxy.set_registration(rs, new)
-        self.notify_return_code(rs, code)
-        params = {key: value for key, value in rs.request.values.items()
-                  if key.startswith(("qsel_", "qop_", "qval_", "qord_"))}
-        params['download'] = None
-        params['is_search'] = True
-        return self.redirect(rs, "event/registration_query", params)
-
     @access("event")
     @event_guard(check_offline=True)
     def checkin_form(self, rs, event_id):

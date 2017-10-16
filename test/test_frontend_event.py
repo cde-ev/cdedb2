@@ -577,18 +577,6 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['actionform']
         f['row_0'].checked = True
         f['row_1'].checked = False
-        f['column'] = 'part2.lodgement_id2'
-        f['value'] = 3
-        self.submit(f)
-        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
-        self.assertPresence("Ergebnis [2]")
-        self.assertEqual(
-            '3',
-            self.response.lxml.get_element_by_id('row_0_lodgement_id2').value)
-        self.assertEqual(
-            '',
-            self.response.lxml.get_element_by_id('row_1_lodgement_id2').value)
-
 
     @as_users("garcia")
     def test_multiedit(self, user):
