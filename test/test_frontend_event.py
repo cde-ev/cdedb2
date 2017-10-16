@@ -600,35 +600,36 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['actionform']
         self.assertEqual("Eventis", f['row_1_family_name'].value)
         self.assertEqual("Generalis", f['row_2_family_name'].value)
-        f['row_1'].checked = True
         f['row_2'].checked = True
-        self.submit(f, "btn-edit") # FIXME this fails due to JS dependency
+        f['row_3'].checked = True
+        # Fake JS link redirection
+        self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual(False, f['enable_part2.status'].checked)
         self.assertEqual(True, f['enable_part3.status'].checked)
-        self.assertEqual("2", f['part3_status'].value)
-        f['part3_status'] = 5
+        self.assertEqual("2", f['part3.status'].value)
+        f['part3.status'] = 5
         self.assertEqual(False, f['enable_fields.transportation'].checked)
         self.assertEqual(True, f['enable_fields.may_reserve'].checked)
         f['enable_fields.transportation'].checked = True
-        f['transportation'] = "pedes"
+        f['fields.transportation'] = "pedes"
         self.submit(f)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual("4", f['part2_status'].value)
-        self.assertEqual("5", f['part3_status'].value)
-        self.assertEqual("pedes", f['transportation'].value)
+        self.assertEqual("4", f['part2.status'].value)
+        self.assertEqual("5", f['part3.status'].value)
+        self.assertEqual("pedes", f['fields.transportation'].value)
         self.traverse({'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/3/show'},
                       {'href': '/event/event/1/registration/3/change'})
         f = self.response.forms['changeregistrationform']
-        self.assertEqual("2", f['part2_status'].value)
-        self.assertEqual("5", f['part3_status'].value)
-        self.assertEqual("pedes", f['transportation'].value)
+        self.assertEqual("2", f['part2.status'].value)
+        self.assertEqual("5", f['part3.status'].value)
+        self.assertEqual("pedes", f['fields.transportation'].value)
 
     @as_users("garcia")
     def test_show_registration(self, user):
