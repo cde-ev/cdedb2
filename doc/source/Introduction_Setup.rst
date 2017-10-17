@@ -52,7 +52,7 @@ Checkout the repository
 
 Use git to clone the code::
 
-  git clone ssh://gitolite@rcs.cde-ev.de:20008/cdedb2
+  git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 
 For this to work you need to send an ssh public key to the administrators
 (``admin@lists.cde-ev.de``) first, to be authorized for access to the
