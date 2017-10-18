@@ -2391,14 +2391,16 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
                 spec["track{0}.course_instructor{0}".format(track_id)] = "id"
-        spec[",".join("track{0}.course_id{0}".format(track_id)
-                      for track_id in tracks)] = "id"
-        spec[",".join("part{0}.status{0}".format(part_id)
-                      for part_id in event['parts'])] = "int"
-        spec[",".join("part{0}.lodgement{0}".format(part_id)
-                      for part_id in event['parts'])] = "id"
-        spec[",".join("track{0}.course_instructor{0}".format(track_id)
-                      for track_id in tracks)] = "id"
+        if len(event['parts'][part_id]['tracks']) > 1:
+            spec[",".join("track{0}.course_id{0}".format(track_id)
+                          for track_id in tracks)] = "id"
+            spec[",".join("track{0}.course_instructor{0}".format(track_id)
+                          for track_id in tracks)] = "id"
+        if len(event['parts']) > 1:
+            spec[",".join("part{0}.status{0}".format(part_id)
+                          for part_id in event['parts'])] = "int"
+            spec[",".join("part{0}.lodgement{0}".format(part_id)
+                          for part_id in event['parts'])] = "id"
         for e in sorted(event['fields'].values(),
                         key=lambda e: e['field_name']):
             if e['association'] == const.FieldAssociations.registration:
@@ -2448,35 +2450,54 @@ class EventFrontend(AbstractUserFrontend):
             "fields.{}".format(field['field_name']): field['field_name']
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration}
-        for part_id, part in event['parts'].items():
-            titles.update({
-                "part{0}.status{0}".format(part_id): rs.gettext(
-                    "registration status (part {title})").format(
-                        title=part['title']),
-                "part{0}.lodgement_id{0}".format(part_id): rs.gettext(
-                    "lodgement (part {title})").format(title=part['title']),
-            })
-        for track_id, track in tracks.items():
-            titles.update({
-                "track{0}.course_id{0}".format(track_id): rs.gettext(
-                    "course (track {title})").format(title=track['title']),
-                "track{0}.course_instructor{0}".format(track_id): rs.gettext(
-                    "course instructor (track {title})").format(
+        if len(tracks) > 1:
+            for track_id, track in tracks.items():
+                titles.update({
+                    "track{0}.course_id{0}".format(track_id): rs.gettext(
+                        "course ({title})").format(
                         title=track['title']),
+                    "track{0}.course_instructor{0}".format(track_id): rs.gettext(
+                        "course instructor ({title})").format(
+                        title=track['title']),
+                })
+            titles.update({
+                ",".join("track{0}.course_id{0}".format(track_id)
+                         for track_id in tracks): rs.gettext(
+                             "course (any track)"),
+                ",".join("track{0}.course_instructor{0}".format(track_id)
+                         for track_id in tracks): rs.gettext(
+                             "course instuctor (any track)")})
+        elif len(tracks) == 1:
+            track_id, track = next(iter(tracks.items()))
+            titles.update({
+                "track{0}.course_id{0}".format(track_id): rs.gettext("course"),
+                "track{0}.course_instructor{0}".format(track_id):
+                    rs.gettext("course instructor"),
             })
-        titles.update({
-            ",".join("track{0}.course_id{0}".format(track_id)
-                     for track_id in tracks): rs.gettext(
-                         "course (any track)"),
-            ",".join("part{0}.status{0}".format(part_id)
-                     for part_id in event['parts']): rs.gettext(
-                         "registration status (any part)"),
-            ",".join("part{0}.lodgement{0}".format(part_id)
-                     for part_id in event['parts']): rs.gettext(
-                         "lodgement (any part)"),
-            ",".join("track{0}.course_instructor{0}".format(track_id)
-                     for track_id in tracks): rs.gettext(
-                         "course instuctor (any track)")})
+        if len(event['parts']) > 1:
+            for part_id, part in event['parts'].items():
+                titles.update({
+                    "part{0}.status{0}".format(part_id): rs.gettext(
+                        "registration status ({title})").format(
+                        title=part['title']),
+                    "part{0}.lodgement_id{0}".format(part_id): rs.gettext(
+                        "lodgement ({title})").format(title=part['title']),
+                })
+            titles.update({
+                ",".join("part{0}.status{0}".format(part_id)
+                         for part_id in event['parts']): rs.gettext(
+                             "registration status (any part)"),
+                ",".join("part{0}.lodgement{0}".format(part_id)
+                         for part_id in event['parts']): rs.gettext(
+                             "lodgement (any part)")})
+        elif len(event['parts']) == 1:
+            part_id, part = next(iter(event['parts'].items()))
+            titles.update({
+                "part{0}.status{0}".format(part_id):
+                    rs.gettext("registration status"),
+                "part{0}.lodgement_id{0}".format(part_id):
+                    rs.gettext("lodgement"),
+            })
 
         return choices, titles
 
