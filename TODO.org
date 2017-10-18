@@ -2,7 +2,6 @@
 ** Add course and lodgement fields to query
 ** Add global consistency check page where we see all mailinglists at once.
 ** include a "remove all inconsistent subscriptions" button on the consistency check page of a mailing list
-** some pages have to much whitespace/too tiny font (esp. forms)
 ** Rename CdE-section to "Mitglieder" and event-section to "Anmeldung"?
 ** Rename "abgeschlossene Veranstaltungen"
 ** Audit data protection w.r.t. persona select API
@@ -16,29 +15,22 @@
 *** automatic unsubscription if the user leaves the audience
 ** streamline search forms/pages
 ** continuous integration (after online VM is set up)
-** move genesis to core realm and change the process to (i) user data input (ii) administrative confirmation.
+** change the genesis process to (i) user data input (ii) administrative confirmation.
 ** make more use of ambience (especially in existing code)
-** maybe replace is_admin with is_priveleged (move checks for orga and moderator there)
+** maybe replace is_admin with is_privileged (move checks for orga and moderator there)
 ** rename CDEDB_OFFLINE_DEPLOYMENT
 ** use util.persona_anchor in templates
 ** run validator on all html output
-** do css layout
-** improve ui
 ** write tests for uncovered code
 ** add translations
 ** adjust LDAP indices
 ** add ml test cases concerning assembly interaction
 ** make country choices into drop down menues
-** allow comma-separated list of ids to lodgement/manage (non-JS fallback)
-** multi-edit formular (multiple ids, merge values and display only equal ones, activate fields by checkbox)
 ** maybe add crosstables for course choices
 ** allow to delete event parts and courses (the last one is a bit tricky)
-*** constrain deletion and addition of parts to before registration
 *** some stuff has to be deleted (course_parts, registration_parts)
 ** detect inconsistencies in course choices when removing a course from a part
 ** maybe split frontend.event.course_choices
-** course list: on separate page, sorted by nr
-** remove some view pages, where redundant (e.g. courses)
 ** format dates in donation certificate
 ** allow arbitrary number of orderings in queries (only frontend needs to be beefed up)
 ** maybe allow storing of custom queries per event
