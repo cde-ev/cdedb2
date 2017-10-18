@@ -2391,7 +2391,7 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
                 spec["track{0}.course_instructor{0}".format(track_id)] = "id"
-        if len(event['parts'][part_id]['tracks']) > 1:
+        if len(tracks) > 1:
             spec[",".join("track{0}.course_id{0}".format(track_id)
                           for track_id in tracks)] = "id"
             spec[",".join("track{0}.course_instructor{0}".format(track_id)
@@ -2420,13 +2420,16 @@ class EventFrontend(AbstractUserFrontend):
         """
         tracks = event_gather_tracks(event)
         choices = {'persona.gender': self.enum_choice(rs, const.Genders)}
+        lodgement_choices =  {
+            lodgement_id: lodgement['moniker']
+            for lodgement_id, lodgement in lodgements.items()
+        }
         for part_id in event['parts']:
             choices.update({
                 "part{0}.status{0}".format(part_id): self.enum_choice(
                     rs, const.RegistrationPartStati),
-                "part{0}.lodgement_id{0}".format(part_id): {
-                    lodgement_id: lodgement['moniker']
-                    for lodgement_id, lodgement in lodgements.items()},})
+                "part{0}.lodgement_id{0}".format(part_id): lodgement_choices,
+            })
         for track_id in tracks:
             course_choices = {
                 course_id: "{}. {}".format(courses[course_id]['nr'],
@@ -2439,6 +2442,25 @@ class EventFrontend(AbstractUserFrontend):
                     course_choices,
                 "track{0}.course_instructor{0}".format(track_id):
                     course_choices})
+        if len(tracks) > 1:
+            course_choices = {
+                course_id: "{}. {}".format(courses[course_id]['nr'],
+                                           courses[course_id]['shortname'])
+                for course_id, course
+                in sorted(courses.items(), key=lambda x: x[1]['nr'])}
+            choices[",".join("track{0}.course_id{0}".format(track_id)
+                             for track_id in tracks)] = course_choices
+            choices[",".join("track{0}.course_instructor{0}".format(track_id)
+                             for track_id in tracks)] = course_choices
+        if len(event['parts']) > 1:
+            choices.update({
+                ",".join("part{0}.status{0}".format(part_id)
+                         for part_id in event['parts']):
+                    self.enum_choice(rs, const.RegistrationPartStati),
+                ",".join("part{0}.lodgement{0}".format(part_id)
+                         for part_id in event['parts']):
+                    lodgement_choices,
+            })
         choices.update({
             "fields.{}".format(field['field_name']): {
                 value: desc for value, desc in field['entries']}
