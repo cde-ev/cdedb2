@@ -7,7 +7,7 @@
 {% block heading %}
     <h1 class="title">
         {{ ambience['pcourse']['nr']|e }}. {{ ambience['pcourse']['title']|e }}
-        <small>({{ ambience['pevent']['title']|e }})</small>
+        <small>{{ util.make_icon('calendar') }} {{ ambience['pevent']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
