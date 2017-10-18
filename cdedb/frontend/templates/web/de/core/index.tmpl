@@ -162,7 +162,7 @@
                                     {{ util.href(cdedblink('event/register_form', {'event_id': event_id}), "anmelden",
                                                  icon='log-in') }}
                                     {% if event['registration_soft_limit'] %}
-                                        {% if now().date() >= event['registration_soft_limit'] %}
+                                        {% if now().date() <= event['registration_soft_limit'] %}
                                             (bis {{ event['registration_soft_limit']|date(lang=lang)|e }})
                                         {% elif event['registration_hard_limit'] %}
                                             (Nachmeldungen bis {{ event['registration_hard_limit']|date(lang=lang)|e }})
