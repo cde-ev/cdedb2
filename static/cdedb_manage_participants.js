@@ -52,7 +52,7 @@
      * jQuery plugin as a helper to improve usability of the delete checkbox.
      *
      * This plugin should be called on the `delete` checkboxes of the manage_attendees/manage_inhabitants pages. It
-     * inserts a small red button with trash icon and the given title and hides the checkbox in return. The button will
+     * inserts a small red button with minus-icon and the given title and hides the checkbox in return. The button will
      * toggle the checked state of the (hidden) checkbox and add some highlight to the surrounding list item.
      */
     $.fn.cdedbRemoveParticipantButton = function(title) {

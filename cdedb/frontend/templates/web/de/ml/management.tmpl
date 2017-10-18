@@ -61,7 +61,7 @@
                         <form action="{{ cdedblink('ml/remove_moderator')|e }}" method="POST"
                                 id="removemoderatorform{{ moderator|e }}" style="display: inline;">
                             {{ util.input_hidden(name="moderator_id", value=moderator) }}
-                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="trash",
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
                                     title=glue(personas[moderator]['given_names'], personas[moderator]['family_name'],
                                                "als Moderator entfernen")) }}
                         </form>
@@ -119,7 +119,7 @@
                 <form action="{{ cdedblink('ml/remove_whitelist')|e }}" method="POST"
                         id="removewhitelistform{{ loop.index|e }}" style="display: inline;">
                     {{ util.input_hidden(name="email", value=email) }}
-                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
+                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
                             title="Diese Adresse aus der Whitelist löschen") }}
                 </form>
             </li>
@@ -160,7 +160,7 @@
                             <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
                                     id="removesubscriberform{{ anid|e }}" style="display: inline;">
                                 {{ util.input_hidden(name="subscriber_id", value=anid) }}
-                                {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
+                                {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",
                                         title=(personas[anid]['given_names'] + " " + personas[anid]['family_name'] +
                                         " als Abonnent entfernen")) }}
                             </form>
