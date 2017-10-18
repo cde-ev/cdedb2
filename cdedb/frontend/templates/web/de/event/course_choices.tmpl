@@ -45,20 +45,25 @@ Kurswahlen ({{ ambience['event']['title']|e }})
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
             <p>
-                Teilnehmer, die in Teil
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [('', '— egal —')] %}
-                {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                    {{ myentries.append((track_id, track['title']))|e }}
-                {% endfor %}
-                {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim") }}
+                Teilnehmer, die
+                {% if ambience['event']['tracks']|length > 1 %}
+                    in Kursschiene
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [('', '— egal —')] %}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {{ myentries.append((track_id, track['title']))|e }}
+                    {% endfor %}
+                    {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim input-sm") }}
+                {% else %}
+                    {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
+                {% endif %}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id, course in courses|xdictsort('nr') %}
                     {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
                 {% endfor %}
                 den Kurs
-                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim") }}
+                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim input-sm") }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [('', "— kein Filter —"),
                                     (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
@@ -68,10 +73,10 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                     (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
                                     (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
                                     (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
-                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim") }}<br />
+                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim input-sm") }}<br />
                 {# TODO Link to query page with matching query (if possible) #}
-                mit einer der folgenden IDs:
-                {{ util.input_text(name='ids', aclass="form-control input-slim") }}
+                mit einer der folgenden Teilnehmer-IDs:
+                {{ util.input_text(name='ids', aclass="form-control input-slim input-sm") }}
             </p>
             <p class="nosp">
                 {{ util.input_submit(value="anzeigen", icon="search") }}
@@ -140,14 +145,20 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 
         <table class="table table-condensed table-hover">
             <thead>
+                {% if ambience['event']['tracks']|length > 1 %}
+                    <tr>
+                        <th rowspan="2"></th>
+                        <th rowspan="2">Name</th>
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            <th colspan="5" class="b-left">{{ track['title']|e }}</th>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
                 <tr>
-                    <th rowspan="2"></th>
-                    <th rowspan="2">Name</th>
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                        <th colspan="5" class="b-left">{{ track['title']|e }}</th>
-                    {% endfor %}
-                </tr>
-                <tr>
+                    {% if ambience['event']['tracks']|length <= 1 %}
+                        <th></th>
+                        <th>Name</th>
+                    {% endif %}
                     {# TODO markup filtered columns with th.filtered_column #}
                     {% for track_id in ambience['event']['tracks']|sort %}
                         <th class="b-left text-center">
@@ -197,6 +208,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% endfor %}
             </tbody>
         </table>
+        {# TODO: Use ListSelect.js for faster selecting in table #}
     </form>
     <script type="text/javascript">
         $('.event_course_id').dblclick(function() {

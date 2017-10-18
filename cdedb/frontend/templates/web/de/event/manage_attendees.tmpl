@@ -24,7 +24,9 @@ Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambie
         <div class="row">
             {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in ambience['course']['segments']%}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(title=track['title'], aclass="panel-info") %}
+                    {% call util.bootstrap_panel(title=(track['title'] if ambience['event']['tracks']|length > 1
+                                                                       else "Eingeteilte Teilnehmer"),
+                                                 aclass="panel-info") %}
                         <ul class="slim">
                             {% for registration_id in attendees[(ambience['course']['id'], track_id)] %}
                                 <li>
@@ -33,6 +35,8 @@ Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambie
                                     &ensp;{{ util.input_checkbox('delete_'+track_id|e+'_'+registration_id|e, "Entf.",
                                                             aclass="del-box") }}
                                 </li>
+                            {% else %}
+                                <li class="text-muted">Zur Zeit keine Teilnehmer eingeteilt</li>
                             {% endfor %}
                         </ul>
 

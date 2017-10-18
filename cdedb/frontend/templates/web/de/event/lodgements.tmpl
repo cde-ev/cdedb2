@@ -21,19 +21,24 @@
 
     <table class="table table-condensed table-hover">
         <thead>
-            {# TODO: One row-header for one-part-events #}
             <tr>
                 <th rowspan="2">Unterkunft</th>
-                <th colspan="{{ ambience['event']['parts']|length }}" class="b-left">Belegung</th>
+                {% if ambience['event']['parts']|length > 1 %}
+                    <th colspan="{{ ambience['event']['parts']|length }}" class="b-right">Belegung</th>
+                {% else %}
+                    <th rowspan="2" class="text-right">Belegung</th>
+                {% endif %}
                 <th colspan="2" class="b-left">Kapazität</th>
                 <th colspan="2" rowspan="2" class="b-left"></th>
             </tr>
             <tr>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    <th class="text-right{% if loop.first %} b-left{% endif %}">
-                        {{ part['title']|e }}
-                    </th>
-                {% endfor %}
+                {% if ambience['event']['parts']|length > 1 %}
+                    {% for part_id, part in ambience['event']['parts']|dictsort %}
+                        <th class="text-right{% if loop.first %} b-left{% endif %}">
+                            {{ part['title']|e }}
+                        </th>
+                    {% endfor %}
+                {% endif %}
                 <th class="b-left text-right">Plätze</th>
                 <th class="text-right">Reserveplätze</th>
             </tr>

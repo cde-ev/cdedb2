@@ -87,7 +87,13 @@
                                          num_track_attendees,
                                          title="Kurswahlen der Teilnehmer") }}
                         </div>
-                        <h3 class="panel-title">{{ ambience['event']['tracks'][track_id]['title']|e }}</h3>
+                        <h3 class="panel-title">
+                            {% if ambience['event']['tracks']|length > 1 %}
+                                {{ ambience['event']['tracks'][track_id]['title']|e }}
+                            {% else %}
+                                Teilnehmer
+                            {% endif %}
+                        </h3>
                     </div>
                     <div class="panel-body">
                         {% if track_id not in ambience['course']['active_segments'] %}

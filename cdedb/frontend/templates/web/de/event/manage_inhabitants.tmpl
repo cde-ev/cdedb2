@@ -24,7 +24,9 @@ Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ a
         <div class="row">
             {% for part_id, part in ambience['event']['parts']|dictsort %}
                 <div class="col-md-6">
-                    {% call util.bootstrap_panel(title=part['title'], aclass="panel-info") %}
+                    {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
+                                                                      else "Eingeteilte Bewohner"),
+                                                 aclass="panel-info") %}
                         <ul class="slim">
                             {% for registration_id in inhabitants[(ambience['lodgement']['id'], part_id)] %}
                                 <li>
@@ -33,6 +35,8 @@ Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ a
                                     &ensp;{{ util.input_checkbox('delete_'+part_id|e+'_'+registration_id|e, "Entf.",
                                                             aclass="del-box") }}
                                 </li>
+                            {% else %}
+                                <li class="text-muted">Zur Zeit keine Bewohner eingeteilt</li>
                             {% endfor %}
                         </ul>
 

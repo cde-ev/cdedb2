@@ -87,7 +87,9 @@
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
                         <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length|e }}</div>
-                        <h3 class="panel-title">{{ part['title']|e }}</h3>
+                        <h3 class="panel-title">
+                            {% if ambience['event']['parts']|length > 1 %}{{ part['title']|e }}{% else %}Bewohner{% endif %}
+                        </h3>
                     </div>
 
                     <div class="panel-body">
