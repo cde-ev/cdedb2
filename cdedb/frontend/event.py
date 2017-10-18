@@ -1278,9 +1278,10 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
-            track_id: sorted(
-                course_id for course_id in courses
-                if track_id in courses[course_id]['active_segments'])
+            track_id: [course_id
+                       for course_id, course
+                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       if track_id in course['active_segments']]
             for track_id in tracks}
         part_track_association = {
             part_id: list(part['tracks'].keys())
@@ -1459,8 +1460,10 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
-            track_id: sorted(course_id for course_id in courses
-                            if track_id in courses[course_id]['active_segments'])
+            track_id: [course_id
+                       for course_id, course
+                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       if track_id in course['active_segments']]
             for track_id in tracks}
         non_trivials = {}
         for track_id, track in registration['tracks'].items():
@@ -1730,8 +1733,10 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
-            track_id: sorted(course_id for course_id in courses
-                            if track_id in courses[course_id]['segments'])
+            track_id: [course_id
+                       for course_id, course
+                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       if track_id in course['segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -1869,8 +1874,10 @@ class EventFrontend(AbstractUserFrontend):
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
-            track_id: sorted(course_id for course_id in courses
-                            if track_id in courses[course_id]['active_segments'])
+            track_id: [course_id
+                       for course_id, course
+                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       if track_id in course['active_segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
@@ -2419,15 +2426,17 @@ class EventFrontend(AbstractUserFrontend):
                     lodgement_id: lodgement['moniker']
                     for lodgement_id, lodgement in lodgements.items()},})
         for track_id in tracks:
+            course_choices = {
+                course_id: "{}. {}".format(courses[course_id]['nr'],
+                                           courses[course_id]['shortname'])
+                for course_id, course
+                in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                if track_id in course['segments']}
             choices.update({
-                "track{0}.course_id{0}".format(track_id): {
-                    course_id: course['title']
-                    for course_id, course in courses.items()
-                    if track_id in course['segments']},
-                "track{0}.course_instructor{0}".format(track_id): {
-                    course_id: course['title']
-                    for course_id, course in courses.items()
-                    if track_id in course['segments']},})
+                "track{0}.course_id{0}".format(track_id):
+                    course_choices,
+                "track{0}.course_instructor{0}".format(track_id):
+                    course_choices})
         choices.update({
             "fields.{}".format(field['field_name']): {
                 value: desc for value, desc in field['entries']}

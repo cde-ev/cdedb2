@@ -54,7 +54,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim") }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for course_id, course in courses|dictsort %}
+                {% for course_id, course in courses|xdictsort('nr') %}
                     {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
                 {% endfor %}
                 den Kurs

@@ -53,7 +53,9 @@
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_list %}
-                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
+                    {{ myentries.append((course_id,
+                                         "{}. {}".format(courses[course_id]['nr'],
+                                                         courses[course_id]['title'])))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=myentries,
                                          label="Erstwahl", readonly=readonly) }}
@@ -63,12 +65,10 @@
                                          label="Drittwahl", readonly=readonly) }}
 
                 {# jinja does not support list comprehension ... #}
-                {% set myentries = [("", "— Ich bin kein Kursleiter —")] %}
-                {% for course_id in course_list %}
-                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
-                {% endfor %}
+                {% set myentries = [("", "— Ich bin kein Kursleiter —")] + myentries%}
                 {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=myentries,
-                                         label="Kursleiter", readonly=readonly) }}
+                                         label="Kursleiter", readonly=readonly,
+                                         info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
             {% endif %}
         {% endfor %}
 

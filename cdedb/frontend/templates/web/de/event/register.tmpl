@@ -115,10 +115,7 @@
                                              label="Drittwahl") }}
 
                     {# jinja does not support list comprehension ... #}
-                    {% set myentries = [("", "— Ich bin kein Kursleiter —")] %}
-                    {% for course_id in course_list %}
-                        {{ myentries.append((course_id, courses[course_id]['title']))|e }}
-                    {% endfor %}
+                    {% set myentries = [("", "— Ich bin kein Kursleiter —")] + myentries %}
                     {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=myentries,
                                              label="Kursleiter",
                                              info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
