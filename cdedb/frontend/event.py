@@ -13,6 +13,7 @@ import shutil
 import tempfile
 
 import werkzeug
+from numpy.ma.extras import corrcoef
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, registration_is_open, csv_output,
@@ -888,7 +889,7 @@ class EventFrontend(AbstractUserFrontend):
         This allows flexible filtering of the displayed registrations.
         """
         if rs.errors:
-            return self.show_event(rs, event_id)
+            return self.course_choices_form(rs, event_id)
         tracks = event_gather_tracks(rs.ambience['event'])
         registration_ids = self.eventproxy.registrations_by_course(
             rs, event_id, course_id, track_id, position, ids)
@@ -924,9 +925,21 @@ class EventFrontend(AbstractUserFrontend):
                     'assigned_instructors': assigned_instructors,
                     'is_happening': track_id in course['segments'],
                 }
+        corresponding_query = Query(
+            "qview_registration",
+            self.make_registration_query_spec(rs.ambience['event']),
+            ["reg.id", "persona.given_names", "persona.family_name",
+             "persona.username"] + [
+                "track{0}.course_id{0}".format(track_id)
+                for track_id in tracks],
+            (("reg.id", QueryOperators.oneof,
+              ','.join(str(x) for x in registration_ids.keys())),),
+            (("persona.family_name", True), ("persona.given_names", True),)
+        )
         return self.render(rs, "course_choices", {
             'courses': courses, 'personas': personas,
-            'registrations': registrations, 'course_infos': course_infos})
+            'registrations': registrations, 'course_infos': course_infos,
+            'corresponding_query': corresponding_query})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("registration_ids", "[int]"), ("track_ids", "[int]"),

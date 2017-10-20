@@ -1,6 +1,8 @@
 {% set sidenav_active='event_course_choices' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% set jshint='weak' %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
 Kurswahlen ({{ ambience['event']['title']|e }})
 {% endblock %}
@@ -143,7 +145,25 @@ Kurswahlen ({{ ambience['event']['title']|e }})
             </div>
         {% endcall %}
 
-        <table class="table table-condensed table-hover">
+        <div class="pull-right">
+            {{ util.href(cdedblink('event/registration_query', corresponding_query|querytoparams),
+                         "in Anmeldungsliste", icon='list', aclass='btn btn-sm btn-default') }}
+        </div>
+        <div class="p softhide" id="js-button-group">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">alle</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                </button>
+            </div>
+        </div>
+
+        <table class="table table-condensed table-hover ls-list" id="course_choice_table">
             <thead>
                 {% if ambience['event']['tracks']|length > 1 %}
                     <tr>
@@ -159,23 +179,37 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                         <th></th>
                         <th>Name</th>
                     {% endif %}
-                    {# TODO markup filtered columns with th.filtered_column #}
+
+                    {# Some definitions to hight the headings of the filtered columns #}
+                    {% set cfp = enums.CourseFilterPositions %}
+                    {% macro filtered_col_class(track_id, position) -%}
+                        {% if values.get('track_id')|int == '' or values.get('track_id')|int == track_id -%}
+                            {% if position == values.get('position')|int
+                                  or values.get('position')|int == cfp.anywhere.value
+                                  or (values.get('position')|int == cfp.any_choice.value
+                                      and position in (cfp.first_choice.value,
+                                                       cfp.second_choice.value,
+                                                       cfp.third_choice.value)) -%}
+                                filtered_column
+                            {% endif -%}
+                        {% endif -%}
+                    {% endmacro %}
                     {% for track_id in ambience['event']['tracks']|sort %}
-                        <th class="b-left text-center">
+                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
                             {{ util.make_icon('screenshot') }}
                         </th>
-                        <th class="b-left text-center">KL</th>
-                        <th class="text-center">1.</th>
-                        <th class="text-center">2.</th>
-                        <th class="text-center">3.</th>
+                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">KL</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.first_choice.value) }}">1.</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.second_choice.value) }}">2.</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.third_choice.value) }}">3.</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for reg_id, registration in registrations|dictsort %}
-                    <tr>
+                    <tr class="ls-item">
                         <td>
-                            {{ util.input_checkbox("registration_ids", value=reg_id) }}
+                            {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector") }}
                         </td>
                         <td>
                             {% with persona = personas[registration['persona_id']] %}
@@ -183,7 +217,6 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                              "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {% endwith %}
                         </td>
-                        {# TODO markup filtered columns with td.filtered_column #}
                         {% for track_id, track in ambience['event']['tracks']|dictsort %}
                             {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
                             {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
@@ -208,7 +241,21 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% endfor %}
             </tbody>
         </table>
-        {# TODO: Use ListSelect.js for faster selecting in table #}
+
+        <script type="text/javascript">
+            $('#course_choice_table').cdedbListSelect();
+            var lsObj = $('#course_choice_table').data('listSelect');
+            $('#btn-select-all').click(function(){
+                lsObj.selectAll();
+            });
+            $('#btn-select-none').click(function(){
+                lsObj.selectNone();
+            });
+            $('#btn-select-swap').click(function(){
+                lsObj.invertSelection();
+            });
+            $('#js-button-group').show();
+        </script>
     </form>
     <script type="text/javascript">
         $('.event_course_id').dblclick(function() {
