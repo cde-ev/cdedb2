@@ -13,7 +13,6 @@ import shutil
 import tempfile
 
 import werkzeug
-from numpy.ma.extras import corrcoef
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, registration_is_open, csv_output,
