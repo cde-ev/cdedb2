@@ -39,7 +39,7 @@
                                                 enums['AudiencePolicy'].require_assembly: 'assembly_user',
                                                 enums['AudiencePolicy'].require_event: 'event_user',
                                                 enums['AudiencePolicy'].require_cde: 'cde_user',
-                                                enums['AudiencePolicy'].require_member: 'cde_member'} %}
+                                                enums['AudiencePolicy'].require_member: 'member'} %}
                             $('#input-add-moderator').cdedbSearchPerson(
                                 '{{ cdedblink('core/select_persona') + '?kind=' +
                                     search_realm[ambience['mailinglist']['audience_policy']] + '&phrase=%s'}}',
@@ -135,7 +135,7 @@
                                         enums['AudiencePolicy'].require_assembly: 'assembly_user',
                                         enums['AudiencePolicy'].require_event: 'event_user',
                                         enums['AudiencePolicy'].require_cde: 'cde_user',
-                                        enums['AudiencePolicy'].require_member: 'cde_member'} %}
+                                        enums['AudiencePolicy'].require_member: 'member'} %}
                     $('#input-add-subscriber').cdedbSearchPerson(
                         '{{ cdedblink('core/select_persona') + '?kind=' +
                             search_realm[ambience['mailinglist']['audience_policy']] + '&phrase=%s'}}',
