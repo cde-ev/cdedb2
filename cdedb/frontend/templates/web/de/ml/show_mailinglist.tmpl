@@ -22,7 +22,7 @@
     {% if ambience['mailinglist']['assembly_id'] %}
         <div class="subtitle">
             Mailingliste zur Versammlung
-            {% if event['is_visible'] %}
+            {% if assembly['is_visible'] %}
                 {{ util.href(cdedblink('assembly/show_assembly',{'assembly_id':assembly['id']}), assembly['title'],
                         icon='bullhorn')}}
             {% else %}
