@@ -3,6 +3,12 @@ BINDIR=/home/cdedb/cdedb2/bin/
 LOGFILE=$(mktemp)
 MAILTO=cdedb@lists.cde-ev.de
 
+COUNT=`ps aux | grep invoke-autobuild.sh | wc -l`
+if [ $COUNT -gt 2 ]; then
+    echo "Already running $COUNT processes." | mail -s "cdedb2: auto-build abort" $MAILTO
+    exit 42
+fi
+
 $BINDIR/cdedb-autobuild-stage3.sh &> $LOGFILE
 RETVAL=$?
 
