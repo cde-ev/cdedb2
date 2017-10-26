@@ -72,6 +72,10 @@ body{
 .table-superdense>tfoot>tr>th, .table-superdense>thead>tr>td, .table-superdense>thead>tr>th {
     padding: 3px;
 }
+.table>tbody>tr>td.indent, .table>tbody>tr>th.indent {
+    border-top-style: none;
+    min-width: 20px;
+}
 ul.slim {
     padding-left: 15px;
 }
