@@ -793,36 +793,36 @@ td.b-left, th.b-left {
     text-align: center;
     cursor: default;
 }
-td.course-primary {
+tr td.course-primary {
     background-color: #e6e6e6;
 }
-td.course-manyp {
+tr td.course-manyp {
     background-color: #f2b3b3;
 }
-td.course-manyp.course-primary {
+tr td.course-manyp.course-primary {
     background-color: #e08282;
 }
-td.course-fewp {
+tr td.course-fewp {
     background-color: #f2e8b3;
 
 }
-td.course-fewp.course-primary {
+tr td.course-fewp.course-primary {
     background-color: #dfd181;
 }
-td.course-cancelled {
+tr td.course-cancelled {
     background-color: #e0b2f2;
 }
-td.course-cancelled.course-primary {
+tr td.course-cancelled.course-primary {
     background-color: #cb86e6;
 }
-td.course-cancelled-ok {
+tr td.course-cancelled-ok {
     background-color: #b8ceef;
 }
-th.filtered_column {
+tr th.filtered_column {
     background-color: #31708f;
     color: #fff;
 }
-td.filtered_column {
+tr td.filtered_column {
     border-left: solid 1px #31708f;
     border-right: solid 1px #31708f;
 }
