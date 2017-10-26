@@ -741,10 +741,11 @@ class EventFrontend(AbstractUserFrontend):
         get_age = lambda u: determine_age_class(
             u['birthday'], self.event_begin(rs.ambience['event']))
         tests1 = OrderedDict((
-            ('total', (lambda e, r, p: (
-                p['status'] != stati.not_applied))),
             ('pending', (lambda e, r, p: (
                 p['status'] == stati.applied))),
+            (' payed', (lambda e, r, p: (
+                p['status'] == stati.applied
+                and r['payment']))),
             ('participant', (lambda e, r, p: (
                 p['status'] == stati.participant))),
             (' u18', (lambda e, r, p: (
@@ -772,10 +773,25 @@ class EventFrontend(AbstractUserFrontend):
                 p['status'] == stati.waitlist))),
             ('guest', (lambda e, r, p: (
                 p['status'] == stati.guest))),
+            ('total involved', (lambda e, r, p: (
+                stati(p['status']).is_involved()))),
+            (' not payed', (lambda e, r, p: (
+                stati(p['status']).is_involved()
+                and not r['payment']))),
+            (' no parental agreement', (lambda e, r, p: (
+                stati(p['status']).is_involved()
+                and get_age(personas[r['persona_id']]).is_minor()
+                and not r['parental_agreement']))),
+            ('no lodgement', (lambda e, r, p: (
+                stati(p['status']).is_present()
+                and not p['lodgement_id']))),
             ('cancelled', (lambda e, r, p: (
                 p['status'] == stati.cancelled))),
             ('rejected', (lambda e, r, p: (
-                p['status'] == stati.rejected))),))
+                p['status'] == stati.rejected))),
+            ('total', (lambda e, r, p: (
+                p['status'] != stati.not_applied))),
+        ))
         per_part_statistics = OrderedDict()
         for key, test in tests1.items():
             per_part_statistics[key] = {
@@ -783,7 +799,11 @@ class EventFrontend(AbstractUserFrontend):
                     1 for r in registrations.values()
                     if test(rs.ambience['event'], r, r['parts'][part_id]))
                 for part_id in rs.ambience['event']['parts']}
+
         tests2 = OrderedDict((
+            ('all instructors', (lambda e, r, p, t: (
+                p['status'] == stati.participant
+                and t['course_instructor']))),
             ('instructors', (lambda e, r, p, t: (
                 p['status'] == stati.participant
                 and t['course_id']
@@ -792,6 +812,10 @@ class EventFrontend(AbstractUserFrontend):
                 p['status'] == stati.participant
                 and t['course_id']
                 and t['course_id'] != t['course_instructor']))),
+            ('no course', (lambda e, r, p, t: (
+                p['status'] == stati.participant
+                and not t['course_id']
+                and r['persona_id'] not in e['orgas']))),
             ('first choice', (lambda e, r, p, t: (
                 p['status'] == stati.participant
                 and t['course_id']
@@ -817,39 +841,7 @@ class EventFrontend(AbstractUserFrontend):
                                 r['parts'][tracks[track_id]['part_id']],
                                 r['tracks'][track_id]))
                     for track_id in tracks}
-        tests3 = {
-            'not payed': (lambda e, r, p: (
-                stati(p['status']).is_involved()
-                and not r['payment'])),
-            'pending': (lambda e, r, p: (
-                p['status'] == stati.applied
-                and r['payment'])),
-            'no parental agreement': (lambda e, r, p: (
-                stati(p['status']).is_involved()
-                and get_age(personas[r['persona_id']]).is_minor()
-                and not r['parental_agreement'])),
-            'no lodgement': (lambda e, r, p: (
-                stati(p['status']).is_present()
-                and not p['lodgement_id'])),
-        }
-        sorter = lambda registration_id: name_key(
-            personas[registrations[registration_id]['persona_id']])
-        per_part_listings = {
-            key: {
-                part_id: sorted(
-                    (registration_id
-                     for registration_id, r in registrations.items()
-                     if test(rs.ambience['event'], r, r['parts'][part_id])),
-                    key=sorter)
-                for part_id in rs.ambience['event']['parts']
-            }
-            for key, test in tests3.items()
-        }
         tests4 = {
-            'no course': (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and not t['course_id']
-                and r['persona_id'] not in e['orgas'])),
             'wrong choice': (lambda e, r, p, t: (
                 p['status'] == stati.participant
                 and t['course_id']
@@ -870,12 +862,133 @@ class EventFrontend(AbstractUserFrontend):
             }
             for key, test in tests4.items()
         }
+
+        # The base query object to use for links to event/registration_query
+        base_query = Query(
+            "qview_registration",
+            self.make_registration_query_spec(rs.ambience['event']),
+            ["reg.id", "persona.given_names", "persona.family_name",
+             "persona.username"],
+            [],
+            (("persona.family_name", True), ("persona.given_names", True),)
+        )
+        # Some reusable query filter definitions
+        involved_filter = (
+            'part{id}.status{id}',
+            QueryOperators.oneof,
+            ','.join(str(x) for x in
+                (stati.applied.value, stati.waitlist.value, stati.participant.value, stati.guest.value)),
+        )
+        participant_filter = (
+             'part{id}.status{id}',
+             QueryOperators.equal,
+             stati.participant.value,
+        )
+        any_part_participant_filter = (
+             ",".join("part{0}.status{0}".format(part_id)
+                      for part_id in rs.ambience['event']['parts']),
+             QueryOperators.equal,
+             stati.participant.value,
+        )
+        # Query filters for all the statistics defined and calculated above.
+        # They are customized and inserted into the query on the fly by
+        # get_query()
+        query_filters = {
+            'pending': (
+                ('part{id}.status{id}', QueryOperators.equal, stati.applied.value),),
+            ' payed': (
+                ('part{id}.status{id}', QueryOperators.equal, stati.applied.value),
+                ("reg.payment", QueryOperators.nonempty, None),),
+            'participant': (participant_filter, ),
+            ' u18': (
+                participant_filter,
+                ("persona.birthday", QueryOperators.greater,
+                    deduct_years(min(p['part_begin']
+                                     for p in rs.ambience['event']['parts'].values()),
+                                 18)),),
+            ' u16': (
+                participant_filter,
+                ("persona.birthday", QueryOperators.greater,
+                    deduct_years(min(p['part_begin']
+                                     for p in rs.ambience['event']['parts'].values()),
+                                 16)),),
+            ' u14': (
+                participant_filter,
+                ("persona.birthday", QueryOperators.greater,
+                    deduct_years(min(p['part_begin']
+                                     for p in rs.ambience['event']['parts'].values()),
+                                 14)),),
+            ' checked in': (
+                participant_filter,
+                ("reg.checkin", QueryOperators.nonempty, None),),
+            ' not checked in': (
+                participant_filter,
+                ("reg.checkin", QueryOperators.empty, None),),
+            ' orgas': (
+                participant_filter,
+                ("reg.id", QueryOperators.oneof, ','.join(
+                    str(x) for x in rs.ambience['event']['orgas'])),),
+            'waitlist': (
+                ('part{id}.status{id}', QueryOperators.equal, stati.waitlist.value),),
+            'guest': (
+                ('part{id}.status{id}', QueryOperators.equal, stati.guest.value),),
+            'total involved': (involved_filter,),
+            ' not payed': (
+                involved_filter,
+                ("reg.payment", QueryOperators.empty, None),),
+            ' no parental agreement': (
+                involved_filter,
+                ("persona.birthday", QueryOperators.greater,
+                 deduct_years(min(p['part_begin']
+                                  for p in rs.ambience['event']['parts'].values()),
+                              18)),
+                ("reg.parental_agreement", QueryOperators.equal, False),),
+            'no lodgement': (
+                ('part{id}.status{id}', QueryOperators.oneof, ','.join(str(x) for x in
+                    (stati.participant.value, stati.guest.value))),
+                ('part{id}.lodgement_id{id}', QueryOperators.empty, None)),
+            'cancelled': (
+                ('part{id}.status{id}', QueryOperators.equal, stati.cancelled.value),),
+            'rejected': (
+                ('part{id}.status{id}', QueryOperators.equal, stati.rejected.value),),
+            'total': (
+                ('part{id}.status{id}', QueryOperators.unequal, stati.not_applied.value),),
+
+            'all instructors': (
+                any_part_participant_filter,
+                ('track{id}.course_instructor{id}', QueryOperators.nonempty, None),),
+            'no course': (
+                any_part_participant_filter,
+                ('track{id}.course_id{id}', QueryOperators.empty, None),)  # TODO: Query orgas if possible
+        }
+        query_additional_fields = {
+            ' payed': ('reg.payment',),
+            ' u18': ('persona.birthday',),
+            ' u16': ('persona.birthday',),
+            ' u14': ('persona.birthday',),
+            ' checked in': ('reg.checkin',),
+            'total involved': ('part{id}.status{id}',),
+            'all instructors': ('track{id}.course_instructor{id}',
+                                'track{id}.course_id{id}',),
+        }
+
+        def get_query(category, id):
+            if category not in query_filters:
+                return None
+            q = copy.deepcopy(base_query)
+            for f in query_filters[category]:
+                q.constraints.append(
+                    (f[0].format(id=id), f[1], f[2]))
+            if category in query_additional_fields:
+                for f in query_additional_fields[category]:
+                    q.fields_of_interest.append(f.format(id=id))
+            return q
+
         return self.render(rs, "stats", {
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'per_part_statistics': per_part_statistics,
             'per_track_statistics': per_track_statistics,
-            'per_part_listings': per_part_listings,
-            'per_track_listings': per_track_listings})
+            'per_track_listings': per_track_listings, 'get_query': get_query})
 
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
