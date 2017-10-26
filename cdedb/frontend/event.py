@@ -924,10 +924,6 @@ class EventFrontend(AbstractUserFrontend):
             ' not checked in': (
                 participant_filter,
                 ("reg.checkin", QueryOperators.empty, None),),
-            ' orgas': (
-                participant_filter,
-                ("reg.id", QueryOperators.oneof, ','.join(
-                    str(x) for x in rs.ambience['event']['orgas'])),),
             'waitlist': (
                 ('part{id}.status{id}', QueryOperators.equal, stati.waitlist.value),),
             'guest': (
