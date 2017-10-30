@@ -93,9 +93,9 @@
                     </div>
 
                     <div class="panel-body">
-                        {% for description, lodgement_id, problem_part, affected_regs in problems
+                        {% for description, lodgement_id, problem_part, affected_regs, severeness in problems
                                 if problem_part == part_id %}
-                            <p class="text-warning">
+                            <p class="{% if severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
                                 {{ gettext(description)|e }}
                                 {% if affected_regs %}
                                     (

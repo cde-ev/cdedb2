@@ -1997,9 +1997,9 @@ class EventFrontend(AbstractUserFrontend):
         :type registrations: {int: {str: object}}
         :type personas: {int: {str: object}}
         :type inhabitants: {(int, int): [int]}
-        :rtype: [(str, int, int, [int])]
-        :returns: problems as four tuples of (problem description, lodgement
-          id, part id, affected registrations).
+        :rtype: [(str, int, int, [int], int)]
+        :returns: problems as five-tuples of (problem description, lodgement
+          id, part id, affected registrations, severeness).
         """
         ret = []
         ## first some un-inlined code pieces (otherwise nesting is a bitch)
@@ -2015,7 +2015,8 @@ class EventFrontend(AbstractUserFrontend):
                 _("Mixed lodgement with non-mixing participants."),
                 lodgement_id, part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
-                    if not registrations[reg_id]['mixed_lodging']))
+                    if not registrations[reg_id]['mixed_lodging']),
+                3)
         def _reserve(group, part_id):
             """Un-inlined code to count the number of registrations assigned
             to a lodgement as reserve lodgers."""
@@ -2025,29 +2026,30 @@ class EventFrontend(AbstractUserFrontend):
         def _reserve_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for reserve problems."""
             return (
-                _("Wrong number of reserve lodgers used."), lodgement_id,
+                _("Too many reserve lodgers used."), lodgement_id,
                 part_id, tuple(
                     reg_id for reg_id in inhabitants[(lodgement_id, part_id)]
-                    if registrations[reg_id]['parts'][part_id]['is_reserve']))
+                    if registrations[reg_id]['parts'][part_id]['is_reserve']),
+                1)
 
         ## now the actual work
         for lodgement_id in lodgements:
             for part_id in event['parts']:
                 group = inhabitants[(lodgement_id, part_id)]
                 lodgement = lodgements[lodgement_id]
+                num_reserve = _reserve(group, part_id)
                 if len(group) > lodgement['capacity'] + lodgement['reserve']:
                     ret.append(("Overful lodgement.", lodgement_id, part_id,
-                                tuple()))
+                                tuple(), 2))
+                elif len(group) - num_reserve > lodgement['capacity']:
+                    ret.append(("Too few reserve lodgers used.", lodgement_id,
+                                part_id, tuple(), 2))
+                if num_reserve > lodgement['reserve']:
+                    ret.append(_reserve_problem(lodgement_id, part_id))
                 if _mixed(group) and any(
                         not registrations[reg_id]['mixed_lodging']
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
-                if (event['reserve_field']
-                        and (len(group) - lodgement['capacity']
-                             != _reserve(group, part_id))
-                        and ((len(group) - lodgement['capacity'] > 0)
-                             or _reserve(group, part_id))):
-                    ret.append(_reserve_problem(lodgement_id, part_id))
         return ret
 
     @access("event")
@@ -2065,15 +2067,28 @@ class EventFrontend(AbstractUserFrontend):
             rs, tuple(e['persona_id'] for e in registrations.values()))
         inhabitants = self.calculate_groups(
             lodgements, rs.ambience['event'], registrations, key="lodgement_id")
-
+        inhabitant_nums = {k: len(v) for k, v in inhabitants.items()}
+        reserve_inhabitant_nums = {
+            k: sum(1 for r in v if registrations[r]['parts'][k[1]]['is_reserve'])
+            for k, v in inhabitants.items()}
         problems = self.check_lodgment_problems(
             rs.ambience['event'], lodgements, registrations, personas,
             inhabitants)
+        problems_condensed = {}
+        for lodgement_id, part_id in itertools.product(
+                lodgement_ids, rs.ambience['event']['parts'].keys()):
+            problems_here = [p for p in problems
+                             if p[1] == lodgement_id and p[2] == part_id]
+            problems_condensed[(lodgement_id, part_id)] = (
+                max(p[4] for p in problems_here) if len(problems_here) else 0,
+                "; ".join(p[0] for p in problems_here),)
 
         return self.render(rs, "lodgements", {
             'lodgements': lodgements,
             'registrations': registrations, 'personas': personas,
-            'inhabitants': inhabitants, 'problems': problems,})
+            'inhabitants': inhabitant_nums,
+            'reserve_inhabitants': reserve_inhabitant_nums,
+            'problems': problems_condensed,})
 
     @access("event")
     @event_guard()
