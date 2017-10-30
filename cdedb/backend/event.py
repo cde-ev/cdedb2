@@ -283,7 +283,7 @@ class EventBackend(AbstractBackend):
                 "LEFT OUTER JOIN (SELECT registration_id, {part_columns}",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
                 "AS part{part_id} ON reg.id = part{part_id}.registration_id")
-            part_atoms = ("status", "lodgement_id",)
+            part_atoms = ("status", "lodgement_id", "is_reserve")
             part_columns_gen = lambda part_id: ", ".join(
                 "{col} AS {col}{part_id}".format(col=col, part_id=part_id)
                 for col in part_atoms)

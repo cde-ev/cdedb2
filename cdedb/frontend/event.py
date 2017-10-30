@@ -2420,6 +2420,7 @@ class EventFrontend(AbstractUserFrontend):
         for part_id in event['parts']:
             spec["part{0}.status{0}".format(part_id)] = "int"
             spec["part{0}.lodgement_id{0}".format(part_id)] = "id"
+            spec["part{0}.is_reserve{0}".format(part_id)] = "bool"
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
                 spec["track{0}.course_instructor{0}".format(track_id)] = "id"
@@ -2433,6 +2434,8 @@ class EventFrontend(AbstractUserFrontend):
                           for part_id in event['parts'])] = "int"
             spec[",".join("part{0}.lodgement{0}".format(part_id)
                           for part_id in event['parts'])] = "id"
+            spec[",".join("part{0}.is_reserve{0}".format(part_id)
+                          for part_id in event['parts'])] = "bool"
         for e in sorted(event['fields'].values(),
                         key=lambda e: e['field_name']):
             if e['association'] == const.FieldAssociations.registration:
@@ -2536,6 +2539,8 @@ class EventFrontend(AbstractUserFrontend):
                         title=part['title']),
                     "part{0}.lodgement_id{0}".format(part_id): rs.gettext(
                         "lodgement ({title})").format(title=part['title']),
+                    "part{0}.is_reserve{0}".format(part_id): rs.gettext(
+                        "reserve lodger ({title})").format(title=part['title']),
                 })
             titles.update({
                 ",".join("part{0}.status{0}".format(part_id)
@@ -2543,7 +2548,10 @@ class EventFrontend(AbstractUserFrontend):
                              "registration status (any part)"),
                 ",".join("part{0}.lodgement{0}".format(part_id)
                          for part_id in event['parts']): rs.gettext(
-                             "lodgement (any part)")})
+                             "lodgement (any part)"),
+                ",".join("part{0}.is_reserve{0}".format(part_id)
+                         for part_id in event['parts']): rs.gettext(
+                             "reserve lodger (any part)")})
         elif len(event['parts']) == 1:
             part_id, part = next(iter(event['parts'].items()))
             titles.update({
@@ -2551,6 +2559,8 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("registration status"),
                 "part{0}.lodgement_id{0}".format(part_id):
                     rs.gettext("lodgement"),
+                "part{0}.lodgement_id{0}".format(part_id):
+                    rs.gettext("reserve lodger"),
             })
 
         return choices, titles
