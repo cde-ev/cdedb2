@@ -58,7 +58,7 @@
     $.fn.cdedbRemoveParticipantButton = function(title) {
         $(this).each(function () {
             var $box = $(this);
-            var $li = $(this).closest('li');
+            var $li = $(this).closest('li,tr');
             var $button = $('<button></button>', {
                 'class': 'btn btn-xs btn-danger',
                 'type': 'button',
