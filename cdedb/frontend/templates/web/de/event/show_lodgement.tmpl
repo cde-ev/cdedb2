@@ -99,11 +99,11 @@
                                 {{ gettext(description)|e }}
                                 {% if affected_regs %}
                                     (
-                                        {%- for reg_id in affected_regs %}
+                                        {%- for reg_id in affected_regs -%}
                                             {{ personas[registrations[reg_id]['persona_id']]['given_names']|e }}
                                             {{ personas[registrations[reg_id]['persona_id']]['family_name']|e }}
                                             {%- if not loop.last %}, {% endif %}
-                                        {% endfor -%}
+                                        {%- endfor -%}
                                     )
                                 {% endif %}
                             </p>
@@ -116,6 +116,9 @@
                                                            {'registration_id': registration_id}),
                                                  "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]['persona_id']]['family_name'])) }}
+                                    {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
+                                        {{ util.make_icon('tent', title="Reserveplatz", arialabel="Reserveplatz") }}
+                                    {% endif %}
                                 </li>
                             {% endfor %}
                         </ul>

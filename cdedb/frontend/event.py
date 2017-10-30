@@ -1811,6 +1811,8 @@ class EventFrontend(AbstractUserFrontend):
                                 "enum_registrationpartstati"))
             part_params.append(("{}.lodgement_id".format(prefix),
                                 "id_or_None"))
+            part_params.append(("{}.is_reserve".format(prefix),
+                                "bool"))
         raw_parts = request_extractor(rs, part_params)
         track_params = []
         for track_id in tracks:
@@ -1831,7 +1833,7 @@ class EventFrontend(AbstractUserFrontend):
         new_parts = {
             part_id: {
                 key: raw_parts["part{}.{}".format(part_id, key)]
-                for key in ("status", "lodgement_id")
+                for key in ("status", "lodgement_id", "is_reserve")
             }
             for part_id in event['parts']
         }
@@ -2179,6 +2181,12 @@ class EventFrontend(AbstractUserFrontend):
         inhabitants = self.calculate_groups(
             (lodgement_id,), rs.ambience['event'], registrations,
             key="lodgement_id", personas=personas)
+        for part_id in rs.ambience['event']['parts']:
+            merge_dicts(rs.values, {
+                'reserve_{}_{}'.format(part_id, registration_id):
+                    registrations[registration_id]['parts'][part_id]['is_reserve']
+                for registration_id in inhabitants[(lodgement_id, part_id)]
+            })
 
         def _check_without_lodgement(registration_id, part_id):
             """Un-inlined check for registration without lodgement."""
@@ -2246,7 +2254,11 @@ class EventFrontend(AbstractUserFrontend):
             + tuple(itertools.chain(
                 *[(("delete_{}_{}".format(part_id, reg_id), "bool")
                    for reg_id in current_inhabitants[part_id])
-                  for part_id in rs.ambience['event']['parts']]))
+                  for part_id in rs.ambience['event']['parts']],
+                *[(("reserve_{}_{}".format(part_id, reg_id), "bool")
+                   for reg_id in current_inhabitants[part_id])
+                  for part_id in rs.ambience['event']['parts']],
+            ))
         data = request_extractor(rs, params)
         if rs.errors:
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
@@ -2262,9 +2274,17 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in rs.ambience['event']['parts']:
                 new_inhabitant = (registration_id in data["new_{}".format(part_id)])
                 deleted_inhabitant = data.get("delete_{}_{}".format(part_id, registration_id), False)
+                changed_inhabitant = \
+                    registration_id in current_inhabitants[part_id]\
+                    and data.get("reserve_{}_{}".format(part_id, registration_id), False)\
+                        != registration['parts'][part_id]['is_reserve']
                 if new_inhabitant or deleted_inhabitant:
                     new_reg['parts'][part_id] = {
                         'lodgement_id': (lodgement_id if new_inhabitant else None)
+                    }
+                elif changed_inhabitant:
+                    new_reg['parts'][part_id] = {
+                        'is_reserve': data.get("reserve_{}_{}".format(part_id, registration_id), False)
                     }
             if new_reg['parts']:
                 code *= self.eventproxy.set_registration(rs, new_reg)
