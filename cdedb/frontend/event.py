@@ -876,7 +876,7 @@ class EventFrontend(AbstractUserFrontend):
         involved_filter = (
             'part{anid}.status{anid}',
             QueryOperators.oneof,
-            ','.join(str(x.value) for x in stati if x.is_involved()),
+            [x.value for x in stati if x.is_involved()],
         )
         participant_filter = (
              'part{anid}.status{anid}',
@@ -923,6 +923,8 @@ class EventFrontend(AbstractUserFrontend):
             ' not checked in': (
                 participant_filter,
                 ("reg.checkin", QueryOperators.empty, None),),
+            ' orgas': (
+                ('persona.id', QueryOperators.oneof, rs.ambience['event']['orgas']),),
             'waitlist': (
                 ('part{anid}.status{anid}', QueryOperators.equal, stati.waitlist.value),),
             'guest': (
@@ -939,8 +941,8 @@ class EventFrontend(AbstractUserFrontend):
                               18)),
                 ("reg.parental_agreement", QueryOperators.equal, False),),
             'no lodgement': (
-                ('part{anid}.status{anid}', QueryOperators.oneof, ','.join(
-                    str(x.value) for x in (stati.participant, stati.guest))),
+                ('part{anid}.status{anid}', QueryOperators.oneof,
+                 [x.value for x in stati if x.is_present()]),
                 ('part{anid}.lodgement_id{anid}', QueryOperators.empty, None)),
             'cancelled': (
                 ('part{anid}.status{anid}', QueryOperators.equal, stati.cancelled.value),),
