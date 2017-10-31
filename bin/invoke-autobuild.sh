@@ -4,7 +4,7 @@ LOGFILE=$(mktemp)
 MAILTO=cdedb@lists.cde-ev.de
 
 COUNT=`ps aux | grep invoke-autobuild.sh | wc -l`
-if [ $COUNT -gt 2 ]; then
+if [ $COUNT -gt 4 ]; then
     echo "Already running $COUNT processes." | mail -s "cdedb2: auto-build abort" $MAILTO
     exit 42
 fi
