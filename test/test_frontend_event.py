@@ -793,7 +793,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/stats'},)
         self.assertTitle("Teilnehmer-Übersicht Große Testakademie 2222")
-        self.assertPresence("Zweite Hälfte -- 1")
+        self.assertPresence("Zweite Hälfte (1)")
 
     @as_users("garcia")
     def test_course_stats(self, user):
