@@ -229,6 +229,7 @@ QUERY_SPECS = {
     "qview_registration":
     collections.OrderedDict([
         ("reg.id", "id"),
+        ("persona.id", "id"),
         ("persona.given_names", "str"),
         ("persona.family_name", "str"),
         ("persona.username", "str"),

@@ -874,13 +874,12 @@ class EventFrontend(AbstractUserFrontend):
         )
         # Some reusable query filter definitions
         involved_filter = (
-            'part{id}.status{id}',
+            'part{anid}.status{anid}',
             QueryOperators.oneof,
-            ','.join(str(x) for x in
-                (stati.applied.value, stati.waitlist.value, stati.participant.value, stati.guest.value)),
+            ','.join(str(x.value) for x in stati if x.is_involved()),
         )
         participant_filter = (
-             'part{id}.status{id}',
+             'part{anid}.status{anid}',
              QueryOperators.equal,
              stati.participant.value,
         )
@@ -895,9 +894,9 @@ class EventFrontend(AbstractUserFrontend):
         # get_query()
         query_filters = {
             'pending': (
-                ('part{id}.status{id}', QueryOperators.equal, stati.applied.value),),
+                ('part{anid}.status{anid}', QueryOperators.equal, stati.applied.value),),
             ' payed': (
-                ('part{id}.status{id}', QueryOperators.equal, stati.applied.value),
+                ('part{anid}.status{anid}', QueryOperators.equal, stati.applied.value),
                 ("reg.payment", QueryOperators.nonempty, None),),
             'participant': (participant_filter, ),
             ' u18': (
@@ -925,9 +924,9 @@ class EventFrontend(AbstractUserFrontend):
                 participant_filter,
                 ("reg.checkin", QueryOperators.empty, None),),
             'waitlist': (
-                ('part{id}.status{id}', QueryOperators.equal, stati.waitlist.value),),
+                ('part{anid}.status{anid}', QueryOperators.equal, stati.waitlist.value),),
             'guest': (
-                ('part{id}.status{id}', QueryOperators.equal, stati.guest.value),),
+                ('part{anid}.status{anid}', QueryOperators.equal, stati.guest.value),),
             'total involved': (involved_filter,),
             ' not payed': (
                 involved_filter,
@@ -940,22 +939,23 @@ class EventFrontend(AbstractUserFrontend):
                               18)),
                 ("reg.parental_agreement", QueryOperators.equal, False),),
             'no lodgement': (
-                ('part{id}.status{id}', QueryOperators.oneof, ','.join(str(x) for x in
-                    (stati.participant.value, stati.guest.value))),
-                ('part{id}.lodgement_id{id}', QueryOperators.empty, None)),
+                ('part{anid}.status{anid}', QueryOperators.oneof, ','.join(
+                    str(x.value) for x in (stati.participant, stati.guest))),
+                ('part{anid}.lodgement_id{anid}', QueryOperators.empty, None)),
             'cancelled': (
-                ('part{id}.status{id}', QueryOperators.equal, stati.cancelled.value),),
+                ('part{anid}.status{anid}', QueryOperators.equal, stati.cancelled.value),),
             'rejected': (
-                ('part{id}.status{id}', QueryOperators.equal, stati.rejected.value),),
+                ('part{anid}.status{anid}', QueryOperators.equal, stati.rejected.value),),
             'total': (
-                ('part{id}.status{id}', QueryOperators.unequal, stati.not_applied.value),),
+                ('part{anid}.status{anid}', QueryOperators.unequal, stati.not_applied.value),),
 
             'all instructors': (
                 any_part_participant_filter,
-                ('track{id}.course_instructor{id}', QueryOperators.nonempty, None),),
+                ('track{anid}.course_instructor{anid}', QueryOperators.nonempty, None),),
             'no course': (
                 any_part_participant_filter,
-                ('track{id}.course_id{id}', QueryOperators.empty, None),)  # TODO: Query orgas if possible
+                ('track{anid}.course_id{anid}', QueryOperators.empty, None),
+                ('persona.id', QueryOperators.otherthan, rs.ambience['event']['orgas']),)
         }
         query_additional_fields = {
             ' payed': ('reg.payment',),
@@ -963,21 +963,21 @@ class EventFrontend(AbstractUserFrontend):
             ' u16': ('persona.birthday',),
             ' u14': ('persona.birthday',),
             ' checked in': ('reg.checkin',),
-            'total involved': ('part{id}.status{id}',),
-            'all instructors': ('track{id}.course_instructor{id}',
-                                'track{id}.course_id{id}',),
+            'total involved': ('part{anid}.status{anid}',),
+            'all instructors': ('track{anid}.course_instructor{anid}',
+                                'track{anid}.course_id{anid}',),
         }
 
-        def get_query(category, id):
+        def get_query(category, anid):
             if category not in query_filters:
                 return None
             q = copy.deepcopy(base_query)
             for f in query_filters[category]:
                 q.constraints.append(
-                    (f[0].format(id=id), f[1], f[2]))
+                    (f[0].format(anid=anid), f[1], f[2]))
             if category in query_additional_fields:
                 for f in query_additional_fields[category]:
-                    q.fields_of_interest.append(f.format(id=id))
+                    q.fields_of_interest.append(f.format(anid=anid))
             return q
 
         return self.render(rs, "stats", {
