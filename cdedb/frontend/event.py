@@ -2267,11 +2267,11 @@ class EventFrontend(AbstractUserFrontend):
         params = tuple(("new_{}".format(part_id), "[id]")
                        for part_id in rs.ambience['event']['parts']) \
             + tuple(itertools.chain(
-                *[(("delete_{}_{}".format(part_id, reg_id), "bool")
-                   for reg_id in current_inhabitants[part_id])
+                *[[("delete_{}_{}".format(part_id, reg_id), "bool")
+                   for reg_id in current_inhabitants[part_id]]
                   for part_id in rs.ambience['event']['parts']],
-                *[(("reserve_{}_{}".format(part_id, reg_id), "bool")
-                   for reg_id in current_inhabitants[part_id])
+                *[[("reserve_{}_{}".format(part_id, reg_id), "bool")
+                   for reg_id in current_inhabitants[part_id]]
                   for part_id in rs.ambience['event']['parts']],
             ))
         data = request_extractor(rs, params)
