@@ -571,7 +571,7 @@ GRANT SELECT, UPDATE ON event.course_tracks_id_seq TO cdb_persona;
 CREATE TABLE event.field_definitions (
         id                      serial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        field_name              varchar NOT NULL,
+        field_name              varchar NOT NULL, -- FIXME maybe enforce nonnumerical ending (because queries)???
         -- anything allowed as type in a query spec
         kind                    varchar NOT NULL,
         -- see cdedb.database.constants.FieldAssociations

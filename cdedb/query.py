@@ -252,6 +252,8 @@ QUERY_SPECS = {
         ("reg.notes", "str"),
         ("reg.orga_notes", "str"),
         ("reg.checkin", "datetime"),
+        ("ctime.creation_time", "datetime"),
+        ("mtime.modification_time", "datetime"),
         ## This will be augmented with additional fields on the fly.
         ]),
     "qview_core_user": ## query for a general user including past event infos

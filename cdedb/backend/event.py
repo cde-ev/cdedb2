@@ -30,37 +30,69 @@ import cdedb.database.constants as const
 #:
 #:    event.registrations AS reg
 #:    JOIN core.personas AS persona ON reg.persona_id = persona.id
-#:    LEFT OUTER JOIN (SELECT registration_id, status AS status1, lodgement_id AS lodgement_id1
+#:    LEFT OUTER JOIN (SELECT registration_id, status AS status1, lodgement_id AS lodgement_id1, is_reserve AS is_reserve1
 #:                     FROM event.registration_parts WHERE part_id = 1)
 #:        AS part1 ON reg.id = part1.registration_id
-#:    LEFT OUTER JOIN (SELECT registration_id, status AS status2, lodgement_id AS lodgement_id2
+#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
+#:                         SELECT fields FROM event.lodgements WHERE event_id=1)))
+#:                     AS X(lodgement_id1 integer, contamination1 varchar))
+#:        AS lodge_fields1 ON part1.lodgement_id1 = lodge_fields1.lodgement_id1
+#:    LEFT OUTER JOIN (SELECT registration_id, status AS status2, lodgement_id AS lodgement_id2, is_reserve AS is_reserve2
 #:                     FROM event.registration_parts WHERE part_id = 2)
 #:        AS part2 ON reg.id = part2.registration_id
-#:    LEFT OUTER JOIN (SELECT registration_id, status AS status3, lodgement_id AS lodgement_id3
+#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
+#:                         SELECT fields FROM event.lodgements WHERE event_id=1)))
+#:                     AS X(lodgement_id2 integer, contamination2 varchar))
+#:        AS lodge_fields2 ON part2.lodgement_id2 = lodge_fields2.lodgement_id2
+#:    LEFT OUTER JOIN (SELECT registration_id, status AS status3, lodgement_id AS lodgement_id3, is_reserve AS is_reserve3
 #:                     FROM event.registration_parts WHERE part_id = 3)
 #:        AS part3 ON reg.id = part3.registration_id
+#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
+#:                         SELECT fields FROM event.lodgements WHERE event_id=1)))
+#:                     AS X(lodgement_id3 integer, contamination3 varchar))
+#:        AS lodge_fields3 ON part3.lodgement_id3 = lodge_fields3.lodgement_id3
 #:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1, course_instructor AS course_instructor1
 #:                     FROM event.registration_tracks WHERE track_id = 1)
 #:        AS track1 ON reg.id = track1.registration_id
+#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
+#:                         SELECT fields FROM event.courses WHERE event_id=1)))
+#:                     AS X(course_id1 integer, room1 varchar))
+#:        AS course_fields1 ON track1.course_id1 = course_fields1.course_id1
 #:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id2, course_instructor AS course_instructor2
 #:                     FROM event.registration_tracks WHERE track_id = 2)
 #:        AS track2 ON reg.id = track2.registration_id
+#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
+#:                         SELECT fields FROM event.courses WHERE event_id=1)))
+#:                     AS X(course_id2 integer, room2 varchar))
+#:        AS course_fields2 ON track2.course_id2 = course_fields2.course_id2
 #:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3, course_instructor AS course_instructor3
 #:                     FROM event.registration_tracks WHERE track_id = 3)
 #:        AS track3 ON reg.id = track3.registration_id
-#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array( SELECT fields FROM event.registrations)))
-#:                     AS X(registration_id int, brings_balls boolean, transportation varchar, lodge varchar,
-#:                          may_reserve boolean))
-#:        AS fields ON reg.id = fields.registration_id
+#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
+#:                         SELECT fields FROM event.courses WHERE event_id=1)))
+#:                     AS X(course_id3 integer, room3 varchar))
+#:        AS course_fields3 ON track3.course_id3 = course_fields3.course_id3
+#:    LEFT OUTER JOIN (SELECT persona_id, ctime AS creation_time
+#:                     FROM event.log WHERE event_id = 1 AND code = 50)
+#:        AS ctime ON ctime.persona_id = reg.persona_id
+#:    LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS modification_time
+#:                     FROM event.log WHERE event_id = 1 AND code = 51 GROUP BY persona_id)
+#:        AS mtime ON mtime.persona_id = reg.persona_id
+#:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
+#:                         SELECT fields FROM event.registrations WHERE event_id=1)))
+#:                     AS X(may_reserve boolean, lodge varchar, transportation varchar, brings_balls boolean, registration_id integer))
+#:        AS reg_fields ON reg.id = reg_fields.registration_id 
 _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations AS reg",
     "JOIN core.personas AS persona ON reg.persona_id = persona.id",
     "{part_tables}", ## per part details will be filled in here
     "{track_tables}", ## per track details will be filled in here
+    "{creation_date}",
+    "{modification_date}",
     "LEFT OUTER JOIN (SELECT * FROM",
         "json_to_recordset(to_json(array(",
-            "SELECT fields FROM event.registrations)))",
-        "AS X({json_fields})) AS fields ON reg.id = fields.registration_id")
+            "SELECT fields FROM event.registrations WHERE event_id={event_id})))",
+        "AS X({json_reg_fields})) AS reg_fields ON reg.id = reg_fields.registration_id",)
 
 #: Version tag, so we know that we don't run out of sync with exported event
 #: data
@@ -279,41 +311,95 @@ class EventBackend(AbstractBackend):
                     and not self.is_admin(rs)):
                 raise PrivilegeError(_("Not privileged."))
             event = self.get_event(rs, event_id)
+            lodgement_fields = {
+                e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.lodgement
+            }
+            lodgement_fields['lodgement_id'] = PYTHON_TO_SQL_MAP["int"]
+            json_lodge_fields_gen = lambda part_id: ", ".join(
+                "{}{} {}".format(name, part_id, kind)
+                for name, kind in lodgement_fields.items())
             part_table_template = glue(
+                ## first the per part table
                 "LEFT OUTER JOIN (SELECT registration_id, {part_columns}",
                 "FROM event.registration_parts WHERE part_id = {part_id})",
-                "AS part{part_id} ON reg.id = part{part_id}.registration_id")
+                "AS part{part_id} ON reg.id = part{part_id}.registration_id",
+                ## second the associated lodgement fields
+                "LEFT OUTER JOIN (SELECT * FROM",
+                "json_to_recordset(to_json(array(",
+                "SELECT fields FROM event.lodgements WHERE event_id={event_id})))",
+                "AS X({json_lodge_fields})) AS lodge_fields{part_id}",
+                "ON part{part_id}.lodgement_id{part_id} = lodge_fields{part_id}.lodgement_id{part_id}",
+            )
             part_atoms = ("status", "lodgement_id", "is_reserve")
             part_columns_gen = lambda part_id: ", ".join(
                 "{col} AS {col}{part_id}".format(col=col, part_id=part_id)
                 for col in part_atoms)
+            course_fields = {
+                e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
+                for e in event['fields'].values()
+                if e['association'] == const.FieldAssociations.course
+            }
+            course_fields['course_id'] = PYTHON_TO_SQL_MAP["int"]
+            json_course_fields_gen = lambda track_id: ", ".join(
+                "{}{} {}".format(name, track_id, kind)
+                for name, kind in course_fields.items())
             track_table_template = glue(
+                ## first the per track table
                 "LEFT OUTER JOIN (SELECT registration_id, {track_columns}",
                 "FROM event.registration_tracks WHERE track_id = {track_id})",
-                "AS track{track_id} ON reg.id = track{track_id}.registration_id")
+                "AS track{track_id} ON reg.id = track{track_id}.registration_id",
+                ## second the associated course fields
+                "LEFT OUTER JOIN (SELECT * FROM",
+                "json_to_recordset(to_json(array(",
+                "SELECT fields FROM event.courses WHERE event_id={event_id})))",
+                "AS X({json_course_fields})) AS course_fields{track_id}",
+                "ON track{track_id}.course_id{track_id} = course_fields{track_id}.course_id{track_id}",
+            )
             track_atoms = ("course_id", "course_instructor",)
             track_columns_gen = lambda track_id: ", ".join(
                 "{col} AS {col}{track_id}".format(col=col, track_id=track_id)
                 for col in track_atoms)
-            fields = {
+            creation_date = glue(
+                "LEFT OUTER JOIN (SELECT persona_id, ctime AS creation_time",
+                "FROM event.log",
+                "WHERE event_id = {event_id} AND code = {reg_create_code})",
+                "AS ctime ON ctime.persona_id = reg.persona_id").format(
+                    event_id=event_id,
+                    reg_create_code=const.EventLogCodes.registration_created)
+            modification_date = glue(
+                "LEFT OUTER JOIN (SELECT persona_id, MAX(ctime) AS modification_time",
+                "FROM event.log",
+                "WHERE event_id = {event_id} AND code = {reg_mod_code}",
+                "GROUP BY persona_id)",
+                "AS mtime ON mtime.persona_id = reg.persona_id").format(
+                    event_id=event_id,
+                    reg_mod_code=const.EventLogCodes.registration_changed)
+            reg_fields = {
                 e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
                 for e in event['fields'].values()
                 if e['association'] == const.FieldAssociations.registration
             }
-            fields['registration_id'] = PYTHON_TO_SQL_MAP["int"]
+            reg_fields['registration_id'] = PYTHON_TO_SQL_MAP["int"]
             view = _REGISTRATION_VIEW_TEMPLATE.format(
+                event_id=event_id,
                 part_tables=" ".join(
                     part_table_template.format(
-                        part_columns=part_columns_gen(part_id), part_id=part_id)
+                        part_columns=part_columns_gen(part_id), part_id=part_id,
+                        json_lodge_fields=json_lodge_fields_gen(part_id),
+                        event_id=event_id)
                     for part_id in event['parts']),
                 track_tables=" ".join(
                     track_table_template.format(
                         track_columns=track_columns_gen(track_id),
-                        track_id=track_id)
+                        json_course_fields=json_course_fields_gen(track_id),
+                        track_id=track_id, event_id=event_id)
                     for part in event['parts'].values()
                     for track_id in part['tracks']),
-                json_fields=", ".join(
-                    "{} {}".format(name, kind) for name, kind in fields.items())
+                creation_date=creation_date, modification_date=modification_date,
+                json_reg_fields=", ".join(
+                    "{} {}".format(name, kind) for name, kind in reg_fields.items()),
             )
             query.constraints.append(("event_id", QueryOperators.equal,
                                       event_id))
