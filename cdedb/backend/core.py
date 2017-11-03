@@ -1001,7 +1001,7 @@ class CoreBackend(AbstractBackend):
             ret = self.retrieve_personas(rs, ids, columns=PERSONA_CDE_FIELDS)
             if any(not e['is_cde_realm'] for e in ret.values()):
                 raise RuntimeError(_("Not a CdE user."))
-            if (not {"searchable", "cde_admin", "core_adimn"} & rs.user.roles
+            if (not {"searchable", "cde_admin", "core_admin"} & rs.user.roles
                     and any(
                         e['id'] != rs.user.persona_id and not e['is_searchable']
                         for e in ret.values())):
