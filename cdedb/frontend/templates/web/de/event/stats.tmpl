@@ -115,6 +115,29 @@
     <hr />
 
     <div class="row">
+        {% for key, heading in (  ) %} {# Add titles for filtered lists of participants by event part here #}
+            <div class="col-md-6">
+                <h3>{{ heading|e }}</h3>
+                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                    <h4>{{ part['title']|e }} ({{ per_part_listings[key][part_id]|length|e }})</h4>
+                    {% if 3*(per_part_listings[key][part_id]|length) < registrations|length %}
+                        <ul>
+                            {% for registration_id in per_part_listings[key][part_id] %}
+                                <li>
+                                    {% with ud = personas[registrations[registration_id]['persona_id']] %}
+                                        {{ util.href(cdedblink("event/show_registration",
+                                                               {'registration_id': registration_id}),
+                                                     "{} {}".format(ud['given_names'], ud['family_name'])) }}
+                                    {% endwith %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Mindestens ein Drittel.</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endfor %}
         {% if ambience['event']['tracks'] %}
             {% for key, heading in (
                 ('wrong choice', "Ungewählter Kurs zugeteilt"),) %}
@@ -136,7 +159,7 @@
                                 {% endfor %}
                             </ul>
                         {% else %}
-                            Mindestens ein Drittel -- wir sparen uns die Liste.
+                            <p class="text-muted">Mindestens ein Drittel.</p>
                         {% endif %}
                     {% endfor %}
                 </div>

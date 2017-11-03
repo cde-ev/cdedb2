@@ -841,6 +841,23 @@ class EventFrontend(AbstractUserFrontend):
                                 r['parts'][tracks[track_id]['part_id']],
                                 r['tracks'][track_id]))
                     for track_id in tracks}
+        tests3 = {
+            # Add tests (id: lambda(event, reg, part, track)) to add filtered
+            # lists of participants by event part
+        }
+        sorter = lambda registration_id: name_key(
+            personas[registrations[registration_id]['persona_id']])
+        per_part_listings = {
+            key: {
+                part_id: sorted(
+                    (registration_id
+                     for registration_id, r in registrations.items()
+                     if test(rs.ambience['event'], r, r['parts'][part_id])),
+                    key=sorter)
+                for part_id in rs.ambience['event']['parts']
+            }
+            for key, test in tests3.items()
+        }
         tests4 = {
             'wrong choice': (lambda e, r, p, t: (
                 p['status'] == stati.participant
@@ -986,7 +1003,9 @@ class EventFrontend(AbstractUserFrontend):
             'registrations': registrations, 'personas': personas,
             'courses': courses, 'per_part_statistics': per_part_statistics,
             'per_track_statistics': per_track_statistics,
-            'per_track_listings': per_track_listings, 'get_query': get_query})
+            'per_part_listings': per_part_listings,
+            'per_track_listings': per_track_listings,
+            'get_query': get_query})
 
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
