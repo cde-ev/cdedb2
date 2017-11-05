@@ -1,6 +1,8 @@
 {% set sidenav_active='event_course_choices' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% set jshint='weak' %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}
 Kurswahlen ({{ ambience['event']['title']|e }})
 {% endblock %}
@@ -15,11 +17,11 @@ Kurswahlen ({{ ambience['event']['title']|e }})
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
-{% macro course_cell(course_id, part_id, border_left=False, complain_empty=False, primary=False, filtered=False) %}
+{% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False) %}
     {% if course_id %}
         {% with course = courses[course_id] %}
-            {% set attendees = course_infos[(course_id, part_id)]['assigned'] %}
-            {% set aclass = 'course-cancelled' if part_id not in course['active_parts'] else
+            {% set attendees = course_infos[(course_id, track_id)]['assigned'] %}
+            {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] else
                            ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
                             ('course-fewp' if course['min_size'] and attendees < course['min_size'] else '')) %}
             <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
@@ -45,20 +47,25 @@ Kurswahlen ({{ ambience['event']['title']|e }})
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
             <p>
-                Teilnehmer, die in Teil
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [('', '— egal —')] %}
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    {{ myentries.append((part_id, part['title']))|e }}
-                {% endfor %}
-                {{ util.input_select(name="part_id", entries=myentries, aclass="form-control input-slim") }}
+                Teilnehmer, die
+                {% if ambience['event']['tracks']|length > 1 %}
+                    in Kursschiene
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [('', '— egal —')] %}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {{ myentries.append((track_id, track['title']))|e }}
+                    {% endfor %}
+                    {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim input-sm") }}
+                {% else %}
+                    {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
+                {% endif %}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for course_id, course in courses|dictsort %}
+                {% for course_id, course in courses|xdictsort('nr') %}
                     {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
                 {% endfor %}
                 den Kurs
-                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim") }}
+                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim input-sm") }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [('', "— kein Filter —"),
                                     (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
@@ -68,10 +75,9 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                     (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
                                     (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
                                     (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
-                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim") }}<br />
-                {# TODO Link to query page with matching query (if possible) #}
-                mit einer der folgenden IDs:
-                {{ util.input_text(name='ids', aclass="form-control input-slim") }}
+                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim input-sm") }}<br />
+                mit einer der folgenden Teilnehmer-IDs:
+                {{ util.input_text(name='ids', aclass="form-control input-slim input-sm") }}
             </p>
             <p class="nosp">
                 {{ util.input_submit(value="anzeigen", icon="search") }}
@@ -88,19 +94,26 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 <div class="col-md-3">
                     Markierte Personen in
                 </div>
-                <div class="col-md-3 strip-inner-space">
-                    {# jinja does not support list comprehension ... #}
-                    {% set myentries = [] %}
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        {{ myentries.append((part_id, part['title']))|e }}
-                    {% endfor %}
-                    {{ util.input_checkboxes(name="part_ids", entries=myentries) }}
-                </div>
+                {% if ambience['event']['tracks']|length == 1 %}
+                    {{ util.input_hidden(name="track_ids", value=(ambience['event']['tracks']|list)[0]) }}
+                {% else %}
+                    <div class="col-md-3 strip-inner-space">
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            {{ myentries.append((track_id, track['title']))|e }}
+                        {% endfor %}
+                        {{ util.input_checkboxes(name="track_ids", entries=myentries) }}
+                    </div>
+                {% endif %}
                 <div class="col-md-4">
                     <div class="form-group">
                         {{ util.input_select(name="action", anid="input-action", entries=(
-                            (0, "in ihre Erstwahl"), (1, "in ihre Zweitwahl"), (2, "in ihre Drittwahl"),
-                            (-1, "in den Kurs "), (-2, "automatisch"))) }}
+                            (enums.CourseChoiceToolActions.assign_first_choice.value, "in ihre Erstwahl"),
+                            (enums.CourseChoiceToolActions.assign_second_choice.value, "in ihre Zweitwahl"),
+                            (enums.CourseChoiceToolActions.assign_third_choice.value, "in ihre Drittwahl"),
+                            (enums.CourseChoiceToolActions.assign_fixed.value, "in den Kurs …"),
+                            (enums.CourseChoiceToolActions.assign_auto.value, "automatisch"))) }}
                     </div>
                     <div class="form-group">
                         {# jinja does not support list comprehension ... #}
@@ -119,46 +132,83 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                         var $actionSelect = $('#input-action');
                         var $courseSelect = $('#input-course_id');
                         var updateCourseVisibility = function() {
-                            if ($actionSelect.val() == -1)
+                            if ($actionSelect.val() == {{ enums.CourseChoiceToolActions.assign_fixed.value|e }})
                                 $courseSelect.show();
                             else
                                 $courseSelect.hide();
                         };
                         $actionSelect.change(updateCourseVisibility);
                         updateCourseVisibility();
-                        $courseSelect.find("option").eq(0).remove();
                     }
                 </script>
             </div>
         {% endcall %}
 
-        <table class="table table-condensed table-hover">
+        <div class="pull-right">
+            {{ util.href(cdedblink('event/registration_query', corresponding_query|querytoparams),
+                         "in Anmeldungsliste", icon='list', aclass='btn btn-sm btn-default') }}
+        </div>
+        <div class="p softhide" id="js-button-group">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">alle</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                </button>
+            </div>
+        </div>
+
+        <table class="table table-condensed table-hover ls-list" id="course_choice_table">
             <thead>
+                {% if ambience['event']['tracks']|length > 1 %}
+                    <tr>
+                        <th rowspan="2"></th>
+                        <th rowspan="2">Name</th>
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            <th colspan="5" class="b-left">{{ track['title']|e }}</th>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
                 <tr>
-                    <th rowspan="2"></th>
-                    <th rowspan="2">Name</th>
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        <th colspan="5" class="b-left">{{ part['title']|e }}</th>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {# TODO markup filtered columns with th.filtered_column #}
-                    {% for part_id in ambience['event']['parts']|sort %}
-                        <th class="b-left text-center">
+                    {% if ambience['event']['tracks']|length <= 1 %}
+                        <th></th>
+                        <th>Name</th>
+                    {% endif %}
+
+                    {# Some definitions to hight the headings of the filtered columns #}
+                    {% set cfp = enums.CourseFilterPositions %}
+                    {% macro filtered_col_class(track_id, position) -%}
+                        {% if values.get('track_id')|int == '' or values.get('track_id')|int == track_id -%}
+                            {% if position == values.get('position')|int
+                                  or values.get('position')|int == cfp.anywhere.value
+                                  or (values.get('position')|int == cfp.any_choice.value
+                                      and position in (cfp.first_choice.value,
+                                                       cfp.second_choice.value,
+                                                       cfp.third_choice.value)) -%}
+                                filtered_column
+                            {% endif -%}
+                        {% endif -%}
+                    {% endmacro %}
+                    {% for track_id in ambience['event']['tracks']|sort %}
+                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
                             {{ util.make_icon('screenshot') }}
                         </th>
-                        <th class="b-left text-center">KL</th>
-                        <th class="text-center">1.</th>
-                        <th class="text-center">2.</th>
-                        <th class="text-center">3.</th>
+                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">KL</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.first_choice.value) }}">1.</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.second_choice.value) }}">2.</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.third_choice.value) }}">3.</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for reg_id, registration in registrations|dictsort %}
-                    <tr>
+                    <tr class="ls-item">
                         <td>
-                            {{ util.input_checkbox("registration_ids", value=reg_id) }}
+                            {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector") }}
                         </td>
                         <td>
                             {% with persona = personas[registration['persona_id']] %}
@@ -166,18 +216,17 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                              "{} {}".format(persona['given_names'], persona['family_name'])) }}
                             {% endwith %}
                         </td>
-                        {# TODO markup filtered columns with td.filtered_column #}
-                        {% for part_id, part in ambience['event']['parts']|dictsort %}
-                            {% set part_is_filtered = (values['part_id'] in ('', part_id)) %}
-                            {% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant %}
-                                {{ course_cell(registration['parts'][part_id]['course_id'], part_id, border_left=True,
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
+                            {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
+                                {{ course_cell(registration['tracks'][track_id]['course_id'], track_id, border_left=True,
                                                complain_empty=True, primary=True) }}
-                                {{ course_cell(registration['parts'][part_id]['course_instructor'], part_id,
+                                {{ course_cell(registration['tracks'][track_id]['course_instructor'], track_id,
                                                border_left=True) }}
                                 {% for j in range(3) %}
-                                    {{ course_cell(registration['choices'][part_id][j]
-                                                   if registration['choices'][part_id]|length > j else None,
-                                                   part_id) }}
+                                    {{ course_cell(registration['tracks'][track_id]['choices'][j]
+                                                   if registration['tracks'][track_id]['choices']|length > j else None,
+                                                   track_id) }}
                                 {% endfor %}
                             {% else %}
                                 <td class="b-left"></td>
@@ -191,6 +240,21 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% endfor %}
             </tbody>
         </table>
+
+        <script type="text/javascript">
+            $('#course_choice_table').cdedbListSelect();
+            var lsObj = $('#course_choice_table').data('listSelect');
+            $('#btn-select-all').click(function(){
+                lsObj.selectAll();
+            });
+            $('#btn-select-none').click(function(){
+                lsObj.selectNone();
+            });
+            $('#btn-select-swap').click(function(){
+                lsObj.invertSelection();
+            });
+            $('#js-button-group').show();
+        </script>
     </form>
     <script type="text/javascript">
         $('.event_course_id').dblclick(function() {

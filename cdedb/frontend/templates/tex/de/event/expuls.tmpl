@@ -4,8 +4,8 @@
 \von <<< course['instructors']|te >>>
 
 In:
-<<%- for part_id in course['parts']|sort %>>
-    <<< ambience['event']['parts'][part_id]['title']|te >>>
+<<%- for track_id in course['active_segments']|sort %>>
+    <<< ambience['event']['tracks'][track_id]['title']|te >>>
     <<%- if not loop.last %>>,<<% endif %>>
 <<%- endfor %>>
 

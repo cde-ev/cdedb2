@@ -2031,37 +2031,53 @@ msgstr "Konflikt mit Reserveplätzen."
 msgid "Not deleting a non-empty lodgement."
 msgstr "Löschung einer nicht-leeren Unterkunft."
 
-#: cdedb/frontend/event.py:2156
-msgid "course (part {title})"
-msgstr "Kurs (Teil {title})"
+#: cdedb/frontend/event.py:2454
+msgid "course ({title})"
+msgstr "Kurs ({title})"
 
-#: cdedb/frontend/event.py:2158
-msgid "registration status (part {title})"
-msgstr "Anmeldestatus (Teil {title})"
+#: cdedb/frontend/event.py:2457
+msgid "course instructor ({title})"
+msgstr "Kursleiter ({title})"
 
-#: cdedb/frontend/event.py:2161
-msgid "lodgement (part {title})"
-msgstr "Unterkunft (Teil {title})"
+#: cdedb/frontend/event.py:2463
+msgid "course (any track)"
+msgstr "Kurs (bel. Schiene)"
 
-#: cdedb/frontend/event.py:2163
-msgid "course instructor (part {title})"
-msgstr "Kursleiter (Teil {title})"
+#: cdedb/frontend/event.py:2466
+msgid "course instuctor (any track)"
+msgstr "Kursleiter (bel. Schiene)"
 
-#: cdedb/frontend/event.py:2169
-msgid "course (any part)"
-msgstr "Kurs zugeteilt (bel. Teil)"
+#: cdedb/frontend/event.py:2471
+msgid "course"
+msgstr "Kurs"
 
-#: cdedb/frontend/event.py:2172
+#: cdedb/frontend/event.py:2473
+msgid "course instructor"
+msgstr "Kursleiter"
+
+#: cdedb/frontend/event.py:2478
+msgid "registration status ({title})"
+msgstr "Status ({title})"
+
+#: cdedb/frontend/event.py:2481
+msgid "lodgement ({title})"
+msgstr "Unterkunft ({title})"
+
+#: cdedb/frontend/event.py:2486
 msgid "registration status (any part)"
-msgstr "Anmeldestatus (bel. Teil)"
+msgstr "Status (bel. Teil)"
 
-#: cdedb/frontend/event.py:2175
+#: cdedb/frontend/event.py:2489
 msgid "lodgement (any part)"
-msgstr "Unterkunf (bel. Teil)"
+msgstr "Unterkunft (bel. Teil)"
 
-#: cdedb/frontend/event.py:2178
-msgid "course instuctor (any part)"
-msgstr "Kursleiter (bel. Teil)"
+#: cdedb/frontend/event.py:2495
+msgid "registration status"
+msgstr "Status"
+
+#: cdedb/frontend/event.py:2497
+msgid "lodgement"
+msgstr "Unterkunft"
 
 #: cdedb/frontend/event.py:2331 cdedb/frontend/event.py:2354
 #: cdedb/frontend/event.py:2365 cdedb/frontend/event.py:2392

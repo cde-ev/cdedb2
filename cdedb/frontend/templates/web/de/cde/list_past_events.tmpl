@@ -7,10 +7,12 @@
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen", active="True") }}
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen",
-                aclass="btn btn-success btn-sm", icon="plus") }}
-    </div>
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen",
+                    aclass="btn btn-success btn-sm", icon="plus") }}
+        </div>
+    {% endif %}
     
     {% for year, year_events in years|dictsort|reverse %}
         <h4 class="heading-underline">{{ year }}</h4>

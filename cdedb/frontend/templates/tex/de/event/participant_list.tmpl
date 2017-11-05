@@ -23,16 +23,16 @@
     \begin{longtabu}{ll>{\raggedright}p{.3\linewidth}l<<< ('l'*(ambience['event']['parts']|length))|te >>>l}
     \toprule
     Vorname & Nachname & Ort &
-    <<% for part_id, part in ambience['event']['parts']|dictsort -%>>
-        <<< part['title']|te >>> &
+    <<% for track_id, track in ambience['event']['tracks']|dictsort -%>>
+        <<< track['title']|te >>> &
     <<% endfor -%>>
     E-Mail \\
     \midrule
     \endfirsthead
     \midrule
     Vorname & Nachname & Ort & Handy &
-    <<% for part_id, part in ambience['event']['parts']|dictsort -%>>
-        <<< part['title']|te >>> &
+    <<% for track_id, track in ambience['event']['tracks']|dictsort -%>>
+        <<< track['title']|te >>> &
     <<% endfor -%>>
     E-Mail \\
     \midrule
@@ -52,16 +52,16 @@
             <<%- endif -%>>
             &
             <<< personas[registration['persona_id']]['mobile']|te >>> &
-            <<% for part_id in ambience['event']['parts']|sort -%>>
-                <<% if registration['parts'][part_id]['status'] == enums['RegistrationPartStati'].participant -%>>
-                    <<% if registration['parts'][part_id]['course_id'] -%>>
-                        <<% if registration['parts'][part_id]['course_instructor']
-                                == registration['parts'][part_id]['course_id'] -%>>
+            <<% for track_id in ambience['event']['tracks']|sort -%>>
+                <<% if registration['parts'][ambience['event']['tracks'][track_id]['part_id']]['status'] == enums['RegistrationPartStati'].participant -%>>
+                    <<% if registration['tracks'][track_id]['course_id'] -%>>
+                        <<% if registration['tracks'][track_id]['course_instructor']
+                                == registration['tracks'][track_id]['course_id'] -%>>
                             \emph{%
-                                <<< courses[registration['parts'][part_id]['course_id']]['shortname']|te >>>
+                                <<< courses[registration['tracks'][track_id]['course_id']]['shortname']|te >>>
                             }
                         <<% else -%>>
-                            <<< courses[registration['parts'][part_id]['course_id']]['shortname']|te >>>
+                            <<< courses[registration['tracks'][track_id]['course_id']]['shortname']|te >>>
                         <<% endif -%>>
                     <<% elif registration['persona_id'] in ambience['event']['orgas'] -%>>
                         \emph{Orga}

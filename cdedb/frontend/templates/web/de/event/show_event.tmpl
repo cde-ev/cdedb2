@@ -109,7 +109,7 @@
                             <form action="{{ cdedblink('event/remove_orga')|e }}" method="POST"
                                     id="removeorgaform{{ anid|e }}" style="display: inline;">
                                 {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(value="", readonly=is_locked, title="Orga löschen", icon='trash',
+                                {{ util.input_submit(value="", readonly=is_locked, title="Orga entfernen", icon='minus',
                                                      aclass='btn btn-xs btn-danger') }}
                             </form>
                         </li>

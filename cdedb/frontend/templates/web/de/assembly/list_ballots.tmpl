@@ -13,10 +13,12 @@
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen", active=True) }}
 {% endblock %}
 {% block content %}
-    <div class="p">
-        {{ util.href(cdedblink("assembly/create_ballot"), "Abstimmung anlegen", aclass="btn btn-success btn-sm",
-                icon="plus") }}
-    </div>
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink("assembly/create_ballot"), "Abstimmung anlegen", aclass="btn btn-success btn-sm",
+                    icon="plus") }}
+        </div>
+    {% endif %}
     {% for heading, sample, show_state in (("Zukünftige Abstimmungen", future, False),
                                            ("Laufende Abstimmungen", current, True),
                                            ("Abgeschlossene Abstimmungen", done, False)) %}

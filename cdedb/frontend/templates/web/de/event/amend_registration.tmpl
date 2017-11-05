@@ -41,35 +41,34 @@
                 "passwortgeschützte Fotogalerie verwendet werden. Einzelne Fotos können auf gesonderten",
                 "Wunsch davon ausgenommen werden.")) }}
         {{ util.form_input_textarea(name="notes", label="Anmerkungen", rows="5", readonly=readonly) }}
-        {% for part_id, course_list in course_choices|dictsort %}
-            {% if (course_list and part_id in parts
-                   and enums['RegistrationPartStati'](parts[part_id]['status']).is_involved()) %}
+        {% for track_id, course_list in course_choices|dictsort %}
+            {% if track_id in involved_tracks %}
                 <h4>
                     Kurswahl
                     {% if course_choices|length > 1 %}
-                        für {{ ambience['event']['parts'][part_id]['title']|e }}
+                        für {{ ambience['event']['tracks'][track_id]['title']|e }}
                     {% endif %}
                 </h4>
 
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_list %}
-                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
+                    {{ myentries.append((course_id,
+                                         "{}. {}".format(courses[course_id]['nr'],
+                                                         courses[course_id]['title'])))|e }}
                 {% endfor %}
-                {{ util.form_input_select(name="course_choice{}_0".format(part_id), entries=myentries,
+                {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=myentries,
                                          label="Erstwahl", readonly=readonly) }}
-                {{ util.form_input_select(name="course_choice{}_1".format(part_id), entries=myentries,
+                {{ util.form_input_select(name="course_choice{}_1".format(track_id), entries=myentries,
                                          label="Zweitwahl", readonly=readonly) }}
-                {{ util.form_input_select(name="course_choice{}_2".format(part_id), entries=myentries,
+                {{ util.form_input_select(name="course_choice{}_2".format(track_id), entries=myentries,
                                          label="Drittwahl", readonly=readonly) }}
 
                 {# jinja does not support list comprehension ... #}
-                {% set myentries = [("", "— Ich bin kein Kursleiter —")] %}
-                {% for course_id in course_list %}
-                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
-                {% endfor %}
-                {{ util.form_input_select(name="course_instructor{}".format(part_id), entries=myentries,
-                                         label="Kursleiter", readonly=readonly) }}
+                {% set myentries = [("", "— Ich bin kein Kursleiter —")] + myentries%}
+                {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=myentries,
+                                         label="Kursleiter", readonly=readonly,
+                                         info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
             {% endif %}
         {% endfor %}
 

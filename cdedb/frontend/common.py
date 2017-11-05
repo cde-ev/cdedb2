@@ -46,7 +46,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     _, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize)
+    json_serialize, event_gather_tracks)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -416,7 +416,11 @@ def querytoparams_filter(val):
         params['qsel_{}'.format(field)] = True
     for field, op, value in val.constraints:
         params['qop_{}'.format(field)] = op.value
-        params['qval_{}'.format(field)] = value
+        if isinstance(value, collections.Iterable):
+            # TODO: Get separator from central place (also used in validation._query_input)
+            params['qval_{}'.format(field)] = ','.join(str(x) for x in value)
+        else:
+            params['qval_{}'.format(field)] = value
     for entry, postfix in zip(val.order,
                               ("primary", "secondary", "tertiary")):
         field, ascending = entry
@@ -620,6 +624,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'CDEDB_DEV': self.conf.CDEDB_DEV,
             'GIT_COMMIT': self.conf.GIT_COMMIT,
         }
+        ## patch data to bypass jinja short-comings (no list comprehension)
+        if 'event' in data['ambience']:
+            assert('tracks' not in data['ambience']['event'])
+            data['ambience']['event']['tracks'] = event_gather_tracks(
+                data['ambience']['event'])
         ## check that default values are not overridden
         assert(not set(data) & set(params))
         merge_dicts(data, params)

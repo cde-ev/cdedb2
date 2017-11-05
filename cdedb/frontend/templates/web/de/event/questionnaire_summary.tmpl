@@ -29,10 +29,10 @@
             <div class="row">
                 <div class="col-md-6">
                     {{ util.form_input_text(name="title_{}".format(part_id), label="Titel", aclass='drow-input',
-                                            attributes=('data-basename="title_-"' if newrow else ''),
+                                            attributes=('data-basename="title_"' if newrow else ''),
                                             horizontal=false) }}
                     {{ util.form_input_textarea(name="info_{}".format(part_id), label="Text", aclass='drow-input',
-                                                attributes=('data-basename="info_-"' if newrow else ''),
+                                                attributes=('data-basename="info_"' if newrow else ''),
                                                 horizontal=false) }}
                 </div>
                 <div class="col-md-6">
@@ -42,19 +42,19 @@
                         {{ field_entries.append((field_id, field['field_name']))|e }}
                     {% endfor %}
                     {{ util.form_input_select("field_id_{}".format(part_id), label="Abfrage", entries=field_entries,
-                                              attributes=('data-basename="field_id_-"' if newrow else ''),
+                                              attributes=('data-basename="field_id_"' if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
                     {{ util.form_input_select(
                         "input_size_{}".format(part_id), label="Eingabefeldgröße", entries=(
                             (0,"einzeilig"), (2, "mehrzeilig"),
                             (3, "mehrzeilig+"), (4, "mehrzeilig++")),
-                        attributes=('data-basename="input_size_-"' if newrow else ''),
+                        attributes=('data-basename="input_size_"' if newrow else ''),
                         aclass='input-inputsize drow-input', horizontal=False) }}
                     <div class="form-group row">
                         <div class="col-sm-8">
                             <div class="checkbox">
                                 {{ util.input_checkbox("readonly_{}".format(part_id), label="Schreibgeschützt",
-                                                       attributes=('data-basename="readonly_-"' if newrow else ''),
+                                                       attributes=('data-basename="readonly_"' if newrow else ''),
                                                        aclass='input-readonly drow-input') }}
                             </div>
                         </div>
@@ -62,7 +62,7 @@
                             <span class="drow-buttonspace">
                                 {% if newrow %}
                                     {{ util.input_checkbox("create_{}".format(part_id), label="Hinzufügen",
-                                                           attributes='data-basename="create_-"',
+                                                           attributes='data-basename="create_"',
                                                            aclass='drow-indicator')}}
                                 {% else %}
                                     {{ util.input_checkbox("delete_{}".format(part_id), label="Löschen",

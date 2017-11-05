@@ -4,9 +4,10 @@
 ALTER SEQUENCE assembly.attachments_id_seq RESTART WITH 1;
 ALTER SEQUENCE cde.lastschrift_transactions_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.course_choices_id_seq RESTART WITH 1;
-ALTER SEQUENCE event.course_parts_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.course_segments_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.questionnaire_rows_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.registration_parts_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.registration_tracks_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.orgas_id_seq RESTART WITH 1;
 
 --
@@ -88,29 +89,31 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 --
 -- events
 --
-INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, iban, mail_text, notes, offline_lock) VALUES
-    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', date '2000-10-30', date '2200-10-30', date '2220-10-30', 'DE96 3702 0500 0008 0689 01', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False);
+INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, iban, mail_text, notes, offline_lock, lodge_field, reserve_field) VALUES
+    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', date '2000-10-30', date '2200-10-30', date '2220-10-30', 'DE96 3702 0500 0008 0689 01', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL);
 INSERT INTO event.event_parts (id, event_id, title, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', date '2222-11-01', date '2222-11-11', 123.00),
     (3, 1, 'Zweite Hälfte', date '2222-11-11', date '2222-11-30', 450.99);
+INSERT INTO event.course_tracks (id, part_id, title) VALUES
+    (1, 2, 'Morgenkreis (Erste Hälfte)'),
+    (2, 2, 'Kaffeekränzchen (Erste Hälfte)'),
+    (3, 3, 'Arbeitssitzung (Zweite Hälfte)');
 INSERT INTO event.field_definitions (id, event_id, field_name, kind, association, entries) VALUES
     (1, 1, 'brings_balls', 'bool', 1, NULL),
     (2, 1, 'transportation', 'str', 1, '{{"pedes", "by feet"}, {"car", "own car available"}, {"etc", "anything else"}}'),
     (3, 1, 'lodge', 'str', 1, NULL),
     (4, 1, 'may_reserve', 'bool', 1, NULL),
-    (5, 1, 'reserve_1', 'bool', 1, NULL),
-    (6, 1, 'reserve_2', 'bool', 1, NULL),
-    (7, 1, 'reserve_3', 'bool', 1, NULL),
-    (8, 1, 'room', 'str', 2, NULL),
-    (9, 1, 'contamination', 'str', 3, '{{"high", "lots of radiation"}, {"medium", "elevated level of radiation"}, {"low", "some radiation"}, {"none", "no radiation"}}');
+    (5, 1, 'room', 'str', 2, NULL),
+    (6, 1, 'contamination', 'str', 3, '{{"high", "lots of radiation"}, {"medium", "elevated level of radiation"}, {"low", "some radiation"}, {"none", "no radiation"}}');
+UPDATE event.events SET lodge_field = 3, reserve_field = 4 WHERE id = 1;
 INSERT INTO event.courses (id, event_id, title, description, nr, shortname, instructors, max_size, min_size, notes, fields) VALUES
     (1, 1, 'Planetenretten für Anfänger', 'Wir werden die Bäume drücken.', 'α', 'Heldentum', 'ToFi & Co', 10, 3, 'Promotionen in Mathematik und Ethik für Teilnehmer notwendig.', '{"course_id": 1, "room": "Wald"}'::jsonb),
     (2, 1, 'Lustigsein für Fortgeschrittene', 'Inklusive Post, Backwaren und frühzeitigem Ableben.', 'β', 'Kabarett', 'Bernd Lucke', 20, 10, 'Kursleiter hat Sekt angefordert.', '{"course_id": 2, "room": "Theater"}'::jsonb),
     (3, 1, 'Kurzer Kurs', 'mit hoher Leistung.', 'γ', 'Kurz', 'Heinrich und Thomas Mann', 14, 5, NULL, '{"course_id": 3, "room": "Seminarraum 42"}'::jsonb),
     (4, 1, 'Langer Kurs', 'mit hohem Umsatz.', 'δ', 'Lang', 'Stephen Hawking und Richard Feynman', NULL, NULL, NULL, '{"course_id": 4, "room": "Seminarraum 23"}'::jsonb),
     (5, 1, 'Backup-Kurs', 'damit wir Auswahl haben', 'ε', 'Backup', 'TBA', NULL, NULL, NULL, '{"course_id": 5, "room": "Nirwana"}'::jsonb);
-INSERT INTO event.course_parts (course_id, part_id, is_active) VALUES
+INSERT INTO event.course_segments (course_id, track_id, is_active) VALUES
     (1, 1, True),
     (1, 3, True),
     (2, 2, False),
@@ -134,20 +137,36 @@ INSERT INTO event.registrations (id, persona_id, event_id, notes, orga_notes, pa
     (2, 5, 1, 'Extrawünsche: Meerblick, Weckdienst und Frühstück am Bett', 'Unbedingt in die Einzelzelle.', date '2014-02-02', NULL, True, NULL, True, '{"registration_id": 2, "brings_balls": true, "transportation": "pedes"}'::jsonb),
     (3, 7, 1, NULL, NULL, date '2014-03-03', NULL, True, NULL, True, '{"registration_id": 3, "transportation": "car"}'::jsonb),
     (4, 9, 1, NULL, NULL, date '2014-04-04', NULL, False, NULL, True, '{"registration_id": 4, "brings_balls": false, "transportation": "etc", "may_reserve": true}'::jsonb);
-INSERT INTO event.registration_parts (registration_id, part_id, course_id, status, lodgement_id, course_instructor) VALUES
-    (1, 1, NULL, -1, NULL, NULL),
-    (1, 2, NULL, 1, NULL, NULL),
-    (1, 3, NULL, 2, 1, NULL),
-    (2, 1, NULL, 3, NULL, NULL),
-    (2, 2, NULL, 4, 4, NULL),
-    (2, 3, 1,    2, 4, 1),
-    (3, 1, NULL, 2, 2, NULL),
-    (3, 2, 2,    2, NULL, NULL),
-    (3, 3, NULL, 2, 2, NULL),
-    (4, 1, NULL, 6, NULL, NULL),
-    (4, 2, NULL, 5, NULL, NULL),
-    (4, 3, 1,    2, 2, NULL);
-INSERT INTO event.course_choices (registration_id, part_id, course_id, rank) VALUES
+INSERT INTO event.registration_parts (registration_id, part_id, status, lodgement_id, is_reserve) VALUES
+    (1, 1, -1, NULL, False),
+    (1, 2, 1, NULL, False),
+    (1, 3, 2, 1, False),
+    (2, 1, 3, NULL, False),
+    (2, 2, 4, 4, False),
+    (2, 3, 2, 4, False),
+    (3, 1, 2, 2, False),
+    (3, 2, 2, NULL, False),
+    (3, 3, 2, 2, False),
+    (4, 1, 6, NULL, False),
+    (4, 2, 5, NULL, False),
+    (4, 3, 2, 2, True);
+INSERT INTO event.registration_tracks (registration_id, track_id, course_id, course_instructor) VALUES
+    (1, 1, NULL, NULL),
+    (1, 2, NULL, NULL),
+    (1, 3, NULL, NULL),
+    (2, 1, NULL, NULL),
+    (2, 2, NULL, NULL),
+    (2, 3, 1, 1),
+    (3, 1, NULL, NULL),
+    (3, 2, 2, NULL),
+    (3, 3, NULL, NULL),
+    (4, 1, NULL, NULL),
+    (4, 2, NULL, NULL),
+    (4, 3, 1, NULL);
+INSERT INTO event.course_choices (registration_id, track_id, course_id, rank) VALUES
+    (1, 1, 1, 0),
+    (1, 1, 3, 1),
+    (1, 1, 4, 2),
     (1, 2, 2, 0),
     (1, 2, 3, 1),
     (1, 2, 4, 2),
@@ -327,8 +346,9 @@ SELECT setval('past_event.courses_id_seq', 2);
 SELECT setval('past_event.institutions_id_seq', 1);
 SELECT setval('event.events_id_seq', 1);
 SELECT setval('event.event_parts_id_seq', 3);
+SELECT setval('event.course_tracks_id_seq', 3);
 SELECT setval('event.courses_id_seq', 5);
-SELECT setval('event.field_definitions_id_seq', 9);
+SELECT setval('event.field_definitions_id_seq', 6);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
 SELECT setval('ml.mailinglists_id_seq', 10);

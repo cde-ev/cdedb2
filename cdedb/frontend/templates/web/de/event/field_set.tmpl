@@ -28,7 +28,7 @@
                 ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),
                 label="{} {}".format(
                     personas[registrations[registration_id]['persona_id']]['given_names'],
-                    personas[registrations[registration_id]['persona_id']]['family_name'])) }}
+                    personas[registrations[registration_id]['persona_id']]['family_name']), force_label=True) }}
         {% endfor %}
         {{ util.input_hidden(name="field_id") }}
         {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}

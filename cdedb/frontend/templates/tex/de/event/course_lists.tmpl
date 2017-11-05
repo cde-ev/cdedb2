@@ -6,7 +6,7 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for course_id, course in courses|dictsort %>>
-        <<% for part_id in course['parts']|sort %>>
+        <<% for track_id in course['active_segments']|sort %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}
@@ -14,11 +14,11 @@
                 \end{center}
                 \vspace{-2\baselineskip}
             \end{wrapfigure}
-            \section*{<<< course['title']|te >>> (<<< ambience['event']['parts'][part_id]['title']|te >>>)}
+            \section*{<<< course['title']|te >>> (<<< ambience['event']['tracks'][track_id]['title']|te >>>)}
             \begin{itemize}
-                <<% for registration_id in attendees[(course_id, part_id)] %>>
+                <<% for registration_id in attendees[(course_id, track_id)] %>>
                     \item
-                        <<% if (registrations[registration_id]['parts'][part_id]['course_instructor']
+                        <<% if (registrations[registration_id]['tracks'][track_id]['course_instructor']
                                 == course_id) %>>
                             \emph{%
                                 <<< personas[registrations[registration_id]['persona_id']]['given_names']|te >>>

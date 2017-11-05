@@ -229,6 +229,7 @@ QUERY_SPECS = {
     "qview_registration":
     collections.OrderedDict([
         ("reg.id", "id"),
+        ("persona.id", "id"),
         ("persona.given_names", "str"),
         ("persona.family_name", "str"),
         ("persona.username", "str"),
@@ -252,6 +253,8 @@ QUERY_SPECS = {
         ("reg.notes", "str"),
         ("reg.orga_notes", "str"),
         ("reg.checkin", "datetime"),
+        ("ctime.creation_time", "datetime"),
+        ("mtime.modification_time", "datetime"),
         ## This will be augmented with additional fields on the fly.
         ]),
     "qview_core_user": ## query for a general user including past event infos

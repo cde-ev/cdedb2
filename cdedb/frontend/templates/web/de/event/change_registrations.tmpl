@@ -100,19 +100,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                 {{ util.input_select(name="part{}.status".format(part_id), entries=myentries,
                                      anid="part{}_status".format(part_id)) }}
             {% endcall %}
-            {% if course_choices[part_id]|length > 0 %}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id in course_choices[part_id] %}
-                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                    courses[course_id]['shortname'])))|e }}
-                {% endfor %}
-                {% call form_input_optional("part{}.course_id".format(part_id), label="Kurs",
-                                            anid="part{}_course_id".format(part_id)) %}
-                    {{ util.input_select(name="part{}.course_id".format(part_id), entries=myentries,
-                                         nulloption=True, anid="part{}_course_id".format(part_id)) }}
-                {% endcall %}
-            {% endif %}
+
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
             {% for lodgement_id, lodgement in lodgements|dictsort %}
@@ -123,6 +111,30 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id), entries=myentries, nulloption=True,
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
+            {% call form_input_optional("part{}.is_reserve".format(part_id),
+                                        anid="part{}_is_reserve".format(part_id)) %}
+                <div class="checkbox">
+                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label="Reserveplatz",
+                                           anid="part{}_is_reserve".format(part_id)) }}
+                </div>
+            {% endcall %}
+
+            {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
+                {% if course_choices[track_id]|length > 0 %}
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
+                    {% for course_id in course_choices[track_id] %}
+                        {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                        courses[course_id]['shortname'])))|e }}
+                    {% endfor %}
+                    {% call form_input_optional("track{}.course_id".format(track_id),
+                                                label="Kurs {}".format(track['title']),
+                                                anid="track{}_course_id".format(track_id)) %}
+                        {{ util.input_select(name="track{}.course_id".format(track_id), entries=myentries,
+                                             nulloption=True, anid="track{}_course_id".format(track_id)) }}
+                    {% endcall %}
+                {% endif %}
+            {% endfor %}
         {% endfor %}
 
         <h3 class="heading-underline">Anmeldedaten</h3>
@@ -138,20 +150,20 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                                        label="Foto-Einwilligung") }}
             </div>
         {% endcall %}
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
-            {% if course_choices[part_id]|length > 0 %}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {% if course_choices[track_id]|length > 0 %}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_choices[part_id] %}
                     {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
                                                                     courses[course_id]['shortname'])))|e }}
                 {% endfor %}
-                {% call form_input_optional("part{}.course_instructor".format(part_id),
-                                            label="{}: Kursleiter von".format(part['title']),
-                                            anid="input_part{}_course_instructor".format(part_id)) %}
-                    {{ util.input_select(name="part{}.course_instructor".format(part_id),
+                {% call form_input_optional("track{}.course_instructor".format(track_id),
+                                            label="{}: Kursleiter von".format(track['title']),
+                                            anid="input_track{}_course_instructor".format(track_id)) %}
+                    {{ util.input_select(name="track{}.course_instructor".format(track_id),
                                          entries=myentries, nulloption=True,
-                                         anid="input_part{}_course_instructor".format(part_id)) }}
+                                         anid="input_track{}_course_instructor".format(track_id)) }}
                 {% endcall %}
             {% endif %}
         {% endfor %}

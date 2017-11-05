@@ -87,21 +87,23 @@
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
                         <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length|e }}</div>
-                        <h3 class="panel-title">{{ part['title']|e }}</h3>
+                        <h3 class="panel-title">
+                            {% if ambience['event']['parts']|length > 1 %}{{ part['title']|e }}{% else %}Bewohner{% endif %}
+                        </h3>
                     </div>
 
                     <div class="panel-body">
-                        {% for description, lodgement_id, problem_part, affected_regs in problems
+                        {% for description, lodgement_id, problem_part, affected_regs, severeness in problems
                                 if problem_part == part_id %}
-                            <p class="text-warning">
+                            <p class="{% if severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
                                 {{ gettext(description)|e }}
                                 {% if affected_regs %}
                                     (
-                                        {%- for reg_id in affected_regs %}
+                                        {%- for reg_id in affected_regs -%}
                                             {{ personas[registrations[reg_id]['persona_id']]['given_names']|e }}
                                             {{ personas[registrations[reg_id]['persona_id']]['family_name']|e }}
                                             {%- if not loop.last %}, {% endif %}
-                                        {% endfor -%}
+                                        {%- endfor -%}
                                     )
                                 {% endif %}
                             </p>
@@ -114,6 +116,9 @@
                                                            {'registration_id': registration_id}),
                                                  "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]['persona_id']]['family_name'])) }}
+                                    {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
+                                        {{ util.make_icon('tent', title="Reserveplatz", arialabel="Reserveplatz") }}
+                                    {% endif %}
                                 </li>
                             {% endfor %}
                         </ul>

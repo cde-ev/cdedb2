@@ -278,10 +278,13 @@ class EventLogCodes(enum.IntEnum):
     lodgement_created = 26 #:
     lodgement_deleted = 27 #:
     questionnaire_changed = 30 #:
+    track_added = 35 #:
+    track_updated = 36 #:
+    track_removed = 37 #:
     course_created = 40 #:
     course_changed = 41 #:
-    course_parts_changed = 42 #:
-    course_part_activity_changed = 43 #:
+    course_segments_changed = 42 #:
+    course_segment_activity_changed = 43 #:
     registration_created = 50 #:
     registration_changed = 51 #:
     event_locked = 60 #:

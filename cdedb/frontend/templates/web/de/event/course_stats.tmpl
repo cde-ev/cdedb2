@@ -23,13 +23,17 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">Kurs</th>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
-                    <th colspan="5" class="b-left">{{ part['title']|e }}</th>
-                {% endfor %}
+                {% if ambience['event']['tracks']|length == 1 %}
+                    <th colspan="5" class="b-left">Teilnehmer &amp; Kurswahl</th>
+                {% else %}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        <th colspan="5" class="b-left">{{ track['title']|e }}</th>
+                    {% endfor %}
+                {% endif %}
                 <th colspan="2" class="b-left">Grenzen</th>
             </tr>
             <tr>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                {% for track_id, track in ambience['event']['tracks']|dictsort %}
                     <th class="b-left"></th>
                     <th class="text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
                     <th class="text-right">1</th>
@@ -41,37 +45,37 @@
             </tr>
         </thead>
         <tbody>
-            {% for course_id, course in courses|dictsort %}
+            {% for course_id, course in courses|xdictsort('nr') %}
                 <tr>
                     <td>{{ course['nr']|e }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                      course['shortname']) }}</td>
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
-                        {% if part_id in course['parts'] %}
-                            {% set attendees = assign_counts[course_id][part_id] %}
-                            {% set aclass = 'course-cancelled' if part_id not in course['active_parts'] and attendees > 0 else
-                                            ('course-cancelled-ok' if part_id not in course['active_parts'] else
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {% if track_id in course['segments'] %}
+                            {% set attendees = assign_counts[course_id][track_id] %}
+                            {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] and attendees > 0 else
+                                            ('course-cancelled-ok' if track_id not in course['active_segments'] else
                                              ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
                                               ('course-fewp' if course['min_size'] and attendees < course['min_size'] else ''))) %}
                             <td class="b-left course-primary {{ aclass }}">
-                                {% if part_id not in course['active_parts'] %}
+                                {% if track_id not in course['active_segments'] %}
                                     {{ util.make_icon('ban-circle', title="Findet nicht statt") }}
                                 {% endif %}
                             </td>
                             <td class="text-right course-primary {{ aclass }}">
-                                {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
+                                {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                                 'course_id': course_id,
                                                                                 'position': 6,
                                                                                 'submitform': True}),
-                                             assign_counts[course_id][part_id]) }}
+                                             assign_counts[course_id][track_id]) }}
                             </td>
                             {% for i in range(3) %}
                                 <td class="text-right">
-                                    {{ util.href(cdedblink('event/course_choices', {'part_id': part_id,
+                                    {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
                                                                                 'course_id': course_id,
                                                                                 'position': i + 2,
                                                                                 'submitform': True}),
-                                             choice_counts[course_id][(part_id, i)]) }}
+                                             choice_counts[course_id][(track_id, i)]) }}
                             {% endfor %}
                         {% else %}
                             <td class="b-left">{{ util.make_icon('remove-sign', title="Nicht angeboten") }}</td>

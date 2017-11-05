@@ -6,8 +6,10 @@
     <div class="list-group tear-down">
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
                      aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_show')) }}
-        {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), "Kursliste",
-                     aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_list')) }}
+        {% if data['tracks'] %}
+            {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), "Kursliste",
+                         aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_list')) }}
+        {% endif %}
         {% if is_registered %}
             {{ util.href(cdedblink("event/registration_status", {"event_id": data['id']}), "Meine Anmeldung",
                     aclass="list-group-item", icon="log-in", active=(sidenav_active == 'event_register')) }}
@@ -29,10 +31,12 @@
             {{ util.href(cdedblink("event/stats", {"event_id": data['id']}), "Teilnehmer-Statistik",
                     aclass="list-group-item", icon="stats", active=(sidenav_active == 'event_stats')) }}
 
-            {{ util.href(cdedblink("event/course_stats", {"event_id": data['id']}), "Kurse",
-                         aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_stats')) }}
-            {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), "Kurseinteilung",
-                    aclass="list-group-item", icon="screenshot", active=(sidenav_active == 'event_course_choices')) }}
+            {% if data['tracks'] %}
+                {{ util.href(cdedblink("event/course_stats", {"event_id": data['id']}), "Kurse",
+                             aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_stats')) }}
+                {{ util.href(cdedblink("event/course_choices", {"event_id": data['id']}), "Kurseinteilung",
+                        aclass="list-group-item", icon="screenshot", active=(sidenav_active == 'event_course_choices')) }}
+            {% endif %}
             {{ util.href(cdedblink("event/lodgements", {"event_id": data['id']}), "Unterkunft",
                     aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
             {{ util.href(cdedblink("event/downloads", {"event_id": data['id']}), "Downloads", aclass="list-group-item",

@@ -32,13 +32,13 @@ import datetime
 import decimal
 import functools
 import io
+import itertools
 import json
 import logging
 import re
 import string
 import sys
 
-import dateutil.parser
 import magic
 import PIL.Image
 import pytz
@@ -873,26 +873,27 @@ def _persona(val, argname=None, *, creation=False, transition=False,
     return val, errs
 
 def parse_date(val):
-    """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
+    """Make a string into a date.
 
-    By default :py:mod:`dateutil` substitutes todays values if anything
-    is missing from the input. We want no auto-magic defaults so we
-    check whether this behaviour happens and raise an exeption if so.
+    We only support a limited set of formats to avoid any surprises
 
     :type val: str
     :rtype: datetime.date
     """
-    default1 = datetime.datetime(1, 1, 1)
-    default2 = datetime.datetime(2, 2, 2)
-    val1 = dateutil.parser.parse(val, dayfirst=True, default=default1).date()
-    val2 = dateutil.parser.parse(val, dayfirst=True, default=default2).date()
-    if val1.year == 1 and val2.year == 2:
-        raise ValueError(_("Year missing."))
-    if val1.month == 1 and val2.month == 2:
-        raise ValueError(_("Month missing."))
-    if val1.day == 1 and val2.day == 2:
-        raise ValueError(_("Day missing."))
-    return dateutil.parser.parse(val, dayfirst=True).date()
+    formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
+               ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
+    for fmt, _ in formats:
+        try:
+            return datetime.datetime.strptime(val, fmt).date()
+        except ValueError:
+            pass
+    ## Shorten strings to allow datetimes as inputs
+    for fmt, length in formats:
+        try:
+            return datetime.datetime.strptime(val[:length], fmt).date()
+        except ValueError:
+            pass
+    raise ValueError(_("Invalid date string."))
 
 @_addvalidator
 def _date(val, argname=None, *, _convert=True):
@@ -916,36 +917,49 @@ def _date(val, argname=None, *, _convert=True):
     return val, []
 
 def parse_datetime(val, default_date=None):
-    """Wrapper around :py:meth:`dateutil.parser.parse` for sanity checks.
+    """Make a string into a datetime.
 
-    By default :py:mod:`dateutil` substitutes values from now if anything
-    is missing from the input. We want no auto-magic defaults so we
-    check whether this behaviour happens and raise an exeption if so.
+    We only support a limited set of formats to avoid any surprises
 
     :type val: str
     :type default_date: datetime.date or None
     :rtype: datetime.datetime
     """
-    default1 = datetime.datetime(1, 1, 1, 1, 1)
-    default2 = datetime.datetime(2, 2, 2, 2, 2)
-    val1 = dateutil.parser.parse(val, dayfirst=True, default=default1)
-    val2 = dateutil.parser.parse(val, dayfirst=True, default=default2)
-    if not default_date and val1.year == 1 and val2.year == 2:
-        raise ValueError(_("Year missing."))
-    if not default_date and val1.month == 1 and val2.month == 2:
-        raise ValueError(_("Month missing."))
-    if not default_date and val1.day == 1 and val2.day == 2:
-        raise ValueError(_("Day missing."))
-    if val1.hour == 1 and val2.hour == 2:
-        raise ValueError(_("Hours missing."))
-    if val1.minute == 1 and val2.minute == 2:
-        raise ValueError(_("Minutes missing."))
-    if default_date:
-        dd = default_date
-    else:
-        dd = now()
-    default = datetime.datetime(dd.year, dd.month, dd.day)
-    ret = dateutil.parser.parse(val, dayfirst=True, default=default)
+    date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
+    connectors = ("T", " ")
+    time_formats = ("%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
+    formats = itertools.chain(
+        ("{}{}{}".format(d, c, t)
+         for d in date_formats for c in connectors for t in time_formats),
+        ("{} {}".format(t, d) for t in time_formats for d in date_formats))
+    ret = None
+    for fmt in formats:
+        try:
+            ret = datetime.datetime.strptime(val, fmt)
+            break
+        except ValueError:
+            pass
+    if ret is None and default_date:
+        for fmt in time_formats:
+            try:
+                ret = datetime.datetime.strptime(val, fmt)
+                ret = ret.replace(
+                    year=default_date.year, month=default_date.month,
+                    day=default_date.day)
+                break
+            except ValueError:
+                pass
+    if ret is None:
+        ## Fix braindead datetime. The datetime.isoformat() method outputs
+        ## timezone offsets as +HH:MM but the strptime() code %z only
+        ## understand +HHMM. Thus the equivalent of
+        ## datetime.strptime(datetime.isoformat()) is guaranteed to cause an
+        ## exception. *sigh*
+        if (len(val) > 5 and val[-6] in '+-' and val[-3] == ':'
+                and val[-5:-3].isdecimal() and val[-2:].isdecimal()):
+            new_val = val[:-3] + val[-2:]
+            return parse_datetime(new_val, default_date=default_date)
+        raise ValueError(_("Invalid datetime string ({}).".format(val)))
     if ret.tzinfo is None:
         ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
     return ret.astimezone(pytz.utc)
@@ -1534,12 +1548,14 @@ _EVENT_COMMON_FIELDS = lambda: {
     'use_questionnaire': _bool,
     'notes': _str_or_None,
 }
-_EVENT_OPTIONAL_FIELDS = {
+_EVENT_OPTIONAL_FIELDS = lambda: {
     'offline_lock': _bool,
     'is_archived': _bool,
     'orgas': _any,
     'parts': _any,
     'fields': _any,
+    'lodge_field': _id_or_None,
+    'reserve_field': _id_or_None,
 }
 @_addvalidator
 def _event(val, argname=None, *, creation=False, _convert=True):
@@ -1558,11 +1574,11 @@ def _event(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _EVENT_COMMON_FIELDS()
-        optional_fields = _EVENT_OPTIONAL_FIELDS
+        optional_fields = _EVENT_OPTIONAL_FIELDS()
     else:
         mandatory_fields = {'id': _id}
         optional_fields = dict(_EVENT_COMMON_FIELDS(),
-                               **_EVENT_OPTIONAL_FIELDS)
+                               **_EVENT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
@@ -1627,6 +1643,7 @@ _EVENT_PART_COMMON_FIELDS = {
     'part_begin': _date,
     'part_end': _date,
     'fee': _decimal,
+    'tracks': _any,
 }
 @_addvalidator
 def _event_part(val, argname=None, *, creation=False, _convert=True):
@@ -1649,8 +1666,33 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
     else:
         mandatory_fields = {}
         optional_fields = _EVENT_PART_COMMON_FIELDS
-    return _examine_dictionary_fields(val, mandatory_fields, optional_fields,
+    val, errs = _examine_dictionary_fields(val, mandatory_fields, optional_fields,
                                       _convert=_convert)
+    if errs:
+        return val, errs
+    if 'tracks' in val:
+        oldtracks, e = _mapping(val['tracks'], 'tracks', _convert=_convert)
+        if e:
+            errs.extend(e)
+        else:
+            newtracks = {}
+            for anid, title in oldtracks.items():
+                anid, e = _int(anid, 'tracks', _convert=_convert)
+                if e:
+                    errs.extend(e)
+                else:
+                    creation = (anid < 0)
+                    if creation:
+                        title, ee = _str(title, 'title', _convert=_convert)
+                    else:
+                        title, ee = _str_or_None(title, 'title',
+                                                 _convert=_convert)
+                    if ee:
+                        errs.extend(ee)
+                    else:
+                        newtracks[anid] = title
+            val['tracks'] = newtracks
+    return val, errs
 
 _EVENT_FIELD_COMMON_FIELDS = lambda: {
     'kind': _str,
@@ -1756,8 +1798,8 @@ _COURSE_COMMON_FIELDS = lambda: {
     'notes': _str_or_None,
 }
 _COURSE_OPTIONAL_FIELDS = {
-    'parts': _any,
-    'active_parts': _any,
+    'segments': _any,
+    'active_segments': _any,
 }
 @_addvalidator
 def _course(val, argname=None, *, creation=False, _convert=True):
@@ -1786,37 +1828,37 @@ def _course(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    if 'parts' in val:
-        oldparts, e = _iterable(val['parts'], 'parts', _convert=_convert)
+    if 'segments' in val:
+        oldsegments, e = _iterable(val['segments'], 'segments', _convert=_convert)
         if e:
             errs.extend(e)
         else:
-            parts = set()
-            for anid in oldparts:
-                v, e = _id(anid, 'parts', _convert=_convert)
+            segments = set()
+            for anid in oldsegments:
+                v, e = _id(anid, 'segments', _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
-                    parts.add(v)
-            val['parts'] = parts
-    if 'active_parts' in val:
-        oldparts, e = _iterable(val['active_parts'], 'active_parts',
+                    segments.add(v)
+            val['segments'] = segments
+    if 'active_segments' in val:
+        oldsegments, e = _iterable(val['active_segments'], 'active_segments',
                                 _convert=_convert)
         if e:
             errs.extend(e)
         else:
-            active_parts = set()
-            for anid in oldparts:
-                v, e = _id(anid, 'active_parts', _convert=_convert)
+            active_segments = set()
+            for anid in oldsegments:
+                v, e = _id(anid, 'active_segments', _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
-                    active_parts.add(v)
-            val['active_parts'] = active_parts
-    if 'parts' in val and 'active_parts' in val:
-        if not val['active_parts'] <= val['parts']:
-            errs.append(('parts',
-                         ValueError(_("Must be a superset of active parts."))))
+                    active_segments.add(v)
+            val['active_segments'] = active_segments
+    if 'segments' in val and 'active_segments' in val:
+        if not val['active_segments'] <= val['segments']:
+            errs.append(('segments',
+                         ValueError(_("Must be a superset of active segments."))))
     ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
@@ -1825,11 +1867,11 @@ _REGISTRATION_COMMON_FIELDS = lambda: {
     'foto_consent': _bool,
     'notes': _str_or_None,
     'parts': _any,
+    'tracks': _any,
 }
 _REGISTRATION_OPTIONAL_FIELDS = lambda: {
     'parental_agreement': _bool_or_None,
     'real_persona_id': _id_or_None,
-    'choices': _any,
     'orga_notes': _str_or_None,
     'payment': _date_or_None,
     'checkin': _datetime_or_None,
@@ -1881,31 +1923,22 @@ def _registration(val, argname=None, *, creation=False, _convert=True):
                 else:
                     newparts[anid] = part
             val['parts'] = newparts
-    if 'choices' in val:
-        oldchoices, e = _mapping(val['choices'], 'choices', _convert=_convert)
+    if 'tracks' in val:
+        oldtracks, e = _mapping(val['tracks'], 'tracks', _convert=_convert)
         if e:
             errs.extend(e)
         else:
-            newchoices = {}
-            for part_id, choice_list in oldchoices.items():
-                part_id, e = _id(part_id, 'choices', _convert=_convert)
-                choice_list, ee = _iterable(choice_list, 'choices',
-                                            _convert=_convert)
+            newtracks = {}
+            for anid, track in oldtracks.items():
+                anid, e = _id(anid, 'tracks', _convert=_convert)
+                track, ee = _registration_track_or_None(track, 'tracks',
+                                                      _convert=_convert)
                 if e or ee:
                     errs.extend(e)
                     errs.extend(ee)
                 else:
-                    new_list = []
-                    for choice in choice_list:
-                        choice, e = _id(choice, 'choices', _convert=_convert)
-                        if e:
-                            errs.extend(e)
-                            break
-                        else:
-                            new_list.append(choice)
-                    else:
-                        newchoices[part_id] = new_list
-            val['choices'] = newchoices
+                    newtracks[anid] = track
+            val['tracks'] = newtracks
     ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
@@ -1926,13 +1959,51 @@ def _registration_part(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     optional_fields = {
-        'course_id': _id_or_None,
         'status': _enum_registrationpartstati,
         'lodgement_id': _id_or_None,
-        'course_instructor': _id_or_None
+        'is_reserve': _bool,
     }
     return _examine_dictionary_fields(val, {}, optional_fields,
                                       _convert=_convert)
+
+@_addvalidator
+def _registration_track(val, argname=None, *, _convert=True):
+    """This validator has only optional fields. Normally we would have an
+    creation parameter and make stuff mandatory depending on that. But
+    from the data at hand it is impossible to decide when the creation
+    case is applicable.
+
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "registration_track"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    optional_fields = {
+        'course_id': _id_or_None,
+        'course_instructor': _id_or_None,
+        'choices': _any,
+    }
+    val, errs = _examine_dictionary_fields(val, {}, optional_fields,
+                                      _convert=_convert)
+    if 'choices' in val:
+        oldchoices, e = _iterable(val['choices'], 'choices', _convert=_convert)
+        if e:
+            errs.extend(e)
+        else:
+            newchoices = []
+            for choice in oldchoices:
+                choice, e = _id(choice, 'choices', _convert=_convert)
+                if e:
+                    errs.extend(e)
+                    break
+                else:
+                    newchoices.append(choice)
+            val['choices'] = newchoices
+    return val, errs
 
 @_addvalidator
 def _event_associated_fields(val, argname=None, fields=None, association=None,
@@ -2074,13 +2145,15 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'timestamp': _datetime,
         'event.events': _iterable,
         'event.event_parts': _iterable,
+        'event.course_tracks': _iterable,
         'event.courses': _iterable,
-        'event.course_parts': _iterable,
+        'event.course_segments': _iterable,
         'event.orgas': _iterable,
         'event.field_definitions': _iterable,
         'event.lodgements': _iterable,
         'event.registrations': _iterable,
         'event.registration_parts': _iterable,
+        'event.registration_tracks': _iterable,
         'event.course_choices': _iterable,
         'event.questionnaire_rows': _iterable,
     }
@@ -2096,10 +2169,12 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.events': _event,
         'event.event_parts': _augment_dict_validator(
             _event_part, {'id': _id, 'event_id': _id}),
+        'event.course_tracks': _augment_dict_validator(
+            _empty_dict, {'id': _id, 'part_id': _id, 'title': _str}),
         'event.courses': _augment_dict_validator(
             _course, {'event_id': _id}),
-        'event.course_parts': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id,
+        'event.course_segments': _augment_dict_validator(
+            _empty_dict, {'id': _id, 'course_id': _id, 'track_id': _id,
                           'is_active': _bool}),
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
@@ -2113,8 +2188,11 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.registration_parts': _augment_dict_validator(
             _registration_part, {'id': _id, 'part_id': _id,
                                  'registration_id': _id}),
+        'event.registration_tracks': _augment_dict_validator(
+            _registration_track, {'id': _id, 'track_id': _id,
+                                  'registration_id': _id}),
         'event.course_choices': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'course_id': _id, 'part_id': _id,
+            _empty_dict, {'id': _id, 'course_id': _id, 'track_id': _id,
                           'registration_id': _id, 'rank': _int}),
         'event.questionnaire_rows': _augment_dict_validator(
             _empty_dict, {'id': _id, 'event_id': _id, 'pos': _int,

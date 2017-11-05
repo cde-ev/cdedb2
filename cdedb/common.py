@@ -73,7 +73,7 @@ class RequestState:
         :type begin: datetime.datetime
         :param begin: time where we started to process the request
         """
-        self.ambience = None
+        self.ambience = {}
         self.sessionkey = sessionkey
         self.user = user
         self.request = request
@@ -685,8 +685,28 @@ def unwrap(single_element_list, keys=False):
             single_element_list = single_element_list.values()
     return next(i for i in single_element_list)
 
+def event_gather_tracks(event):
+    """Helper to assemble all tracks of an event into one dict.
+
+    The tracks of an event are stored inside their respective parts. This
+    makes it some thing better, but other things (especially lookup)
+    harder. Thus we provide this helper to allow easy lookup.
+
+    :type event: {str: object}
+    :rtype: {int: {str: object}}
+    """
+    return {
+        track_id: {
+            'part_id': part_id,
+            'title': title
+        }
+        for part_id, part in event['parts'].items()
+        for track_id, title in part['tracks'].items()
+    }
+
 @enum.unique
 class AgeClasses(enum.IntEnum):
+
     """Abstraction for encapsulating properties like legal status changing with
     age.
 
@@ -800,6 +820,35 @@ class CourseFilterPositions(enum.IntEnum):
     any_choice = 5 #:
     assigned = 6 #: Being in this course either as participant or as instructor.
     anywhere = 7 #:
+
+@enum.unique
+class CourseChoiceToolActions(enum.IntEnum):
+    """Selection possibilities for the course assignment tool.
+
+    Specify the action to take.
+    """
+    assign_first_choice = 1 #:
+    assign_second_choice = 2 #:
+    assign_third_choice = 3 #:
+    assign_fixed = 4 #: the course is specified separately
+    assign_auto = 5 #: somewhat intelligent algorithm
+
+    def choice_rank(self):
+        """Return the numerical rank of the required choice.
+
+        This is an index into the respective list. If we don't operate on
+        choices, we return None instead.
+
+        :rtype: int or None
+        """
+        if self == CourseChoiceToolActions.assign_first_choice:
+            return 0
+        elif self == CourseChoiceToolActions.assign_second_choice:
+            return 1
+        elif self == CourseChoiceToolActions.assign_third_choice:
+            return 2
+        else:
+            return None
 
 @enum.unique
 class SubscriptionStates(enum.IntEnum):
@@ -1102,10 +1151,13 @@ EVENT_FIELDS = (
     "id", "title", "institution", "description", "shortname",
     "registration_start", "registration_soft_limit", "registration_hard_limit",
     "iban", "mail_text", "use_questionnaire", "notes", "offline_lock",
-    "is_archived")
+    "is_archived", "lodge_field", "reserve_field")
 
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
+
+#: Fields of a track where courses can happen
+COURSE_TRACK_FIELDS = ("id", "part_id", "title")
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",
@@ -1119,7 +1171,7 @@ COURSE_FIELDS = ("id", "event_id", "title", "description", "nr", "shortname",
                  "instructors", "max_size", "min_size", "notes", "fields")
 
 #: Fields specifying in which part a course is available
-COURSE_PART_FIELDS = ("course_id", "part_id", "is_active")
+COURSE_SEGMENT_FIELDS = ("course_id", "track_id", "is_active")
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
@@ -1128,8 +1180,12 @@ REGISTRATION_FIELDS = (
     "fields", "real_persona_id")
 
 #: Fields of a registration which are specific for each part of the event
-REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "course_id",
-                            "status", "lodgement_id", "course_instructor")
+REGISTRATION_PART_FIELDS = ("registration_id", "part_id", "status",
+                            "lodgement_id", "is_reserve")
+
+#: Fields of a registration which are specific for each course track
+REGISTRATION_TRACK_FIELDS = ("registration_id", "track_id", "course_id",
+                            "course_instructor")
 
 #: Fields of a lodgement entry (one house/room)
 LODGEMENT_FIELDS = ("id", "event_id", "moniker", "capacity", "reserve", "notes",

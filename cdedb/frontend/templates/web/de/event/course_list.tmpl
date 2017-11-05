@@ -15,7 +15,7 @@
 {% endblock %}
 {% block content %}
     {% if courses %}
-        {% for anid, entry in courses|dictsort %}
+        {% for anid, entry in courses|xdictsort('nr') %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title']|e }}</h3>
                 {% if ambience['event']['id'] in user.orga or is_admin %}
@@ -31,23 +31,24 @@
                         <span class="label label-primary">{{ entry['shortname']|e }}</span>
                     {% endif %}
                     von {{ entry['instructors']|e }}
-                    {% if ambience['event']['parts']|length > 1 %}
-                        {% set myentries = [] %}
-                        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                            {% if part_id in entry['parts'] %}
-                                {{ myentries.append(part['title'])|e }}
-                            {% endif %}
-                        {% endfor %}
+                    {% if ambience['event']['tracks']|length > 1 %}
                         – <span class="text-info">
-                        {% for partname in myentries -%}
+                        {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in entry['segments'] -%}
                             {% if not loop.first %}{% if loop.last %} und {% else %}, {% endif %}{% endif %}
-                            <i>{{ partname|e }}</i>
+                            {% if track_id not in entry['active_segments'] and
+                                    (ambience['event']['id'] in user.orga or is_admin) %}
+                                <i><s>{{ track['title']|e }}</s></i>
+                            {%- else %}
+                                <i>{{ track['title']|e }}</i>
+                            {%- endif %}
                         {%- endfor %}</span>.
                     {% endif %}
                 </p>
                 {{ entry['description']|rst }}
             </div>
         {% endfor %}
+    {% elif ambience['event']['tracks'] %}
+        <p>Es wurden noch keine Kurse angelegt.</p>
     {% else %}
         <p>Diese Veranstaltung hat keine Kurse.</p>
     {% endif %}
