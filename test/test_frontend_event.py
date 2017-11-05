@@ -789,11 +789,31 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("garcia")
     def test_stats(self, user):
+        ## first check stats
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/stats'},)
         self.assertTitle("Teilnehmer-Übersicht Große Testakademie 2222")
-        self.assertPresence("Zweite Hälfte (1)")
+        self.assertNonPresence("Inga Iota")
+        ## second create some verifiable output
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'})
+        self.assertTitle("Anmeldungen (Große Testakademie 2222)")
+        self.traverse({'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/4/show'},
+                      {'href': '/event/event/1/registration/4/change'})
+        self.assertTitle("\nAnmeldung von Inga Iota bearbeiten\n(Große Testakademie 2222)\n")
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual("1", f['track3.course_id'].value)
+        f['track3.course_id'] = 5
+        self.submit(f)
+        ## third check change
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/stats'},)
+        self.assertTitle("Teilnehmer-Übersicht Große Testakademie 2222")
+        self.assertPresence("Inga Iota")
 
     @as_users("garcia")
     def test_course_stats(self, user):
