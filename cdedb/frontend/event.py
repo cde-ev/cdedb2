@@ -547,12 +547,12 @@ class EventFrontend(AbstractUserFrontend):
         for field_id in fields:
             if field_id not in deletes:
                 tmp = request_extractor(rs, params(field_id))
-                temp = {}
-                temp['kind'] = tmp["kind_{}".format(field_id)]
-                temp['association'] = tmp["association_{}".format(field_id)]
-                temp['entries'] = tmp["entries_{}".format(field_id)]
-                temp = check(rs, "event_field", temp)
-                if temp:
+                tmp = check(rs, "event_field", tmp, extra_suffix="_{}".format(field_id))
+                if tmp:
+                    temp = {}
+                    temp['kind'] = tmp["kind_{}".format(field_id)]
+                    temp['association'] = tmp["association_{}".format(field_id)]
+                    temp['entries'] = tmp["entries_{}".format(field_id)]
                     ret[field_id] = temp
         for field_id in deletes:
             ret[field_id] = None
@@ -566,13 +566,14 @@ class EventFrontend(AbstractUserFrontend):
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
                 tmp = request_extractor(rs, params(marker))
-                temp = {}
-                temp['field_name'] = tmp["field_name_-{}".format(marker)]
-                temp['kind'] = tmp["kind_-{}".format(marker)]
-                temp['association'] = tmp["association_-{}".format(marker)]
-                temp['entries'] = tmp["entries_-{}".format(marker)]
-                temp = check(rs, "event_field", temp, creation=True)
-                if temp:
+                tmp = check(rs, "event_field", tmp, creation=True,
+                            extra_suffix="_-{}".format(marker))
+                if tmp:
+                    temp = {}
+                    temp['field_name'] = tmp["field_name_-{}".format(marker)]
+                    temp['kind'] = tmp["kind_-{}".format(marker)]
+                    temp['association'] = tmp["association_-{}".format(marker)]
+                    temp['entries'] = tmp["entries_-{}".format(marker)]
                     ret[-marker] = temp
             else:
                 break

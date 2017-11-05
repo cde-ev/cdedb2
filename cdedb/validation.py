@@ -1694,13 +1694,13 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
             val['tracks'] = newtracks
     return val, errs
 
-_EVENT_FIELD_COMMON_FIELDS = lambda: {
-    'kind': _str,
-    'association': _enum_fieldassociations,
-    'entries': _any,
+_EVENT_FIELD_COMMON_FIELDS = lambda extra_suffix: {
+    'kind{}'.format(extra_suffix): _str,
+    'association{}'.format(extra_suffix): _enum_fieldassociations,
+    'entries{}'.format(extra_suffix): _any,
 }
 @_addvalidator
-def _event_field(val, argname=None, *, creation=False, _convert=True):
+def _event_field(val, argname=None, *, creation=False, _convert=True, extra_suffix=''):
     """
     :type val: object
     :type argname: str or None
@@ -1708,6 +1708,9 @@ def _event_field(val, argname=None, *, creation=False, _convert=True):
     :type creation: bool
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
+    :type extra_suffix: str
+    :param extra_suffix: Suffix appended to all keys. This is due to the
+      necessity of the frontend to create unambiguous names.
     :rtype: (dict or None, [(str or None, exception)])
     """
     argname = argname or "event_field"
@@ -1715,23 +1718,25 @@ def _event_field(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if creation:
-        mandatory_fields = dict(_EVENT_FIELD_COMMON_FIELDS(),
-                                field_name=_restrictive_identifier)
+        spec = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
+        spec["field_name{}".format(extra_suffix)] = _restrictive_identifier
+        mandatory_fields = spec
         optional_fields = {}
     else:
         mandatory_fields = {}
-        optional_fields = _EVENT_FIELD_COMMON_FIELDS()
+        optional_fields = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    if not val.get('entries', True):
-        val['entries'] = None
-    if 'entries' in val and val['entries'] is not None:
-        if isinstance(val['entries'], str) and _convert:
-            val['entries'] = tuple(tuple(y.strip() for y in x.split(';', 1))
-                                   for x in val['entries'].split('\n'))
-        oldentries, e = _iterable(val['entries'], "entries", _convert=_convert)
+    entries_key = "entries{}".format(extra_suffix)
+    if not val.get(entries_key, True):
+        val[entries_key] = None
+    if entries_key in val and val[entries_key] is not None:
+        if isinstance(val[entries_key], str) and _convert:
+            val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
+                                   for x in val[entries_key].split('\n'))
+        oldentries, e = _iterable(val[entries_key], entries_key, _convert=_convert)
         seen_values = set()
         if e:
             errs.extend(e)
@@ -1741,20 +1746,20 @@ def _event_field(val, argname=None, *, creation=False, _convert=True):
                 try:
                     value, description = entry
                 except (ValueError, TypeError) as e:
-                    errs.append(("entries", e))
+                    errs.append((entries_key, e))
                 else:
-                    value, e = _str(value, "entries", _convert=_convert)
-                    description, ee = _str(description, "entries",
+                    value, e = _str(value, entries_key, _convert=_convert)
+                    description, ee = _str(description, entries_key,
                                            _convert=_convert)
                     if value in seen_values:
-                        e.append(("entries", ValueError(_("Duplicate value."))))
+                        e.append((entries_key, ValueError(_("Duplicate value."))))
                     if e or ee:
                         errs.extend(e)
                         errs.extend(ee)
                     else:
                         entries.append((value, description))
                         seen_values.add(value)
-            val['entries'] = entries
+            val[entries_key] = entries
     return val, errs
 
 _PAST_COURSE_COMMON_FIELDS = lambda: {
