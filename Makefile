@@ -86,6 +86,7 @@ sql:
 ifeq ($(wildcard /DBVM),/DBVM)
 	$(error Refusing to touch live instance)
 endif
+	sudo systemctl stop pgbouncer
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-users.sql
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
@@ -93,6 +94,7 @@ endif
 	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
 	sudo -u cdb psql -U cdb -d cdb -f test/ancillary_files/sample_data.sql
 	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
+	sudo systemctl start pgbouncer
 
 sql-test:
 	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
