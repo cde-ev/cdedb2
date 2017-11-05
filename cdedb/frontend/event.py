@@ -1206,8 +1206,6 @@ class EventFrontend(AbstractUserFrontend):
                 self.event_begin(rs.ambience['event']))
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         tex = self.fill_template(rs, "tex", "nametags", {
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas, 'courses': courses})
@@ -2921,12 +2919,15 @@ class EventFrontend(AbstractUserFrontend):
                     v['parts'][current_part]['status']).is_present()))}
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
                 self.event_begin(rs.ambience['event']))
         return self.render(rs, "checkin", {
-            'registrations': registrations, 'personas': personas})
+            'registrations': registrations, 'personas': personas,
+            'lodgements': lodgements})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("registration_id", "id"))

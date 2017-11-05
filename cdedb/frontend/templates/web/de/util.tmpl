@@ -407,8 +407,8 @@
     {%- endif -%}
 {% endmacro %}
 
-{% macro bootstrap_panel(title="", aclass="panel-default", icon="") %}
-    <div class="panel {{ aclass|e }}">
+{% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
+    <div class="panel {{ aclass|e }}"{% if anid %} id="{{ anid|e }}"{% endif %}>
         {% if title or icon %}
             <div class="panel-heading">
                 <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title|e }}</h3>
