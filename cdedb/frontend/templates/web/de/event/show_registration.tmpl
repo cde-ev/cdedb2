@@ -106,7 +106,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
     </dl>
 
     <div class="row">
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
+        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             <div class="col-md-6">
                 {% if ambience['event']['parts']|length > 1 %}
                     <h4>{{ part['title']|e }}</h4>

@@ -70,7 +70,7 @@
     }}\hskip 0pt\relax}
 <<% endblock %>>
 <<% block content %>>
-    <<% for part_id, part in ambience['event']['parts']|dictsort -%>>
+    <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') -%>>
         <<% for registration_id, registration in registrations|dictsort -%>>
             <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() -%>>
                 <<# jinja does not support list comprehension ... -#>>

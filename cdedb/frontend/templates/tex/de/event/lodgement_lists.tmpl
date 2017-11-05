@@ -6,7 +6,7 @@
 <<% endblock %>>
 <<% block content %>>
     <<% for lodgement_id, lodgement in lodgements|dictsort %>>
-        <<% for part_id, part in ambience['event']['parts']|dictsort %>>
+        <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %>>
             \begin{wrapfigure}{r}{3.1cm}
                 \vspace{-2\baselineskip}
                 \begin{center}

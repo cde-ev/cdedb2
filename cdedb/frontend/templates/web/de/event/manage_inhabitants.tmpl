@@ -22,7 +22,7 @@ Bewohner der Unterkunft {{ ambience['lodgement']['moniker']|e }} verwalten ({{ a
 {% block content %}
     <form action="{{ cdedblink('event/manage_inhabitants')|e }}" method="POST" id="manageinhabitantsform">
         <div class="row">
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
+            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                 <div class="col-md-6">
                     {% call util.bootstrap_panel(title=(part['title'] if ambience['event']['parts']|length > 1
                                                                       else "Eingeteilte Bewohner"),

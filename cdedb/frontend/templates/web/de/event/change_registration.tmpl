@@ -49,7 +49,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
         {{ util.form_input_text(name="reg.checkin", label="Eingecheckt am", type="datetime-local",
                                 placeholder="YYYY-MM-DDThh:ii") }}
 
-        {% for part_id, part in ambience['event']['parts']|dictsort %}
+        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title']|e }}</h4>
             {% endif %}

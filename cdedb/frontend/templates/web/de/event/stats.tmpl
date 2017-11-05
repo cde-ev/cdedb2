@@ -39,7 +39,7 @@
             <thead>
                 <tr>
                     <th colspan="2"></th>
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
+                    {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         <th>
                             {% if ambience['event']['parts']|length > 1 %}{{ part['title']|e }}{% else %}Anzahl{% endif %}
                         </th>
@@ -118,7 +118,7 @@
         {% for key, heading in (  ) %} {# Add titles for filtered lists of participants by event part here #}
             <div class="col-md-6">
                 <h3>{{ heading|e }}</h3>
-                {% for part_id, part in ambience['event']['parts']|dictsort %}
+                {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                     <h4>{{ part['title']|e }} ({{ per_part_listings[key][part_id]|length|e }})</h4>
                     {% if 3*(per_part_listings[key][part_id]|length) < registrations|length %}
                         <ul>

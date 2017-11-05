@@ -81,7 +81,7 @@
         {% if ambience['event']['parts']|length > 1 %}
             {# jinja does not support list comprehension ... #}
             {% set myentries = [] %}
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
+            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                 {{ myentries.append((part_id, part['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}

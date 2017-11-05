@@ -103,7 +103,7 @@
     <form action="{{ cdedblink('event/part_summary')|e }}" method="POST" id="partsummaryform" class="form-horizontal">
         <div id="drow-container">
             {# Old items, already stored in the database #}
-            {% for part_id, part in ambience['event']['parts']|dictsort %}
+            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                 {{ print_part(part_id, part_id not in referenced_parts, tracks=part['tracks'], aclass='drow-row') }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}

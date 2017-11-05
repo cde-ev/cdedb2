@@ -33,7 +33,7 @@
             </tr>
             <tr>
                 {% if ambience['event']['parts']|length > 1 %}
-                    {% for part_id, part in ambience['event']['parts']|dictsort %}
+                    {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         <th class="text-right{% if loop.first %} b-left{% endif %}">
                             {{ part['title']|e }}
                         </th>
@@ -50,7 +50,7 @@
                     <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
                                      lodgement['moniker']) }}</td>
                     {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
-                    {% for part_id in ambience['event']['parts']|sort %}
+                    {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         <td class="text-right {% if loop.first %} b-left{% endif %}
                                    {{ colors[problems[(lodgement_id, part_id)][0]] }}"
                             title="{{ problems[(lodgement_id, part_id)][1]|e }}">
