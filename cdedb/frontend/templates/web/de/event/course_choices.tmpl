@@ -76,7 +76,6 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                     (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
                                     (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
                 {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim input-sm") }}<br />
-                {# TODO Link to query page with matching query (if possible) #}
                 mit einer der folgenden Teilnehmer-IDs:
                 {{ util.input_text(name='ids', aclass="form-control input-slim input-sm") }}
             </p>

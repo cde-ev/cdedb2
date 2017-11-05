@@ -27,6 +27,11 @@
         ' orgas': "Orgas",
         'waitlist': "Warteliste",
         'guest': "Gast",
+        'total involved': "Aktive Anmeldungen gesamt",
+        ' not payed': "Nicht bezahlt",
+        ' payed': "Bezahlt",
+        ' no parental agreement': "Einverständniserklärung fehlt",
+        'no lodgement': "Keine Unterkunft",
         'cancelled': "Abgemeldet",
         'rejected': "Abgelehnt"
     } %}
@@ -51,7 +56,14 @@
                             <th colspan="2">{{ HEADINGS.get(key, key)|e }}</th>
                         {% endif %}
                         {% for part_id, datum in row|dictsort %}
-                            <td>{{ datum|e }}</td>
+                            <td>
+                                {% set query = get_query(key, part_id) %}
+                                {% if query %}
+                                    {{ util.href(cdedblink('event/registration_query', query|querytoparams), datum) }}
+                                {% else %}
+                                    {{ datum|e }}
+                                {% endif %}
+                            </td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
@@ -61,6 +73,7 @@
     {% if ambience['event']['tracks'] %}
         <h3>Kursteilnehmer-Statistik</h3>
         {% with HEADINGS = {
+            'all instructors': "Kursleiter (theoretisch)",
             'instructors': "Kursleiter",
             'attendees': "Kursteilnehmer",
             'first choice': "Erstwahl zugeteilt",
@@ -82,9 +95,16 @@
                     {% for key, row in per_track_statistics.items() %}
                         <tr>
                             <th>{{ HEADINGS.get(key, key)|e }}</th>
-                            {% for track_id, datum in row|dictsort %}
-                                <td>{{ datum|e }}</td>
-                            {% endfor %}
+                                {% for track_id, datum in row|dictsort %}
+                                <td>
+                                    {% set query = get_query(key, track_id) %}
+                                    {% if query %}
+                                        {{ util.href(cdedblink('event/registration_query', query|querytoparams), datum) }}
+                                    {% else %}
+                                        {{ datum|e }}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
                         </tr>
                     {% endfor %}
                 <tbody>
@@ -95,11 +115,7 @@
     <hr />
 
     <div class="row">
-        {% for key, heading in (
-            ('not payed', "Unbezahlte Anmeldungen"),
-            ('pending', "Offene Anmeldungen"),
-            ('no parental agreement', "Einverständniserklärung fehlt"),
-            ('no lodgement', "Ohne Unterkunft"),) %}
+        {% for key, heading in (  ) %} {# Add titles for filtered lists of participants by event part here #}
             <div class="col-md-6">
                 <h3>{{ heading|e }}</h3>
                 {% for part_id, part in ambience['event']['parts']|dictsort %}
@@ -117,14 +133,13 @@
                             {% endfor %}
                         </ul>
                     {% else %}
-                        Mindestens ein Drittel -- wir sparen uns die Liste.
+                        <p class="text-muted">Mindestens ein Drittel.</p>
                     {% endif %}
                 {% endfor %}
             </div>
         {% endfor %}
         {% if ambience['event']['tracks'] %}
             {% for key, heading in (
-                ('no course', "Ohne Kurs"),
                 ('wrong choice', "Ungewählter Kurs zugeteilt"),) %}
 
                 <div class="col-md-6">
@@ -144,7 +159,7 @@
                                 {% endfor %}
                             </ul>
                         {% else %}
-                            Mindestens ein Drittel -- wir sparen uns die Liste.
+                            <p class="text-muted">Mindestens ein Drittel.</p>
                         {% endif %}
                     {% endfor %}
                 </div>

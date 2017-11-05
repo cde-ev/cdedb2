@@ -416,7 +416,11 @@ def querytoparams_filter(val):
         params['qsel_{}'.format(field)] = True
     for field, op, value in val.constraints:
         params['qop_{}'.format(field)] = op.value
-        params['qval_{}'.format(field)] = value
+        if isinstance(value, collections.Iterable):
+            # TODO: Get separator from central place (also used in validation._query_input)
+            params['qval_{}'.format(field)] = ','.join(str(x) for x in value)
+        else:
+            params['qval_{}'.format(field)] = value
     for entry, postfix in zip(val.order,
                               ("primary", "secondary", "tertiary")):
         field, ascending = entry
