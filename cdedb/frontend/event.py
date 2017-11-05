@@ -17,7 +17,7 @@ import werkzeug
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, registration_is_open, csv_output,
     check_validation as check, event_guard, query_result_to_json,
-    REQUESTfile, request_extractor, cdedbid_filter)
+    REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -1794,7 +1794,10 @@ class EventFrontend(AbstractUserFrontend):
         """Render form for changing multiple registrations."""
         # Get information about registrations, courses and lodgements
         registrations = self.eventproxy.get_registrations(rs, reg_ids)
-        # TODO add error and show registration_query if 0 registrations found
+        if not registrations:
+            rs.notify("error", _("No participants found to edit."))
+            return self.redirect(rs, 'event/registration_query')
+
         personas = self.coreproxy.get_event_users(
             rs, (r['persona_id'] for r in registrations.values()))
         for reg_id, reg in registrations.items():
@@ -1866,8 +1869,17 @@ class EventFrontend(AbstractUserFrontend):
             registration['id'] = reg_id
             code *= self.eventproxy.set_registration(rs, registration)
         self.notify_return_code(rs, code)
-        # TODO redirect to query filtered by reg_ids
-        return self.redirect(rs, "event/registration_query")
+
+        # redirect to query filtered by reg_ids
+        query = Query(
+            "qview_registration",
+            self.make_registration_query_spec(rs.ambience['event']),
+            ("reg.id", "persona.given_names", "persona.family_name",
+             "persona.username"),
+            (("reg.id", QueryOperators.oneof, reg_ids),),
+            (("persona.family_name", True), ("persona.given_names", True),)
+        )
+        return self.redirect(rs, "event/registration_query", querytoparams_filter(query))
 
     @staticmethod
     def calculate_groups(entity_ids, event, registrations, key,
