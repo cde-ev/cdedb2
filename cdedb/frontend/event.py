@@ -2949,7 +2949,7 @@ class EventFrontend(AbstractUserFrontend):
         }
         code = self.eventproxy.set_registration(rs, new_reg)
         self.notify_return_code(rs, code)
-        return self.checkin_form(rs, event_id)
+        return self.redirect(rs, 'event/checkin')
 
     @access("event")
     @REQUESTdata(("field_id", "id_or_None"),
