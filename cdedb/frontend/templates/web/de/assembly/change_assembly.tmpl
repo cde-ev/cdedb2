@@ -25,6 +25,14 @@
                                 type="datetime-local") }}
         {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
                                     info="Unterstützt reStructuredText") }}
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-8">
+                <div class="form-control-static text-info">
+                    {{ util.make_icon('info-sign') }} Achtung: Die Änderungen sind sofort für alle CdE-Mitglieder
+                    und Versammlungsteilnehmer sichtbar.
+                </div>
+            </div>
+        </div>
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("assembly/show_assembly")) }}
     </form>
     <script type="text/javascript">
