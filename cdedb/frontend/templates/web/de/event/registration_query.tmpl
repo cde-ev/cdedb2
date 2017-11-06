@@ -66,8 +66,7 @@
 
     {% if values['is_search'] %}
         <h3>Ergebnis [{{ result|length|e }}]</h3>
-        <form action="{{ cdedblink('event/registration_action', query|querytoparams)|e }}" method="POST"
-         id="actionform">
+        <form action="" method="POST" id="actionform">
             {{ titles.update({
                 "reg.id": "ID",
                 "reg.notes": "Anmerkungen",
@@ -101,6 +100,9 @@
                     <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
                         {{ util.make_icon('edit') }} Feld setzen
                     </button>
+                    <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
+                        {{ util.make_icon('pencil') }} Bearbeiten
+                    </button>
                     <script type="text/javascript">
                         $('#btn-course-choices').click(function(){
                             var list = [];
@@ -110,8 +112,8 @@
                             if (list.length == 0)
                                 return;
                             location.href =
-                                "{{ cdedblink('event/course_choices_form', {'ids': 12345}) }}"
-                                    .replace('12345', list.join(','));
+                                "{{ cdedblink('event/course_choices_form', magic_placeholders=['ids']) }}"
+                                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
                         });
                         $('#btn-set-field').click(function(){
                             var list = [];
@@ -121,76 +123,29 @@
                             if (list.length == 0)
                                 return;
                             location.href =
-                                "{{ cdedblink('event/field_set_select', {'reg_ids': 12345}) }}"
-                                    .replace('12345', list.join(','));
+                                "{{ cdedblink('event/field_set_select', magic_placeholders=['reg_ids']) }}"
+                                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                        });
+                        $('#btn-edit').click(function(){
+                            var list = [];
+                            $('#query-result').find('.ls-selected').each(function(){
+                                list.push($(this).attr('data-id'));
+                            });
+                            if (list.length == 0)
+                                return;
+                            if (list.length == 1)
+                                location.href =
+                                    "{{ cdedblink('event/change_registration', magic_placeholders=['registration_id']) }}"
+                                        .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                            else
+                                location.href =
+                                    "{{ cdedblink('event/change_registrations', magic_placeholders=['reg_ids']) }}"
+                                        .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
                         });
                     </script>
                 </div>
                 {{ generic.display_query_result(result, query, titles, choices) }}
 
-            <div>
-                Ausgewählte Anmeldungen modifizieren
-                    <script type="text/javascript">
-                        function update_action_choices(choices, spec, selected) {
-                            var previous = $("#value_input").val();
-                            $("#value_input").remove();
-                            if (selected in choices && !$.isEmptyObject(choices[selected])) {
-                                $("#value_span").append($("<select>", {"name": "value", "id": "value_input"}));
-                                $("#value_input").append($("<option>", {"value": ""}));
-                                for (var key in choices[selected]) {
-                                    if (choices[selected].hasOwnProperty(key)) {
-                                        $("#value_input").append($("<option>", {
-                                            "value": key, "html": choices[selected][key],
-                                            "selected": (key == previous)}));
-                                    }
-                                }
-                            } else if (spec[selected] == "bool") {
-                                $("#value_span").append($("<select>", {"name": "value", "id": "value_input"}));
-                                $("#value_input").append($("<option>", {"value": ""}));
-                                var bool_choices = {"True": "wahr", "False": "falsch"};
-                                for (var key in bool_choices) {
-                                    $("#value_input").append($("<option>", {"value": key, "html": bool_choices[key],
-                                                                            "selected": (key == previous)}));
-                                }
-                            } else {
-                                $("#value_span").append($("<input>", {"name": "value", "id": "value_input",
-                                                                      "type": "text", "value": previous}));
-                            }
-                        }
-                        $(document).ready(function(){
-                            $("#column_selector").change(function (){
-                                update_action_choices({{ choices|json }}, {{ spec|json }}, $(this).val()) });
-                            $("#column_selector").trigger('change');
-                        });
-                    </script>
-                    {# some fields are not sensibly modifyable #}
-                    {% with BLACKLIST = (
-                        "reg.id", "reg.notes", "reg.orga_notes", "membership.is_member", "persona.username",
-                        "persona.family_name", "persona.given_names", "persona.display_name", "persona.title",
-                        "persona.name_supplement", "persona.gender", "persona.birthday", "persona.telephone",
-                        "persona.mobile", "persona.address", "persona.address_supplement", "persona.postal_code",
-                        "persona.location", "persona.country") %}
-
-                        {# jinja does not support list comprehension ... #}
-                        {% set myentries = [] %}
-                        {% for field in spec %}
-                            {% if field not in BLACKLIST and ',' not in field %}
-                                {{ myentries.append((field, titles[field]))|e }}
-                            {% endif %}
-                        {% endfor %}
-                        {{ util.form_input_select(name="column", label="", entries=myentries, anid="column_selector",
-                                             readonly=is_locked) }}
-                    {% endwith %}
-                    <span id="value_span">
-                        {{ util.form_input_text(name="value", anid="value_input", readonly=is_locked) }}
-                    </span>
-                    {{ util.input_hidden(name="num_rows", value=result|length) }}
-                    {% if "reg.id" in query.fields_of_interest %}
-                        {{ util.form_input_submit(value="Ändern", anid="value_input", readonly=is_locked) }}
-                    {% else %}
-                        Für Änderungsoperation muss die Spalte ID ausgewählt sein.
-                    {% endif %}
-            </div>
         </form>
     {% endif %}
 {% endblock %}

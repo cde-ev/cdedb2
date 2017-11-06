@@ -259,7 +259,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
     <script type="text/javascript">
         $('.event_course_id').dblclick(function() {
             location.href =
-                "{{ cdedblink('event/show_course', {'course_id': 12345}) }}".replace('12345', $(this).attr('data-id'));
+                "{{ cdedblink('event/show_course', magic_placeholders=['course_id']) }}"
+                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', $(this).attr('data-id'));
         });
     </script>
 {% endblock %}

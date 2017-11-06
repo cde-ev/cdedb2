@@ -275,7 +275,9 @@
             {% if aclass %} class="{{ aclass|e }}" {% endif %}{% if readonly %}disabled="disabled"{% endif %}
             {{ attributes }}>
         {% if nulloption %}
-             <option value=""> </option>
+             <option value=""
+                     {% if values.get(name, defaultvalue) == None %} selected="selected" {% endif %}>
+             </option>
         {% endif %}
         {% for value, label in entries %}
             <option value="{{ value|e }}"
