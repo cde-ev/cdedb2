@@ -2090,6 +2090,9 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_registrations_form(self, rs, event_id, reg_ids):
         """Render form for changing multiple registrations."""
+        if rs.errors:
+            return self.registration_query(rs, event_id, download=None,
+                                           is_search=False)
         # Get information about registrations, courses and lodgements
         tracks = event_gather_tracks(rs.ambience['event'])
         registrations = self.eventproxy.get_registrations(rs, reg_ids)
