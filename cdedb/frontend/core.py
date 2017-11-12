@@ -1110,7 +1110,8 @@ class CoreFrontend(AbstractFrontend):
         rs.values['new_username'] = self.encode_parameter(
             "core/do_username_change", "new_username", new_username,
             timeout=self.conf.EMAIL_PARAMETER_TIMEOUT)
-        return self.render(rs, "do_username_change")
+        return self.render(rs, "do_username_change", {
+            'raw_email': new_username})
 
     @access("persona", modi={"POST"})
     @REQUESTdata(('new_username', '#email'), ('password', 'str'))
