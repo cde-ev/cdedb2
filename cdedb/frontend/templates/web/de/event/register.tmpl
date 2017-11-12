@@ -36,36 +36,20 @@
 
             <dt>Geburtstag</dt>
             <dd>{{ persona['birthday']|e }}</dd>
-
-
             <dt>Geschlecht</dt>
             <dd>{{ persona['gender']|gender|e }}</dd>
-
-
             <dt>E-Mail</dt>
             <dd> {{ persona['username']|e }} </dd>
-
-
             <dt>Telefon</dt>
             <dd>{{ persona['telephone']|e }}</dd>
-
-
             <dt>Mobiltelefon</dt>
             <dd>{{ persona['mobile']|e }}</dd>
-
-
             <dt>Straße</dt>
             <dd>{{ persona['address']|e }}</dd>
-
-
             <dt>Adresszusatz</dt>
             <dd>{{ persona['address_supplement']|e }}</dd>
-
-
             <dt>Stadt</dt>
             <dd>{{ persona['postal_code']|e }} {{ persona['location']|e }}</dd>
-
-
             <dt>Land</dt>
             <dd>{{ persona['country']|e }}</dd>
         </dl>
@@ -89,10 +73,10 @@
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
-        {# TODO: Hide course choice fields for parts not registered #}
         {% for track_id, course_list in course_choices|dictsort %}
             {% if course_list %}
-                <div id="course_choice_container-{{ track_id }}">
+                <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
+                     data-part="{{ ambience['event']['tracks'][track_id]['part_id'] }}">
                     <h4>
                         Kurswahl
                         {% if course_choices|length > 1 %}
@@ -150,22 +134,25 @@
     </form>
     <script type="text/javascript">
         var form = $('#registerform');
-        var checkboxes = form.find('[type="checkbox",name="parts"]');
+        var checkboxes = form.find('[type="checkbox"][name="parts"]');
+        /* Map part to part selection checkbox ($-encapsulated) */
+        checkbox_map = {};
+        checkboxes.each(function(){
+            checkbox_map[$(this).val()] = $(this);
+        });
+        var containers = $('.course_choice_container');
         var updateCourseChoiceContainers = function() {
-            checkboxes.each(function(){
-               var tracks = {{ part_track_association|e }}[$(this).val()];
-               var length = tracks.length;
-               for (var i = 0; i < length; i++) {
-                   var container = $('#course_choice_container-' + tracks[i]);
-                   if (this.checked)
-                       container.show();
-                   else
-                       container.hide();
-               }
+            containers.each(function(){
+               if (checkbox_map[$(this).attr('data-part')].prop('checked'))
+                   $(this).show();
+               else
+                   $(this).hide();
             });
         };
 
-        checkboxes.change(updateCourseChoiceContainers);
-        updateCourseChoiceContainers();
+        if (checkboxes.length) {
+            checkboxes.change(updateCourseChoiceContainers);
+            updateCourseChoiceContainers();
+        }
     </script>
 {% endblock %}

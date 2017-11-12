@@ -1424,16 +1424,12 @@ class EventFrontend(AbstractUserFrontend):
                        in sorted(courses.items(), key=lambda x: x[1]['nr'])
                        if track_id in course['active_segments']]
             for track_id in tracks}
-        part_track_association = {
-            part_id: list(part['tracks'].keys())
-            for part_id, part in rs.ambience['event']['parts'].items()}
         ## by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', rs.ambience['event']['parts'])
         return self.render(rs, "register", {
             'persona': persona, 'age': age, 'courses': courses,
-            'course_choices': course_choices,
-            'part_track_association': part_track_association})
+            'course_choices': course_choices})
 
     @staticmethod
     def process_registration_input(rs, event, courses, parts=None):
