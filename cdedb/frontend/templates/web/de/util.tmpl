@@ -1,14 +1,6 @@
 {# This template provides a set of standard macros which should be used to
    create html-elements. #}
 
-{% macro jquery_with_ui_preamble() %}
-    <script type="text/javascript">
-        cdedb_javascript = true;
-    </script>
-    <script type="text/javascript" src="{{ staticurl("jquery-ui/jquery-ui.js")|e }}"></script>
-    <link rel="stylesheet" type="text/css" href="{{ staticurl("jquery-ui/jquery-ui.css")|e }}">
-{% endmacro %}
-
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
     {% if not script in script_files %}
