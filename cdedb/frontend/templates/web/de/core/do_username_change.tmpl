@@ -3,15 +3,14 @@
 {% block title %}E-Mail-Adresse ändern{% endblock %}
 {% block content %}
     Gibt Dein Passwort ein und klicke den Bestätigungsknopf um Deine
-    E-Mail-Adresse in {{ raw_email|e }} zu ändern. Nachdem Du die
+    E-Mail-Adresse in <code>{{ raw_email|e }}</code> zu ändern. Nachdem Du die
     Änderung durchgeführt hast musst Du bei der Anmeldung Deine neue
     E-Mail-Adresse angeben.
 
-    <form action="{{ cdedblink('core/do_username_change')|e }}" method="POST" id="usernamechangeform">
-        <div>
-            {{ util.input_hidden(name="new_username") }}
-            {{ util.form_input_text(name="password", type="password") }}
-            {{ util.form_input_submit(value="E-Mail-Adresse ändern") }}
-        </div>
+    <form action="{{ cdedblink('core/do_username_change')|e }}" method="POST" id="usernamechangeform"
+          class="form-horizontal">
+        {{ util.input_hidden(name="new_username") }}
+        {{ util.form_input_text(name="password", type="password", label="Passwort") }}
+        {{ util.form_input_submit(value="E-Mail-Adresse ändern") }}
     </form>
 {% endblock %}
