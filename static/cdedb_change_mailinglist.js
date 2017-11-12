@@ -25,7 +25,7 @@
             };
 
             // Change visibility of event/assembly/gateway select boxes and clear boxes
-            for (var i = 0; i < visible.length; i++) {
+            for (var i in visible) {
                 if (visible[i]) {
                     fields[i].closest('.form-group').show();
                 } else {
@@ -45,7 +45,7 @@
         }
 
         // Add event handler and call function once on document load
-        for (var i = 0; i < fields.length; i++) {
+        for (var i in fields) {
             fields[i].change(update_view);
         }
         update_view();
