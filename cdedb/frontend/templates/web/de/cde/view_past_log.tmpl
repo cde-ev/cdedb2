@@ -23,7 +23,7 @@ Log: Abgeschlossene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['s
         <tbody>
             {% for entry in log %}
                 <tr>
-                    <td>{{ entry['ctime']|datetime|e }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
                     <td>{{ gettext(enums['PastEventLogCodes'](entry['code'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}

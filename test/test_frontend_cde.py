@@ -47,7 +47,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Bertålotta Beispiel")
-        self.assertPresence("1933-04-03")
+        self.assertPresence("03.04.1933")
         self.assertPresence("Jabberwocky for the win.")
 
     @as_users("anton")

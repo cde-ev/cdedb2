@@ -41,7 +41,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         <dd>{{ util.deko_checkbox(checked=(persona['is_member'])) }}</dd>
         <dt>Geburtstag</dt>
         <dd>
-            {{ persona['birthday']|date|e }} (<em>{{ gettext(age|string)|e }}</em>)
+            {{ persona['birthday']|date(lang=lang)|e }} (<em>{{ gettext(age|string)|e }}</em>)
         </dd>
         <dt>Geschlecht</dt>
         <dd>{{ persona['gender']|gender|e }}</dd>
@@ -80,7 +80,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         <dt>Teilnehmerbeitrag</dt>
         <dd>
             {% if ambience['registration']['payment'] %}
-                bezahlt am {{ ambience['registration']['payment'] |date|e }}
+                bezahlt am {{ ambience['registration']['payment'] |date(lang=lang)|e }}
             {% else %}
                 <em>ausstehend</em>
             {% endif %}
@@ -98,7 +98,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         <dt>Eingecheckt</dt>
         <dd>
             {% if ambience['registration']['checkin'] %}
-                eingecheckt am {{ ambience['registration']['checkin'] |date|e }}
+                eingecheckt am {{ ambience['registration']['checkin'] |date(lang=lang)|e }}
             {% else %}
                 —
             {% endif %}
@@ -219,9 +219,11 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                                 {{ util.deko_checkbox(
                                     checked=ambience['registration']['fields'].get(field['field_name'])) }}
                             {% elif field['kind'] == "date" %}
-                                {{ ambience['registration']['fields'].get(field['field_name'])|date(passthrough=True)|e }}
+                                {{ ambience['registration']['fields'].get(field['field_name'])
+                                   |date(lang=lang, passthrough=True)|e }}
                             {% elif field['kind'] == "datetime" %}
-                                {{ ambience['registration']['fields'].get(field['field_name'])|datetime(passthrough=True)|e }}
+                                {{ ambience['registration']['fields'].get(field['field_name'])
+                                   |datetime(lang=lang, passthrough=True)|e }}
                             {% else %}
                                 {{ ambience['registration']['fields'].get(field['field_name'])|e|linebreaks }}
                             {% endif %}

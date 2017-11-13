@@ -49,9 +49,11 @@
                                     {{ util.deko_checkbox(
                                         checked=ambience['course']['fields'].get(field['field_name'])) }}
                                 {% elif field['kind'] == "date" %}
-                                    {{ ambience['course']['fields'].get(field['field_name'])|date(passthrough=True)|e }}
+                                    {{ ambience['course']['fields'].get(field['field_name'])
+                                       |date(lang=lang, passthrough=True)|e }}
                                 {% elif field['kind'] == "datetime" %}
-                                    {{ ambience['course']['fields'].get(field['field_name'])|datetime(passthrough=True)|e }}
+                                    {{ ambience['course']['fields'].get(field['field_name'])
+                                       |datetime(lang=lang, passthrough=True)|e }}
                                 {% else %}
                                     {{ ambience['course']['fields'].get(field['field_name'])|e|linebreaks }}
                                 {% endif %}

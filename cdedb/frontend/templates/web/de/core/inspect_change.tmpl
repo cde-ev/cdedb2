@@ -52,7 +52,7 @@
         {{ show_diff('display_name', "Rufname") }}
         {{ show_diff('birth_name', "Geburtsname") }}
         {% call(next) show_diff('birthday', "Geburtstag", True) %}
-            {% if next %}{{ pending['birthday']|date|e }}{% else %}{{ current['birthday']|date|e }}{% endif %}
+            {% if next %}{{ pending['birthday']|date|e }}{% else %}{{ current['birthday']|date(lang=lang)|e }}{% endif %}
         {% endcall %}
         {% call(next) show_diff('gender', "Geschlecht", True) %}
             {% if next %}{{ pending['gender']|gender|e }}{% else %}{{ current['gender']|gender|e }}{% endif %}

@@ -38,7 +38,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
         {{ util.form_input_text(name="reg.real_persona_id", label="Online CdEDB-ID",
                                 info="Nur für Offline-Anmeldungen") }}
         {# TODO: Hide if not in offline mode #}
-        {{ util.form_input_static(label="Geburtstag", value=persona['birthday']|date|e) }}
+        {{ util.form_input_static(label="Geburtstag", value=persona['birthday']|date(lang=lang)|e) }}
         {{ util.form_input_static(label="Geschlecht", value=persona['gender']|gender|e) }}
         {{ util.form_input_textarea(name="reg.orga_notes", label="Orga-Notizen", rows="5") }}
 

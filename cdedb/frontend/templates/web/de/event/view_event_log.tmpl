@@ -29,7 +29,7 @@ Log: {{ ambience['event']['title']|e }} [{{ values['start']|int|e }}–{{ (value
         <tbody>
         {% for entry in log %}
             <tr>
-                <td>{{ entry['ctime']|datetime|e }}</td>
+                <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
                 <td>{{ gettext(enums['EventLogCodes'](entry['code'])|string)|e }}</td>
                 <td>
                     {% if entry['submitted_by'] %}

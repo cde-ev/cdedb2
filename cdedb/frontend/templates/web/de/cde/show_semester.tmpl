@@ -52,7 +52,7 @@
                 </div>
                 <div class="panel-body">
                     {% if period['billing_done'] %}
-                        <span class="text-success">Erledigt am {{ period['billing_done']|datetime }}.</span>
+                        <span class="text-success">Erledigt am {{ period['billing_done']|datetime(lang=lang)|e }}.</span>
                     {% else %}
                         {% if period['billing_state'] %}
                             Bereits bis ID {{ period['billing_state']|cdedbid }} abgearbeitet.
@@ -79,7 +79,7 @@
                 </div>
                 <div class="panel-body">
                     {% if period['ejection_done'] %}
-                        <span class="text-success">Erledigt am {{ period['ejection_done']|datetime }}.</span>
+                        <span class="text-success">Erledigt am {{ period['ejection_done']|datetime(lang=lang)|e }}.</span>
                     {% elif period['billing_done'] %}
                         {% if period['ejection_state'] %}
                             <p>
@@ -108,7 +108,7 @@
                 </div>
                 <div class="panel-body">
                     {% if period['balance_done'] %}
-                        <span class="text-success">Erledigt am {{ period['balance_done']|datetime }}.</span>
+                        <span class="text-success">Erledigt am {{ period['balance_done']|datetime(lang=lang)|e }}.</span>
                     {% elif period['ejection_done'] %}
                         {% if period['balance_state'] %}
                             <p>
@@ -163,7 +163,9 @@
                 </div>
                 <div class="panel-body">
                     {% if expuls['addresscheck_done'] %}
-                        <span class="text-success">Erledigt am {{ expuls['addresscheck_done']|datetime }}.</span>
+                        <span class="text-success">
+                            Erledigt am {{ expuls['addresscheck_done']|datetime(lang=lang)|e }}.
+                        </span>
                     {% else %}
                         {% if expuls['addresscheck_state'] %}
                             Bereits bis ID {{ expuls['addresscheck_state']|cdedbid }} abgearbeitet.

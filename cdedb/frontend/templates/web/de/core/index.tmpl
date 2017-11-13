@@ -146,7 +146,7 @@
                                 {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
                                              icon='blackboard') }}
                                 <br />
-                                {{ event['start']|date(lang=lang) }}–{{ event['end']|date(lang=lang) }}
+                                {{ event['start']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
                                 <br />
                                 {% if event['registration'] %}
                                     (bereits

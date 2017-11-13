@@ -24,7 +24,7 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
         <tbody>
             {% for entry in log %}
                 <tr>
-                    <td>{{ entry['ctime']|datetime|e }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
                     <td>{{ gettext(enums['MemberChangeStati'](entry['change_status'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}

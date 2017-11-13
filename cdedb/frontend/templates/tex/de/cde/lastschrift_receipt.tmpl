@@ -67,7 +67,7 @@
             <<< "{:.2f}".format(ambience['transaction']['amount'])|te >>>\,€
                 & <<< ambience['transaction']['amount_words'][0]|te >>> Euro
                   <<< ambience['transaction']['amount_words'][1]|te >>> Cent
-                & <<< ambience['transaction']['processed_at']|date|te >>>
+                & <<< ambience['transaction']['processed_at']|date(lang=lang)|te >>>
         \end{tabular}
         \par\bigskip
         Es handelt sich nicht um den Verzicht auf Erstattung von Aufwendungen.
@@ -86,7 +86,7 @@
 
         \vspace{15mm}\par
         \begin{tabular}{@{}lc}
-            <<< meta_info['Finanzvorstand_Ort']|te >>>,  den <<< now()|date|te >>> & \makebox[7cm]{\dotfill} \\
+            <<< meta_info['Finanzvorstand_Ort']|te >>>,  den <<< now()|date(lang=lang)|te >>> & \makebox[7cm]{\dotfill} \\
             & {\small <<< meta_info['Finanzvorstand_Name']|te >>>, Vorstand}
         \end{tabular}
         \par\vfill

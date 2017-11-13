@@ -96,7 +96,7 @@
             {% endif %}
             {% if data['birthday'] %}
                 <dt>Geburtstag</dt>
-                <dd>{{ data['birthday']|date|e }}</dd>
+                <dd>{{ data['birthday']|date(lang=lang)|e }}</dd>
             {% endif %}
             {% if data['gender'] %}
                 <dt>Geschlecht</dt>

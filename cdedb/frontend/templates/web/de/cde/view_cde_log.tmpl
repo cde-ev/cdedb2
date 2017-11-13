@@ -21,7 +21,7 @@
         <tbody>
             {% for entry in log %}
                 <tr>
-                    <td>{{ entry['ctime']|datetime|e }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
                     <td>{{ gettext(enums['CdeLogCodes'](entry['code'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}

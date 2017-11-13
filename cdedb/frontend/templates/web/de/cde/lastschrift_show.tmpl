@@ -86,7 +86,7 @@
 		<dd>{{ lastschrift['account_address']|e|linebreaks }}</dd>
 
 		<dt>Erteilt</dt>
-		<dd>{{ lastschrift['granted_at']|datetime|e }}</dd>
+		<dd>{{ lastschrift['granted_at']|datetime(lang=lang)|e }}</dd>
             </dl>
         {% endwith %}
     {% else %}
@@ -111,8 +111,8 @@
 	    <tbody>
             {% for transaction_id, transaction in transactions|xdictsort('issued_at')|reverse %}
                 <tr>
-                    <td>{{ transaction['issued_at']|datetime|e }}</td>
-                    <td>{{ transaction['processed_at']|datetime|e }}</td>
+                    <td>{{ transaction['issued_at']|datetime(lang=lang)|e }}</td>
+                    <td>{{ transaction['processed_at']|datetime(lang=lang)|e }}</td>
                     <td>{{ transaction['period_id']|e }}</td>
                     <td>{{ transaction['status']|enum(enums['LastschriftTransactionStati'])|e }}</td>
                     <td>{{ transaction['amount']|e }}€</td>

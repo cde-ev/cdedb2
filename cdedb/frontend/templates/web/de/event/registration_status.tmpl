@@ -82,7 +82,7 @@
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), "Ändern", aclass="btn btn-sm btn-warning",
                          icon='pencil') }}
-            &ensp; Änderungen sind bis zum Anmeldeschluss ({{ ambience['event']['registration_soft_limit']|date|e }})
+            &ensp; Änderungen sind bis zum Anmeldeschluss ({{ ambience['event']['registration_soft_limit']|date(lang=lang)|e }})
             möglich.
         </p>
     {% endif %}

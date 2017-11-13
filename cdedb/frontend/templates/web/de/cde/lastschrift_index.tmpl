@@ -86,7 +86,7 @@
                         ({{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': transaction['lastschrift_id']}),
                                     "Ermächtigung", icon="euro") }})
                         </td>
-                        <td>{{ transaction['issued_at']|datetime|e }}</td>
+                        <td>{{ transaction['issued_at']|datetime(lang=lang)|e }}</td>
                         <td>{{ transaction['amount']|e }}€</td>
                    </tr>
                 {% endfor %}

@@ -42,7 +42,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Emilia E. Eventis")
-        self.assertPresence("1933-04-03")
+        self.assertPresence("03.04.1933")
 
     @as_users("anton")
     def test_toggleactivity(self, user):

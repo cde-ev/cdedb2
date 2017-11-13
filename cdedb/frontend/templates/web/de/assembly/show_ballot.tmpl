@@ -40,17 +40,18 @@
     <dl class="dl-horizontal">
         <dt>Abstimmungszeitraum</dt>
         <dd>
-            {{ ambience['ballot']['vote_begin']|datetime|e }} bis {{ ambience['ballot']['vote_end']|datetime|e }}
+            {{ ambience['ballot']['vote_begin']|datetime(lang=lang)|e }}
+            bis {{ ambience['ballot']['vote_end']|datetime(lang=lang)|e }}
             {% if ambience['ballot']['extended'] is none %}
                 {% if ambience['ballot']['quorum'] %}
                     <br />
-                    Verlängerung bis {{ ambience['ballot']['vote_extension_end']|datetime|e }} falls Quorum =
+                    Verlängerung bis {{ ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e }} falls Quorum =
                     {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht werden.
                 {% endif %}
             {% else %}
                 {% if ambience['ballot']['extended'] %}
                     <br />
-                    Wurde bis {{ ambience['ballot']['vote_extension_end']|datetime|e }} verlängert, da
+                    Wurde bis {{ ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e }} verlängert, da
                     {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht wurden.
                 {% elif ambience['ballot']['quorum'] %}
                     <br />

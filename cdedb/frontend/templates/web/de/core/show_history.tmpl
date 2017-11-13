@@ -116,7 +116,7 @@
 
         {% call history_field("Geburtstag") %}
             {% call(c) print_history('birthday') %}
-                 {{ entries[c]['birthday']|date|e }}
+                 {{ entries[c]['birthday']|date(lang=lang)|e }}
             {% endcall %}
         {% endcall %}
 
@@ -260,7 +260,7 @@
                     gesichtet von {{ util.persona_anchor(personas[entry['reviewed_by']]) }}
                 {% endif %}
                 {{ entry['change_status']|enum(enums['MemberChangeStati'])|e }}
-                ({{ entry['ctime']|datetime|e }}): {{ entry['change_note']|e }}
+                ({{ entry['ctime']|datetime(lang=lang)|e }}): {{ entry['change_note']|e }}
             </li>
         {% endfor %}
     </ul>

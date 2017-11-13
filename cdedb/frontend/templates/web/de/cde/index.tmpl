@@ -71,7 +71,7 @@
                     {% if deadline <= now().date() %}
                         Deine Mitgliedschaft läuft in wenigen Tagen aus.
                     {% else %}
-                        Dies reicht voraussichtlich bis {{ deadline|date|e }}.
+                        Dies reicht voraussichtlich bis {{ deadline|date(lang=lang)|e }}.
                     {% endif %}
                 </p>
             {% else %}

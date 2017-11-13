@@ -13,7 +13,7 @@
             {{ util.href(cdedblink("event/show_event", {'event_id': event['id']}), event['title']) }}
         </div>
         <div class="col-sm-5 small">
-            {{ event['begin']|date|e }}–{{ event['end']|date|e }}
+            {{ event['begin']|date(lang=lang)|e }}&#8239;–&#8239;{{ event['end']|date(lang=lang)|e }}
             {% if event['parts']|length > 1 %}
                 ({{ event['parts']|length }} Teile)
             {% endif %}

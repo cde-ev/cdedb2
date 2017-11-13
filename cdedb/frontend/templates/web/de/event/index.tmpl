@@ -13,7 +13,7 @@
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
                     <br />
-                    {{ event['begin']|date|e }}–{{ event['end']|date|e }}
+                    {{ event['begin']|date(lang=lang)|e }}&#8239;–&#8239;{{ event['end']|date(lang=lang)|e }}
                 </li>
             {% endfor %}
         </ul>
@@ -30,7 +30,7 @@
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), entry['title']) }}
                     <br />
-                    {{ entry['begin']|date|e }}–{{ entry['end']|date|e }}
+                    {{ entry['begin']|date(lang=lang)|e }}–{{ entry['end']|date(lang=lang)|e }}
                     <br />
                     <span class="small">
                         {{ util.href(cdedblink('event/registration_query', {'event_id': event_id}),

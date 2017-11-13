@@ -119,7 +119,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Bertålotta Beispiel")
-        self.assertPresence("1933-04-03")
+        self.assertPresence("03.04.1933")
 
     @as_users("anton")
     def test_adminchangedata2(self, user):
@@ -132,7 +132,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Anton Armin A. Administrator")
-        self.assertPresence("1933-04-03")
+        self.assertPresence("03.04.1933")
 
     @as_users("anton", "berta", "emilia")
     def test_change_password(self, user):
@@ -402,11 +402,11 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertPresence("Zelda")
         self.assertTitle("Bertålotta Beispiel")
-        self.assertPresence("1933-04-03")
+        self.assertPresence("03.04.1933")
         self.traverse({'href': '/core/persona/2/history'})
         self.assertTitle("Geschichte von Bertålotta Beispiel")
-        self.assertPresence(r"Gen 2\W*1933-04-03", regex=True)
-        self.assertPresence(r"Gen 1\W*1981-02-11", regex=True)
+        self.assertPresence(r"Gen 2\W*03.04.1933", regex=True)
+        self.assertPresence(r"Gen 1\W*11.02.1981", regex=True)
 
     @as_users("anton")
     def test_rst(self, user):

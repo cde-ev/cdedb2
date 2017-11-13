@@ -42,13 +42,13 @@
             <dd>
                 {% if ambience['event']['parts']|length == 1 %}
                     {% with part = (ambience['event']['parts'].values()|list)[0] %}
-                        <span class="nowrap">{{  part['part_begin']|date(lang=lang,verbosity='full')|e }}</span> –
-                        <span class="nowrap">{{ part['part_end']|date(lang=lang,verbosity='full')|e }}</span>
+                        <span class="nowrap">{{ part['part_begin']|date(lang=lang,verbosity='full')|e }}</span>&#8239;–
+                        {#-  #}&#8239;<span class="nowrap">{{ part['part_end']|date(lang=lang,verbosity='full')|e }}</span>
                     {% endwith %}
                 {% else %}
                     {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
                         {{ part['title']|e }}:
-                        {{ part['part_begin']|date(lang=lang)|e }}–
+                        {{ part['part_begin']|date(lang=lang)|e }}&#8239;–&#8239;
                         {{- part['part_end']|date(lang=lang)|e }}<br />
                     {% endfor %}
                 {% endif %}
@@ -56,7 +56,7 @@
         {% endif %}
         <dt>Anmeldung</dt>
         <dd>
-            {{ ambience['event']['registration_start']|date(lang=lang)|e }}–
+            {{ ambience['event']['registration_start']|date(lang=lang)|e }}&#8239;–&#8239;
             {{- ambience['event']['registration_soft_limit']|date(lang=lang)|e }}
             {% if (values['event_id'] in user.orga or is_admin) and
                     ambience['event']['registration_hard_limit'] != ambience['event']['registration_hard_limit'] %}
