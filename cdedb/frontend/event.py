@@ -1198,6 +1198,8 @@ class EventFrontend(AbstractUserFrontend):
         """
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         personas = self.coreproxy.get_event_users(rs, tuple(
             reg['persona_id'] for reg in registrations.values()))
         for registration in registrations.values():
