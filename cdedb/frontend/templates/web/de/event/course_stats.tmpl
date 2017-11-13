@@ -31,6 +31,9 @@
                     {% endfor %}
                 {% endif %}
                 <th colspan="2" class="b-left">Grenzen</th>
+                {% if ambience['event']['tracks']|length < 4 %}
+                    <th rowspan="2" class="b-left"></th>
+                {% endif %}
             </tr>
             <tr>
                 {% for track_id, track in ambience['event']['tracks']|dictsort %}
@@ -84,6 +87,16 @@
                     {% endfor %}
                     <td class="b-left text-right">{{ course['min_size']|e }}</td>
                     <td class="text-right">{{ course['max_size']|e }}</td>
+                    {% if ambience['event']['tracks']|length < 4 %}
+                        <td class="b-left text-nowrap">
+                            {{ util.href(cdedblink("event/change_course_form", {'course_id': course_id}),
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
+                                         title="Bearbeiten") }}
+                            {{ util.href(cdedblink("event/manage_attendees_form", {'course_id': course_id}),
+                                         readonly=is_locked, aclass='btn btn-xs btn-warning', icon='user',
+                                         title="Teilnehmer ändern") }}
+                        </td>
+                    {% endif %}
                 </tr>
             {% endfor %}
         </tbody>
