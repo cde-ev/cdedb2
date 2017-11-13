@@ -69,10 +69,10 @@
             <div class="col-md-6">
                 {{ util.form_input_text(name="part_begin_{}".format(part_id), label="Beginn", type='date',
                                         attributes=('data-basename="part_begin_"' if newrow else ''),
-                                        aclass='drow-input') }}
+                                        aclass='drow-input', placeholder="YYYY-MM-DD") }}
                 {{ util.form_input_text(name="part_end_{}".format(part_id), label="Ende", type='date',
                                         attributes=('data-basename="part_end_"' if newrow else ''),
-                                        aclass='drow-input') }}
+                                        aclass='drow-input', placeholder="YYYY-MM-DD") }}
                 {% call util.form_input_general("fee_{}".format(part_id), "Teilnehmerbeitrag") %}
                     <div class="input-group">
                         {{ util.input_text(name="fee_{}".format(part_id),
