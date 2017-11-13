@@ -39,7 +39,8 @@
             {% for track_id, track in ambience['event']['tracks']|dictsort %}
                 {{ myentries.append((track_id, track['title']))|e }}
             {% endfor %}
-            {{ util.form_input_checkboxes(name="segments", label="Angeboten in", entries=myentries) }}
+            {{ util.form_input_checkboxes(name="segments", label="Angeboten in", entries=myentries,
+                                          aclass='checkbox_segment') }}
         {% endif %}
 
         <h4 class="heading-underline">Status</h4>
@@ -48,8 +49,8 @@
             {{ util.form_input_checkbox("active_segments", label="Findet statt",
                                         value=(ambience['event']['tracks']|list)[0]) }}
         {% else %}
-            {{ util.form_input_checkboxes(name="active_segments", label="Findet statt in", entries=myentries) }}
-            {# TODO JS to deactivate invalid options #}
+            {{ util.form_input_checkboxes(name="active_segments", label="Findet statt in", entries=myentries,
+                                          aclass='checkbox_active_segment') }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
 
@@ -64,5 +65,22 @@
     </form>
     <script type="text/javascript">
         $('#changecourseform').cdedbProtectChanges();
+        $(function(){
+            function updateCheckbox($checkbox, enabled) {
+                if (enabled) {
+                    $checkbox.prop('disabled', false);
+                } else {
+                    $checkbox.prop('checked', false);
+                    $checkbox.prop('disabled', true);
+                }
+            }
+            $('.checkbox_segment').each(function () {
+                var $related_checkbox = $('.checkbox_active_segment[value="' + $(this).val() + '"]');
+                updateCheckbox($related_checkbox, $(this).prop('checked'));
+                $(this).change(function(){
+                    updateCheckbox($related_checkbox, $(this).prop('checked'));
+                });
+            });
+        });
     </script>
 {% endblock %}

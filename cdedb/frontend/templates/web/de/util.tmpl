@@ -226,12 +226,13 @@
     </label>
 {% endmacro %}
 
-{% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False) %}
+{% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='') %}
     {% for entry_value, entry_label in entries %}
         {% if not inline %}
             <div class="{% if radio %}radio{% else %}checkbox{% endif %} {% if readonly %}disabled{% endif %}">
         {% endif %}
-            {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio) }}
+            {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
+                              aclass=aclass) }}
         {% if not inline %}</div>{% endif %}
     {% endfor %}
 {% endmacro %}
@@ -252,11 +253,11 @@
 {% endmacro %}
 
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False, horizontal=True) %}
+        small=False, radio=False, horizontal=True, aclass='') %}
     {# This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
     {% call form_input_general(name, label, '', small, info, displayerrors, horizontal) %}
-        {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio) }}
+        {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass) }}
     {% endcall %}
 {% endmacro %}
 
