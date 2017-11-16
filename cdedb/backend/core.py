@@ -648,6 +648,8 @@ class CoreBackend(AbstractBackend):
                 data['id']))
             change_note = rs.gettext("Unspecified change.")
 
+        current = self.sql_select_one(
+            rs, "core.personas", ("is_archived", "decided_search"), data['id'])
         if not may_wait and generation is not None:
             raise ValueError(
                 _("Non-waiting change without generation override."))
@@ -667,7 +669,7 @@ class CoreBackend(AbstractBackend):
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles)
                      or "membership" not in allow_specials)):
             raise PrivilegeError(_("Membership modification prevented."))
-        if (not data.get("is_searchable", True)
+        if (current['decided_search'] and not data.get("is_searchable", True)
                 and (not ({"cde_admin", "core_admin"} & rs.user.roles))):
             raise PrivilegeError(_("Hiding prevented."))
         if ("is_archived" in data
@@ -693,12 +695,10 @@ class CoreBackend(AbstractBackend):
                 and not self.is_relative_admin(rs, data['id'])):
             raise PrivilegeError(_("Not privileged."))
 
-        ## Prevent modification of archived members. This check (using
-        ## is_archived) is sufficient since we can only edit our own data if
-        ## we are not archived.
-        is_archived = unwrap(self.sql_select_one(rs, "core.personas",
-                                                 ("is_archived",), data['id']))
-        if is_archived and data.get('is_archived', True):
+        ## Prevent modification of archived members. This check is
+        ## sufficient since we can only edit our own data if we are not
+        ## archived.
+        if current['is_archived'] and data.get('is_archived', True):
             raise RuntimeError(_("Editing archived member impossible."))
 
         with Atomizer(rs):
