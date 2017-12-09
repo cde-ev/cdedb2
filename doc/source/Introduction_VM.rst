@@ -18,11 +18,9 @@ Download
 --------
 
 The vm-images can be downloaded from `the CdE server
-<https://ssl.cde-ev.de/cdedb2/images/>`_. You need the following credentials
-to access the link.
-
-* Username: ``cdedb``
-* Password: ``tie4aech7A``
+<https://ssl.cde-ev.de/cdedb2/images/>`_. The access credentials can be
+found on `the tracker
+<https://tracker.cde-ev.de/gitea/cdedb/cdedb2/wiki/Home>`_.
 
 Running
 -------
