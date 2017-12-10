@@ -61,9 +61,6 @@ the repository. Now you can build the documentation by issuing::
 
   make doc
 
-If you are reading the excerpt version (``INSTALL.html``) you can now switch
-to the real document.
-
 Prepare environment
 -------------------
 

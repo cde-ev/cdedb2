@@ -1,9 +1,7 @@
 == CdEDB v2 ==
 
-The documentation can be found under doc/source/*.rst which can be viewed as
-html pages at doc/build/html/ after issuing the command 'make doc' (needs
-sphinx). Additionally the link manual.html redirects to the documentation
-(which is available after running 'make doc') for convenience.
-
-For a setup guide see the INSTALL.html (which is an excerpt of the above
-documentation for bootstrapping).
+The documentation can be accessed at https://db2.cde-ev.de/doc/ online. The
+source can be found under doc/source/*.rst and to compile it to html pages
+issue the command 'make doc' (needs sphinx). The link manual.html redirects
+to the documentation (which is available after running 'make doc') for
+convenience.
