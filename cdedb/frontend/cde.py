@@ -645,7 +645,8 @@ class CdEFrontend(AbstractUserFrontend):
         given_names, p = validate.check_str(
             datum['raw']['given_names'], "given_names")
         problems.extend(p)
-        amount, p = validate.check_decimal(datum['raw']['amount'], "amount")
+        amount, p = validate.check_non_negative_decimal(datum['raw']['amount'],
+                                                        "amount")
         problems.extend(p)
         note, p = validate.check_str_or_None(datum['raw']['note'], "note")
         problems.extend(p)
@@ -661,8 +662,6 @@ class CdEFrontend(AbstractUserFrontend):
                              persona['given_names'], flags=re.IGNORECASE):
                 problems.append(('given_names',
                                  ValueError(_("Given names don't match."))))
-        if amount and amount < 0:
-            problems.append(('amount', ValueError(_("Transfer saldo is negative."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,
@@ -677,29 +676,34 @@ class CdEFrontend(AbstractUserFrontend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type data: [{str: object}]
         :type sendmail: bool
-        :rtype: bool, int
-        :returns: Success information and for positive outcome the
-          number of recorded transfer or for negative outcome the line
-          where an exception was triggered or None if it was a DB
-          serialization error.
+        :rtype: bool, int, int
+        :returns: Success information and
+          * for positive outcome the number of recorded transfer as well as
+            the number of new members or
+          * for negative outcome the line where an exception was triggered
+            or None if it was a DB serialization error as first number and
+            None as second number.
         """
         try:
             with Atomizer(rs):
                 count = 0
+                memberships_gained = 0
                 persona_ids = tuple(e['persona_id'] for e in data)
                 personas = self.coreproxy.get_total_personas(rs, persona_ids)
                 for index, datum in enumerate(data):
                     new_balance = (personas[datum['persona_id']]['balance']
                                    + datum['amount'])
-                    self.coreproxy.change_persona_balance(
+                    count += self.coreproxy.change_persona_balance(
                         rs, datum['persona_id'], new_balance,
                         const.FinanceLogCodes.increase_balance,
                         change_note=datum['note'])
-                    count += 1
+                    if new_balance > 0:
+                        memberships_gained += self.coreproxy.change_membership(
+                            rs, datum['persona_id'], is_member=True)
         except psycopg2.extensions.TransactionRollbackError:
             ## We perform a rather big transaction, so serialization errors
             ## could happen.
-            return False, None
+            return False, None, None
         except:
             ## This blanket catching of all exceptions is a last resort. We try
             ## to do enough validation, so that this should never happen, but
@@ -712,7 +716,7 @@ class CdEFrontend(AbstractUserFrontend):
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
             self.logger.error(cgitb.text(sys.exc_info(), context=7))
-            return False, index
+            return False, index, None
         if sendmail:
             for datum in data:
                 persona = personas[datum['persona_id']]
@@ -724,7 +728,7 @@ class CdEFrontend(AbstractUserFrontend):
                               'Subject': _('CdE money transfer received'),},
                              {'persona': persona, 'address': address,
                               'new_balance': new_balance})
-        return True, count
+        return True, count, memberships_gained
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata(("sendmail", "bool"), ("transfers", "str"),
@@ -774,9 +778,12 @@ class CdEFrontend(AbstractUserFrontend):
             return self.money_transfers_form(rs, data=data)
 
         ## Here validation is finished
-        success, num = self.perform_money_transfers(rs, data, sendmail)
+        success, num, new_members = self.perform_money_transfers(
+            rs, data, sendmail)
         if success:
-            rs.notify("success", _("Committed {num} transfers."), {'num': num})
+            rs.notify("success", _("Committed {num} transfers. "
+                                   "There were {new_members} new members."),
+                      {'num': num, 'new_members': new_members})
             return self.redirect(rs, "cde/index")
         else:
             if num is None:

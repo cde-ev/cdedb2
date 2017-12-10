@@ -290,6 +290,20 @@ def _decimal(val, argname=None, *, _convert=True):
     return val, []
 
 @_addvalidator
+def _non_negative_decimal(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (decimal.Decimal or None, [(str or None, exception)])
+    """
+    val, err = _decimal(val, argname, _convert=_convert)
+    if not err and val < 0:
+        val = None
+        err.append((argname, ValueError(_("Transfer saldo is negative."))))
+    return val, err
+
+@_addvalidator
 def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
     """
     :type val: object

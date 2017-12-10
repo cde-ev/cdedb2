@@ -756,7 +756,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
         self.submit(f)
-        self.assertPresence("3 Überweisungen gebucht.", div="notifications")
+        self.assertPresence("3 Überweisungen gebucht. 1 neue Mitglieder.", div="notifications")
 
     @as_users("anton")
     def test_semester(self, user):

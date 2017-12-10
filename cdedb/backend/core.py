@@ -805,9 +805,10 @@ class CoreBackend(AbstractBackend):
         :type change_note: str or None
         :rtype: int
         :returns: default return code
+
         """
         persona_id = affirm("id", persona_id)
-        balance = affirm("decimal", balance)
+        balance = affirm("non_negative_decimal", balance)
         log_code = affirm("enum_financelogcodes", log_code)
         change_note = affirm("str_or_None", change_note)
         update = {
@@ -815,8 +816,10 @@ class CoreBackend(AbstractBackend):
             'balance': balance,
         }
         with Atomizer(rs):
-            current = unwrap(self.retrieve_personas(rs, (persona_id,),
-                                                    ("balance",)))
+            current = unwrap(self.retrieve_personas(
+                rs, (persona_id,), ("balance", "is_cde_realm")))
+            if not current['is_cde_realm']:
+                raise RuntimeError(_("Tried to credit balance to non-cde person."))
             if current['balance'] != balance:
                 ret = self.set_persona(
                     rs, update, may_wait=False, change_note=change_note,
