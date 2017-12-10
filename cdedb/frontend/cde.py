@@ -661,6 +661,8 @@ class CdEFrontend(AbstractUserFrontend):
                              persona['given_names'], flags=re.IGNORECASE):
                 problems.append(('given_names',
                                  ValueError(_("Given names don't match."))))
+        if amount and amount < 0:
+            problems.append(('amount', ValueError(_("Transfer saldo is negative."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,

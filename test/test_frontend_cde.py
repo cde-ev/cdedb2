@@ -738,7 +738,7 @@ class TestCdEFrontend(FrontendTest):
             (r"persona_id:\W*Falsches Format.",),
             (r"family_name:\W*Nachname passt nicht.",),
             (r"persona_id:\W*Falsches Format.",),
-            tuple(),
+            (r"amount:\W*Transfer saldo is negative.",),
             (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
             (r"Mehrere Überweisungen für diesen Account \(Zeilen 6 und 7\).",),
             )
@@ -746,7 +746,7 @@ class TestCdEFrontend(FrontendTest):
             for piece in ex:
                 self.assertTrue(re.search(piece, out))
         lines = f['transfers'].value.split('\n')
-        inputdata = '\n'.join(lines[4:7])
+        inputdata = '\n'.join(lines[4:7]).replace('-12.34', '12.34')
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
 
