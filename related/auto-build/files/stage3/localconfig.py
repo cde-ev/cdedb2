@@ -10,7 +10,6 @@ SYSLOG_LOG_LEVEL = logging.INFO
 CONSOLE_LOG_LEVEL = logging.INFO
 
 GLOBAL_LOG = "/log/cdedb.log"
-TIMING_LOG = "/log/cdedb-timing.log"
 FRONTEND_LOG = "/log/cdedb-frontend.log"
 CORE_FRONTEND_LOG = "/log/cdedb-frontend-core.log"
 CDE_FRONTEND_LOG = "/log/cdedb-frontend-cde.log"
