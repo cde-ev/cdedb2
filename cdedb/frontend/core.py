@@ -6,6 +6,9 @@ import collections
 import copy
 import hashlib
 import os.path
+import pathlib
+import quopri
+import tempfile
 import uuid
 
 from cdedb.frontend.common import (
@@ -1412,3 +1415,26 @@ class CoreFrontend(AbstractFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(rs, "view_log", {'log': log, 'personas': personas})
 
+    @access("anonymous")
+    def debug_email(self, rs, token):
+        """Debug functionality to view emails stored to HDD.
+
+        In test instances emails are stored to disk since most of the time
+        no real email addresses are given. This creates the problem that
+        those are only readable with access to the file system, which most
+        test users won't have.
+
+        In production this will not be active, but should be harmless anyway
+        since no mails will be saved to disk.
+
+        The token parameter cannot contain slashes as this is prevented by
+        werkzeug.
+        """
+        if not self.conf.CDEDB_DEV:
+            return self.redirect(rs, "core/index")
+        filename = pathlib.Path(tempfile.gettempdir(),
+                                "cdedb-mail-{}.txt".format(token))
+        with open(str(filename)) as f:
+            rawtext = f.read()
+        emailtext = quopri.decodestring(rawtext).decode('utf-8')
+        return self.render(rs, "debug_email", {'emailtext': emailtext})

@@ -45,6 +45,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="view_changelog_meta"),
             rule("/foto/<filename:foto>", methods=_GET,
                  endpoint="get_foto"),
+            rule("/debugemail/<token>", methods=_GET,
+                 endpoint="debug_email"),
             sub('/self', (
                 rule("/show", methods=_GET,
                      endpoint="mydata"),

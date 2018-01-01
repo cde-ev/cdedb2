@@ -1,0 +1,8 @@
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block title %}Emailbetrachter{% endblock %}
+{% block content %}
+    <div>
+        {{ emailtext|e|linebreaks }}
+    </div>
+{% endblock %}

@@ -15,6 +15,22 @@
         <link href="{{ staticurl("bootstrap-3/css/bootstrap.min.css")|e }}" rel="stylesheet" media="all" />
         <script type="text/javascript" src="{{ staticurl("bootstrap-3/js/bootstrap.min.js")|e }}"></script>
         <script type="text/javascript" src="{{ staticurl("cdedb-general.js")|e }}"></script>
+        {% if CDEDB_DEV %}
+            <!-- script for adding links to view emails -->
+            <script type="text/javascript">
+                $(window).on('load', function() {
+                    $("div.alert-info").append(function(index, html){
+                        var pos = html.indexOf(" /tmp/cdedb-mail-");
+                        if (pos >= 0) {
+                            var endpos = html.indexOf(".txt ", pos);
+                            var token = html.substring(pos + 17, endpos);
+                            return '(<a href="core/debugemail/' + token + '">View Email in Browser</a>)';
+                        }
+                        return "";
+                    });
+                });
+            </script>
+        {% endif %}
 
         {% block scripts %}{% endblock %}
 
