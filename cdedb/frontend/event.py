@@ -1405,7 +1405,7 @@ class EventFrontend(AbstractUserFrontend):
             track_id: [course_id
                        for course_id, course
                        in sorted(courses.items(), key=lambda x: x[1]['nr'])
-                       if track_id in course['active_segments']]
+                       if track_id in course['segments']]
             for track_id in tracks}
         ## by default select all parts
         if 'parts' not in rs.values:
@@ -1583,7 +1583,7 @@ class EventFrontend(AbstractUserFrontend):
             track_id: [course_id
                        for course_id, course
                        in sorted(courses.items(), key=lambda x: x[1]['nr'])
-                       if track_id in course['active_segments']]
+                       if track_id in course['segments']]
             for track_id in tracks}
         non_trivials = {}
         for track_id, track in registration['tracks'].items():
