@@ -26,7 +26,7 @@
                 {% if ambience['event']['parts']|length > 1 %}
                     <th colspan="{{ ambience['event']['parts']|length * 2 }}" class="b-left">Belegung</th>
                 {% else %}
-                    <th rowspan="2" class="text-right">Belegung</th>
+                    <th rowspan="2" colspan="2" class="text-right">Belegung</th>
                 {% endif %}
                 <th colspan="2" class="b-left">Kapazität</th>
                 <th rowspan="2" class="b-left"></th>
