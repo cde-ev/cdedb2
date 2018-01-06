@@ -1132,9 +1132,9 @@ _GENESIS_CASE_STRICT_FIELDS = lambda: {
     'telephone': _phone_or_None,
     'mobile': _phone_or_None,
     'address_supplement': _str_or_None,
-    'address': _str_or_None,
+    'address': _str,
     'postal_code': _printable_ascii_or_None,
-    'location': _str_or_None,
+    'location': _str,
     'country': _str_or_None,
 }
 @_addvalidator
