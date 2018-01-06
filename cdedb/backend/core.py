@@ -25,7 +25,8 @@ from cdedb.common import (
     _, glue, GENESIS_CASE_FIELDS, PrivilegeError, unwrap, extract_roles,
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
-    privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson)
+    privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
+    merge_dicts, PERSONA_DEFAULTS)
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -1489,6 +1490,7 @@ class CoreBackend(AbstractBackend):
         if self.conf.LOCKDOWN and not self.is_admin(rs):
             return None
         data['case_status'] = const.GenesisStati.unconfirmed
+        # TODO: maybe delete all unverified cases with the provided email address?
         ret = self.sql_insert(rs, "core.genesis_cases", data)
         self.core_log(rs, const.CoreLogCodes.genesis_request, persona_id=None,
                       additional_info=data['username'])
@@ -1498,10 +1500,14 @@ class CoreBackend(AbstractBackend):
     def genesis_verify(self, rs, case_id):
         """Confirm the new email address and proceed to the next stage.
 
+        Returning the realm is a conflation caused by lazyness, but before
+        we create another function bloating the code this will do.
+
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
         :rtype: (int, str or None)
         :returns: (default return code, realm of the case if successful)
+
         """
         case_id = affirm("id", case_id)
         query = glue("UPDATE core.genesis_cases SET case_status = %s",
@@ -1553,26 +1559,6 @@ class CoreBackend(AbstractBackend):
             params.append(stati)
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
-
-    @access("anonymous")
-    def genesis_my_case(self, rs, case_id, secret):
-        """Retrieve one dataset.
-
-        This is seperately to allow secure anonymous access.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type case_id: int
-        :type secret: str
-        :rtype: {int: {str: object}}
-        :returns: the requested data or None if wrong secret
-        """
-        case_id = affirm("id", case_id)
-        secret = affirm("str", secret)
-        data = self.sql_select_one(rs, "core.genesis_cases",
-                                   GENESIS_CASE_FIELDS, case_id)
-        if secret != data['secret']:
-            return None
-        return data
 
     @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
             "ml_admin")
@@ -1629,73 +1615,25 @@ class CoreBackend(AbstractBackend):
                     additional_info=current['username'])
         return ret
 
-    @access("anonymous")
-    def genesis_check(self, rs, case_id, secret, realm):
-        """Verify input data for genesis case.
-
-        This is a security check, which enables us to share a
-        non-ephemeral private link after a moderator approved a request.
-
-        :type rs: :py:class:`cdedb.common.RequestState`
-        :type case_id: int
-        :type secret: str
-        :type realm: str
-        :rtype: bool
-        """
-        case_id = affirm("id", case_id)
-        secret = affirm("str", secret)
-        realm = affirm("str", realm)
-        case = self.sql_select_one(rs, "core.genesis_cases",
-                                   ("case_status", "secret", "realm"), case_id)
-        return (bool(case)
-                and case['case_status'] == const.GenesisStati.approved
-                and case['secret'] == secret
-                and case['realm'] == realm)
-
-    @access("anonymous")
-    def genesis(self, rs, case_id, secret, realm, data):
+    @access("core_admin", "cde_admin", "event_admin", "assembly_admin",
+            "ml_admin")
+    def genesis(self, rs, case_id):
         """Create a new user account upon request.
 
         This is the final step in the genesis process and actually creates
-        the account. This heavily escalates privileges to allow the creation
-        of a user with an anonymous role.
+        the account.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type case_id: int
-        :type realm: str
-        :type secret: str
-        :param secret: Verification for the authenticity of the invocation.
-        :type data: {str: object}
         :rtype: int
         :returns: The id of the newly created persona.
         """
         case_id = affirm("id", case_id)
-        secret = affirm("str", secret)
-        realm = affirm("str", realm)
-        if self.conf.LOCKDOWN and not self.is_admin(rs):
-            return 0
         ACCESS_BITS = {
-            'cde' : {
-                'is_cde_realm': True,
-                'is_event_realm': True,
-                'is_assembly_realm': True,
-                'is_ml_realm': True,
-                ## Do not specify membership
-                ## 'is_member': True,
-                'is_searchable': False,
-            },
             'event' : {
                 'is_cde_realm': False,
                 'is_event_realm': True,
                 'is_assembly_realm': False,
-                'is_ml_realm': True,
-                'is_member': False,
-                'is_searchable': False,
-            },
-            'assembly' : {
-                'is_cde_realm': False,
-                'is_event_realm': False,
-                'is_assembly_realm': True,
                 'is_ml_realm': True,
                 'is_member': False,
                 'is_searchable': False,
@@ -1709,44 +1647,28 @@ class CoreBackend(AbstractBackend):
                 'is_searchable': False,
             },
         }
-        ## Fix realms, so that the persona validator does the correct thing
-        data.update(ACCESS_BITS[realm])
-        data = affirm("persona", data, creation=True)
-
-        ## escalate priviliges
-        if rs.conn.is_contaminated:
-            raise RuntimeError(_("Atomized -- impossible to escalate."))
-        orig_conn = rs.conn
-        rs.conn = self.connpool['cdb_admin']
-        orig_roles = rs.user.roles
-        rs.user.roles = rs.user.roles | {"persona", "core_admin", realm,
-                                         "{}_admin".format(realm)}
-
         with Atomizer(rs):
-            case = self.sql_select_one(rs, "core.genesis_cases",
-                                       GENESIS_CASE_FIELDS, case_id)
-            if not case or case['secret'] != secret:
-                return None, _("Invalid genesis case.")
+            case = unwrap(self.genesis_get_cases(rs, (case_id,)))
+            data = {k: v for k, v in case.items()
+                    if k in PERSONA_ALL_FIELDS and k != "id"}
+            data['display_name'] = data['given_names']
+            merge_dicts(data, PERSONA_DEFAULTS)
+            ## Fix realms, so that the persona validator does the correct thing
+            data.update(ACCESS_BITS[case['realm']])
+            data = affirm("persona", data, creation=True)
             if case['case_status'] != const.GenesisStati.approved:
-                return None, _("Invalid genesis state.")
+                raise ValueError(_("Invalid genesis state."))
             tier = privilege_tier(extract_roles(data))
             if "{}_admin".format(case['realm']) not in tier:
-                return None, _("Wrong target realm.")
-            data['username'] = case['username']
-            data['given_names'] = case['given_names']
-            data['family_name'] = case['family_name']
+                raise PrivilegeError(_("Wrong target realm."))
             ret = self.create_persona(
                 rs, data, submitted_by=case['reviewer'])
             update = {
                 'id': case_id,
-                'case_status': const.GenesisStati.finished,
+                'case_status': const.GenesisStati.successful,
             }
             self.sql_update(rs, "core.genesis_cases", update)
-
-        ## deescalate privileges
-        rs.conn = orig_conn
-        rs.user.roles = orig_roles
-        return ret
+            return ret
 
     @access("core_admin")
     def find_doppelgangers(self, rs, persona):

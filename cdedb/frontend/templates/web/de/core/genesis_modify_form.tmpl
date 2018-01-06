@@ -1,0 +1,44 @@
+{% set sidenav_active='core_genesis_list' %}
+{% extends "web/de/core/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}Accountanfrage bearbeiten{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}), "Accountanfrage bearbeitenn", active="True") }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('core/genesis_modify')|e }}" method="POST" id="genesismodifyform" class="form-horizontal">
+        <div>
+            {{ util.form_input_text(name="given_names", label="Vorname(n)", small=True) }}
+            {{ util.form_input_text(name="family_name", label="Nachname", small=True) }}
+            {{ util.form_input_text(name="username", label="E-Mail-Adresse", small=True, type="email") }}
+            {% if "core_admin" in user.roles %}
+                {{ util.form_input_select(
+                    name="realm", small=True, entries=(("event", "CdE-Veranstaltung"), ("ml", "CdE-Mailingliste")),
+                    label="Bereich") }}
+            {% else %}
+                {% with realms = {'event': ('Veranstaltung', 'blackboard'), 'ml': ('Mailingliste', 'envelope')} %}
+                    {{ util.make_icon(values['realm'][1]) }} {{ values['realm'][0] }}
+                {% endwith %}
+                {{ util.form_input_hidden(name="realm") }}
+            {% endif %}
+            {{ util.form_input_textarea(name="notes", label="Begründung (max. {} Zeichen)".format(max_rationale),
+                                        small=True, maxlength=max_rationale) }}
+            {# FIXME add javascript to show the following only for event requests #}
+            <p>Die folgenden Felder sind nur für Veranstaltungsanfragen relevant.</p>
+            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date") }}
+            {{ util.form_input_text(name="telephone", label="Telefon") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.form_input_text(name="address", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location", label="Stadt") }}
+            {{ util.form_input_text(name="country", label="Land") }}
+            {{ util.form_input_submit(value="Speichern", small=True) }}
+        </div>
+    </form>
+{% endblock %}

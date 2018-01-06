@@ -68,18 +68,16 @@ class FieldAssociations(enum.IntEnum):
 @enum.unique
 class GenesisStati(enum.IntEnum):
     """Spec for field case_status of core.genesis_cases."""
-    #: created, email unconfirmed
+    #: created, data logged, email unconfirmed
     unconfirmed = 1
     #: email confirmed, awaiting review
     to_review = 2
-    #: reviewed and approved, awaiting persona creation
+    #: acked by reviewer, but not yet created
     approved = 3
     #: finished (persona created, challenge archived)
-    finished = 4
+    successful = 4
     #: reviewed and rejected (also a final state)
     rejected = 10
-    #: abandoned and archived (also final)
-    timeout = 11
 
 @enum.unique
 class SubscriptionPolicy(enum.IntEnum):

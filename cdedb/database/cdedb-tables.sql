@@ -145,9 +145,19 @@ CREATE TABLE core.genesis_cases (
         id                      bigserial PRIMARY KEY,
         -- creation time
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        -- user data
         username                varchar NOT NULL,
         given_names             varchar NOT NULL,
         family_name             varchar NOT NULL,
+        gender                  integer,
+        birthday                date,
+        telephone               varchar,
+        mobile                  varchar,
+        address_supplement      varchar,
+        address                 varchar,
+        postal_code             varchar,
+        location                varchar,
+        country                 varchar,
         -- initial target realm, note that e.g. event implies is_event_realm and is_ml_realm
         realm                   varchar DEFAULT NULL,
         -- user-supplied comment (short justification of request)
@@ -158,13 +168,11 @@ CREATE TABLE core.genesis_cases (
         --
         -- To prevent spam and enhance security every persona creation needs
         -- to be approved by moderators/administrators; upon addmittance an
-        -- email is sent, that persona creation can proceed
+        -- email is sent, that persona creation was successful
         --
         -- enum tracking the progress
         -- see cdedb.database.constants.GenesisStati
         case_status             integer NOT NULL DEFAULT 0,
-        -- After review we need a persistent and private url.
-        secret                  varchar DEFAULT NULL,
         -- who moderated the request
         reviewer                integer REFERENCES core.personas(id) DEFAULT NULL
 );

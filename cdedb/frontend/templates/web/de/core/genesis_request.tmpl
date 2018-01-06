@@ -11,8 +11,9 @@
         Nachdem Du das Formular abgeschickt hast, wird eine E-Mail an die
         angegebene Adresse verschickt, die einen Verifikations-Link
         enthält. Diesen musst Du öffnen, um deine Anfrage zu bestätigen.
-        Erst danach wird die Anfrage von einem Admin überprüft und Du erhältst eine weitere
-        E-Mail, sobald Du Deinen Account erstellen kannst.
+        Erst danach wird die Anfrage von einem Admin überprüft und
+        gegebenenfalls ein Account erstellt, worüber Du dann per E-Mail
+        benachrichtigt wirst.
     </p>
 
     <form action="{{ cdedblink('core/genesis_request')|e }}" method="POST" id="genesisform" class="form-horizontal">
@@ -26,6 +27,17 @@
                 label="Grund") }}
             {{ util.form_input_textarea(name="notes", label="Begründung (max. {} Zeichen)".format(max_rationale),
                                         small=True, maxlength=max_rationale) }}
+            {# FIXME add javascript to show the following only for event requests #}
+            <p>Die folgenden Felder sind nur relevant, falls Du einen Account für eine Veranstaltung beantragst.</p>
+            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht", nulloption=True) }}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date") }}
+            {{ util.form_input_text(name="telephone", label="Telefon") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.form_input_text(name="address", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location", label="Stadt") }}
+            {{ util.form_input_text(name="country", label="Land") }}
             {{ util.form_input_submit(value="Antrag abschicken", small=True) }}
         </div>
     </form>

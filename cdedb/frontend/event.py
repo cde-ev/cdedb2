@@ -152,25 +152,6 @@ class EventFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("anonymous")
-    @REQUESTdata(("secret", "str"))
-    def genesis_form(self, rs, case_id, secret):
-        return super().genesis_form(rs, case_id, secret=secret)
-
-    @access("anonymous", modi={"POST"})
-    @REQUESTdata(("secret", "str"))
-    @REQUESTdatadict(
-        "title", "name_supplement", "display_name", "birthday", "gender",
-        "telephone", "mobile", "address", "address_supplement",
-        "postal_code", "location", "country")
-    def genesis(self, rs, case_id, secret, data):
-        data.update({
-            'is_active': True,
-            'cloud_account': False,
-            'notes': '',
-        })
-        return super().genesis(rs, case_id, secret=secret, data=data)
-
     @access("event_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs, download, is_search):

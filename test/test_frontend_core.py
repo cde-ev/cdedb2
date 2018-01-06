@@ -445,6 +445,140 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
         self.assertPresence("Geburtstag")
 
+    def test_genesis_event(self):
+        user = USER_DICT['anton']
+        self.get('/')
+        self.traverse({'href': '/core/genesis/request'})
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "event"
+        f['gender'] = "1"
+        f['birthday'] = "5.6.1987"
+        f['address'] = "An der Eiche"
+        f['postal_code'] = "12345"
+        f['location'] = "Marcuria"
+        f['country'] = "Arkadien"
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = None
+        for line in mail.split('\n'):
+            if line.startswith('[1] '):
+                link = line[4:]
+        link = quopri.decodestring(link).decode('utf-8')
+        self.get(link)
+        self.follow()
+        self.login(user)
+        self.traverse({'href': '/core/genesis/list'})
+        self.assertTitle("Accountanfragen")
+        self.assertPresence("zelda@example.cde")
+        self.assertNonPresence("zorro@example.cde")
+        self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
+        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        self.traverse({'href': '/core/genesis/1/modify'})
+        self.assertTitle("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['username'] = 'zorro@example.cde'
+        f['realm'] = 'ml'
+        self.submit(f)
+        self.assertTitle("Accountanfragen")
+        self.assertNonPresence("zelda@example.cde")
+        self.assertPresence("zorro@example.cde")
+        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
+        self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        self.traverse({'href': '/core/genesis/1/modify'})
+        f = self.response.forms['genesismodifyform']
+        f['realm'] = 'event'
+        self.submit(f)
+        self.assertTitle("Accountanfragen")
+        self.assertNonPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
+        self.assertPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        f = self.response.forms['genesiseventapprovalform1']
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = None
+        for line in mail.split('\n'):
+            if line.startswith('[1] '):
+                link = line[4:]
+        link = quopri.decodestring(link).decode('utf-8')
+        self.logout()
+        self.get(link)
+        self.assertTitle("Neues Passwort setzen")
+        new_password = "long_saFe_37pass"
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f)
+        new_user = {
+            'id': 9,
+            'username': "zorro@example.cde",
+            'password': new_password,
+            'display_name': "Zelda",
+            'given_names': "Zelda",
+            'family_name': "Zeruda-Hime",
+        }
+        self.login(new_user)
+        self.traverse({'href': '/core/self/show'})
+        self.assertTitle("Zelda Zeruda-Hime")
+        self.assertPresence("12345")
+
+    def test_genesis_ml(self):
+        user = USER_DICT['anton']
+        self.get('/')
+        self.traverse({'href': '/core/genesis/request'})
+        self.assertTitle("Account anfordern")
+        f = self.response.forms['genesisform']
+        f['given_names'] = "Zelda"
+        f['family_name'] = "Zeruda-Hime"
+        f['username'] = "zelda@example.cde"
+        f['notes'] = "Gimme!"
+        f['realm'] = "ml"
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = None
+        for line in mail.split('\n'):
+            if line.startswith('[1] '):
+                link = line[4:]
+        link = quopri.decodestring(link).decode('utf-8')
+        self.get(link)
+        self.follow()
+        self.login(user)
+        self.traverse({'href': '/core/genesis/list'})
+        self.assertTitle("Accountanfragen")
+        self.assertPresence("zelda@example.cde")
+        self.assertPresence("Zur Zeit liegen keine Veranstaltungs-Anfragen vor")
+        self.assertNonPresence("Zur Zeit liegen keine Mailinglisten-Anfragen vor")
+        f = self.response.forms['genesismlapprovalform1']
+        self.submit(f)
+        mail = self.fetch_mail()[0]
+        link = None
+        for line in mail.split('\n'):
+            if line.startswith('[1] '):
+                link = line[4:]
+        link = quopri.decodestring(link).decode('utf-8')
+        self.logout()
+        self.get(link)
+        self.assertTitle("Neues Passwort setzen")
+        new_password = "long_saFe_37pass"
+        f = self.response.forms['passwordresetform']
+        f['new_password'] = new_password
+        f['new_password2'] = new_password
+        self.submit(f)
+        new_user = {
+            'id': 11,
+            'username': "zelda@example.cde",
+            'password': new_password,
+            'display_name': "Zelda",
+            'given_names': "Zelda",
+            'family_name': "Zeruda-Hime",
+        }
+        self.login(new_user)
+        self.traverse({'href': '/core/self/show'})
+        self.assertTitle("Zelda Zeruda-Hime")
+
     def test_log(self):
         ## First: generate data
         self.test_set_foto()

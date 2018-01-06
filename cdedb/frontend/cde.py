@@ -271,14 +271,6 @@ class CdEFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    def genesis_form(self, rs, case_id, secret):
-        """Member accounts cannot be requested."""
-        raise NotImplementedError(_("Not available in cde realm."))
-
-    def genesis(self, rs, case_id, secret, data):
-        """Member accounts cannot be requested."""
-        raise NotImplementedError(_("Not available in cde realm."))
-
     @access("cde_admin")
     def batch_admission_form(self, rs, data=None, csvfields=None):
         """Render form.

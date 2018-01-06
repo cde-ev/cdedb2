@@ -93,19 +93,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("anonymous")
-    @REQUESTdata(("secret", "str"))
-    def genesis_form(self, rs, case_id, secret):
-        """Assembly accounts cannot be requested."""
-        raise NotImplementedError(_("Not available in assembly realm."))
-
-    @access("anonymous", modi={"POST"})
-    @REQUESTdata(("secret", "str"))
-    @REQUESTdatadict("display_name",)
-    def genesis(self, rs, case_id, secret, data):
-        """Assembly accounts cannot be requested."""
-        raise NotImplementedError(_("Not available in assembly realm."))
-
     @access("assembly_admin")
     @REQUESTdata(("download", "str_or_None"), ("is_search", "bool"))
     def user_search(self, rs, download, is_search):

@@ -1112,10 +1112,30 @@ _GENESIS_CASE_COMMON_FIELDS = lambda: {
     'notes': _str,
 }
 _GENESIS_CASE_OPTIONAL_FIELDS = lambda: {
-    'realm': _str,
     'case_status': _enum_genesisstati,
-    'secret': _str,
     'reviewer': _id,
+}
+_GENESIS_CASE_LENIENT_FIELDS = lambda: {
+    'gender': _enum_genders_or_None,
+    'birthday': _date_or_None,
+    'telephone': _phone_or_None,
+    'mobile': _phone_or_None,
+    'address_supplement': _str_or_None,
+    'address': _str_or_None,
+    'postal_code': _printable_ascii_or_None,
+    'location': _str_or_None,
+    'country': _str_or_None,
+}
+_GENESIS_CASE_STRICT_FIELDS = lambda: {
+    'gender': _enum_genders,
+    'birthday': _date,
+    'telephone': _phone_or_None,
+    'mobile': _phone_or_None,
+    'address_supplement': _str_or_None,
+    'address': _str_or_None,
+    'postal_code': _printable_ascii_or_None,
+    'location': _str_or_None,
+    'country': _str_or_None,
 }
 @_addvalidator
 def _genesis_case(val, argname=None, *, creation=False, _convert=True):
@@ -1134,18 +1154,34 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if creation:
         mandatory_fields = _GENESIS_CASE_COMMON_FIELDS()
-        optional_fields = _GENESIS_CASE_OPTIONAL_FIELDS()
+        optional_fields = dict(_GENESIS_CASE_OPTIONAL_FIELDS(),
+                               **_GENESIS_CASE_LENIENT_FIELDS())
     else:
         mandatory_fields = {'id': _id,}
         optional_fields = dict(_GENESIS_CASE_COMMON_FIELDS(),
-                               **_GENESIS_CASE_OPTIONAL_FIELDS())
+                               **_GENESIS_CASE_OPTIONAL_FIELDS(),
+                               **_GENESIS_CASE_LENIENT_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    if ('realm' in val
-            and val['realm'] not in ("cde", "event", "ml", "assembly")):
-        errs.append(('realm', ValueError(_("Invalid target realm."))))
+    if 'realm' in val:
+         if val['realm'] == "cde":
+             errs.append(('realm', ValueError(_("CdE not supported for genesis."))))
+         if val['realm'] == "assembly":
+             errs.append(('realm', ValueError(_("Assembly not supported for genesis."))))
+         elif val['realm'] =="ml":
+             pass
+         elif val['realm'] == "event":
+             if creation:
+                 interesting = _GENESIS_CASE_STRICT_FIELDS()
+                 uninteresting = dict(_GENESIS_CASE_COMMON_FIELDS(),
+                                      **_GENESIS_CASE_OPTIONAL_FIELDS())
+                 val, e = _examine_dictionary_fields(
+                     val, interesting, uninteresting, _convert=_convert)
+                 errs.extend(e)
+         else:
+             errs.append(('realm', ValueError(_("Invalid target realm."))))
     return val, errs
 
 @_addvalidator

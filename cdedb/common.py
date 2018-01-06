@@ -1137,7 +1137,9 @@ PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
 #: Fields of a persona creation case.
 GENESIS_CASE_FIELDS = (
     "id", "ctime", "username", "given_names", "family_name",
-    "realm", "notes", "case_status", "secret", "reviewer")
+    "gender", "birthday", "telephone", "mobile", "address_supplement",
+    "address", "postal_code", "location", "country",
+    "realm", "notes", "case_status", "reviewer")
 
 #: Fields for institutions of events
 INSTITUTION_FIELDS = ("id", "title", "moniker")

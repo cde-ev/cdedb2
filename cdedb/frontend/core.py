@@ -13,12 +13,12 @@ import uuid
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
-    check_validation as check, merge_dicts, request_extractor, REQUESTfile,
+    check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
     csv_output, query_result_to_json)
 from cdedb.common import (
     _, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
-    now)
+    now, merge_dicts)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
@@ -1193,7 +1193,10 @@ class CoreFrontend(AbstractFrontend):
                            {'max_rationale': self.conf.MAX_RATIONALE})
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdatadict("username", "notes", "given_names", "family_name", "realm")
+    @REQUESTdatadict(
+        "notes", "realm", "username", "given_names", "family_name", "gender",
+        "birthday", "telephone", "mobile", "address_supplement", "address",
+        "postal_code", "location", "country")
     def genesis_request(self, rs, data):
         """Voice the desire to become a persona.
 
@@ -1241,47 +1244,76 @@ class CoreFrontend(AbstractFrontend):
             error=_("Verification failed. Please contact the administrators."),
             success=_("Email verified. Wait for moderation. "
                       "You will be notified by mail."))
-        notify = None
+        if not code:
+            return self.redirect(rs, "core/genesis_request_form")
+        notify = self.conf.MANAGEMENT_ADDRESS
         if realm == "event":
             notify = self.conf.EVENT_ADMIN_ADDRESS
         if realm == "ml":
             notify = self.conf.ML_ADMIN_ADDRESS
-        if notify:
-            self.do_mail(
-                rs, "genesis_request",
-                {'To': (notify,),
-                 'Subject': _('CdEDB account request'),})
-        if not code:
-            return self.redirect(rs, "core/genesis_request_form")
+        self.do_mail(
+            rs, "genesis_request",
+            {'To': (notify,),
+             'Subject': _('CdEDB account request'),})
         return self.redirect(rs, "core/index")
 
     @access("core_admin", "event_admin", "ml_admin")
     def genesis_list_cases(self, rs):
         """Compile a list of genesis cases to review."""
-        stati = (const.GenesisStati.to_review, const.GenesisStati.approved)
         realms = []
         if {"core_admin", "event_admin"} & rs.user.roles:
             realms.append("event")
         if {"core_admin", "ml_admin"} & rs.user.roles:
             realms.append("ml")
-        data = self.coreproxy.genesis_list_cases(rs, stati=stati, realms=realms)
-        review_ids = tuple(
-            k for k in data
-            if data[k]['case_status'] == const.GenesisStati.to_review)
-        to_review = self.coreproxy.genesis_get_cases(rs, review_ids)
-        approved = {k: v for k, v in data.items()
-                    if v['case_status'] == const.GenesisStati.approved}
+        data = self.coreproxy.genesis_list_cases(
+            rs, stati=(const.GenesisStati.to_review,), realms=realms)
+        cases = self.coreproxy.genesis_get_cases(rs, set(data))
+        event_cases = {k: v for k, v in cases.items() if v['realm'] == 'event'}
+        ml_cases = {k: v for k, v in cases.items() if v['realm'] == 'ml'}
         return self.render(rs, "genesis_list_cases", {
-            'to_review': to_review, 'approved': approved,})
+            'ml_cases': ml_cases, 'event_cases': event_cases})
+
+    @access("core_admin", "event_admin", "ml_admin")
+    def genesis_modify_form(self, rs, case_id):
+        """View a specific case and present the option to edit it."""
+        case = self.coreproxy.genesis_get_case(rs, case_id)
+        if (not self.is_admin(rs)
+                and "{}_admin".format(case['realm']) not in rs.user.roles):
+            raise PrivilegeError(_("Not privileged."))
+        if case['case_status'] != const.GenesisStati.to_review:
+            rs.notify("error", _("Case not to review."))
+            return self.genesis_list_cases(rs)
+        merge_dicts(rs.values, case)
+        return self.render(rs, "genesis_modify_form")
 
     @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
-    @REQUESTdata(("case_status", "enum_genesisstati"),
-                 ("realm", "realm_or_None"))
-    def genesis_decide(self, rs, case_id, case_status, realm):
+    @REQUESTdatadict(
+        "notes", "realm", "username", "given_names", "family_name", "gender",
+        "birthday", "telephone", "mobile", "address_supplement", "address",
+        "postal_code", "location", "country")
+    def genesis_modify(self, rs, case_id, data):
+        """Edit a case to fix potential issues before creation."""
+        data['id'] = case_id
+        data = check(rs, "genesis_case", data)
+        if rs.errors:
+            return self.genesis_modify_form(rs, case_id)
+        case = self.coreproxy.genesis_get_case(rs, case_id)
+        if (not self.is_admin(rs)
+                and "{}_admin".format(case['realm']) not in rs.user.roles):
+            raise PrivilegeError(_("Not privileged."))
+        if case['case_status'] != const.GenesisStati.to_review:
+            rs.notify("error", _("Case not to review."))
+            return self.genesis_list_cases(rs)
+        code = self.coreproxy.genesis_modify_case(rs, data)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "core/genesis_list_cases")
+
+    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
+    @REQUESTdata(("case_status", "enum_genesisstati"))
+    def genesis_decide(self, rs, case_id, case_status):
         """Approve or decline a genensis case.
 
-        This sends an email with the link of the final creation page or a
-        rejection note to the applicant.
+        This either creates a new account or declines account creation.
         """
         if rs.errors:
             return self.genesis_list_cases(rs)
@@ -1297,21 +1329,25 @@ class CoreFrontend(AbstractFrontend):
             'case_status': case_status,
             'reviewer': rs.user.persona_id,
         }
-        if realm:
-            data['realm'] = realm
-        if case_status == const.GenesisStati.approved:
-            data['secret'] = str(uuid.uuid4())
-        code = self.coreproxy.genesis_modify_case(rs, data)
-        if not code:
+        with Atomizer(rs):
+            code = self.coreproxy.genesis_modify_case(rs, data)
+            persona_id = bool(code)
+            if code and data['case_status'] == const.GenesisStati.approved:
+                persona_id = self.coreproxy.genesis(rs, case_id)
+        if not persona_id:
             rs.notify("error", _("Failed."))
             return rs.genesis_list_cases(rs)
-        case = self.coreproxy.genesis_get_case(rs, case_id)
         if case_status == const.GenesisStati.approved:
+            success, cookie = self.coreproxy.make_reset_cookie(rs, case['username'])
             self.do_mail(
                 rs, "genesis_approved",
                 {'To': (case['username'],),
-                 'Subject': _('CdEDB account approved')},
-                {'case': case,})
+                 'Subject': _('CdEDB account created'),},
+                {'case': case,
+                 'email': self.encode_parameter(
+                     "core/do_password_reset_form", "email", case['username'],
+                     timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),
+                 'cookie': cookie,})
             rs.notify("success", _("Case approved."))
         else:
             self.do_mail(
@@ -1320,29 +1356,6 @@ class CoreFrontend(AbstractFrontend):
                  'Subject': _('CdEDB account declined')},
                 {'case': case,})
             rs.notify("info", _("Case rejected."))
-        return self.redirect(rs, "core/genesis_list_cases")
-
-    @access("core_admin", "event_admin", "ml_admin", modi={"POST"})
-    def genesis_timeout(self, rs, case_id):
-        """Abandon a genesis case.
-
-        If a genesis case is approved, but the applicant loses interest,
-        it remains dangling. Thus this enables to archive them.
-        """
-        case = self.coreproxy.genesis_get_case(rs, case_id)
-        if (not self.is_admin(rs)
-                and "{}_admin".format(case['realm']) not in rs.user.roles):
-            raise PrivilegeError(_("Not privileged."))
-        if case['case_status'] != const.GenesisStati.approved:
-            rs.notify("error", _("Case not approved."))
-            return self.genesis_list_cases(rs)
-        data = {
-            'id': case_id,
-            'case_status': const.GenesisStati.timeout,
-            'reviewer': rs.user.persona_id,
-        }
-        code = self.coreproxy.genesis_modify_case(rs, data)
-        self.notify_return_code(rs, code, success=_("Case abandoned."))
         return self.redirect(rs, "core/genesis_list_cases")
 
     @access("core_admin")

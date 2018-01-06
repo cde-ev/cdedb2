@@ -1,9 +1,9 @@
 Hallo {{ case['given_names'] }} {{ case['family_name'] }},
 
-Du hast vor kurzem einen Account für die CdE-Datenbank beantragt. Deine Anfrage
-wurde von uns genehmigt. Nun kannst Du dem Link [1] folgen, um Deinen Account
-anzulegen.
+Du hast vor kurzem einen Account für die CdE-Datenbank beantragt. Deine
+Anfrage wurde von uns genehmigt. Nun kannst Du dem Link [1] folgen, um ein
+Passwort zu setzen.
 
 Liebe Grüße von der Verwaltung
 
-[1] {{ cdedblink('{}/genesis_form'.format(case['realm']), {'case_id': case['id'], 'secret': case['secret']}) }}
+[1] {{ cdedblink('core/do_password_reset_form', {'email': email, 'cookie': cookie}) }}
