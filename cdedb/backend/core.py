@@ -8,11 +8,10 @@ accesses.
 import collections
 import copy
 import decimal
-import hashlib
-import random
+import hmac
+import secrets
 import subprocess
 import tempfile
-import uuid
 
 import ldap3
 from passlib.hash import sha512_crypt
@@ -1160,7 +1159,7 @@ class CoreBackend(AbstractBackend):
                                            or data['is_core_admin']):
                 ## Short circuit in case of lockdown
                 return None
-            sessionkey = str(uuid.uuid4())
+            sessionkey = secrets.token_hex()
             with Atomizer(rs):
                 query = glue(
                     "UPDATE core.sessions SET is_active = False",
@@ -1284,9 +1283,8 @@ class CoreBackend(AbstractBackend):
                     raise PrivilegeError(_("Preventing reset of admin."))
             password_hash = unwrap(self.sql_select_one(
                 rs, "core.personas", ("password_hash",), persona_id))
-            plain = "{}-{}-{}".format(password_hash, persona_id, salt)
-            h = hashlib.sha512()
-            h.update(plain.encode("ascii"))
+            plain = "{}-{}".format(password_hash, persona_id)
+            h = hmac.new(salt.encode(), msg=plain.encode(), digestmod="sha512")
             return h.hexdigest()
 
     def _verify_reset_cookie(self, rs, persona_id, salt, cookie):
@@ -1299,7 +1297,7 @@ class CoreBackend(AbstractBackend):
         :rtype: bool
         """
         correct = self._generate_reset_cookie(rs, persona_id, salt, verify=True)
-        return correct == cookie
+        return hmac.compare_digest(correct, cookie)
 
     def modify_password(self, rs, persona_id, new_password, old_password=None,
                         reset_cookie=None):
@@ -1343,7 +1341,7 @@ class CoreBackend(AbstractBackend):
             orig_conn = rs.conn
             rs.conn = self.connpool['cdb_persona']
         if not new_password:
-            new_password = ''.join(random.choice(
+            new_password = ''.join(secrets.choice(
                 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789' +
                 '!@#$%&*()[]-=<>') for _ in range(12))
         ## do not use set_persona since it doesn't operate on password

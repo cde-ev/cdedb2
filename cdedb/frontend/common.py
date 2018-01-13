@@ -20,7 +20,7 @@ import email.mime.image
 import email.mime.multipart
 import email.mime.text
 import functools
-import hashlib
+import hmac
 import io
 import json
 import logging
@@ -1551,16 +1551,16 @@ def encode_parameter(salt, target, name, param,
     :type timeout: datetime.timedelta or None
     :rtype: str
     """
-    myhash = hashlib.sha512()
+    h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     if timeout is None:
         timestamp = 24 * '.'
     else:
         ttl = now() + timeout
         timestamp = ttl.strftime("%Y-%m-%d %H:%M:%S%z")
     message = "{}--{}".format(timestamp, param)
-    tohash = "{}--{}--{}--{}".format(salt, target, name, message)
-    myhash.update(tohash.encode("utf-8"))
-    return "{}--{}".format(myhash.hexdigest(), message)
+    tohash = "{}--{}--{}".format(target, name, message)
+    h.update(tohash.encode("utf-8"))
+    return "{}--{}".format(h.hexdigest(), message)
 
 def decode_parameter(salt, target, name, param):
     """Inverse of :py:func:`encode_parameter`. See there for
@@ -1573,13 +1573,13 @@ def decode_parameter(salt, target, name, param):
     :rtype: str or None
     :returns: decoded message, ``None`` if decoding or verification fails
     """
-    myhash = hashlib.sha512()
+    h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     mac, message = param[0:128], param[130:]
-    tohash = "{}--{}--{}--{}".format(salt, target, name, message)
-    myhash.update(tohash.encode("utf-8"))
-    if myhash.hexdigest() != mac:
+    tohash = "{}--{}--{}".format(target, name, message)
+    h.update(tohash.encode("utf-8"))
+    if not hmac.compare_digest(h.hexdigest(), mac):
         _LOGGER.debug("Hash mismatch ({} != {}) for {}".format(
-            myhash.hexdigest(), mac, tohash))
+            h.hexdigest(), mac, tohash))
         return None
     timestamp = message[:24]
     if timestamp == 24 * '.':

@@ -27,7 +27,7 @@ do it.
 """
 
 import copy
-import hashlib
+import hmac
 import os.path
 import string
 
@@ -36,7 +36,7 @@ from cdedb.backend.common import (
     Silencer, singularize, AbstractBackend)
 from cdedb.common import (
     _, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
-    ASSEMBLY_ATTACHMENT_FIELDS, random_ascii, schulze_evaluate, name_key,
+    ASSEMBLY_ATTACHMENT_FIELDS, secure_random_ascii, schulze_evaluate, name_key,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -87,11 +87,10 @@ class AssemblyBackend(AbstractBackend):
         :type vote: str
         :rtype: str
         """
-        myhash = hashlib.sha512()
-        myhash.update(salt.encode('ascii'))
-        myhash.update(secret.encode('ascii'))
-        myhash.update(vote.encode('ascii'))
-        return myhash.hexdigest()
+        h = hmac.new(salt.encode('ascii'), digestmod="sha512")
+        h.update(secret.encode('ascii'))
+        h.update(vote.encode('ascii'))
+        return h.hexdigest()
 
     def retrieve_vote(self, rs, ballot_id, secret):
         """Low level function for looking up a vote.
@@ -612,7 +611,7 @@ class AssemblyBackend(AbstractBackend):
             new_attendee = {
                 'assembly_id': assembly_id,
                 'persona_id': persona_id,
-                'secret': random_ascii(),
+                'secret': secure_random_ascii(),
             }
             self.sql_insert(rs, "assembly.attendees", new_attendee)
             self.assembly_log(rs, const.AssemblyLogCodes.new_attendee,
@@ -711,7 +710,7 @@ class AssemblyBackend(AbstractBackend):
                 secret = unwrap(self.query_one(
                     rs, query, (ballot['assembly_id'], rs.user.persona_id)))
             if not has_voted:
-                salt = random_ascii()
+                salt = secure_random_ascii()
                 entry = {
                     'ballot_id': ballot_id,
                     'vote': vote,

@@ -277,11 +277,11 @@ INSERT INTO assembly.voter_register (persona_id, ballot_id, has_voted) VALUES
     (11, 5, False);
 
 INSERT INTO assembly.votes (ballot_id, vote, salt, hash) VALUES
-    (1, '2>3>_bar_>1=4', 'rxt3x/jnl', 'd40aec7b54edf646991f100511fd19372f9d48445610b2e23ac59c7f2f0185175a78ef438f887794c7481c8dedb64a58c4be56fd67cc60c2ccbe66e2f5cd8b5e'),
-    (1, '3>2=4>_bar_>1', 'et3[uh{kr', '6c9533ce039c6a89576574bf28e1df4ad3b5610c934d32216b2b3e188b2c635f6f3a47d7ce0a69be40ada6d8dce6c6ff406aaf4e2bc03006616d848ec868283b'),
-    (1, '_bar_>4>3>2>1', 'krcqm"xdv', '2638c1ce32f8cab312d550d9149dc7e02617da994d0551c9c4425577c3cdfea760cfce54197af498b236e62ea2fa0d1a3de4f090af41cbb1abac739c11902f86'),
-    (1, '1>2=3=4>_bar_', 'klw3xjq8s', 'e4e3ca08ae6b31473fa04a3fc8afec94f94dafb28fc67333d2e8deaea1e7cfa869196f31005947ec57313cf14c0e26d67ef5ac8207601963c29e93de5c20383e'),
-    (3, 'Lo>Li=St=Fi=Bu=Go=_bar_', 'lkn/4kvj9', 'aeebbc35184f4e286b48bf7874d33525980c8a8f76ab18fc862332ce31e0ec423a6ef2b87a95754a6fba569bf6f0d389b7e3a045aaccdd004ac7436d443d6a76');
+    (1, '2>3>_bar_>1=4', 'rxt3x/jnl', 'a3bf0788f1eaa85f5ca979d2ba963b7c60bce02c49ac1c0dfe5d06d5b3950d69c55752df5d963b8de770d353bf795ca07060f7578456b19e18028249bcf51195'),
+    (1, '3>2=4>_bar_>1', 'et3[uh{kr', 'f99ade4db2d724c6ae887cffc099c5758927358c99d65aac43e3ce61d212effad5bfbb68e69d6f2669f42d58c74e1fa3f2149a92c7172f2bb9d0e487478e5bb7'),
+    (1, '_bar_>4>3>2>1', 'krcqm"xdv', '65ab33a95a367ff3dd07d19ecb9de1311dd3cee5525bae5c7ba6ff46587e79e964e14a246211748f3beb406506b3aa926a66ff5754a69d4c340c98a0f3f5d69d'),
+    (1, '1>2=3=4>_bar_', 'klw3xjq8s', '9d59b3a4a6a9eca9613ef2e0710117a8e240e9197f20f2b970288dd93fd6347d657d265033f915c7fa44043315c4a8b834951c4f4e6fc46ea59a795c02af93e7'),
+    (3, 'Lo>Li=St=Fi=Bu=Go=_bar_', 'lkn/4kvj9', '314776ac07ffdd56a53112ae5f5113fb356b82b19f3a43754695aa41bf8e120c0346b45e43d0a0114e2bbc7756e7f34ce41f784000c010570d71e90a5c2ab1f1');
 
 --
 -- ml

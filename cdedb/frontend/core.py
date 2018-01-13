@@ -9,7 +9,6 @@ import os.path
 import pathlib
 import quopri
 import tempfile
-import uuid
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,

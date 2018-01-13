@@ -7,16 +7,15 @@ eine gewisse unvermeidbare Duplikation haben.
 """
 
 import argparse
-import hashlib
+import hmac
 import json
 
 def encrypt_vote(salt, secret, vote):
     """Berechne Hash zum Datensatz einer Stimme."""
-    myhash = hashlib.sha512()
-    myhash.update(salt.encode('ascii'))
-    myhash.update(secret.encode('ascii'))
-    myhash.update(vote.encode('ascii'))
-    return myhash.hexdigest()
+    h = hmac.new(salt.encode('ascii'), digestmod="sha512")
+    h.update(secret.encode('ascii'))
+    h.update(vote.encode('ascii'))
+    return h.hexdigest()
 
 def retrieve_vote(votes, secret):
     """Ermittle Stimme, die mit dem Geheimnis abgegeben wurde."""
