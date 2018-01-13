@@ -36,8 +36,9 @@ from cdedb.backend.common import (
     Silencer, singularize, AbstractBackend)
 from cdedb.common import (
     _, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
-    ASSEMBLY_ATTACHMENT_FIELDS, secure_random_ascii, schulze_evaluate, name_key,
+    ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, name_key,
     extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize)
+from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const

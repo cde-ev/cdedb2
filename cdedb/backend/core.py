@@ -9,7 +9,6 @@ import collections
 import copy
 import decimal
 import hmac
-import secrets
 import subprocess
 import tempfile
 
@@ -26,6 +25,7 @@ from cdedb.common import (
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
     merge_dicts, PERSONA_DEFAULTS)
+from cdedb.security import secure_random_ascii, secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 import cdedb.validation as validate
@@ -1159,7 +1159,7 @@ class CoreBackend(AbstractBackend):
                                            or data['is_core_admin']):
                 ## Short circuit in case of lockdown
                 return None
-            sessionkey = secrets.token_hex()
+            sessionkey = secure_token_hex()
             with Atomizer(rs):
                 query = glue(
                     "UPDATE core.sessions SET is_active = False",
@@ -1341,9 +1341,9 @@ class CoreBackend(AbstractBackend):
             orig_conn = rs.conn
             rs.conn = self.connpool['cdb_persona']
         if not new_password:
-            new_password = ''.join(secrets.choice(
-                'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789' +
-                '!@#$%&*()[]-=<>') for _ in range(12))
+            new_password = secure_random_ascii(
+                chars=('abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ' +
+                       '23456789!@#$%&*()[]-=<>'))
         ## do not use set_persona since it doesn't operate on password
         ## hashes by design
         query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"

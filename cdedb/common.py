@@ -14,7 +14,6 @@ import itertools
 import json
 import logging
 import logging.handlers
-import secrets
 import string
 import sys
 
@@ -331,16 +330,6 @@ def merge_dicts(*dicts):
         for key in adict:
             if key not in dicts[0]:
                 dicts[0][key] = adict[key]
-
-def secure_random_ascii(length=12):
-    """Create a random string of printable ASCII characters.
-
-    :type length: int
-    :param length: number of characters in the returned string
-    :rtype: str
-    """
-    chars = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(secrets.choice(chars) for _ in range(length))
 
 def now():
     """Return an up to date timestamp.
