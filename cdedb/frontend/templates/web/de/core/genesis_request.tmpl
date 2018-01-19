@@ -24,20 +24,35 @@
             {{ util.form_input_select(name="realm", small=True, entries=(
                 ("event", "CdE-Veranstaltung"),
                 ("ml", "CdE-Mailingliste")),
-                label="Grund") }}
+                label="Grund", anid="realm-select") }}
             {{ util.form_input_textarea(name="notes", label="Begründung (max. {} Zeichen)".format(max_rationale),
                                         small=True, maxlength=max_rationale) }}
-            {# FIXME add javascript to show the following only for event requests #}
-            <p>Die folgenden Felder sind nur relevant, falls Du einen Account für eine Veranstaltung beantragst.</p>
-            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht", nulloption=True) }}
-            {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date") }}
-            {{ util.form_input_text(name="telephone", label="Telefon") }}
-            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
-            {{ util.form_input_text(name="address", label="Straße") }}
-            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.form_input_text(name="location", label="Stadt") }}
-            {{ util.form_input_text(name="country", label="Land") }}
+            <div id="event-field-container">
+                <p class="text-muted">{{ util.make_icon('info-sign') }}
+                    Die folgenden Felder sind nur relevant, falls Du einen Account für eine Veranstaltung beantragst.</p>
+                {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht", nulloption=True, small=True) }}
+                {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date", small=True) }}
+                {{ util.form_input_text(name="telephone", label="Telefon", small=True) }}
+                {{ util.form_input_text(name="mobile", label="Mobiltelefon", small=True) }}
+                {{ util.form_input_text(name="address", label="Straße", small=True) }}
+                {{ util.form_input_text(name="address_supplement", label="Addresszusatz", small=True) }}
+                {{ util.form_input_text(name="postal_code", label="Postleitzahl", small=True) }}
+                {{ util.form_input_text(name="location", label="Stadt", small=True) }}
+                {{ util.form_input_text(name="country", label="Land", small=True) }}
+            </div>
+            <script type="text/javascript">
+                var $select = $('#realm-select');
+                var show_event_fields = function() {
+                    if ($select.val() === 'event') {
+                        $('#event-field-container').show();
+                    } else {
+                        $('#event-field-container').hide();
+                    }
+                };
+                $select.change(show_event_fields);
+                show_event_fields();
+            </script>
+
             {{ util.form_input_submit(value="Antrag abschicken", small=True) }}
         </div>
     </form>
