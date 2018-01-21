@@ -449,48 +449,56 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
-    def select_persona(self, rs, phrase, kind, aux):
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
+                 ("sphere", "str_or_None"))
+    def select_persona(self, rs, phrase, kind, aux, sphere):
         """Provide data for inteligent input fields.
 
         This searches for users by name so they can be easily selected
         without entering their numerical ids. This is for example
         intended for addition of orgas to events.
 
+        The kind parameter specifies the purpose of the query which decides
+        the privilege level required and the basic search paramaters.
+
         The aux parameter allows to supply an additional id for example
         in the case of a moderator this would be the relevant
         mailinglist id.
+
+        The sphere parameter allows to restrict results to a specific realm
+        or to members only. This is only useful for certain kinds of queries
+        and ignored in the rest.
         """
+        if not rs.errors and sphere:
+            if sphere not in ("cde", "event", "ml", "assembly", "member"):
+                rs.errors.append(("sphere",
+                                  ValueError(_("Not a valid restriction."))))
         if rs.errors:
             return self.send_json(rs, {})
 
         spec_additions = {}
         search_additions = []
         mailinglist = None
+        event = None
         num_preview_personas = self.conf.NUM_PREVIEW_PERSONAS
-        if kind == "persona":
-            if "core_admin" not in rs.user.roles:
+        sphere_additions = {
+            realm: ("is_{}_realm".format(realm), QueryOperators.equal, True)
+            for realm in ("cde", "event", "ml", "assembly")
+        }
+        sphere_additions["member"] = ("is_member", QueryOperators.equal, True)
+        if kind == "admin_persona":
+            privilege_levels = {
+                None: "core_admin",
+                "cde": "cde_admin",
+                "member": "cde_admin",
+                "event": "event_admin",
+                "ml": "ml_admin",
+                "assembly": "assembly_admin",
+            }
+            if privilege_levels[sphere] not in rs.user.roles:
                 raise PrivilegeError(_("Not privileged."))
-        elif kind == "member":
-            if "cde_admin" not in rs.user.roles:
-                raise PrivilegeError(_("Not privileged."))
-            search_additions.append(
-                ("is_member", QueryOperators.equal, True))
-        elif kind == "cde_user":
-            if "cde_admin" not in rs.user.roles:
-                raise PrivilegeError(_("Not privileged."))
-            search_additions.append(
-                ("is_cde_realm", QueryOperators.equal, True))
-        elif kind == "event_user":
-            if "event_admin" not in rs.user.roles:
-                raise PrivilegeError(_("Not privileged."))
-            search_additions.append(
-                ("is_event_realm", QueryOperators.equal, True))
-        elif kind == "assembly_user":
-            if "assembly_admin" not in rs.user.roles:
-                raise PrivilegeError(_("Not privileged."))
-            search_additions.append(
-                ("is_assembly_realm", QueryOperators.equal, True))
+            if sphere:
+                search_additions.append(sphere_additions[sphere])
         elif kind == "pure_assembly_user":
             if "assembly_admin" not in rs.user.roles:
                 raise PrivilegeError(_("Not privileged."))
@@ -498,12 +506,7 @@ class CoreFrontend(AbstractFrontend):
                 ("is_assembly_realm", QueryOperators.equal, True))
             search_additions.append(
                 ("is_member", QueryOperators.equal, False))
-        elif kind == "ml_user":
-            if "ml_admin" not in rs.user.roles:
-                raise PrivilegeError(_("Not privileged."))
-            search_additions.append(
-                ("is_ml_realm", QueryOperators.equal, True))
-        elif kind == "mod_ml_user":
+        elif kind == "mod_ml_user" and aux:
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if "ml_admin" not in rs.user.roles:
                 num_preview_personas //= 2
@@ -511,6 +514,16 @@ class CoreFrontend(AbstractFrontend):
                     raise PrivilegeError(_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
+            if sphere:
+                search_additions.append(sphere_additions[sphere])
+        elif kind == "orga_event_user" and aux:
+            event = self.eventproxy.get_event(rs, aux)
+            if "event_admin" not in rs.user.roles:
+                num_preview_personas //= 2
+                if rs.user.persona_id not in event['orgas']:
+                    raise PrivilegeError(_("Not privileged."))
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
         else:
             return self.send_json(rs, {})
 

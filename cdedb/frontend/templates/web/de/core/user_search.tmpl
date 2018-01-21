@@ -35,7 +35,7 @@
                     </form>
                     <script type="text/javascript">
                         var $i = $('#input-showuser-id');
-                        $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') + '?kind=persona&phrase=%s'}}', [],
+                        $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s'}}', [],
                                              true);
                         $i.next().after($i);
                         $i.change(function(){$('#adminshowuserform').submit();})

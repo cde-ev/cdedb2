@@ -50,7 +50,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("anton")
     def test_selectpersona(self, user):
-        self.get('/core/persona/select?kind=persona&phrase=din')
+        self.get('/core/persona/select?kind=admin_persona&phrase=din')
         expectation = {
             'personas': [{'display_name': 'Daniel',
                           'email': 'daniel@example.cde',
@@ -63,6 +63,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
         expectation = (1, 2, 3, 5, 6, 7, 9, 11)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+        self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
+        expectation = (2,)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 

@@ -98,7 +98,7 @@ _DEFAULTS = {
     "NUM_PREVIEW_CHARS": 3,
     ## maximum length of personas presented for selection in an intelligent
     ## input field
-    "NUM_PREVIEW_PERSONAS": 42,
+    "NUM_PREVIEW_PERSONAS": 12,
     ## Available languages
     "I18N_LANGUAGES": ("de", "en"),
 

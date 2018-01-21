@@ -41,8 +41,7 @@
                                                 enums['AudiencePolicy'].require_cde: 'cde_user',
                                                 enums['AudiencePolicy'].require_member: 'member'} %}
                             $('#input-add-moderator').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') + '?kind=' +
-                                    search_realm[ambience['mailinglist']['audience_policy']] + '&phrase=%s'}}',
+                                '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
                                 {{ ambience['mailinglist']['moderators']|list|json }}
                             );
                         {% endwith %}
@@ -137,8 +136,7 @@
                                         enums['AudiencePolicy'].require_cde: 'cde_user',
                                         enums['AudiencePolicy'].require_member: 'member'} %}
                     $('#input-add-subscriber').cdedbSearchPerson(
-                        '{{ cdedblink('core/select_persona') + '?kind=' +
-                            search_realm[ambience['mailinglist']['audience_policy']] + '&phrase=%s'}}',
+                        '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
                         {{ subscribers|list|json }}
                     );
                 {% endwith %}

@@ -121,7 +121,7 @@
                         {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga') }}
                         <script type="text/javascript">
                             $('#input-add-orga').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') + '?kind=event_user&phrase=%s'}}',
+                                '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + ambience['event']['id']|e }}',
                                 {{ ambience['event']['orgas']|list|json }}
                             );
                         </script>

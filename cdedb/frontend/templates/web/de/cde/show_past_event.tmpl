@@ -57,7 +57,7 @@
                                     anid="input-add-participant", aclass="form-control input-sm") }}
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
-                                    '{{ cdedblink('core/select_persona') + '?kind=cde_user&phrase=%s'}}',
+                                    '{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s&sphere=cde'}}',
                                     {{ participants.keys()|list|json }}
                                 );
                             </script>
