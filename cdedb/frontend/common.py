@@ -471,6 +471,23 @@ def xdictsort_filter(value, attribute):
     """
     return sorted(value.items(), key=lambda item: item[1].get(attribute))
 
+def xdictsortpad_filter(value, attribute):
+    """Allow sorting by an arbitrary attribute of the value with padding.
+
+    This function can be used as a Jinja filter, just as `xdictsort_filter` to
+    sort dictionary entries by an attribute's value. This function interprets
+    the attribute's value as a string and tries to pad it.
+
+    This requires the values to allow attribute access by key and the
+    referenced attribute to be a string in all single items.
+
+    :type value: {object: dict}
+    :rtype: [(object, dict)]
+    """
+    max_len = max(len(item[1].get(attribute, "")) for item in value.items())
+    return sorted(value.items(),
+                  key=lambda item: item[1].get(attribute).rjust(max_len, '\0'))
+
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
     'date': date_filter,
@@ -489,6 +506,7 @@ JINJA_FILTERS = {
     'rst': rst_filter,
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,
+    'xdictsortpad': xdictsortpad_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
 }

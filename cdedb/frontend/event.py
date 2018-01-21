@@ -17,7 +17,8 @@ import werkzeug
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, registration_is_open, csv_output,
     check_validation as check, event_guard, query_result_to_json,
-    REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter)
+    REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
+    xdictsortpad_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -1404,7 +1405,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       in xdictsortpad_filter(courses, 'nr')
                        if track_id in course['segments']]
             for track_id in tracks}
         ## by default select all parts
@@ -1582,7 +1583,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       in xdictsortpad_filter(courses, 'nr')
                        if track_id in course['segments']]
             for track_id in tracks}
         non_trivials = {}
@@ -1855,7 +1856,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       in xdictsortpad_filter(courses, 'nr')
                        if track_id in course['segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -2023,7 +2024,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       in xdictsortpad_filter(courses, 'nr')
                        if track_id in course['active_segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -2087,7 +2088,7 @@ class EventFrontend(AbstractUserFrontend):
         course_choices = {
             track_id: [course_id
                        for course_id, course
-                       in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                       in xdictsortpad_filter(courses, 'nr')
                        if track_id in course['segments']]
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -2754,7 +2755,7 @@ class EventFrontend(AbstractUserFrontend):
                 course_id: "{}. {}".format(courses[course_id]['nr'],
                                            courses[course_id]['shortname'])
                 for course_id, course
-                in sorted(courses.items(), key=lambda x: x[1]['nr'])
+                in xdictsortpad_filter(courses, 'nr')
                 if track_id in course['segments']}
             choices.update({
                 "track{0}.course_id{0}".format(track_id):
@@ -2772,7 +2773,7 @@ class EventFrontend(AbstractUserFrontend):
                 course_id: "{}. {}".format(courses[course_id]['nr'],
                                            courses[course_id]['shortname'])
                 for course_id, course
-                in sorted(courses.items(), key=lambda x: x[1]['nr'])}
+                in xdictsortpad_filter(courses, 'nr')}
             choices[",".join("track{0}.course_id{0}".format(track_id)
                              for track_id in tracks)] = course_choices
             choices[",".join("track{0}.course_instructor{0}".format(track_id)

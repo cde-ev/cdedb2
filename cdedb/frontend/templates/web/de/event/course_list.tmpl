@@ -15,7 +15,7 @@
 {% endblock %}
 {% block content %}
     {% if courses %}
-        {% for anid, entry in courses|xdictsort('nr') %}
+        {% for anid, entry in courses|xdictsortpad('nr') %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title']|e }}</h3>
                 {% if ambience['event']['id'] in user.orga or is_admin %}
