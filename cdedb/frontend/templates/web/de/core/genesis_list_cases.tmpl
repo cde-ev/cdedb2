@@ -27,10 +27,6 @@
         {% if event_cases|length > 0 %}
             {% for case_id, entry in event_cases|dictsort %}
                 <div class="row">
-                    <div class="col-sm-2">
-                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), "Bearbeiten",
-                            aclass="btn btn-info btn-sm") }}
-                    </div>
                     <div class="col-sm-3">
                         <p>
                             {{ entry['given_names']|e }} {{ entry['family_name']|e }}
@@ -44,19 +40,21 @@
                         {% endwith %}
                         {% if entry['notes'] %}<p class="textbox">{{ entry['notes']|e }}</p>{% endif %}
                     </div>
-                    <div class="col-sm-3">
-                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
-                         id="genesiseventrejectionform{{ loop.index|e }}" class="pull-left rejection-form">
-                            {{ util.input_hidden(name="case_id", value=case_id) }}
-                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                            {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
-                        </form>
+                    <div class="col-sm-5    button-par">
                         <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                          id="genesiseventapprovalform{{ loop.index|e }}" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value="Genehmigen", aclass="btn btn-sm btn-success") }}
+                            {{ util.input_submit(value="OK", aclass="btn btn-sm btn-success") }}
                         </form>
+                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
+                         id="genesiseventrejectionform{{ loop.index|e }}" class="rejection-form" style="display: inline;">
+                            {{ util.input_hidden(name="case_id", value=case_id) }}
+                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
+                            {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
+                        </form>
+                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), "Bearbeiten",
+                            aclass="btn btn-warning btn-sm", icon="pencil") }}
                     </div>
                 </div>
                 {% if not loop.last %}
@@ -72,10 +70,6 @@
         {% if ml_cases|length > 0 %}
             {% for case_id, entry in ml_cases|dictsort %}
                 <div class="row">
-                    <div class="col-sm-2">
-                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), "Bearbeiten",
-                            aclass="btn btn-info btn-sm") }}
-                    </div>
                     <div class="col-sm-3">
                         <p>
                             {{ entry['given_names']|e }} {{ entry['family_name']|e }}
@@ -88,19 +82,21 @@
                         {% endwith %}
                         {% if entry['notes'] %}<p class="textbox">{{ entry['notes']|e }}</p>{% endif %}
                     </div>
-                    <div class="col-sm-3">
-                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
-                         id="genesismlrejectionform{{ loop.index|e }}" class="pull-left rejection-form">
-                            {{ util.input_hidden(name="case_id", value=case_id) }}
-                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                            {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
-                        </form>
+                    <div class="col-sm-5 button-par">
                         <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                          id="genesismlapprovalform{{ loop.index|e }}" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value="Genehmigen", aclass="btn btn-sm btn-success") }}
+                            {{ util.input_submit(value="OK", aclass="btn btn-sm btn-success") }}
                         </form>
+                        <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
+                         id="genesismlrejectionform{{ loop.index|e }}" class="rejection-form" style="display: inline;">
+                            {{ util.input_hidden(name="case_id", value=case_id) }}
+                            {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
+                            {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
+                        </form>
+                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), "Bearbeiten",
+                            aclass="btn btn-warning btn-sm", icon="pencil") }}
                     </div>
                 </div>
                 {% if not loop.last %}

@@ -7,7 +7,9 @@
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen") }}
-{{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}), "Accountanfrage bearbeitenn", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
+                        "Accountanfrage von {} {} bearbeiten".format(values["given_names"], values["family_name"]),
+                        active="True", icon="user") }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/genesis_modify')|e }}" method="POST" id="genesismodifyform" class="form-horizontal">
@@ -54,7 +56,7 @@
                 show_event_fields();
             </script>
 
-            {{ util.form_input_submit(value="Speichern", small=True) }}
+            {{ util.form_input_submit(value="Speichern", small=True, cancellink=cdedblink("core/genesis_list_cases")) }}
         </div>
     </form>
 {% endblock %}
