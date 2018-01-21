@@ -1088,8 +1088,8 @@ class CoreBackend(AbstractBackend):
         if not (tier & rs.user.roles):
             raise PrivilegeError(_("Unable to create this sort of persona."))
         ## modified version of hash for 'secret' and thus safe/unknown plaintext
-        data['password_hash'] = glue(
-            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/",
+        data['password_hash'] = (
+            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
             "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
         ## add balance for cde users
         if data.get('is_cde_realm') and 'balance' not in data:
