@@ -503,7 +503,7 @@ class EventBackend(AbstractBackend):
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
         ## new
-        for x in new:
+        for x in reversed(sorted(new)):
             new_track = {
                 "part_id": part_id,
                 "title": data[x],
