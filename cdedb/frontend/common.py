@@ -458,7 +458,7 @@ def rst_filter(val):
                                       settings_overrides=defaults)
     return ret['html_body']
 
-def xdictsort_filter(value, attribute):
+def xdictsort_filter(value, attribute, pad=False):
     """Allow sorting by an arbitrary attribute of the value.
 
     Jinja only provides sorting by key or entire value. Also Jinja does
@@ -467,26 +467,18 @@ def xdictsort_filter(value, attribute):
     This obviously only works if the values allow access by key.
 
     :type value: {object: dict}
+    :type attribute: str
+    :param attribute: name of the attribute
+    :type pad: bool
+    :param pad: If True the attribute's value is interpreted as string and
+      padded before sorting. The important use-case is numerical sorting.
     :rtype: [(object, dict)]
     """
-    return sorted(value.items(), key=lambda item: item[1].get(attribute))
-
-def xdictsortpad_filter(value, attribute):
-    """Allow sorting by an arbitrary attribute of the value with padding.
-
-    This function can be used as a Jinja filter, just as `xdictsort_filter` to
-    sort dictionary entries by an attribute's value. This function interprets
-    the attribute's value as a string and tries to pad it.
-
-    This requires the values to allow attribute access by key and the
-    referenced attribute to be a string in all single items.
-
-    :type value: {object: dict}
-    :rtype: [(object, dict)]
-    """
-    max_len = max(len(item[1].get(attribute, "")) for item in value.items())
-    return sorted(value.items(),
-                  key=lambda item: item[1].get(attribute).rjust(max_len, '\0'))
+    key = lambda item: item[1].get(attribute)
+    if pad:
+        max_len = max(len(v.get(attribute, "")) for v in value.values())
+        key = lambda item: item[1].get(attribute).rjust(max_len, '\0')
+    return sorted(value.items(), key=key)
 
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
@@ -506,7 +498,6 @@ JINJA_FILTERS = {
     'rst': rst_filter,
     'enum': enum_filter,
     'xdictsort': xdictsort_filter,
-    'xdictsortpad': xdictsortpad_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
 }

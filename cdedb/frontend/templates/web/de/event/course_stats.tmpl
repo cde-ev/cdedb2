@@ -48,7 +48,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for course_id, course in courses|xdictsortpad('nr') %}
+            {% for course_id, course in courses|xdictsort('nr', pad=True) %}
                 <tr>
                     <td>{{ course['nr']|e }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
