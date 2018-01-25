@@ -530,12 +530,12 @@ CREATE TABLE event.events (
         --
         -- cut for past_event.events (modulo column tempus)
         --
-        registration_start      date,
+        registration_start      timestamp WITH TIME ZONE,
         -- official end of registration
-        registration_soft_limit date,
+        registration_soft_limit timestamp WITH TIME ZONE,
         -- actual end of registration, in between participants are
         -- automatically warned about registering late
-        registration_hard_limit date,
+        registration_hard_limit timestamp WITH TIME ZONE,
         iban                    varchar,
         mail_text               varchar,
         use_questionnaire       boolean NOT NULL DEFAULT False,

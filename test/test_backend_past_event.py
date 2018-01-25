@@ -201,8 +201,8 @@ class TestPastEventBackend(BackendTest):
     def test_archive(self, user):
         update = {
             'id': 1,
-            'registration_soft_limit': datetime.date(2001, 10, 30),
-            'registration_hard_limit': datetime.date(2002, 10, 30),
+            'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0, tzinfo=pytz.utc),
+            'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0, tzinfo=pytz.utc),
             'parts': {
                 1: {
                     'part_begin': datetime.date(2003, 2, 2),

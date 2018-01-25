@@ -26,12 +26,12 @@
         {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
         {{ util.form_input_text(name="shortname", label="Kürzel") }}
-        {{ util.form_input_text(name="registration_start", label="Anmeldebeginn", type='date',
-                                placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss", type='date',
-                                placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss", type='date',
-                                placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_text(name="registration_start", label="Anmeldebeginn", type='datetime-local',
+                                placeholder="YYYY-MM-DD HH:MM:SS") }}
+        {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss", type='datetime-local',
+                                placeholder="YYYY-MM-DD HH:MM:SS") }}
+        {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss", type='datetime-local',
+                                placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=(
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
             ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption=True) }}

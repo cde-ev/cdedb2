@@ -1569,7 +1569,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/show_event")
         registration = self.eventproxy.get_registration(rs, registration_id)
         if (rs.ambience['event']['registration_soft_limit'] and
-                now().date() > rs.ambience['event']['registration_soft_limit']):
+                now() > rs.ambience['event']['registration_soft_limit']):
             rs.notify("warning", _("Registration closed, no changes possible."))
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(rs.ambience['event']):
@@ -1616,7 +1616,7 @@ class EventFrontend(AbstractUserFrontend):
             rs.notify("warning", _("Not registered for event."))
             return self.redirect(rs, "event/show_event")
         if (rs.ambience['event']['registration_soft_limit'] and
-                now().date() > rs.ambience['event']['registration_soft_limit']):
+                now() > rs.ambience['event']['registration_soft_limit']):
             rs.notify("error", _("No changes allowed anymore."))
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(rs.ambience['event']):

@@ -56,11 +56,11 @@
         {% endif %}
         <dt>Anmeldung</dt>
         <dd>
-            {{ ambience['event']['registration_start']|date(lang=lang)|e }}&#8239;–&#8239;
-            {{- ambience['event']['registration_soft_limit']|date(lang=lang)|e }}
+            {{ ambience['event']['registration_start']|datetime(lang=lang)|e }}&#8239;–&#8239;
+            {{- ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }}
             {% if (values['event_id'] in user.orga or is_admin) and
                     ambience['event']['registration_hard_limit'] != ambience['event']['registration_hard_limit'] %}
-                (inoffiziell noch bis {{ ambience['event']['registration_hard_limit']|date(lang=lang)|e }})
+                (inoffiziell noch bis {{ ambience['event']['registration_hard_limit']|datetime(lang=lang)|e }})
             {% endif %}
         </dd>
         <dt>Orgas</dt>

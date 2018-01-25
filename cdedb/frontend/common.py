@@ -1714,11 +1714,10 @@ def registration_is_open(event):
     :param event: event dataset as returned by the backend
     :rtype: bool
     """
-    today = now().date()
     return (event['registration_start']
-            and event['registration_start'] <= today
+            and event['registration_start'] <= now()
             and (event['registration_hard_limit'] is None
-                 or event['registration_hard_limit'] >= today))
+                 or event['registration_hard_limit'] >= now()))
 
 def csv_output(data, fields, replace_newlines=True, substitutions=None):
     """Generate a csv representation of the passed data.

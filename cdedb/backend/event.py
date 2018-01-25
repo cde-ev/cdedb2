@@ -271,11 +271,10 @@ class EventBackend(AbstractBackend):
                 "ON p.event_id = e.id WHERE registration_start IS NOT NULL",
                 "GROUP BY e.id")
             data = self.query_all(rs, query, tuple())
-            today = now().date()
             ret = {e['id']: e['title']
-                   for e in data if (e['registration_start'] <= today
+                   for e in data if (e['registration_start'] <= now()
                                      and e['event_end'] is not None
-                                     and e['event_end'] >= today)}
+                                     and e['event_end'] >= now().date())}
             return ret
 
     @access("persona")

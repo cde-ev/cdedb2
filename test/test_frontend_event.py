@@ -135,9 +135,9 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         ## basic event data
         f = self.response.forms['changeeventform']
-        self.assertEqual(f['registration_start'].value, "2000-10-30")
+        self.assertEqual(f['registration_start'].value, "2000-10-30T01:00:00")
         f['title'] = "Universale Akademie"
-        f['registration_start'] = "2001-10-30"
+        f['registration_start'] = "2001-10-30 00:00:00"
         f['notes'] = """Some
 
         more
@@ -204,7 +204,7 @@ class TestEventFrontend(FrontendTest):
         f['shortname'] = "UnAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
-        f['registration_start'] = "2000-01-01"
+        f['registration_start'] = "2000-01-01 00:00:00+0000"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-H, DB-7-I"
         self.submit(f)
@@ -303,7 +303,7 @@ etc;anything else""", f['entries_2'].value)
         f['shortname'] = "UnAka"
         f['event_begin'] = "2345-01-01"
         f['event_end'] = "2345-6-7"
-        f['registration_start'] = "2000-01-01"
+        f['registration_start'] = "2000-01-01 00:00:00+0000"
         f['notes'] = "Die spinnen die Orgas."
         f['orga_ids'] = "DB-2-H, DB-7-I"
         self.submit(f)
@@ -1078,8 +1078,8 @@ etc;anything else""", f['entries_2'].value)
         ## prepare dates
         self.traverse({'href': '/event/event/1/change'})
         f = self.response.forms["changeeventform"]
-        f['registration_soft_limit'] = "2001-10-30"
-        f['registration_hard_limit'] = "2001-10-30"
+        f['registration_soft_limit'] = "2001-10-30 00:00:00+0000"
+        f['registration_hard_limit'] = "2001-10-30 00:00:00+0000"
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
         self.traverse({'href': '/event/event/1/part/summary'})
