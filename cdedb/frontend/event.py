@@ -1406,7 +1406,7 @@ class EventFrontend(AbstractUserFrontend):
             track_id: [course_id
                        for course_id, course
                        in xdictsort_filter(courses, 'nr', pad=True)
-                       if track_id in course['segments']]
+                       if track_id in course['active_segments']]
             for track_id in tracks}
         ## by default select all parts
         if 'parts' not in rs.values:
@@ -1584,7 +1584,7 @@ class EventFrontend(AbstractUserFrontend):
             track_id: [course_id
                        for course_id, course
                        in xdictsort_filter(courses, 'nr', pad=True)
-                       if track_id in course['segments']]
+                       if track_id in course['active_segments']]
             for track_id in tracks}
         non_trivials = {}
         for track_id, track in registration['tracks'].items():
