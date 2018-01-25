@@ -46,4 +46,17 @@
             {% endfor %}
         </ul>
     {% endif %}
+
+    {% if other_events %}
+        <h3>Weitere Veranstaltungen</h3>
+        <ul>
+            {% for event_id, event in other_events|dictsort|reverse %}
+                <li>
+                    {{ util.href(cdedblink("event/show_event", {"event_id": event_id}), event['title']) }}
+                    <br />
+                    {{ event['begin']|date(lang=lang)|e }}&#8239;–&#8239;{{ event['end']|date(lang=lang)|e }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 {% endblock %}

@@ -119,12 +119,17 @@ class EventFrontend(AbstractUserFrontend):
         open_event_list = self.eventproxy.list_open_events(rs)
         open_events = self.eventproxy.get_events(rs, open_event_list.keys())
         orga_events = self.eventproxy.get_events(rs, rs.user.orga)
+        visible_event_list = self.eventproxy.list_db_events(rs, visible_only=True)
+        other_events = self.eventproxy.get_events(
+            rs, set(visible_event_list) - set(open_event_list))
         for event in itertools.chain(open_events.values(),
-                                     orga_events.values()):
+                                     orga_events.values(),
+                                     other_events.values()):
             event['begin'] = self.event_begin(event)
             event['end'] = self.event_end(event)
         return self.render(rs, "index", {
-            'open_events': open_events, 'orga_events': orga_events,})
+            'open_events': open_events, 'orga_events': orga_events,
+            'other_events': other_events})
 
     @access("event_admin")
     def create_user_form(self, rs):
@@ -221,11 +226,16 @@ class EventFrontend(AbstractUserFrontend):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
             params['minor_form_present'] = os.path.isfile(os.path.join(
                 self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
+        elif not rs.ambience['event']['is_visible']:
+            return self.redirect(rs, "event/index")
         return self.render(rs, "show_event", params)
 
     @access("event")
     def course_list(self, rs, event_id):
         """List courses from an event."""
+        if (not rs.ambience['event']['is_course_list_visible']
+                and not (event_id in rs.user.orga or self.is_admin(rs))):
+            return self.redirect(rs, "event/show_event")
         rs.ambience['event']['is_open'] = registration_is_open(
             rs.ambience['event'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -247,7 +257,8 @@ class EventFrontend(AbstractUserFrontend):
         "title", "institution", "description", "shortname",
         "registration_start", "registration_soft_limit",
         "registration_hard_limit", "iban", "mail_text", "use_questionnaire",
-        "notes", "lodge_field", "reserve_field")
+        "notes", "lodge_field", "reserve_field", "is_visible",
+        "is_course_list_visible")
     @event_guard(check_offline=True)
     def change_event(self, rs, event_id, data):
         """Modify an event organized via DB."""

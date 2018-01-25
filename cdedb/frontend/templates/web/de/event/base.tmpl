@@ -6,7 +6,7 @@
     <div class="list-group tear-down">
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
                      aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_show')) }}
-        {% if data['tracks'] %}
+        {% if data['tracks'] and data['is_course_list_visible'] %}
             {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), "Kursliste",
                          aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_list')) }}
         {% endif %}

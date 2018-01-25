@@ -244,20 +244,23 @@ class EventBackend(AbstractBackend):
             start, stop)
 
     @access("persona")
-    def list_db_events(self, rs):
+    def list_db_events(self, rs, visible_only=False):
         """List all events organized via DB.
 
         :type rs: :py:class:`cdedb.common.RequestState`
+        :type visible_only: bool
         :rtype: {int: str}
         :returns: Mapping of event ids to titles.
         """
         query = "SELECT id, title FROM event.events"
+        if visible_only:
+            query = glue(query, "WHERE is_visible = True")
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
     @access("persona")
     def list_open_events(self, rs):
-        """List all events which are open.
+        """List all events which are open (and visible).
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: {int: {str: object}}
@@ -265,14 +268,15 @@ class EventBackend(AbstractBackend):
         """
         with Atomizer(rs):
             query = glue(
-                "SELECT e.id, e.registration_start, e.title,",
+                "SELECT e.id, e.registration_start, e.title, e.is_visible,",
                 "MAX(p.part_end) AS event_end",
                 "FROM event.events AS e JOIN event.event_parts AS p",
                 "ON p.event_id = e.id WHERE registration_start IS NOT NULL",
                 "GROUP BY e.id")
             data = self.query_all(rs, query, tuple())
             ret = {e['id']: e['title']
-                   for e in data if (e['registration_start'] <= now()
+                   for e in data if (e['is_visible']
+                                     and e['registration_start'] <= now()
                                      and e['event_end'] is not None
                                      and e['event_end'] >= now().date())}
             return ret

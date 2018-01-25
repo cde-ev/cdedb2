@@ -82,6 +82,8 @@ class TestEventBackend(BackendTest):
         data['id'] = new_id
         data['offline_lock'] = False
         data['is_archived'] = False
+        data['is_course_list_visible'] = False
+        data['is_visible'] = False
         data['lodge_field'] = None
         data['reserve_field'] = None
         ## correct part and field ids
@@ -1278,6 +1280,8 @@ class TestEventBackend(BackendTest):
                               'notes': 'Todoliste ... just kidding ;)',
                               'offline_lock': False,
                               'is_archived': False,
+                              'is_course_list_visible': True,
+                              'is_visible': True,
                               'lodge_field': 3,
                               'mail_text': 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.',
                               'institution': 1,
