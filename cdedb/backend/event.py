@@ -475,7 +475,7 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = fields
         return ret
 
-    def _set_tracks(self, rs, event_id, part_id, data):
+    def _set_tracks(self, rs, event_id, part_id, data, cautious=False):
         """Helper for handling of course tracks.
 
         This is basically uninlined code from ``set_event()``.
@@ -486,6 +486,9 @@ class EventBackend(AbstractBackend):
         :type event_id: int
         :type part_id: int
         :type data: {int: str}
+        :type cautious: bool
+        :param cautious: If True only modification of existing tracks is
+          allowed. That is creation and deletion of tracks is disallowed.
         :rtype: int
         :returns: default return code
         """
@@ -505,6 +508,8 @@ class EventBackend(AbstractBackend):
                    if x > 0 and data[x] is not None}
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
+        if cautious and (new or deleted):
+            raise ValueError(_("Registrations exist, only modifications."))
         ## new
         for x in reversed(sorted(new)):
             new_track = {
@@ -630,6 +635,7 @@ class EventBackend(AbstractBackend):
                                        data['id'], persona_id=anid)
             if 'parts' in data:
                 parts = data['parts']
+                has_registrations = self.has_registrations(rs, data['id'])
                 current = self.sql_select(rs, "event.event_parts", ("id",),
                                           (data['id'],), entity_key="event_id")
                 existing = {unwrap(e) for e in current}
@@ -640,6 +646,9 @@ class EventBackend(AbstractBackend):
                            if x > 0 and parts[x] is not None}
                 deleted = {x for x in parts
                            if x > 0 and parts[x] is None}
+                if has_registrations and (deleted or new):
+                    raise ValueError(
+                        _("Registrations exist, modifications only."))
                 if deleted >= existing | new:
                     raise ValueError(_("At least one event part required."))
                 for x in new:
@@ -660,7 +669,8 @@ class EventBackend(AbstractBackend):
                     update['id'] = x
                     tracks = update.pop('tracks', {})
                     ret *= self.sql_update(rs, "event.event_parts", update)
-                    ret *= self._set_tracks(rs, data['id'], x, tracks)
+                    ret *= self._set_tracks(rs, data['id'], x, tracks,
+                                            cautious=has_registrations)
                     self.event_log(
                         rs, const.EventLogCodes.part_changed, data['id'],
                         additional_info=titles[x])
@@ -1109,6 +1119,22 @@ class EventBackend(AbstractBackend):
                 ret[anid]['fields'] = cast_fields(ret[anid]['fields'],
                                                   event['fields'])
         return ret
+
+    @access("event")
+    def has_registrations(self, rs, event_id):
+        """Determine whether there exist registrations for an event.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :rtype: bool
+        """
+        event_id = affirm("id", event_id)
+        if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
+            raise PrivilegeError(_("Not privileged."))
+        with Atomizer(rs):
+            query = glue("SELECT COUNT(*) FROM event.registrations",
+                         "WHERE event_id = %s LIMIT 1")
+            return bool(unwrap(self.query_one(rs, query, (event_id,))))
 
     def _set_course_choices(self, rs, registration_id, track_id, choices,
                             courses):

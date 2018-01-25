@@ -169,29 +169,6 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['partsummaryform']
         self.assertEqual("Warmup", f['title_1'].value)
 
-    @as_users("anton", "garcia")
-    def test_part_summary_tracks(self, user):
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/part/summary'})
-        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
-        f = self.response.forms['partsummaryform']
-        self.assertNotIn('track_3_4', f.fields)
-        f['track_3_-1'] = "Spätschicht"
-        f['track_create_3_-1'].checked = True
-        self.submit(f)
-        f = self.response.forms['partsummaryform']
-        self.assertEqual("Spätschicht", f['track_3_4'].value)
-        f['track_3_4'] = "Nachtschicht"
-        self.submit(f)
-        f = self.response.forms['partsummaryform']
-        self.assertEqual("Nachtschicht", f['track_3_4'].value)
-        f['track_delete_3_4'].checked = True
-        self.submit(f)
-        self.assertTitle("Große Testakademie 2222 Teile konfigurieren")
-        f = self.response.forms['partsummaryform']
-        self.assertNotIn('track_3_4', f.fields)
-
     @as_users("anton")
     def test_part_summary_complex(self, user):
         self.traverse({'href': '/event/$'},
@@ -229,6 +206,25 @@ class TestEventFrontend(FrontendTest):
         f['title_5'] = "Größere Hälfte"
         f['fee_5'] = "99.99"
         self.submit(f)
+        ## and now for tracks
+        self.assertTitle("Universale Akademie Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertNotIn('track_5_5', f.fields)
+        f['track_5_-1'] = "Spätschicht"
+        f['track_create_5_-1'].checked = True
+        self.submit(f)
+        f = self.response.forms['partsummaryform']
+        self.assertEqual("Spätschicht", f['track_5_5'].value)
+        f['track_5_5'] = "Nachtschicht"
+        self.submit(f)
+        f = self.response.forms['partsummaryform']
+        self.assertEqual("Nachtschicht", f['track_5_5'].value)
+        f['track_delete_5_5'].checked = True
+        self.submit(f)
+        self.assertTitle("Universale Akademie Teile konfigurieren")
+        f = self.response.forms['partsummaryform']
+        self.assertNotIn('track_5_5', f.fields)
+        ## finally deletion
         self.assertTitle("Universale Akademie Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Größere Hälfte", f['title_5'].value)

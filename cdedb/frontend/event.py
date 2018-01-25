@@ -344,13 +344,7 @@ class EventFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, current)
         referenced_parts = set()
         referenced_tracks = set()
-        reg_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(rs, reg_ids)
-        for registration in registrations.values():
-            referenced_parts.update(registration['parts'].keys())
-            ## the following also takes care of course choices
-            referenced_tracks.update(registration['tracks'].keys())
-        has_registrations = bool(registrations)
+        has_registrations = self.eventproxy.has_registrations(rs, event_id)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         for course in courses.values():
@@ -364,7 +358,7 @@ class EventFrontend(AbstractUserFrontend):
             'has_registrations': has_registrations})
 
     @staticmethod
-    def process_part_input(rs, parts):
+    def process_part_input(rs, parts, has_registrations):
         """This handles input to configure the parts.
 
         Since this covers a variable number of rows, we cannot do this
@@ -373,6 +367,7 @@ class EventFrontend(AbstractUserFrontend):
         :type rs: :py:class:`FrontendRequestState`
         :type parts: {int: {str: object}}
         :param parts: parts to process
+        :type has_registrations: bool
         :rtype: {int: {str: object}}
         """
         ## Handle basic part data
@@ -380,6 +375,8 @@ class EventFrontend(AbstractUserFrontend):
             rs, (("delete_{}".format(part_id), "bool") for part_id in parts))
         deletes = {part_id for part_id in parts
                    if delete_flags['delete_{}'.format(part_id)]}
+        if has_registrations and deletes:
+            raise ValueError(_("Registrations exist, no deletion."))
         spec = {
             'title': "str",
             'part_begin': "date",
@@ -401,6 +398,8 @@ class EventFrontend(AbstractUserFrontend):
             will_create = unwrap(request_extractor(
                 rs, (("create_-{}".format(marker), "bool"),)))
             if will_create:
+                if has_registrations:
+                    raise ValueError(_("Registrations exist, no creation."))
                 params = tuple(("{}_-{}".format(key, marker), value)
                                for key, value in spec.items())
                 data = request_extractor(rs, params)
@@ -423,6 +422,8 @@ class EventFrontend(AbstractUserFrontend):
                          for track_id in part['tracks']
                          if track_delete_flags['track_delete_{}_{}'.format(
                                  part_id, track_id)]}
+        if has_registrations and track_deletes:
+            raise ValueError(_("Registrations exist, no deletion."))
         params = tuple(("track_{}_{}".format(part_id, track_id), "str")
                        for part_id, part in parts.items()
                        for track_id in part['tracks']
@@ -444,6 +445,8 @@ class EventFrontend(AbstractUserFrontend):
                     rs,
                     (("track_create_{}_-{}".format(part_id, marker), "bool"),)))
                 if will_create:
+                    if has_registrations:
+                        raise ValueError(_("Registrations exist, no creation."))
                     params = (("track_{}_-{}".format(part_id, marker), "str"),)
                     newtrack = unwrap(request_extractor(rs, params))
                     ret[part_id]['tracks'][-marker] = newtrack
@@ -478,18 +481,15 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def part_summary(self, rs, event_id):
         """Manipulate the parts of an event."""
+        has_registrations = self.eventproxy.has_registrations(rs, event_id)
         parts = self.process_part_input(
-            rs, rs.ambience['event']['parts'])
+            rs, rs.ambience['event']['parts'], has_registrations)
         if rs.errors:
             return self.part_summary_form(rs, event_id)
         for part_id, part in rs.ambience['event']['parts'].items():
             if parts.get(part_id) == part:
                 ## remove unchanged
                 del parts[part_id]
-        for part_id, part in parts.items():
-            if part_id < 0:
-                if self.eventproxy.list_registrations(rs, event_id):
-                    raise ValueError(_("Already registrations present."))
         event = {
             'id': event_id,
             'parts': parts

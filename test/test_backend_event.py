@@ -288,6 +288,10 @@ class TestEventBackend(BackendTest):
         expectation = {1: 'Große Testakademie 2222'}
         self.assertEqual(expectation, self.event.list_open_events(self.key))
 
+    @as_users("anton", "garcia")
+    def test_has_registrations(self, user):
+        self.assertEqual(True, self.event.has_registrations(self.key, 1))
+
     @as_users("emilia")
     def test_registration_participant(self, user):
         expectation = {

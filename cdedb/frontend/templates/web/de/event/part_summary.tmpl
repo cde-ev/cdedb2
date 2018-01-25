@@ -28,7 +28,8 @@
                                                attributes='data-basename="track_create_"', aclass='drow-indicator1') }}
                     {% else %}
                         {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Löschen",
-                                               readonly=(track_id in referenced_tracks), aclass='drow-indicator1') }}
+                                               readonly=(has_registrations or track_id in referenced_tracks),
+                                               aclass='drow-indicator1') }}
                     {% endif %}
                 </div>
             </div>
@@ -60,10 +61,12 @@
                     {% for i in range(1, values.get('track_create_last_index', {}).get(part_id, 0) + 1) %}
                         {{ print_track(part_id, -i, aclass='drow-new1', newrow=True) }}
                     {% endfor %}
-                    {{ print_track(part_id, values.get('track_create_last_index', {}).get(part_id, 0) - 1,
-                                   aclass='drow-prototype1', newrow=True) }}
-                    <button type="button" class="btn btn-success btn-xs add-track-button softhide">
-                        {{ util.make_icon('plus') }} Schiene hinzufügen</button>
+                    {% if not has_registrations %}
+                        {{ print_track(part_id, values.get('track_create_last_index', {}).get(part_id, 0) - 1,
+                                       aclass='drow-prototype1', newrow=True) }}
+                        <button type="button" class="btn btn-success btn-xs add-track-button softhide">
+                            {{ util.make_icon('plus') }} Schiene hinzufügen</button>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-md-6">
@@ -104,7 +107,8 @@
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                {{ print_part(part_id, part_id not in referenced_parts, tracks=part['tracks'], aclass='drow-row') }}
+                {{ print_part(part_id, part_id not in referenced_parts and not has_registrations,
+                              tracks=part['tracks'], aclass='drow-row') }}
             {% endfor %}
             {# Items that were added by the user but failed validation. They are still new and have no official id. #}
             {% for i in range(1, values.get('create_last_index', 0) + 1) %}
