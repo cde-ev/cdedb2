@@ -40,17 +40,22 @@
                 {{ myentries.append((track_id, track['title']))|e }}
             {% endfor %}
             {{ util.form_input_checkboxes(name="segments", label="Angeboten in", entries=myentries,
-                                          aclass='checkbox_segment') }}
+                                          aclass='checkbox_segment',
+                                          info="Veranstaltungsteile, in denen der Kurs ursprünglich angeboten wurde.") }}
         {% endif %}
 
         <h4 class="heading-underline">Status</h4>
         {% if ambience['event']['tracks']|length == 1 %}
             {# show only single checkbox if event has only one course track #}
             {{ util.form_input_checkbox("active_segments", label="Findet statt",
-                                        value=(ambience['event']['tracks']|list)[0]) }}
+                                        value=(ambience['event']['tracks']|list)[0],
+                                        info="Ausfallende Kurse sind nicht mehr von Teilnehmern wählbar und werden in"
+                                             " der Kursliste und bei der Kurseinteilung markiert.") }}
         {% else %}
             {{ util.form_input_checkboxes(name="active_segments", label="Findet statt in", entries=myentries,
-                                          aclass='checkbox_active_segment') }}
+                                          aclass='checkbox_active_segment',
+                                          info="Ausfallende Kurse sind nicht mehr von Teilnehmern wählbar und werden in"
+                                               " der Kursliste und bei der Kurseinteilung markiert.") }}
         {% endif %}
         {{ util.form_input_textarea(name="notes", label="Orga-Notizen", rows="5") }}
 
