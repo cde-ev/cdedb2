@@ -9,21 +9,13 @@
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen", active="True") }}
 {% endblock %}
 {% block content %}
-    <h2>Ausstehende Anfragen [{{ to_review|length|e }}]</h2>
-
     <script type="text/javascript">
         $(function() {
             $('.rejection-form').cdedbProtectAction("Die Account-Anfrage wird irreversibel gelöscht.");
         });
     </script>
-    <p>
-        Die im Folgenden aufgeführten Personen haben einen Account für den angegebenen Bereich der CdE-Datenbank
-        beantragt. Nach dem Genehmigen einer Anfrage wird der entsprechende erhält der Bewerber eine E-Mail mit Link zu einem Formular
-        zum Anlegen seines Accounts. Wird die Anfrage abgelehnt, so erhält er eine E-Mail, die ihn darüber
-        informiert.
-    </p>
     {% if 'event_admin' in user.roles or 'core_admin' in user.roles %}
-        <h3>Veranstaltungs-Anfragen</h3>
+        <h3>Veranstaltungs-Anfragen [{{ event_cases|length|e }}]</h3>
         {% if event_cases|length > 0 %}
             {% for case_id, entry in event_cases|dictsort %}
                 <div class="row">
@@ -66,7 +58,7 @@
         {% endif %}
     {% endif %}
     {% if 'ml_admin' in user.roles or 'core_admin' in user.roles %}
-        <h3>Malinglisten-Anfragen</h3>
+        <h3>Malinglisten-Anfragen [{{ ml_cases|length|e }}]</h3>
         {% if ml_cases|length > 0 %}
             {% for case_id, entry in ml_cases|dictsort %}
                 <div class="row">
