@@ -140,8 +140,6 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.consent_decision_form(rs, stay=True)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        if data['decided_search']:
-            return self.redirect(rs, "core/index")
         new = {
             'id': rs.user.persona_id,
             'decided_search': True,
