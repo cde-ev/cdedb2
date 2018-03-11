@@ -75,6 +75,27 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         ## automatic check for success notification
 
+    def test_consent_change(self):
+        # Remove consent decision of Bertalotta Beispiel
+        self.login(USER_DICT["anton"])
+        self.admin_view_profile('berta')
+        self.traverse({'href': '/core/persona/2/adminchange'})
+        f = self.response.forms['changedataform']
+        f['is_searchable'].checked = False
+        self.submit(f)
+
+        # Check that Consent Decision is reachable for Berta but does not show
+        # up upon login. CdE Member search should be disabled
+        self.logout()
+        self.login(USER_DICT["berta"])
+        self.assertTitle("CdE Datenbank")
+        self.traverse({'href': '/cde'})
+        self.assertNotIn("membersearchform", self.response.forms)
+        self.traverse({'href': '/cde/self/consent'})
+        # Re-acknowledge consent
+        f = self.response.forms['ackconsentform']
+        self.submit(f)
+
     @as_users("berta")
     def test_quota(self, user):
         count = 42
