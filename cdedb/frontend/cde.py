@@ -153,7 +153,9 @@ class CdEFrontend(AbstractUserFrontend):
         self.notify_return_code(rs, code, success=message)
         if not code:
             return self.consent_decision_form(rs, stay=True)
-        return self.redirect(rs, "core/index")
+        if not data['decided_search']:
+            return self.redirect(rs, "core/index")
+        return self.redirect(rs, "cde/index")
 
     @access("searchable")
     @REQUESTdata(("is_search", "bool"))
