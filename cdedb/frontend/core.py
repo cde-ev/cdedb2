@@ -791,7 +791,7 @@ class CoreFrontend(AbstractFrontend):
                 "birth_name", "address_supplement2", "address2", "postal_code2",
                 "location2", "country2", "weblink", "specialisation",
                 "affiliation", "timeline", "interests", "free_form",
-                "bub_search"}
+                "bub_search", "is_searchable"}
         }
         attributes = REALM_ATTRIBUTES['persona']
         roles = extract_roles(rs.ambience['persona'])

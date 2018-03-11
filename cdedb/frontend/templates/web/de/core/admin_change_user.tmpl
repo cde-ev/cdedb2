@@ -36,6 +36,7 @@
 
         <h4 class="heading-underline">Account</h4>
         {% if values['is_cde_realm'] %}
+            {{ util.form_input_checkbox(name="is_searchable", label="Suchbar (Datenschutz-Zustimmung)") }}
             {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
         {% endif %}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
