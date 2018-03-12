@@ -158,7 +158,7 @@
                                                      "Fragebogen", icon='edit') -}}
                                     {% endif -%}
                                     )
-                                {% else %}
+                                {% elif event['registration_start'] and event['registration_start'] >= now() %}
                                     {{ util.href(cdedblink('event/register_form', {'event_id': event_id}), "anmelden",
                                                  icon='log-in') }}
                                     {% if event['registration_soft_limit'] %}

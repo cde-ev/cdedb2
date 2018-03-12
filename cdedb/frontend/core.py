@@ -9,6 +9,7 @@ import os.path
 import pathlib
 import quopri
 import tempfile
+import datetime
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
@@ -111,9 +112,9 @@ class CoreFrontend(AbstractFrontend):
                     requests = self.mlproxy.list_requests(rs, mailinglist_id)
                     mailinglist['requests'] = len(requests)
                 dashboard['moderator'] = moderator
-            ## open events
+            ## visible and open events
             if "event" in rs.user.roles:
-                event_ids = self.eventproxy.list_open_events(rs)
+                event_ids = self.eventproxy.list_visible_events(rs)
                 events = self.eventproxy.get_events(rs, event_ids.keys())
                 final = {}
                 for event_id, event in events.items():
@@ -129,6 +130,17 @@ class CoreFrontend(AbstractFrontend):
                         registration = self.eventproxy.list_registrations(
                             rs, event_id, rs.user.persona_id)
                         event['registration'] = bool(registration)
+                        # Skip events, its registration begins more then 2 weeks in future
+                        if event['registration_start'] and \
+                                now() + datetime.timedelta(weeks=2) < \
+                                event['registration_start']:
+                            continue
+                        # Skip events, that are over or are not registerable anymore
+                        if event['registration_hard_limit'] and \
+                                now() > event['registration_hard_limit'] \
+                                and not event['registration']\
+                                or now().date() > event['end']:
+                            continue
                         final[event_id] = event
                 if final:
                     dashboard['events'] = final

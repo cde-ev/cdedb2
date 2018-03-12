@@ -259,8 +259,8 @@ class EventBackend(AbstractBackend):
         return {e['id']: e['title'] for e in data}
 
     @access("persona")
-    def list_open_events(self, rs):
-        """List all events which are open (and visible).
+    def list_visible_events(self, rs):
+        """List all events which are visible and not archived.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :rtype: {int: {str: object}}
@@ -271,15 +271,11 @@ class EventBackend(AbstractBackend):
                 "SELECT e.id, e.registration_start, e.title, e.is_visible,",
                 "MAX(p.part_end) AS event_end",
                 "FROM event.events AS e JOIN event.event_parts AS p",
-                "ON p.event_id = e.id WHERE registration_start IS NOT NULL",
+                "ON p.event_id = e.id",
+                "WHERE e.is_visible AND NOT e.is_archived",
                 "GROUP BY e.id")
             data = self.query_all(rs, query, tuple())
-            ret = {e['id']: e['title']
-                   for e in data if (e['is_visible']
-                                     and e['registration_start'] <= now()
-                                     and e['event_end'] is not None
-                                     and e['event_end'] >= now().date())}
-            return ret
+            return {e['id']: e['title'] for e in data}
 
     @access("persona")
     def list_db_courses(self, rs, event_id):

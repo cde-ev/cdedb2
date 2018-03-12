@@ -116,7 +116,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("persona")
     def index(self, rs):
         """Render start page."""
-        open_event_list = self.eventproxy.list_open_events(rs)
+        open_event_list = self.eventproxy.list_visible_events(rs)
         open_events = self.eventproxy.get_events(rs, open_event_list.keys())
         orga_events = self.eventproxy.get_events(rs, rs.user.orga)
         visible_event_list = self.eventproxy.list_db_events(rs, visible_only=True)

@@ -284,9 +284,9 @@ class TestEventBackend(BackendTest):
                          self.event.get_course(self.key, new_id))
 
     @as_users("anton", "garcia")
-    def test_open_events(self, user):
+    def test_visible_events(self, user):
         expectation = {1: 'Große Testakademie 2222'}
-        self.assertEqual(expectation, self.event.list_open_events(self.key))
+        self.assertEqual(expectation, self.event.list_visible_events(self.key))
 
     @as_users("anton", "garcia")
     def test_has_registrations(self, user):
