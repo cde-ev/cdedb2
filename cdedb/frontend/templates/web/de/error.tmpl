@@ -4,7 +4,8 @@
 {% block content %}
     {% if error.code == 403 %}
         <div class="alert alert-danger">
-            {{ util.make_icon('remove-sign') }} Du hast keine ausreichende Berechtigung, um auf diese Seite zuzugreifen.
+            {{ util.make_icon('remove-sign') }} Du hast keine ausreichende Berechtigung, um auf diese Seite zuzugreifen:
+            {{ error.description|e }}
         </div>
         <p>
             Wenn Du diese Meldung für einen Fehler der CdE-Datenbank hältst, kontaktiere bitte das Datenbank-Team unter
@@ -13,7 +14,8 @@
         </p>
     {% elif error.code == 404 %}
         <div class="alert alert-danger">
-            {{ util.make_icon('remove-sign') }} Die gewünschte Seite konnte leider nicht gefunden werden.
+            {{ util.make_icon('remove-sign') }} Die gewünschte Seite konnte leider nicht gefunden werden:
+            {{ error.description|e }}
         </div>
         <p>
             Wenn Du durch einen internen Link der CdE-Datenbank hierher gelangt bist, kontaktiere bitte das
