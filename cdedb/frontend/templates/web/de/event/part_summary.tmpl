@@ -16,6 +16,9 @@
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), "Veranstaltungs-Teile", active=True) }}
 {% endblock %}
 
+{# Macro for a general course track, that can have each role in the (inner) DynamicRow workflow.
+   aclass is used to pass classes to the row, such as drow-row1, drow-prototype1, drow-new1
+   newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_track(part_id, track_id, aclass="", newrow=False) %}
     <div class="p {{ aclass }}">
         <div class="input-group">

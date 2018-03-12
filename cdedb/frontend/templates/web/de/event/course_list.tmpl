@@ -15,6 +15,13 @@
     </h1>
 {% endblock %}
 {% block content %}
+    {% if not ambience['event']['is_course_list_visible'] %}
+        <div class="alert alert-info" role="alert">
+            {{ util.make_icon('info-sign') }}
+            <strong>Achtung!</strong>
+            <span class="notificationMessage">Die Kursliste ist zur Zeit nur für Orgas und Admins sichtbar.</span>
+        </div>
+    {% endif %}
     {% if courses %}
         {% for anid, entry in courses|xdictsort('nr', pad=True) %}
             <div class="hide-hover-container">
