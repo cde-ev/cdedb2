@@ -4,20 +4,22 @@
 
 {% macro one_event_links(data) %}
     <div class="list-group tear-down">
+        {% if data['is_visible'] or data['id'] in user.orga or is_admin %}
         {{ util.href(cdedblink("event/show_event", {"event_id": data['id']}), "Übersicht",
                      aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'event_show')) }}
-        {% if data['tracks'] and data['is_course_list_visible'] %}
+        {% endif %}
+        {% if data['tracks'] and (data['is_course_list_visible'] or data['id'] in user.orga or is_admin) %}
             {{ util.href(cdedblink("event/course_list", {"event_id": data['id']}), "Kursliste",
                          aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_list')) }}
         {% endif %}
         {% if is_registered %}
             {{ util.href(cdedblink("event/registration_status", {"event_id": data['id']}), "Meine Anmeldung",
                     aclass="list-group-item", icon="log-in", active=(sidenav_active == 'event_register')) }}
-            {% if ambience['event']['use_questionnaire'] %}
+            {% if data['use_questionnaire'] %}
                 {{ util.href(cdedblink("event/questionnaire_form", {"event_id": data['id']}), "Fragebogen",
                         aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest')) }}
             {% endif %}
-        {% else %}
+        {% elif data['is_open'] %}
             {{ util.href(cdedblink("event/register_form", {"event_id": data['id']}), "Anmelden",
                     readonly=is_locked, aclass="list-group-item", icon="log-in",
                     active=(sidenav_active == 'event_register')) }}

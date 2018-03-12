@@ -390,9 +390,9 @@
     {% endcall %}
 {% endmacro %}
 
-{% macro breadcrumb_link(ref, label, icon="", active=False) %}
-    {%- if active -%}
-        <li class="active">
+{% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
+    {%- if active or readonly -%}
+        <li {% if active %}class="active"{% endif %}>
             {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
         </li>
     {%- else -%}
