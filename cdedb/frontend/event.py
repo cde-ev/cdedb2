@@ -227,7 +227,8 @@ class EventFrontend(AbstractUserFrontend):
             params['minor_form_present'] = os.path.isfile(os.path.join(
                 self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
         elif not rs.ambience['event']['is_visible']:
-            return self.redirect(rs, "event/index")
+            raise werkzeug.exceptions.Forbidden(
+                _("The event is not published yet."))
         return self.render(rs, "show_event", params)
 
     @access("event")
@@ -235,6 +236,7 @@ class EventFrontend(AbstractUserFrontend):
         """List courses from an event."""
         if (not rs.ambience['event']['is_course_list_visible']
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
+            rs.notify("warning", _("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
         rs.ambience['event']['is_open'] = registration_is_open(
             rs.ambience['event'])
