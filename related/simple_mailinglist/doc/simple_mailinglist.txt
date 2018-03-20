@@ -1,0 +1,472 @@
+.. -*-coding: utf-8-*-
+
+================================
+Simple minimalistic mailing list
+================================
+
+**WARNUNG: DIESE DOKUMENTATION IST VERALTET!!!***
+
+:Author:    Roland Koebler <rk at simple-is-better dot org>
+:Website:   http://www.simple-is-better.org/mailinglist/
+:Date:      2014-08-02
+
+.. meta::
+    :description: simple minimalistic mailinglist manager
+    :keywords: mailing list, mailing list manager, python, simple, minimalistic
+
+.. contents:: **Table of contents**
+    :backlinks: none
+.. sectnum::
+
+**WARNUNG: DIESE DOKUMENTATION IST VERALTET!!!***
+
+Overview
+========
+Most mailinglist managers are large and heavy, with many different options,
+a webinterface (to administrate the list), a subscription management, an
+own mailinglist-archive etc. They often also have to be or are integrated into
+a MTA and then run system-wide. While parts of this *may* be useful for large
+mailinglists, it makes things too complicated for small lists. [#]_
+
+Since I prefer simple solutions, I wrote a minimalistic mailinglist software
+which:
+
+- does not depend on a specific MTA, and can even run completely *without*
+  a local MTA,
+- has no webinterface, no automatic subscribe/unsubscribe handling, no
+  whistles and bells,
+- is configurable by a small and simple JSON-file,
+- only needs access to the configfile, its maildirs, its logfile and a
+  sendmail command,
+- runs completely as user,
+- buffers mails-to-send in an outbox, which makes it possible to send the
+  mails later and to continue sending after an error
+- can be "connected" flexibly to existing software (e.g. a database), so it
+  can get the list of subscribers and other configuration from there,
+- can use a file with hashed email-addresses for whitelisting.
+
+  
+You only have to create a JSON-configfile, mkdir some directories,
+configure your mail delivery (e.g. Postfix or procmail) to put all mail
+to the mailinglist-address into a maildir, and periodically run a script.
+
+All the script does, is:
+
+0. Be run periodically, e.g. by at, cron or inotify.
+1. Read the configuration-file.
+2. Read mails from its maildir-like directories.
+3. Check if the mail was accepted by a moderator or if
+   the (envelope) sender is in the whitelist, and:
+
+   - if yes: Mangle the mail-header + send the mail to the subscribers.
+   - if no:  Send a moderation-request to the moderators (if not already done).
+
+4. Move processed mails to an other maildir-like directory.
+5. Log messages to a logfile and errors optionally to stderr.
+
+.. [#] Note that for completely moderated mailinglists (=where *every* mail
+   has to be moderated) with only one moderator, you don't even need *any*
+   mailinglist software. Simply let all mail to the mailinglist address
+   be delivered to you, and configure your mailreader to sort this mail
+   into an own folder. Then, periodically check the new mails in this folder
+   and forward them to the subscribers.
+
+Documentation
+=============
+
+Quickstart
+----------
+
+1. Create a config-file for you mailinglist, e.g.::
+
+    {
+        "listname" : "Testlist",
+        "address"       : "testlist@lists.example.com",
+        "admin_address" : "testlist-admin@lists.example.com",
+        "sender"        : "owner-testlist@example.com",
+
+        "list-owner"    : "mailto:owner-testlist@example.com",
+
+        "dir"            : "/var/spool/mail/vhosts/list-test/_/new/",
+        "dir_done"       : "/var/spool/mail/vhosts/list-test/_/cur/",
+        "admin_dir"      : "/var/spool/mail/vhosts/list-test/admin/new/",
+        "admin_dir_done" : "/var/spool/mail/vhosts/list-test/admin/cur/",
+        "outbox_dir"     : "/var/spool/mail/vhosts/list-test/outbox/",
+        "logfile"        : "/var/spool/mail/vhosts/list-test/logfile.txt",
+        
+        "sendmail" : "/usr/sbin/sendmail",
+        
+        "subscribers" : [
+            "user1@example.com",
+            "user2@example.com"
+            ],
+        "whitelist" : [
+            ".",
+            "root@example.com"
+            ],
+        "moderators" : ["user3@example.com"]
+    }
+
+2. Check the configuration, e.g.::
+
+    simple_mailinglist.py -c testlist.json
+ 
+3. Create the maildir directories and set their permissions, .e.g::
+
+        mkdir -p /var/spool/mail/vhosts/list-test/
+        cd /var/spool/mail/vhosts/list-test/
+        mkdir -p _/new _/cur _/tmp admin/new admin/cur admin/tmp outbox
+        chgrp -R mail .
+        chmod g+rx . _ admin
+        chmod g+rwx _/* admin/*
+
+4. Add the mail-addresses, and configure delivery.
+
+   - Postfix with virtual hosting, e.g.:
+     
+     /etc/postfix/vmailbox::
+
+        testlist@lists.example.com          list-test/_/
+        testlist-admin@lists.example.com    list-test/admin/
+
+     /etc/postfix/vmailbox_uid::
+
+        testlist@lists.example.com          1000
+        testlist-admin@lists.example.com    1000
+
+     /etc/postfix/virtual::
+
+        owner-testlist@example.com      postmaster
+
+     Don't forget to call ``postmap`` for the files afterwards.
+
+   - procmail: TODO
+
+5. Maybe configure your MTA to keep the envelope sender as ``Return-Path:``
+   header, so that the whitelist checks the envelope sender (and not the
+   ``From:`` header field).
+
+   The "local" and "virtual" delivery agent of Postfix already do this
+   automatically.
+
+6. Setup cron/at/inotify to call the mailinglist-script periodically,
+   e.g. call the script every minute by cron::
+
+    $ crontab -e
+    * * * * * /home/user/simple_mailinglist.py -p -s testlist.json
+
+7. Send some testmails.
+
+
+Configuration
+-------------
+A simple JSON-file is used for configuration::
+
+    {
+    "listname" : "MAILINGLIST_NAME",
+    "address"       : "MAILINGLIST_ADDRESS",
+    "admin_address" : "MAILINGLIST_ADMIN_ADDRESS",
+    "sender"        : "MAILINGLIST_ENVELOPE_SENDER_ADDRESS",
+
+    "list-owner"       : "URL",
+    "list-subscribe"   : "URL",
+    "list-unsubscribe" : "URL",
+    "list-help"        : "URL",
+    "precedence"       : "list",
+
+    "dir"            : "DIRECTORY_CONTAINING_THE_MAILS",
+    "dir_done"       : "DIRECTORY_WHERE_PROCESSED_MAILS_ARE_MOVED_TO",
+    "admin_dir"      : "DIRECTORY_CONTAINING_ADMIN_MAILS",
+    "admin_dir_done" : "DIRECTORY_WHERE_PROCESSES_ADMIN_MAILS_ARE_MOVED_TO",
+    "outbox_dir"     : "DIRECTORY_WHERE_MAILS_TO_SEND_SHOULD_BE_PUT",
+
+    "logfile"          : "LOGFILE_FILENAME",
+    "errors_to_stderr" : true|false,
+
+    "sendmail"              : "SENDMAIL_CMD",
+    "sendmail_skip_errors"  : False,
+    "max_rcpts_per_message" : 50,
+
+    "subscribers"   : [ALL, SUBSCRIBED, MAIL, ADDRESSES],
+    "whitelist"     : [WHITELISTED, SENDER, ADDRESSES],
+    "moderators"    : [MODERATOR, EMAIL, ADDRESSES],
+
+    "whitelist_hashfile" : FILE_CONTAINING_SHA256_HASHED_EMAIL_ADDRESSES
+    "config_extend" : "SHELL_CMD_TO_RECEIVE_A_JSON_FILE_WHICH_EXTENDS_THESE_VALUES"
+    }
+
+All entries have to be ASCII, except "listname" which may also contain
+non-ASCII characters.
+
+``listname`` (string, optional)
+    The name of the mailinglist; this name is added in ``[]`` to the subject
+    of the mailinglist-mails.
+``address`` (string, email-address)
+    The mailinglist-address, e.g. ``"mylist@lists.example.org"``.
+``admin_address`` (string, email-address)
+    The email-address for moderation-mails,
+    e.g. ``"mylist-admin@lists.example.org"``.
+``sender`` (string, email-address)
+    The envelope-sender for the mailinglist; that's the address where
+    bounces/error-messages (e.g. about failed delivery) should go to,
+    e.g. ``"mylist-owner@example.org"``.
+``list-*`` (string, optional)
+    Values for optional mail-header-lines; must be ASCII.
+``precedence`` (string, optional)
+    Value of the inserted ``Precedence:``-header. This may be empty,
+    bulk or list; default is ``list``.
+``dir`` (string, directory)
+    The directory where the script should look for new mails,
+    e.g. ``"/var/mail/vhosts/mylist/_/new/"``.
+``dir_done`` (string, directory)
+    The directory where the script should move processed mails to,
+    e.g. ``"/var/mail/vhosts/mylist/_/cur/"``.
+``admin_dir`` (string, directory)
+    The directory where the script should look for new moderation-mails,
+    e.g. ``"/var/mail/vhosts/mylist/admin/new/"``.
+``admin_dir_done`` (string, directory)
+    The directory where the script should move processed moderation mails to,
+    e.g. ``"/var/mail/vhosts/mylist/admin/cur/"``.
+``outbox`` (string, directory)
+    The directory where the script should write outbox-mails + their
+    envelope-files to, e.g. ``"/var/mail/vhosts/mylist/outbox/"`` or
+    ``"/home/user/mylist.outbox/"``.
+``logfile`` (string, filename)
+    | The logfile. Use ``""`` if no logfile should be used and
+      ``"/dev/stdout"`` for STDOUT.
+    | Example: ``"/var/mail/vhosts/mylist/logfile.txt"`` or
+      ``"/home/user/mylist.log"``.
+``errors_to_stderr`` (boolean, optional, default: ``true``)
+    True (default) if errors should also be logged to stderr, so if the
+    script is called via cron, cron will send a mail on error.
+    False otherwise.
+``sendmail`` (string, filename)
+    The sendmail executable, e.g. ``"/usr/sbin/sendmail"``.
+    Currently, no parameters are allowed (this may change in the future).
+``sendmail_skip_errors`` (bollean, optional, default: ``false``)
+    | Normally, simple_mailinglist aborts if sendmail fails for a mail, since
+      this is usually a bigger problem, and there's no use to try all other
+      mails, since sendmail will probably fail for these, too. As soon as
+      sendmail works again, the mails are sent on the next cron-/at-/inotify-
+      triggered run of simple_mailinglist.
+    | But some mailers are configured strangely, so that e.g. sendmail fails
+      depending on the contents of the mail body (!). In these cases, set this
+      option to ``true``, so a mail which sendmail doesn't like doesn't block
+      other mails. But prepare to get larger logfiles, then.
+``max_rcpts_per_message`` (integer, optional, default: ``50``)
+    Max. number of recipients for each sendmail-call. If there are more
+    subscribers, sendmail is called multiple times.
+``subscribers`` (list)
+    A list of all subscribed email addresses,
+    e.g. ``["user1@example.org", "user2@example.org"]``.
+``whitelist`` (list)
+    | A list of all (envelope-)senders which should not be moderated.
+      The special value ``"."`` adds all subscribers to the whitelist,
+      ``"*"`` adds everyone to the whitelist (and so disables moderation).
+    | Example: ``[".", "userxy@example.org"]``
+``moderators`` (list)
+    A list of all moderator-email-addresses, e.g. ``["moderator1@example.org"]``.
+``whitelist_hashfile`` (string, filename, optional)
+    | Filename of a file containing lines with SHA256-hashed lowercase
+      email adresses, which should be whitelisted,
+      e.g. ``/var/mail/vhosts/mylist/whitelist.sha256``.
+    | This is especially useful if you have a large userbase which should
+      be whitelisted.
+``config_extend`` (string, filename, optional)
+    Path to an executable (e.g. a shell-script) which writes a JSON-object
+    to STDOUT. This JSON-object is then used to extend the configuration
+    (missing keys are added, existing keys are extended).
+
+    This can be used to retrieve *any* parts of the configuration (except 
+    the directories) from somewhere else, e.g. to retrieve the subscribers
+    from a database. But DO NOT configure ``dir``/``admin_dir``/``outbox_dir``
+    externally [#]_.
+
+    This is very flexible, since you can decide which configuration values
+    should be stored in the JSON configuration file and which should be
+    retrieved from somewhere else. You can e.g. even store some subscribers
+    in a database and some in the configfile, and it's easy to e.g. later
+    move a configuration value to a database or back.
+
+    Note that since executing a command may be a security risk, this only
+    works if you use ``-x`` as parameter to ``simple_mailinglist.py``.
+    If this parameter is missing and ``"config_extend"`` exists and is not
+    empty, the script fails.
+    
+
+Some notes about the files/directories and permissions:
+
+- ``dir_done`` and ``admin_dir_done`` can be any directory, but using
+  ``cur/`` of the maildirs keeps the files together and eases administration.
+- Two users/groups are important: The user which runs the
+  simple_mailinglist-script (e.g. "user") and the user/group
+  of the MDA/MTA (e.g. "mail").
+- The following permissions are necessary:
+
+  ===================== =========== ===========
+  file/directory        user        mail
+  ===================== =========== ===========
+  ``dir``               rwx         rwx [m]_
+  ``dir_done``          wx          --
+  ``admin_dir``         rwx         rwx [m]_
+  ``admin_dir_done``    wx          --
+  ``outbox_dir``        rwx         --
+  ``logfile``           wx          --
+  ===================== =========== ===========
+
+
+.. [#] Since retrieving the configuration from somewhere else (e.g. a database)
+       is considered to be expensive, this is only done when necessary, i.e.
+       when there are new mails to process. So, as optimization, the directories
+       are checked before extending the configuration.
+.. [m] But note, that "mail" also needs access to the ``tmp/`` dirs of the
+       maildirs where it delivers mail!
+
+
+MDA configuration
+-----------------
+You have to configure you mail delivery to put all mails to the
+mailinglist-addresses into a maildir-like directory. Note that the
+envelope-sender should be kept as ``Reply-To:``, so the whitelist
+can work with the envelope-sender (instead of the ``From:`` header).
+
+If you use the ``list-*`` configuration fields, you should also add
+the subscribe-/unsubscribe-/owner- and help-addresses which forward
+the mail to you.
+
+Instructions:
+
+- Postfix with virtual hosting:
+
+  TODO
+
+- procmail:
+
+  TOOD
+
+- ...
+
+Subscribe/Unsubscribe/Whitelist
+-------------------------------
+| Simply add/remove the email address in the configuration-file.
+| If you have a large whitelist, ``whitelist_hashfile`` could be useful.
+
+Run
+---
+- simple_mailinglist.py normally should be run as user without any special rights.
+- Usage::
+
+    $ ./simple_mailinglist.py --help
+    USAGE: simple_mailinglist.py [-c] [-p] [-s] [-x] CONFIG.json ...
+           -c  check configuration and print errors
+           -p  process mails and write mails to the outbox
+           -s  send outbox
+           -x  allow execution of shell-command from "config_extend"
+
+- run periodically by cron::
+
+    $ crontab -e
+    * * * * * /home/user/simple_mailinglist.py -p -s CONFIGFILE.json
+
+- run by inotify: TODO
+
+Accessing mails
+---------------
+Since normally, all mails (new and processed) are stored in a maildir, you
+can access them with a mail-user-agent, e.g. mutt. But be careful, since
+the new/read-status and the flag ("F") are used internally!
+
+- ``new/``: contains the new mails
+- ``cur/``: usually contains the already processed mails
+- Flag ``F``: marks mails, which are waiting for moderation
+  (i.e. for which a moderation-request has already been sent)
+
+So, you can:
+
+- Mark mails as new / move mails from ``new/`` to ``cur/`` to process them
+  again.
+- Remove flag ``F`` to reset moderation for a mail, so that the mail is
+  checked again against the whitelist and -- if necessary -- a new
+  moderation-request is sent.
+
+But note that many mail-user-agents automatically move mails from ``new/`` to
+``cur/`` when closing a maildir! In mutt, you can prevent this by ``$`` + ``%``.
+
+Logfile
+-------
+Logfile example::
+
+    TODO
+
+Developer documentation
+-----------------------
+See sourcecode or ``pydoc simple_mailinglist.py``.
+The code is readable and well documented, and should be easy
+to understand/modify/extend.
+
+
+Download
+========
+
+
+    | Author: Roland Koebler (rk *at* simple-is-better *dot* org)
+    | Release: 0.1-rc9
+    | License: MIT-like
+    | Requirements: python (tested with 2.6), python-simplejson
+
+    **Warning: That this is a pre-release! It probably contains some bugs!!!**
+
+    Download: `<simple_mailinglist-0.1-rc9.tgz>`_ (19 kB), containing:
+        - `README`_
+        - `NEWS`_
+        - `LICENSE`_
+        - `simple_mailinglist.py`_
+        - `simple_mailinglist.html`_ / `simple_mailinglist.txt`_
+
+.. _`README`:                   simple_mailinglist-current/README
+.. _`NEWS`:                     simple_mailinglist-current/NEWS
+.. _`LICENSE`:                  simple_mailinglist-current/LICENSE
+.. _`simple_mailinglist.py`:    simple_mailinglist-current/simple_mailinglist.py
+.. _`simple_mailinglist.html`:  simple_mailinglist-current/simple_mailinglist.html
+.. _`simple_mailinglist.txt`:   simple_mailinglist-current/simple_mailinglist.txt
+
+Contact
+=======
+
+Please **don't hesitate** to contact me if you find any bugs, have any
+questions, comments, suggestions etc.! It would also be nice to drop
+me a note if you are simply using simple_mailinglist.
+
+Author:
+    | *rk at simple-is-better.org*
+    | (in English or German)
+
+announcement-list:
+    TODO
+
+mailinglist:
+    TODO
+
+
+Todo/Wishlist
+=============
+
+Todo:
+
+- many tests...
+- default value for max_rcpts_per_message?
+- try harder not to lose any moderation mail
+- error-handling to prevent that a mail is sent multiple times
+- Should "Received:" header lines be removed or not?
+- encodings
+- Py3k version
+- egg/distutils
+
+Ideas:
+
+- remove not-yet-moderated mails periodically (after xx days?)
+- add a footer to the mails (e.g. with unsubscribe information)
+- ? handle/strip attachments / html-mails
+- ? limit size, attachments, mime-types, ...
+- ? config-file-check: check email-syntax
+

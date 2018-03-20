@@ -1,0 +1,15 @@
+{
+    "address"       : "list@example.com",
+    "admin_address" : "admin@example.com",
+    "sender"        : "list-owner@example.com",
+
+    "dir"            : "spool/list1/_/new/",
+    "dir_done"       : "spool/list1/_/cur/",
+    "admin_dir"      : "spool/list1/admin/new/",
+    "admin_dir_done" : "spool/list1/admin/cur/",
+    "outbox_dir"     : "spool/outbox/",
+
+    "sendmail" : "/usr/sbin/sendmail"
+
+    "subscribers" : []
+}
