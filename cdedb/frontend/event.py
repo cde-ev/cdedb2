@@ -2077,6 +2077,17 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_registration",
                              {'registration_id': new_id})
 
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_registration(self, rs, event_id, registration_id):
+        """Remove a registration."""
+        if rs.errors:
+            return self.show_registration_form(rs, event_id, registration_id)
+
+        code = self.eventproxy.delete_registration(rs, registration_id)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/show_event")
+
     @access("event")
     @REQUESTdata(("reg_ids", "int_csv_list"))
     @event_guard(check_offline=True)

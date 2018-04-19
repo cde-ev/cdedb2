@@ -662,6 +662,14 @@ class TestEventBackend(BackendTest):
                          self.event.list_registrations(self.key, event_id))
 
     @as_users("anton", "garcia")
+    def test_registration_delete(self, user):
+        self.assertEqual({1: 1, 2: 5, 3: 7, 4: 9},
+                         self.event.list_registrations(self.key, 1))
+        self.event.delete_registration(self.key, 1)
+        self.assertEqual({2: 5, 3: 7, 4: 9},
+                         self.event.list_registrations(self.key, 1))
+        
+    @as_users("anton", "garcia")
     def test_course_filtering(self, user):
         event_id = 1
         expectation={1: 1, 2: 5, 3: 7, 4: 9}

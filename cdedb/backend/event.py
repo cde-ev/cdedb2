@@ -1340,6 +1340,32 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
+    def delete_registration(self, rs, registration_id):
+        """Remove a registration.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type registration_id: int
+        :rtype: int
+        :returns: default return code
+        """
+        registration_id = affirm("id", registration_id)
+        reg = unwrap(self.get_registrations(rs, (registration_id,)))
+        if not self.is_orga(rs, event_id=reg['event_id']) and not self.is_admin(rs):
+            raise PrivilegeError(_("Not privileged."))
+        self.assert_offline_lock(rs, event_id=reg['event_id'])
+        with Atomizer(rs):
+            self.sql_delete(rs, "event.registration_parts", (registration_id,),
+                                  entity_key="registration_id")
+            self.sql_delete(rs, "event.registration_tracks", (registration_id,),
+                                   entity_key="registration_id")
+            self.sql_delete(rs, "event.course_choices", (registration_id,),
+                                   entity_key="registration_id")
+            ret = self.sql_delete(rs, "event.registrations", (registration_id,))
+        self.event_log(rs, const.EventLogCodes.registration_deleted, reg['event_id'],
+                       persona_id=reg['persona_id'])
+        return ret
+
+    @access("event")
     def list_lodgements(self, rs, event_id):
         """List all lodgements for an event.
 

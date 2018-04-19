@@ -687,7 +687,7 @@ CREATE TABLE event.registrations (
 CREATE INDEX idx_registrations_persona_id ON event.registrations(persona_id);
 CREATE INDEX idx_registrations_event_id ON event.registrations(event_id);
 CREATE UNIQUE INDEX idx_registrations_constraint ON event.registrations(persona_id, event_id);
-GRANT SELECT, INSERT, UPDATE ON event.registrations TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.registrations TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registrations_id_seq TO cdb_persona;
 
 CREATE TABLE event.registration_parts (
@@ -701,7 +701,7 @@ CREATE TABLE event.registration_parts (
         is_reserve              boolean DEFAULT False
 );
 CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
-GRANT SELECT, INSERT, UPDATE ON event.registration_parts TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.registration_parts TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registration_parts_id_seq TO cdb_persona;
 
 CREATE TABLE event.registration_tracks (
@@ -713,7 +713,7 @@ CREATE TABLE event.registration_tracks (
         course_instructor       integer REFERENCES event.courses(id)
 );
 CREATE INDEX idx_registration_tracks_registration_id ON event.registration_tracks(registration_id);
-GRANT SELECT, INSERT, UPDATE ON event.registration_tracks TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.registration_tracks TO cdb_persona;
 GRANT SELECT, UPDATE ON event.registration_tracks_id_seq TO cdb_persona;
 
 CREATE TABLE event.course_choices (

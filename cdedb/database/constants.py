@@ -285,6 +285,7 @@ class EventLogCodes(enum.IntEnum):
     course_segment_activity_changed = 43 #:
     registration_created = 50 #:
     registration_changed = 51 #:
+    registration_deleted = 52 #:
     event_locked = 60 #:
     event_unlocked = 61 #:
 
