@@ -2078,9 +2078,12 @@ class EventFrontend(AbstractUserFrontend):
                              {'registration_id': new_id})
 
     @access("event", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
-    def delete_registration(self, rs, event_id, registration_id):
+    def delete_registration(self, rs, event_id, registration_id, ack_delete):
         """Remove a registration."""
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
         if rs.errors:
             return self.show_registration_form(rs, event_id, registration_id)
 
