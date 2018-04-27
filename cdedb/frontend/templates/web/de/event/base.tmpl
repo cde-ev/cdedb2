@@ -43,6 +43,8 @@
                     aclass="list-group-item", icon="home", active=(sidenav_active == 'event_lodgements')) }}
             {{ util.href(cdedblink("event/downloads", {"event_id": data['id']}), "Downloads", aclass="list-group-item",
                     icon="download", active=(sidenav_active == 'event_downloads')) }}
+            {{ util.href(cdedblink("event/batch_fees_form", {"event_id": data['id']}), "Überweisungen eintragen",
+                    aclass="list-group-item", icon="euro", active=(sidenav_active == 'event_batch_fees')) }}
         </div>
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/change_event", {"event_id": data['id']}), "Konfiguration",

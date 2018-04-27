@@ -2,16 +2,20 @@
 
 """Services for the event realm."""
 
+import cgitb
 from collections import OrderedDict
 import copy
+import csv
 import decimal
 import itertools
 import os
 import os.path
 import re
 import shutil
+import sys
 import tempfile
 
+import psycopg2.extensions
 import werkzeug
 
 from cdedb.frontend.common import (
@@ -23,11 +27,13 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     _, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
-    unwrap, now, ProxyShim, json_serialize, CourseChoiceToolActions,
-    event_gather_tracks)
+    unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
+    event_gather_tracks, diacritic_patterns)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
+from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
+import cdedb.validation as validate
 
 class EventFrontend(AbstractUserFrontend):
     """This mainly allows the organization of events."""
@@ -1176,6 +1182,167 @@ class EventFrontend(AbstractUserFrontend):
         return self.render(rs, "course_stats", {
             'courses': courses, 'choice_counts': choice_counts,
             'assign_counts': assign_counts})
+
+    @access("event")
+    @event_guard(check_offline=True)
+    def batch_fees_form(self, rs, event_id, data=None):
+        """Render form.
+
+        The ``data`` parameter contains all extra information assembled
+        during processing of a POST request.
+        """
+        data = data or {}
+        return self.render(rs, "batch_fees", {'data': data})
+
+    def examine_fee(self, rs, datum):
+        """Check one line specifying a paid fee.
+
+        We test for fitness of the data itself.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type event_id: int
+        :type datum: {str: object}
+        :rtype: {str: object}
+        :returns: The processed input datum.
+        """
+        event = rs.ambience['event']
+        warnings = []
+        date, problems = validate.check_date(datum['raw']['date'], "date")
+        amount, p = validate.check_non_negative_decimal(
+            datum['raw']['amount'], "amount")
+        problems.extend(p)
+        persona_id, p = validate.check_cdedbid(
+            datum['raw']['id'], "persona_id")
+        problems.extend(p)
+        family_name, p = validate.check_str(
+            datum['raw']['family_name'], "family_name")
+        problems.extend(p)
+        given_names, p = validate.check_str(
+            datum['raw']['given_names'], "given_names")
+        problems.extend(p)
+
+        registration_id = None
+        if persona_id:
+            persona = self.coreproxy.get_persona(rs, persona_id)
+            registration_id = tuple(self.eventproxy.list_registrations(
+                rs, event['id'], persona_id).keys())
+            if registration_id:
+                registration_id = unwrap(registration_id)
+                registration = self.eventproxy.get_registration(rs, registration_id)
+                if registration['payment']:
+                    warnings.append(('persona_id',
+                                     ValueError(_("Already paid."))))
+                relevant_stati = (const.RegistrationPartStati.applied,
+                                  const.RegistrationPartStati.waitlist,
+                                  const.RegistrationPartStati.participant,)
+                fee = sum(event['parts'][part_id]['fee']
+                          for part_id, part in registration['parts'].items()
+                          if part['status'] in relevant_stati)
+                if amount < fee:
+                    problems.append(('amount',
+                                     ValueError(_("Not enough money."))))
+                if amount > fee:
+                    warnings.append(('amount',
+                                     ValueError(_("Too much money."))))
+            else:
+                problems.append(('persona_id',
+                                 ValueError(_("No registration found."))))
+            if not re.search(diacritic_patterns(family_name),
+                             persona['family_name'], flags=re.IGNORECASE):
+                warnings.append(('family_name',
+                                 ValueError(_("Family name doesn't match."))))
+            if not re.search(diacritic_patterns(given_names),
+                             persona['given_names'], flags=re.IGNORECASE):
+                warnings.append(('given_names',
+                                 ValueError(_("Given names don't match."))))
+        datum.update({
+            'persona_id': persona_id,
+            'registration_id': registration_id,
+            'date': date,
+            'amount': amount,
+            'warnings': warnings,
+            'problems': problems,})
+        return datum
+
+    def book_fees(self, rs, data):
+        """Book all paid fees.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type data: [{str: object}]
+        :rtype: bool, int
+        :returns: Success information and
+          * for positive outcome the number of recorded transfers
+          * for negative outcome the line where an exception was triggered
+            or None if it was a DB serialization error
+        """
+        try:
+            with Atomizer(rs):
+                count = 0
+                for index, datum in enumerate(data):
+                    update = {
+                        'id': datum['registration_id'],
+                        'payment': datum['date'],
+                    }
+                    count += self.eventproxy.set_registration(rs, update)
+        except psycopg2.extensions.TransactionRollbackError:
+            ## We perform a rather big transaction, so serialization errors
+            ## could happen.
+            return False, None
+        except:
+            ## This blanket catching of all exceptions is a last resort. We try
+            ## to do enough validation, so that this should never happen, but
+            ## an opaque error (as would happen without this) would be rather
+            ## frustrating for the users -- hence some extra error handling
+            ## here.
+            self.logger.error(glue(
+                ">>>\n>>>\n>>>\n>>> Exception during fee transfer processing",
+                "<<<\n<<<\n<<<\n<<<"))
+            self.logger.exception("FIRST AS SIMPLE TRACEBACK")
+            self.logger.error("SECOND TRY CGITB")
+            self.logger.error(cgitb.text(sys.exc_info(), context=7))
+            return False, index
+        return True, count
+
+    @access("event", modi={"POST"})
+    @REQUESTdata(("force", "bool"), ("fee_data", "str"))
+    @event_guard(check_offline=True)
+    def batch_fees(self, rs, event_id, force, fee_data):
+        """Allow orgas to add lots paid of participant fee at once."""
+        fee_data = fee_data or ''
+        fee_data_lines = fee_data.splitlines()
+        fields = ('date', 'amount', 'id', 'family_name', 'given_names')
+        reader = csv.DictReader(
+            fee_data_lines, fieldnames=fields, delimiter=';',
+            quoting=csv.QUOTE_MINIMAL, quotechar='"', doublequote=False,
+            escapechar='\\')
+        data = []
+        lineno = 0
+        for raw_entry in reader:
+            dataset = {'raw': raw_entry}
+            lineno += 1
+            dataset['lineno'] = lineno
+            data.append(self.examine_fee(rs, dataset))
+        if lineno != len(fee_data_lines):
+            rs.errors.append(("fee_data",
+                              ValueError(_("Lines didn't match up."))))
+        open_issues = any(e['problems'] for e in data)
+        if not force:
+            open_issues = open_issues or any(e['warnings'] for e in data)
+        if rs.errors or not data or open_issues:
+            return self.batch_fees_form(rs, event_id, data=data)
+
+        ## Here validation is finished
+        success, num = self.book_fees(rs, data)
+        if success:
+            rs.notify("success", _("Committed {num} fees."), {'num': num,})
+            return self.redirect(rs, "event/show_event")
+        else:
+            if num is None:
+                rs.notify("warning", _("DB serialization error."))
+            else:
+                rs.notify("error", _("Unexpected error on line {num}."),
+                          {'num': num})
+            return self.batch_fees_form(rs, event_id, data=data)
 
     @access("event")
     @event_guard()

@@ -448,6 +448,40 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Bitte in ruhiger Lage.\nEcht.", f['lodge'].value)
 
     @as_users("garcia")
+    def test_batch_fee(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/batchfee'})
+        self.assertTitle("Überweisungen eintragen (Große Testakademie 2222)")
+        f = self.response.forms['batchfeesform']
+        f['fee_data'] = """01.04.2018;570.99;DB-1-J;Admin;Anton
+01.04.2018;461.49;DB-5-B;Eventis;Emilia
+01.04.2018;570.99;DB-11-G;K;Kalif
+77.04.2018;0.0;DB-666-X;Y;Z;stuff
+"""
+        self.submit(f, check_notification=False)
+        f = self.response.forms['batchfeesform']
+        f['fee_data'] = """01.04.2018;573.99;DB-1-J;Admin;Anton
+04.01.2018;461.49;DB-5-B;Eventis;Emilia
+"""
+        self.submit(f, check_notification=False)
+        f = self.response.forms['batchfeesform']
+        f['force'].checked = True
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/1/show'})
+        self.assertTitle("Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
+        self.assertPresence("bezahlt am 01.04.2018")
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/2/show'})
+        self.assertTitle("Anmeldung von Emilia E. Eventis (Große Testakademie 2222)")
+        self.assertPresence("bezahlt am 04.01.2018")
+
+    @as_users("garcia")
     def test_registration_query(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},

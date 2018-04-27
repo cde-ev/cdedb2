@@ -1,0 +1,61 @@
+{% set sidenav_active='event_batch_fees' %}
+{% extends "web/de/event/base.tmpl" %}
+{% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}
+    Überweisungen eintragen ({{ ambience['event']['title']|e }})
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/batch_fees"), "Überweisungen", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Überweisungen eintragen
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <p>
+        Hier können mehrere Überweisungen eingetragen werden, eine pro Zeile. Das Format ist dabei:
+        <tt>Datum;Betrag;CdEDB-ID;Nachname;Vorname</tt>
+        und jetzt noch ein Beispiel:
+        <tt>01.04.2018;123.00;DB-9-E;Iota;Inga</tt>
+    </p>
+    <form action="{{ cdedblink('event/batch_fees')|e }}" method="POST" id="batchfeesform"
+          class="form-horizontal">
+        {{ util.form_input_textarea(name="fee_data", label="Überweisungsdaten", rows="10") }}
+        {{ util.form_input_checkbox(name="force", label="Warnungen ignorieren") }}
+        {{ util.form_input_submit(value="Eintragen", cancellink=cdedblink("event/show_event")) }}
+    </form>
+    {% if data %}
+        <h2>Validierungsergebnisse</h2>
+        {% for dataset in data %}
+            <strong>
+                Zeile {{ dataset['lineno']|e }}: {{ dataset['amount']|money }} für
+                {{ dataset['raw']['given_names']|e }} {{ dataset['raw']['family_name']|e }}
+            </strong>
+            <div class="batch-line-body">
+                {% if dataset['problems'] or dataset['warnings'] %}
+                    <ul class="list-unstyled">
+                        {% for key, problem in dataset['problems'] %}
+                            <li class="text-danger">
+                                {{ util.make_icon('exclamation-sign', title="Fehler") }}
+                                {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                {{ util.format_error(problem) }}
+                            </li>
+                        {% endfor %}
+                        {% for key, warning in dataset['warnings'] %}
+                            <li class="text-warning">
+                                {{ util.make_icon('warning-sign', title="Warnung") }}
+                                {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                {{ util.format_error(warning) }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endblock %}
