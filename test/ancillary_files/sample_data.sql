@@ -292,7 +292,7 @@ INSERT INTO ml.mailinglists (id, title, address, description, sub_policy, mod_po
     (3, 'Witz des Tages', 'witz@example.cde', 'Einer geht noch ...', 3, 2, 2, 1, '[witz]', 2048, True, NULL, NULL, ARRAY[]::integer[], NULL),
     (4, 'Klatsch und Tratsch', 'klatsch@example.cde', NULL, 4, 1, 1, 1, '[klatsch]', NULL, True, NULL, NULL, ARRAY[]::integer[], NULL),
     (5, 'Sozialistischer Kampfbrief', 'kongress@example.cde', NULL, 5, 2, 2, 2, '[kampf]', 1024, True, NULL, NULL, ARRAY[]::integer[], 1),
-    (6, 'Aktivenforum 2000', 'aktivenforum@example.cde', NULL, 5, 2, 2, 5, '[aktivenforum]', 1024, False, NULL, NULL, ARRAY[]::integer[], NULL),
+    (6, 'Aktivenforum 2000', 'aktivenforum2000@example.cde', NULL, 5, 2, 2, 5, '[aktivenforum]', 1024, False, NULL, NULL, ARRAY[]::integer[], NULL),
     (7, 'Aktivenforum 2001', 'aktivenforum@example.cde', NULL, 5, 2, 2, 5, '[aktivenforum]', 1024, True, 6, NULL, ARRAY[]::integer[], NULL),
     (8, 'Orga-Liste', 'aka@example.cde', NULL, 5, 1, 1, 3, '[orga]', NULL, True, NULL, 1, ARRAY[]::integer[], NULL),
     (9, 'Teilnehmer-Liste', 'participants@example.cde', NULL, 5, 2, 1, 3, '[aka]', NULL, True, NULL, 1, ARRAY[2, 4], NULL),

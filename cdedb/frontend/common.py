@@ -521,7 +521,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env.filters.update(JINJA_FILTERS)
 
     @abc.abstractmethod
-    def finalize_session(self, rs, auxilliary=False):
+    def finalize_session(self, rs, connpool, auxilliary=False):
         """Allow realm specific tweaking of the session.
 
         This is intended to add orga and moderator infos in the event
@@ -713,8 +713,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """Slim helper to create json responses.
 
         :type rs: :py:class:`RequestState`
-        :type templatename: str
-        :type params: {str: object}
+        :type data: object
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         rs.response = Response(json_serialize(data),
@@ -1082,7 +1081,8 @@ class Worker(threading.Thread):
         rrs = RequestState(
             rs.sessionkey, rs.user, rs.request, None, [], rs.urls,
             rs.requestargs, rs.urlmap, [], copy.deepcopy(rs.values),
-            rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin)
+            rs.lang, rs.gettext, rs.ngettext, rs._coders, rs.begin,
+            rs.scriptkey)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
             conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets)

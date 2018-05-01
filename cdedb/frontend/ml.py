@@ -12,7 +12,8 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    _, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates)
+    _, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates,
+    json_serialize)
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
 from cdedb.backend.cde import CdEBackend
@@ -37,18 +38,15 @@ class MlFrontend(AbstractUserFrontend):
         self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
         secrets = SecretsConfig(configpath)
         self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
-        self.connpool = connection_pool_factory(
-            self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets)
 
-    def finalize_session(self, rs, auxilliary=False):
-        super().finalize_session(rs, auxilliary=auxilliary)
-        if self.validate_scriptkey(rs.sessionkey):
+    def finalize_session(self, rs, connpool, auxilliary=False):
+        super().finalize_session(rs, connpool, auxilliary=auxilliary)
+        if self.validate_scriptkey(rs.scriptkey):
             ## Special case the access of the mailing list software since
             ## it's not tied to an actual persona.
             rs.user.roles.add("ml_script")
             ## Upgrade db connection
-            rs._conn = self.connpool["cdb_persona"]
+            rs._conn = connpool["cdb_persona"]
         if "ml" in rs.user.roles:
             rs.user.moderator = self.mlproxy.moderator_info(rs,
                                                             rs.user.persona_id)
@@ -511,3 +509,18 @@ class MlFrontend(AbstractUserFrontend):
         code = self.mlproxy.mark_override(rs, mailinglist_id, subscriber_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/check_states")
+
+    @access("ml_script")
+    def export_overview(self, rs):
+        """Provide listing for mailinglist software"""
+        if rs.errors:
+            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        return self.send_json(rs, self.mlproxy.export_overview(rs))
+
+    @access("ml_script")
+    @REQUESTdata(("address", "email"))
+    def export_one(self, rs, address):
+        """Provide specific infos for mailinglist software"""
+        if rs.errors:
+            return self.send_json(rs, {'error': tuple(map(str, rs.errors))})
+        return self.send_json(rs, self.mlproxy.export_one(rs, address))

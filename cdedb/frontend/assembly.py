@@ -35,8 +35,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
         self.cdeproxy = ProxyShim(CdEBackend(configpath))
 
-    def finalize_session(self, rs, auxilliary=False):
-        super().finalize_session(rs, auxilliary=auxilliary)
+    def finalize_session(self, rs, connpool, auxilliary=False):
+        super().finalize_session(rs, connpool, auxilliary=auxilliary)
 
     @classmethod
     def is_admin(cls, rs):

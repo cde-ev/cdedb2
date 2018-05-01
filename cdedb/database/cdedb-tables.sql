@@ -915,7 +915,7 @@ GRANT USAGE ON SCHEMA ml TO cdb_persona;
 CREATE TABLE ml.mailinglists (
         id                      serial PRIMARY KEY,
         title                   varchar NOT NULL,
-        address                 varchar NOT NULL,
+        address                 varchar UNIQUE NOT NULL,
         description             varchar,
         -- see cdedb.database.constants.SubscriptionPolicy
         sub_policy              integer NOT NULL,

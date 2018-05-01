@@ -124,6 +124,7 @@ class Application(BaseApp):
                 ## note time for performance measurement
                 begin = now()
                 sessionkey = request.cookies.get("sessionkey")
+                scriptkey = request.cookies.get("scriptkey")
                 data = self.sessionproxy.lookupsession(sessionkey,
                                                        request.remote_addr)
                 urls = self.urlmap.bind_to_environ(request.environ)
@@ -148,7 +149,7 @@ class Application(BaseApp):
                 rs = RequestState(
                     sessionkey, None, request, None, [], urls, args,
                     self.urlmap, [], {}, "de", self.translations["de"].gettext,
-                    self.translations["de"].ngettext, coders, begin)
+                    self.translations["de"].ngettext, coders, begin, scriptkey)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")
@@ -181,10 +182,11 @@ class Application(BaseApp):
                 ## It will be made accessible for the backends by the ProxyShim.
                 rs._conn = self.connpool[roles_to_db_role(rs.user.roles)]
                 ## Add realm specific infos (mostly to the user object)
-                getattr(self, component).finalize_session(rs)
+                getattr(self, component).finalize_session(rs, self.connpool)
                 for realm in getattr(handler, 'realm_usage', set()):
                     ## Add extra information for the cases where it's necessary
-                    getattr(self, realm).finalize_session(rs, auxilliary=True)
+                    getattr(self, realm).finalize_session(rs, self.connpool,
+                                                          auxilliary=True)
                 try:
                     return handler(rs, **args)
                 finally:

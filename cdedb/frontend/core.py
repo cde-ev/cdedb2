@@ -48,8 +48,8 @@ class CoreFrontend(AbstractFrontend):
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
-    def finalize_session(self, rs, auxilliary=False):
-        super().finalize_session(rs, auxilliary=auxilliary)
+    def finalize_session(self, rs, connpool, auxilliary=False):
+        super().finalize_session(rs, connpool, auxilliary=auxilliary)
 
     @classmethod
     def is_admin(cls, rs):

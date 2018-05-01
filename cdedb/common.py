@@ -29,7 +29,7 @@ class RequestState:
     """
     def __init__(self, sessionkey, user, request, response, notifications,
                  mapadapter, requestargs, urlmap, errors, values, lang, gettext,
-                 ngettext, coders, begin):
+                 ngettext, coders, begin, scriptkey):
         """
         :type sessionkey: str or None
         :type user: :py:class:`User`
@@ -71,6 +71,9 @@ class RequestState:
           with secrets. This is hacky, but sadly necessary.
         :type begin: datetime.datetime
         :param begin: time where we started to process the request
+        :type scriptkey: str or None
+        :param scriptkey: Like a sessionkey, but for scripts. This is simply
+          stored, so each frontend can take separate action.
         """
         self.ambience = {}
         self.sessionkey = sessionkey
@@ -90,6 +93,7 @@ class RequestState:
         self.ngettext = ngettext
         self._coders = coders
         self.begin = begin
+        self.scriptkey = scriptkey
         ## Visible version of the database connection
         self.conn = None
         ## Private version of the database connection, only visible in the
@@ -483,7 +487,9 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
             return str(obj)
-        return super().default(self, obj)
+        elif isinstance(obj, set):
+            return tuple(obj)
+        return super().default(obj)
 
 def json_serialize(data):
     """Do beefed up JSON serialization.

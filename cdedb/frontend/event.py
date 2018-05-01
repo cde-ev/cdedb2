@@ -47,8 +47,8 @@ class EventFrontend(AbstractUserFrontend):
         self.eventproxy = ProxyShim(EventBackend(configpath))
         self.pasteventproxy = ProxyShim(PastEventBackend(configpath))
 
-    def finalize_session(self, rs, auxilliary=False):
-        super().finalize_session(rs, auxilliary=auxilliary)
+    def finalize_session(self, rs, connpool, auxilliary=False):
+        super().finalize_session(rs, connpool, auxilliary=auxilliary)
         if "event" in rs.user.roles:
             rs.user.orga = self.eventproxy.orga_info(rs, rs.user.persona_id)
 

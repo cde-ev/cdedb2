@@ -292,6 +292,39 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Janis Jalapeño")
         self.assertPresence("Ausnahmen")
 
+    def test_export(self):
+        self.app.set_cookie('scriptkey', "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3")
+        expectation =  [{'address': 'announce@example.cde', 'is_active': True},
+                        {'address': 'werbung@example.cde', 'is_active': True},
+                        {'address': 'witz@example.cde', 'is_active': True},
+                        {'address': 'klatsch@example.cde', 'is_active': True},
+                        {'address': 'kongress@example.cde', 'is_active': True},
+                        {'address': 'aktivenforum2000@example.cde', 'is_active': False},
+                        {'address': 'aktivenforum@example.cde', 'is_active': True},
+                        {'address': 'aka@example.cde', 'is_active': True},
+                        {'address': 'participants@example.cde', 'is_active': True},
+                        {'address': 'wait@example.cde', 'is_active': True}]
+        self.get("/ml/script/all")
+        self.assertEqual(expectation, self.response.json)
+        expectation = {
+            'address': 'werbung@example.cde',
+            'admin_address': 'werbung-owner@example.cde',
+            'listname': 'Werbung',
+            'moderators': ['janis@example.cde'],
+            'sender': 'werbung@example.cde',
+            'size_max': None,
+            'subscribers': ['anton@example.cde',
+                            'berta@example.cde',
+                            'charly@example.cde',
+                            'emilia@example.cde',
+                            'garcia@example.cde',
+                            'inga@example.cde',
+                            'janis@example.cde',
+                            'kalif@example.cde'],
+            'whitelist': ['honeypot@example.cde']}
+        self.get("/ml/script/one?address=werbung@example.cde")
+        self.assertEqual(expectation, self.response.json)
+
     def test_log(self):
         ## First: generate data
         self.test_mailinglist_management()

@@ -754,8 +754,59 @@ class MlBackend(AbstractBackend):
             return self.sql_update(rs, "ml.subscription_states", update)
 
     @access("ml_script")
-    def export(self, rs, mailinglist_id):
-        """TODO"""
-        # omit subscriptions with empty email addresses (may happen in
-        # reality, because username was deleted because of bouncing mail)
-        raise NotImplementedError(_("TODO"))
+    def export_overview(self, rs):
+        """Get a summary of all existing mailing lists.
+
+        This is used to setup the mailinglist software.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: [{str: object}]
+        """
+        query = "SELECT address, is_active FROM ml.mailinglists"
+        data = self.query_all(rs, query, tuple())
+        return data
+
+    @access("ml_script")
+    def export_one(self, rs, address):
+        """Retrieve data about a specific mailinglist.
+
+        This is invoked by the mailinglist software to query for the
+        configuration of a specific mailinglist.
+
+        Care has to be taken, to filter away any empty email addresses which
+        may happen because they were unset in the backend.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type address: str
+        :rtype: {str: object}
+        """
+        address = affirm("email", address)
+        with Atomizer(rs):
+            query = "SELECT id FROM ml.mailinglists WHERE address = %s"
+            mailinglist_id = self.query_one(rs, query, (address,))
+            if not mailinglist_id:
+                return None
+            mailinglist_id = unwrap(mailinglist_id)
+            mailinglist = unwrap(self.get_mailinglists(rs, (mailinglist_id,)))
+            local_part, domain = mailinglist['address'].split('@')
+            ## We do not use self.core.get_personas since this triggers an
+            ## access violation. It would be quite tedious to fix this so
+            ## it's better to allow a small hack.
+            query = "SELECT username FROM core.personas WHERE id = ANY(%s)"
+            tmp = self.query_all(rs, query, (mailinglist['moderators'],))
+            moderators = tuple(filter(None, (e['username'] for e in tmp)))
+            subscribers = tuple(filter(
+                None, self.subscribers(rs, mailinglist_id).values()))
+            return {
+                "listname": mailinglist['title'],
+                "address": mailinglist['address'],
+                "admin_address": "{}-owner@{}".format(local_part, domain),
+                "sender": mailinglist['address'],
+                ## "footer" will be set in the frontend
+                # FIXME "prefix" currently not supported
+                "size_max": mailinglist['maxsize'],
+                "moderators": moderators,
+                "subscribers": subscribers,
+                "whitelist": mailinglist['whitelist'],
+            }
+

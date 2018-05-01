@@ -70,7 +70,7 @@ class BackendShim(ProxyShim):
         rs = RequestState(
             key, None, None, None, [], None, None,
             None, [], {}, "de", self.translator.gettext,
-            self.translator.ngettext, None, None)
+            self.translator.ngettext, None, None, key)
         vals = {k: data[k] for k in ('persona_id', 'username', 'given_names',
                                      'display_name', 'family_name')}
         rs.user = User(roles=extract_roles(data), **vals)
