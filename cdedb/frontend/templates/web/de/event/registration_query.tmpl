@@ -135,11 +135,11 @@
                                 return;
                             if (list.length == 1)
                                 location.href =
-                                    "{{ cdedblink('event/change_registration', magic_placeholders=['registration_id']) }}"
+                                    "{{ cdedblink('event/change_registration_form', magic_placeholders=['registration_id']) }}"
                                         .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
                             else
                                 location.href =
-                                    "{{ cdedblink('event/change_registrations', magic_placeholders=['reg_ids']) }}"
+                                    "{{ cdedblink('event/change_registrations_form', magic_placeholders=['reg_ids']) }}"
                                         .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
                         });
                     </script>

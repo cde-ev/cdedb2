@@ -18,7 +18,7 @@
         </tr>
         <tr>
             <td>Geschlecht</td>
-            <td>{{ data['gender']|gender|e }}</td>
+            <td>{{ gettext(enums['Genders'](data['gender'])|string)|e }}</td>
         </tr>
         <tr>
             <td>E-Mail</td>

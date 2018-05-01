@@ -55,7 +55,7 @@
             {% if next %}{{ pending['birthday']|date|e }}{% else %}{{ current['birthday']|date(lang=lang)|e }}{% endif %}
         {% endcall %}
         {% call(next) show_diff('gender', "Geschlecht", True) %}
-            {% if next %}{{ pending['gender']|gender|e }}{% else %}{{ current['gender']|gender|e }}{% endif %}
+            {% if next %}{{ gettext(enums['Genders'](pending['gender'])|string)|e }}{% else %}{{ gettext(enums['Genders'](current['gender'])|string)|e }}{% endif %}
         {% endcall %}
 
         <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>

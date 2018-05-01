@@ -38,7 +38,7 @@
             <dt>Geburtstag</dt>
             <dd>{{ persona['birthday']|e }}</dd>
             <dt>Geschlecht</dt>
-            <dd>{{ persona['gender']|gender|e }}</dd>
+            <dd>{{ gettext(enums['Genders'](persona['gender'])|string)|e }}</dd>
             <dt>E-Mail</dt>
             <dd> {{ persona['username']|e }} </dd>
             <dt>Telefon</dt>

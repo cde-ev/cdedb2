@@ -326,21 +326,6 @@ def json_filter(val):
     """
     return json.dumps(val, cls=CustomEscapingJSONEncoder)
 
-def gender_filter(val):
-    """Custom jinja filter to convert gender constants to something printable.
-
-    :type val: int
-    :rtype: str
-    """
-    if val is None:
-        return None
-    if val == const.Genders.female:
-        return '♀'
-    elif val == const.Genders.male:
-        return '♂'
-    else:
-        return '⚧'
-
 def enum_filter(val, enum):
     """Custom jinja filter to convert enums to something printable.
 
@@ -488,7 +473,6 @@ JINJA_FILTERS = {
     'cdedbid': cdedbid_filter,
     'escape': escape_filter,
     'e': escape_filter,
-    'gender': gender_filter,
     'json': json_filter,
     'stringIn': stringIn_filter,
     'querytoparams': querytoparams_filter,

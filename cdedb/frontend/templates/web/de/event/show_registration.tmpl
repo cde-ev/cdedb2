@@ -52,7 +52,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
             {{ persona['birthday']|date(lang=lang)|e }} (<em>{{ gettext(age|string)|e }}</em>)
         </dd>
         <dt>Geschlecht</dt>
-        <dd>{{ persona['gender']|gender|e }}</dd>
+        <dd>{{ gettext(enums['Genders'](persona['gender'])|string)|e }}</dd>
     </dl>
     <dl class="dl-horizontal">
         <dt>E-Mail</dt>

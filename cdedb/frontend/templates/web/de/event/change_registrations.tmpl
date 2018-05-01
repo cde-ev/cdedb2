@@ -10,7 +10,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
-{{ util.breadcrumb_link(cdedblink("event/change_registrations"), "Bearbeiten", active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/change_registrations_form"), "Bearbeiten", active=True) }}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
@@ -65,7 +65,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
         {% endcall %}
 
         {% if values['enable_reg.gender'] %}
-            {{ util.form_input_static(label="Geschlecht", value=values['gender']|gender|e) }}
+            {{ util.form_input_static(label="Geschlecht", value=gettext(enums['Genders'](values['reg.gender'])|string)|e) }}
         {% else %}
             {{ util.form_input_static(label="Geschlecht", value="unterschiedlich") }}
         {% endif %}
