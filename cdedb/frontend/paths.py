@@ -513,6 +513,8 @@ CDEDB_PATHS = werkzeug.routing.Map((
                  endpoint="export_overview"),
             rule("/script/one", methods=_GET,
                  endpoint="export_one"),
+            rule("/check", methods=_GET,
+                 endpoint="global_check_states"),
             sub('/mailinglist/<int:mailinglist_id>', (
                 rule("/show", methods=_GET,
                      endpoint="show_mailinglist"),

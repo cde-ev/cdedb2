@@ -3,6 +3,7 @@
 """Services for the ml realm."""
 
 import copy
+import itertools
 
 import werkzeug
 
@@ -499,6 +500,25 @@ class MlFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, problems+overrides)
         return self.render(rs, "check_states", {
             'problems': problems, 'overrides': overrides, 'personas': personas})
+
+    @access("ml_admin")
+    def global_check_states(self, rs):
+        """Test all explicit subscriptions for consistency with audience."""
+        mailinglists = self.mlproxy.list_mailinglists(rs)
+        problems = self.mlproxy.check_states(rs, tuple(mailinglists.keys()))
+        overrides = {
+            ml_id: tuple(e['persona_id'] for e in probs if e['is_override'])
+            for ml_id, probs in problems.items()}
+        problems = {
+            ml_id: tuple(e['persona_id'] for e in probs if not e['is_override'])
+            for ml_id, probs in problems.items()}
+        persona_ids = {x for l in itertools.chain(overrides.values(),
+                                                  problems.values())
+                       for x in l}
+        personas = self.coreproxy.get_personas(rs, persona_ids)
+        return self.render(rs, "global_check_states", {
+            'problems': problems, 'overrides': overrides, 'personas': personas,
+            'mailinglists': mailinglists})
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdata(("subscriber_id", "id"))

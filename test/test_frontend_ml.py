@@ -272,6 +272,30 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Janis Jalapeño")
 
     @as_users("anton")
+    def test_global_check_states(self, user):
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/check$'},)
+        self.assertTitle("globaler Konsistenzcheck")
+        self.assertPresence("Sozialistischer Kampfbrief")
+        self.assertNonPresence("Janis Jalapeño")
+        ## generate an inconsistency
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list$'},
+                      {'href': '/ml/mailinglist/3'},
+                      {'href': '/ml/mailinglist/3/change'},)
+        self.assertTitle("Witz des Tages – Konfiguration")
+        f = self.response.forms['changelistform']
+        f['audience_policy'] = 5
+        self.submit(f)
+        ## now check
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/check$'},)
+        self.assertTitle("globaler Konsistenzcheck")
+        self.assertPresence("Witz des Tages")
+        self.assertPresence("Janis Jalapeño")
+        
+
+    @as_users("anton")
     def test_overrides(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/list$'},

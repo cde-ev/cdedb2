@@ -690,7 +690,7 @@ class MlBackend(AbstractBackend):
     def check_states(self, rs, mailinglist_ids):
         """Verify that all explicit subscriptions are by the target audience.
 
-        A persona may change state or may be subscribed by a moderated
+        A persona may change state or may be subscribed by a moderator
         even if she is not in the target audience. Since defending
         against the first case is rather complicated, we choose to offer
         the means of verification afterwards.
