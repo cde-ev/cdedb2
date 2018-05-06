@@ -41,6 +41,12 @@
                 </li>
             {% endfor %}
         </ul>
+        <form action="{{ cdedblink('ml/remove_subscribers')|e }}" method="POST"
+                id="removeallproblemsform" style="display: inline;">
+            {{ util.input_hidden(name="subscriber_ids", value=problems|join(",")) }}
+            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                    title="Alle obigen Abonnenments entfernen") }}
+        </form>
     {% endif %}
     {% if overrides %}
         <h2>Ausnahmen</h2>

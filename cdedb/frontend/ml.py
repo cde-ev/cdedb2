@@ -15,6 +15,7 @@ from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     _, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates,
     json_serialize)
+from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
 from cdedb.backend.event import EventBackend
 from cdedb.backend.cde import CdEBackend
@@ -411,6 +412,21 @@ class MlFrontend(AbstractUserFrontend):
             return self.management(rs, mailinglist_id)
         code = self.mlproxy.change_subscription_state(
             rs, mailinglist_id, subscriber_id, subscribe=False)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "ml/management")
+
+    @access("ml", modi={"POST"})
+    @REQUESTdata(("subscriber_ids", "int_csv_list"))
+    @mailinglist_guard()
+    def remove_subscribers(self, rs, mailinglist_id, subscriber_ids):
+        """Administratively unsubscribe many people."""
+        if rs.errors:
+            return self.management(rs, mailinglist_id)
+        with Atomizer(rs):
+            code = 1
+            for subscriber_id in subscriber_ids:
+                code *= self.mlproxy.change_subscription_state(
+                    rs, mailinglist_id, subscriber_id, subscribe=False)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "ml/management")
 

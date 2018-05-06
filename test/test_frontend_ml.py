@@ -293,7 +293,6 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("globaler Konsistenzcheck")
         self.assertPresence("Witz des Tages")
         self.assertPresence("Janis Jalapeño")
-        
 
     @as_users("anton")
     def test_overrides(self, user):
@@ -315,6 +314,37 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Witz des Tages – Konsistenzcheck")
         self.assertPresence("Janis Jalapeño")
         self.assertPresence("Ausnahmen")
+
+    @as_users("anton")
+    def test_check_states_multi_remove(self, user):
+        # first generate inconsistency
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list$'},
+                      {'href': '/ml/mailinglist/3'},
+                      {'href': '/ml/mailinglist/3/change'},)
+        self.assertTitle("Witz des Tages – Konfiguration")
+        f = self.response.forms['changelistform']
+        f['audience_policy'] = 5
+        self.submit(f)
+        # now check and remove
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list$'},
+                      {'href': '/ml/mailinglist/3'},
+                      {'href': '/ml/mailinglist/3/management'},
+                      {'href': '/ml/mailinglist/3/check'},)
+        self.assertTitle("Witz des Tages – Konsistenzcheck")
+        self.assertPresence("Janis Jalapeño")
+        f = self.response.forms['removeallproblemsform']
+        self.submit(f)
+        # make sure it worked
+        self.traverse({'href': '/ml/$'},
+                      {'href': '/ml/mailinglist/list$'},
+                      {'href': '/ml/mailinglist/3'},
+                      {'href': '/ml/mailinglist/3/management'},
+                      {'href': '/ml/mailinglist/3/check'},)
+        self.assertTitle("Witz des Tages – Konsistenzcheck")
+        self.assertTitle("Witz des Tages – Konsistenzcheck")
+        self.assertNonPresence("Janis Jalapeño")
 
     def test_export(self):
         self.app.set_cookie('scriptkey', "c1t2w3r4n5v6l6s7z8ap9u0k1y2i2x3")
