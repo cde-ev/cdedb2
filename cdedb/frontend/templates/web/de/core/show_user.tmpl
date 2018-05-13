@@ -53,7 +53,7 @@
                 {% if "core_admin" in user.roles %}
                     <form action="{{ cdedblink('core/archive_persona')|e }}" method="POST"
                      id="archivepersonaform" style="display: inline;">
-                        {{ util.input_submit(value="Account archivieren", icon="ban-circle",
+                        {{ util.input_submit(value="Account archivieren", icon="erase",
                                 aclass="btn btn-danger btn-sm") }}
                         {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
                     </form>
@@ -69,12 +69,12 @@
                 {% if "core_admin" in user.roles %}
                     <form action="{{ cdedblink('core/dearchive_persona')|e }}" method="POST"
                      id="dearchivepersonaform" style="display: inline;">
-                        {{ util.input_submit(value="Account wieder instandsetzen.", icon="ban-circle",
+                        {{ util.input_submit(value="Account wieder instandsetzen.", icon="open-file",
                                 aclass="btn btn-danger btn-sm") }}
                     </form>
                     <form action="{{ cdedblink('core/purge_persona')|e }}" method="POST"
                      id="purgepersonaform" style="display: inline;">
-                        {{ util.input_submit(value="Account leeren", icon="ban-circle",
+                        {{ util.input_submit(value="Account leeren", icon="fire",
                                 aclass="btn btn-danger btn-sm") }}
                         {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
                     </form>
