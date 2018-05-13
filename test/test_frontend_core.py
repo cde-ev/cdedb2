@@ -358,6 +358,35 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Der Benutzer ist archiviert.")
 
     @as_users("anton")
+    def test_archive_user(self, user):
+        self.admin_view_profile('charly')
+        self.assertTitle("Charly C. Clown")
+        self.assertNonPresence("Der Benutzer ist archiviert.")
+        self.assertPresence("Zirkusstadt")
+        f = self.response.forms['archivepersonaform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("Charly C. Clown")
+        self.assertPresence("Der Benutzer ist archiviert.")
+        self.assertNonPresence("Zirkusstadt")
+        f = self.response.forms['dearchivepersonaform']
+        self.submit(f)
+        self.assertTitle("Charly C. Clown")
+        self.assertNonPresence("Der Benutzer ist archiviert.")
+
+    @as_users("anton")
+    def test_purge_user(self, user):
+        self.admin_view_profile('hades', check=False)
+        self.assertTitle("Hades Hell")
+        self.assertPresence("Der Benutzer ist archiviert.")
+        f = self.response.forms['purgepersonaform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("N. N.")
+        self.assertNonPresence("Hades")
+        self.assertPresence("Der Benutzer ist archiviert.")
+
+    @as_users("anton")
     def test_meta_info(self, user):
         self.traverse({'href': '^/$'},
                       {'href': '/meta'})

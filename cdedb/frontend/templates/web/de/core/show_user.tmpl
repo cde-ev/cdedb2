@@ -17,40 +17,72 @@
     {% endif %}
     {% if data['id'] == user.persona_id or is_relative_admin %}
         <div class="p">
-            {% if is_relative_admin %}
-                {% if data['id'] == user.persona_id %}
-                    {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten (normal)",
-                            aclass="btn btn-warning btn-sm", icon="pencil") }}
-                    {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten (mit Adminrechten)",
-                            aclass="btn btn-warning btn-sm", icon="pencil") }}
+            {% if not ambience['persona']['is_archived'] %}
+                {% if is_relative_admin %}
+                    {% if data['id'] == user.persona_id %}
+                        {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten (normal)",
+                                aclass="btn btn-warning btn-sm", icon="pencil") }}
+                        {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten (mit Adminrechten)",
+                                aclass="btn btn-warning btn-sm", icon="pencil") }}
+                    {% else %}
+                        {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten",
+                                aclass="btn btn-warning btn-sm", icon="pencil") }}
+                    {% endif %}
                 {% else %}
-                    {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten",
+                    {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten",
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
                 {% endif %}
+                {% if data['id'] == user.persona_id %}
+                    {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern", aclass="btn btn-warning btn-sm",
+                            icon="edit") }}
+                {% else %}
+                    {% if data['is_active'] %}
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
+                         id="activitytoggleform" style="display: inline;">
+                            {{ util.input_submit(value="Account deaktivieren", icon="ban-circle",
+                                    aclass="btn btn-danger btn-sm") }}
+                        </form>
+                    {% else %}
+                        <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
+                         id="activitytoggleform" style="display: inline;">
+                            {{ util.input_submit(value="Account aktivieren", icon="ok-circle",
+                                    aclass="btn btn-success btn-sm") }}
+                        </form>
+                    {% endif %}
+                {% endif %}
+                {% if "core_admin" in user.roles %}
+                    <form action="{{ cdedblink('core/archive_persona')|e }}" method="POST"
+                     id="archivepersonaform" style="display: inline;">
+                        {{ util.input_submit(value="Account archivieren", icon="ban-circle",
+                                aclass="btn btn-danger btn-sm") }}
+                        {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                    </form>
+                    <script type="text/javascript">
+                        $('#archivepersonaform').cdedbProtectAction("Die meisten Informationen zu dem Nutzer werden gelöscht.");
+                        $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                    </script>
+                {% endif %}
+                {% if is_relative_admin %}
+                    {{ util.href(cdedblink("core/show_history"), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
+                {% endif %}
             {% else %}
-                {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten",
-                        aclass="btn btn-warning btn-sm", icon="pencil") }}
-            {% endif %}
-            {% if data['id'] == user.persona_id %}
-                {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern", aclass="btn btn-warning btn-sm",
-                        icon="edit") }}
-            {% else %}
-                {% if data['is_active'] %}
-                    <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
-                     id="activitytoggleform" style="display: inline;">
-                        {{ util.input_submit(value="Account deaktivieren", icon="ban-circle",
+                {% if "core_admin" in user.roles %}
+                    <form action="{{ cdedblink('core/dearchive_persona')|e }}" method="POST"
+                     id="dearchivepersonaform" style="display: inline;">
+                        {{ util.input_submit(value="Account wieder instandsetzen.", icon="ban-circle",
                                 aclass="btn btn-danger btn-sm") }}
                     </form>
-                {% else %}
-                    <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
-                     id="activitytoggleform" style="display: inline;">
-                        {{ util.input_submit(value="Account aktivieren", icon="ok-circle",
-                                aclass="btn btn-success btn-sm") }}
+                    <form action="{{ cdedblink('core/purge_persona')|e }}" method="POST"
+                     id="purgepersonaform" style="display: inline;">
+                        {{ util.input_submit(value="Account leeren", icon="ban-circle",
+                                aclass="btn btn-danger btn-sm") }}
+                        {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
                     </form>
+                    <script type="text/javascript">
+                        $('#purgepersonaform').cdedbProtectAction("Der Account wird geleert.");
+                        $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                    </script>
                 {% endif %}
-            {% endif %}
-            {% if is_relative_admin %}
-                {{ util.href(cdedblink("core/show_history"), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
             {% endif %}
         </div>
     {% endif %}

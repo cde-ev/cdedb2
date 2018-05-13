@@ -686,6 +686,28 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
 
     @as_users("anton")
+    def test_archive(self, user):
+        data = self.core.get_total_persona(self.key, 3)
+        self.assertEqual(False, data['is_archived'])
+        ret = self.core.archive_persona(self.key, 3)
+        self.assertLess(0, ret)
+        data = self.core.get_total_persona(self.key, 3)
+        self.assertEqual(True, data['is_archived'])
+        ret = self.core.dearchive_persona(self.key, 3)
+        self.assertLess(0, ret)
+        data = self.core.get_total_persona(self.key, 3)
+        self.assertEqual(False, data['is_archived'])
+
+    @as_users("anton")
+    def test_purge(self, user):
+        data = self.core.get_total_persona(self.key, 8)
+        self.assertEqual("Hades", data['given_names'])
+        ret = self.core.purge_persona(self.key, 8)
+        self.assertLess(0, ret)
+        data = self.core.get_total_persona(self.key, 8)
+        self.assertEqual("N.", data['given_names'])
+
+    @as_users("anton")
     def test_log(self, user):
         ## first generate some data
         data = copy.deepcopy(PERSONA_TEMPLATE)
@@ -766,6 +788,13 @@ class TestCoreBackend(BackendTest):
              'change_status': 2,
              'ctime': nearly_now(),
              'generation': 1,
+             'persona_id': 8,
+             'reviewed_by': None,
+             'submitted_by': 1},
+            {'change_note': 'Init.',
+             'change_status': 2,
+             'ctime': nearly_now(),
+             'generation': 1,
              'persona_id': 7,
              'reviewed_by': None,
              'submitted_by': 1},
@@ -813,4 +842,3 @@ class TestCoreBackend(BackendTest):
              'submitted_by': 1})
         self.assertEqual(expectation,
                          self.core.retrieve_changelog_meta(self.key))
-

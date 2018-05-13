@@ -362,6 +362,13 @@ class PrivilegeError(RuntimeError):
     """
     pass
 
+class ArchiveError(RuntimeError):
+    """
+    Exception for signalling an exact error when archiving a persona
+    goes awry.
+    """
+    pass
+
 # TODO decide whether we sort by first or last name
 def name_key(entry):
     """Create a sorting key associated to a persona dataset.

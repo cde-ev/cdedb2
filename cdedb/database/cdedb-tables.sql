@@ -200,6 +200,7 @@ GRANT SELECT, INSERT ON core.sessions TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.sessions_id_seq TO cdb_anonymous;
 GRANT UPDATE (is_active) ON core.sessions TO cdb_anonymous;
 GRANT UPDATE (atime) ON core.sessions TO cdb_persona;
+GRANT DELETE ON core.sessions TO cdb_admin;
 
 CREATE TABLE core.quota (
         id                      bigserial PRIMARY KEY,
@@ -211,6 +212,7 @@ CREATE INDEX idx_quota_persona_id_qdate ON core.quota(qdate, persona_id);
 GRANT SELECT, INSERT ON core.quota TO cdb_member;
 GRANT SELECT, UPDATE ON core.quota_id_seq TO cdb_member;
 GRANT UPDATE (queries) ON core.quota TO cdb_member;
+GRANT DELETE ON core.quota TO cdb_admin;
 
 -- This table is designed to hold just a single row. Additionally the
 -- keys of the dict stored here, will be runtime configurable.
@@ -238,7 +240,7 @@ CREATE TABLE core.log (
 );
 CREATE INDEX idx_core_log_code ON core.log(code);
 CREATE INDEX idx_core_log_persona_id ON core.log(persona_id);
-GRANT SELECT ON core.log TO cdb_admin;
+GRANT SELECT, DELETE ON core.log TO cdb_admin;
 GRANT INSERT ON core.log TO cdb_anonymous;
 GRANT SELECT, UPDATE ON core.log_id_seq TO cdb_anonymous;
 
@@ -315,6 +317,7 @@ GRANT SELECT, INSERT ON core.changelog TO cdb_persona;
 GRANT SELECT, UPDATE ON core.changelog_id_seq TO cdb_persona;
 GRANT UPDATE (change_status) ON core.changelog TO cdb_persona;
 GRANT UPDATE (reviewed_by) ON core.changelog TO cdb_admin;
+GRANT DELETE ON core.changelog TO cdb_admin;
 
 ---
 --- SCHEMA cde
@@ -430,6 +433,7 @@ CREATE INDEX idx_cde_log_code ON cde.log(code);
 CREATE INDEX idx_cde_log_persona_id ON cde.log(persona_id);
 GRANT SELECT, INSERT ON cde.log TO cdb_persona;
 GRANT SELECT, UPDATE ON cde.log_id_seq TO cdb_persona;
+GRANT DELETE ON cde.log TO cdb_admin;
 
 ---
 --- SCHEMA past_event
@@ -510,6 +514,7 @@ CREATE INDEX idx_past_event_log_code ON past_event.log(code);
 CREATE INDEX idx_past_event_log_event_id ON past_event.log(pevent_id);
 GRANT SELECT, INSERT ON past_event.log TO cdb_persona;
 GRANT SELECT, UPDATE ON past_event.log_id_seq TO cdb_persona;
+GRANT DELETE ON past_event.log TO cdb_admin;
 
 ---
 --- SCHEMA event
@@ -757,6 +762,7 @@ CREATE INDEX idx_event_log_code ON event.log(code);
 CREATE INDEX idx_event_log_event_id ON event.log(event_id);
 GRANT SELECT, INSERT ON event.log TO cdb_persona;
 GRANT SELECT, UPDATE ON event.log_id_seq TO cdb_persona;
+GRANT DELETE ON event.log TO cdb_admin;
 
 ---
 --- SCHEMA assembly

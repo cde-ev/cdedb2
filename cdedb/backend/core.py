@@ -24,7 +24,7 @@ from cdedb.common import (
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
-    merge_dicts, PERSONA_DEFAULTS)
+    merge_dicts, PERSONA_DEFAULTS, ArchiveError)
 from cdedb.security import secure_random_ascii, secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -699,13 +699,13 @@ class CoreBackend(AbstractBackend):
         ## Prevent modification of archived members. This check is
         ## sufficient since we can only edit our own data if we are not
         ## archived.
-        if current['is_archived'] and data.get('is_archived', True):
+        if (current['is_archived'] and data.get('is_archived', True)
+                and "purge" not in allow_specials):
             raise RuntimeError(_("Editing archived member impossible."))
 
         with Atomizer(rs):
             ## reroute through the changelog if necessary
-            if (not self.conf.CDEDB_OFFLINE_DEPLOYMENT
-                    and "archive" not in allow_specials):
+            if not self.conf.CDEDB_OFFLINE_DEPLOYMENT:
                 ret = self.changelog_submit_change(
                     rs, data, generation=generation,
                     may_wait=may_wait, change_note=change_note)
@@ -869,15 +869,286 @@ class CoreBackend(AbstractBackend):
             self.finance_log(rs, code, persona_id, delta, new_balance)
             return ret
 
-    @access("core_admin")
+    @access("core_admin", "cde_admin")
     def archive_persona(self, rs, persona_id):
-        """TODO"""
-        raise NotImplementedError(_("To be done."))
+        """Move a persona to the attic.
+
+        This clears most of the data we have about the persona. The
+        basic use case is for retiring members of a time long gone,
+        which have not been seen for an extended period.
+
+        We keep the following data to enable us to recognize them
+        later on to allow readmission:
+        * name,
+        * date of birth,
+        * past events.
+
+        Additionally not all data is purged, since we have separate
+        life cycles for different realms. This affects the following.
+        * finances: we preserve a log of all transactions for bookkeeping,
+        * lastschrift: similarily to finances
+        * events: to ensure consistency, events are only deleted en bloc
+        * assemblies: these we keep to make the decisions traceable
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :rtype: int
+        :returns: default return code
+        """
+        persona_id = affirm("id", persona_id)
+        with Atomizer(rs):
+            persona = unwrap(self.get_total_personas(rs, (persona_id,)))
+            ##
+            ## 1. Check whether we are already archived
+            ##
+            if persona['is_archived']:
+                return 0
+            ##
+            ## 2. Remove complicated attributes (membership, foto and password)
+            ##
+            if persona['is_member']:
+                code = self.change_membership(rs, persona_id, is_member=False)
+                if not code:
+                    raise ArchiveError(_("Failed to revoke membership."))
+            if persona['foto']:
+                code = self.change_foto(rs, persona_id, foto=None)
+                if not code:
+                    raise ArchiveError(_("Failed to remove foto."))
+            ## modified version of hash for 'secret' and thus
+            ## safe/unknown plaintext
+            password_hash = (
+                "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
+                "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHE/si/")
+            query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
+            self.query_exec(rs, query, (password_hash, persona_id))
+            ##
+            ## 3. Strip all unnecessary attributes
+            ##
+            update = {
+                'id': persona_id,
+                # 'password_hash' already adjusted
+                'username': None,
+                'is_active': False,
+                'notes': None,
+                'is_admin': False,
+                'is_core_admin': False,
+                'is_cde_admin': False,
+                'is_event_admin': False,
+                'is_ml_admin': False,
+                'is_assembly_admin': False,
+                'is_cde_realm': False,
+                'is_event_realm': False,
+                'is_ml_realm': False,
+                'is_assembly_realm': False,
+                # 'is_member' already adjusted
+                'is_searchable': False,
+                'cloud_account': False,
+                # 'is_archived' will be done later
+                # 'display_name' kept for later recognition
+                # 'given_names' kept for later recognition
+                # 'family_name' kept for later recognition
+                'title': None,
+                'name_supplement': None,
+                'gender': None,
+                # 'birthday' kept for later recognition
+                'telephone': None,
+                'mobile': None,
+                'address_supplement': None,
+                'address': None,
+                'postal_code': None,
+                'location': None,
+                'country': None,
+                # 'birth_name' kept for later recognition
+                'address_supplement2': None,
+                'address2': None,
+                'postal_code2': None,
+                'location2': None,
+                'country2': None,
+                'weblink': None,
+                'specialisation': None,
+                'affiliation': None,
+                'timeline': None,
+                'interests': None,
+                'free_form': None,
+                'balance': None,
+                'decided_search': False,
+                'trial_member': False,
+                'bub_search': False,
+                # 'foto' already adjusted
+                # 'fulltext' is set automatically
+            }
+            self.set_persona(
+                rs, update, generation=None, may_wait=False,
+                change_note="Prepare for archiving.",
+                allow_specials=("admins", "username", "realms", "finance"))
+            ##
+            ## 4. Delete all sessions and quotas
+            ##
+            self.sql_delete(rs, "core.sessions", (persona_id,), "persona_id")
+            self.sql_delete(rs, "core.quota", (persona_id,), "persona_id")
+            ##
+            ## 5. Handle lastschrift
+            ##
+            lastschrift = self.sql_select(
+                rs, "cde.lastschrift", ("id", "revoked_at"), (persona_id,),
+                "persona_id")
+            if any(not l['revoked_at'] for l in lastschrift):
+                raise ArchiveError(_("Active lastschrift exists."))
+            query = glue(
+                "UPDATE cde.lastschrift",
+                "SET (amount, max_dsa, iban, account_owner, account_address)",
+                "= (%s, %s, %s, %s, %s)",
+                "WHERE persona_id = %s")
+            if lastschrift:
+                self.query_exec(rs, query, (0, 0, "", "", "", persona_id))
+            ##
+            ## 6. Handle event realm
+            ##
+            query = glue(
+                "SELECT reg.persona_id, MAX(part_end)",
+                "FROM event.registrations as reg ",
+                "JOIN event.events as event ON reg.event_id = event.id",
+                "JOIN event.event_parts as parts ON parts.event_id = event.id",
+                "WHERE reg.persona_id = %s"
+                "GROUP BY persona_id")
+            max_end = self.query_one(rs, query, (persona_id,))
+            if max_end and max_end >= now().date():
+                raise ArchiveError(_("Involved in unfinished event."))
+            self.sql_delete(rs, "event.orgas", (persona_id,), "persona_id")
+            ##
+            ## 7. Handle assembly realm
+            ##
+            query = glue(
+                "SELECT ass.id FROM assembly.assemblies as ass",
+                "JOIN assembly.attendees as att ON att.assembly_id = ass.id",
+                "WHERE att.persona_id = %s AND ass.is_active = True")
+            ass_active = self.query_all(rs, query, (persona_id,))
+            if ass_active:
+                raise ArchiveError(_("Involved in unfinished assembly."))
+            query = glue(
+                "UPDATE assembly.attendees SET secret = NULL",
+                "WHERE persona_id = %s")
+            self.query_exec(rs, query, (persona_id,))
+            ##
+            ## 8. Handle ml realm
+            ##
+            self.sql_delete(rs, "ml.subscription_states", (persona_id,),
+                            "persona_id")
+            self.sql_delete(rs, "ml.subscription_requests", (persona_id,),
+                            "persona_id")
+            self.sql_delete(rs, "ml.moderators", (persona_id,), "persona_id")
+            ##
+            ## 9. Clear logs
+            ##
+            self.sql_delete(rs, "core.log", (persona_id,), "persona_id")
+            # finance log stays untouched to keep balance correct
+            self.sql_delete(rs, "cde.log", (persona_id,), "persona_id")
+            # past event log stays untouched since we keep past events
+            # event log stays untouched since events have a separate life cycle
+            # assembly log stays since assemblies have a separate life cycle
+            self.sql_delete(rs, "ml.log", (persona_id,), "persona_id")
+            ##
+            ## 10. Mark archived
+            ##
+            update = {
+                'id': persona_id,
+                'is_archived': True,
+            }
+            self.set_persona(
+                rs, update, generation=None, may_wait=False,
+                change_note=_("Archiving persona."),
+                allow_specials=("archive",))
+            ##
+            ## 11. Clear changelog
+            ##
+            # FIXME
+            query = glue(
+                "SELECT id FROM core.changelog WHERE persona_id = %s",
+                "ORDER BY ctime DESC LIMIT 1")
+            newest = self.query_one(rs, query, (persona_id,))
+            query = glue(
+                "DELETE FROM core.changelog",
+                "WHERE persona_id = %s AND NOT id = %s")
+            ret = self.query_exec(rs, query, (persona_id, newest['id']))
+            ##
+            ## 12. Finish
+            ##
+            return ret
 
     @access("core_admin")
     def dearchive_persona(self, rs, persona_id):
-        """TODO"""
-        raise NotImplementedError(_("To be done."))
+        """Return a persona from the attic to activity.
+
+        This does nothing but flip the archiving bit.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :rtype: int
+        :returns: default return code
+        """
+        persona_id = affirm("id", persona_id)
+        with Atomizer(rs):
+            update = {
+                'id': persona_id,
+                'is_archived': False,
+            }
+            return self.set_persona(
+                rs, update, generation=None, may_wait=False,
+                change_note=_("Reinstating persona from the archive."),
+                allow_specials=("archive",))
+
+    @access("core_admin", "cde_admin")
+    def purge_persona(self, rs, persona_id):
+        """Delete all infos about this persona.
+
+        It has to be archived beforehand. Thus we do not have to
+        remove a lot since archiving takes care of most of the stuff.
+
+        However we do not entirely delete the entry since this would
+        cause havock in other areas (like assemblies), we only
+        anonymize the entry by removing all identifying information.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type persona_id: int
+        :rtype: int
+        :returns: default return code
+
+        """
+        persona_id = affirm("id", persona_id)
+        with Atomizer(rs):
+            persona = unwrap(self.get_total_personas(rs, (persona_id,)))
+            if not persona['is_archived']:
+                raise RuntimeError(_("Persona is not archived."))
+            ##
+            ## 1. Zap information
+            ##
+            update = {
+                'id': persona_id,
+                'display_name': "N.",
+                'given_names': "N.",
+                'family_name': "N.",
+                'birthday': None,
+                'birth_name': None,
+            }
+            ret = self.set_persona(
+                rs, update, generation=None, may_wait=False,
+                change_note="Purging persona.",
+                allow_specials=("admins", "username", "purge"))
+            ##
+            ## 2. Clear changelog
+            ##
+            query = glue(
+                "SELECT id FROM core.changelog WHERE persona_id = %s",
+                "ORDER BY ctime DESC LIMIT 1")
+            newest = self.query_one(rs, query, (persona_id,))
+            query = glue(
+                "DELETE FROM core.changelog",
+                "WHERE persona_id = %s AND NOT id = %s")
+            ret *= self.query_exec(rs, query, (persona_id, newest['id']))
+            ##
+            ## 3. Finish
+            ##
+            return ret
 
     @access("persona")
     def change_username(self, rs, persona_id, new_username, password):

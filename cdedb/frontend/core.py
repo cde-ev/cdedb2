@@ -18,7 +18,7 @@ from cdedb.frontend.common import (
     csv_output, query_result_to_json)
 from cdedb.common import (
     _, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
-    now, merge_dicts)
+    now, merge_dicts, ArchiveError)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
@@ -1417,6 +1417,45 @@ class CoreFrontend(AbstractFrontend):
         message = _("Change committed.") if ack else _("Change dropped.")
         self.notify_return_code(rs, code, success=message)
         return self.redirect(rs, "core/list_pending_changes")
+
+    @access("core_admin", "cde_admin", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
+    def archive_persona(self, rs, persona_id, ack_delete):
+        """Move a persona to the attic."""
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.redirect_show_user(rs, persona_id)
+
+        try:
+            code = self.coreproxy.archive_persona(rs, persona_id)
+        except ArchiveError:
+            rs.notify(("error", ArchiveError.args[0]))
+        self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
+
+    @access("core_admin", "cde_admin", modi={"POST"})
+    def dearchive_persona(self, rs, persona_id):
+        """Reinstate a persona from the attic."""
+        if rs.errors:
+            return self.redirect_show_user(rs, persona_id)
+
+        code = self.coreproxy.dearchive_persona(rs, persona_id)
+        self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
+    
+    @access("core_admin", "cde_admin", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
+    def purge_persona(self, rs, persona_id, ack_delete):
+        """Delete all identifying information for a persona."""
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.redirect_show_user(rs, persona_id)
+
+        code = self.coreproxy.purge_persona(rs, persona_id)
+        self.notify_return_code(rs, code)
+        return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
     @REQUESTdata(("stati", "[int]"), ("start", "int_or_None"),

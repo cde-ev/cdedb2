@@ -114,6 +114,12 @@ CDEDB_PATHS = werkzeug.routing.Map((
                      endpoint="show_user"),
                 rule("/history", methods=_GET,
                      endpoint="show_history"),
+                rule("/archive", methods=_POST,
+                     endpoint="archive_persona"),
+                rule("/dearchive", methods=_POST,
+                     endpoint="dearchive_persona"),
+                rule("/purge", methods=_POST,
+                     endpoint="purge_persona"),
                 rule("/activity/change", methods=_POST,
                      endpoint="toggle_activity"),)),
             sub('/genesis', (
