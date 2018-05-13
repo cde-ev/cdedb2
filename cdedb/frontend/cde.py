@@ -646,6 +646,9 @@ class CdEFrontend(AbstractUserFrontend):
         persona = None
         if persona_id:
             persona = self.coreproxy.get_persona(rs, persona_id)
+            if persona['is_archived']:
+                problems.append(('persona_id',
+                                 ValueError(_("Persona is archived."))))
             if not re.search(diacritic_patterns(family_name),
                              persona['family_name'], flags=re.IGNORECASE):
                 problems.append(('family_name',
