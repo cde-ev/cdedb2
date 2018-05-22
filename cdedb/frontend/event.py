@@ -28,7 +28,7 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     _, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    event_gather_tracks, diacritic_patterns)
+    event_gather_tracks, diacritic_patterns, open_utf8)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.database.connection import Atomizer
@@ -1376,8 +1376,7 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = os.path.join(tmp_dir, rs.ambience['event']['shortname'])
             os.mkdir(work_dir)
-            ## FIXME quick hack: add encoding against unicode errors
-            with open(os.path.join(work_dir, "nametags.tex"), 'w', encoding="utf-8") as f:
+            with open_utf8(os.path.join(work_dir, "nametags.tex"), 'w') as f:
                 f.write(tex)
             src = os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png")
             shutil.copy(src, os.path.join(work_dir, "aka-logo.png"))
@@ -1472,7 +1471,7 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = os.path.join(tmp_dir, rs.ambience['event']['shortname'])
             os.mkdir(work_dir)
-            with open(os.path.join(work_dir, "course_lists.tex"), 'w') as f:
+            with open_utf8(os.path.join(work_dir, "course_lists.tex"), 'w') as f:
                 f.write(tex)
             for course_id in courses:
                 shutil.copy(
@@ -1502,7 +1501,7 @@ class EventFrontend(AbstractUserFrontend):
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = os.path.join(tmp_dir, rs.ambience['event']['shortname'])
             os.mkdir(work_dir)
-            with open(os.path.join(work_dir, "lodgement_lists.tex"), 'w') as f:
+            with open_utf8(os.path.join(work_dir, "lodgement_lists.tex"), 'w') as f:
                 f.write(tex)
             shutil.copy(
                 os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png"),

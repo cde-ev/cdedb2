@@ -13,7 +13,7 @@ from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
     _, merge_dicts, unwrap, now, ProxyShim, PrivilegeError,
-    ASSEMBLY_BAR_MONIKER)
+    ASSEMBLY_BAR_MONIKER, open_utf8)
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.database.connection import Atomizer
@@ -500,7 +500,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if ballot['is_tallied']:
             path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
                                 str(ballot_id))
-            with open(path) as f:
+            with open_utf8(path) as f:
                 result = json.load(f)
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
             winners = []

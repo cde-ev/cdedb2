@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     ## Iteriere durch Ergebnisdateien ...
     for path in args.results:
-        with open(path) as f:
+        with open(path, encoding='UTF-8') as f:
             data = json.load(f)
         print("Versammlung: {}".format(data['assembly']))
         print("Abstimmung: {}".format(data['ballot']))

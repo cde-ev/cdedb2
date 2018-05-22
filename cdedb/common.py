@@ -515,6 +515,17 @@ class PsycoJson(psycopg2.extras.Json):
     def dumps(self, obj):
         return json_serialize(obj)
 
+def open_utf8(*args, **kwargs):
+    """Wrapper around open() with encoding set to utf8.
+
+    This is just a convenience function for not having to specify the
+    encoding manually. All our textual data is utf8, so this can be used
+    everywhere (except for binary data).
+
+    :rtype: file handle
+    """
+    return open(*args, **kwargs, encoding='UTF-8')
+
 def pairwise(iterable):
     """Iterate over adjacent pairs of values of an iterable.
 

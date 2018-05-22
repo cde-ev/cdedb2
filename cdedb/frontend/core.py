@@ -18,7 +18,7 @@ from cdedb.frontend.common import (
     csv_output, query_result_to_json)
 from cdedb.common import (
     _, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
-    now, merge_dicts, ArchiveError)
+    now, merge_dicts, ArchiveError, open_utf8)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
@@ -1510,7 +1510,7 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
                                 "cdedb-mail-{}.txt".format(token))
-        with open(str(filename)) as f:
+        with open_utf8(str(filename)) as f:
             rawtext = f.read()
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})

@@ -25,7 +25,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.common import (
     _, merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
     int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
-    ProxyShim, diacritic_patterns)
+    ProxyShim, diacritic_patterns, open_utf8)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -1184,7 +1184,7 @@ class CdEFrontend(AbstractUserFrontend):
             j = os.path.join
             work_dir = j(tmp_dir, 'workdir')
             os.mkdir(work_dir)
-            with open(j(work_dir, "lastschrift_receipt.tex"), 'w') as f:
+            with open_utf8(j(work_dir, "lastschrift_receipt.tex"), 'w') as f:
                 f.write(tex)
             logo_src = j(self.conf.REPOSITORY_PATH, "misc/cde-logo.jpg")
             shutil.copy(logo_src, j(work_dir, "cde-logo.jpg"))

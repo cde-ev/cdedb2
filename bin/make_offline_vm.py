@@ -86,7 +86,7 @@ if __name__ == "__main__":
     ## do the actual work
 
     print("Loading exported event")
-    with open(args.data_path) as infile:
+    with open(args.data_path, encoding='UTF-8') as infile:
         data = json.load(infile)
 
     if data["CDEDB_EXPORT_EVENT_VERSION"] != 1:
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     subprocess.check_call(
         ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
          config_path])
-    with open(config_path, 'a') as conf:
+    with open(config_path, 'a', encoding='UTF-8') as conf:
         conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
     print("Finished")

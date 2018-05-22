@@ -46,7 +46,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     _, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, event_gather_tracks)
+    json_serialize, event_gather_tracks, open_utf8)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -834,8 +834,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             # TODO use a with context?
             if maintype == "text":
-                ## FIXME quick hack: add encoding against unicode errors
-                afile = open(attachment['path'], encoding="utf-8")
+                afile = open_utf8(attachment['path'])
             else:
                 afile = open(attachment['path'], 'rb')
         ## Only support common types

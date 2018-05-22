@@ -39,7 +39,7 @@ class Entry:
 ## read data
 ##
 entries = []
-with open(args.log) as infile:
+with open(args.log, encoding='UTF-8') as infile:
     for line in infile:
         fields = line.replace('\n', '').split(' ')
         if len(fields) != 4:
