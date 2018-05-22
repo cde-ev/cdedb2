@@ -1781,6 +1781,11 @@ def _event_field(val, argname=None, *, creation=False, _convert=True, extra_suff
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
+    fn = "field_name{}".format(extra_suffix)
+    if fn in val and val[fn][-1].isdigit():
+        errs.append(("field_name{}".format(extra_suffix),
+                     ValueError(_("Must not end with a digit."))))
+        return val, errs
     entries_key = "entries{}".format(extra_suffix)
     if not val.get(entries_key, True):
         val[entries_key] = None

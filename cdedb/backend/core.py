@@ -1061,7 +1061,6 @@ class CoreBackend(AbstractBackend):
             ##
             ## 11. Clear changelog
             ##
-            # FIXME
             query = glue(
                 "SELECT id FROM core.changelog WHERE persona_id = %s",
                 "ORDER BY ctime DESC LIMIT 1")
