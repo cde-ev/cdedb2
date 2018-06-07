@@ -9,7 +9,7 @@ provided exported event. The VM is then put into offline mode.
 import argparse
 import collections
 import json
-import os.path
+import pathlib
 import subprocess
 import sys
 
@@ -77,11 +77,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ## detemine repo path
-    currentpath = os.path.dirname(os.path.abspath(__file__))
-    if (not currentpath.startswith('/')
-            or not currentpath.endswith('/bin')):
+    currentpath = pathlib.Path(__file__).resolve().parent
+    if (currentpath.parts[0] != '/'
+            or currentpath.parts[-1] != 'bin'):
         raise RuntimeError("Failed to locate repository")
-    repopath = currentpath[:-4]
+    repopath = currentpath.parent
 
     ## do the actual work
 
@@ -98,10 +98,10 @@ if __name__ == "__main__":
     if input("Are you sure (type uppercase YES)? ").strip() != "YES":
         print("Aborting.")
         sys.exit()
-    clean_script = os.path.join(repopath, "test/ancillary_files/clean_data.sql")
+    clean_script = repopath / "test/ancillary_files/clean_data.sql"
     subprocess.check_call(
         ["sudo", "-u", "cdb", "psql", "-U", "cdb", "-d", "cdb", "-f",
-         clean_script], stderr=subprocess.DEVNULL)
+         str(clean_script)], stderr=subprocess.DEVNULL)
 
     print("Connect to database")
     connection_string = "dbname={} user={} password={} port={}".format(
@@ -121,11 +121,11 @@ if __name__ == "__main__":
                 populate_table(cur, table, data[table])
 
     print("Enabling offline mode")
-    config_path = os.path.join(repopath, "cdedb/localconfig.py")
+    config_path = repopath / "cdedb/localconfig.py"
     subprocess.check_call(
         ["sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
-         config_path])
-    with open(config_path, 'a', encoding='UTF-8') as conf:
+         str(config_path)])
+    with open(str(config_path), 'a', encoding='UTF-8') as conf:
         conf.write("\nCDEDB_OFFLINE_DEPLOYMENT = True\n")
 
     print("Finished")

@@ -9,9 +9,8 @@ import csv
 import decimal
 import itertools
 import os
-import os.path
+import pathlib
 import re
-import shutil
 import sys
 import tempfile
 
@@ -28,7 +27,7 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     _, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    event_gather_tracks, diacritic_patterns, open_utf8)
+    event_gather_tracks, diacritic_patterns, open_utf8, shutil_copy)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.database.connection import Atomizer
@@ -230,8 +229,8 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event']['orgas'])
         if event_id in rs.user.orga or self.is_admin(rs):
             params['institutions'] = self.pasteventproxy.list_institutions(rs)
-            params['minor_form_present'] = os.path.isfile(os.path.join(
-                self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
+            params['minor_form_present'] = (
+                self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         elif not rs.ambience['event']['is_visible']:
             raise werkzeug.exceptions.Forbidden(
                 _("The event is not published yet."))
@@ -281,7 +280,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def get_minor_form(self, rs, event_id):
         """Retrieve minor form."""
-        path = os.path.join(self.conf.STORAGE_DIR, "minor_form", str(event_id))
+        path = self.conf.STORAGE_DIR / "minor_form" / str(event_id)
         return self.send_file(
             rs, mimetype="application/pdf",
             filename=rs.gettext("minor_form.pdf"), path=path)
@@ -298,8 +297,8 @@ class EventFrontend(AbstractUserFrontend):
         minor_form = check(rs, 'pdffile', minor_form, "minor_form")
         if rs.errors:
             return self.show_event(rs, event_id)
-        path = os.path.join(self.conf.STORAGE_DIR, 'minor_form', str(event_id))
-        with open(path, 'wb') as f:
+        path = self.conf.STORAGE_DIR / 'minor_form' / str(event_id)
+        with open(str(path), 'wb') as f:
             f.write(minor_form)
         rs.notify("success", _("Minor form updated."))
         return self.redirect(rs, "event/show_event")
@@ -1374,18 +1373,17 @@ class EventFrontend(AbstractUserFrontend):
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas, 'courses': courses})
         with tempfile.TemporaryDirectory() as tmp_dir:
-            work_dir = os.path.join(tmp_dir, rs.ambience['event']['shortname'])
-            os.mkdir(work_dir)
-            with open_utf8(os.path.join(work_dir, "nametags.tex"), 'w') as f:
+            work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
+            work_dir.mkdir()
+            with open_utf8(work_dir / "nametags.tex", 'w') as f:
                 f.write(tex)
-            src = os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png")
-            shutil.copy(src, os.path.join(work_dir, "aka-logo.png"))
-            shutil.copy(src, os.path.join(work_dir, "orga-logo.png"))
-            shutil.copy(src, os.path.join(work_dir, "minor-pictogram.png"))
-            shutil.copy(src, os.path.join(work_dir, "multicourse-logo.png"))
+            src = self.conf.REPOSITORY_PATH / "misc/logo.png"
+            shutil_copy(src, work_dir / "aka-logo.png")
+            shutil_copy(src, work_dir / "orga-logo.png")
+            shutil_copy(src, work_dir / "minor-pictogram.png")
+            shutil_copy(src, work_dir / "multicourse-logo.png")
             for course_id in courses:
-                shutil.copy(src, os.path.join(
-                    work_dir, "logo-{}.png".format(course_id)))
+                shutil_copy(src, work_dir / "logo-{}.png".format(course_id))
             return self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 _("nametags.tex"), runs)
@@ -1469,14 +1467,14 @@ class EventFrontend(AbstractUserFrontend):
             'courses': courses, 'registrations': registrations,
             'personas': personas, 'attendees': attendees})
         with tempfile.TemporaryDirectory() as tmp_dir:
-            work_dir = os.path.join(tmp_dir, rs.ambience['event']['shortname'])
-            os.mkdir(work_dir)
-            with open_utf8(os.path.join(work_dir, "course_lists.tex"), 'w') as f:
+            work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
+            work_dir.mkdir()
+            with open_utf8(work_dir / "course_lists.tex", 'w') as f:
                 f.write(tex)
             for course_id in courses:
-                shutil.copy(
-                    os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png"),
-                    os.path.join(work_dir, "logo-{}.png".format(course_id)))
+                shutil_copy(
+                    self.conf.REPOSITORY_PATH / "misc/logo.png",
+                    work_dir / "logo-{}.png".format(course_id))
             return self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 _("course_lists.tex"), runs)
@@ -1499,13 +1497,13 @@ class EventFrontend(AbstractUserFrontend):
             'lodgements': lodgements, 'registrations': registrations,
             'personas': personas, 'inhabitants': inhabitants})
         with tempfile.TemporaryDirectory() as tmp_dir:
-            work_dir = os.path.join(tmp_dir, rs.ambience['event']['shortname'])
-            os.mkdir(work_dir)
-            with open_utf8(os.path.join(work_dir, "lodgement_lists.tex"), 'w') as f:
+            work_dir = pathlib.Path(tmp_dir, rs.ambience['event']['shortname'])
+            work_dir.mkdir()
+            with open_utf8(work_dir / "lodgement_lists.tex", 'w') as f:
                 f.write(tex)
-            shutil.copy(
-                os.path.join(self.conf.REPOSITORY_PATH, "misc/logo.png"),
-                os.path.join(work_dir, "aka-logo.png"))
+            shutil_copy(
+                self.conf.REPOSITORY_PATH / "misc/logo.png",
+                work_dir / "aka-logo.png")
             return self.serve_complex_latex_document(
                 rs, tmp_dir, rs.ambience['event']['shortname'],
                 _("lodgement_lists.tex"), runs)
@@ -1574,8 +1572,8 @@ class EventFrontend(AbstractUserFrontend):
         age = determine_age_class(
             persona['birthday'],
             self.event_begin(rs.ambience['event']))
-        minor_form_present = os.path.isfile(os.path.join(
-            self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
+        minor_form_present = (
+            self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
             rs.notify("info", _("No minors may register."))
             return self.redirect(rs, "event/show_event")
@@ -1697,8 +1695,8 @@ class EventFrontend(AbstractUserFrontend):
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
             persona['birthday'], self.event_begin(rs.ambience['event']))
-        minor_form_present = os.path.isfile(os.path.join(
-            self.conf.STORAGE_DIR, 'minor_form', str(event_id)))
+        minor_form_present = (
+            self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
             rs.notify("error", _("No minors may register."))
             return self.redirect(rs, "event/show_event")

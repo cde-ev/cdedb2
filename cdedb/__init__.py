@@ -21,7 +21,7 @@ try:
     ## the global log needs to be writable by different users (frontend
     ## and backend) making it world writable is pretty permissive but
     ## seems to be the most sensible way
-    os.chmod(_BASICCONF.GLOBAL_LOG, stat.S_IRUSR | stat.S_IWUSR |
+    os.chmod(str(_BASICCONF.GLOBAL_LOG), stat.S_IRUSR | stat.S_IWUSR |
              stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH)
 except (PermissionError, FileNotFoundError):
     pass

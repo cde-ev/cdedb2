@@ -28,7 +28,6 @@ do it.
 
 import copy
 import hmac
-import os.path
 import string
 
 from cdedb.backend.common import (
@@ -875,8 +874,7 @@ class AssemblyBackend(AbstractBackend):
                 'USE_BAR': esc(ballot['use_bar']),
                 'VOTERS': voter_list,
                 'VOTES': vote_list,})
-            path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
-                                str(ballot_id))
+            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
             with open_utf8(path, 'w') as f:
                 f.write(result_file)
         return True

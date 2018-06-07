@@ -25,7 +25,7 @@ import io
 import json
 import logging
 import os
-import os.path
+import pathlib
 import re
 import smtplib
 import subprocess
@@ -497,8 +497,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         super().__init__(configpath, *args, **kwargs)
         self.jinja_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(os.path.join(
-                self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
+            loader=jinja2.FileSystemLoader(
+                str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None)
@@ -636,8 +636,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             )
         else:
             jinja_env = self.jinja_env
-        t = jinja_env.get_template(os.path.join(
-            modus, rs.lang, self.realm, "{}.tmpl".format(templatename)))
+        t = jinja_env.get_template(str(pathlib.Path(
+            modus, rs.lang, self.realm, "{}.tmpl".format(templatename))))
         return t.render(**data)
 
     @staticmethod
@@ -657,7 +657,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :type inline: bool
         :param inline: Set content disposition to force display in browser (if
           True) or to force a download box (if False).
-        :type path: str
+        :type path: str or pathlib.Path
         :type afile: file like
         :param afile: should be opened in binary mode
         :type data: str or bytes
@@ -667,11 +667,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise ValueError(_("No input specified."))
         if (path and afile) or (path and data) or (afile and data):
             raise ValueError(_("Ambiguous input."))
-        if path and not os.path.isfile(path):
+        if path and not pathlib.Path(path).is_file():
             raise werkzeug.exceptions.NotFound()
         if path:
             # TODO Can we use a with context here or maybe close explicitly?
-            afile = open(path, 'rb')
+            afile = open(str(path), 'rb')
         elif data is not None:
             afile = io.BytesIO()
             if isinstance(data, str):
@@ -836,7 +836,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if maintype == "text":
                 afile = open_utf8(attachment['path'])
             else:
-                afile = open(attachment['path'], 'rb')
+                afile = open(str(attachment['path']), 'rb')
         ## Only support common types
         factories = {
             'application': email.mime.application.MIMEApplication,
@@ -1001,7 +1001,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     +------- ...
 
         :type rs: :py:class:`RequestState`
-        :type tmp_dir: str
+        :type tmp_dir: str or pathlib.Path
         :param tmp_dir: path of temporary directory
         :type work_dir_name: str
         :param work_dir_name: name of working directory inside temporary
@@ -1018,30 +1018,30 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: werkzeug.Response
         """
         if not runs:
-            target = os.path.join(
+            target = pathlib.Path(
                 tmp_dir, "{}.tar.gz".format(work_dir_name))
-            args = ("tar", "-vczf", target, work_dir_name)
+            args = ("tar", "-vczf", str(target), work_dir_name)
             self.logger.info("Invoking {}".format(args))
             subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                  cwd=tmp_dir)
+                                  cwd=str(tmp_dir))
             return self.send_file(
                 rs, path=target, inline=False,
                 filename="{}.tar.gz".format(work_dir_name))
         else:
-            work_dir = os.path.join(tmp_dir, work_dir_name)
+            work_dir = pathlib.Path(tmp_dir, work_dir_name)
             if tex_file_name.endswith('.tex'):
                 pdf_file = "{}.pdf".format(tex_file_name[:-4])
             else:
                 pdf_file = "{}.pdf".format(tex_file_name)
             args = ("pdflatex", "-interaction", "batchmode",
-                    os.path.join(work_dir, tex_file_name))
+                    str(work_dir / tex_file_name))
             for _ in range(runs):
                 self.logger.info("Invoking {}".format(args))
                 subprocess.check_call(args, stdout=subprocess.DEVNULL,
-                                      cwd=work_dir)
+                                      cwd=str(work_dir))
             return self.send_file(
                 rs, mimetype="application/pdf",
-                path=os.path.join(work_dir, pdf_file),
+                path=(work_dir / pdf_file),
                 filename=rs.gettext(pdf_file))
 
 class Worker(threading.Thread):
@@ -1273,7 +1273,7 @@ def staticurl(path):
     :type path: str
     :rtype: str
     """
-    return os.path.join("/static", path)
+    return str(pathlib.Path("/static", path))
 
 def REQUESTdata(*spec):
     """Decorator to extract parameters from requests and validate them. This

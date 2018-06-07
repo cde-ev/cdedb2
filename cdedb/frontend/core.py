@@ -5,7 +5,7 @@
 import collections
 import copy
 import hashlib
-import os.path
+import os
 import pathlib
 import quopri
 import tempfile
@@ -942,7 +942,7 @@ class CoreFrontend(AbstractFrontend):
     @access("cde")
     def get_foto(self, rs, foto):
         """Retrieve profile picture."""
-        path = os.path.join(self.conf.STORAGE_DIR, "foto", foto)
+        path = self.conf.STORAGE_DIR / "foto" / foto
         return self.send_file(rs, path=path)
 
     @access("cde")
@@ -971,16 +971,16 @@ class CoreFrontend(AbstractFrontend):
             myhash = hashlib.sha512()
             myhash.update(foto)
             myhash = myhash.hexdigest()
-            path = os.path.join(self.conf.STORAGE_DIR, 'foto', myhash)
-            if not os.path.isfile(path):
-                with open(path, 'wb') as f:
+            path = self.conf.STORAGE_DIR / 'foto' / myhash
+            if not path.exists():
+                with open(str(path), 'wb') as f:
                     f.write(foto)
         with Atomizer(rs):
             code = self.coreproxy.change_foto(rs, persona_id, foto=myhash)
             if previous:
                 if not self.coreproxy.foto_usage(rs, previous):
-                    path = os.path.join(self.conf.STORAGE_DIR, 'foto', previous)
-                    os.remove(path)
+                    path = self.conf.STORAGE_DIR / 'foto' / previous
+                    os.remove(str(path))
         self.notify_return_code(rs, code, success=_("Foto updated."))
         return self.redirect_show_user(rs, persona_id)
 
@@ -1510,7 +1510,7 @@ class CoreFrontend(AbstractFrontend):
             return self.redirect(rs, "core/index")
         filename = pathlib.Path(tempfile.gettempdir(),
                                 "cdedb-mail-{}.txt".format(token))
-        with open_utf8(str(filename)) as f:
+        with open_utf8(filename) as f:
             rawtext = f.read()
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})

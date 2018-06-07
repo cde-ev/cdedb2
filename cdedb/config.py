@@ -12,7 +12,7 @@ import datetime
 import decimal
 import importlib.machinery
 import logging
-import os.path
+import pathlib
 import subprocess
 import uuid
 
@@ -23,12 +23,12 @@ from cdedb.common import _, deduct_years, now
 
 _LOGGER = logging.getLogger(__name__)
 
-_currentpath = os.path.dirname(os.path.abspath(__file__))
-if not _currentpath.startswith('/') or not _currentpath.endswith('/cdedb'):
+_currentpath = pathlib.Path(__file__).resolve().parent
+if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
     raise RuntimeError(_("Failed to locate repository"))
-_repopath = _currentpath[:-6]
+_repopath = _currentpath.parent
 _git_commit = subprocess.check_output(
-    ("git", "rev-parse", "HEAD"), cwd=_repopath).decode().strip()
+    ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
@@ -41,19 +41,19 @@ _BASIC_DEFAULTS = {
     ## Logging level for stdout
     "CONSOLE_LOG_LEVEL": None,
     ## Global log for messages unrelated to specific components
-    "GLOBAL_LOG": "/tmp/cdedb.log",
+    "GLOBAL_LOG": pathlib.Path("/tmp/cdedb.log"),
     ## file system path to this repository
     "REPOSITORY_PATH": _repopath,
     ## hash id of the current HEAD/running version
     "GIT_COMMIT": _git_commit,
     ## relative path to config file with settings for the test suite
-    "TESTCONFIG_PATH": "test/localconfig.py",
+    "TESTCONFIG_PATH": pathlib.Path("test/localconfig.py"),
     ## port on which the database listens, preferably a pooler like pgbouncer
     "DB_PORT": 6432,
     ## default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
     ## path to log file for recording performance information during test runs
-    "TIMING_LOG": "/tmp/cdedb-timing.log",
+    "TIMING_LOG": pathlib.Path("/tmp/cdedb-timing.log"),
 }
 
 #: defaults for :py:class:`Config`
@@ -79,14 +79,14 @@ _DEFAULTS = {
     "LDAP_USER": "cn=root,dc=cde-ev,dc=de",
 
     ## place for uploaded data
-    "STORAGE_DIR": "/var/lib/cdedb/",
+    "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
 
     ###
     ### Frontend stuff
     ###
 
     ## log for frontend issues
-    "FRONTEND_LOG": "/tmp/cdedb-frontend.log",
+    "FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend.log"),
     ## timeout for protected url parameters to prevent replay
     "ONLINE_PARAMETER_TIMEOUT": datetime.timedelta(seconds=120),
     ## email is a slower medium, so this has a longer timeout
@@ -125,28 +125,28 @@ _DEFAULTS = {
     "ML_ADMIN_ADDRESS": "ml-admins@cde-ev.de",
 
     ## logs
-    "CORE_FRONTEND_LOG": "/tmp/cdedb-frontend-core.log",
-    "CDE_FRONTEND_LOG": "/tmp/cdedb-frontend-cde.log",
-    "EVENT_FRONTEND_LOG": "/tmp/cdedb-frontend-event.log",
-    "ML_FRONTEND_LOG": "/tmp/cdedb-frontend-ml.log",
-    "ASSEMBLY_FRONTEND_LOG": "/tmp/cdedb-frontend-assembly.log",
+    "CORE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-core.log"),
+    "CDE_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-cde.log"),
+    "EVENT_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-event.log"),
+    "ML_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-ml.log"),
+    "ASSEMBLY_FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend-assembly.log"),
 
     ###
     ### Backend stuff
     ###
 
     ## log for backend issues
-    "BACKEND_LOG": "/tmp/cdedb-backend.log",
+    "BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend.log"),
 
     ### Core stuff
 
     ## log
-    "CORE_BACKEND_LOG": "/tmp/cdedb-backend-core.log",
+    "CORE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-core.log"),
 
     ### Session stuff
 
     ## log
-    "SESSION_BACKEND_LOG": "/tmp/cdedb-backend-session.log",
+    "SESSION_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-session.log"),
 
     ## session parameters
     "SESSION_TIMEOUT": datetime.timedelta(days=2),
@@ -155,7 +155,7 @@ _DEFAULTS = {
     ### CdE stuff
 
     ## log
-    "CDE_BACKEND_LOG": "/tmp/cdedb-backend-cde.log",
+    "CDE_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-cde.log"),
 
     ## maximal number of data sets a normal user is allowed to view per day
     "QUOTA_VIEWS_PER_DAY": 42,
@@ -188,22 +188,22 @@ _DEFAULTS = {
     ### event stuff
 
     ## log
-    "EVENT_BACKEND_LOG": "/tmp/cdedb-backend-event.log",
+    "EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-event.log"),
 
     ### past event stuff
 
     ## log
-    "PAST_EVENT_BACKEND_LOG": "/tmp/cdedb-backend-past-event.log",
+    "PAST_EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-past-event.log"),
 
     ### ml stuff
 
     ## log
-    "ML_BACKEND_LOG": "/tmp/cdedb-backend-ml.log",
+    "ML_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-ml.log"),
 
     ### assembly stuff
 
     ## log
-    "ASSEMBLY_BACKEND_LOG": "/tmp/cdedb-backend-assembly.log",
+    "ASSEMBLY_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-assembly.log"),
 
     ###
     ### Query stuff
@@ -320,7 +320,7 @@ class Config(BasicConfig):
         self._configpath = configpath
         if configpath:
             module_id = str(uuid.uuid4()) ## otherwise importlib caches wrongly
-            loader = importlib.machinery.SourceFileLoader(module_id, configpath)
+            loader = importlib.machinery.SourceFileLoader(module_id, str(configpath))
             primaryconf = loader.load_module(module_id)
         else:
             primaryconf = None
@@ -356,7 +356,7 @@ class SecretsConfig:
             configpath))
         if configpath:
             module_id = str(uuid.uuid4()) ## otherwise importlib caches wrongly
-            loader = importlib.machinery.SourceFileLoader(module_id, configpath)
+            loader = importlib.machinery.SourceFileLoader(module_id, str(configpath))
             primaryconf = loader.load_module(module_id)
         else:
             primaryconf = None

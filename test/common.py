@@ -4,7 +4,7 @@ import datetime
 import functools
 import gettext
 import inspect
-import os.path
+import pathlib
 import pytz
 import re
 import unittest
@@ -17,7 +17,7 @@ from cdedb.config import BasicConfig, SecretsConfig
 from cdedb.frontend.application import Application
 from cdedb.common import (
     do_singularization, ProxyShim, extract_roles, RequestState, User,
-    roles_to_db_role, PrivilegeError)
+    roles_to_db_role, PrivilegeError, open_utf8)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.backend.cde import CdEBackend
@@ -63,7 +63,7 @@ class BackendShim(ProxyShim):
         self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
         self.translator = gettext.translation(
             'cdedb', languages=('de',),
-            localedir=os.path.join(backend.conf.REPOSITORY_PATH, 'i18n'))
+            localedir=str(backend.conf.REPOSITORY_PATH / 'i18n'))
 
     def _setup_requeststate(self, key):
         data = self.sessionproxy.lookupsession(key, "127.0.0.0")
@@ -135,8 +135,7 @@ class BackendUsingTest(unittest.TestCase):
 
     @staticmethod
     def initialize_raw_backend(backendcls):
-        return backendcls(os.path.join(_BASICCONF.REPOSITORY_PATH,
-                                       _BASICCONF.TESTCONFIG_PATH))
+        return backendcls(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
 
     @staticmethod
     def initialize_backend(backendcls):
@@ -288,7 +287,7 @@ class FrontendTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        app = Application(os.path.join(_BASICCONF.REPOSITORY_PATH, _BASICCONF.TESTCONFIG_PATH))
+        app = Application(_BASICCONF.REPOSITORY_PATH / _BASICCONF.TESTCONFIG_PATH)
         cls.app = webtest.TestApp(app, extra_environ={'REMOTE_ADDR': "127.0.0.0", 'SERVER_PROTOCOL': "HTTP/1.1"})
 
     def setUp(self):
@@ -308,7 +307,7 @@ class FrontendTest(unittest.TestCase):
         if response is None:
             response = self.response
         if _BASICCONF.TIMING_LOG:
-            with open(_BASICCONF.TIMING_LOG, 'a') as f:
+            with open_utf8(_BASICCONF.TIMING_LOG, 'a') as f:
                 output = "{} {} {} {}\n".format(
                     response.request.path, response.request.method,
                     response.headers.get('X-Generation-Time'),
@@ -376,7 +375,7 @@ class FrontendTest(unittest.TestCase):
         mails = [_extract_path(x) for x in elements if x.startswith("E-Mail als ")]
         ret = []
         for path in mails:
-            with open(path) as f:
+            with open_utf8(path) as f:
                 ret.append(f.read())
         return ret
 

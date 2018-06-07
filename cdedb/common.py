@@ -14,6 +14,8 @@ import itertools
 import json
 import logging
 import logging.handlers
+import pathlib
+import shutil
 import string
 import sys
 
@@ -273,7 +275,7 @@ def make_root_logger(name, logfile_path, log_level, syslog_level=None,
     logger is routed through this configured logger.
 
     :type name: str
-    :type logfile_path: str
+    :type logfile_path: str or pathlib.Path
     :type log_level: int
     :type syslog_level: int or None
     :type console_log_level: int or None
@@ -287,7 +289,7 @@ def make_root_logger(name, logfile_path, log_level, syslog_level=None,
     logger.setLevel(log_level)
     formatter = logging.Formatter(
         '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(logfile_path)
+    file_handler = logging.FileHandler(str(logfile_path))
     file_handler.setLevel(log_level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -522,9 +524,26 @@ def open_utf8(*args, **kwargs):
     encoding manually. All our textual data is utf8, so this can be used
     everywhere (except for binary data).
 
+    Additionally this takes care of converting pathlib.Path to str, as
+    open() does only accept Path objects from python 3.6 onwards.
+
     :rtype: file handle
     """
+    if 'file' in kwargs:
+        kwargs['file'] = str(kwargs['file'])
+    elif len(args) > 0:
+        args = (str(args[0]),) + args[1:]
     return open(*args, **kwargs, encoding='UTF-8')
+
+def shutil_copy(*args, **kwargs):
+    """Wrapper around shutil.copy() converting pathlib.Path to str.
+
+    This is just a convenience function.
+    """
+    args = tuple(str(a) if isinstance(a, pathlib.Path) else a for a in args)
+    kwargs = {k: str(v) if isinstance(v, pathlib.Path) else v
+              for k, v in kwargs.items()}
+    return shutil.copy(*args, **kwargs)
 
 def pairwise(iterable):
     """Iterate over adjacent pairs of values of an iterable.

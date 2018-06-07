@@ -8,10 +8,9 @@ import copy
 import csv
 import hashlib
 import itertools
-import os.path
+import pathlib
 import random
 import re
-import shutil
 import string
 import sys
 import tempfile
@@ -25,7 +24,7 @@ from cdedb.database.connection import Atomizer
 from cdedb.common import (
     _, merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
     int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
-    ProxyShim, diacritic_patterns, open_utf8)
+    ProxyShim, diacritic_patterns, open_utf8, shutil_copy)
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
@@ -1181,13 +1180,12 @@ class CdEFrontend(AbstractUserFrontend):
         tex = self.fill_template(rs, "tex", "lastschrift_receipt", {
             'meta_info': meta_info, 'persona': persona, 'addressee': addressee})
         with tempfile.TemporaryDirectory() as tmp_dir:
-            j = os.path.join
-            work_dir = j(tmp_dir, 'workdir')
-            os.mkdir(work_dir)
-            with open_utf8(j(work_dir, "lastschrift_receipt.tex"), 'w') as f:
+            work_dir = pathlib.Path(tmp_dir) / 'workdir'
+            work_dir.mkdir()
+            with open_utf8(work_dir / "lastschrift_receipt.tex", 'w') as f:
                 f.write(tex)
-            logo_src = j(self.conf.REPOSITORY_PATH, "misc/cde-logo.jpg")
-            shutil.copy(logo_src, j(work_dir, "cde-logo.jpg"))
+            logo_src = self.conf.REPOSITORY_PATH / "misc/cde-logo.jpg"
+            shutil_copy(logo_src, work_dir / "cde-logo.jpg")
             return self.serve_complex_latex_document(
                 rs, tmp_dir, 'workdir', "lastschrift_receipt.tex")
 

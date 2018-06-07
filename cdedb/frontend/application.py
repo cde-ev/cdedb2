@@ -5,7 +5,7 @@
 import cgitb
 import gettext
 import json
-import os.path
+import pathlib
 import sys
 
 import jinja2
@@ -55,8 +55,8 @@ class Application(BaseApp):
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
             secrets)
         self.jinja_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(os.path.join(
-                self.conf.REPOSITORY_PATH, "cdedb/frontend/templates")),
+            loader=jinja2.FileSystemLoader(
+                str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None)
@@ -64,9 +64,9 @@ class Application(BaseApp):
         self.translations = {
             lang: gettext.translation(
                 'cdedb', languages=(lang,),
-                localedir=os.path.join(self.conf.REPOSITORY_PATH, 'i18n'))
+                localedir=str(self.conf.REPOSITORY_PATH / 'i18n'))
             for lang in self.conf.I18N_LANGUAGES}
-        if os.path.isfile("/DBVM"):
+        if pathlib.Path("/DBVM").is_file():
             ## Sanity checks for the live instance
             if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
                 raise RuntimeError(_("Refusing to start in debug mode."))
@@ -106,7 +106,7 @@ class Application(BaseApp):
             'values': {},
             'error': error,
         }
-        t = self.jinja_env.get_template(os.path.join("web", lang, "error.tmpl"))
+        t = self.jinja_env.get_template(str(pathlib.Path("web", lang, "error.tmpl")))
         html = t.render(**data)
         response = Response(html, mimetype='text/html', status=error.code)
         response.headers.add('X-Generation-Time', str(now() - begin))

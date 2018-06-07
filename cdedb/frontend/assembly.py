@@ -5,6 +5,7 @@
 import copy
 import json
 import os
+import pathlib
 
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, REQUESTfile, access, csv_output,
@@ -245,8 +246,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if secret:
             rs.notify("success", _("Signed up."))
             attachment = {
-                'path': os.path.join(self.conf.REPOSITORY_PATH,
-                                     "bin/verify_votes.py"),
+                'path': self.conf.REPOSITORY_PATH / "bin/verify_votes.py",
                 'filename': 'verify_votes.py',
                 'mimetype': 'text/plain'}
             self.do_mail(
@@ -373,8 +373,8 @@ class AssemblyFrontend(AbstractUserFrontend):
         """Retrieve an attachment."""
         if not self.may_assemble(rs, assembly_id=assembly_id):
             raise PrivilegeError(_("Not privileged."))
-        path = os.path.join(self.conf.STORAGE_DIR, "assembly_attachment",
-                            str(attachment_id))
+        path = (self.conf.STORAGE_DIR / "assembly_attachment"
+                / str(attachment_id))
         return self.send_file(rs, path=path, mimetype="application/pdf",
                               filename=rs.ambience['attachment']['filename'])
 
@@ -397,7 +397,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         It can either be associated to an assembly or a ballot.
         """
         if not filename:
-            tmp = os.path.basename(attachment.filename)
+            tmp = pathlib.Path(attachment.filename).parts[-1]
             filename = check(rs, "identifier", tmp, 'attachment')
         attachment = check(rs, "pdffile", attachment, 'attachment')
         if rs.errors:
@@ -412,9 +412,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         else:
             data['assembly_id'] = assembly_id
         attachment_id = self.assemblyproxy.add_attachment(rs, data)
-        path = os.path.join(self.conf.STORAGE_DIR, 'assembly_attachment',
-                            str(attachment_id))
-        with open(path, 'wb') as f:
+        path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+                / str(attachment_id))
+        with open(str(path), 'wb') as f:
             f.write(attachment)
         self.notify_return_code(rs, attachment_id,
                                 success=_("Attachment added."))
@@ -430,9 +430,9 @@ class AssemblyFrontend(AbstractUserFrontend):
         with Atomizer(rs):
             code = self.assemblyproxy.remove_attachment(rs, attachment_id)
             self.notify_return_code(rs, code)
-            path = os.path.join(self.conf.STORAGE_DIR, 'assembly_attachment',
-                                str(attachment_id))
-            os.remove(path)
+            path = (self.conf.STORAGE_DIR / 'assembly_attachment'
+                    / str(attachment_id))
+            os.remove(str(path))
         if ballot_id:
             return self.redirect(rs, "assembly/show_ballot")
         else:
@@ -474,13 +474,12 @@ class AssemblyFrontend(AbstractUserFrontend):
                 attendees = self.coreproxy.get_assembly_users(rs, attendee_ids)
                 mails = tuple(x['username'] for x in attendees.values())
                 attachment_script = {
-                    'path': os.path.join(self.conf.REPOSITORY_PATH,
-                                         "bin/verify_votes.py"),
+                    'path': self.conf.REPOSITORY_PATH / "bin/verify_votes.py",
                     'filename': 'verify_votes.py',
                     'mimetype': 'text/plain'}
                 attachment_result = {
-                    'path': os.path.join(self.conf.STORAGE_DIR,
-                                         "ballot_result", str(ballot_id)),
+                    'path': (self.conf.STORAGE_DIR / "ballot_result"
+                             / str(ballot_id)),
                     'filename': 'result.json',
                     'mimetype': 'application/json'}
                 self.do_mail(
@@ -498,8 +497,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                      and timestamp < ballot['vote_extension_end'])))
         result = None
         if ballot['is_tallied']:
-            path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
-                                str(ballot_id))
+            path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
             with open_utf8(path) as f:
                 result = json.load(f)
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
@@ -644,8 +642,7 @@ class AssemblyFrontend(AbstractUserFrontend):
         if not rs.ambience['ballot']['is_tallied']:
             rs.notify("warning", _("Ballot not yet tallied."))
             return self.show_ballot(rs, assembly_id, ballot_id)
-        path = os.path.join(self.conf.STORAGE_DIR, 'ballot_result',
-                            str(ballot_id))
+        path = self.conf.STORAGE_DIR / 'ballot_result' / str(ballot_id)
         return self.send_file(rs, path=path, inline=False,
                               filename=rs.gettext("result.json"))
 
