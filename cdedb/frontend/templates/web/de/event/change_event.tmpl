@@ -43,18 +43,22 @@
         {% set myentries = [] %}
         {% for field_id, field in ambience['event']['fields']|dictsort %}
             {% if field['kind'] == "str" and field['association'] == enums['FieldAssociations'].registration %}
-                {{ myentries.append((field_id, field['title']))|e }}
+                {{ myentries.append((field_id, field['field_name']))|e }}
             {% endif %}
         {% endfor %}
-        {{ util.form_input_select(name="lodge_field", label="Extrafeld für Hauswünsche", entries=myentries, nulloption=True) }}
+        {{ util.form_input_select(name="lodge_field", label="Extrafeld für Hauswünsche", entries=myentries,
+                                  nulloption=True, info="In welchem Datenfeld werden Hauswünsche der Teilnehmer "
+                                                        "eingetragen?") }}
         {# jinja does not support list comprehension ... #}
         {% set myentries = [] %}
         {% for field_id, field in ambience['event']['fields']|dictsort %}
             {% if field['kind'] == "bool" and field['association'] == enums['FieldAssociations'].registration %}
-                {{ myentries.append((field_id, field['title']))|e }}
+                {{ myentries.append((field_id, field['field_name']))|e }}
             {% endif %}
         {% endfor %}
-        {{ util.form_input_select(name="reserve_field", label="Extrafeld für Isomattenschläfer", entries=myentries, nulloption=True) }}
+        {{ util.form_input_select(name="reserve_field", label="Extrafeld für Isomattenschläfer", entries=myentries,
+                                  nulloption=True, info="In welchem Datenfeld wird eingetragen, ob Teilnehmer bereit "
+                                                        "sind, auf Isomatte zu schlafen?") }}
         {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/show_event')) }}
     </form>
