@@ -3321,9 +3321,9 @@ class EventFrontend(AbstractUserFrontend):
             return self.show_event(rs, event_id)
         ## Check for unmigrated personas
         current = self.eventproxy.export_event(rs, event_id)
-        claimed = {e['persona_id'] for e in data['event.registrations']
+        claimed = {e['persona_id'] for e in data['event.registrations'].values()
                    if not e['real_persona_id']}
-        if claimed - {e['id'] for e in current['core.personas']}:
+        if claimed - set(current['core.personas']):
             rs.notify("error", _("There exist unmigrated personas."))
             return self.show_event(rs, event_id)
 

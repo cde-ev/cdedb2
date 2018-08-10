@@ -81,7 +81,7 @@ import cdedb.database.constants as const
 #:    LEFT OUTER JOIN (SELECT * FROM json_to_recordset(to_json(array(
 #:                         SELECT fields FROM event.registrations WHERE event_id=1)))
 #:                     AS X(may_reserve boolean, lodge varchar, transportation varchar, brings_balls boolean, registration_id integer))
-#:        AS reg_fields ON reg.id = reg_fields.registration_id 
+#:        AS reg_fields ON reg.id = reg_fields.registration_id
 _REGISTRATION_VIEW_TEMPLATE = glue(
     "event.registrations AS reg",
     "JOIN core.personas AS persona ON reg.persona_id = persona.id",
@@ -1611,12 +1611,17 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
             raise PrivilegeError(_("Not privileged."))
+
+        def list_to_dict(alist):
+            return {e['id']: e for e in alist}
+
         with Atomizer(rs):
             ret = {
-                "CDEDB_EXPORT_EVENT_VERSION": _CDEDB_EXPORT_EVENT_VERSION,
+                'CDEDB_EXPORT_EVENT_VERSION': _CDEDB_EXPORT_EVENT_VERSION,
+                'kind': "full", # could also be "partial"
                 'id': event_id,
-                'event.events': self.sql_select(
-                    rs, "event.events", EVENT_FIELDS, (event_id,)),
+                'event.events': list_to_dict(self.sql_select(
+                    rs, "event.events", EVENT_FIELDS, (event_id,))),
                 'timestamp': now(),
             }
             ## Table name; column to scan; fields to extract
@@ -1647,21 +1652,21 @@ class EventBackend(AbstractBackend):
                 if id_name == "event_id":
                     id_range = {event_id}
                 elif id_name == "part_id":
-                    id_range = set(e['id'] for e in ret['event.event_parts'])
+                    id_range = set(ret['event.event_parts'])
                 elif id_name == "track_id":
-                    id_range = set(e['id'] for e in ret['event.course_tracks'])
+                    id_range = set(ret['event.course_tracks'])
                 else:
                     id_range = None
                 if 'id' not in columns:
                     columns += ('id',)
-                ret[table] = self.sql_select(rs, table, columns, id_range,
-                                             entity_key=id_name)
+                ret[table] = list_to_dict(self.sql_select(
+                    rs, table, columns, id_range, entity_key=id_name))
                 ## Note the personas present to export them further on
-                for e in ret[table]:
+                for e in ret[table].values():
                     if e.get('persona_id'):
                         personas.add(e['persona_id'])
-            ret['core.personas'] = self.sql_select(
-                rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
+            ret['core.personas'] = list_to_dict(self.sql_select(
+                rs, "core.personas", PERSONA_EVENT_FIELDS, personas))
             return ret
 
     @classmethod
@@ -1704,9 +1709,9 @@ class EventBackend(AbstractBackend):
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type table: str
-        :type data: [{str: object}]
+        :type data: {int: {str: object}}
         :param data: Data set to put in.
-        :type current: [{str: object}]
+        :type current: {int: {str: object}}
         :param current: Current state.
         :type translations: {str: {int: int}}
         :param translations: IDs which got out of sync during offline usage.
@@ -1722,15 +1727,12 @@ class EventBackend(AbstractBackend):
         """
         extra_translations = extra_translations or {}
         ret = 1
-        dlookup = {e['id'] for e in data}
-        for e in current:
-            if e['id'] not in dlookup:
-                ret *= self.sql_delete_one(rs, table, e['id'])
-        clookup = {e['id']: e for e in current}
-        for e in data:
-            if e != clookup.get(e['id']):
+        for anid in set(current) - set(data):
+            ret *= self.sql_delete_one(rs, table, anid)
+        for e in data.values():
+            if e != current.get(e['id']):
                 new_e = self.translate(e, translations, extra_translations)
-                if e['id'] in clookup:
+                if e['id'] in current:
                     ret *= self.sql_update(rs, table, new_e)
                 else:
                     if 'id' in new_e:
@@ -1759,20 +1761,23 @@ class EventBackend(AbstractBackend):
             raise RuntimeError(_("Not locked."))
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
             raise ValueError(_("Version mismatch -- aborting."))
+        if data["kind"] != "full":
+            raise ValueError(_("Not a full export, unable to proceed."))
 
         with Atomizer(rs):
             current = self.export_event(rs, data['id'])
             ## First check that all newly created personas have been
             ## transferred to the online DB
-            claimed = {e['persona_id'] for e in data['event.registrations']
+            claimed = {e['persona_id']
+                       for e in data['event.registrations'].values()
                        if not e['real_persona_id']}
-            if claimed - {e['id'] for e in current['core.personas']}:
+            if claimed - set(current['core.personas']):
                 raise ValueError(_("Non-transferred persona found"))
 
             ret = 1
             ## Second synchronize the data sets
             translations = collections.defaultdict(dict)
-            for reg in data['event.registrations']:
+            for reg in data['event.registrations'].values():
                 if reg['real_persona_id']:
                     translations['persona_id'][reg['persona_id']] = \
                       reg['real_persona_id']

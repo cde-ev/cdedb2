@@ -2184,7 +2184,7 @@ def _serialized_event_upload(val, argname=None, *, _convert=True):
     val, errs = _input_file(val, argname, _convert=_convert)
     if errs:
         return val, errs
-    data = json.loads(val.decode("ascii"))
+    data = json.loads(val.decode("utf-8"))
     return _serialized_event(data, argname, _convert=_convert)
 
 @_addvalidator
@@ -2201,26 +2201,31 @@ def _serialized_event(val, argname=None, *, _convert=True):
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    if 'kind' not in val or val['kind'] != "full":
+        return None, [(argname, KeyError(_(
+            "Currently only full exports are supported")))]
+
     mandatory_fields = {
         'CDEDB_EXPORT_EVENT_VERSION': _int,
+        'kind': _str,
         'id': _id,
         'timestamp': _datetime,
-        'event.events': _iterable,
-        'event.event_parts': _iterable,
-        'event.course_tracks': _iterable,
-        'event.courses': _iterable,
-        'event.course_segments': _iterable,
-        'event.orgas': _iterable,
-        'event.field_definitions': _iterable,
-        'event.lodgements': _iterable,
-        'event.registrations': _iterable,
-        'event.registration_parts': _iterable,
-        'event.registration_tracks': _iterable,
-        'event.course_choices': _iterable,
-        'event.questionnaire_rows': _iterable,
+        'event.events': _mapping,
+        'event.event_parts': _mapping,
+        'event.course_tracks': _mapping,
+        'event.courses': _mapping,
+        'event.course_segments': _mapping,
+        'event.orgas': _mapping,
+        'event.field_definitions': _mapping,
+        'event.lodgements': _mapping,
+        'event.registrations': _mapping,
+        'event.registration_parts': _mapping,
+        'event.registration_tracks': _mapping,
+        'event.course_choices': _mapping,
+        'event.questionnaire_rows': _mapping,
     }
     val, errs = _examine_dictionary_fields(
-        val, mandatory_fields, {'core.personas': _iterable}, _convert=_convert)
+        val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert)
     if errs:
         return val, errs
     ## Second a thorough investigation
@@ -2263,13 +2268,15 @@ def _serialized_event(val, argname=None, *, _convert=True):
                           'readonly': _bool_or_None,}),
     }
     for table, validator in table_validators.items():
-        new_table = []
-        for entry in val[table]:
+        new_table = {}
+        for key, entry in val[table].items():
             new_entry, e = validator(entry, table, _convert=_convert)
-            if e:
+            new_key, ee = _int(key, table, _convert=True) # fix JSON key restriction
+            if e or ee:
                 errs.extend(e)
+                errs.extend(ee)
             else:
-                new_table.append(new_entry)
+                new_table[new_key] = new_entry
         val[table] = new_table
     if errs:
         return None, errs
@@ -2277,11 +2284,11 @@ def _serialized_event(val, argname=None, *, _convert=True):
     if len(val['event.events']) != 1:
         errs.append(('event.events',
                      ValueError(_("Only a single event is supported."))))
-    if len(val['event.events']) and val['id'] != val['event.events'][0]['id']:
+    if len(val['event.events']) and val['id'] != val['event.events'][val['id']]['id']:
         errs.append(('event.events', ValueError(_("Wrong event specified."))))
     for k, v in val.items():
-        if k not in ('id', 'CDEDB_EXPORT_EVENT_VERSION', 'timestamp'):
-            for e in v:
+        if k not in ('id', 'CDEDB_EXPORT_EVENT_VERSION', 'timestamp', 'kind'):
+            for e in v.values():
                 if e.get('event_id') and e['event_id'] != val['id']:
                     errs.append((k, ValueError(_("Mismatched event."))))
     if errs:
