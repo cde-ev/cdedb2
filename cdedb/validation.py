@@ -2215,6 +2215,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.course_tracks': _mapping,
         'event.courses': _mapping,
         'event.course_segments': _mapping,
+        'event.log': _mapping,
         'event.orgas': _mapping,
         'event.field_definitions': _mapping,
         'event.lodgements': _mapping,
@@ -2243,6 +2244,11 @@ def _serialized_event(val, argname=None, *, _convert=True):
         'event.course_segments': _augment_dict_validator(
             _empty_dict, {'id': _id, 'course_id': _id, 'track_id': _id,
                           'is_active': _bool}),
+        'event.log': _augment_dict_validator(
+            _empty_dict, {'id': _id, 'ctime': _datetime, 'code': _int,
+                          'submitted_by': _id, 'event_id': _id_or_None,
+                          'persona_id': _id_or_None,
+                          'additional_info': _str_or_None}),
         'event.orgas': _augment_dict_validator(
             _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
         'event.field_definitions': _augment_dict_validator(

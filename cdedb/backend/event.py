@@ -1646,6 +1646,9 @@ class EventBackend(AbstractBackend):
                 ('event.questionnaire_rows', "event_id", (
                     'id', 'event_id', 'field_id', 'pos', 'title', 'info',
                     'input_size', 'readonly',)),
+                ('event.log', "event_id", (
+                    'id', 'ctime', 'code', 'submitted_by', 'event_id',
+                    'persona_id', 'additional_info')),
             )
             personas = set()
             for table, id_name, columns in tables:
@@ -1795,7 +1798,8 @@ class EventBackend(AbstractBackend):
                       ('event.registration_parts', None),
                       ('event.registration_tracks', None),
                       ('event.course_choices', None),
-                      ('event.questionnaire_rows', None))
+                      ('event.questionnaire_rows', None),
+                      ('event.log', None))
             for table, entity in tables:
                 ret *= self.synchronize_table(
                     rs, table, data[table], current[table], translations,

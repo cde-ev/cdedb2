@@ -1423,6 +1423,34 @@ class TestEventBackend(BackendTest):
                     'moniker': 'Einzelzelle',
                     'notes': None,
                     'reserve': 0}},
+            'event.log': {1: {'additional_info': None,
+                              'code': 50,
+                              'ctime': datetime.datetime(2014, 1, 1, 1, 4, 5, tzinfo=pytz.utc),
+                              'event_id': 1,
+                              'id': 1,
+                              'persona_id': 1,
+                              'submitted_by': 1},
+                          2: {'additional_info': None,
+                              'code': 50,
+                              'ctime': datetime.datetime(2014, 1, 1, 2, 5, 6, tzinfo=pytz.utc),
+                              'event_id': 1,
+                              'id': 2,
+                              'persona_id': 5,
+                              'submitted_by': 5},
+                          3: {'additional_info': None,
+                              'code': 50,
+                              'ctime': datetime.datetime(2014, 1, 1, 3, 6, 7, tzinfo=pytz.utc),
+                              'event_id': 1,
+                              'id': 3,
+                              'persona_id': 7,
+                              'submitted_by': 7},
+                          4: {'additional_info': None,
+                              'code': 50,
+                              'ctime': datetime.datetime(2014, 1, 1, 4, 7, 8, tzinfo=pytz.utc),
+                              'event_id': 1,
+                              'id': 4,
+                              'persona_id': 9,
+                              'submitted_by': 9}},
             'event.orgas': {1: {'event_id': 1, 'id': 1, 'persona_id': 7}},
             'event.questionnaire_rows': {
                 1: {'event_id': 1,
@@ -1885,6 +1913,16 @@ class TestEventBackend(BackendTest):
         result = self.event.export_event(self.key, 1)
         ## because it's irrelevant anyway simply paste the result
         stored_data['core.personas'] = result['core.personas']
+        ## add log message
+        stored_data['event.log'][6] = {
+            'additional_info': None,
+            'code': 61,
+            'ctime': nearly_now(),
+            'event_id': 1,
+            'id': 6,
+            'persona_id': None,
+            'submitted_by': 1}
+
         self.assertEqual(stored_data, result)
 
     @as_users("anton")
