@@ -9,6 +9,7 @@ ALTER SEQUENCE event.course_segments_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.questionnaire_rows_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.registration_parts_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.registration_tracks_id_seq RESTART WITH 1;
+ALTER SEQUENCE event.log_id_seq RESTART WITH 1;
 ALTER SEQUENCE event.orgas_id_seq RESTART WITH 1;
 
 --
@@ -209,6 +210,11 @@ INSERT INTO event.questionnaire_rows (event_id, field_id, pos, title, info, inpu
     (1, NULL, 3, 'Weitere Überschrift', NULL, NULL, NULL),
     (1, 2, 4, 'Vehikel', NULL, NULL, False),
     (1, 3, 5, 'Hauswunsch', NULL, 3, False);
+INSERT INTO event.log (ctime, code, submitted_by, event_id, persona_id, additional_info) VALUES
+    (timestamp with time zone '2014-01-01 03:04:05+02', 50, 1, 1, 1, NULL),
+    (timestamp with time zone '2014-01-01 04:05:06+02', 50, 5, 1, 5, NULL),
+    (timestamp with time zone '2014-01-01 05:06:07+02', 50, 7, 1, 7, NULL),
+    (timestamp with time zone '2014-01-01 06:07:08+02', 50, 9, 1, 9, NULL);
 
 --
 -- assembly
@@ -353,6 +359,7 @@ SELECT setval('event.courses_id_seq', 5);
 SELECT setval('event.field_definitions_id_seq', 6);
 SELECT setval('event.lodgements_id_seq', 4);
 SELECT setval('event.registrations_id_seq', 4);
+SELECT setval('event.log_id_seq', 4);
 SELECT setval('ml.mailinglists_id_seq', 10);
 SELECT setval('assembly.assemblies_id_seq', 1);
 SELECT setval('assembly.ballots_id_seq', 5);
