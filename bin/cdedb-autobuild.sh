@@ -47,19 +47,20 @@ if [[ ! -e $AUTOBUILDDIR/images/cdedb-$PORT.qcow2 ]]; then
    exit 103
 fi;
 
-echo "make vdiimage"
-make vdiimage || exit 103
-if [ ! -e $AUTOBUILDDIR/images/cdedb-$PORT.vdi ]; then
-   echo "bailing out, as viimage does not exist ... exiting"
-   exit 105
-fi;
-gzip $AUTOBUILDDIR/images/cdedb-$PORT.vdi
+# disable until this works again
+# echo "make vdiimage"
+# make vdiimage || exit 103
+# if [ ! -e $AUTOBUILDDIR/images/cdedb-$PORT.vdi ]; then
+#    echo "bailing out, as viimage does not exist ... exiting"
+#    exit 105
+# fi;
+# gzip $AUTOBUILDDIR/images/cdedb-$PORT.vdi
 
 # cleanup, move to WWW
 echo "moving images"
 rm -f $WWWDIR/cdedb-*.qcow2
 rm -f $WWWDIR/cdedb-*.vdi.gz
 mv $AUTOBUILDDIR/images/cdedb-$PORT.qcow2 $WWWDIR/
-mv $AUTOBUILDDIR/images/cdedb-$PORT.vdi.gz $WWWDIR/
+# mv $AUTOBUILDDIR/images/cdedb-$PORT.vdi.gz $WWWDIR/
 echo "images moved"
 exit 1
