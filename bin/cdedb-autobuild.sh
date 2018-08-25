@@ -60,6 +60,6 @@ echo "moving images"
 rm -f $WWWDIR/cdedb-*.qcow2
 rm -f $WWWDIR/cdedb-*.vdi.gz
 mv $AUTOBUILDDIR/images/cdedb-$PORT.qcow2 $WWWDIR/
-# mv $AUTOBUILDDIR/images/cdedb-$PORT.vdi.gz $WWWDIR/
+mv $AUTOBUILDDIR/images/cdedb-$PORT.vdi.gz $WWWDIR/
 echo "images moved"
 exit 1
