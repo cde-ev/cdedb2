@@ -44,6 +44,7 @@ showconf:
 	@echo "stage1:   |  build-stage1 install-stage1"
 	@echo "stage2:   |  build-stage2 install-stage2"
 	@echo "stage3:   |  build-stage3 install-stage3"
+	@echo "stagevdi: |  build-stagevdi"
 	@echo "use:      |  run"
 	@echo "          |     "
 	@echo "admin:    |  fullimage vdiimage clean mrproper"
@@ -182,9 +183,28 @@ ${WORKDIR}/.done_fullimage-${PORT}:${WORKDIR}/.done_install-stage3-${PORT}
 	${QEMUIMG} convert -c -f qcow2 -O qcow2 ${WORKDIR}/cdedb-run-${PORT}.qcow2 ${IMAGEDIR}/cdedb-${PORT}.qcow2
 	touch $@
 
+stagevdicd:${WORKDIR}/.done_stagevdicd
+${WORKDIR}/.done_stagevdicd:${WORKDIR}/.done_checksum files/stage3-install ${FILES} \
+		| ${WORKDIR}
+	rm -rf ${WORKDIR}/stagevdicd
+	mkdir ${WORKDIR}/stagevdicd
+	cp files/stage3-install ${WORKDIR}/stagevdicd/cdedb-install
+	chmod 755 ${WORKDIR}/stagevdicd/cdedb-install
+	cp files/call-cdedbinstall ${WORKDIR}/stagevdicd/init
+	touch ${WORKDIR}/stagevdicd/vdi
+	${MKISOFS} -R -o ${WORKDIR}/stagevdicd.iso ${WORKDIR}/stagevdicd
+	touch $@
+
+build-stagevdi:${WORKDIR}/.done_stagevdi-${PORT}
+${WORKDIR}/.done_stagevdi-${PORT}:${WORKDIR}/.done_stagevdicd ${IMAGEDIR}/stage2.qcow2 | ${WORKDIR}
+	rm -f ${WORKDIR}/stagevdi.qcow2
+	${QEMUIMG} create -b `readlink -f ${IMAGEDIR}/stage2.qcow2` -f qcow2 ${WORKDIR}/stagevdi.qcow2
+	(cd ${WORKDIR} && ${QEMU} ${QEMUOPTIONS} -no-reboot -boot order=c -drive file=stagevdi.qcow2,if=virtio,cache=${QEMUCACHING} -drive file=stagevdicd.iso,media=cdrom,index=2)
+	touch $@
+
 vdiimage: ${WORKDIR}/.done_vdiimage-${PORT}
-${WORKDIR}/.done_vdiimage-${PORT}:${WORKDIR}/.done_fullimage-${PORT}
-	${QEMUIMG} convert -f qcow2 -O vdi ${IMAGEDIR}/cdedb-${PORT}.qcow2 ${IMAGEDIR}/cdedb-${PORT}.vdi
+${WORKDIR}/.done_vdiimage-${PORT}:${WORKDIR}/.done_stagevdi-${PORT}
+	${QEMUIMG} convert -f qcow2 -O vdi ${WORKDIR}/stagevdi.qcow2 ${IMAGEDIR}/cdedb-${PORT}.vdi
 	touch $@
 
 run: ${WORKDIR}/.done_install-stage3

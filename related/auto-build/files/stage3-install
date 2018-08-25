@@ -118,6 +118,19 @@ echo "--------------------------------------------"
 cp /cdedb2/related/auto-build/files/stage3/cdedb.conf /etc/fail2ban/filter.d/
 cp /cdedb2/related/auto-build/files/stage3/jail.local /etc/fail2ban/
 
+if [ -e /media/cdrom0/vdi ]; then
+
+    echo ""
+    echo "cdedb - sandbox system: STAGE VDI"
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo ""
+    echo "Adjusting grup.cfg..."
+    echo "--------------------------------------------"
+
+    sed -i -e 's=/dev/vda1=/dev/sda1=g' /boot/grub/grub.cfg
+
+fi
+
 echo ""
 echo "Disable auto-build init..."
 echo "--------------------------------------------"
