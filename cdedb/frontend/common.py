@@ -461,6 +461,8 @@ def xdictsort_filter(value, attribute, pad=False):
     """
     key = lambda item: item[1].get(attribute)
     if pad:
+        if not value:
+            return value
         max_len = max(len(v.get(attribute, "")) for v in value.values())
         key = lambda item: item[1].get(attribute).rjust(max_len, '\0')
     return sorted(value.items(), key=key)
