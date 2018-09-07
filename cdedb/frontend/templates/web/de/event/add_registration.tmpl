@@ -19,8 +19,9 @@
           class="form-horizontal">
         <h3 class="heading-underline">Personendaten</h3>
         {{ util.form_input_text(name="persona.persona_id", label="CdEDB-ID") }}
-        {{ util.form_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
-        {# TODO: Hide if not in offline mode #}
+        {% if CDEDB_OFFLINE_DEPLOYMENT %}
+            {{ util.form_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
+        {% endif %}
 
         <h3 class="heading-underline">Status</h3>
         {{ util.form_input_textarea(name="reg.orga_notes", label="Orga-Notizen", rows="5") }}

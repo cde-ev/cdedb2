@@ -2070,7 +2070,8 @@ class EventFrontend(AbstractUserFrontend):
 
     @staticmethod
     def process_orga_registration_input(rs, event, do_fields=True,
-                                        check_enabled=False):
+                                        check_enabled=False,
+                                        do_real_persona_id=False):
         """Helper to handle input by orgas.
 
         This takes care of extracting the values and validating them. Which
@@ -2079,14 +2080,19 @@ class EventFrontend(AbstractUserFrontend):
 
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}
+        :param do_fields: Process custom fields of the registration(s)
         :type do_fields: bool
         :param check_enabled: Check if the "enable" checkboxes, corresponding
                               to the fields are set. This is required for the
                               multiedit page.
         :type check_enabled: bool
+        :param do_real_persona_id: Process the `real_persona_id` field. Should
+                                   only be done when CDEDB_OFFLINE_DEPLOYMENT
+        :type do_real_persona_id: bool
         :rtype: {str: object}
         :returns: registration data set
         """
+        # Helper function to filter parameters by `enabled` checkbox
         def filter_parameters(params):
             if not check_enabled:
                 return params
@@ -2096,43 +2102,41 @@ class EventFrontend(AbstractUserFrontend):
             return tuple((key, kind) for key, kind in params
                          if enable["enable_{}".format(key)])
 
+        # Extract parameters from request
         tracks = event_gather_tracks(event)
         reg_params = (
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
             ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
             ("reg.mixed_lodging", "bool"), ("reg.checkin", "date_or_None"),
-            ("reg.foto_consent", "bool"),
-            ("reg.real_persona_id", "cdedbid_or_None"))
-        raw_reg = request_extractor(rs, filter_parameters(reg_params))
-
+            ("reg.foto_consent", "bool"))
         part_params = []
         for part_id in event['parts']:
-            prefix = "part{}".format(part_id)
-            part_params.append(("{}.status".format(prefix),
-                                "enum_registrationpartstati"))
-            part_params.append(("{}.lodgement_id".format(prefix),
-                                "id_or_None"))
-            part_params.append(("{}.is_reserve".format(prefix),
-                                "bool"))
-        raw_parts = request_extractor(rs, filter_parameters(part_params))
-
+            part_params.extend((
+                ("part{}.status".format(part_id), "enum_registrationpartstati"),
+                ("part{}.lodgement_id".format(part_id), "id_or_None"),
+                ("part{}.is_reserve".format(part_id), "bool")))
         track_params = []
         for track_id in tracks:
-            prefix = "track{}".format(track_id)
             track_params.extend(
-                ("{}.{}".format(prefix, suffix), "id_or_None")
-                for suffix in ("course_id", "course_choice_0",
-                               "course_choice_1", "course_choice_2",
-                               "course_instructor"))
-        raw_tracks = request_extractor(rs, filter_parameters(track_params))
-
+                ("track{}.{}".format(track_id, key), "id_or_None")
+                for key in ("course_id", "course_choice_0",
+                            "course_choice_1", "course_choice_2",
+                            "course_instructor"))
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
              "{}_or_None".format(field['kind']))
             for field in event['fields'].values()
             if field['association'] == const.FieldAssociations.registration)
+
+        raw_reg = request_extractor(rs, filter_parameters(reg_params))
+        if do_real_persona_id:
+            raw_reg.upade(request_extractor(rs, filter_parameters((
+                ("reg.real_persona_id", "cdedbid_or_None"),))))
+        raw_parts = request_extractor(rs, filter_parameters(part_params))
+        raw_tracks = request_extractor(rs, filter_parameters(track_params))
         raw_fields = request_extractor(rs, filter_parameters(field_params))
 
+        # Build `parts`, `tracks` and `fields` dict
         new_parts = {
             part_id: {
                 key: raw_parts["part{}.{}".format(part_id, key)]
@@ -2141,7 +2145,6 @@ class EventFrontend(AbstractUserFrontend):
             }
             for part_id in event['parts']
         }
-
         new_tracks = {
             track_id: {
                 key: raw_tracks["track{}.{}".format(track_id, key)]
@@ -2150,6 +2153,7 @@ class EventFrontend(AbstractUserFrontend):
             }
             for track_id in tracks
         }
+        # Build course choices (but only if all 3 choices are present)
         for track_id in tracks:
             if not all("track{}.course_choice_{}".format(track_id, i)
                             in raw_tracks
@@ -2159,10 +2163,10 @@ class EventFrontend(AbstractUserFrontend):
                 track_id, i)]
             new_tracks[track_id]['choices'] = tuple(
                 extractor(i) for i in range(3) if extractor(i))
-
         new_fields = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
 
+        # Put it all together
         registration = {
             key.split('.', 1)[1]: value for key, value in raw_reg.items()}
         registration['parts'] = new_parts
@@ -2182,7 +2186,8 @@ class EventFrontend(AbstractUserFrontend):
         much more cumbersome to always use this interface.
         """
         registration = self.process_orga_registration_input(
-            rs, rs.ambience['event'])
+            rs, rs.ambience['event'],
+            do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
         if rs.errors:
             return self.change_registration_form(rs, event_id, registration_id)
 
@@ -2230,7 +2235,8 @@ class EventFrontend(AbstractUserFrontend):
             rs.errors.append(("persona.persona_id",
                               ValueError(_("Allready registered."))))
         registration = self.process_orga_registration_input(
-            rs, rs.ambience['event'], do_fields=False)
+            rs, rs.ambience['event'], do_fields=False,
+            do_real_persona_id=self.conf.CDEDB_OFFLINE_DEPLOYMENT)
         if rs.errors:
             return self.add_registration_form(rs, event_id)
 
