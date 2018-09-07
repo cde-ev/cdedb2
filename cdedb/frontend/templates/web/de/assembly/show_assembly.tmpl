@@ -96,7 +96,9 @@
                                                      {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
                                                      battachment['title'])}}
                                         (<small class="text-muted nowrap">
-                                            {{ util.make_icon('thumbs-up') }} {{ ballot['title']|e }}</small>)
+                                            {{- util.make_icon('thumbs-up', arialabel="Zu Abstimmung") }}
+                                            {{ ballot['title']|e -}}
+                                         </small>)
                                     </li>
                                 {% endfor %}
                             </ul>

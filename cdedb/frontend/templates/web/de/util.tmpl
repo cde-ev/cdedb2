@@ -38,6 +38,7 @@
 {% endmacro %}
 
 {% macro make_icon(icon, aclass='', title='', arialabel='') -%}
+    {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
     <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}" {% if title %}title="{{ title|e }}"{% endif %}
             aria-hidden="true"></span>
     {%- if arialabel %}

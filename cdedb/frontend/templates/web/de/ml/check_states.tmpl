@@ -11,7 +11,9 @@
 {% block heading %}
     <h1 class="title">
         Konsistenzcheck
-        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title']|e }}</small>
+        <small>
+            {{- util.make_icon('envelope', arialabel="Mailingliste") }} {{ ambience['mailinglist']['title']|e -}}
+        </small>
     </h1>
 {% endblock %}
 {% block content %}

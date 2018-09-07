@@ -15,8 +15,8 @@ Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambie
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Teilnehmer von {{ ambience['course']['shortname']|e }}
-        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+        Kursteilnehmer von {{ ambience['course']['shortname']|e }}
+        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block content %}

@@ -85,7 +85,8 @@
         <ul class="nav nav-tabs mosp" role="tablist" id="associations_tablist">
             {% for title, association, icon in associations -%}
                 <li role="presentation"{% if loop.first %} class="active"{% endif %}>
-                    <a href="#tab_{{ association.name }}" data-toggle="tab">{{ util.make_icon(icon) }} {{ title }}</a>
+                    <a href="#tab_{{ association.name }}" data-toggle="tab" aria-controls="tab_{{ association.name }}"
+                            role="tab">{{ util.make_icon(icon) }} {{ title }}</a>
                 </li>
             {%- endfor %}
         </ul>

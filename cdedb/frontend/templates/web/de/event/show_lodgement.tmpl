@@ -119,7 +119,7 @@
                                                  "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
                                                                 personas[registrations[registration_id]['persona_id']]['family_name'])) }}
                                     {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
-                                        {{ util.make_icon('tent', title="Reserveplatz", arialabel="Reserveplatz") }}
+                                        {{ util.make_icon('tent', title="Reserveplatz") }}
                                     {% endif %}
                                 </li>
                             {% endfor %}

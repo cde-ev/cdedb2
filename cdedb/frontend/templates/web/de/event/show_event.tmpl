@@ -117,7 +117,7 @@
                 </ul>
                 <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform" class="p">
                     <div class="input-group has-success">
-                        <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                        <span class="input-group-addon">{{ util.make_icon('plus', title="Orga hinzufügen") }}</span>
                         {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga') }}
                         <script type="text/javascript">
                             $('#input-add-orga').cdedbSearchPerson(

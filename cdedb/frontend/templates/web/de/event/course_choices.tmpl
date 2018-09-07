@@ -195,7 +195,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     {% endmacro %}
                     {% for track_id in ambience['event']['tracks']|sort %}
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
-                            {{ util.make_icon('screenshot') }}
+                            {{ util.make_icon('screenshot', title="eingeteilt in") }}
                         </th>
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">KL</th>
                         <th class="text-center {{ filtered_col_class(track_id, cfp.first_choice.value) }}">1.</th>

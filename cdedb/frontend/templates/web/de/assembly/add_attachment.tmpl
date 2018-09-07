@@ -12,9 +12,13 @@
     <h1 class="title">
         Datei anhängen
         {% if ambience['ballot'] %}
-            <small>{{ util.make_icon('thumbs-up') }} {{ ambience['ballot']['title']|e }}</small>
+            <small>
+                {{- util.make_icon('thumbs-up', arialabel="Abstimmung") }} {{ ambience['ballot']['title']|e -}}
+            </small>
         {% else %}
-            <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title']|e }}</small>
+            <small>
+                {{- util.make_icon('bullhorn', arialabel="Versammlung") }} {{ ambience['assembly']['title']|e -}}
+            </small>
         {% endif %}
     </h1>
 {% endblock %}

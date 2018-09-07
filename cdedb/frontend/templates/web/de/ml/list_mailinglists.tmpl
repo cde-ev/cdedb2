@@ -27,6 +27,7 @@
             {% elif ml['audience_policy'] == enums['AudiencePolicy'].require_member %}
                 <span title="Sichtbar für CdE-Mitglieder">
                     {{ util.make_icon('education') }}{{ util.make_icon('ok-circle') }}
+                    <span class="sr-only">Sichtbar für CdE-Mitglieder</span>
                 </span>
             {% endif %}
         </div>
