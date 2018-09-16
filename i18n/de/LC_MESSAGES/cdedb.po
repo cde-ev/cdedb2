@@ -279,6 +279,18 @@ msgid "EventLogCodes.questionnaire_changed"
 msgstr "Fragebogen geändert"
 
 #: cdedb/i18n_additional.py:76
+msgid "EventLogCodes.track_added"
+msgstr "Kursschiene hinzugefügt"
+
+#: cdedb/i18n_additional.py:77
+msgid "EventLogCodes.track_updated"
+msgstr "Kursschiene geändert"
+
+#: cdedb/i18n_additional.py:78
+msgid "EventLogCodes.track_removed"
+msgstr "Kursschiene entfernt"
+
+#: cdedb/i18n_additional.py:79
 msgid "EventLogCodes.course_created"
 msgstr "Kurs erstellt"
 
@@ -286,9 +298,13 @@ msgstr "Kurs erstellt"
 msgid "EventLogCodes.course_changed"
 msgstr "Kurs geändert"
 
-#: cdedb/i18n_additional.py:78
-msgid "EventLogCodes.course_parts_changed"
-msgstr "Kursteile geändert"
+#: cdedb/i18n_additional.py:81
+msgid "EventLogCodes.course_segments_changed"
+msgstr "Kurs: angebotene Schienen geändert"
+
+#: cdedb/i18n_additional.py:82
+msgid "EventLogCodes.course_segment_activity_changed"
+msgstr "Kurs: stattfindende Schienen geändert"
 
 #: cdedb/i18n_additional.py:79
 msgid "EventLogCodes.registration_created"
@@ -297,6 +313,10 @@ msgstr "Anmeldung erstellt"
 #: cdedb/i18n_additional.py:80
 msgid "EventLogCodes.registration_changed"
 msgstr "Anmeldung geändert"
+
+#: cdedb/i18n_additional.py:85
+msgid "EventLogCodes.registration_deleted"
+msgstr "Anmeldung gelöscht"
 
 #: cdedb/i18n_additional.py:81
 msgid "EventLogCodes.event_locked"
@@ -569,6 +589,7 @@ msgstr "Moderiertes Opt-In"
 #: cdedb/i18n_additional.py:157
 msgid "SubscriptionPolicy.invitation_only"
 msgstr "Nur durch Moderatoren"
+
 
 #: cdedb/i18n_additional.py:162
 msgid "day is out of range for month"
