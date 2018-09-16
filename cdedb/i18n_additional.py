@@ -101,6 +101,7 @@ I18N_STRINGS = (
     _("FinanceLogCodes.lastschrift_transaction_skip"),
     _("FinanceLogCodes.lastschrift_transaction_cancelled"),
     _("FinanceLogCodes.lastschrift_transaction_revoked"),
+    _("FinanceLogCodes.other"),
 
     _("Genders.female"),
     _("Genders.male"),
@@ -129,8 +130,10 @@ I18N_STRINGS = (
     _("MlLogCodes.subscribed"),
     _("MlLogCodes.subscription_changed"),
     _("MlLogCodes.unsubscribed"),
+    _("MlLogCodes.marked_override"),
     _("MlLogCodes.request_approved"),
     _("MlLogCodes.request_denied"),
+    _("MlLogCodes.request_cancelled"),
 
     _("ModerationPolicy.unmoderated"),
     _("ModerationPolicy.non_subscribers"),

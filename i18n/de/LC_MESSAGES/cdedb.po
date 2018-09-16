@@ -386,6 +386,10 @@ msgstr "Einzug abgebrochen"
 msgid "FinanceLogCodes.lastschrift_transaction_revoked"
 msgstr "Einzug zurückgebucht"
 
+#: cdedb/i18n_additional.py:104
+msgid "FinanceLogCodes.other"
+msgstr "Sonstiges"
+
 #: cdedb/i18n_additional.py:100
 msgid "Genders.female"
 msgstr "weiblich"
@@ -482,6 +486,10 @@ msgstr "Abonnement geändert"
 msgid "MlLogCodes.unsubscribed"
 msgstr "Abbestellt"
 
+#: cdedb/i18n_additional.py:133
+msgid "MlLogCodes.marked_override"
+msgstr "Als Ausnahme markiert"
+
 #: cdedb/i18n_additional.py:127
 msgid "MlLogCodes.request_approved"
 msgstr "Abonnementantrag bestätigt"
@@ -489,6 +497,10 @@ msgstr "Abonnementantrag bestätigt"
 #: cdedb/i18n_additional.py:128
 msgid "MlLogCodes.request_denied"
 msgstr "Abonnementantrag abgelehnt"
+
+#: cdedb/i18n_additional.py:136
+msgid "MlLogCodes.request_cancelled"
+msgstr "Abonnementantrag zurückgezogen"
 
 #: cdedb/i18n_additional.py:130
 msgid "ModerationPolicy.unmoderated"
@@ -590,6 +602,9 @@ msgstr "Moderiertes Opt-In"
 msgid "SubscriptionPolicy.invitation_only"
 msgstr "Nur durch Moderatoren"
 
+#: cdedb/i18n_additional.py:167
+msgid "LastschriftTransactionStati.issued"
+msgstr "Offen"
 
 #: cdedb/i18n_additional.py:165
 msgid "LastschriftTransactionStati.skipped"
