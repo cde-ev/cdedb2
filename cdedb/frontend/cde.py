@@ -1045,7 +1045,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.cdeproxy.finalize_lastschrift_transaction(
                     rs, transaction_id, stati.cancelled)
             rs.notify("error", _("Creation of SEPA-PAIN-file failed."))
-            return self.lastschrift_index(rs)
+            return self.redirect(rs, "cde/lastschrift_index")
         return self.send_file(rs, data=sepapain_file, inline=False,
                               filename=rs.gettext("sepa.cdd"))
 

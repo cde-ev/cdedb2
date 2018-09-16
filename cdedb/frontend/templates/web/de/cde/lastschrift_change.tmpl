@@ -22,11 +22,11 @@
 	    class="form-horizontal">
 	{{ util.form_input_static(label="Mitglied",
 		value="{} {}".format(persona['given_names'], persona['family_name'])) }}
-	{{ util.form_input_text(name="amount", label="Betrag") }}
+	{{ util.form_input_text(name="amount", label="Betrag", type="number", attributes='min="0" step="0.01"') }}
 	{{ util.form_input_text(name="iban", label="IBAN") }}
 	{{ util.form_input_text(name="account_owner", label="Kontoinhaber (falls abweichend)") }}
 	{{ util.form_input_textarea(name="account_address", label="Adresse (falls abweichend)") }}
-	{{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil") }}
+	{{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil", type="number", attributes='min="0" max="1"') }}
 	{{ util.form_input_textarea(name="notes", label="Notizen", rows="5",
 								info="Unterstützt reStructuredText") }}
 	

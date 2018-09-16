@@ -161,6 +161,13 @@ I18N_STRINGS = (
     _("SubscriptionPolicy.moderated_opt_in"),
     _("SubscriptionPolicy.invitation_only"),
 
+    _("LastschriftTransactionStati.issued"),
+    _("LastschriftTransactionStati.skipped"),
+    _("LastschriftTransactionStati.success"),
+    _("LastschriftTransactionStati.failure"),
+    _("LastschriftTransactionStati.cancelled"),
+    _("LastschriftTransactionStati.rollback"),
+
     ##
     ## Validation errors
     ##

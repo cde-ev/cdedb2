@@ -591,6 +591,26 @@ msgid "SubscriptionPolicy.invitation_only"
 msgstr "Nur durch Moderatoren"
 
 
+#: cdedb/i18n_additional.py:165
+msgid "LastschriftTransactionStati.skipped"
+msgstr "Übersprungen"
+
+#: cdedb/i18n_additional.py:166
+msgid "LastschriftTransactionStati.success"
+msgstr "Erfolgreich"
+
+#: cdedb/i18n_additional.py:167
+msgid "LastschriftTransactionStati.failure"
+msgstr "Geplatzt"
+
+#: cdedb/i18n_additional.py:168
+msgid "LastschriftTransactionStati.cancelled"
+msgstr "Abgebrochen"
+
+#: cdedb/i18n_additional.py:169
+msgid "LastschriftTransactionStati.rollback"
+msgstr "Rückgebucht"
+
 #: cdedb/i18n_additional.py:162
 msgid "day is out of range for month"
 msgstr "Tag liegt nicht im Monat."
