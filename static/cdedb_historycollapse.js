@@ -8,7 +8,7 @@
             var $rows = $element.find('.history-row:not(.pending)');
             var $crows = $rows.slice(0, -1);
             
-            if ($rows.length < 2)
+            if ($rows.length < 3)
                 return;
             
             $crows.addClass('collapse').hide();

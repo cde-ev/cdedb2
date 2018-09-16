@@ -250,18 +250,36 @@
         {% endfor %}
 
     </div>
-    {# FIXME formatting #}
-    <h3>Veränderungen</h4>
-    <ul>
-        {% for _, entry in entries|xdictsort('generation')|reverse %}
-            <li>
-                Gen {{ entry['generation']|e }} durch {{ util.persona_anchor(personas[entry['submitted_by']]) }}
-                {% if entry['reviewed_by'] %}
-                    gesichtet von {{ util.persona_anchor(personas[entry['reviewed_by']]) }}
-                {% endif %}
-                {{ entry['change_status']|enum(enums['MemberChangeStati'])|e }}
-                ({{ entry['ctime']|datetime(lang=lang)|e }}): {{ entry['change_note']|e }}
-            </li>
-        {% endfor %}
-    </ul>
+
+    <h3>Veränderungen</h3>
+    <table class="table table-condensed table-hover">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Zeitstempel</th>
+                <th>Status</th>
+                <th>Verantwortlich</th>
+                <th>Geprüft von</th>
+                <th>Notiz</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for _, entry in entries|xdictsort('generation')|reverse %}
+                <tr>
+                    <td class="nowrap">Gen {{ entry['generation']|e }}</td>
+                    <td>{{ entry['ctime']|datetime(lang=lang)|e }}</td>
+                    <td>{{ gettext(entry['change_status']|enum(enums['MemberChangeStati']))|e }}</td>
+                    <td>{{ util.persona_anchor(personas[entry['submitted_by']]) }}</td>
+                    <td>
+                        {% if entry['reviewed_by'] %}
+                            {{ util.persona_anchor(personas[entry['reviewed_by']]) }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </td>
+                    <td>{{ entry['change_note']|e }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 {% endblock %}

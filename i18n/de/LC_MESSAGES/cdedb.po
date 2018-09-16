@@ -1633,7 +1633,7 @@ msgstr "Option doppelt gefunden."
 
 #: cdedb/frontend/cde.py:147
 msgid "Consent decision (is {ack})."
-msgstr "Datenschut-Einwilligung entschieden (ist {ack})."
+msgstr "Datenschutz-Einwilligung entschieden (ist {ack})."
 
 #: cdedb/frontend/cde.py:151
 msgid "Consent noted."

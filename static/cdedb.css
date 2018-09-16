@@ -491,12 +491,11 @@ tr.drow-delete>td {
 
 /* Profile history */
 .history-row {
-    border: 1px #ddd;
-    border-style: solid none;
+    border-bottom: solid 1px #ddd;
     margin-top: -1px;
     position: relative;
 }
-.history-row:nth-child(odd) {
+.history-row:nth-child(even) {
     background-color: #eee;
 }
 .history-row.pending {
