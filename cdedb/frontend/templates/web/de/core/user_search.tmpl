@@ -14,35 +14,9 @@
 {{ util.breadcrumb_link(cdedblink("core/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-md-8">
-            {% with TITLES = {} %}
-            <div>
-                {{ generic.place_default_queries("core/user_search", default_queries, TITLES) }}
-            </div>
-            {% endwith %}
-        </div>
-        <div class="col-md-4">
-            {% call util.bootstrap_panel(title="Aktionen", aclass="panel-warning") %}
-                    <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
-                        <div class="sr-only">Benutzer nach ID suchen</div>
-                        <div class="input-group">
-                            <input type="text" name="phrase" class="form-control" id="input-showuser-id" />
-                            <span class="input-group-btn">
-                                {{ util.input_submit("", icon='search', title='Suchen') }}
-                            </span>
-                        </div>
-                    </form>
-                    <script type="text/javascript">
-                        var $i = $('#input-showuser-id');
-                        $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s'}}', [],
-                                             true);
-                        $i.next().after($i);
-                        $i.change(function(){$('#adminshowuserform').submit();})
-                    </script>
-            {% endcall %}
-        </div>
-    </div>
+    {% with TITLES = {} %}
+        {{ generic.place_default_queries("core/user_search", default_queries, TITLES) }}
+    {% endwith %}
 
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 
