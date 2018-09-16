@@ -2130,7 +2130,7 @@ class EventFrontend(AbstractUserFrontend):
 
         raw_reg = request_extractor(rs, filter_parameters(reg_params))
         if do_real_persona_id:
-            raw_reg.upade(request_extractor(rs, filter_parameters((
+            raw_reg.update(request_extractor(rs, filter_parameters((
                 ("reg.real_persona_id", "cdedbid_or_None"),))))
         raw_parts = request_extractor(rs, filter_parameters(part_params))
         raw_tracks = request_extractor(rs, filter_parameters(track_params))
