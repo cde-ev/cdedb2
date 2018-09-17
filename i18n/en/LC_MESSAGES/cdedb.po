@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-09-16 23:18+0200\n"
+"POT-Creation-Date: 2018-09-17 11:45+0200\n"
 "PO-Revision-Date: 2016-11-24 16:06+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -1569,7 +1569,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:127 cdedb/frontend/cde.py:230
 #: cdedb/frontend/core.py:702 cdedb/frontend/core.py:750
-#: cdedb/frontend/event.py:199 cdedb/frontend/event.py:3143
+#: cdedb/frontend/event.py:199 cdedb/frontend/event.py:3150
 #: cdedb/frontend/ml.py:127
 msgid "result.csv"
 msgstr ""
@@ -1577,7 +1577,7 @@ msgstr ""
 #: cdedb/frontend/assembly.py:132 cdedb/frontend/assembly.py:647
 #: cdedb/frontend/cde.py:236 cdedb/frontend/core.py:708
 #: cdedb/frontend/core.py:756 cdedb/frontend/event.py:205
-#: cdedb/frontend/event.py:3149 cdedb/frontend/ml.py:132
+#: cdedb/frontend/event.py:3156 cdedb/frontend/ml.py:132
 msgid "result.json"
 msgstr ""
 
@@ -2187,92 +2187,116 @@ msgid "Not deleting a non-empty lodgement."
 msgstr ""
 
 #: cdedb/frontend/event.py:3001
-msgid "course ({title})"
+msgid "{title}: course "
 msgstr ""
 
 #: cdedb/frontend/event.py:3004
-msgid "course instructor ({title})"
+msgid "{title}: course instructor"
 msgstr ""
 
-#: cdedb/frontend/event.py:3015
-msgid "course (any track)"
+#: cdedb/frontend/event.py:3010
+msgid "{title} course: {field}"
 msgstr ""
 
 #: cdedb/frontend/event.py:3018
-msgid "course instuctor (any track)"
+msgid "any track: course"
 msgstr ""
 
-#: cdedb/frontend/event.py:3029
+#: cdedb/frontend/event.py:3021
+msgid "any track: course instuctor"
+msgstr ""
+
+#: cdedb/frontend/event.py:3026
+msgid "any track course: {field}"
+msgstr ""
+
+#: cdedb/frontend/event.py:3032
 msgid "course"
 msgstr ""
 
-#: cdedb/frontend/event.py:3031
+#: cdedb/frontend/event.py:3034
 msgid "course instructor"
 msgstr ""
 
-#: cdedb/frontend/event.py:3041
-msgid "registration status ({title})"
+#: cdedb/frontend/event.py:3038
+msgid "course: {field}"
 msgstr ""
 
 #: cdedb/frontend/event.py:3044
-msgid "lodgement ({title})"
+msgid "{title}: registration status"
 msgstr ""
 
-#: cdedb/frontend/event.py:3046
-msgid "reserve lodger ({title})"
+#: cdedb/frontend/event.py:3047
+msgid "{title}: lodgement"
 msgstr ""
 
-#: cdedb/frontend/event.py:3056
-msgid "registration status (any part)"
+#: cdedb/frontend/event.py:3049
+msgid "{title}: reserve lodger"
 msgstr ""
 
-#: cdedb/frontend/event.py:3059
-msgid "lodgement (any part)"
+#: cdedb/frontend/event.py:3054
+msgid "{title} lodgement: {field}"
 msgstr ""
 
-#: cdedb/frontend/event.py:3062
-msgid "reserve lodger (any part)"
+#: cdedb/frontend/event.py:3061
+msgid "any part: registration status"
 msgstr ""
 
-#: cdedb/frontend/event.py:3074
+#: cdedb/frontend/event.py:3064
+msgid "any part: lodgement"
+msgstr ""
+
+#: cdedb/frontend/event.py:3067
+msgid "any part: reserve lodger"
+msgstr ""
+
+#: cdedb/frontend/event.py:3072
+msgid "any part lodgement: {field})"
+msgstr ""
+
+#: cdedb/frontend/event.py:3081
 msgid "registration status"
 msgstr ""
 
-#: cdedb/frontend/event.py:3076
+#: cdedb/frontend/event.py:3083
 msgid "lodgement"
 msgstr ""
 
-#: cdedb/frontend/event.py:3078
+#: cdedb/frontend/event.py:3085
 msgid "reserve lodger"
 msgstr ""
 
-#: cdedb/frontend/event.py:3194 cdedb/frontend/event.py:3224
-#: cdedb/frontend/event.py:3241 cdedb/frontend/event.py:3274
+#: cdedb/frontend/event.py:3089
+msgid "lodgement: {field}"
+msgstr ""
+
+#: cdedb/frontend/event.py:3201 cdedb/frontend/event.py:3231
+#: cdedb/frontend/event.py:3248 cdedb/frontend/event.py:3281
 msgid "Wrong associated event."
 msgstr ""
 
-#: cdedb/frontend/event.py:3196
+#: cdedb/frontend/event.py:3203
 msgid "Allready checked in."
 msgstr ""
 
-#: cdedb/frontend/event.py:3228 cdedb/frontend/event.py:3244
-#: cdedb/frontend/event.py:3277
+#: cdedb/frontend/event.py:3235 cdedb/frontend/event.py:3251
+#: cdedb/frontend/event.py:3284
 msgid "Wrong associated field."
 msgstr ""
 
-#: cdedb/frontend/event.py:3326
+#: cdedb/frontend/event.py:3333
 msgid "Data from wrong event."
 msgstr ""
 
-#: cdedb/frontend/event.py:3333
+#: cdedb/frontend/event.py:3340
 msgid "There exist unmigrated personas."
 msgstr ""
 
-#: cdedb/frontend/event.py:3349
+#: cdedb/frontend/event.py:3356
 msgid "Event already archived."
 msgstr ""
 
-#: cdedb/frontend/event.py:3355
+#: cdedb/frontend/event.py:3362
 msgid "Event archived."
 msgstr ""
 
@@ -2436,5 +2460,35 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "EventLogCodes.course_parts_changed"
+#~ msgstr ""
+
+#~ msgid "course ({title})"
+#~ msgstr ""
+
+#~ msgid "course instructor ({title})"
+#~ msgstr ""
+
+#~ msgid "course (any track)"
+#~ msgstr ""
+
+#~ msgid "course instuctor (any track)"
+#~ msgstr ""
+
+#~ msgid "registration status ({title})"
+#~ msgstr ""
+
+#~ msgid "lodgement ({title})"
+#~ msgstr ""
+
+#~ msgid "reserve lodger ({title})"
+#~ msgstr ""
+
+#~ msgid "registration status (any part)"
+#~ msgstr ""
+
+#~ msgid "lodgement (any part)"
+#~ msgstr ""
+
+#~ msgid "reserve lodger (any part)"
 #~ msgstr ""
 

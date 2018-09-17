@@ -35,17 +35,17 @@
         </div>
     </div>
 
-
     {{ titles.update({
             "reg.id": "ID",
             "reg.notes": "Anmerkungen",
             "reg.orga_notes": "Orga-Notizen",
-            "reg.payment": "Teilnehmerbeitrag",
+            "reg.payment": "Bezahlung",
             "reg.parental_agreement": "Einverständniserklärung",
             "reg.mixed_lodging": "Gemischte Unterbringung",
             "reg.checkin": "Checkin",
             "reg.foto_consent": "Foto-Einwilligung",
-            "membership.is_member": "CdE-Mitglied",
+            "persona.id": "CdEDB-ID",
+            "persona.is_member": "CdE-Mitglied",
             "persona.username": "E-Mail",
             "persona.family_name": "Nachname",
             "persona.given_names": "Vorname",
@@ -60,39 +60,15 @@
             "persona.address_supplement": "Adresszusatz",
             "persona.postal_code": "PLZ",
             "persona.location": "Ort",
-            "persona.country": "Land",})|e }}
+            "persona.country": "Land",
+            "ctime.creation_time": "Zeitstempel Erstellung",
+            "mtime.modification_time": "Zeitstempel letzte Änderung",})|e }}
 
     {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
 
     {% if values['is_search'] %}
         <h3>Ergebnis [{{ result|length|e }}]</h3>
         <form action="" method="POST" id="actionform">
-            {{ titles.update({
-                "reg.id": "ID",
-                "reg.notes": "Anmerkungen",
-                "reg.orga_notes": "Orga-Notizen",
-                "reg.payment": "Teilnehmerbeitrag",
-                "reg.parental_agreement": "Einverständniserklärung",
-                "reg.mixed_lodging": "Gemischte Unterbringung",
-                "reg.checkin": "Checkin",
-                "reg.foto_consent": "Foto-Einwilligung",
-                "membership.is_member": "CdE-Mitglied",
-                "persona.username": "E-Mail",
-                "persona.family_name": "Nachname",
-                "persona.given_names": "Vorname",
-                "persona.display_name": "Rufname",
-                "persona.title": "Titel",
-                "persona.name_supplement": "Namenszusatz",
-                "persona.gender": "Geschlecht",
-                "persona.birthday": "Geburtstag",
-                "persona.telephone": "Telefon",
-                "persona.mobile": "Mobilfunk",
-                "persona.address": "Anschrift",
-                "persona.address_supplement": "Adresszusatz",
-                "persona.postal_code": "PLZ",
-                "persona.location": "Ort",
-                "persona.country": "Land",})|e }}
-
                 <div class="p pull-right">
                     <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
                         {{ util.make_icon('screenshot') }} Kurseinteilung
@@ -144,6 +120,7 @@
                         });
                     </script>
                 </div>
+
                 {{ generic.display_query_result(result, query, titles, choices) }}
 
         </form>

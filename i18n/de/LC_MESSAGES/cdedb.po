@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-09-16 23:18+0200\n"
+"POT-Creation-Date: 2018-09-17 11:45+0200\n"
 "PO-Revision-Date: 2017-12-10 13:36+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -1575,7 +1575,7 @@ msgstr "Die Sitzung ist abgelaufen."
 
 #: cdedb/frontend/assembly.py:127 cdedb/frontend/cde.py:230
 #: cdedb/frontend/core.py:702 cdedb/frontend/core.py:750
-#: cdedb/frontend/event.py:199 cdedb/frontend/event.py:3143
+#: cdedb/frontend/event.py:199 cdedb/frontend/event.py:3150
 #: cdedb/frontend/ml.py:127
 msgid "result.csv"
 msgstr "Ergebnis.csv"
@@ -1583,7 +1583,7 @@ msgstr "Ergebnis.csv"
 #: cdedb/frontend/assembly.py:132 cdedb/frontend/assembly.py:647
 #: cdedb/frontend/cde.py:236 cdedb/frontend/core.py:708
 #: cdedb/frontend/core.py:756 cdedb/frontend/event.py:205
-#: cdedb/frontend/event.py:3149 cdedb/frontend/ml.py:132
+#: cdedb/frontend/event.py:3156 cdedb/frontend/ml.py:132
 msgid "result.json"
 msgstr "Ergebnis.json"
 
@@ -2197,92 +2197,116 @@ msgid "Not deleting a non-empty lodgement."
 msgstr "Löschung einer nicht-leeren Unterkunft."
 
 #: cdedb/frontend/event.py:3001
-msgid "course ({title})"
-msgstr "Kurs ({title})"
+msgid "{title}: course "
+msgstr "{title}: Kurs"
 
 #: cdedb/frontend/event.py:3004
-msgid "course instructor ({title})"
-msgstr "Kursleiter ({title})"
+msgid "{title}: course instructor"
+msgstr "{title}: Kursleiter"
 
-#: cdedb/frontend/event.py:3015
-msgid "course (any track)"
-msgstr "Kurs (bel. Schiene)"
+#: cdedb/frontend/event.py:3010
+msgid "{title} course: {field}"
+msgstr "{title} Kurs: {field}"
 
 #: cdedb/frontend/event.py:3018
-msgid "course instuctor (any track)"
-msgstr "Kursleiter (bel. Schiene)"
+msgid "any track: course"
+msgstr "Bel. Schiene: Kurs"
 
-#: cdedb/frontend/event.py:3029
+#: cdedb/frontend/event.py:3021
+msgid "any track: course instuctor"
+msgstr "Bel. Schiene: Kursleiter"
+
+#: cdedb/frontend/event.py:3026
+msgid "any track course: {field}"
+msgstr "Bel. Schiene Kurs: {field}"
+
+#: cdedb/frontend/event.py:3032
 msgid "course"
 msgstr "Kurs"
 
-#: cdedb/frontend/event.py:3031
+#: cdedb/frontend/event.py:3034
 msgid "course instructor"
 msgstr "Kursleiter"
 
-#: cdedb/frontend/event.py:3041
-msgid "registration status ({title})"
-msgstr "Status ({title})"
+#: cdedb/frontend/event.py:3038
+msgid "course: {field}"
+msgstr "Kurs: {field}"
 
 #: cdedb/frontend/event.py:3044
-msgid "lodgement ({title})"
-msgstr "Unterkunft ({title})"
+msgid "{title}: registration status"
+msgstr "{title}: Status"
 
-#: cdedb/frontend/event.py:3046
-msgid "reserve lodger ({title})"
-msgstr "Reserveplatz ({title})"
+#: cdedb/frontend/event.py:3047
+msgid "{title}: lodgement"
+msgstr "{title}: Unterkunft"
 
-#: cdedb/frontend/event.py:3056
-msgid "registration status (any part)"
-msgstr "Status (bel. Teil)"
+#: cdedb/frontend/event.py:3049
+msgid "{title}: reserve lodger"
+msgstr "{title}: Reserveplatz"
 
-#: cdedb/frontend/event.py:3059
-msgid "lodgement (any part)"
-msgstr "Unterkunft (bel. Teil)"
+#: cdedb/frontend/event.py:3054
+msgid "{title} lodgement: {field}"
+msgstr "{title} Unterkunft: {field}"
 
-#: cdedb/frontend/event.py:3062
-msgid "reserve lodger (any part)"
-msgstr "Reserveplatz (bel. Teil)"
+#: cdedb/frontend/event.py:3061
+msgid "any part: registration status"
+msgstr "Bel. Teil: Status"
 
-#: cdedb/frontend/event.py:3074
+#: cdedb/frontend/event.py:3064
+msgid "any part: lodgement"
+msgstr "Bel. Teil: Unterkunft"
+
+#: cdedb/frontend/event.py:3067
+msgid "any part: reserve lodger"
+msgstr "Bel. Teil: Reserveplatz"
+
+#: cdedb/frontend/event.py:3072
+msgid "any part lodgement: {field}"
+msgstr "Bel. Teil Unterkunft: {field}"
+
+#: cdedb/frontend/event.py:3081
 msgid "registration status"
 msgstr "Status"
 
-#: cdedb/frontend/event.py:3076
+#: cdedb/frontend/event.py:3083
 msgid "lodgement"
 msgstr "Unterkunft"
 
-#: cdedb/frontend/event.py:3078
+#: cdedb/frontend/event.py:3085
 msgid "reserve lodger"
 msgstr "Reserveplatz"
 
-#: cdedb/frontend/event.py:3194 cdedb/frontend/event.py:3224
-#: cdedb/frontend/event.py:3241 cdedb/frontend/event.py:3274
+#: cdedb/frontend/event.py:3089
+msgid "lodgement: {field}"
+msgstr "Unterkunft: {field}"
+
+#: cdedb/frontend/event.py:3201 cdedb/frontend/event.py:3231
+#: cdedb/frontend/event.py:3248 cdedb/frontend/event.py:3281
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/frontend/event.py:3196
+#: cdedb/frontend/event.py:3203
 msgid "Allready checked in."
 msgstr "Bereits eingecheckt."
 
-#: cdedb/frontend/event.py:3228 cdedb/frontend/event.py:3244
-#: cdedb/frontend/event.py:3277
+#: cdedb/frontend/event.py:3235 cdedb/frontend/event.py:3251
+#: cdedb/frontend/event.py:3284
 msgid "Wrong associated field."
 msgstr "Feld einer anderen Veranstaltung angegeben."
 
-#: cdedb/frontend/event.py:3326
+#: cdedb/frontend/event.py:3333
 msgid "Data from wrong event."
 msgstr "Daten passen nicht zur Veranstaltung."
 
-#: cdedb/frontend/event.py:3333
+#: cdedb/frontend/event.py:3340
 msgid "There exist unmigrated personas."
 msgstr "Unmigrierte Accounts gefunden."
 
-#: cdedb/frontend/event.py:3349
+#: cdedb/frontend/event.py:3356
 msgid "Event already archived."
 msgstr "Veranstaltung bereits archiviert."
 
-#: cdedb/frontend/event.py:3355
+#: cdedb/frontend/event.py:3362
 msgid "Event archived."
 msgstr "Veranstaltung archiviert."
 
@@ -2396,4 +2420,34 @@ msgstr "Diese Seite ist mit JavaScript einfacher nutzbar."
 
 #~ msgid "EventLogCodes.course_parts_changed"
 #~ msgstr "Kursteile geändert"
+
+#~ msgid "course ({title})"
+#~ msgstr "Kurs ({title})"
+
+#~ msgid "course instructor ({title})"
+#~ msgstr "Kursleiter ({title})"
+
+#~ msgid "course (any track)"
+#~ msgstr "Kurs (bel. Schiene)"
+
+#~ msgid "course instuctor (any track)"
+#~ msgstr "Kursleiter (bel. Schiene)"
+
+#~ msgid "registration status ({title})"
+#~ msgstr "Status ({title})"
+
+#~ msgid "lodgement ({title})"
+#~ msgstr "Unterkunft ({title})"
+
+#~ msgid "reserve lodger ({title})"
+#~ msgstr "Reserveplatz ({title})"
+
+#~ msgid "registration status (any part)"
+#~ msgstr "Status (bel. Teil)"
+
+#~ msgid "lodgement (any part)"
+#~ msgstr "Unterkunft (bel. Teil)"
+
+#~ msgid "reserve lodger (any part)"
+#~ msgstr "Reserveplatz (bel. Teil)"
 
