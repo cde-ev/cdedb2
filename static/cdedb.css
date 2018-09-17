@@ -48,6 +48,10 @@ body{
     display: block;
     color: #a94442;
 }
+.input-group .form-control {
+    /* Prevent creating a Stacking Context (see ), which prevents embedded selectize.js dropdowns from laying on top */
+    z-index: auto;
+}
 .input-group-addon {
     font-size: 13px;
 }
@@ -333,17 +337,11 @@ h1.title {
 .has-success .selectize-input {
     border-color: #3d763d;
 }
-.input-group .selectize-input {
-    border-radius: 0;
-}
-.input-group .selectize-input {
-    border-radius: 0;
-}
 .input-group .selectize-control:not(:last-child) .selectize-input {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
 }
-.input-group .selectize-control:not(:first-child) .selectize-input {
+.input-group .selectize-control:not(:nth-child(2)) .selectize-input {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
 }
