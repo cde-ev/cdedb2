@@ -76,15 +76,16 @@
         $("#searchpanel").show();
         $("#selector").focus()
             .on('keydown paste input', function(){
-            /* Source: https://stackoverflow.com/a/3561711 and https://stackoverflow.com/a/874722 */
-            var re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
-            $(".selectee").each(function(){
-                if (removeDiacritics($(this).text()).match(re))
-                    $(this).show();
-                else
-                    $(this).hide();
-            });
-        });
+                /* Source: https://stackoverflow.com/a/3561711 and https://stackoverflow.com/a/874722 */
+                var re = new RegExp(removeDiacritics($(this).val()).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
+                $(".selectee").each(function(){
+                    if (removeDiacritics($(this).text()).match(re))
+                        $(this).show();
+                    else
+                        $(this).hide();
+                });
+            })
+            .trigger('input');
         $('.checkinform').cdedbProtectAction("Der Teilnehmer wird eingecheckt.");
     </script>
 {% endblock %}
