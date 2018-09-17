@@ -68,61 +68,61 @@
 
     {% if values['is_search'] %}
         <h3>Ergebnis [{{ result|length|e }}]</h3>
-        <form action="" method="POST" id="actionform">
-                <div class="p pull-right">
-                    <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
-                        {{ util.make_icon('screenshot') }} Kurseinteilung
-                    </button>
-                    <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
-                        {{ util.make_icon('edit') }} Feld setzen
-                    </button>
-                    <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
-                        {{ util.make_icon('pencil') }} Bearbeiten
-                    </button>
-                    <script type="text/javascript">
-                        $('#btn-course-choices').click(function(){
-                            var list = [];
-                            $('#query-result').find('.ls-selected').each(function(){
-                                list.push($(this).attr('data-id'));
-                            });
-                            if (list.length == 0)
-                                return;
-                            location.href =
-                                "{{ cdedblink('event/course_choices_form', magic_placeholders=['ids']) }}"
-                                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                        });
-                        $('#btn-set-field').click(function(){
-                            var list = [];
-                            $('#query-result').find('.ls-selected').each(function(){
-                                list.push($(this).attr('data-id'));
-                            });
-                            if (list.length == 0)
-                                return;
-                            location.href =
-                                "{{ cdedblink('event/field_set_select', magic_placeholders=['reg_ids']) }}"
-                                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                        });
-                        $('#btn-edit').click(function(){
-                            var list = [];
-                            $('#query-result').find('.ls-selected').each(function(){
-                                list.push($(this).attr('data-id'));
-                            });
-                            if (list.length == 0)
-                                return;
-                            if (list.length == 1)
-                                location.href =
-                                    "{{ cdedblink('event/change_registration_form', magic_placeholders=['registration_id']) }}"
-                                        .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                            else
-                                location.href =
-                                    "{{ cdedblink('event/change_registrations_form', magic_placeholders=['reg_ids']) }}"
-                                        .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
-                        });
-                    </script>
-                </div>
 
-                {{ generic.display_query_result(result, query, titles, choices) }}
+        <!-- Additional buttons for the registration_query -->
+        <div class="p pull-right">
+            <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
+                {{ util.make_icon('screenshot') }} Kurseinteilung
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
+                {{ util.make_icon('edit') }} Feld setzen
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
+                {{ util.make_icon('pencil') }} Bearbeiten
+            </button>
+            <script type="text/javascript">
+                $('#btn-course-choices').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink('event/course_choices_form', magic_placeholders=['ids']) }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+                $('#btn-set-field').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink('event/field_set_select', magic_placeholders=['reg_ids']) }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+                $('#btn-edit').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    if (list.length == 1)
+                        location.href =
+                            "{{ cdedblink('event/change_registration_form', magic_placeholders=['registration_id']) }}"
+                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                    else
+                        location.href =
+                            "{{ cdedblink('event/change_registrations_form', magic_placeholders=['reg_ids']) }}"
+                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+            </script>
+        </div>
 
-        </form>
+        {{ generic.display_query_result(result, query, titles, choices) }}
+
     {% endif %}
 {% endblock %}
