@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-09-17 11:45+0200\n"
+"POT-Creation-Date: 2018-09-17 19:49+0200\n"
 "PO-Revision-Date: 2017-12-10 13:36+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -626,11 +626,91 @@ msgstr "Abgebrochen"
 msgid "LastschriftTransactionStati.rollback"
 msgstr "Rückgebucht"
 
+#: cdedb/i18n_additional.py:174
+msgid "QueryOperators.empty"
+msgstr "ist leer"
+
+#: cdedb/i18n_additional.py:175
+msgid "QueryOperators.nonempty"
+msgstr "ist nicht leer"
+
+#: cdedb/i18n_additional.py:176
+msgid "QueryOperators.equal"
+msgstr "ist gleich"
+
 #: cdedb/i18n_additional.py:177
+msgid "QueryOperators.unequal"
+msgstr "ist ungleich"
+
+#: cdedb/i18n_additional.py:178
+msgid "QueryOperators.oneof"
+msgstr "ist eines aus"
+
+#: cdedb/i18n_additional.py:179
+msgid "QueryOperators.otherthan"
+msgstr "ist keins von"
+
+#: cdedb/i18n_additional.py:180
+msgid "QueryOperators.similar"
+msgstr "passt auf Muster"
+
+#: cdedb/i18n_additional.py:181
+msgid "QueryOperators.dissimilar"
+msgstr "passt nicht auf Muster"
+
+#: cdedb/i18n_additional.py:182
+msgid "QueryOperators.regex"
+msgstr "passt auf POSIX-RegEx"
+
+#: cdedb/i18n_additional.py:183
+msgid "QueryOperators.notregex"
+msgstr "passt nicht auf POSIX-RegEx"
+
+#: cdedb/i18n_additional.py:184
+msgid "QueryOperators.containsall"
+msgstr "enthält alle"
+
+#: cdedb/i18n_additional.py:185
+msgid "QueryOperators.containsnone"
+msgstr "enthält keins von"
+
+#: cdedb/i18n_additional.py:186
+msgid "QueryOperators.containssome"
+msgstr "enthält min. eines aus"
+
+#: cdedb/i18n_additional.py:187
+msgid "QueryOperators.fuzzy"
+msgstr "ist ähnlich zu"
+
+#: cdedb/i18n_additional.py:188
+msgid "QueryOperators.less"
+msgstr "ist kleiner als"
+
+#: cdedb/i18n_additional.py:189
+msgid "QueryOperators.lessequal"
+msgstr "ist kleiner/gleich"
+
+#: cdedb/i18n_additional.py:190
+msgid "QueryOperators.between"
+msgstr "ist zwischen"
+
+#: cdedb/i18n_additional.py:191
+msgid "QueryOperators.outside"
+msgstr "ist nicht zwischen"
+
+#: cdedb/i18n_additional.py:192
+msgid "QueryOperators.greaterequal"
+msgstr "ist größer/gleich"
+
+#: cdedb/i18n_additional.py:193
+msgid "QueryOperators.greater"
+msgstr "ist größer"
+
+#: cdedb/i18n_additional.py:198
 msgid "day is out of range for month"
 msgstr "Tag liegt nicht im Monat."
 
-#: cdedb/i18n_additional.py:178
+#: cdedb/i18n_additional.py:199
 msgid "[<class 'decimal.ConversionSyntax'>]"
 msgstr "Keine Zahl gefunden."
 

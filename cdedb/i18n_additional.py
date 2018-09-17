@@ -171,6 +171,27 @@ I18N_STRINGS = (
     _("LastschriftTransactionStati.cancelled"),
     _("LastschriftTransactionStati.rollback"),
 
+    _("QueryOperators.empty"),
+    _("QueryOperators.nonempty"),
+    _("QueryOperators.equal"),
+    _("QueryOperators.unequal"),
+    _("QueryOperators.oneof"),
+    _("QueryOperators.otherthan"),
+    _("QueryOperators.similar"),
+    _("QueryOperators.dissimilar"),
+    _("QueryOperators.regex"),
+    _("QueryOperators.notregex"),
+    _("QueryOperators.containsall"),
+    _("QueryOperators.containsnone"),
+    _("QueryOperators.containssome"),
+    _("QueryOperators.fuzzy"),
+    _("QueryOperators.less"),
+    _("QueryOperators.lessequal"),
+    _("QueryOperators.between"),
+    _("QueryOperators.outside"),
+    _("QueryOperators.greaterequal"),
+    _("QueryOperators.greater"),
+
     ##
     ## Validation errors
     ##

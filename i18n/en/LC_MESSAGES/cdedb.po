@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-09-17 11:45+0200\n"
+"POT-Creation-Date: 2018-09-17 19:49+0200\n"
 "PO-Revision-Date: 2016-11-24 16:06+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -626,11 +626,91 @@ msgstr ""
 msgid "LastschriftTransactionStati.rollback"
 msgstr ""
 
+#: cdedb/i18n_additional.py:174
+msgid "QueryOperators.empty"
+msgstr ""
+
+#: cdedb/i18n_additional.py:175
+msgid "QueryOperators.nonempty"
+msgstr ""
+
+#: cdedb/i18n_additional.py:176
+msgid "QueryOperators.equal"
+msgstr ""
+
 #: cdedb/i18n_additional.py:177
-msgid "day is out of range for month"
+msgid "QueryOperators.unequal"
 msgstr ""
 
 #: cdedb/i18n_additional.py:178
+msgid "QueryOperators.oneof"
+msgstr ""
+
+#: cdedb/i18n_additional.py:179
+msgid "QueryOperators.otherthan"
+msgstr ""
+
+#: cdedb/i18n_additional.py:180
+msgid "QueryOperators.similar"
+msgstr ""
+
+#: cdedb/i18n_additional.py:181
+msgid "QueryOperators.dissimilar"
+msgstr ""
+
+#: cdedb/i18n_additional.py:182
+msgid "QueryOperators.regex"
+msgstr ""
+
+#: cdedb/i18n_additional.py:183
+msgid "QueryOperators.notregex"
+msgstr ""
+
+#: cdedb/i18n_additional.py:184
+msgid "QueryOperators.containsall"
+msgstr ""
+
+#: cdedb/i18n_additional.py:185
+msgid "QueryOperators.containsnone"
+msgstr ""
+
+#: cdedb/i18n_additional.py:186
+msgid "QueryOperators.containssome"
+msgstr ""
+
+#: cdedb/i18n_additional.py:187
+msgid "QueryOperators.fuzzy"
+msgstr ""
+
+#: cdedb/i18n_additional.py:188
+msgid "QueryOperators.less"
+msgstr ""
+
+#: cdedb/i18n_additional.py:189
+msgid "QueryOperators.lessequal"
+msgstr ""
+
+#: cdedb/i18n_additional.py:190
+msgid "QueryOperators.between"
+msgstr ""
+
+#: cdedb/i18n_additional.py:191
+msgid "QueryOperators.outside"
+msgstr ""
+
+#: cdedb/i18n_additional.py:192
+msgid "QueryOperators.greaterequal"
+msgstr ""
+
+#: cdedb/i18n_additional.py:193
+msgid "QueryOperators.greater"
+msgstr ""
+
+#: cdedb/i18n_additional.py:198
+msgid "day is out of range for month"
+msgstr ""
+
+#: cdedb/i18n_additional.py:199
 msgid "[<class 'decimal.ConversionSyntax'>]"
 msgstr ""
 
@@ -2251,7 +2331,7 @@ msgid "any part: reserve lodger"
 msgstr ""
 
 #: cdedb/frontend/event.py:3072
-msgid "any part lodgement: {field})"
+msgid "any part lodgement: {field}"
 msgstr ""
 
 #: cdedb/frontend/event.py:3081
@@ -2490,5 +2570,8 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "reserve lodger (any part)"
+#~ msgstr ""
+
+#~ msgid "any part lodgement: {field})"
 #~ msgstr ""
 
