@@ -467,9 +467,9 @@
                 }
             }
             var selectize = $filterFieldSelect[0].selectize;
+            selectize.setValue('');
             selectize.clearOptions();
             selectize.addOption(options);
-            selectize.setValue('');
         };
 
         /**
@@ -491,9 +491,9 @@
                 }
             }
             var selectize = $viewFieldSelect[0].selectize;
+            selectize.setValue('');
             selectize.clearOptions();
             selectize.addOption(options);
-            selectize.setValue('');
         };
 
         /**
@@ -525,9 +525,9 @@
                 }
             }
             var selectize = $sortFieldSelect[0].selectize;
+            selectize.setValue('');
             selectize.clearOptions();
             selectize.addOption(options);
-            selectize.setValue('');
         };
 
         /**
