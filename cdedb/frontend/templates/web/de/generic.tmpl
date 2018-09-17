@@ -465,7 +465,7 @@
                 </form>
                 <script type="text/javascript">
                     {
-                        $('#qf_tablist').show();
+                        $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
                         $qf.cdedbQueryForm({"choices" : {{ choices|json }}});
                         $('#tab_link_qf_js')
@@ -543,7 +543,7 @@
                     $('#queryform').submit();
                 });
                 $('#result-container').cdedbMoveToWidePage($('.btn-trigger-wide'));
-                $('#js-button-group').show();
+                $('#js-button-group').css('display', 'none');
             });
         </script>
         <div class="p softhide" id="js-button-group">

@@ -37,18 +37,19 @@
          * -1 if no filterable field is known to be the id field.
          */
         var idField = -1;
-        /**
-         * The jQueryDOM object of the .addviewfield select box (and not it's selectize container)
-         */
+
+        /** The jQueryDOM object of the .addviewfield select box (and not it's selectize container) */
         var $viewFieldSelect = $element.find('.addviewfield');
-        /**
-         * The jQueryDOM object of the .addsortfield select box (and not it's selectize container)
-         */
+        /** The jQueryDOM object of the .addsortfield select box (and not it's selectize container) */
         var $sortFieldSelect = $element.find('.addsortfield');
-        /**
-         * The jQueryDOM object of the .addfilter select box (and not it's selectize container)
-         */
+        /** The jQueryDOM object of the .addfilter select box (and not it's selectize container) */
         var $filterFieldSelect = $element.find('.addfilter');
+        /** The jQueryDOM object of the container for filter rows */
+        var $filterFieldList = $element.find('.filterfield-list');
+        /** The jQueryDOM object of the container for view field entries */
+        var $viewFieldList = $element.find('.viewfield-list');
+        /** The jQueryDOM object of the container for sort rows */
+        var $sortFieldList = $element.find('.sortfield-list');
 
         /* Scan form rows and initialize field list */
         $element.find('.query_field').each(function() {
@@ -114,7 +115,7 @@
             $filterFieldSelect.change(function() {
                 if ($(this).val() === '')
                     return;
-                obj.addFilterRow($(this).val());
+                obj.addFilterRow($(this).val(), true);
                 obj.refreshFilterFieldSelect();
             });
             $filterFieldSelect.selectize({
@@ -145,7 +146,7 @@
          *
          * @param number (int) Id of the field in fieldList
          */
-        this.addFilterRow = function(number) {
+        this.addFilterRow = function(number, focus) {
             var f = fieldList[number];
 
             var $button = $('<button></button>', {
@@ -190,8 +191,10 @@
             if (f.error)
                 $item.append($('<div></div>',{'class':'input-error-block'}).html(f.error));
 
-            $element.find('.filterfield-list').append($item);
-            $opselector.focus();
+            $filterFieldList.append($item);
+            if (focus) {
+                $opselector.focus();
+            }
 
             this.updateFilterValueInput(number, $opselector.val(), $fieldbox)
         };
@@ -310,9 +313,9 @@
                     .val(values[1]);
 
                 if (f.type == 'date')
-                    $i1.add($i2).attr('placeholder','YYYY-MM-DD').attr('type', 'date');
+                    $($i1[0], $i2[0]).attr('placeholder','YYYY-MM-DD').attr('type', 'date');
                 else if (f.type == 'datetime')
-                    $i1.add($i2).attr('placeholder','YYYY-MM-DDThh:mm').attr('type', 'datetime-local');
+                    $($i1[0], $i2[0]).attr('placeholder','YYYY-MM-DDThh:mm').attr('type', 'datetime-local');
 
                 $i1.add($i2).change(function() {
                     var val = escape($i1.val()) + ',' + escape($i2.val());
@@ -392,7 +395,7 @@
                     .text(f.name)
                     .append($button);
 
-            $element.find('.viewfield-list').append($box);
+            $viewFieldList.append($box);
         };
 
         /**
@@ -441,7 +444,7 @@
                     .append($sortselector).append('&ensp;')
                     .append($button);
 
-            $element.find('.sortfield-list').append($item);
+            $sortFieldList.append($item);
         };
 
 
@@ -507,10 +510,10 @@
 
             // Check if maximum number of sortfields is reached
             if (numSortFields >= sortInputs.length) {
-                $sortFieldSelect.parent().hide();
+                $sortFieldSelect.parent().css('display', 'none');
                 return;
             } else {
-                $sortFieldSelect.parent().show();
+                $sortFieldSelect.parent().css('display', '');
             }
 
             // Add all valid and not listed fields to selectize.js-selectbox
@@ -596,7 +599,7 @@
             // Set filter value in nonjs-form to id list
             f.input_filter_value.val(ids.join(settings.separator));
             // Add filter rot to js-form
-            this.addFilterRow(idField)
+            this.addFilterRow(idField, false)
         };
 
         /**
@@ -607,16 +610,16 @@
          */
         this.initFromForm = function() {
             // Clear formular
-            $element.find('.filterfield-list').children().detach();
-            $element.find('.viewfield-list').children().detach();
-            $element.find('.sortfield-list').children().detach();
+            $filterFieldList.children().detach();
+            $viewFieldList.children().detach();
+            $sortFieldList.children().detach();
 
             // Add currently selected and filtered fields to dynamic lists
             for (var i = 0; i < fieldList.length; i++) {
                 var f = fieldList[i];
 
                 if (f.input_filter_op.val() !== '')
-                    this.addFilterRow(i);
+                    this.addFilterRow(i, false);
 
                 if (f.input_select && f.input_select.prop('checked'))
                     this.addViewRow(i);
@@ -673,7 +676,7 @@
                 if (parameters[f.input_filter_op.attr('name')]) {
                     f.input_filter_op.val(parameters[f.input_filter_op.attr('name')]);
                     f.input_filter_value.val(decodeURIComponent(parameters[f.input_filter_value.attr('name')]));
-                    this.addFilterRow(i);
+                    this.addFilterRow(i, false);
                 }
                 if (f.input_select && parameters[f.input_select.attr('name')] == 'True') {
                     f.input_select.prop('checked',true);
@@ -725,26 +728,24 @@
                 //Prevent default handler
                 e.preventDefault();
                 //Gather input fields that will be disabled in a jQuery object
-                var $toDisable = $();
+                var toDisable = [];
                 $(this).find('.query_field').each(function() {
                     var input_op = $(this).find('.filter-op');
                     if (input_op.val() === '') {
-                        $toDisable = $toDisable
-                            .add(input_op)
-                            .add($(this).find('.filter-value'));
+                        toDisable.push(input_op[0]);
+                        toDisable.push($(this).find('.filter-value'));
                     }
                 });
                 $(this).find('.query_sort').each(function() {
                     var input_field = $(this).find('.sort-field');
                     if (input_field.val() === '') {
-                        $toDisable = $toDisable
-                            .add(input_field)
-                            .add($(this).find('.sort-order'));
+                        toDisable.push(input_field[0]);
+                        toDisable.push($(this).find('.sort-order'));
                     }
                 });
 
                 // Disable them
-                $toDisable.attr("disabled", "disabled");
+                $(toDisable).attr("disabled", "disabled");
 
                 // Now submit the form
                 // Important: We're using the DOM object's handler to prevent calling our jQuery handler recursively
@@ -785,18 +786,18 @@
         
         // Construct wide page container
         var $widecontainer = $('<div></div>',{'class': 'wide-content-page'});
-        $widecontainer.hide();
+        $widecontainer.css('display', 'none');
         $('#maincontainer').after($widecontainer);
         
         // Add event handlers
         $triggers.click(function() {
             if (!$(this).hasClass('active')) {
                 $widecontainer.append($box.contents());
-                $widecontainer.show();
+                $widecontainer.css('display', '');
                 $triggers.addClass('active');
             } else {
                 $box.append($widecontainer.contents());
-                $widecontainer.hide();
+                $widecontainer.css('display', 'none');
                 $triggers.removeClass('active');
             }
         });

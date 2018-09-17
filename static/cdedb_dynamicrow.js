@@ -93,7 +93,7 @@
                     .click(function() {
                         obj.addRow();
                     })
-                    .show();
+                    .css('display', 'block');
             
             $element.find('.drow-row' + class_sfx).each(function() {
                 var $row = $(this);
@@ -116,7 +116,7 @@
             $row.find('.drow-indicator' + class_sfx).prop("checked", true);
             
             addDeleteButton($row, true);            
-            $row.css('display', ''); /* instead of show() to preserve display attribute */
+            $row.css('display', ''); /* instead of show() to preserve display attribute and be faster */
             $prototype.before($row);
             $row.find('.drow-input' + class_sfx).first().focus();
             settings.callback.call($row);

@@ -81,7 +81,7 @@
                 $li.addClass('list-group-item-danger');
             }
             $box.parent().after($button);
-            $box.parent().hide();
+            $box.parent().css('display', 'none');
         });
     };
 })(jQuery);
