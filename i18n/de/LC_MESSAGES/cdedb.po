@@ -1502,7 +1502,7 @@ msgstr "Feld ist nicht zur Hauswunschabfrage geeignet."
 
 #: cdedb/backend/event.py:606
 msgid "Unfit field for reserve_field"
-msgstr "Feld ist nicht zur Reserveabfrage geeignet."
+msgstr "Feld ist nicht zur Isomattenabfrage geeignet."
 
 #: cdedb/backend/event.py:639 cdedb/backend/event.py:1234
 msgid "Non-existing parts specified."
@@ -2270,7 +2270,7 @@ msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
 
 #: cdedb/frontend/event.py:2463
 msgid "Too many reserve lodgers used."
-msgstr "Zu viele Reserveplätze belegt."
+msgstr "Zu viele Isomattenplätze belegt."
 
 #: cdedb/frontend/event.py:2616
 msgid "Not deleting a non-empty lodgement."
@@ -2322,7 +2322,7 @@ msgstr "{title}: Unterkunft"
 
 #: cdedb/frontend/event.py:3049
 msgid "{title}: reserve lodger"
-msgstr "{title}: Reserveplatz"
+msgstr "{title}: Isomattenplatz"
 
 #: cdedb/frontend/event.py:3054
 msgid "{title} lodgement: {field}"
@@ -2338,7 +2338,7 @@ msgstr "Bel. Teil: Unterkunft"
 
 #: cdedb/frontend/event.py:3067
 msgid "any part: reserve lodger"
-msgstr "Bel. Teil: Reserveplatz"
+msgstr "Bel. Teil: Isomattenplatz"
 
 #: cdedb/frontend/event.py:3072
 msgid "any part lodgement: {field}"
@@ -2354,7 +2354,7 @@ msgstr "Unterkunft"
 
 #: cdedb/frontend/event.py:3085
 msgid "reserve lodger"
-msgstr "Reserveplatz"
+msgstr "Isomattenplatz"
 
 #: cdedb/frontend/event.py:3089
 msgid "lodgement: {field}"

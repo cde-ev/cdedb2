@@ -114,7 +114,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% call form_input_optional("part{}.is_reserve".format(part_id),
                                         anid="part{}_is_reserve".format(part_id)) %}
                 <div class="checkbox">
-                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label="Reserveplatz",
+                    {{ util.input_checkbox(name="part{}.is_reserve".format(part_id), label="Isomattenplatz",
                                            anid="part{}_is_reserve".format(part_id)) }}
                 </div>
             {% endcall %}

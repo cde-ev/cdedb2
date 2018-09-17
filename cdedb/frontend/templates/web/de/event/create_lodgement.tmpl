@@ -21,7 +21,7 @@
           class="form-horizontal">
         {{ util.form_input_text(name="moniker", label="Bezeichnung") }}
         {{ util.form_input_text(name="capacity", label="normale Plätze", type="number") }}
-        {{ util.form_input_text(name="reserve", label="Reserveplätze", type="number") }}
+        {{ util.form_input_text(name="reserve", label="Isomattenplätze", type="number") }}
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="5") }}
         {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("event/lodgements")) }}
     </form>
