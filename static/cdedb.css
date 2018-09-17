@@ -892,6 +892,9 @@ tr td.filtered_column {
     /* A div containing buttons, which may be wrapped with nice spacing in between */
     margin-bottom: -8px;
 }
+.button-par.p {
+    margin-bottom: 2px;
+}
 .button-par .btn {
     margin-bottom: 8px;
 }
