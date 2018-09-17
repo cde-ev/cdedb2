@@ -284,6 +284,36 @@ h1.title {
     }
 }
 
+/* Tabs in Panel Header */
+.panel-heading {
+    position: relative;
+}
+.panel-heading .nav-tabs {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border-bottom: none;
+}
+.panel-heading .nav-tabs>li>a {
+    padding: 6px 10px;
+    border-bottom: none;
+}
+.panel-heading .nav-tabs>li.active>a {
+    border-bottom: none;
+}
+.panel-heading .nav-tabs>li>a:hover {
+    background: rgba(240,240,240,0.3);
+    border-bottom: none;
+}
+.panel-primary .panel-heading .nav-tabs>li>a {
+    color: #fff;
+}
+.panel-primary .panel-heading .nav-tabs>li.active>a {
+    background: #fff;
+    color: #337ab7;
+}
+
+
 /* Helper classes */
 .float-along {
     display: block;

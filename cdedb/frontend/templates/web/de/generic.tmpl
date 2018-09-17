@@ -271,192 +271,213 @@
 
 {% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
                       heading='Suchmaske') %}
-    {% call util.bootstrap_panel(title=heading, icon="search", aclass="panel-primary") %}
-    {% with OPERATOR_LABELS = {1: "ist leer",
-                               2: "ist nicht leer",
-                               3: "ist gleich",
-                               4: "ist ungleich",
-                               5: "ist eines aus",
-                               6: "ist keines aus",
-                               10: "ist ähnlich zu",
-                               11: "ist nicht ähnlich zu",
-                               12: "passt auf RegEx",
-                               13: "passt nicht auf RegEx",
-                               14: "enthält alle aus",
-                               15: "enthält keines aus",
-                               16: "enthält min. eines aus",
-                               17: "fuzzy Vergleich",
-                               20: "ist kleiner",
-                               21: "ist kleinergleich",
-                               22: "liegt zwischen",
-                               23: "liegt nicht zwischen",
-                               24: "ist größergleich",
-                               25: "ist größer",} %}
-        <form action="{{ target|e }}" method="GET" id="queryform">
-            {{ util.input_hidden(name="is_search", value=True) }}
-            <!-- Non-JS form -->
-            <p class="queryform-nojs">
-                <button type="submit" class="btn btn-primary">{{ util.make_icon('search') }} Suche</button>
-                <span class="btn-group">
-                    <button type="submit" class="btn btn-default" name="download" value="csv">
-                        {{ util.make_icon('download') }} CSV-Datei
-                    </button>
-                    <button type="submit" class="btn btn-default" name="download" value="json">
-                        {{ util.make_icon('download') }} JSON-Datei
-                    </button>
-                </span>
-            </p>
-            <div class="row queryform-nojs">
-                <div class="col-lg-7">
-                    <table class="query-form-cols table table-superdense">
-                        <thead>
-                            <tr>
-                                <th>{{ util.make_icon('eye-open', title="Feld anzeigen") }}</th>
-                                <th>Felder</th>
-                                <th colspan="2">Filter</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for field in spec %}
-                            <tr class="query_field {% if field in errors %}errorInput{% endif %}
-                                       {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
-                                    data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
-                                <td>
-                                    {# multi-fields are not reliably selectable, so we disable selection #}
-                                    {% if ',' not in field and field not in selection_blacklist %}
-                                        {% with name = "qsel_{}".format(field) %}
-                                            {% if output_selection %}
-                                                {{ util.input_checkbox(name, aclass='outputSelector', value=True) }}
-                                            {% else %}
-                                                {{ util.input_hidden(name, value=True) }}
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% endif %}
-                                </td>
-                                <td class="name">{{ titles.get(field, field)|e }}</td>
-                                <td>
-                                    {% with name = "qop_{}".format(field) %}
-                                        {% with theid = "qop_{}".format(field) %}
-                                            {# jinja does not support list comprehension ... #}
-                                            {% set myentries = [] %}
-                                            {% for op in query_mod.VALID_QUERY_OPERATORS[spec[field]] %}
-                                                {% if field not in choices
-                                                        or op in query_mod.SELECTION_VALUE_OPERATORS %}
-                                                    {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
-                                                {% endif %}
-                                            {% endfor %}
-                                            {{ util.input_select(name, entries=myentries, nulloption=True,
-                                                                 aclass='form-control input-sm filter-op', anid=theid) }}
-                                        {% endwith %}
-                                    {% endwith %}
-                                </td>
-                                <td>
-                                    {% with name = "qval_{}".format(field) %}
-                                        {% if spec[field] == 'bool' %}
-                                            {# Boolean fields are the only ones that don't need a text input field,
-                                               for none of their filter operators. So we can provide a select box
-                                               for none-javascript users. #}
-                                            {{ util.input_select(name, anid="qinput_{}".format(field),
-                                                    aclass='form-control input-sm filter-value',
-                                                    entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
-                                        {% else %}
-                                            {{ util.input_text(name, anid="qinput_{}".format(field),
-                                                    aclass='form-control input-sm filter-value') }}
-                                        {% endif %}
-                                        {{ util.output_errors(field, True) }}
-                                    {% endwith %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="col-lg-5">
-                    <table class="query-form-sort table table-superdense">
-                        <thead>
-                            <tr><th colspan="3">Sortierung</th></tr>
-                        </thead>
-                        <tbody>
-                        {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
-                                               ("3.", "qord_tertiary"))%}
-                            <tr class="query_sort">
-                                <td> {{ title|e }} </td>
-                                <td>
-                                    {# jinja does not support list comprehension ... #}
-                                    {% set myentries = [] %}
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ util.make_icon('search') }} {{ heading|e }}</h3>
+
+            <!-- Tabs to chose between NonJS- and JS-form -->
+            <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
+                <li role="presentation" class="active">
+                    <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab">
+                        {{ util.make_icon('list') }} Tabellarisch
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
+                        {{ util.make_icon('star-empty') }} Magisch
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="panel-body">
+
+            {% with OPERATOR_LABELS = {1: "ist leer",
+                                       2: "ist nicht leer",
+                                       3: "ist gleich",
+                                       4: "ist ungleich",
+                                       5: "ist eines aus",
+                                       6: "ist keines aus",
+                                       10: "ist ähnlich zu",
+                                       11: "ist nicht ähnlich zu",
+                                       12: "passt auf RegEx",
+                                       13: "passt nicht auf RegEx",
+                                       14: "enthält alle aus",
+                                       15: "enthält keines aus",
+                                       16: "enthält min. eines aus",
+                                       17: "fuzzy Vergleich",
+                                       20: "ist kleiner",
+                                       21: "ist kleinergleich",
+                                       22: "liegt zwischen",
+                                       23: "liegt nicht zwischen",
+                                       24: "ist größergleich",
+                                       25: "ist größer",} %}
+                <form action="{{ target|e }}" method="GET" id="queryform">
+                    {{ util.input_hidden(name="is_search", value=True) }}
+
+                    <div class="tab-content" id="queryform_tabcontent">
+                        <!-- Non-JS form -->
+                        <div class="tab-pane active row" role="tabpanel" id="tab_qf_nojs">
+                            <div class="col-lg-7">
+                                <table class="query-form-cols table table-superdense">
+                                <thead>
+                                    <tr>
+                                        <th>{{ util.make_icon('eye-open', title="Feld anzeigen") }}</th>
+                                        <th>Felder</th>
+                                        <th colspan="2">Filter</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     {% for field in spec %}
-                                        {% if ',' not in field %}
-                                            {{ myentries.append((field, titles.get(field,field)))|e }}
-                                        {% endif %}
+                                        <tr class="query_field {% if field in errors %}errorInput{% endif %}
+                                                   {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
+                                                data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
+                                            <td>
+                                                {# multi-fields are not reliably selectable, so we disable selection #}
+                                                {% if ',' not in field and field not in selection_blacklist %}
+                                                    {% with name = "qsel_{}".format(field) %}
+                                                        {% if output_selection %}
+                                                            {{ util.input_checkbox(name, aclass='outputSelector', value=True) }}
+                                                        {% else %}
+                                                            {{ util.input_hidden(name, value=True) }}
+                                                        {% endif %}
+                                                    {% endwith %}
+                                                {% endif %}
+                                            </td>
+                                            <td class="name">{{ titles.get(field, field)|e }}</td>
+                                            <td>
+                                                {% with name = "qop_{}".format(field) %}
+                                                    {% with theid = "qop_{}".format(field) %}
+                                                        {# jinja does not support list comprehension ... #}
+                                                        {% set myentries = [] %}
+                                                        {% for op in query_mod.VALID_QUERY_OPERATORS[spec[field]] %}
+                                                            {% if field not in choices
+                                                                    or op in query_mod.SELECTION_VALUE_OPERATORS %}
+                                                                {{ myentries.append((op.value, OPERATOR_LABELS[op.value]))|e }}
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                        {{ util.input_select(name, entries=myentries, nulloption=True,
+                                                                             aclass='form-control input-sm filter-op', anid=theid) }}
+                                                    {% endwith %}
+                                                {% endwith %}
+                                            </td>
+                                            <td>
+                                                {% with name = "qval_{}".format(field) %}
+                                                    {% if spec[field] == 'bool' %}
+                                                        {# Boolean fields are the only ones that don't need a text input field,
+                                                           for none of their filter operators. So we can provide a select box
+                                                           for none-javascript users. #}
+                                                        {{ util.input_select(name, anid="qinput_{}".format(field),
+                                                                aclass='form-control input-sm filter-value',
+                                                                entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
+                                                    {% else %}
+                                                        {{ util.input_text(name, anid="qinput_{}".format(field),
+                                                                aclass='form-control input-sm filter-value') }}
+                                                    {% endif %}
+                                                    {{ util.output_errors(field, True) }}
+                                                {% endwith %}
+                                            </td>
+                                        </tr>
                                     {% endfor %}
-                                    {{ util.input_select(name, entries=myentries, nulloption=True,
-                                                         aclass="form-control input-sm sort-field" )}}
-                                </td>
-                                <td>
-                                    {{ util.input_select(name + "_ascending", defaultvalue=True,
-                                                         aclass="form-control input-sm sort-order",
-                                                         entries=((True, "A→Z"), (False, "Z→A"))) }}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                                </tbody>
+                                </table>
+                            </div>
+                            <div class="col-lg-5">
+                                <table class="query-form-sort table table-superdense">
+                                <thead>
+                                    <tr><th colspan="3">Sortierung</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
+                                                           ("3.", "qord_tertiary"))%}
+                                        <tr class="query_sort">
+                                            <td> {{ title|e }} </td>
+                                            <td>
+                                                {# jinja does not support list comprehension ... #}
+                                                {% set myentries = [] %}
+                                                {% for field in spec %}
+                                                    {% if ',' not in field %}
+                                                        {{ myentries.append((field, titles.get(field,field)))|e }}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {{ util.input_select(name, entries=myentries, nulloption=True,
+                                                                     aclass="form-control input-sm sort-field" )}}
+                                            </td>
+                                            <td>
+                                                {{ util.input_select(name + "_ascending", defaultvalue=True,
+                                                                     aclass="form-control input-sm sort-order",
+                                                                     entries=((True, "A→Z"), (False, "Z→A"))) }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                </table>
+                            </div>
+                        </div>
 
 
-            <!-- JS Form -->
-            <div class="queryform-js softhide">
-                <h4 class="filter-title nosp">{{ util.make_icon('filter') }} Filter</h4>
-                <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
-                <div class="input-group has-success queryform-add">
-                    <span class="input-group-addon">{{ util.make_icon('plus', title="Filter hinzufügen") }}</span>
-                    <select class="form-control input-sm input-slim addfilter" aria-label="Gefiltertes Feld"></select>
-                </div>
-                <div class="row">
-                    <div class="col-sm-6">
-                        <h4 class="filter-title">{{ util.make_icon('eye-open') }} Angezeigte Felder</h4>
-                        <p class="viewfield-list"></p>
-                        <div class="input-group has-success">
-                            <span class="input-group-addon">
-                                {{ util.make_icon('plus', title="Angezeigtes Feld hinzufügen") }}
-                            </span>
-                            <select class="form-control input-sm addviewfield"
-                                    aria-label="Neues Feld"></select>
+                        <!-- JS Form -->
+                        <div class="tab-pane" role="tabpanel" id="tab_qf_js">
+                            <h4 class="filter-title nosp">{{ util.make_icon('filter') }} Filter</h4>
+                            <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
+                            <div class="input-group has-success queryform-add">
+                                <span class="input-group-addon">{{ util.make_icon('plus', title="Filter hinzufügen") }}</span>
+                                <select class="form-control input-sm input-slim addfilter" aria-label="Gefiltertes Feld"></select>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <h4 class="filter-title">{{ util.make_icon('eye-open') }} Angezeigte Felder</h4>
+                                    <p class="viewfield-list"></p>
+                                    <div class="input-group has-success">
+                                        <span class="input-group-addon">
+                                            {{ util.make_icon('plus', title="Angezeigtes Feld hinzufügen") }}
+                                        </span>
+                                        <select class="form-control input-sm addviewfield"
+                                                aria-label="Neues Feld"></select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <h4 class="filter-title">{{ util.make_icon('sort-by-alphabet') }} Sortierung</h4>
+                                    <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
+                                    <div class="input-group has-success queryform-add">
+                                        <span class="input-group-addon">
+                                            {{ util.make_icon('plus', title="Sortierkriterium hinzufügen") }}
+                                        </span>
+                                        <select class="form-control input-sm addsortfield"
+                                                aria-label="Neues Sortierkriterium"></select>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col-sm-6">
-                        <h4 class="filter-title">{{ util.make_icon('sort-by-alphabet') }} Sortierung</h4>
-                        <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
-                        <div class="input-group has-success queryform-add">
-                            <span class="input-group-addon">
-                                {{ util.make_icon('plus', title="Sortierkriterium hinzufügen") }}
-                            </span>
-                            <select class="form-control input-sm addsortfield"
-                                    aria-label="Neues Sortierkriterium"></select>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <p class="pull-right nosp">
-                <button type="submit" class="btn btn-primary">{{ util.make_icon('search') }} Suche</button>
-                <span class="btn-group">
-                    <button type="submit" class="btn btn-default" name="download" value="csv">
-                        {{ util.make_icon('download') }} CSV-Datei
-                    </button>
-                    <button type="submit" class="btn btn-default" name="download" value="json">
-                        {{ util.make_icon('download') }} JSON-Datei
-                    </button>
-                </span>
-            </p>
-            {{ util.output_errors('query') }}
-        </form>
-        <script type="text/javascript">
-            $('#queryform').cdedbQueryForm({"choices" : {{ choices|json }}});
-        </script>
-    {% endwith %}
-    {% endcall %}
+                    <p class="pull-right nosp">
+                        <button type="submit" class="btn btn-primary">{{ util.make_icon('search') }} Suche</button>
+                        <span class="btn-group">
+                            <button type="submit" class="btn btn-default" name="download" value="csv">
+                                {{ util.make_icon('download') }} CSV-Datei
+                            </button>
+                            <button type="submit" class="btn btn-default" name="download" value="json">
+                                {{ util.make_icon('download') }} JSON-Datei
+                            </button>
+                        </span>
+                    </p>
+                    {{ util.output_errors('query') }}
+                </form>
+                <script type="text/javascript">
+                    {
+                        $('#qf_tablist').show();
+                        var $qf = $('#queryform');
+                        $qf.cdedbQueryForm({"choices" : {{ choices|json }}});
+                        $('#tab_link_qf_js')
+                            .on('show.bs.tab', function() {
+                                $qf.data('cdedbQueryForm').initFromForm();
+                            })
+                            .tab('show');
+                    }
+                </script>
+            {% endwith %}
+        </div>
+    </div>
 {% endmacro %}
 
 {% macro place_default_queries(target, queries, titles, title="Standardabfragen") %}

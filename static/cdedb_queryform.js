@@ -92,46 +92,14 @@
 
         /* Member functions */
         /**
-         * Init function.
+         * Initialize add*field select boxes.
          *
-         * Hides non-js formular, shows our nice dynamic form and adds predefined filters (and selected fields) to it.
-         * Enables Event handlers for select boxes.
+         * Enables Event handlers and selectize.js for add*field select boxes and uses the refresh*() functions to add
+         * available options.
          */
-        this.init = function() {
-            // Hide non-js form, show js form
-            $element.find('.queryform-nojs').hide();
-            $element.find('.queryform-js').show();
-
-            // Add currently selected and filtered fields to dynamic lists
-            for (var i = 0; i < fieldList.length; i++) {
-                var f = fieldList[i];
-
-                if (f.input_filter_op.val() !== '')
-                    this.addFilterRow(i);
-
-                if (f.input_select && f.input_select.prop('checked'))
-                    this.addViewRow(i);
-            }
-            // Add current sort fields
-            for (var i = 0; i < sortInputs.length; i++) {
-                if (sortInputs[i].input_field.val() !== '') {
-                    //Search field in fieldList
-                    var field = -1;
-                    for (var j = 0; j < fieldList.length; j++) {
-                        if (fieldList[j].id == sortInputs[i].input_field.val()) {
-                            field = j;
-                            break;
-                        }
-                    }
-                    if (field == -1)
-                        continue;
-
-                    // Add field to sort list
-                    this.addSortRow(field, sortInputs[i].input_order.val());
-                }
-            }
-
-            // Eventhandler, list update and selectize.js for add*field select boxes
+        this.initFieldSelects = function() {
+            /* Add event handler, and selectize.js for add*field select boxes */
+            /* No refreshs/filling with options for now, as they are done later by init() */
             $viewFieldSelect.change(function() {
                 if ($(this).val() === '')
                     return;
@@ -142,7 +110,6 @@
                 'placeholder': '– Angezeigtes Feld hinzufügen –',
                 copyClassesToDropdown: false
             });
-            this.refreshViewFieldSelect();
 
             $filterFieldSelect.change(function() {
                 if ($(this).val() === '')
@@ -154,7 +121,6 @@
                 'placeholder': '– Filter hinzufügen –',
                 copyClassesToDropdown: false
             });
-            this.refreshFilterFieldSelect();
 
             $sortFieldSelect.change(function() {
                 if ($(this).val() === '')
@@ -167,7 +133,9 @@
                 'placeholder': '– Sortierung hinzufügen –',
                 copyClassesToDropdown: false
             });
-            this.updateSortInputs();
+
+            this.refreshViewFieldSelect();
+            this.refreshFilterFieldSelect();
             this.refreshSortFieldSelect();
         };
 
@@ -424,7 +392,6 @@
                     .text(f.name)
                     .append($button);
 
-            this.refreshViewFieldSelect();
             $element.find('.viewfield-list').append($box);
         };
 
@@ -633,6 +600,53 @@
         };
 
         /**
+         * Public API: Reset fancy js query form from the current state of the non-js query form
+         *
+         * This method is automatically called, when initializing this QueryForm object with .init(). It can be called
+         * afterwards, if manual changes to the non-js form are expected.
+         */
+        this.initFromForm = function() {
+            // Clear formular
+            $element.find('.filterfield-list').children().detach();
+            $element.find('.viewfield-list').children().detach();
+            $element.find('.sortfield-list').children().detach();
+
+            // Add currently selected and filtered fields to dynamic lists
+            for (var i = 0; i < fieldList.length; i++) {
+                var f = fieldList[i];
+
+                if (f.input_filter_op.val() !== '')
+                    this.addFilterRow(i);
+
+                if (f.input_select && f.input_select.prop('checked'))
+                    this.addViewRow(i);
+            }
+            // Add current sort fields
+            for (var i = 0; i < sortInputs.length; i++) {
+                if (sortInputs[i].input_field.val() !== '') {
+                    //Search field in fieldList
+                    var field = -1;
+                    for (var j = 0; j < fieldList.length; j++) {
+                        if (fieldList[j].id == sortInputs[i].input_field.val()) {
+                            field = j;
+                            break;
+                        }
+                    }
+                    if (field == -1)
+                        continue;
+
+                    // Add field to sort list
+                    this.addSortRow(field, sortInputs[i].input_order.val());
+                }
+            }
+
+            this.refreshViewFieldSelect();
+            this.refreshFilterFieldSelect();
+            this.updateSortInputs();
+            this.refreshSortFieldSelect();
+        };
+
+        /**
          * Public API: Reset query form to parameters from query url.
          * @param url The query url to read query parameters from. The GET-parameter string is sufficient; anything
          *            before the first question mark will be stripped.
@@ -666,6 +680,8 @@
                     this.addViewRow(i);
                 }
             }
+            this.refreshViewFieldSelect();
+            this.refreshFilterFieldSelect();
             // Scan for sort fields
             for (var i = 0; i < sortInputs.length; i++) {
                 if (parameters[sortInputs[i].input_field.attr('name')]) {
@@ -684,8 +700,8 @@
                     this.addSortRow(field, sortInputs[i].input_order.val());
                 }
             }
-            obj.updateSortInputs();
-            obj.refreshSortFieldSelect();
+            this.updateSortInputs();
+            this.refreshSortFieldSelect();
         }
     };
 
@@ -751,7 +767,7 @@
                 }
             });
 
-            obj.init();
+            obj.initFieldSelects();
         });
         return this;
     };
