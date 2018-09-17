@@ -11,6 +11,7 @@
             choices : {},
             separator : ',',
             escapechar : '\\\\' //double escaped backslash for usage in regex
+            // TODO add translation dictionary and translate german strings
         }, options || {});
         /**
          * List of all data fields listed in the query form. Each element has the following attributes:
@@ -179,23 +180,30 @@
         this.addFilterRow = function(number) {
             var f = fieldList[number];
 
-            var $button = $('<button></button>', {'class':"btn btn-sm btn-danger pull-right",'type':"button"})
-                    .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
-                    .click(function() {
-                        f.input_filter_op.val('');
-                        f.input_filter_value.val('');
-                        $(this).parent().detach();
-                        obj.refreshFilterFieldSelect();
-                    });
+            var $button = $('<button></button>', {
+                'class':"btn btn-sm btn-danger pull-right",
+                'type':"button",
+                'title':"Filter entfernen"
+            })
+                .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
+                .click(function() {
+                    f.input_filter_op.val('');
+                    f.input_filter_value.val('');
+                    $(this).parent().detach();
+                    obj.refreshFilterFieldSelect();
+                });
             var $fieldbox = $('<span></span>');
-            var $opselector = $('<select></select>', {'class':"form-control input-sm input-slim"})
-                    .append(f.input_filter_op.children('option').slice(1).clone())
-                    .change(function() {
-                        f.input_filter_op.val($(this).val());
-                        f.error = null;
-                        $(this).siblings('.input-error-block').detach();
-                        obj.updateFilterValueInput(number,$(this).val(),$fieldbox);
-                    });
+            var $opselector = $('<select></select>', {
+                'class':"form-control input-sm input-slim",
+                'aria-label': "Filter-Operation"
+            })
+                .append(f.input_filter_op.children('option').slice(1).clone())
+                .change(function() {
+                    f.input_filter_op.val($(this).val());
+                    f.error = null;
+                    $(this).siblings('.input-error-block').detach();
+                    obj.updateFilterValueInput(number,$(this).val(),$fieldbox);
+                });
             // Initially sync operator select
             if (f.input_filter_op.val() !== '')
                 $opselector.val(f.input_filter_op.val());
@@ -203,11 +211,14 @@
                 f.input_filter_op.val($opselector.val());
 
 
-            var $item = $('<li></li>',{'class':"list-group-item queryform-filterbox",'data-id':number})
-                    .append(f.name).append('&ensp;')
-                    .append($opselector).append('&ensp;')
-                    .append($fieldbox)
-                    .append($button);
+            var $item = $('<li></li>',{
+                'class':"list-group-item queryform-filterbox",
+                'data-id': number
+            })
+                .append(f.name).append('&ensp;')
+                .append($opselector).append('&ensp;')
+                .append($fieldbox)
+                .append($button);
             if (f.error)
                 $item.append($('<div></div>',{'class':'input-error-block'}).html(f.error));
 
@@ -260,7 +271,11 @@
                 };
 
                 if (f.type == 'bool' || f.type == 'list') {
-                    var $s = $('<select>',{class : "form-control input-sm input-slim", type: inputTypes[f.type]})
+                    var $s = $('<select>',{
+                        'class' : "form-control input-sm input-slim",
+                        'type': inputTypes[f.type],
+                        'aria-label': "Vergleichswert"
+                    })
                             .change(changeFunction);
                     if (f.type == 'list') {
                         for (var i in f.choices)
@@ -279,9 +294,13 @@
                     if (f.type == 'list')
                         $s.selectize();
                 } else {
-                    $i = $('<input>',{'class':"form-control input-sm input-slim", 'type': inputTypes[f.type]})
-                            .change(changeFunction)
-                            .val(f.input_filter_value.val());
+                    $i = $('<input>',{
+                        'class': "form-control input-sm input-slim",
+                        'type': inputTypes[f.type],
+                        'aria-label': "Vergleichswert"
+                    })
+                        .change(changeFunction)
+                        .val(f.input_filter_value.val());
                     if (f.type == 'date')
                         $i.attr('placeholder','YYYY-MM-DD');
                     else if (f.type == 'datetime')
@@ -309,10 +328,18 @@
                 else
                     values=["",""];
 
-                var $i1 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
-                            .val(values[0]);
-                var $i2 = $('<input>',{'class' : "form-control input-sm input-slim", 'type': 'text'})
-                            .val(values[1]);
+                var $i1 = $('<input>',{
+                    'class' : "form-control input-sm input-slim",
+                    'type': 'text',
+                    'aria-label': "Bereichs-Anfang"
+                })
+                    .val(values[0]);
+                var $i2 = $('<input>',{
+                    'class' : "form-control input-sm input-slim",
+                    'type': 'text',
+                    'aria-label': "Bereichs-Ende"
+                })
+                    .val(values[1]);
 
                 if (f.type == 'date')
                     $i1.add($i2).attr('placeholder','YYYY-MM-DD').attr('type', 'date');
@@ -341,12 +368,16 @@
                     'str' : '<wert>,<wert>,…',
                     'float' : '<wert>,<wert>,…'};
 
-                var $i = $('<input>',{'class' : "form-control input-sm input-slim",
-                             'type': 'text', placeholder: placeholders[f.type]})
-                        .change(function() { f.input_filter_value.val($(this).val()); })
-                        .attr('size','40')
-                        .val(f.input_filter_value.val())
-                        .appendTo($fieldbox);
+                var $i = $('<input>',{
+                    'class' : "form-control input-sm input-slim",
+                    'type': 'text',
+                    'placeholder': placeholders[f.type],
+                    'aria-label': "Vergleichswerte"
+                })
+                    .change(function() { f.input_filter_value.val($(this).val()); })
+                    .attr('size','40')
+                    .val(f.input_filter_value.val())
+                    .appendTo($fieldbox);
 
                 if (f.type == 'list') {
                     var options = [];
@@ -374,17 +405,21 @@
                 return;
             }
 
-            // Check hidden checkbox representing the actual state
+            // Tick hidden checkbox representing the actual state
             f.input_select.prop('checked',true);
 
             // Add box to the dynamic list
-            var $button = $('<button></button>', {'class':"btn btn-xs btn-danger",'type':"button"})
-                    .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
-                    .click(function() {
-                        f.input_select.prop('checked',false);
-                        $(this).parent().detach();
-                        obj.refreshViewFieldSelect();
-                    });
+            var $button = $('<button></button>', {
+                'class': "btn btn-xs btn-danger",
+                'type': "button",
+                'title': "Feld entfernen"
+            })
+                .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
+                .click(function() {
+                    f.input_select.prop('checked',false);
+                    $(this).parent().detach();
+                    obj.refreshViewFieldSelect();
+                });
             var $box = $('<span></span>',{'class':'queryform-fieldbox', 'data-id':number})
                     .text(f.name)
                     .append($button);
@@ -412,20 +447,27 @@
                     'list' : ['A→Z','Z→A'],
                     'float' : ['0→9','9→0']};
 
-            var $button = $('<button></button>', {'class':"btn btn-sm btn-danger pull-right",'type':"button"})
-                    .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
-                    .click(function() {
-                        $(this).parent().detach();
-                        obj.updateSortInputs();
-                        obj.refreshSortFieldSelect();
-                    });
-            var $sortselector = $('<select></select>', {'class':"form-control input-sm input-slim order"})
-                    .append(new Option(inputTypes[f.type][0],'True'))
-                    .append(new Option(inputTypes[f.type][1],'False'))
-                    .val(sorting)
-                    .change(function() {
-                        obj.updateSortInputs();
-                    });
+            var $button = $('<button></button>', {
+                'class': "btn btn-sm btn-danger pull-right",
+                'type': "button",
+                'title': "Sortierung entfernen"
+            })
+                .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
+                .click(function() {
+                    $(this).parent().detach();
+                    obj.updateSortInputs();
+                    obj.refreshSortFieldSelect();
+                });
+            var $sortselector = $('<select></select>', {
+                'class': "form-control input-sm input-slim order",
+                'aria-label': "Sortierreihenfolge"
+            })
+                .append(new Option(inputTypes[f.type][0],'True'))
+                .append(new Option(inputTypes[f.type][1],'False'))
+                .val(sorting)
+                .change(function() {
+                    obj.updateSortInputs();
+                });
             var $item = $('<li></li>',{'class':"list-group-item queryform-filterbox",'data-id':number})
                     .append($('<span></span>',{'class':'num label label-default'})).append('&ensp;')
                     .append(f.name).append('&ensp;')

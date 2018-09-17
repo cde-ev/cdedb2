@@ -411,15 +411,18 @@
                 <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
                 <div class="input-group has-success queryform-add">
                     <span class="input-group-addon">{{ util.make_icon('plus', title="Filter hinzufügen") }}</span>
-                    <select class="form-control input-sm input-slim addfilter"></select>
+                    <select class="form-control input-sm input-slim addfilter" aria-label="Gefiltertes Feld"></select>
                 </div>
                 <div class="row">
                     <div class="col-sm-6">
                         <h4 class="filter-title">{{ util.make_icon('eye-open') }} Angezeigte Felder</h4>
                         <p class="viewfield-list"></p>
                         <div class="input-group has-success">
-                            <span class="input-group-addon">{{ util.make_icon('plus', title="Feld hinzufügen") }}</span>
-                            <select class="form-control input-sm addviewfield"></select>
+                            <span class="input-group-addon">
+                                {{ util.make_icon('plus', title="Angezeigtes Feld hinzufügen") }}
+                            </span>
+                            <select class="form-control input-sm addviewfield"
+                                    aria-label="Neues Feld"></select>
                         </div>
                     </div>
                     <div class="col-sm-6">
@@ -429,7 +432,8 @@
                             <span class="input-group-addon">
                                 {{ util.make_icon('plus', title="Sortierkriterium hinzufügen") }}
                             </span>
-                            <select class="form-control input-sm addsortfield"></select>
+                            <select class="form-control input-sm addsortfield"
+                                    aria-label="Neues Sortierkriterium"></select>
                         </div>
                     </div>
                 </div>
