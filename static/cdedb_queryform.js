@@ -36,6 +36,18 @@
          * -1 if no filterable field is known to be the id field.
          */
         var idField = -1;
+        /**
+         * The jQueryDOM object of the .addviewfield select box (and not it's selectize container)
+         */
+        var $viewFieldSelect = $element.find('.addviewfield');
+        /**
+         * The jQueryDOM object of the .addsortfield select box (and not it's selectize container)
+         */
+        var $sortFieldSelect = $element.find('.addsortfield');
+        /**
+         * The jQueryDOM object of the .addfilter select box (and not it's selectize container)
+         */
+        var $filterFieldSelect = $element.find('.addfilter');
 
         /* Scan form rows and initialize field list */
         $element.find('.query_field').each(function() {
@@ -118,23 +130,41 @@
                 }
             }
 
-            // Eventhandler and list update for add*field select boxes
-            $('.addviewfield').change(function() {
+            // Eventhandler, list update and selectize.js for add*field select boxes
+            $viewFieldSelect.change(function() {
+                if ($(this).val() === '')
+                    return;
                 obj.addViewRow($(this).val());
                 obj.refreshViewFieldSelect();
             });
+            $viewFieldSelect.selectize({
+                'placeholder': '– Angezeigtes Feld hinzufügen –',
+                copyClassesToDropdown: false
+            });
             this.refreshViewFieldSelect();
 
-            $('.addfilter').change(function() {
+            $filterFieldSelect.change(function() {
+                if ($(this).val() === '')
+                    return;
                 obj.addFilterRow($(this).val());
                 obj.refreshFilterFieldSelect();
             });
+            $filterFieldSelect.selectize({
+                'placeholder': '– Filter hinzufügen –',
+                copyClassesToDropdown: false
+            });
             this.refreshFilterFieldSelect();
 
-            $('.addsortfield').change(function() {
+            $sortFieldSelect.change(function() {
+                if ($(this).val() === '')
+                    return;
                 obj.addSortRow($(this).val(),'True');
                 obj.updateSortInputs();
                 obj.refreshSortFieldSelect();
+            });
+            $sortFieldSelect.selectize({
+                'placeholder': '– Sortierung hinzufügen –',
+                copyClassesToDropdown: false
             });
             this.updateSortInputs();
             this.refreshSortFieldSelect();
@@ -416,17 +446,18 @@
                 currentFields[$(this).attr('data-id')] = true;
             });
 
-            // Add not listed fields to selectbox
-            var $box = $element.find('.addfilter');
-            $box.empty();
-            $box.append(new Option('— Filter hinzufügen —',''));
+            // Add not listed fields to selectize.js-selectbox
+            options = [];
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (!currentFields[i]) {
-                    $box.append(new Option(f.name, i));
+                    options.push({value: i, text: f.name});
                 }
             }
-            $box.val('');
+            var selectize = $filterFieldSelect[0].selectize;
+            selectize.clearOptions();
+            selectize.addOption(options);
+            selectize.setValue('');
         };
 
         /**
@@ -439,17 +470,18 @@
                 currentFields[$(this).attr('data-id')] = true;
             });
 
-            // Add all valid and not listed fields to selectbox
-            var $box = $element.find('.addviewfield');
-            $box.empty();
-            $box.append(new Option('— Angezeigtes Feld hinzufügen —',''));
+            // Add all valid and not listed fields to selectize.js-selectbox
+            options = [];
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (f.input_select !== null && !currentFields[i]) {
-                    $box.append(new Option(f.name, i));
+                    options.push({value: i, text: f.name});
                 }
             }
-            $box.val('');
+            var selectize = $viewFieldSelect[0].selectize;
+            selectize.clearOptions();
+            selectize.addOption(options);
+            selectize.setValue('');
         };
 
         /**
@@ -458,29 +490,32 @@
         this.refreshSortFieldSelect = function() {
             // Check currently listed fields
             var currentFields = new Array(fieldList.length);
-            var numSortFields=0;
-            $element.find('.sortfield-list .queryform-filterbox').each(function() {
+            var numSortFields = 0;
+            $element.find('.sortfield-list .queryform-filterbox').each(function () {
                 currentFields[$(this).attr('data-id')] = true;
                 numSortFields++;
             });
 
-            // Add all valid and not listed fields to selectbox
-            var $box = $element.find('.addsortfield');
+            // Check if maximum number of sortfields is reached
+            if (numSortFields >= sortInputs.length) {
+                $sortFieldSelect.parent().hide();
+                return;
+            } else {
+                $sortFieldSelect.parent().show();
+            }
 
-            if (numSortFields >= sortInputs.length)
-                $box.parent().hide();
-            else
-                $box.parent().show();
-
-            $box.empty();
-            $box.append(new Option('— Sortierung hinzufügen —',''));
+            // Add all valid and not listed fields to selectize.js-selectbox
+            options = [];
             for (var i=0; i < fieldList.length; i++) {
                 var f = fieldList[i];
                 if (f.sortable && !currentFields[i]) {
-                    $box.append(new Option(f.name, i));
+                    options.push({value: i, text: f.name});
                 }
             }
-            $box.val('');
+            var selectize = $sortFieldSelect[0].selectize;
+            selectize.clearOptions();
+            selectize.addOption(options);
+            selectize.setValue('');
         };
 
         /**
