@@ -12,6 +12,7 @@
    </h1>
 {%- endblock %}
 
+{% set sidenav_active='cde_lastschrift' %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
     {% if is_admin %}
@@ -38,6 +39,7 @@
         {{ util.form_input_text(name="max_dsa", label="Maximaler DSA-Anteil", type="number", attributes='min="0" max="1"') }}
         {{ util.form_input_textarea(name="notes", label="Notizen", rows="5",
                                     info="Unterstützt reStructuredText") }}
-        {{ util.form_input_submit(value="Anlegen", cancellink=show_user_link(ambience['persona']['id'])) }}
+        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink(
+            'cde/lastschrift_show', {'person_id': ambience['persona']['persona_id']})) }}
     </form>
 {% endblock %}
