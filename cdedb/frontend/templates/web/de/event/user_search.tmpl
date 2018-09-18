@@ -10,12 +10,13 @@
 {{ util.breadcrumb_link(cdedblink("event/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}
+    {# TODO use macro generic.user_search() here, after moving the specific TITLES to some more generic place #}
     <div class="row">
         <div class="col-md-4">
-            {% call util.bootstrap_panel(title="Aktionen", aclass="panel-warning") %}
-                    {{ util.href(cdedblink("event/create_user"), "Nutzer anlegen", icon="plus",
-                                 aclass="btn btn-success") }}
-            {% endcall %}
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/create_user"), "Nutzer anlegen", icon="plus",
+                             aclass="btn btn-success btn-sm") }}
+            </div>
         </div>
         <div class="col-md-8">
             {% with TITLES = {

@@ -118,10 +118,10 @@
 {% macro user_search(realm) %}
     <div class="row">
         <div class="col-md-4">
-            {% call util.bootstrap_panel(title="Aktionen", aclass="panel-warning") %}
+            <div class="p button-par">
                 {{ util.href(cdedblink("{}/create_user".format(realm)), "Nutzer anlegen",
-                        icon="plus", aclass="btn btn-success") }}
-            {% endcall %}
+                        icon="plus", aclass="btn btn-success btn-sm") }}
+            </div>
         </div>
         <div class="col-md-8">
             {% with TITLES = {
