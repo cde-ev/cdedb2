@@ -16,8 +16,8 @@
         {% elif script == 'selectize' %}
             <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js")|e }}"></script>
             <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css")|e }}" />
-        {% elif script == 'batch-admission' %}
-            <script type="text/javascript" src="{{ staticurl("cdedb_batch_admission.js")|e }}"></script>
+        {% elif script == 'csv-tools' %}
+            <script type="text/javascript" src="{{ staticurl("cdedb_csv_tools.js")|e }}"></script>
         {% elif script == 'search-persona' %}
             {{ cdedb_script('selectize') }}
             <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js")|e }}"></script>

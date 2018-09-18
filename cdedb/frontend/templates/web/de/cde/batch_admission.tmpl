@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_manage_users' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('batch-admission') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('csv-tools') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}Accounts anlegen{% endblock %}
 {% block breadcrumb %}
@@ -130,6 +130,19 @@
             {% endfor %}
 
             {{ ba_submit_button() }}
+
+            <script type="text/javascript">
+                $(function() {
+                    var $textinput = $('#input-data');
+                    $('.row-col-key').addClass('clickable').click(function() {
+                        $textinput.jumpCsvPosition($(this).attr('data-row'),$(this).attr('data-col'));
+                    });
+                    $('.row-key').addClass('clickable').click(function() {
+                        $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
+                    });
+                });
+            </script>
         {% endif %}
     </form>
+
 {% endblock %}
