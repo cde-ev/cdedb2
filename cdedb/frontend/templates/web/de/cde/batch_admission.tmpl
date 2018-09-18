@@ -1,7 +1,7 @@
 {% set sidenav_active='cde_manage_users' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('csv-tools') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('csv-tools') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='strong' %}
 {% block title %}Accounts anlegen{% endblock %}
 {% block breadcrumb %}
@@ -94,38 +94,42 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
-
-                    <label>Aktion</label>
-                    <div class="p">
-                        {# jinja does not support list comprehension ... #}
-                        {% set myentries = [] %}
-                        {% for resolution in enums['LineResolutions'] %}
-                            {% if dataset['doppelgangers'] or not resolution.is_modification() %}
-                                {{ myentries.append((resolution.value, gettext(resolution|string)))|e }}
-                            {% endif %}
-                        {% endfor %}
-                        {{ util.input_checkboxes("resolution{}".format(dataset['lineno'] - 1), myentries, radio=True,
-                                inline=True) }}
-                    </div>
-
-                    {% if dataset['doppelgangers'] %}
-                        <label>Zusammenführen mit Account</label>
-                        <div class="p strip-space">
-                            {# jinja does not support list comprehension ... #}
-                            {% set myentries = [('', '–')] %}
-                            {% for key, value in dataset['doppelgangers']|dictsort %}
-                                {% with description = "{} {} ({}) <{}> (geb. am {}), {}{}".format(
-                                        value['given_names'], value['family_name'],
-                                        value['birth_name'] or value['family_name'],
-                                        value['username'], value['birthday'], key|cdedbid,
-                                        '' if value['is_member'] else ' (kein Mitglied)') %}
-                                    {{ myentries.append((key, description))|e }}
-                                {% endwith %}
-                            {% endfor %}
-                            {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1), myentries,
-                                    radio=True) }}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>Aktion</label>
+                            <div class="p">
+                                {# jinja does not support list comprehension ... #}
+                                {% set myentries = [] %}
+                                {% for resolution in enums['LineResolutions'] %}
+                                    {% if dataset['doppelgangers'] or not resolution.is_modification() %}
+                                        {{ myentries.append((resolution.value, gettext(resolution|string)))|e }}
+                                    {% endif %}
+                                {% endfor %}
+                                {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries, nulloption=True, aclass="form-control select-action") }}
+                            </div>
                         </div>
-                    {% endif %}
+
+                        {% if dataset['doppelgangers'] %}
+                            <div class="col-md-6">
+                                <label>Zusammenführen mit Account</label>
+                                <div class="p strip-space">
+                                    {# jinja does not support list comprehension ... #}
+                                    {% set myentries = [('', '–')] %}
+                                    {% for key, value in dataset['doppelgangers']|dictsort %}
+                                        {% with description = "{} {} ({}) <{}> (geb. am {}), {}{}".format(
+                                                value['given_names'], value['family_name'],
+                                                value['birth_name'] or value['family_name'],
+                                                value['username'], value['birthday']|date(lang=lang), key|cdedbid,
+                                                '' if value['is_member'] else ' (kein Mitglied)') %}
+                                            {{ myentries.append((key, description))|e }}
+                                        {% endwith %}
+                                    {% endfor %}
+                                    {{ util.input_checkboxes("doppelganger_id{}".format(dataset['lineno'] - 1), myentries,
+                                            radio=True) }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
 
@@ -133,6 +137,7 @@
 
             <script type="text/javascript">
                 $(function() {
+                    /* Add csv jumps */
                     var $textinput = $('#input-data');
                     $('.row-col-key').addClass('clickable').click(function() {
                         $textinput.jumpCsvPosition($(this).attr('data-row'),$(this).attr('data-col'));
@@ -140,6 +145,19 @@
                     $('.row-key').addClass('clickable').click(function() {
                         $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
                     });
+
+                    /* Add highlight of undecided rows */
+                    var updateLineState = function() {
+                        if ($(this).val() == '')
+                            $(this).closest('.batch-line-body').css('background-color', '#eee');
+                        else
+                            $(this).closest('.batch-line-body').css('background-color', '');
+                    };
+                    $('.select-action').change(updateLineState);
+                    $('.select-action').each(function() { updateLineState.call(this) });
+
+                    /* protect form changes */
+                    $('#admissionform').cdedbProtectChanges();
                 });
             </script>
         {% endif %}
