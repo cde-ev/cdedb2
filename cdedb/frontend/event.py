@@ -2477,11 +2477,11 @@ class EventFrontend(AbstractUserFrontend):
                 lodgement = lodgements[lodgement_id]
                 num_reserve = _reserve(group, part_id)
                 if len(group) > lodgement['capacity'] + lodgement['reserve']:
-                    ret.append(("Overful lodgement.", lodgement_id, part_id,
+                    ret.append((_("Overful lodgement."), lodgement_id, part_id,
                                 tuple(), 2))
                 elif len(group) - num_reserve > lodgement['capacity']:
-                    ret.append(("Too few reserve lodgers used.", lodgement_id,
-                                part_id, tuple(), 2))
+                    ret.append((_("Too few reserve lodgers used."),
+                                lodgement_id, part_id, tuple(), 2))
                 if num_reserve > lodgement['reserve']:
                     ret.append(_reserve_problem(lodgement_id, part_id))
                 if _mixed(group) and any(
