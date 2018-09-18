@@ -607,7 +607,7 @@ class CdEFrontend(AbstractUserFrontend):
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
     @access("cde_admin")
-    def money_transfers_form(self, rs, data=None):
+    def money_transfers_form(self, rs, data=None, csvfields=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -616,7 +616,9 @@ class CdEFrontend(AbstractUserFrontend):
         defaults = {'sendmail': True,}
         merge_dicts(rs.values, defaults)
         data = data or {}
-        return self.render(rs, "money_transfers", {'data': data})
+        csvfields = csvfields or tuple()
+        csv_position = {key: ind for ind, key in enumerate(csvfields)}
+        return self.render(rs, "money_transfers", {'data': data, 'csvfields': csv_position})
 
     def examine_money_transfer(self, rs, datum):
         """Check one line specifying a money transfer.
@@ -765,11 +767,11 @@ class CdEFrontend(AbstractUserFrontend):
         open_issues = any(e['problems'] for e in data)
         if rs.errors or not data or open_issues:
             rs.values['checksum'] = None
-            return self.money_transfers_form(rs, data=data)
+            return self.money_transfers_form(rs, data=data, csvfields=fields)
         current_checksum = hashlib.md5(transfers.encode()).hexdigest()
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
-            return self.money_transfers_form(rs, data=data)
+            return self.money_transfers_form(rs, data=data, csvfields=fields)
 
         ## Here validation is finished
         success, num, new_members = self.perform_money_transfers(
@@ -785,7 +787,7 @@ class CdEFrontend(AbstractUserFrontend):
             else:
                 rs.notify("error", _("Unexpected error on line {num}."),
                           {'num': num})
-            return self.money_transfers_form(rs, data=data)
+            return self.money_transfers_form(rs, data=data, csvfields=fields)
 
     def determine_open_permits(self, rs, lastschrift_ids=None):
         """Find ids, which to debit this period.

@@ -1184,14 +1184,18 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard(check_offline=True)
-    def batch_fees_form(self, rs, event_id, data=None):
+    def batch_fees_form(self, rs, event_id, data=None, csvfields=None):
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
         during processing of a POST request.
         """
         data = data or {}
-        return self.render(rs, "batch_fees", {'data': data})
+        csvfields = csvfields or tuple()
+        csv_position = {key: ind for ind, key in enumerate(csvfields)}
+        csv_position['persona_id'] = csv_position.pop('id', -1)
+        return self.render(rs, "batch_fees",
+                           {'data': data, 'csvfields': csv_position})
 
     def examine_fee(self, rs, datum):
         """Check one line specifying a paid fee.
@@ -1328,7 +1332,7 @@ class EventFrontend(AbstractUserFrontend):
         if not force:
             open_issues = open_issues or any(e['warnings'] for e in data)
         if rs.errors or not data or open_issues:
-            return self.batch_fees_form(rs, event_id, data=data)
+            return self.batch_fees_form(rs, event_id, data=data, csvfields=fields)
 
         ## Here validation is finished
         success, num = self.book_fees(rs, data)
@@ -1341,7 +1345,7 @@ class EventFrontend(AbstractUserFrontend):
             else:
                 rs.notify("error", _("Unexpected error on line {num}."),
                           {'num': num})
-            return self.batch_fees_form(rs, event_id, data=data)
+            return self.batch_fees_form(rs, event_id, data=data, csvfields=fields)
 
     @access("event")
     @event_guard()

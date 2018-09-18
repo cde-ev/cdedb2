@@ -1,7 +1,7 @@
 {% set sidenav_active='event_batch_fees' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}{{ util.cdedb_script('csv-tools') }}{% endblock %}
 {% block title %}
     Überweisungen eintragen ({{ ambience['event']['title']|e }})
 {% endblock %}
@@ -17,23 +17,28 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <p>
-        Hier können mehrere Überweisungen eingetragen werden, eine pro Zeile. Das Format ist dabei:
-        <tt>Datum;Betrag;CdEDB-ID;Nachname;Vorname</tt>
-        und jetzt noch ein Beispiel:
-        <tt>01.04.2018;123.00;DB-9-E;Iota;Inga</tt>
-    </p>
-    <form action="{{ cdedblink('event/batch_fees')|e }}" method="POST" id="batchfeesform"
-          class="form-horizontal">
-        {{ util.form_input_textarea(name="fee_data", label="Überweisungsdaten", rows="10") }}
-        {{ util.form_input_checkbox(name="force", label="Warnungen ignorieren") }}
-        {{ util.form_input_submit(value="Eintragen", cancellink=cdedblink("event/show_event")) }}
+    <form action="{{ cdedblink('event/batch_fees')|e }}" method="POST" id="batchfeesform">
+        {{ util.form_input_checkbox(name="force", horizontal=False, label="Warnungen ignorieren") }}
+        {{ util.form_input_textarea(name="fee_data", horizontal=False, label="Überweisungsdaten", rows="10",
+                                    anid="input-data") }}
+
+        <p class="help-block">
+            {{ util.make_icon('info-sign') }} Bitte einen Datensatz pro Zeile einfügen. Das Format ist
+        </p>
+        <pre>Datum;Betrag;CdEDB-ID;Nachname;Vorname</pre>
+        <p class="help-block">
+            z.B. <code>01.04.2018;123.00;DB-9-E;Iota;Inga</code>
+        </p>
+
+        {{ util.form_input_submit(value="Eintragen", horizontal=False) }}
     </form>
+
     {% if data %}
         <h2>Validierungsergebnisse</h2>
         {% for dataset in data %}
             <strong>
-                Zeile {{ dataset['lineno']|e }}: {{ dataset['amount']|money }} für
+                <span  class="row-key" data-row="{{ dataset['lineno']|e }}">Zeile {{ dataset['lineno']|e }}</span>:
+                {{ dataset['amount']|money }} für
                 {{ dataset['raw']['given_names']|e }} {{ dataset['raw']['family_name']|e }}
             </strong>
             <div class="batch-line-body">
@@ -42,14 +47,24 @@
                         {% for key, problem in dataset['problems'] %}
                             <li class="text-danger">
                                 {{ util.make_icon('exclamation-sign', title="Fehler") }}
-                                {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                {% if key %}
+                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
+                                        data-col="{{ csvfields.get(key, -1) }}">
+                                        {{ key|e -}}
+                                    </em>:
+                                {% endif %}
                                 {{ util.format_error(problem) }}
                             </li>
                         {% endfor %}
                         {% for key, warning in dataset['warnings'] %}
                             <li class="text-warning">
                                 {{ util.make_icon('warning-sign', title="Warnung") }}
-                                {% if key %}<em>{{ key|e }}</em>:{% endif %}
+                                {% if key %}
+                                    <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
+                                        data-col="{{ csvfields.get(key, -1) }}">
+                                        {{ key|e -}}
+                                    </em>:
+                                {% endif %}
                                 {{ util.format_error(warning) }}
                             </li>
                         {% endfor %}
@@ -57,5 +72,17 @@
                 {% endif %}
             </div>
         {% endfor %}
+
+        <script type="text/javascript">
+            $(function() {
+                var $textinput = $('#input-data');
+                $('.row-col-key').addClass('clickable').click(function() {
+                    $textinput.jumpCsvPosition($(this).attr('data-row'),$(this).attr('data-col'));
+                });
+                $('.row-key').addClass('clickable').click(function() {
+                    $textinput.jumpCsvPosition($(this).attr('data-row'),-1);
+                });
+            });
+        </script>
     {% endif %}
 {% endblock %}
