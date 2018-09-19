@@ -1799,11 +1799,17 @@ class CdEFrontend(AbstractUserFrontend):
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})
 
     @access("cde_admin", modi={"POST"})
-    def delete_past_course(self, rs, pevent_id, pcourse_id):
+    @REQUESTdata(("ack_delete", "bool"))
+    def delete_past_course(self, rs, pevent_id, pcourse_id, ack_delete):
         """Delete a concluded course.
 
         This also deletes all participation information w.r.t. this course.
         """
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.show_past_course(rs, pevent_id, pcourse_id)
+
         code = self.pasteventproxy.delete_past_course(rs, pcourse_id,
                                                       cascade=True)
         self.notify_return_code(rs, code)

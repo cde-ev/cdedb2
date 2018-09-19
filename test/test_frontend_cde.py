@@ -1096,6 +1096,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Abstract Nonsense (PfingstAkademie 2014)")
         f = self.response.forms['deletecourseform']
+        f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Abstract Nonsense")

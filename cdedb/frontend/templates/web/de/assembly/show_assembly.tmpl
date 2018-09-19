@@ -109,6 +109,7 @@
                               id="concludeassemblyform" style="display: inline;">
                             {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-danger",
                                                  icon="folder-close") }}
+                            {{ util.input_checkbox(name="ack_conclude", label="sicher?") }}
                         </form>
                     </div>
                 </div>
@@ -124,6 +125,7 @@
         <script type="text/javascript">
             $(function() {
                 $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
+                $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();
             });
         </script>
     {% endif %}

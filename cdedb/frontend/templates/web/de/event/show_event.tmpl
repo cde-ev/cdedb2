@@ -192,6 +192,7 @@
                                 style="display: inline;">
                             {{ util.input_submit(value="Archivieren", readonly=is_locked,
                                                  aclass="btn btn-danger", icon="folder-close") }}
+                            {{ util.input_checkbox(name="ack_archive", label="sicher?") }}
                         </form>
                     </div>
                 </div>
@@ -206,6 +207,7 @@
         {% endcall %}
         <script type="text/javascript">
             $('#archiveeventform').cdedbProtectAction("Die Veranstaltung wird irreversibel archiviert.");
+            $('#archiveeventform').find('[name="ack_archive"]').prop('checked', true).parent().hide();
         </script>
     {% endif %}
 {% endblock %}

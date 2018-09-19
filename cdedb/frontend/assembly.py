@@ -289,11 +289,17 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.render(rs, "list_attendees", {"attendees": attendees})
 
     @access("assembly_admin", modi={"POST"})
-    def conclude_assembly(self, rs, assembly_id):
+    @REQUESTdata(("ack_conclude", "bool"))
+    def conclude_assembly(self, rs, assembly_id, ack_conclude):
         """Archive an assembly.
 
         This purges stored voting secret.
         """
+        if not ack_conclude:
+            rs.errors.append(("ack_conclude", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.show_assembly(rs, assembly_id)
+
         code = self.assemblyproxy.conclude_assembly(rs, assembly_id)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/show_assembly")
@@ -577,8 +583,14 @@ class AssemblyFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_ballot")
 
     @access("assembly_admin", modi={"POST"})
-    def delete_ballot(self, rs, assembly_id, ballot_id):
+    @REQUESTdata(("ack_delete", "bool"))
+    def delete_ballot(self, rs, assembly_id, ballot_id, ack_delete):
         """Remove a ballot."""
+        if not ack_delete:
+            rs.errors.append(("ack_conclude", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.show_ballot(rs, assembly_id, ballot_id)
+
         code = self.assemblyproxy.delete_ballot(rs, ballot_id, cascade=True)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "assembly/list_ballots")

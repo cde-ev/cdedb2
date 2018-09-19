@@ -131,7 +131,7 @@
                         {{ util.input_checkbox(name="ack_delete", label="sicher?", readonly=is_locked) }}
                     </form>
                     <script type="text/javascript">
-                        $('#deletelodgementform').cdedbProtectAction("Die Unterkunft wird irreversibel gelöscht.",);
+                        $('#deletelodgementform').cdedbProtectAction("Die Unterkunft wird irreversibel gelöscht.");
                         $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
                     </script>
                 </div>

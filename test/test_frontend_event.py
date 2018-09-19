@@ -1136,6 +1136,7 @@ etc;anything else""", f['entries_2'].value)
         ## do it
         self.traverse({'href': '/event/event/1/show'})
         f = self.response.forms["archiveeventform"]
+        f['ack_archive'].checked = True
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
         self.assertIn("removeparticipantform7", self.response.forms)

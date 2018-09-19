@@ -2262,7 +2262,7 @@ class EventFrontend(AbstractUserFrontend):
         if not ack_delete:
             rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
         if rs.errors:
-            return self.show_registration_form(rs, event_id, registration_id)
+            return self.show_registration(rs, event_id, registration_id)
 
         code = self.eventproxy.delete_registration(rs, registration_id)
         self.notify_return_code(rs, code)
@@ -2620,8 +2620,10 @@ class EventFrontend(AbstractUserFrontend):
     def delete_lodgement(self, rs, event_id, lodgement_id, ack_delete):
         """Remove a lodgement."""
         if not ack_delete:
-            rs.notify("error", _("Not deleting a non-empty lodgement."))
-            return self.redirect(rs, "event/show_lodgement")
+            rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.show_lodgement(rs, event_id, lodgement_id)
+
         code = self.eventproxy.delete_lodgement(rs, lodgement_id, cascade=True)
         self.notify_return_code(rs, code)
         return self.redirect(rs, "event/lodgements")
@@ -3352,8 +3354,9 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event_admin", modi={"POST"})
+    @REQUESTdata(("ack_archive", "bool"))
     @event_guard(check_offline=True)
-    def archive_event(self, rs, event_id):
+    def archive_event(self, rs, event_id, ack_archive):
         """Make a past_event from an event.
 
         This is at the boundary between event and cde frontend, since
@@ -3362,6 +3365,10 @@ class EventFrontend(AbstractUserFrontend):
         if rs.ambience['event']['is_archived']:
             rs.notify("warning", _("Event already archived."))
             return self.redirect(rs, "event/show_event")
+        if not ack_archive:
+            rs.errors.append(("ack_conclude", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.show_event(rs, event_id)
         new_id, message = self.pasteventproxy.archive_event(rs, event_id)
         if not new_id:
             rs.notify("warning", message)

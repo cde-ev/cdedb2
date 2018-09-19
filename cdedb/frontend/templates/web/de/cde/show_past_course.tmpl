@@ -1,7 +1,9 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}
+    {% if is_admin %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endif %}
+{% endblock %}
 {% set jshint='strong' %}
 {% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}){% endblock %}
 {% block heading %}
@@ -76,7 +78,8 @@
                     {% if participant['is_instructor'] %}</strong>{% endif %}
                     {% if is_admin %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
-                         id="removeparticipantform{{ anid|e }}" style="display: inline;">
+                              id="removeparticipantform{{ anid|e }}" style="display: inline;"
+                              class="delete-participant-form">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
@@ -102,6 +105,7 @@
                         <form action="{{ cdedblink('cde/delete_past_course')|e }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
                             {{ util.input_submit(value="Kurs löschen", icon="trash", aclass="btn btn-danger") }}
+                            {{ util.input_checkbox(name="ack_delete", label="sicher?", readonly=is_locked) }}
                         </form>
                     </div>
                 </div>
@@ -114,6 +118,8 @@
         {% endcall %}
         <script type="text/javascript">
             $('#deletecourseform').cdedbProtectAction("Der Kurs wird mit allen Daten irreversibel gelöscht.");
+            $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+            $('.delete-participant-form').cdedbProtectAction("Der Teilnehmer wird aus dem Kurs entfernt.");
         </script>
     {% endif %}
 

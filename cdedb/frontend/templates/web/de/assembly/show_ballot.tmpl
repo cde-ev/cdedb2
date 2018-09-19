@@ -513,11 +513,14 @@
                          <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST" id="deleteballotform"
                                style="display: inline;">
                              {{ util.input_submit(value="Löschen", icon="trash", aclass="btn btn-danger") }}
+                             {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
                          </form>
                          <script type="text/javascript">
                              $(function() {
                                  $('#deleteballotform').cdedbProtectAction(
                                      "Die Abstimmung wird irreversibel mit allen Daten gelöscht.");
+                                 $('#deleteballotform').find('[name="ack_delete"]').prop('checked', true)
+                                     .parent().hide();
                              });
                          </script>
                     </div>

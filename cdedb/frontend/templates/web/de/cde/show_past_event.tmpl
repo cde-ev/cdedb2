@@ -1,7 +1,9 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/de/cde/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('search-persona') }}{% endblock %}
+{% block scripts %}
+    {% if is_admin %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endif %}
+{% endblock %}
 {% block title %}{{ ambience['pevent']['title']|e }}{% endblock %}
 {% block heading %}
     <h1 class="title">{{ ambience['pevent']['title']|e }} <small>({{ ambience['pevent']['shortname']|e }})</small></h1>
@@ -102,7 +104,7 @@
                     {# only allow removal of participants without a course #}
                     {% if is_admin and None in participant['pcourse_ids'] %}
                         <form action="{{ cdedblink('cde/remove_participant')|e }}" method="POST"
-                         id="removeparticipantform{{ anid|e }}" style="display: inline;">
+                         id="removeparticipantform{{ anid|e }}" style="display: inline;" class="delete-participant-form">
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="course_page", value=False) }}
                             {{ util.input_submit(title='entfernen', icon="minus", aclass="btn btn-xs btn-danger",
@@ -116,5 +118,10 @@
         <p>
             <i>Keine Teilnehmer eingetragen.</i>
         </p>
+    {% endif %}
+    {% if is_admin %}
+        <script type="text/javascript">
+            $('.delete-participant-form').cdedbProtectAction("Der Teilnehmer wird aus der Veranstaltung entfernt.");
+        </script>
     {% endif %}
 {% endblock %}
