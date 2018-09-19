@@ -389,7 +389,7 @@ class FrontendTest(unittest.TestCase):
         if self.response.content_type == "text/plain":
             target = self.response.text
         else:
-            content = self.response.lxml.xpath("//div[@id='{}']".format(div))[0]
+            content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
             target = content.text_content()
         if regex:
             self.assertTrue(re.search(s.strip(), target))
@@ -401,7 +401,7 @@ class FrontendTest(unittest.TestCase):
         if self.response.content_type == "text/plain":
             self.assertNotIn(s.strip(), self.response.text)
         else:
-            content = self.response.lxml.xpath("//div[@id='{}']".format(div))[0]
+            content = self.response.lxml.xpath("//*[@id='{}']".format(div))[0]
             self.assertNotIn(s.strip(), content.text_content())
 
     def assertLogin(self, name):
