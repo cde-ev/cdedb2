@@ -21,16 +21,6 @@
         <div class="p">
             {{ util.href(cdedblink("assembly/change_ballot_form"), "Bearbeiten", icon="pencil",
                     aclass="btn btn-sm btn-warning") }}
-            <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST" id="deleteballotform"
-                    style="display: inline;">
-                {{ util.input_submit(value="Löschen", icon="trash", aclass="btn btn-sm btn-danger") }}
-            </form>
-            <script type="text/javascript">
-                $(function() {
-                    $('#deleteballotform').cdedbProtectAction(
-                        "Die Abstimmung wird irreversibel mit allen Daten gelöscht.");
-                });
-            </script>
         </div>
     {% endif %}
 
@@ -266,7 +256,7 @@
                                 <form action="{{ cdedblink('assembly/remove_candidate',
                                                            {'candidate_id': candidate_id})|e }}"
                                         method="POST" id="removecandidateform{{ candidate_id|e }}"
-                                        style="display: inline;">
+                                        style="display: inline;" class="remove-candiate-form">
                                     {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
                                                          title="Kandidaten löschen") }}
                                 </form>
@@ -274,6 +264,11 @@
                         </li>
                     {% endfor %}
                 </ul>
+                {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                    <script type="text/javascript">
+                        $('.remove-candiate-form').cdedbProtectAction("Der Kandidat wird gelöscht.");
+                    </script>
+                {% endif %}
             {% endif %}
 
         {% else %}
@@ -288,7 +283,8 @@
                                 and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
                             <form action="{{ cdedblink('assembly/remove_candidate',
                                                        {'candidate_id': candidate_id})|e }}"
-                                    method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;">
+                                  method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;"
+                                  class="remove-candiate-form">
                                 {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
                                                      title="Kandidaten löschen") }}
                             </form>
@@ -296,6 +292,11 @@
                     </li>
                 {% endfor %}
             </ul>
+            {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                <script type="text/javascript">
+                    $('.remove-candiate-form').cdedbProtectAction("Der Kandidat wird gelöscht.");
+                </script>
+            {% endif %}
 
             {# Preferential voting: Voting form #}
             {% if ambience['ballot']['is_voting'] and attends %}
@@ -501,6 +502,32 @@
                 {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
                              aclass="btn btn-success btn-sm", icon="plus") }}
             {% endif %}
+        {% endcall %}
+    {% endif %}
+
+    {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
+        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                         <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST" id="deleteballotform"
+                               style="display: inline;">
+                             {{ util.input_submit(value="Löschen", icon="trash", aclass="btn btn-danger") }}
+                         </form>
+                         <script type="text/javascript">
+                             $(function() {
+                                 $('#deleteballotform').cdedbProtectAction(
+                                     "Die Abstimmung wird irreversibel mit allen Daten gelöscht.");
+                             });
+                         </script>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        Löscht die Abstimmung und alle dazugehörigen Einstellungen und Kandidaten.
+                    </p>
+                </div>
+            </div>
         {% endcall %}
     {% endif %}
 {% endblock %}

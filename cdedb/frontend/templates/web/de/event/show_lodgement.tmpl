@@ -22,14 +22,6 @@
         {{ util.href(cdedblink("event/change_lodgement_form"), "Bearbeiten", readonly=is_locked,
                      aclass="btn btn-sm btn-warning", icon='pencil') }}
         {{ util.href(cdedblink("event/manage_inhabitants_form"), "Belegung ändern", readonly=is_locked, aclass="btn btn-sm btn-warning", icon='user') }}
-        <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform" style="display: inline;">
-            {{ util.input_submit("Löschen", readonly=is_locked, aclass="btn btn-sm btn-danger", icon='trash') }}
-            {{ util.input_checkbox(name="ack_delete", label="sicher?", readonly=is_locked) }}
-        </form>
-        <script type="text/javascript">
-            $('#deletelodgementform').cdedbProtectAction("Die Unterkunft wird irreversibel gelöscht.");
-            $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-        </script>
     </div>
 
     <div class="row">
@@ -129,4 +121,27 @@
             </div>
         {% endfor %}
     </div>
+
+    {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="p">
+                    <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform" style="display: inline;">
+                        {{ util.input_submit("Löschen", readonly=is_locked, aclass="btn btn-sm btn-danger", icon='trash') }}
+                        {{ util.input_checkbox(name="ack_delete", label="sicher?", readonly=is_locked) }}
+                    </form>
+                    <script type="text/javascript">
+                        $('#deletelodgementform').cdedbProtectAction("Die Unterkunft wird irreversibel gelöscht.",);
+                        $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                    </script>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <p class="text-muted">
+                    Löscht die Unterkunft mit allen Informationen und lässt die aktuell eingeteilten Teilnehmer ohne
+                    Unterkunft zurück.
+                </p>
+            </div>
+        </div>
+    {% endcall %}
 {% endblock %}

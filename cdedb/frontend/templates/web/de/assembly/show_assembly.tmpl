@@ -13,16 +13,6 @@
         {% if is_admin and ambience['assembly']['is_active'] %}
             {{ util.href(cdedblink('assembly/change_assembly'), "Konfiguration", aclass="btn btn-sm btn-warning",
                          icon="cog") }}
-            <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST" id="concludeassemblyform"
-                    style="display: inline;">
-                {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-sm btn-danger",
-                        icon="ban-circle") }}
-            </form>
-            <script type="text/javascript">
-                $(function() {
-                    $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
-                });
-            </script>
             {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), "Log",
                     icon="list-alt") }}
         {% endif %}
@@ -108,6 +98,34 @@
             {% endif %}
         </div>
         {% endcall %}
+    {% endif %}
+
+    {% if is_admin %}
+        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST"
+                              id="concludeassemblyform" style="display: inline;">
+                            {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-danger",
+                                                 icon="folder-close") }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        Archiviert die Versammlung. Anschließend können keine Einstellungen der Versammlung oder ihrer
+                        Abstimmungen mehr geändert werden. Außerdem werden die geheimen Schlüssel zur Signatur der
+                        Stimmen aus der Datenbank gelöscht.
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+        <script type="text/javascript">
+            $(function() {
+                $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
+            });
+        </script>
     {% endif %}
     
 {% endblock %}

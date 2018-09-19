@@ -205,6 +205,9 @@ ul.nosp, ol.nosp {
 .nav.nav-tabs.mosp {
     margin-bottom: 20px;
 }
+.panel.mosp {
+    margin-top: 20px;
+}
 .panel-body>:last-child {
     margin-bottom: 0;
 }

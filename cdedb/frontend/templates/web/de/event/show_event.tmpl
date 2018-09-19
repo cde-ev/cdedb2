@@ -16,23 +16,6 @@
             {{ util.make_icon('info-sign') }} <strong>Info</strong> Diese Veranstaltung ist bereits archiviert.
         </div>
     {% endif %}
-
-    {% if values['event_id'] in user.orga or is_admin %}
-        <div class="p">
-            {{ util.href(cdedblink('event/change_event'), "Konfiguration", aclass="btn btn-sm btn-warning",
-                         icon="cog", readonly=is_locked) }}
-            {% if is_admin and "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
-                <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" id="archiveeventform"
-                        style="display: inline;">
-                    {{ util.input_submit(value="Archivieren", readonly=is_locked, aclass="btn btn-sm btn-danger",
-                                         icon="ban-circle") }}
-                </form>
-                <script type="text/javascript">
-                    $('#archiveeventform').cdedbProtectAction("Die Veranstaltung wird irreversibel archiviert.");
-                </script>
-            {% endif %}
-        </div>
-    {% endif %}
     
     {{ ambience['event']['description']|rst }}
 
@@ -197,5 +180,32 @@
                 {% endcall %}
             </div>
         </div>
+    {% endif %}
+
+
+    {% if is_admin and "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
+        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('event/archive_event')|e }}" method="POST" id="archiveeventform"
+                                style="display: inline;">
+                            {{ util.input_submit(value="Archivieren", readonly=is_locked,
+                                                 aclass="btn btn-danger", icon="folder-close") }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        Archiviert die Veranstaltung. Dabei wird eine neue "Abgeschlossene Veranstaltung" im CdE-Bereich
+                        erstellt und die Kurse und Teilnehmer dieser Veranstaltung dorthin übertragen. Anschließend sind
+                        keine Änderungen dieser Veranstaltung (inkl. Teilnehmern, Kursen, Unterkünften) mehr möglich.
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+        <script type="text/javascript">
+            $('#archiveeventform').cdedbProtectAction("Die Veranstaltung wird irreversibel archiviert.");
+        </script>
     {% endif %}
 {% endblock %}

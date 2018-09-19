@@ -1,6 +1,7 @@
 {% if data['id'] == user.persona_id %}{% set sidenav_active='core_mydata'%}{% endif %}
 {% extends "web/de/core/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% import "web/de/generic.tmpl" as generic with context %}
 {% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
 {% block breadcrumb %}
@@ -35,53 +36,9 @@
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern", aclass="btn btn-warning btn-sm",
                             icon="edit") }}
-                {% else %}
-                    {% if data['is_active'] %}
-                        <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}" method="POST"
-                         id="activitytoggleform" style="display: inline;">
-                            {{ util.input_submit(value="Account deaktivieren", icon="ban-circle",
-                                    aclass="btn btn-danger btn-sm") }}
-                        </form>
-                    {% else %}
-                        <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}" method="POST"
-                         id="activitytoggleform" style="display: inline;">
-                            {{ util.input_submit(value="Account aktivieren", icon="ok-circle",
-                                    aclass="btn btn-success btn-sm") }}
-                        </form>
-                    {% endif %}
-                {% endif %}
-                {% if "core_admin" in user.roles %}
-                    <form action="{{ cdedblink('core/archive_persona')|e }}" method="POST"
-                     id="archivepersonaform" style="display: inline;">
-                        {{ util.input_submit(value="Account archivieren", icon="erase",
-                                aclass="btn btn-danger btn-sm") }}
-                        {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
-                    </form>
-                    <script type="text/javascript">
-                        $('#archivepersonaform').cdedbProtectAction("Die meisten Informationen zu dem Nutzer werden gelöscht.");
-                        $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
                 {% endif %}
                 {% if is_relative_admin %}
                     {{ util.href(cdedblink("core/show_history"), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
-                {% endif %}
-            {% else %}
-                {% if "core_admin" in user.roles %}
-                    <form action="{{ cdedblink('core/dearchive_persona')|e }}" method="POST"
-                     id="dearchivepersonaform" style="display: inline;">
-                        {{ util.input_submit(value="Account wieder instandsetzen.", icon="open-file",
-                                aclass="btn btn-danger btn-sm") }}
-                    </form>
-                    <form action="{{ cdedblink('core/purge_persona')|e }}" method="POST"
-                     id="purgepersonaform" style="display: inline;">
-                        {{ util.input_submit(value="Account leeren", icon="fire",
-                                aclass="btn btn-danger btn-sm") }}
-                        {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
-                    </form>
-                    <script type="text/javascript">
-                        $('#purgepersonaform').cdedbProtectAction("Der Account wird geleert.");
-                        $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-                    </script>
                 {% endif %}
             {% endif %}
         </div>
@@ -365,4 +322,114 @@
             {{ data['free_form']|rst }}
         {% endif %}
     </div>
+
+    {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
+        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            {% if not ambience['persona']['is_archived'] %}
+                {% if is_relative_admin %}
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                {% if data['is_active'] %}
+                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}"
+                                          method="POST" id="activitytoggleform" style="display: inline;">
+                                        {{ util.input_submit(value="Account deaktivieren", icon="ban-circle",
+                                                aclass="btn btn-danger btn-sm") }}
+                                    </form>
+                                {% else %}
+                                    <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}"
+                                          method="POST" id="activitytoggleform" style="display: inline;">
+                                        {{ util.input_submit(value="Account aktivieren", icon="ok-circle",
+                                                aclass="btn btn-success btn-sm") }}
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <p class="text-muted">
+                                {% if data['is_active'] %}
+                                    Deaktiviert den Account, sodass der Benutzer sich nicht mehr einloggen kann. Andere
+                                    Benutzer ohne Admin-Rechte können den Benutzer noch sehen, jedoch ohne vollständiges
+                                    Profil. Dies kann jederzeit rückgängig gemacht werden.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if "core_admin" in user.roles %}
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                <form action="{{ cdedblink('core/archive_persona')|e }}" method="POST"
+                                 id="archivepersonaform" style="display: inline;">
+                                    {{ util.input_submit(value="Account archivieren", icon="erase",
+                                            aclass="btn btn-danger btn-sm") }}
+                                    {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                                </form>
+                                <script type="text/javascript">
+                                    $('#archivepersonaform').cdedbProtectAction("Der Account wird archiviert.");
+                                    $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true)
+                                        .parent().hide();
+                                </script>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <p class="text-muted">
+                                Archiviert den Account. Dabei wird der Account bis auf Weiteres unbenutzbar und die
+                                meisten Informationen werden gelöscht. Nur Informationen, die für eine
+                                Wiederaufnahme der CdE-Mitgliedschaft von Bedeutung sind (z.B. Name und
+                                Akademieteilnahme), bleiben bestehen. Andere Benutzer können den Account nicht mehr
+                                finden.
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+
+            {% else %} {# user is archived #}
+                {% if "core_admin" in user.roles %}
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                <form action="{{ cdedblink('core/dearchive_persona')|e }}" method="POST"
+                                      id="dearchivepersonaform" style="display: inline;">
+                                    {{ util.input_submit(value="Account wiederherstellen.", icon="open-file",
+                                                         aclass="btn btn-success btn-sm") }}
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-sm-8">
+                            <p class="text-muted">
+                                Reaktiviert den archivierten Account. Er kann anschließend wieder normal genutzt werden.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="p">
+                                <form action="{{ cdedblink('core/purge_persona')|e }}" method="POST"
+                                 id="purgepersonaform" style="display: inline;">
+                                    {{ util.input_submit(value="Account leeren", icon="fire",
+                                            aclass="btn btn-danger btn-sm") }}
+                                    {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                                </form>
+                                <script type="text/javascript">
+                                    $('#purgepersonaform').cdedbProtectAction("Der Account wird geleert.");
+                                    $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true)
+                                        .parent().hide();
+                                </script>
+                            </div>
+                            <div class="col-sm-8">
+                                <p class="text-muted">
+                                    Löscht alle verbleibenden Informationen aus dem Account. Auch der Name geht dabei
+                                    verloren. Es ist anschließend nicht mehr möglich, den Benutzer wiederherzustellen.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+        {% endcall %}
+
+    {% endif %}
 {% endblock %}
