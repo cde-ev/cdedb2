@@ -11,7 +11,7 @@ class TestConfig(unittest.TestCase):
         basic = BasicConfig()
         self.assertEqual(pytz.timezone('CET'), basic.DEFAULT_TIMEZONE)
         config = Config(None)
-        self.assertEqual(6432, config.DB_PORT)
+        self.assertEqual(5432, config.DB_PORT)
         self.assertEqual("cdb", config.CDB_DATABASE_NAME)
         extraconfig = Config("test/ancillary_files/extra_config.py")
         self.assertEqual(42, extraconfig.DB_PORT)

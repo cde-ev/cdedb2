@@ -97,13 +97,15 @@ endif
 	sudo systemctl start pgbouncer
 
 sql-test:
-	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test
-	sudo -u cdb psql -U cdb -d cdb_test -f cdedb/database/cdedb-tables.sql
+	sudo -u postgres psql -U postgres -f cdedb/database/cdedb-db.sql -v cdb_database_name=cdb_test_template
+	sudo -u cdb psql -U cdb -d cdb_test_template -f cdedb/database/cdedb-tables.sql
+	sudo -u cdb psql -U cdb -d cdb_test_template -f test/ancillary_files/clean_data.sql
+	sudo -u cdb psql -U cdb -d cdb_test_template -f test/ancillary_files/sample_data.sql
 	make sql-test-shallow
 
 sql-test-shallow:
-	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/clean_data.sql
-	sudo -u cdb psql -U cdb -d cdb_test -f test/ancillary_files/sample_data.sql
+	sudo -u postgres psql -U postgres -c "DROP DATABASE IF EXISTS cdb_test;"
+	sudo -u postgres psql -U postgres -c "CREATE DATABASE cdb_test TEMPLATE cdb_test_template;"
 
 lint:
 	@echo ""
