@@ -59,7 +59,7 @@ class BackendShim(ProxyShim):
         secrets = SecretsConfig(backend.conf._configpath)
         self.connpool = connection_pool_factory(
             backend.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets)
+            secrets, backend.conf.DB_PORT)
         self.validate_scriptkey = lambda k: k == secrets.ML_SCRIPT_KEY
         self.translator = gettext.translation(
             'cdedb', languages=('de',),

@@ -53,7 +53,7 @@ class Application(BaseApp):
         self.conf = Config(configpath)
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets)
+            secrets, self.conf.DB_PORT)
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),

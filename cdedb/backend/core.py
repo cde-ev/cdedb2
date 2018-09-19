@@ -69,7 +69,7 @@ class CoreBackend(AbstractBackend):
         secrets = SecretsConfig(configpath)
         self.connpool = connection_pool_factory(
             self.conf.CDB_DATABASE_NAME, DATABASE_ROLES,
-            secrets)
+            secrets, self.conf.DB_PORT)
         self.ldap_server = ldap3.Server(self.conf.LDAP_URL)
         self.ldap_connect = lambda: ldap3.Connection(
             self.ldap_server, self.conf.LDAP_USER, secrets.LDAP_PASSWORD)

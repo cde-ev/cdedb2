@@ -32,8 +32,6 @@ _git_commit = subprocess.check_output(
 
 #: defaults for :py:class:`BasicConfig`
 _BASIC_DEFAULTS = {
-    ## True for development instances
-    "CDEDB_DEV": False,
     ## Logging level for CdEDBs own log files
     "LOG_LEVEL": logging.INFO,
     ## Logging level for syslog
@@ -44,12 +42,8 @@ _BASIC_DEFAULTS = {
     "GLOBAL_LOG": pathlib.Path("/tmp/cdedb.log"),
     ## file system path to this repository
     "REPOSITORY_PATH": _repopath,
-    ## hash id of the current HEAD/running version
-    "GIT_COMMIT": _git_commit,
     ## relative path to config file with settings for the test suite
     "TESTCONFIG_PATH": pathlib.Path("test/localconfig.py"),
-    ## port on which the database listens, preferably a pooler like pgbouncer
-    "DB_PORT": 6432,
     ## default timezone for input and output
     "DEFAULT_TIMEZONE": pytz.timezone('CET'),
     ## path to log file for recording performance information during test runs
@@ -65,11 +59,17 @@ _DEFAULTS = {
     ## name of database to use
     "CDB_DATABASE_NAME": "cdb",
 
+    ## port on which the database listens, preferably a pooler like pgbouncer
+    "DB_PORT": 6432,
+
     ## True for offline versions running on academies
     "CDEDB_OFFLINE_DEPLOYMENT": False,
 
     ## If True only core admins are granted access
     "LOCKDOWN": False,
+
+    ## True for development instances
+    "CDEDB_DEV": False,
 
     ## location of ldap server
     "LDAP_URL": "ldap://localhost",
@@ -80,6 +80,9 @@ _DEFAULTS = {
 
     ## place for uploaded data
     "STORAGE_DIR": pathlib.Path("/var/lib/cdedb/"),
+
+    ## hash id of the current HEAD/running version
+    "GIT_COMMIT": _git_commit,
 
     ###
     ### Frontend stuff

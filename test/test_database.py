@@ -15,7 +15,7 @@ class TestDatabase(unittest.TestCase):
     def test_instant_connection(self):
         factory = connection_pool_factory(
             _CONF.CDB_DATABASE_NAME, ("cdb_anonymous", "cdb_persona", "cdb_admin"),
-            _SECRECTSCONF)
+            _SECRECTSCONF, _CONF.DB_PORT)
         with factory["cdb_persona"] as conn:
             self.assertIsInstance(conn, psycopg2.extensions.connection)
             self.assertIsInstance(conn, IrradiatedConnection)
@@ -25,13 +25,13 @@ class TestDatabase(unittest.TestCase):
     def test_less_users(self):
         factory = connection_pool_factory(
             _CONF.CDB_DATABASE_NAME, ("cdb_anonymous", "cdb_admin"),
-            _SECRECTSCONF)
+            _SECRECTSCONF, _CONF.DB_PORT)
         with self.assertRaises(ValueError):
             factory["cdb_persona"]
 
     def test_atomizer(self):
         factory = connection_pool_factory(
-            _CONF.CDB_DATABASE_NAME, ("cdb_persona",), _SECRECTSCONF)
+            _CONF.CDB_DATABASE_NAME, ("cdb_persona",), _SECRECTSCONF, _CONF.DB_PORT)
         conn = factory["cdb_persona"]
         class Tmp:
             def __init__(self, conn):
@@ -50,7 +50,7 @@ class TestDatabase(unittest.TestCase):
 
     def test_suppressed_exception(self):
         factory = connection_pool_factory(
-            _CONF.CDB_DATABASE_NAME, ("cdb_admin",), _SECRECTSCONF)
+            _CONF.CDB_DATABASE_NAME, ("cdb_admin",), _SECRECTSCONF, _CONF.DB_PORT)
         conn = factory["cdb_admin"]
         class Tmp:
             def __init__(self, conn):

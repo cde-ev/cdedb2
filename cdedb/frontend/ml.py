@@ -23,7 +23,6 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.config import SecretsConfig
-from cdedb.database.connection import connection_pool_factory
 
 class MlFrontend(AbstractUserFrontend):
     """Manage mailing lists which will be run by an external software."""

@@ -49,7 +49,7 @@ def _create_connection(dbname, dbuser, password, port,
     _LOGGER.debug("Created connection to {} as {}".format(dbname, dbuser))
     return conn
 
-def connection_pool_factory(dbname, roles, secrets,
+def connection_pool_factory(dbname, roles, secrets, port,
                             isolation_level=SERIALIZABLE):
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
@@ -68,6 +68,7 @@ def connection_pool_factory(dbname, roles, secrets,
     :type roles: [str]
     :param secrets: container for db passwords
     :type secrets: :py:class:`cdedb.config.SecretsConfig`
+    :type port: int
     :param isolation_level: Isolation level of database connection, a
         constant coming from :py:mod:`psycopg2.extensions`. This should be used
         very sparingly!
@@ -84,8 +85,8 @@ def connection_pool_factory(dbname, roles, secrets,
             if not role in self.roles:
                 raise ValueError(_("role {role} not available"), {'role': role})
             return _create_connection(
-                dbname, role, secrets.CDB_DATABASE_ROLES[role],
-                _BASICCONF.DB_PORT, isolation_level)
+                dbname, role, secrets.CDB_DATABASE_ROLES[role], port,
+                isolation_level)
 
         def __delitem__(self, key):
             raise NotImplementedError(_("Not available for instant pool"))

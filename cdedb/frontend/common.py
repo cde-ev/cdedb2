@@ -1070,7 +1070,7 @@ class Worker(threading.Thread):
             rs.scriptkey)
         secrets = SecretsConfig(conf._configpath)
         connpool = connection_pool_factory(
-            conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets)
+            conf.CDB_DATABASE_NAME, DATABASE_ROLES, secrets, conf.DB_PORT)
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         def runner():
             """Implements the actual loop running the task inside the Thread."""
