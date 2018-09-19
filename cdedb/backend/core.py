@@ -1590,6 +1590,24 @@ class CoreBackend(AbstractBackend):
           either the new password or an error message.
         :rtype: (bool, str)
         """
+        #
+        # BEGIN
+        #
+        # Provisional code to make the test-migration safe.
+        # This makes sure all password resets for the migrated database are
+        # done via an SQL-command line.
+        # Before the real migration this obviously has to be removed.
+        #
+        password_hash = unwrap(self.sql_select_one(
+                rs, "core.personas", ("password_hash",), persona_id))
+        test_migration_hash = (
+            "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
+            "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHZ/si/")
+        if password_hash == test_migration_hash:
+            raise RuntimeError(_("Password reset during test migration disabled."))
+        #
+        # END
+        #
         if not old_password and not reset_cookie:
             return False, _("No authorization provided.")
         if old_password:
