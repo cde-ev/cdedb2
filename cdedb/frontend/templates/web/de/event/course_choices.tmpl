@@ -89,7 +89,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
     {% endcall %}
 
     <form action="{{ cdedblink('event/course_choices')|e }}" method="POST" id="choiceactionform">
-        {% call util.bootstrap_panel(title="Zuteilen", icon="screenshot", aclass='panel-warning') %}
+        {% call util.bootstrap_panel(title="Zuteilen", icon="screenshot", aclass='panel-warning',
+                                     anid="assignment-options") %}
             <div class="row">
                 <div class="col-md-3">
                     Markierte Personen in

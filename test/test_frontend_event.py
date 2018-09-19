@@ -778,6 +778,8 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/choices'},)
         self.assertTitle("Kurswahlen (Große Testakademie 2222)")
+        self.assertPresence("Morgenkreis", div="course_choice_table")
+        self.assertPresence("Morgenkreis", div="assignment-options")
         self.assertPresence("Heldentum")
         self.assertPresence("Anton Armin")
         self.assertPresence("Emilia")
@@ -1137,6 +1139,65 @@ etc;anything else""", f['entries_2'].value)
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
         self.assertIn("removeparticipantform7", self.response.forms)
+
+    @as_users("anton")
+    def test_one_track_no_courses(self, user):
+        # First, create a new event
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/list'},
+                      {'href': '/event/event/create'})
+        self.assertTitle("Veranstaltung anlegen")
+        f = self.response.forms['createeventform']
+        f['title'] = "Universale Akademie"
+        f['institution'] = 1
+        f['shortname'] = "UnAka"
+        f['event_begin'] = "2345-01-01"
+        f['event_end'] = "2345-6-7"
+        f['registration_start'] = "2000-01-01 00:00:00+0000"
+        f['orga_ids'] = "DB-2-H"
+        self.submit(f)
+
+        # Check if course list is present (though we have no course track)
+        self.assertNonPresence('/event/event/2/course/list', div="sidebar")
+        self.assertNonPresence('/event/event/2/course/stats', div="sidebar")
+        self.assertNonPresence('/event/event/2/course/choices', div="sidebar")
+
+        # Add course track
+        self.traverse({'href': '/event/event/2/part/summary'})
+        f = self.response.forms['partsummaryform']
+        f['title_4'] = "Partywoche"
+        f['track_create_4_-1'].checked = True
+        f['track_4_-1'] = "Chillout"
+        self.submit(f)
+
+        # Add registration
+        self.traverse({'href': '/event/event/2/registration/query'},
+                      {'href': '/event/event/2/registration/add'})
+        self.assertNonPresence('Partywoche')  # We have only one part, thus it should not be named
+        self.assertNonPresence('Chillout')  # We have only one track, thus it should not be named
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = "DB-2-H"
+        f['part4.status'] = 1
+        self.submit(f)
+        self.assertNonPresence('Partywoche')
+        self.assertNonPresence('Chillout')
+        self.traverse({'href': '/event/event/2/registration/5/change'})
+        self.assertNonPresence('Partywoche')
+        self.assertNonPresence('Chillout')
+        self.get("/event/event/2/registration/multiedit?reg_ids=5")
+        self.assertNonPresence('Partywoche')
+        self.assertNonPresence('Chillout')
+
+        # Check course related pages for errors
+        self.traverse({'href': '/event/event/2/course/list'})
+        self.assertNonPresence('Partywoche')
+        self.assertNonPresence('Chillout')
+        self.traverse({'href': '/event/event/2/course/stats'})
+        self.assertNonPresence('Partywoche')
+        self.assertNonPresence('Chillout')
+        self.traverse({'href': '/event/event/2/course/choices'})
+        self.assertNonPresence('Partywoche')
+        self.assertNonPresence('Chillout')
 
     def test_log(self):
         ## First: generate data
