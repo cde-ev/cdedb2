@@ -120,20 +120,19 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% endcall %}
 
             {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
-                {% if course_choices[track_id]|length > 0 %}
-                    {# jinja does not support list comprehension ... #}
-                    {% set myentries = [] %}
-                    {% for course_id in course_choices[track_id] %}
-                        {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                        courses[course_id]['shortname'])))|e }}
-                    {% endfor %}
-                    {% call form_input_optional("track{}.course_id".format(track_id),
-                                                label="Kurs {}".format(track['title']),
-                                                anid="track{}_course_id".format(track_id)) %}
-                        {{ util.input_select(name="track{}.course_id".format(track_id), entries=myentries,
-                                             nulloption=True, anid="track{}_course_id".format(track_id)) }}
-                    {% endcall %}
-                {% endif %}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id in course_choices[track_id] %}
+                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                    courses[course_id]['shortname'])))|e }}
+                {% endfor %}
+                {% call form_input_optional("track{}.course_id".format(track_id),
+                                            label="Kurs {}".format(track['title'])
+                                                  if ambience['event']['tracks']|length > 1  else "Kurs",
+                                            anid="track{}_course_id".format(track_id)) %}
+                    {{ util.input_select(name="track{}.course_id".format(track_id), entries=myentries,
+                                         nulloption=True, anid="track{}_course_id".format(track_id)) }}
+                {% endcall %}
             {% endfor %}
         {% endfor %}
 
@@ -151,21 +150,20 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             </div>
         {% endcall %}
         {% for track_id, track in ambience['event']['tracks']|dictsort %}
-            {% if course_choices[track_id]|length > 0 %}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id in course_choices[part_id] %}
-                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                    courses[course_id]['shortname'])))|e }}
-                {% endfor %}
-                {% call form_input_optional("track{}.course_instructor".format(track_id),
-                                            label="{}: Kursleiter von".format(track['title']),
-                                            anid="input_track{}_course_instructor".format(track_id)) %}
-                    {{ util.input_select(name="track{}.course_instructor".format(track_id),
-                                         entries=myentries, nulloption=True,
-                                         anid="input_track{}_course_instructor".format(track_id)) }}
-                {% endcall %}
-            {% endif %}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for course_id in course_choices[part_id] %}
+                {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                courses[course_id]['shortname'])))|e }}
+            {% endfor %}
+            {% call form_input_optional("track{}.course_instructor".format(track_id),
+                                        label="{}: Kursleiter von".format(track['title'])
+                                              if ambience['event']['tracks']|length > 1  else "Kursleiter von",
+                                        anid="input_track{}_course_instructor".format(track_id)) %}
+                {{ util.input_select(name="track{}.course_instructor".format(track_id),
+                                     entries=myentries, nulloption=True,
+                                     anid="input_track{}_course_instructor".format(track_id)) }}
+            {% endcall %}
         {% endfor %}
 
         {% if ambience['event']['fields']|length > 0 %}

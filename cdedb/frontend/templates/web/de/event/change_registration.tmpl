@@ -69,17 +69,17 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
             {{ util.form_input_checkbox(name="part{}.is_reserve".format(part_id), label="Isomattenplatz") }}
 
             {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
-                {% if course_choices[track_id]|length > 0 %}
-                    {# jinja does not support list comprehension ... #}
-                    {% set myentries = [] %}
-                    {% for course_id in course_choices[track_id] %}
-                        {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                        courses[course_id]['shortname'])))|e }}
-                    {% endfor %}
-                    {{ util.form_input_select(name="track{}.course_id".format(track_id),
-                                              label="Kurs {}".format(track['title']), entries=myentries,
-                                              nulloption=True) }}
-                {% endif %}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id in course_choices[track_id] %}
+                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                    courses[course_id]['shortname'])))|e }}
+                {% endfor %}
+                {{ util.form_input_select(name="track{}.course_id".format(track_id),
+                                          label="Kurs {}".format(track['title'])
+                                                if ambience['event']['tracks']|length > 1  else "Kurs",
+                                          entries=myentries,
+                                          nulloption=True) }}
             {% endfor %}
         {% endfor %}
 

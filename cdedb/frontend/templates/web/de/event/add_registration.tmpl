@@ -55,7 +55,9 @@
                     {{ myentries.append((course_id, courses[course_id]['title']))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
-                                          label="Kurs {}".format(track['title']), entries=myentries,
+                                          label="Kurs {}".format(track['title'])
+                                                if ambience['event']['tracks']|length > 1  else "Kurs",
+                                          entries=myentries,
                                           nulloption=True) }}
             {% endfor %}
         {% endfor %}

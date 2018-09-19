@@ -128,7 +128,9 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                     {% if enums['RegistrationPartStati'](ambience['registration']['parts'][part_id]['status'])
                             .is_involved() %}
                         {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
-                            <dt>Kurs {{ track['title']|e }}</dt>
+                            <dt>
+                                Kurs {% if ambience['event']['tracks']|length > 1 %}{{ track['title']|e }}{% endif %}
+                            </dt>
                             <dd>
                                 {% with course_id = ambience['registration']['tracks'][track_id]['course_id'] %}
                                     {% if course_id %}
