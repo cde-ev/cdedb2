@@ -747,7 +747,9 @@ class AssemblyBackend(AbstractBackend):
         :param secret: The secret of this user. May be None to signal that the
           stored secret should be used.
         :rtype: str or None
-        :returns: The vote if we have voted or None otherwise.
+        :returns: The vote if we have voted or None otherwise. Note, that
+          this also returns None, if the secret has been purged after an
+          assembly has concluded.
         """
         ballot_id = affirm("id", ballot_id)
         secret = affirm("printable_ascii_or_None", secret)
@@ -768,6 +770,8 @@ class AssemblyBackend(AbstractBackend):
                              "WHERE assembly_id = %s and persona_id = %s")
                 secret = unwrap(self.query_one(
                     rs, query, (ballot['assembly_id'], rs.user.persona_id)))
+            if secret is None:
+                return None
             vote = self.retrieve_vote(rs, ballot_id, secret)
         return vote['vote']
 
