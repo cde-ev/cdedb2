@@ -584,7 +584,7 @@
                             {# NOTE that we split off any possible schema specification since they're not preserved
                                     by the query #}
                             {% with afield = field.split('.')[-1] %}
-                                <td>
+                                <td data-col="{{ afield|e }}">  {# The data-col attribute is mainly used for testing #}
                                     {% if field == "personas.id" or (query.scope == "qview_persona"
                                                                      and field == "id") %}
                                         {{ util.href(show_user_link(row[afield]), row[afield]|cdedbid,
@@ -599,8 +599,6 @@
                                         {{ choices.get(csvfield, {}).get(row.get(afield),
                                                                          row.get(afield, "UNDEFINED"))|e }}
                                     {% endif %}
-                                    {{ util.input_hidden("row_{}_{}".format(outerloopindex, afield), row.get(afield),
-                                                         anid="row_{}_{}".format(outerloopindex, afield)) }}
                                 </td>
                             {% endwith %}
                         {% endfor %}

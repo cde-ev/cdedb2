@@ -500,14 +500,11 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Emilia")
         self.assertPresence("Garcia")
         self.assertEqual(
-            '4',
-            self.response.lxml.get_element_by_id('row_0_lodgement_id2').value)
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[1]/td[@data-col="lodgement_id2"]')[0].text.strip(),
+            "Einzelzelle")
         self.assertEqual(
-            '',
-            self.response.lxml.get_element_by_id('row_1_lodgement_id2').value)
-        f = self.response.forms['actionform']
-        f['row_0'].checked = True
-        f['row_1'].checked = False
+            self.response.lxml.xpath('//*[@id="query-result"]//tr[2]/td[@data-col="lodgement_id2"]')[0].text.strip(),
+            "")
 
     @as_users("garcia")
     def test_multiedit(self, user):
@@ -516,11 +513,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/registration/query'},
                       {'description': 'Alle Anmeldungen'})
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
-        f = self.response.forms['actionform']
-        self.assertEqual("Eventis", f['row_1_family_name'].value)
-        self.assertEqual("Generalis", f['row_2_family_name'].value)
-        f['row_2'].checked = True
-        f['row_3'].checked = True
+        self.assertNotEqual(self.response.lxml.xpath('//table[@id="query-result"]/tbody/tr[@data-id="2"]'), [])
         # Fake JS link redirection
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
         self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")

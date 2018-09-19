@@ -176,7 +176,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("CdE-Nutzerverwaltung")
         self.assertPresence("Ergebnis [1]")
-        self.assertIn('"row_0_id" value="2"', self.response.text)
+        self.assertEqual(self.response.lxml.xpath("//*[@id='query-result']/tbody/tr[1]/@data-id")[0], "2")
 
     @as_users("anton")
     def test_user_search_csv(self, user):
