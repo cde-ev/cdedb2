@@ -82,7 +82,7 @@
         {% set associations = (("Anmeldungsfelder", enums['FieldAssociations'].registration, 'user'),
                                ("Kursfelder", enums['FieldAssociations'].course, 'book'),
                                ("Unterkunftsfelder", enums['FieldAssociations'].lodgement, 'home')) %}
-        <ul class="nav nav-tabs mosp" role="tablist" id="associations_tablist">
+        <ul class="nav nav-tabs mosp softhide" role="tablist" id="associations_tablist">
             {% for title, association, icon in associations -%}
                 <li role="presentation"{% if loop.first %} class="active"{% endif %}>
                     <a href="#tab_{{ association.name }}" data-toggle="tab" aria-controls="tab_{{ association.name }}"
@@ -131,7 +131,7 @@
         /* Hide tabs except first one and headings and enable tab switching */
         $('#associations_tabcontent').children('.tab-pane').not(':eq(0)').removeClass('active');
         $('#fieldsummaryform').find('h3').hide();
-        $('#associations_tablist').tab();
+        $('#associations_tablist').css('display', 'block').tab();
         $('#fieldsummaryform').cdedbDynamicRow({
             addButton: $('#drow-addbutton'),
             delButtonTitle: "Datenfeld löschen",
