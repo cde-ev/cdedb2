@@ -556,7 +556,7 @@ class TestCdEFrontend(FrontendTest):
             if i in (1, 7, 14):
                 expectation = '1'
             else:
-                expectation = None
+                expectation = ''
             self.assertEqual(expectation, f['resolution{}'.format(i)].value)
         inputdata = f['accounts'].value
         f['resolution0'] = 2
@@ -653,7 +653,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erneut validieren")
         self.assertNonPresence("Anlegen")
         f = self.response.forms['admissionform']
-        self.assertEqual(None, f['resolution4'].value)
+        self.assertEqual('', f['resolution4'].value)
         content = self.response.lxml.xpath("//div[@id='{}']".format("content"))[0].text_content()
         _, content = content.split(" Zeile 1:")
         output = []

@@ -359,7 +359,7 @@ class FrontendTest(unittest.TestCase):
 
     def admin_view_profile(self, user, check=True):
         u = USER_DICT[user]
-        self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+        self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = u["DB-ID"]
         self.submit(f)

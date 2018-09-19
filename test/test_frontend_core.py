@@ -78,17 +78,17 @@ class TestCoreFrontend(FrontendTest):
                               ("berta@example.cde", "Bertålotta Beispiel"),
                               ("anton@example.cde", "Anton Armin A. Administrator"),
                               ("Spielmanns", "Bertålotta Beispiel"),):
-            self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+            self.traverse({'href': '^/$'})
             f = self.response.forms['adminshowuserform']
             f['phrase'] = phrase
             self.submit(f)
             self.assertTitle(title)
-        self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+        self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "nonsense asorecuhasoecurhkgdgdckgdoao"
         self.submit(f)
         self.assertTitle("CdE Datenbank")
-        self.traverse({'href': '^/$'}, {'href': '/core/search/user'})
+        self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "@example.cde"
         self.submit(f)
