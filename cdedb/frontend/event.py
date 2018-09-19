@@ -708,6 +708,9 @@ class EventFrontend(AbstractUserFrontend):
         """Render form."""
         ## by default select all tracks
         tracks = event_gather_tracks(rs.ambience['event'])
+        if not tracks:
+            rs.notify("error", _("Event without tracks forbids courses"))
+            return self.redirect(rs, 'event/course_stats')
         if 'segments' not in rs.values:
             rs.values.setlist('segments', tracks)
         return self.render(rs, "create_course")
