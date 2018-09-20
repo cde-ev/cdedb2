@@ -108,6 +108,8 @@
                 var $row = $(this);
                 addDeleteButton($row, true);
             });
+            /* Remove names from prototype row to avoid interference with new rows */
+            $element.find('.drow-prototype' + class_sfx + ' .drow-input').removeAttr('name')
         };
         
         /**
