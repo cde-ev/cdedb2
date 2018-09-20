@@ -18,7 +18,7 @@
 {% block content %}
     {% call util.bootstrap_panel("Namen suchen", icon='search', aclass='panel-primary panel-condensed softhide',
                                  anid='searchpanel') %}
-        <input type="text" id="selector" class="form-control" value="" />
+        <input type="text" id="selector" class="form-control" value="" aria-label="Name zum Filtern" />
     {% endcall %}
     <div class="list-group list-group-hover">
         {% for registration_id, registration in registrations|dictsort %}

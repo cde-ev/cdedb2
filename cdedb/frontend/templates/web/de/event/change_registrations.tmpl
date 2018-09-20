@@ -38,6 +38,9 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                     <input type="checkbox" name="enable_{{ name|e }}" value="True" class="enable-input"
                            {% if anid %}id="enable_{{ anid|e }}" data-input="{{ anid|e }}"{% endif %}
                            {% if values.get("enable_{}".format(name), False) %}checked="checked"{% endif %} />
+                    <span class="sr-only">
+                        {% if label %}'{{ label|e }}'{% else %}Dieses Feld{% endif %} überschreiben
+                    </span>
                 </label>
             </div>
         </div>

@@ -61,9 +61,10 @@
                 <div class="col-md-6">
                 {% call util.bootstrap_panel(title="Benutzerverwaltung", aclass="panel-warning", icon='user') %}
                     <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
-                        <div class="sr-only">Benutzer nach ID suchen</div>
+                        <div class="sr-only">Benutzer nach ID oder Namen suchen</div>
                         <div class="input-group">
-                            <input type="text" name="phrase" class="form-control" id="input-showuser-id" />
+                            <input type="text" name="phrase" class="form-control" id="input-showuser-id"
+                                   aria-label="Benutzer-ID oder Benutzername"/>
                             <span class="input-group-btn">
                                 {{ util.input_submit("", icon='search', title='Suchen') }}
                             </span>
