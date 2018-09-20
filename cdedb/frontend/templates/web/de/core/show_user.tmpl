@@ -122,7 +122,9 @@
                             {% set tmp = vars.update({'any_realm_not': True}) %}
                         {% endif %}
                     {% endfor %}
-                    {% if 'core_admin' in user.roles and vars['any_realm_not'] %}
+                    {% if 'core_admin' in user.roles
+                            and vars['any_realm_not']
+                            and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink("core/promote_user_form"), "Bereich hinzufügen", icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
@@ -144,7 +146,7 @@
                         {% endif %}
                     {% endfor %}
                     {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}
-                    {% if 'admin' in user.roles %}
+                    {% if 'admin' in user.roles and not ambience['persona']['is_archived'] %}
                         {{ util.href(cdedblink("core/change_privileges_form"), "bearbeiten", icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
@@ -222,7 +224,7 @@
                 {% if data['id'] == user.persona_id %}
                     {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten",
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
-                {% elif is_relative_admin %}
+                {% elif is_relative_admin and not ambience['persona']['is_archived'] %}
                     {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% endif %}
