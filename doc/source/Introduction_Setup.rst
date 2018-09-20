@@ -180,7 +180,11 @@ for the application resides in ``/etc/cdedb-application-config.py``.
 Running it
 ----------
 
-Check if postgres, pgbouncer and slapd are running. Optionally you
+Last step before startup is compiling the GNU gettext .mo files for i18n::
+
+  make i18n-compile
+
+Now, check if postgres, pgbouncer and slapd are running. Optionally you
 can run the test suite first to see whether everything is ready::
 
   make check
@@ -196,6 +200,11 @@ templates no action is necessary. For the python code updating the mtime of
 the wsgi file resets the apache workers::
 
   touch wsgi/cdedb.wsgi
+
+You can use the make target reload to re-compile i18n and trigger the worker
+reload::
+
+  make reload
 
 For the database you should restart pgbouncer (which probably has some open
 connections left) before doing a ``make sample-data``.

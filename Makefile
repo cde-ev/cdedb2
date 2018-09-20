@@ -2,6 +2,7 @@ SHELL := /bin/bash
 
 help:
 	@echo "doc -- build documentation"
+	@echo "reload -- re-compile GNU gettext data and trigger WSGI worker reload"
 	@echo "sample-data -- initialize database structures (DESTROYES DATA!)"
 	@echo "sample-data-test -- initialize database structures for test suite"
 	@echo "sample-data-test-shallow -- initialize database structures for test suite"
@@ -33,6 +34,10 @@ endif
 
 doc:
 	make -C doc html
+
+reload:
+	make i18n-compile
+	touch wsgi/cdedb.wsgi
 
 i18n-refresh:
 	pybabel extract -F ./babel.cfg -k "rs.gettext","rs.ngettext" -o ./i18n/cdedb.pot .

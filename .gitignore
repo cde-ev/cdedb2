@@ -22,5 +22,6 @@ related/auto-build/distfiles/**
 related/auto-build/images/**
 related/auto-build/work/**
 
-# i18n working data
+# i18n working and compiled data
 i18n/cdedb.pot
+i18n/*/LC_MESSAGES/cdedb.mo
