@@ -15,7 +15,7 @@ from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
-    csv_output, query_result_to_json)
+    csv_output, query_result_to_json, event_gather_tracks)
 from cdedb.common import (
     _, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
     now, merge_dicts, ArchiveError, open_utf8)
@@ -101,6 +101,7 @@ class CoreFrontend(AbstractFrontend):
                                                                   event['id'])
                         event['start'] = start
                         event['registrations'] = len(regs)
+                        event['tracks'] = event_gather_tracks(event)
                         orga[event_id] = event
                 dashboard['orga'] = orga
                 dashboard['present'] = present
