@@ -11,10 +11,10 @@ Deshalb bitten wir Dich, auf das CdE-Konto den halbjährlichen
 Mitgliedsbeitrag von {{ fee|money }} oder ein Vielfaches davon
 zu überweisen:
 
-Kontoinhaber:     CdE e.V.
-IBAN:             DE26 3702 0500 0008 0689 00
-BIC:              BFSWDE33XXX
-Kreditinstitut:   Bank für Sozialwirtschaft
+Kontoinhaber:     {{ meta_info['CdE_Konto_Inhaber']|e }}
+IBAN:             {{ meta_info['CdE_Konto_IBAN']|e }}
+BIC:              {{ meta_info['CdE_Konto_BIC']|e }}
+Kreditinstitut:   {{ meta_info['CdE_Konto_Institut']|e }}
 Verwendungszweck: {{ transaction_subject }}
 
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
@@ -84,7 +84,7 @@ Du bist für dieses Halbjahr Probemitglied im CdE.
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
 
 Weitere Angaben zur Überweisung auf das CdE-Konto findest Du unter
-{{ cdedblink("core/index") }} {# TODO useful link #}
+{{ cdedblink("cde/index") }}
 
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich per Lastschrift von Deinem Konto den

@@ -1246,6 +1246,7 @@ class CdEFrontend(AbstractUserFrontend):
             with Atomizer(rrs):
                 period_id = self.cdeproxy.current_period(rrs)
                 period = self.cdeproxy.get_period(rrs, period_id)
+                meta_info = self.coreproxy.get_meta_info(rrs)
                 previous = period['billing_state'] or 0
                 persona_id = self.coreproxy.next_persona(rrs, previous)
                 if testrun:
@@ -1280,7 +1281,8 @@ class CdEFrontend(AbstractUserFrontend):
                      'open_lastschrift': open_lastschrift,
                      'address': address,
                      'transaction_subject': transaction_subject,
-                     'addresscheck': addresscheck,})
+                     'addresscheck': addresscheck,
+                     'meta_info': meta_info})
                 if testrun:
                     return False
                 period_update = {
