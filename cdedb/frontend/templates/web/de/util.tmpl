@@ -407,7 +407,7 @@
 
 {% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
     {%- if active or readonly -%}
-        <li {% if active %}class="active"{% endif %}>
+        <li {% if active %}class="active" aria-current="location"{% endif %}>
             {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e -}}
         </li>
     {%- else -%}
