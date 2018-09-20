@@ -1,6 +1,7 @@
 {% set sidenav_active='event_register' %}
 {% extends "web/de/event/base.tmpl" %}
 {% import "web/de/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Anmeldung für {{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -134,8 +135,9 @@
         {{ util.form_input_submit(value="Anmelden", cancellink=cdedblink('event/show_event')) }}
     </form>
     <script type="text/javascript">
-        var form = $('#registerform');
-        var checkboxes = form.find('[type="checkbox"][name="parts"]');
+        var $form = $('#registerform');
+        $form.cdedbProtectChanges();
+        var checkboxes = $form.find('[type="checkbox"][name="parts"]');
         /* Map part to part selection checkbox ($-encapsulated) */
         checkbox_map = {};
         checkboxes.each(function(){
