@@ -45,7 +45,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 
 {% block content %}
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
-        <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform">
+        <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform"
+              aria-label="Filter">
             <p>
                 Teilnehmer, die
                 {% if ambience['event']['tracks']|length > 1 %}
@@ -55,7 +56,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     {% for track_id, track in ambience['event']['tracks']|dictsort %}
                         {{ myentries.append((track_id, track['title']))|e }}
                     {% endfor %}
-                    {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim input-sm") }}
+                    {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim input-sm",
+                                         arialabel="Filter: Kursschiene") }}
                 {% else %}
                     {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
                 {% endif %}
@@ -65,7 +67,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
                 {% endfor %}
                 den Kurs
-                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim input-sm") }}
+                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim input-sm",
+                                     arialabel="Filter: Kurs") }}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [('', "— kein Filter —"),
                                     (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
@@ -75,9 +78,11 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                     (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
                                     (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
                                     (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
-                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim input-sm") }}<br />
+                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim input-sm",
+                                     arialabel="Filter: Kursoperator") }}<br />
                 mit einer der folgenden Teilnehmer-IDs:
-                {{ util.input_text(name='ids', aclass="form-control input-slim input-sm") }}
+                {{ util.input_text(name='ids', aclass="form-control input-slim input-sm",
+                                   arialabel="Filter: Anmeldungs-ID") }}
             </p>
             <p class="nosp">
                 {{ util.input_submit(value="anzeigen", icon="search") }}
@@ -88,7 +93,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
         </form>
     {% endcall %}
 
-    <form action="{{ cdedblink('event/course_choices')|e }}" method="POST" id="choiceactionform">
+    <form action="{{ cdedblink('event/course_choices')|e }}" method="POST" id="choiceactionform"
+          aria-label="Zuteilung">
         {% call util.bootstrap_panel(title="Zuteilen", icon="screenshot", aclass='panel-warning',
                                      anid="assignment-options") %}
             <div class="row">
@@ -98,13 +104,15 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% if ambience['event']['tracks']|length == 1 %}
                     {{ util.input_hidden(name="track_ids", value=(ambience['event']['tracks']|list)[0]) }}
                 {% else %}
+                    <label class="sr-only" id="input-track_ids-label">Kursschienen</label>
                     <div class="col-md-3 strip-inner-space">
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
                         {% for track_id, track in ambience['event']['tracks']|dictsort %}
                             {{ myentries.append((track_id, track['title']))|e }}
                         {% endfor %}
-                        {{ util.input_checkboxes(name="track_ids", entries=myentries) }}
+                        {{ util.input_checkboxes(name="track_ids", entries=myentries,
+                                                 arialabeledby="input-track_ids-label") }}
                     </div>
                 {% endif %}
                 <div class="col-md-4">
@@ -114,7 +122,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             (enums.CourseChoiceToolActions.assign_second_choice.value, "in ihre Zweitwahl"),
                             (enums.CourseChoiceToolActions.assign_third_choice.value, "in ihre Drittwahl"),
                             (enums.CourseChoiceToolActions.assign_fixed.value, "in den Kurs …"),
-                            (enums.CourseChoiceToolActions.assign_auto.value, "automatisch"))) }}
+                            (enums.CourseChoiceToolActions.assign_auto.value, "automatisch")),
+                                arialabel="Einteilungsverfahren") }}
                     </div>
                     <div class="form-group">
                         {# jinja does not support list comprehension ... #}
@@ -122,7 +131,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                         {% for course_id, course in courses|dictsort %}
                             {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname'])))|e }}
                         {% endfor %}
-                        {{ util.input_select(name="course_id", anid="input-course_id", entries=myentries, nulloption=True) }}
+                        {{ util.input_select(name="course_id", anid="input-course_id", entries=myentries,
+                                             nulloption=True, arialabel="Einteilung in Kurs") }}
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -207,15 +217,16 @@ Kurswahlen ({{ ambience['event']['title']|e }})
             </thead>
             <tbody>
                 {% for reg_id, registration in registrations|dictsort %}
+                    {% set persona = personas[registration['persona_id']] %}
                     <tr class="ls-item">
                         <td>
-                            {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector") }}
+                            {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector",
+                                    arialabel="{} {} auswählen".format(persona['given_names'], persona['family_name']))
+                                    }}
                         </td>
                         <td>
-                            {% with persona = personas[registration['persona_id']] %}
-                                {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
-                                             "{} {}".format(persona['given_names'], persona['family_name'])) }}
-                            {% endwith %}
+                            {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
+                                         "{} {}".format(persona['given_names'], persona['family_name'])) }}
                         </td>
                         {% for track_id, track in ambience['event']['tracks']|dictsort %}
                             {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}

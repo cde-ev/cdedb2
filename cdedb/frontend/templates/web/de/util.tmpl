@@ -156,10 +156,11 @@
 {% endmacro %}
 
 {% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, type='text',
-        placeholder='', attributes='') %}
+        placeholder='', arialabel='', attributes='') %}
     <input type="{{ type|e }}" {% if aclass %} class="{{ aclass|e }}"{% endif %}
             {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {% if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
+            {% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
             {% if anid %} id="{{ anid|e }}"{% endif %}
             name="{{ name|e }}"
             {% if type != 'password' %}
@@ -183,9 +184,10 @@
 {% endmacro %}
 
 
-{% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='') %}
+{% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
     <input type="file" {% if aclass %} class="{{ aclass|e }}"{% endif %}
             {% if accept %} class="{{ accept|e }}"{% endif %}
+            {% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
             {% if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"
             name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
 {% endmacro %}
@@ -199,10 +201,10 @@
 {% endmacro %}
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3,
-                        attributes='') %}
+                        arialabel='', attributes='') %}
     <textarea {% if aclass %} class="{{ aclass|e }}"{% endif %} rows="{{ rows }}"
-            {% if anid %} id="{{ anid|e }}"{% endif %} name="{{ name|e }}"
-            {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+            {% if anid %} id="{{ anid|e }}"{% endif %}{% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
+            name="{{ name|e }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {% if readonly %}disabled="disabled"{% endif %} {{ attributes }}
     >{{ values.get(name, defaultvalue)|e }}</textarea>
 {% endmacro %}
@@ -218,12 +220,13 @@
 
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
-        radio=False, attributes='') %}
+        radio=False, arialabel='', attributes='') %}
     <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name|e }}" value="{{ value|e }}"
             {% if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue)  %}
                 checked="checked"
             {% endif %}
+            {% if arialabel %}aria-label="{{ arialabel|e }}"{% endif %}
             {% if readonly %} disabled="disabled" {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
             {% if aclass %} class="{{ aclass|e }}"{% endif %} {{ attributes }} />
         {{ label|e }}
@@ -275,10 +278,10 @@
 
 
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
-        nulloption=False, attributes="") %}
+        nulloption=False, arialabel='', attributes="") %}
     <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
             {% if aclass %} class="{{ aclass|e }}" {% endif %}{% if readonly %}disabled="disabled"{% endif %}
-            {{ attributes }}>
+            {% if arialabel %} aria-label="{{ arialabel|e }}" {% endif %} {{ attributes }}>
         {% if nulloption %}
              <option value=""
                      {% if values.get(name, defaultvalue) == None %} selected="selected" {% endif %}>
@@ -345,9 +348,9 @@
         <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             <div class="input-group">
                 <span class="input-group-addon">von</span>
-                {{ input_text(name=name1, type=type, attributes='aria-label="{label} von"'.format(label)) }}
+                {{ input_text(name=name1, type=type, arialabel='{} von'.format(label)) }}
                 <span class="input-group-addon">bis</span>
-                {{ input_text(name=name2, type=type, attributes='aria-label="{label} bis"'.format(label)) }}
+                {{ input_text(name=name2, type=type, arialabel='{} bis'.format(label)) }}
             </div>
             {{ output_errors('start', displayerrors) }}
             {{ output_errors('stop', displayerrors) }}

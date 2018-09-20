@@ -107,7 +107,7 @@
                             <label for="input-new-adress" class="sr-only">Neue Abonnement-Adresse</label>
                             <div class="input-group">
                                 {{ util.input_text(name="email", type="email", placeholder="new-address@example.com",
-                                        anid="input-new-adress") }}
+                                        anid="input-new-adress", arialabel="Neue E-Mail-Adresse") }}
                                 <div class="input-group-btn">{{ util.input_submit(value="Adresse ändern") }}</div>
                             </div>
                             {{ util.output_errors('email') }}

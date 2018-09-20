@@ -31,9 +31,11 @@
                     {{ util.form_input_text(name="title_{}".format(part_id), label="Titel", aclass='drow-input',
                                             attributes=('data-basename="title_"' if newrow else ''),
                                             horizontal=false) }}
+                    {# TODO add dynamically updated id and for-reference #}
                     {{ util.form_input_textarea(name="info_{}".format(part_id), label="Text", aclass='drow-input',
                                                 attributes=('data-basename="info_"' if newrow else ''),
                                                 horizontal=false) }}
+                    {# TODO add dynamically updated id and for-reference #}
                 </div>
                 <div class="col-md-6">
                     {# jinja does not support list comprehension ... #}
@@ -44,12 +46,14 @@
                     {{ util.form_input_select("field_id_{}".format(part_id), label="Abfrage", entries=field_entries,
                                               attributes=('data-basename="field_id_"' if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
+                    {# TODO add dynamically updated id and for-reference #}
                     {{ util.form_input_select(
                         "input_size_{}".format(part_id), label="Eingabefeldgröße", entries=(
                             (0,"einzeilig"), (2, "mehrzeilig"),
                             (3, "mehrzeilig+"), (4, "mehrzeilig++")),
                         attributes=('data-basename="input_size_"' if newrow else ''),
                         aclass='input-inputsize drow-input', horizontal=False) }}
+                    {# TODO add dynamically updated id and for-reference #}
                     <div class="form-group row">
                         <div class="col-sm-8">
                             <div class="checkbox">

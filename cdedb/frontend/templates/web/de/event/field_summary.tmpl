@@ -21,11 +21,12 @@
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_field(field_id, association, deletable, aclass="", newrow=False) %}
-    <div class="col-md-6 {{ aclass }}">
+    <div class="col-md-6 {{ aclass }}" role="group">
         <div class="panel panel-default panel-condensed">
             <div class="panel-heading">
                 {{ util.input_text(name="field_name_{}".format(field_id), placeholder="Name des Datenfelds",
                                    readonly=not newrow, aclass='drow-input form-control',
+                                   arialabel="Name des Datenfelds",
                                    attributes=('data-basename="field_name_"' if newrow else '')) }}
                 {{ util.output_errors("field_name_{}".format(field_id)) }}
             </div>
@@ -38,6 +39,7 @@
                                 ("date", "Datum"), ("datetime", "Datum mit Uhrzeit")),
                             attributes=('data-basename="kind_"' if newrow else ''), aclass='drow-input form-control') }}
                         {{ util.output_errors("kind_{}".format(field_id)) }}
+                        {# TODO arialabel or better: dynamically referencing label with input #}
                     </div>
                     <div class="col-sm-3">
                         <div class="text-right">
@@ -64,6 +66,7 @@
                                                   attributes=('data-basename="association_"' if newrow else ''),
                                                   aclass='drow-input form-control association-input')
                         }}
+                        {# TODO arialabel or better: dynamically referencing label with input #}
                     </div>
                 {% else %}
                     {{ util.input_hidden(name="association_{}".format(field_id), value=association.value) }}

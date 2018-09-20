@@ -33,7 +33,8 @@
             <form action="{{ cdedblink('ml/add_moderator')|e }}" method="POST" id="addmoderatorform" class="p">
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X") }}
+                    {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X",
+                                       arialabel="ID des neuen Moderators") }}
                     <script type="text/javascript">
                         {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
                                                 enums['AudiencePolicy'].require_assembly: 'assembly_user',
@@ -104,7 +105,8 @@
     <form action="{{ cdedblink('ml/add_whitelist')|e }}" method="POST" id="addwhitelistform" class="p">
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(name="email", type="email", placeholder="mail@example.com") }}
+            {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
+                               arialabel="E-Mail-Adresse zum Whitelisten") }}
             <div class="input-group-btn">
                 {{ util.input_submit(value="Eintrag hinzufügen", aclass="btn btn-success") }}
             </div>
@@ -128,7 +130,8 @@
     <form action="{{ cdedblink('ml/add_subscriber')|e }}" method="POST" id="addsubscriberform" class="p">
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber") }}
+            {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
+                               arialabel="ID des neuen Abonnenten") }}
             <script type="text/javascript">
                 {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
                                         enums['AudiencePolicy'].require_assembly: 'assembly_user',

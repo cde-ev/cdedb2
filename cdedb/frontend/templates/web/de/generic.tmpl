@@ -315,7 +315,10 @@
                                             {% if ',' not in field and field not in selection_blacklist %}
                                                 {% with name = "qsel_{}".format(field) %}
                                                     {% if output_selection %}
-                                                        {{ util.input_checkbox(name, aclass='outputSelector', value=True) }}
+                                                        {{ util.input_checkbox(name, aclass='outputSelector',
+                                                                value=True,
+                                                                arialabel="{} anzeigen"
+                                                                          .format(titles.get(field, field)|e)) }}
                                                     {% else %}
                                                         {{ util.input_hidden(name, value=True) }}
                                                     {% endif %}
@@ -336,7 +339,9 @@
                                                         {% endif %}
                                                     {% endfor %}
                                                     {{ util.input_select(name, entries=myentries, nulloption=True,
-                                                                         aclass='form-control input-sm filter-op', anid=theid) }}
+                                                            aclass='form-control input-sm filter-op', anid=theid,
+                                                            arialabel="Filteroperator für {}"
+                                                                      .format(titles.get(field, field)|e)) }}
                                                 {% endwith %}
                                             {% endwith %}
                                         </td>
@@ -348,10 +353,14 @@
                                                        for none-javascript users. #}
                                                     {{ util.input_select(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
-                                                            entries=(('',''),(True, 'ja'),(False, 'nein'))) }}
+                                                            entries=(('',''),(True, 'ja'),(False, 'nein')),
+                                                            arialabel="Vergleichswert für {}"
+                                                                      .format(titles.get(field, field)|e)) }}
                                                 {% else %}
                                                     {{ util.input_text(name, anid="qinput_{}".format(field),
-                                                            aclass='form-control input-sm filter-value') }}
+                                                            aclass='form-control input-sm filter-value',
+                                                            arialabel="Vergleichswert für {}"
+                                                                      .format(titles.get(field, field)|e)) }}
                                                 {% endif %}
                                                 {{ util.output_errors(field, True) }}
                                             {% endwith %}
@@ -380,12 +389,15 @@
                                                 {% endif %}
                                             {% endfor %}
                                             {{ util.input_select(name, entries=myentries, nulloption=True,
-                                                                 aclass="form-control input-sm sort-field" )}}
+                                                                 aclass="form-control input-sm sort-field",
+                                                                 attributes='aria-label="{} Sortierkriterium"'
+                                                                            .format(title))}}
                                         </td>
                                         <td>
                                             {{ util.input_select(name + "_ascending", defaultvalue=True,
                                                                  aclass="form-control input-sm sort-order",
-                                                                 entries=((True, "A→Z"), (False, "Z→A"))) }}
+                                                                 entries=((True, "A→Z"), (False, "Z→A")),
+                                                                 arialabel="{} Sortierreihenfolge".format(title)) }}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -577,7 +589,7 @@
                 <tr class="ls-item" data-id="{{ row[query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1]]|e }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
-                                               aclass="rowSelector") }}
+                                               aclass="rowSelector", arialabel="Zeile {}".format(outerloopindex)) }}
                     </td>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}

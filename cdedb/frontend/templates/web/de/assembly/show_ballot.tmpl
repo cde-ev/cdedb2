@@ -89,11 +89,12 @@
                 icon='plus') %}
             <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform" class="row">
                 <div class="col-md-3">
-                    {{ util.input_text(name="moniker", placeholder="Kurzname", aclass="form-control input-sm") }}
+                    {{ util.input_text(name="moniker", placeholder="Kurzname", aclass="form-control input-sm",
+                                       arialabel="Kurzname") }}
                 </div>
                 <div class="col-md-6">
                     {{ util.input_text(name="description", placeholder="Beschreibung",
-                                       aclass="form-control input-sm") }}
+                                       aclass="form-control input-sm", arialabel="Beschreibung") }}
                 </div>
                 <div class="col-md-3">
                     {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}

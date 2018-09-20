@@ -13,15 +13,15 @@
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_row(institution_id, deletable, aclass="", newrow=False) %}
-    <tr class="{{ aclass }}">
+    <tr class="{{ aclass }}" role="group" aria-label="Institution {{ institution_id }}">
         <td>
             {{ util.input_text('title_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="title_"' if newrow else '')) }}
+                    attributes=('data-basename="title_"' if newrow else ''), arialabel="Name") }}
             {{ util.output_errors('title_{}'.format(institution_id)) }}
         </td>
         <td>
             {{ util.input_text('moniker_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="moniker_"' if newrow else '')) }}
+                    attributes=('data-basename="moniker_"' if newrow else ''), arialabel="Kürzel") }}
             {{ util.output_errors('moniker_{}'.format(institution_id)) }}
         </td>
         <td>

@@ -46,6 +46,8 @@
         var addDeleteButton = function($row, newrow) {
             var $deleteButton = $('<button />', {'type': 'button',
                                                  'title': settings.delButtonTitle,
+                                                 'aria-label': settings.delButtonTitle,
+                                                 'aria-pressed': 'false',
                                                  'class': 'btn btn-danger btn-sm' })
                     .append($('<span></span>', {'class': 'glyphicon glyphicon-trash'}));
                     
@@ -61,7 +63,8 @@
                     
                 if ($indicator.prop("checked")) {
                     $row.addClass('drow-delete' + class_sfx);
-                    $deleteButton.removeClass('active');
+                    $deleteButton.addClass('active')
+                        .attr('aria-pressed','true');
                 }
                     
                 $deleteButton.click(function() {
@@ -69,10 +72,12 @@
                     $indicator.prop("checked", !check);
                     if (check) {
                         $row.removeClass('drow-delete' + class_sfx);
-                        $(this).removeClass('active');
+                        $(this).removeClass('active')
+                            .attr('aria-pressed','false');
                     } else {
                         $row.addClass('drow-delete' + class_sfx);
-                        $(this).addClass('active');
+                        $(this).addClass('active')
+                            .attr('aria-pressed','true');
                     }
                 });
             }

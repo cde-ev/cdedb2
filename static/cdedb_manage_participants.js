@@ -62,6 +62,8 @@
             var $button = $('<button></button>', {
                 'class': 'btn btn-xs btn-danger',
                 'type': 'button',
+                'aria-pressed': 'false',
+                'aria-label': title,
                 'title': title
             });
             $button.append($('<span></span>', {'class': 'glyphicon glyphicon-minus'}));
@@ -70,9 +72,11 @@
                 $(this).toggleClass('active');
                 if ($(this).hasClass('active')) {
                     $box.prop('checked', true);
+                    $(this).attr('aria-pressed', 'true');
                     $li.addClass('list-group-item-danger');
                 } else {
                     $box.prop('checked', false);
+                    $(this).attr('aria-pressed', 'false');
                     $li.removeClass('list-group-item-danger');
                 }
             });

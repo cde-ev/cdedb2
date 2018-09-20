@@ -101,7 +101,8 @@
                 <form action="{{ cdedblink('event/add_orga')|e }}" method="POST" id="addorgaform" class="p">
                     <div class="input-group has-success">
                         <span class="input-group-addon">{{ util.make_icon('plus', title="Orga hinzufügen") }}</span>
-                        {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga') }}
+                        {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
+                                           arialabel="ID des neuen Orgas") }}
                         <script type="text/javascript">
                             $('#input-add-orga').cdedbSearchPerson(
                                 '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + ambience['event']['id']|e }}',
@@ -132,7 +133,8 @@
                     <form action="{{ cdedblink('event/change_minor_form')|e }}" method="POST" enctype="multipart/form-data"
                      id="changeminorformform">
                         <div class="input-group">
-                            {{ util.input_file(name="minor_form", accept="application/pdf") }}
+                            {{ util.input_file(name="minor_form", accept="application/pdf",
+                                               arialabel="PDF-Datei des neuen Minderjährigenformulars") }}
                             <div class="input-group-btn">
                                 {{ util.input_submit(value="Hochladen", readonly=is_locked, icon='upload') }}
                             </div>
@@ -155,7 +157,8 @@
                             <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data"
                               id="unlockform">
                                 <div class="input-group">
-                                    {{ util.input_file(name="json", accept="text/json") }}
+                                    {{ util.input_file(name="json", accept="text/json",
+                                                       arialabel="Datenexport der Offline-Datenbank") }}
                                     <div class="input-group-btn">
                                         {{ util.input_submit(value="Entsperren", icon='cloud-upload',
                                                              aclass='btn btn-success') }}

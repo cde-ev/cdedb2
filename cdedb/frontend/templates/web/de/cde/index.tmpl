@@ -13,7 +13,7 @@
                             class="form-horizontal">
                         {{ util.input_hidden(name="is_search", value=True) }}
                         <p>
-                            {{ util.input_text(name="qval_fulltext") }}
+                            {{ util.input_text(name="qval_fulltext", arialabel="Suchbegriff") }}
                         </p>
                         <div class="text-right">
                             {{ util.input_submit('Suche', icon='search') }}

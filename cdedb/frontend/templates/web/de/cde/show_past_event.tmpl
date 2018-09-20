@@ -56,7 +56,8 @@
                     <div class="row">
                         <div class="col-sm-7">
                             {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
-                                    anid="input-add-participant", aclass="form-control input-sm") }}
+                                    anid="input-add-participant", aclass="form-control input-sm",
+                                    arialabel="ID des neuen Teilnehmers") }}
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
                                     '{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s&sphere=cde'}}',
