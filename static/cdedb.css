@@ -277,7 +277,6 @@ h1.title {
 }
 .breadcrumb {
     font-size: 0.9em;
-    margin-bottom: -6px;
 }
 @media (min-width: 992px) {
     .breadcrumb-hanging {

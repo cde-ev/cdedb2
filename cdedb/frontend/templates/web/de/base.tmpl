@@ -133,14 +133,11 @@
                     {% block navigation %}
                     {% endblock %}
                 </div>
-                <div class="col-md-9" role="main">
+                <div class="col-md-9">
                     {% if self.breadcrumb %}
                         <h6 id="bc-title" class="sr-only">Du bist hier:</h6>
                         <ol class="breadcrumb breadcrumb-hanging">{% block breadcrumb %}{% endblock %}</ol>
                     {% endif %}
-                    {% block heading %}
-                        <h1 class="title">{{ self.title() }}</h1>
-                    {% endblock %}
 
                     <div id="notifications">
                         {% with icontypes = {"success" : "ok-sign", "info" : "info-sign", "question" : "question-sign",
@@ -159,10 +156,16 @@
                         {% endwith %}
                     </div>
 
-                    <div id="content">
-                        {% block content %}
-                            This should not be visible.
+                    <div role="main">
+                        {% block heading %}
+                            <h1 class="title">{{ self.title() }}</h1>
                         {% endblock %}
+
+                        <div id="content">
+                            {% block content %}
+                                This should not be visible.
+                            {% endblock %}
+                        </div>
                     </div>
                 </div>
             </div>
