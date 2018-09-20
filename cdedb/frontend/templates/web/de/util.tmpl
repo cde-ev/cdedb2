@@ -135,10 +135,10 @@
 {% endmacro %}
 
 {% macro form_input_general(name='', label='', anid='', small=False, info='', displayerrors=True,
-        horizontal=True) %}
+        horizontal=True, labelid='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {% if label %}
-            <label{% if anid %} for="{{ anid|e }}"{% endif %}
+            <label{% if labelid %} id="{{ labelid|e }}"{% endif %}{% if anid %} for="{{ anid|e }}"{% endif %}
                     class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %}
                            control-label">
                 {{ label|e }}
@@ -227,15 +227,20 @@
     </label>
 {% endmacro %}
 
-{% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='') %}
-    {% for entry_value, entry_label in entries %}
-        {% if not inline %}
-            <div class="{% if radio %}radio{% else %}checkbox{% endif %} {% if readonly %}disabled{% endif %}">
-        {% endif %}
-            {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
-                              aclass=aclass) }}
-        {% if not inline %}</div>{% endif %}
-    {% endfor %}
+{% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
+        arialabeledby="") %}
+    <div role="{% if radio %}radio{% endif %}group"
+            {% if arialabeledby %}aria-labeledby="{{ arialabeledby }}"{% endif %}>
+        {% if arialabel %}<legend class="sr-only">{{ arialabel|e }}</legend>{% endif %}
+        {% for entry_value, entry_label in entries %}
+            {% if not inline %}
+                <div class="{% if radio %}radio{% else %}checkbox{% endif %} {% if readonly %}disabled{% endif %}">
+            {% endif %}
+                {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
+                                  aclass=aclass) }}
+            {% if not inline %}</div>{% endif %}
+        {% endfor %}
+    </div>
 {% endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
@@ -254,11 +259,12 @@
 {% endmacro %}
 
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
-        small=False, radio=False, horizontal=True, aclass='') %}
+        small=False, radio=False, horizontal=True, aclass='', labelid='') %}
     {# This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
-    {% call form_input_general(name, label, '', small, info, displayerrors, horizontal) %}
-        {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass) }}
+    {% call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid) %}
+        {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
+                arialabeledby=labelid) }}
     {% endcall %}
 {% endmacro %}
 
@@ -290,13 +296,13 @@
     {% endcall %}
 {% endmacro%}
 
-{% macro input_static(value) %}
-    <div class="form-control-static">{{ value }}</div>
+{% macro input_static(value, anid='') %}
+    <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value }}</div>
 {% endmacro %}
-{% macro form_input_static(label="", info='', value='', small=False, horizontal=True) %}
+{% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True) %}
     {% if caller %}{% set value=caller() %}{% else %}{% set value=value|e %}{% endif %}
-    {% call form_input_general(None, label, '', small, info, False, horizontal) %}
-        {{ input_static(value) }}
+    {% call form_input_general(None, label, anid, small, info, False, horizontal) %}
+        {{ input_static(value, anid) }}
     {% endcall %}
 {% endmacro %}
 
@@ -333,9 +339,9 @@
         <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             <div class="input-group">
                 <span class="input-group-addon">von</span>
-                {{ input_text(name=name1, type=type) }}
+                {{ input_text(name=name1, type=type, attributes='aria-label="{label} von"'.format(label)) }}
                 <span class="input-group-addon">bis</span>
-                {{ input_text(name=name2, type=type) }}
+                {{ input_text(name=name2, type=type, attributes='aria-label="{label} bis"'.format(label)) }}
             </div>
             {{ output_errors('start', displayerrors) }}
             {{ output_errors('stop', displayerrors) }}
@@ -387,7 +393,7 @@
     {% endif %}
     {% call form_input_general(name, (None if fields['kind'] == "bool" and not force_label else label), anid, False,
                                info, displayerrors, True) %}
-        {{ event_field_input(fields, name, readonly, anid) }}
+        {{ event_field_input(fields, name, readonly, defaultvalue, anid) }}
     {% endcall %}
 {% endmacro %}
 
