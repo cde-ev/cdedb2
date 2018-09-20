@@ -175,6 +175,7 @@
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
     maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='') %}
+    {% if not anid %}{% set anid = "input-text-{}".format(name) %}{% endif %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
         {{ input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
                 aclass="form-control " + aclass, attributes=attributes) }}
@@ -191,6 +192,7 @@
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
         small=False, horizontal=True) %}
+    {% if not anid %}{% set anid = "input-file-{}".format(name) %}{% endif %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
         {{ input_file(name, readonly, defaultvalue, anid, accept=accept) }}
     {% endcall %}
@@ -207,6 +209,7 @@
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
         aclass='', small=False, maxlength=0, rows=3, horizontal=True, attributes='') %}
+    {% if not anid %}{% set anid = "input-textarea-{}".format(name) %}{% endif %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
         {{ input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                           aclass='form-control '+aclass) }}
@@ -246,6 +249,7 @@
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
         anid='', horizontal=True, small=False, attributes='') %}
     {# This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
+    {% if not anid %}{% set anid = "input-checkbox-{}".format(name) %}{% endif %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         <div {% if horizontal %}class="{% if small %}col-sm-6 col-sm-offset-2{% else -%}
                 col-sm-8 col-sm-offset-4{% endif %}"{% endif %}>
@@ -262,6 +266,7 @@
         small=False, radio=False, horizontal=True, aclass='', labelid='') %}
     {# This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
+    {% if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
     {% call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid) %}
         {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
                 arialabeledby=labelid) }}
@@ -290,6 +295,7 @@
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
         nulloption=False, anid='', small=False, horizontal=True, aclass="", attributes="") %}
+    {% if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
         {{ input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes) }}
@@ -388,9 +394,8 @@
 
 {% macro form_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
                                 defaultvalue='', anid='', force_label=False) %}
-    {% if not label %}
-        {% set label = fields['field_name'] %}
-    {% endif %}
+    {% if not label %}{% set label = fields['field_name'] %}{% endif %}
+    {% if not anid %}{% set anid = "event-input-{}".format(name) %}{% endif %}
     {% call form_input_general(name, (None if fields['kind'] == "bool" and not force_label else label), anid, False,
                                info, displayerrors, True) %}
         {{ event_field_input(fields, name, readonly, defaultvalue, anid) }}
