@@ -132,10 +132,14 @@
         
         /**
          * Refresh the names of inputs of new rows based on their basename and their position in the list.
+         *
+         * If an input has an id, search for <label>s referencing the input and set the id (as well as the labels'
+         * attributes) to drow-input-{name}.
          */
         this.refreshInputNames = function() {
             var i=-1;
             $element.find('.drow-new' + class_sfx).each(function() {
+                var $row = $(this);
                 $(this).find('.drow-input'  + class_sfx + ',.drow-indicator' + class_sfx).each(function() {
                     var name = $(this).attr('data-basename');
                     for (var j = 1; j <= settings['nestingLevel']; j++) {
@@ -143,6 +147,13 @@
                     }
                     name += String(i);
                     $(this).attr('name', name);
+
+                    var id = $(this).attr('id');
+                    if (id) {
+                        var new_id = 'drow-input-' + name;
+                        $(this).attr('id', new_id);
+                        $row.find('label[for="' + id + '"]').attr('for', new_id);
+                    }
                 });
                 /* Set outer ids and update input names of nested dynamic rows recursively */
                 $(this).find('.drow-container' + String(settings['nestingLevel'] + 1)).each(function() {

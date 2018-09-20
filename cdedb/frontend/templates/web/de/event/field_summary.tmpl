@@ -32,14 +32,16 @@
             </div>
             <div class="panel-body">
                 <div class="form-group">
-                    <label class="col-sm-4 control-label">Datentyp</label>
+                    <label class="col-sm-4 control-label" for="{{ "input-select-kind_{}".format(field_id)|e }}">
+                        Datentyp
+                    </label>
                     <div class="col-sm-5">
                         {{ util.input_select(name="kind_{}".format(field_id), entries=(
                                 ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
                                 ("date", "Datum"), ("datetime", "Datum mit Uhrzeit")),
-                            attributes=('data-basename="kind_"' if newrow else ''), aclass='drow-input form-control') }}
+                            attributes=('data-basename="kind_"' if newrow else ''), aclass='drow-input form-control',
+                            anid="input-select-kind_{}".format(field_id)) }}
                         {{ util.output_errors("kind_{}".format(field_id)) }}
-                        {# TODO arialabel or better: dynamically referencing label with input #}
                     </div>
                     <div class="col-sm-3">
                         <div class="text-right">

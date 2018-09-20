@@ -77,22 +77,20 @@
                 {{ util.form_input_text(name="part_begin_{}".format(part_id), label="Beginn", type='date',
                                         attributes=('data-basename="part_begin_"' if newrow else ''),
                                         aclass='drow-input', placeholder="YYYY-MM-DD") }}
-                {# TODO add dynamically updated id and for-reference #}
                 {{ util.form_input_text(name="part_end_{}".format(part_id), label="Ende", type='date',
                                         attributes=('data-basename="part_end_"' if newrow else ''),
                                         aclass='drow-input', placeholder="YYYY-MM-DD") }}
-                {# TODO add dynamically updated id and for-reference #}
-                {% call util.form_input_general("fee_{}".format(part_id), "Teilnehmerbeitrag") %}
+                {% call util.form_input_general("fee_{}".format(part_id), "Teilnehmerbeitrag",
+                                                anid="input-text-fee_".format(part_id)) %}
                     <div class="input-group">
                         {{ util.input_text(name="fee_{}".format(part_id),
                                            attributes=('data-basename="fee_"' if newrow else ''),
-                                           aclass='drow-input form-control') }}
+                                           aclass='drow-input form-control', anid="input-text-fee_".format(part_id)) }}
                         <span class="input-group-addon">
                             €
                         </span>
                     </div>
                 {% endcall %}
-                {# TODO arialabel or better: dynamically referencing label with input #}
                 <div class="text-right">
                     <span class="drow-buttonspace">
                         {% if newrow %}
