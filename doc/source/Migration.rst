@@ -63,7 +63,8 @@ CdE
 Functionality
 """""""""""""
 
-* TODO
+* There should be little change here except for some goodies (like profile
+  foto).
 
 Data
 """"
@@ -82,13 +83,12 @@ Functionality
   queries instead.
 * The mtime triggers are gone. Replaced by the logging facility.
 * Bus stuff is gone. Use fields.
-* TODO: UEberweisungen
 
 Data
 """"
 
 No migration for events organized via DB. Past events are migrated in a
-semi-automatic way via SQL script -- the catch being, that they gained a
+mostly automatic way via SQL script -- the catch being, that they gained a
 ``tempus`` column for ordering; however since this needs only to be acurate
 within a month or so it should be easy to fill in.
 
@@ -104,8 +104,7 @@ Functionality
 Data
 """"
 
-Manual migration (assisted by SQL dump). This should be done in 1--2 hours
-(faster than engineering a more sophisticated solution).
+Use SQL-script.
 
 Assembly
 ^^^^^^^^
@@ -113,12 +112,15 @@ Assembly
 Functionality
 """""""""""""
 
-TODO
+* Handling of files changed.
 
 Data
 """"
 
-No migration.
+Old assemblies are migrated in a summary form. This means they are
+essentially preserved, but with only one vote per ballot transporting the
+entire result (hence we lose the vote count). And there are no attendance
+lists.
 
 Files
 ^^^^^
@@ -145,3 +147,42 @@ Data
 """"
 
 See cde realm.
+
+Implementation Details
+----------------------
+
+First export the data on the old database server::
+
+    sudo -u postgres pg_dump cdedbxy > /tmp/cdedbv1.sql
+
+Copy the dump to the new database server and import it into a separate
+postgres database::
+
+    sed -i -e 's/ TO cdedb[a-z_]*/ TO cdb_old/' cdedbv1.sql
+    sed -i -e 's/^REVOKE .*//' cdedbv1.sql
+    sudo -u postgres psql -c "CREATE USER cdb_old PASSWORD '987654321098765432109876543210';"
+    sudo -u postgres psql -c "CREATE DATABASE cdedbxy WITH OWNER = cdb_old TEMPLATE = template0 ENCODING = 'UTF8';"
+    sudo -u postgres psql -c "ALTER DATABASE cdedbxy SET datestyle TO 'ISO, YMD';"
+    sudo -u postgres psql -d cdedbxy -f cdedbv1.sql
+
+Now we reset the working copy of the new database::
+
+    sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-users.sql
+    sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
+    sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-tables.sql -v cdb_database_name=cdb
+    echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D 'cn=root,dc=cde-ev,dc=de' -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0
+    ldapadd -c -x -D 'cn=root,dc=cde-ev,dc=de'  -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0 -f /cdedb2/cdedb/database/init.ldif
+
+We can now execute the migration script::
+
+    sudo -u www-data PYTHONPATH="/cdedb2:${PYTHONPATH}" /cdedb2/bin/migrate_execute.py
+
+Take note of the output and double-check any suspicious cases. One more
+manual step has to be done -- initialize the meta info table::
+
+    sudo -u postgres psql -d cdb -c "INSERT INTO core.meta_info (info) VALUES ('{\"Finanzvorstand_Vorname\": \"\", \"Finanzvorstand_Name\": \"\", \"Finanzvorstand_Adresse_Einzeiler\": \"\", \"Finanzvorstand_Adresse_Zeile2\": \"\", \"Finanzvorstand_Adresse_Zeile3\": \"\", \"Finanzvorstand_Adresse_Zeile4\": \"\", \"Finanzvorstand_Ort\": \"\", \"message_of_the_day\": \"\"}'::jsonb);"
+
+Finally we dispose of the old dataset::
+
+    sudo -u postgres psql -c "DROP DATABASE cdedbxy;"
+    sudo -u postgres psql -c "DROP USER cdb_old;"
