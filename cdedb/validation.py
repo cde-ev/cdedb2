@@ -1287,14 +1287,14 @@ def _expuls(val, argname=None, *, _convert=True):
                                       _convert=_convert)
 
 _LASTSCHRIFT_COMMON_FIELDS = lambda: {
-    'amount': _decimal,
-    'iban': _str,
+    'amount': _non_negative_decimal,
+    'iban': _iban,
     'account_owner': _str_or_None,
     'account_address': _str_or_None,
     'notes': _str_or_None,
 }
 _LASTSCHRIFT_OPTIONAL_FIELDS = lambda: {
-    'max_dsa': _decimal,
+    'max_dsa': _non_negative_decimal,
     'granted_at': _datetime,
     'revoked_at': _datetime_or_None,
 }
@@ -1322,6 +1322,40 @@ def _lastschrift(val, argname=None, *, creation=False, _convert=True):
                                **_LASTSCHRIFT_OPTIONAL_FIELDS())
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
+    if 'max_dsa' in val and val['max_dsa'] > decimal.Decimal(1):
+        errs.append(('max_dsa', ValueError(_("Can be at most 1."))))
+    return val, errs
+
+@_addvalidator
+def _iban(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (str or None, [(str or None, exception)])
+    """
+    argname = argname or "iban"
+    val, errs = _str(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    val = val.upper()
+    tmp = val.replace(' ', '')
+    if len(tmp) < 5:
+        errs.append((argname, ValueError(_("Too short."))))
+        return None, errs
+    for char in tmp[:2]:
+        if char not in string.ascii_uppercase:
+            errs.append((argname,
+                         ValueError(_("Must start with country code."))))
+    for char in tmp[2:]:
+        if char not in string.digits:
+            errs.append((argname,
+                         ValueError(_("Must continue with digits."))))
+    temp = tmp[4:] + str(ord(tmp[0]) - 55) + str(ord(tmp[1]) - 55) + tmp[2:4]
+    if int(temp) % 97 != 1:
+        errs.append((argname, ValueError(_("Invalid checksum."))))
     return val, errs
 
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
@@ -1367,7 +1401,7 @@ _SEPA_TRANSACTIONS_FIELDS = {
     'period_id': _id,
     'mandate_reference': _str,
     'amount': _decimal,
-    'iban': _str,
+    'iban': _iban,
     'mandate_date': _date,
     'account_owner': _str,
     'unique_id': _str,
@@ -1430,7 +1464,7 @@ _SEPA_SENDER_FIELDS = {
     'name': _str,
     'address': _iterable,
     'country': _str,
-    'iban': _str,
+    'iban': _iban,
     'glaeubigerid': _str,
 }
 _SEPA_META_LIMITS = {
@@ -1593,7 +1627,7 @@ _EVENT_COMMON_FIELDS = lambda: {
     'registration_start': _datetime_or_None,
     'registration_soft_limit': _datetime_or_None,
     'registration_hard_limit': _datetime_or_None,
-    'iban': _str_or_None,
+    'iban': _iban_or_None,
     'mail_text': _str_or_None,
     'use_questionnaire': _bool,
     'notes': _str_or_None,

@@ -339,6 +339,7 @@ class TestCdEFrontend(FrontendTest):
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
         self.assertTitle("Bertålotta Beispiel")
+        print(self.response)
         self.traverse({'href': '/cde/user/2/lastschrift'})
         self.assertTitle("Einzugsermächtigung Bertålotta Beispiel")
         if user['id'] == 1:
