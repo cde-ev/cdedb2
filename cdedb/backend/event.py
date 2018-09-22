@@ -17,8 +17,7 @@ from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, event_gather_tracks, registration_is_open,
-    PsycoJson)
+    REGISTRATION_TRACK_FIELDS, PsycoJson)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -471,10 +470,23 @@ class EventBackend(AbstractBackend):
                 assert('fields' not in ret[anid])
                 ret[anid]['fields'] = fields
         for anid in ids:
-            ret[anid]['tracks'] = event_gather_tracks(ret[anid])
-            ret[anid]['is_open'] = registration_is_open(ret[anid])
-            ret[anid]['begin'] = min((p['part_begin'] for p in ret[anid]['parts'].values()))
-            ret[anid]['end'] = max((p['part_end'] for p in ret[anid]['parts'].values()))
+            ret[anid]['begin'] = min((p['part_begin']
+                                      for p in ret[anid]['parts'].values()))
+            ret[anid]['end'] = max((p['part_end']
+                                    for p in ret[anid]['parts'].values()))
+            ret[anid]['is_open'] = (
+                ret[anid]['registration_start']
+                and ret[anid]['registration_start'] <= now()
+                and (ret[anid]['registration_hard_limit'] is None
+                     or ret[anid]['registration_hard_limit'] >= now()))
+            ret[anid]['tracks'] =  {
+                track_id: {
+                    'part_id': part_id,
+                    'title': title
+                }
+                for part_id, part in ret[anid]['parts'].items()
+                for track_id, title in part['tracks'].items()
+            }
         return ret
 
     def _set_tracks(self, rs, event_id, part_id, data, cautious=False):

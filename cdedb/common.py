@@ -717,39 +717,6 @@ def unwrap(single_element_list, keys=False):
             single_element_list = single_element_list.values()
     return next(i for i in single_element_list)
 
-def event_gather_tracks(event):
-    """Helper to assemble all tracks of an event into one dict.
-
-    The tracks of an event are stored inside their respective parts. This
-    makes it some thing better, but other things (especially lookup)
-    harder. Thus we provide this helper to allow easy lookup.
-
-    :type event: {str: object}
-    :rtype: {int: {str: object}}
-    """
-    return {
-        track_id: {
-            'part_id': part_id,
-            'title': title
-        }
-        for part_id, part in event['parts'].items()
-        for track_id, title in part['tracks'].items()
-    }
-
-def registration_is_open(event):
-    """Small helper to determine if an event is open for registration.
-
-    This is a somewhat verbose condition encapsulated here for brevity.
-
-    :type event: {str: object}
-    :param event: event dataset as returned by the backend
-    :rtype: bool
-    """
-    return (event['registration_start']
-            and event['registration_start'] <= now()
-            and (event['registration_hard_limit'] is None
-                 or event['registration_hard_limit'] >= now()))
-
 @enum.unique
 class AgeClasses(enum.IntEnum):
 
