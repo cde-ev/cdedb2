@@ -257,6 +257,9 @@ class CoreFrontend(AbstractFrontend):
         for realm in ("ml", "assembly", "event", "cde"):
             if "{}_admin" in rs.user.roles:
                 access_levels.add(realm)
+        ## Relative admins can see core data
+        if is_relative_admin:
+            access_levels.add("core")
         ## Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
             if not rs.ambience['persona']['is_searchable']:
