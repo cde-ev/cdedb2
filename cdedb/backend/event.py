@@ -473,7 +473,7 @@ class EventBackend(AbstractBackend):
         for anid in ids:
             ret[anid]['tracks'] = event_gather_tracks(ret[anid])
             ret[anid]['is_open'] = registration_is_open(ret[anid])
-            ret[anid]['begin'] = max((p['part_begin'] for p in ret[anid]['parts'].values()))
+            ret[anid]['begin'] = min((p['part_begin'] for p in ret[anid]['parts'].values()))
             ret[anid]['end'] = max((p['part_end'] for p in ret[anid]['parts'].values()))
         return ret
 
@@ -1261,7 +1261,7 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError(_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                all_tracks = event['tracks']
+                all_tracks = set(event['tracks'])
                 if not(all_tracks >= set(tracks)):
                     raise ValueError(_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
