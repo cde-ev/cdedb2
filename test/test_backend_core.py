@@ -699,6 +699,22 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(False, data['is_archived'])
 
     @as_users("anton")
+    def test_archive_activate_bug(self, user):
+        self.core.archive_persona(self.key, 4)
+        self.core.dearchive_persona(self.key, 4)
+        # The following call sometimes failed with the error "editing
+        # archived members impossbile". The solution may be to add some
+        # sleep to let the DB settle, but this seems kind of bogus.
+        #
+        # import time
+        # time.sleep(1)
+        data = {
+            'id': 4,
+            'is_active': True,
+        }
+        self.core.change_persona(self.key, data, may_wait=False)
+
+    @as_users("anton")
     def test_purge(self, user):
         data = self.core.get_total_persona(self.key, 8)
         self.assertEqual("Hades", data['given_names'])

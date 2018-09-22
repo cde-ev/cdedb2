@@ -347,7 +347,7 @@ class CoreBackend(AbstractBackend):
                 and not ({"core_admin", "cde_admin"} & rs.user.roles))
 
             ## prepare for inserting a new changelog entry
-            query = glue("SELECT COUNT(*) AS num FROM core.changelog",
+            query = glue("SELECT MAX(generation) AS gen FROM core.changelog",
                          "WHERE persona_id = %s")
             next_generation = unwrap(self.query_one(
                 rs, query, (data['id'],))) + 1
