@@ -184,7 +184,7 @@ fsync in the postgres configuration before running this)::
 Take note of the output and double-check any suspicious cases. One more
 manual step has to be done -- initialize the meta info table::
 
-    sudo -u postgres psql -d cdb -c "INSERT INTO core.meta_info (info) VALUES ('{\"Finanzvorstand_Vorname\": \"\", \"Finanzvorstand_Name\": \"\", \"Finanzvorstand_Adresse_Einzeiler\": \"\", \"Finanzvorstand_Adresse_Zeile2\": \"\", \"Finanzvorstand_Adresse_Zeile3\": \"\", \"Finanzvorstand_Adresse_Zeile4\": \"\", \"Finanzvorstand_Ort\": \"\", \"message_of_the_day\": \"\"}'::jsonb);"
+    sudo -u postgres psql -d cdb -c "INSERT INTO core.meta_info (info) VALUES ('{\"Finanzvorstand_Vorname\": \"\", \"Finanzvorstand_Name\": \"\", \"Finanzvorstand_Adresse_Einzeiler\": \"\", \"Finanzvorstand_Adresse_Zeile2\": \"\", \"Finanzvorstand_Adresse_Zeile3\": \"\", \"Finanzvorstand_Adresse_Zeile4\": \"\", \"Finanzvorstand_Ort\": \"\", \"CdE_Konto_Inhaber\": \"\", \"CdE_Konto_IBAN\": \"\", \"CdE_Konto_BIC\": \"\", \"CdE_Konto_Institut\": \"\", \"banner_before_login\": \"\", \"banner_after_login\": \"\"}'::jsonb);"
 
 Finally we dispose of the old dataset::
 
