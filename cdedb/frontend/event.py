@@ -1546,7 +1546,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard()
     def download_expuls(self, rs, event_id):
-        """Create TeX-snippet for announcement in the ExPuls."""
+        """Create TeX-snippet for announcement in the exPuls."""
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "expuls", {'courses': courses})
