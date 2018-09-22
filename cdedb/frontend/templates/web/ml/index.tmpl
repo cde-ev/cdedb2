@@ -30,7 +30,7 @@
 
     <h3>Allgemeine Listen</h3>
     <ul class="styleless">
-        {% for mailinglist_id, title in mailinglists|dictsort %}
+        {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if mailinglist_infos[mailinglist_id]['audience_policy'] not in (
                     enums['AudiencePolicy'].require_assembly,
                     enums['AudiencePolicy'].require_event) %}
@@ -41,7 +41,7 @@
     {% if 'event' in user.roles %}
     <h3>Veranstaltungslisten</h3>
     <ul class="styleless">
-        {% for mailinglist_id, title in mailinglists|dictsort %}
+        {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_event %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
@@ -51,7 +51,7 @@
     {% if 'assembly' in user.roles %}
     <h3>Versammlungslisten</h3>
     <ul class="styleless">
-        {% for mailinglist_id, title in mailinglists|dictsort %}
+        {% for mailinglist_id, title in mailinglists|dictsort(False, 'value') %}
             {% if  mailinglist_infos[mailinglist_id]['audience_policy'] == enums['AudiencePolicy'].require_assembly %}
                 {{ format_entry(mailinglist_id, title) }}
             {% endif %}
