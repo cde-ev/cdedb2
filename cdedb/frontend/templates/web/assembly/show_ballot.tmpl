@@ -91,10 +91,12 @@
                 <div class="col-md-3">
                     {{ util.input_text(name="moniker", placeholder="Kurzname", aclass="form-control input-sm",
                                        arialabel="Kurzname") }}
+                    {{ util.output_errors("moniker") }}
                 </div>
                 <div class="col-md-6">
                     {{ util.input_text(name="description", placeholder="Beschreibung",
                                        aclass="form-control input-sm", arialabel="Beschreibung") }}
+                    {{ util.output_errors("description") }}
                 </div>
                 <div class="col-md-3">
                     {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}
@@ -278,8 +280,12 @@
             <ul>
                 {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                     <li>
-                        {% if attends %}<span class="label label-primary">{{ candidate['moniker']|e }}</span>{% endif %}
                         {{ candidate['description']|e }}
+                        {% if attends or is_admin %}
+                            <span class="label label-primary"><span class="sr-only">Kurz: </span>
+                                {{ candidate['moniker']|e }}
+                            </span>
+                        {% endif %}
                         {% if is_admin and now() < ambience['ballot']['vote_begin']
                                 and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
                             <form action="{{ cdedblink('assembly/remove_candidate',
@@ -359,10 +365,10 @@
                                 <strong>Beispiele:</strong> Wir nehmen folgende beispielhafte Kandidatenliste an:
                             </p>
                             <ul>
-                                <li>[Luke] Luke Skywalker</li>
-                                <li>[Leia] Princess Leia Organa von Alderaan</li>
-                                <li>[Han] Han Solo</li>
-                                <li>[ObiWan] Obi-Wan „Ben“ Kenobi</li>
+                                <li>Luke Skywalker, kurz: [Luke]</li>
+                                <li>Princess Leia Organa von Alderaan, kurz: [Leia]</li>
+                                <li>Han Solo, kurz: [Han]</li>
+                                <li>Obi-Wan „Ben“ Kenobi, kurz: [ObiWan]</li>
                             </ul>
                             <p>
                                 Deine Wahl könnte dann z.B. so aussehen:
