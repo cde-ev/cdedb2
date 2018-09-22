@@ -216,7 +216,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 </tr>
             </thead>
             <tbody>
-                {% for reg_id, registration in registrations|dictsort %}
+                {# is already sorted #}
+                {% for reg_id, registration in registrations.items() %}
                     {% set persona = personas[registration['persona_id']] %}
                     <tr class="ls-item">
                         <td>

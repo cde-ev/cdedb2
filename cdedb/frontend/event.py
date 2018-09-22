@@ -1071,7 +1071,10 @@ class EventFrontend(AbstractUserFrontend):
         )
         return self.render(rs, "course_choices", {
             'courses': courses, 'personas': personas,
-            'registrations': registrations, 'course_infos': course_infos,
+            'registrations': OrderedDict(
+                sorted(registrations.items(),
+                       key=lambda reg: name_key(personas[reg[1]['persona_id']]))),
+            'course_infos': course_infos,
             'corresponding_query': corresponding_query})
 
     @access("event", modi={"POST"})
