@@ -105,7 +105,7 @@
                                            arialabel="ID des neuen Orgas") }}
                         <script type="text/javascript">
                             $('#input-add-orga').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + ambience['event']['id']|e }}',
+                                '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + (ambience['event']['id']|string) }}',
                                 {{ ambience['event']['orgas']|list|json }}
                             );
                         </script>

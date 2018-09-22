@@ -510,8 +510,6 @@ class CoreFrontend(AbstractFrontend):
             }
             if privilege_levels[sphere] not in rs.user.roles:
                 raise PrivilegeError(_("Not privileged."))
-            if sphere:
-                search_additions.append(sphere_additions[sphere])
         elif kind == "pure_assembly_user":
             if "assembly_admin" not in rs.user.roles:
                 raise PrivilegeError(_("Not privileged."))
@@ -527,8 +525,6 @@ class CoreFrontend(AbstractFrontend):
                     raise PrivilegeError(_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
-            if sphere:
-                search_additions.append(sphere_additions[sphere])
         elif kind == "orga_event_user" and aux:
             event = self.eventproxy.get_event(rs, aux)
             if "event_admin" not in rs.user.roles:
@@ -539,6 +535,8 @@ class CoreFrontend(AbstractFrontend):
                 ("is_event_realm", QueryOperators.equal, True))
         else:
             return self.send_json(rs, {})
+        if sphere:
+            search_additions.append(sphere_additions[sphere])
 
         data = None
         anid, errs = validate.check_cdedbid(phrase, "phrase")

@@ -36,13 +36,13 @@
                     {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X",
                                        arialabel="ID des neuen Moderators") }}
                     <script type="text/javascript">
-                        {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
-                                                enums['AudiencePolicy'].require_assembly: 'assembly_user',
-                                                enums['AudiencePolicy'].require_event: 'event_user',
-                                                enums['AudiencePolicy'].require_cde: 'cde_user',
+                        {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml',
+                                                enums['AudiencePolicy'].require_assembly: 'assembly',
+                                                enums['AudiencePolicy'].require_event: 'event',
+                                                enums['AudiencePolicy'].require_cde: 'cde',
                                                 enums['AudiencePolicy'].require_member: 'member'} %}
                             $('#input-add-moderator').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
+                                '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) + '&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
                                 {{ ambience['mailinglist']['moderators']|list|json }}
                             );
                         {% endwith %}
@@ -133,13 +133,13 @@
             {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
                                arialabel="ID des neuen Abonnenten") }}
             <script type="text/javascript">
-                {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
-                                        enums['AudiencePolicy'].require_assembly: 'assembly_user',
-                                        enums['AudiencePolicy'].require_event: 'event_user',
-                                        enums['AudiencePolicy'].require_cde: 'cde_user',
+                {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml',
+                                        enums['AudiencePolicy'].require_assembly: 'assembly',
+                                        enums['AudiencePolicy'].require_event: 'event',
+                                        enums['AudiencePolicy'].require_cde: 'cde',
                                         enums['AudiencePolicy'].require_member: 'member'} %}
                     $('#input-add-subscriber').cdedbSearchPerson(
-                        '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
+                        '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) + '&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
                         {{ subscribers|list|json }}
                     );
                 {% endwith %}
