@@ -520,7 +520,7 @@ class CoreFrontend(AbstractFrontend):
         elif kind == "mod_ml_user" and aux:
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if "ml_admin" not in rs.user.roles:
-                num_preview_personas //= 2
+                num_preview_personas //= 3
                 if rs.user.persona_id not in mailinglist['moderators']:
                     raise PrivilegeError(_("Not privileged."))
             search_additions.append(
@@ -528,7 +528,7 @@ class CoreFrontend(AbstractFrontend):
         elif kind == "orga_event_user" and aux:
             event = self.eventproxy.get_event(rs, aux)
             if "event_admin" not in rs.user.roles:
-                num_preview_personas //= 2
+                num_preview_personas //= 3
                 if rs.user.persona_id not in event['orgas']:
                     raise PrivilegeError(_("Not privileged."))
             search_additions.append(
@@ -563,7 +563,7 @@ class CoreFrontend(AbstractFrontend):
                 "qview_core_user", spec,
                 ("personas.id", "username", "family_name", "given_names",
                  "display_name"), search, (("personas.id", True),))
-            data = self.coreproxy.submit_general_query(rs, query)
+            data = self.coreproxy.submit_select_persona_query(rs, query)
 
         if mailinglist:
             persona_ids = tuple(e['id'] for e in data)

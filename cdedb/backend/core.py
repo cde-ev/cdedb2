@@ -2031,7 +2031,7 @@ class CoreBackend(AbstractBackend):
     @access("core_admin")
     def submit_general_query(self, rs, query):
         """Realm specific wrapper around
-        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.`
+        :py:meth:`cdedb.backend.common.AbstractBackend.general_query`.
 
         :type rs: :py:class:`cdedb.common.RequestState`
         :type query: :py:class:`cdedb.query.Query`
@@ -2049,3 +2049,18 @@ class CoreBackend(AbstractBackend):
         else:
             raise RuntimeError(_("Bad scope."))
         return self.general_query(rs, query)
+
+    @access("persona")
+    def submit_select_persona_query(self, rs, query):
+        """Accessible version of :py:meth:`submit_general_query`.
+
+        This should be used solely by the persona select API which is also
+        accessed by less privileged accounts. The frontend takes the
+        necessary precautions.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type query: :py:class:`cdedb.query.Query`
+        :rtype: [{str: object}]
+
+        """
+        return self.submit_general_query(rs, query)

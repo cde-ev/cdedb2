@@ -78,6 +78,27 @@ class TestCoreFrontend(FrontendTest):
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
 
+    @as_users("garcia")
+    def test_selectpersona_unprivileged_event(self, user):
+        self.get('/core/persona/select?kind=orga_event_user&phrase=bert&aux=1')
+        expectation = (2,)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("berta")
+    def test_selectpersona_unprivileged_ml(self, user):
+        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=1')
+        expectation = (1, 2, 3, 6)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
+    @as_users("janis")
+    def test_selectpersona_unprivileged_ml2(self, user):
+        self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=2')
+        expectation = (1, 2, 3, 5)
+        reality = tuple(e['id'] for e in self.response.json['personas'])
+        self.assertEqual(expectation, reality)
+
     @as_users("anton")
     def test_adminshowuser_advanced(self, user):
         for phrase, title in (("DB-2-H", "Bertålotta Beispiel"),
