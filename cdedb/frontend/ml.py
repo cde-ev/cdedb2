@@ -8,7 +8,7 @@ import itertools
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, registration_is_open, csv_output,
+    REQUESTdata, REQUESTdatadict, access, csv_output,
     check_validation as check, mailinglist_guard, query_result_to_json)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
@@ -226,7 +226,7 @@ class MlFrontend(AbstractUserFrontend):
             event['is_visible'] = (
                 "event_admin" in rs.user.roles or
                 rs.user.persona_id in event['orgas'] or
-                registration_is_open(event) or
+                event['is_open'] or
                 bool(self.eventproxy.list_registrations(
                     rs, event['id'], rs.user.persona_id)))
         assembly = {}

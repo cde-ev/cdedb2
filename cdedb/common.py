@@ -736,6 +736,20 @@ def event_gather_tracks(event):
         for track_id, title in part['tracks'].items()
     }
 
+def registration_is_open(event):
+    """Small helper to determine if an event is open for registration.
+
+    This is a somewhat verbose condition encapsulated here for brevity.
+
+    :type event: {str: object}
+    :param event: event dataset as returned by the backend
+    :rtype: bool
+    """
+    return (event['registration_start']
+            and event['registration_start'] <= now()
+            and (event['registration_hard_limit'] is None
+                 or event['registration_hard_limit'] >= now()))
+
 @enum.unique
 class AgeClasses(enum.IntEnum):
 
