@@ -79,19 +79,19 @@
                         <li>
                             {{ util.persona_anchor(personas[request]) }}
                             <span class="nowrap">
-                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
-                                    id="nackrequestform{{ request|e }}" style="display: inline;">
-                                {{ util.input_hidden(name="ack", value=False) }}
-                                {{ util.input_hidden(name="persona_id", value=request) }}
-                                {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-xs btn-danger") }}
-                            </form>
-                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
-                                    id="ackrequestform{{ request|e }}" style="display: inline;">
-                                {{ util.input_hidden(name="ack", value=True) }}
-                                {{ util.input_hidden(name="persona_id", value=request) }}
-                                {{ util.input_submit(value="Genehmigen", aclass="btn btn-xs btn-success") }}
-                            </form>
-                        </span>
+                                <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
+                                        id="nackrequestform{{ request|e }}" style="display: inline;">
+                                    {{ util.input_hidden(name="ack", value=False) }}
+                                    {{ util.input_hidden(name="persona_id", value=request) }}
+                                    {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-xs btn-danger") }}
+                                </form>
+                                <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
+                                        id="ackrequestform{{ request|e }}" style="display: inline;">
+                                    {{ util.input_hidden(name="ack", value=True) }}
+                                    {{ util.input_hidden(name="persona_id", value=request) }}
+                                    {{ util.input_submit(value="Genehmigen", aclass="btn btn-xs btn-success") }}
+                                </form>
+                            </span>
                         </li>
                     {% endfor %}
                 </ul>

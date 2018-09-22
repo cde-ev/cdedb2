@@ -68,7 +68,6 @@
                                                   attributes=('data-basename="association_"' if newrow else ''),
                                                   aclass='drow-input form-control association-input')
                         }}
-                        {# TODO arialabel or better: dynamically referencing label with input #}
                     </div>
                 {% else %}
                     {{ util.input_hidden(name="association_{}".format(field_id), value=association.value) }}
