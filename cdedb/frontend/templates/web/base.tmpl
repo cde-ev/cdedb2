@@ -61,7 +61,7 @@
                 {% endif %}
             </div>
             <!-- main navigation bar -->
-            <nav class="navbar navbar-default">
+            <nav class="navbar navbar-default" aria-label="Hauptmenü">
                 <div class="navbar-header">
                     <p class="navbar-collapse-header">Hauptmenü</p>
                     <button type="button" class="navbar-toggle collapsed hide" data-toggle="collapse"
@@ -128,8 +128,7 @@
             </script>
 
             <div class="row">
-                <div class="col-md-3" role="navigation" id="sidebar">
-                    <h4 class="sr-only">Seiten-Navigation</h4>
+                <div class="col-md-3" role="navigation" id="sidebar" aria-label="Untermenü">
                     {% block navigation %}
                     {% endblock %}
                 </div>
