@@ -316,6 +316,14 @@ class CdEFrontend(AbstractUserFrontend):
             rs.values['resolution{}'.format(datum['lineno'] - 1)] = None
             warnings.append((None, ValueError(_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
+        ## Adapt input of gender from old convention
+        GENDER_CONVERT = {
+            "0": str(const.Genders.unknown.value),
+            "1": str(const.Genders.male.value),
+            "2": str(const.Genders.female.value),
+        }
+        persona['gender'] = GENDER_CONVERT.get(persona.get('gender').strip(),
+                                               persona.get('gender'))
         del persona['event']
         del persona['course']
         persona.update({
