@@ -1854,7 +1854,7 @@ def _event_field(val, argname=None, *, creation=False, _convert=True, extra_suff
     return val, errs
 
 _PAST_COURSE_COMMON_FIELDS = lambda: {
-    'nr': _str_or_None,
+    'nr': _str,
     'title': _str,
     'description': _str_or_None,
 }
