@@ -85,7 +85,7 @@
                 <li>
 
                     {% if participant['viewable'] %}
-                        {{ util.persona_anchor(personas[anid]) }}
+                        {{ util.persona_anchor(personas[anid], quote_me=True) }}
                     {% else %}
                         {{ personas[anid]['given_names']|e }} {{ personas[anid]['family_name']|e }}
                     {% endif %}

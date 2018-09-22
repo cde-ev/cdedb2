@@ -99,13 +99,13 @@
     {% endif %}
 {% endmacro %}
 
-{% macro persona_anchor(persona, verbose=False) %}
+{% macro persona_anchor(persona, verbose=False, quote_me=False) %}
     {%- if verbose -%}
-        {{ href(show_user_link(persona['id']), "{} {} {} {}".format(
+        {{ href(show_user_link(persona['id'], quote_me), "{} {} {} {}".format(
               persona['title'], persona['given_names'],
               persona['family_name'], persona['name_supplement'])) }}
     {%- else -%}
-        {{ href(show_user_link(persona['id']), "{} {}".format(
+        {{ href(show_user_link(persona['id'], quote_me), "{} {}".format(
               persona['given_names'], persona['family_name'])) }}
     {%- endif -%}
 {% endmacro %}
