@@ -18,7 +18,7 @@ import psycopg2.extensions
 import werkzeug
 
 from cdedb.frontend.common import (
-    REQUESTdata, REQUESTdatadict, access, registration_is_open, csv_output,
+    REQUESTdata, REQUESTdatadict, access, csv_output,
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
     xdictsort_filter)
@@ -27,7 +27,7 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     _, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    event_gather_tracks, diacritic_patterns, open_utf8, shutil_copy)
+    diacritic_patterns, open_utf8, shutil_copy)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.database.connection import Atomizer
@@ -64,28 +64,6 @@ class EventFrontend(AbstractUserFrontend):
     @classmethod
     def is_admin(cls, rs):
         return super().is_admin(rs)
-
-    @staticmethod
-    def event_begin(event):
-        """Small helper to calculate the begin of an event.
-
-        :type event: {str: object}
-        :param event: event dataset as returned by the backend
-        :rtype: datetime.date
-        """
-        return min((p['part_begin'] for p in event['parts'].values()),
-                   default=now().date())
-
-    @staticmethod
-    def event_end(event):
-        """Small helper to calculate the end of an event.
-
-        :type event: {str: object}
-        :param event: event dataset as returned by the backend
-        :rtype: datetime.date
-        """
-        return max((p['part_end'] for p in event['parts'].values()),
-                   default=now().date())
 
     def is_locked(self, event):
         """Shorthand to deremine locking state of an event.
@@ -127,11 +105,6 @@ class EventFrontend(AbstractUserFrontend):
         visible_event_list = self.eventproxy.list_db_events(rs, visible_only=True)
         other_events = self.eventproxy.get_events(
             rs, set(visible_event_list) - set(open_event_list))
-        for event in itertools.chain(open_events.values(),
-                                     orga_events.values(),
-                                     other_events.values()):
-            event['begin'] = self.event_begin(event)
-            event['end'] = self.event_end(event)
         return self.render(rs, "index", {
             'open_events': open_events, 'orga_events': orga_events,
             'other_events': other_events})
@@ -213,8 +186,6 @@ class EventFrontend(AbstractUserFrontend):
         events = self.eventproxy.list_db_events(rs)
         events = self.eventproxy.get_events(rs, events.keys())
         for event in events.values():
-            event['begin'] = self.event_begin(event)
-            event['end'] = self.event_end(event)
             regs = self.eventproxy.list_registrations(rs, event['id'])
             event['registrations'] = len(regs)
         return self.render(rs, "list_db_events", {'events': events})
@@ -222,8 +193,6 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def show_event(self, rs, event_id):
         """Display event organized via DB."""
-        rs.ambience['event']['is_open'] = registration_is_open(
-            rs.ambience['event'])
         params = {}
         params['orgas'] = self.coreproxy.get_personas(
             rs, rs.ambience['event']['orgas'])
@@ -243,8 +212,6 @@ class EventFrontend(AbstractUserFrontend):
                 and not (event_id in rs.user.orga or self.is_admin(rs))):
             rs.notify("warning", _("Course list not published yet."))
             return self.redirect(rs, "event/show_event")
-        rs.ambience['event']['is_open'] = registration_is_open(
-            rs.ambience['event'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = None
         if course_ids:
@@ -340,7 +307,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def part_summary_form(self, rs, event_id):
         """Render form."""
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         current = {
             "{}_{}".format(key, part_id): value
             for part_id, part in rs.ambience['event']['parts'].items()
@@ -707,7 +674,7 @@ class EventFrontend(AbstractUserFrontend):
     def create_course_form(self, rs, event_id):
         """Render form."""
         ## by default select all tracks
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         if not tracks:
             rs.notify("error", _("Event without tracks forbids courses"))
             return self.redirect(rs, 'event/course_stats')
@@ -735,7 +702,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard()
     def stats(self, rs, event_id):
         """Present an overview of the basic stats."""
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         courses = self.eventproxy.list_db_courses(rs, event_id)
@@ -743,7 +710,7 @@ class EventFrontend(AbstractUserFrontend):
             rs, tuple(e['persona_id'] for e in registrations.values()))
         stati = const.RegistrationPartStati
         get_age = lambda u: determine_age_class(
-            u['birthday'], self.event_begin(rs.ambience['event']))
+            u['birthday'], rs.ambience['event']['begin'])
         tests1 = OrderedDict((
             ('pending', (lambda e, r, p: (
                 p['status'] == stati.applied))),
@@ -923,21 +890,15 @@ class EventFrontend(AbstractUserFrontend):
             ' u18': (
                 participant_filter,
                 ("persona.birthday", QueryOperators.greater,
-                    deduct_years(min(p['part_begin']
-                                     for p in rs.ambience['event']['parts'].values()),
-                                 18)),),
+                    deduct_years(rs.ambience['event']['begin'], 18)),),
             ' u16': (
                 participant_filter,
                 ("persona.birthday", QueryOperators.greater,
-                    deduct_years(min(p['part_begin']
-                                     for p in rs.ambience['event']['parts'].values()),
-                                 16)),),
+                    deduct_years(rs.ambience['event']['begin'], 16)),),
             ' u14': (
                 participant_filter,
                 ("persona.birthday", QueryOperators.greater,
-                    deduct_years(min(p['part_begin']
-                                     for p in rs.ambience['event']['parts'].values()),
-                                 14)),),
+                    deduct_years(rs.ambience['event']['begin'], 14)),),
             ' checked in': (
                 participant_filter,
                 ("reg.checkin", QueryOperators.nonempty, None),),
@@ -957,9 +918,7 @@ class EventFrontend(AbstractUserFrontend):
             ' no parental agreement': (
                 involved_filter,
                 ("persona.birthday", QueryOperators.greater,
-                 deduct_years(min(p['part_begin']
-                                  for p in rs.ambience['event']['parts'].values()),
-                              18)),
+                 deduct_years(rs.ambience['event']['begin'], 18)),
                 ("reg.parental_agreement", QueryOperators.equal, False),),
             'no lodgement': (
                 ('part{anid}.status{anid}', QueryOperators.oneof,
@@ -1023,7 +982,7 @@ class EventFrontend(AbstractUserFrontend):
         """
         if rs.errors:
             return self.course_choices_form(rs, event_id)
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.registrations_by_course(
             rs, event_id, course_id, track_id, position, ids)
         registrations = self.eventproxy.get_registrations(
@@ -1092,7 +1051,7 @@ class EventFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.course_choices_form(rs, event_id)
 
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         courses = None
         if action == CourseChoiceToolActions.assign_auto:
@@ -1153,7 +1112,7 @@ class EventFrontend(AbstractUserFrontend):
         all courses.
         """
         event = rs.ambience['event']
-        tracks = event_gather_tracks(event)
+        tracks = event['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -1376,7 +1335,7 @@ class EventFrontend(AbstractUserFrontend):
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
-                self.event_begin(rs.ambience['event']))
+                rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         tex = self.fill_template(rs, "tex", "nametags", {
@@ -1407,7 +1366,7 @@ class EventFrontend(AbstractUserFrontend):
         This can be printed and cut to help with distribution of participants.
         """
         event = rs.ambience['event']
-        tracks = event_gather_tracks(event)
+        tracks = event['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
@@ -1451,7 +1410,7 @@ class EventFrontend(AbstractUserFrontend):
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
-                self.event_begin(event))
+                event['begin'])
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
@@ -1566,13 +1525,13 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def register_form(self, rs, event_id):
         """Render form."""
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id)
         if rs.user.persona_id in registrations.values():
             rs.notify("info", _("Allready registered."))
             return self.redirect(rs, "event/registration_status")
-        if not registration_is_open(rs.ambience['event']):
+        if not rs.ambience['event']['is_open']:
             rs.notify("warning", _("Registration not open."))
             return self.redirect(rs, "event/show_event")
         if self.is_locked(rs.ambience['event']):
@@ -1581,7 +1540,7 @@ class EventFrontend(AbstractUserFrontend):
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
             persona['birthday'],
-            self.event_begin(rs.ambience['event']))
+            rs.ambience['event']['begin'])
         minor_form_present = (
             self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
@@ -1621,7 +1580,7 @@ class EventFrontend(AbstractUserFrontend):
         :rtype: {str: object}
         :returns: registration data set
         """
-        tracks = event_gather_tracks(event)
+        tracks = event['tracks']
         standard_params = (("mixed_lodging", "bool"), ("foto_consent", "bool"),
                            ("notes", "str_or_None"))
         if parts is None:
@@ -1688,7 +1647,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event", modi={"POST"})
     def register(self, rs, event_id):
         """Register for an event."""
-        if not registration_is_open(rs.ambience['event']):
+        if not rs.ambience['event']['is_open']:
             rs.notify("error", _("Registration not open."))
             return self.redirect(rs, "event/show_event")
         if self.is_locked(rs.ambience['event']):
@@ -1704,7 +1663,7 @@ class EventFrontend(AbstractUserFrontend):
         registration['persona_id'] = rs.user.persona_id
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
-            persona['birthday'], self.event_begin(rs.ambience['event']))
+            persona['birthday'], rs.ambience['event']['begin'])
         minor_form_present = (
             self.conf.STORAGE_DIR / 'minor_form' / str(event_id)).exists()
         if not minor_form_present and age.is_minor():
@@ -1735,7 +1694,7 @@ class EventFrontend(AbstractUserFrontend):
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
-            persona['birthday'], self.event_begin(rs.ambience['event']))
+            persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         fee = sum(rs.ambience['event']['parts'][part_id]['fee']
@@ -1748,7 +1707,7 @@ class EventFrontend(AbstractUserFrontend):
     @access("event")
     def amend_registration_form(self, rs, event_id):
         """Render form."""
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registration_id = unwrap(self.eventproxy.list_registrations(
             rs, event_id, persona_id=rs.user.persona_id), keys=True)
         if not registration_id:
@@ -1764,7 +1723,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.redirect(rs, "event/registration_status")
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
-            persona['birthday'], self.event_begin(rs.ambience['event']))
+            persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
@@ -1820,7 +1779,7 @@ class EventFrontend(AbstractUserFrontend):
         registration['id'] = registration_id
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
         age = determine_age_class(
-            persona['birthday'], self.event_begin(rs.ambience['event']))
+            persona['birthday'], rs.ambience['event']['begin'])
         registration['mixed_lodging'] = (registration['mixed_lodging']
                                          and age.may_mix())
         code = self.eventproxy.set_registration(rs, registration)
@@ -2022,7 +1981,7 @@ class EventFrontend(AbstractUserFrontend):
         persona = self.coreproxy.get_event_user(
             rs, rs.ambience['registration']['persona_id'])
         age = determine_age_class(
-            persona['birthday'], self.event_begin(rs.ambience['event']))
+            persona['birthday'], rs.ambience['event']['begin'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -2035,7 +1994,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def change_registration_form(self, rs, event_id, registration_id):
         """Render form."""
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
@@ -2113,7 +2072,7 @@ class EventFrontend(AbstractUserFrontend):
                          if enable["enable_{}".format(key)])
 
         # Extract parameters from request
-        tracks = event_gather_tracks(event)
+        tracks = event['tracks']
         reg_params = (
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
             ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
@@ -2210,7 +2169,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def add_registration_form(self, rs, event_id):
         """Render form."""
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         course_choices = {
@@ -2280,7 +2239,7 @@ class EventFrontend(AbstractUserFrontend):
             return self.registration_query(rs, event_id, download=None,
                                            is_search=False)
         # Get information about registrations, courses and lodgements
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, reg_ids)
         if not registrations:
             rs.notify("error", _("No participants found to edit."))
@@ -2392,7 +2351,7 @@ class EventFrontend(AbstractUserFrontend):
           lists by name, so that the can be displayed sorted.
         :rtype: {(int, int): [int]}
         """
-        tracks = event_gather_tracks(event)
+        tracks = event['tracks']
         aspect = None
         if key == "course_id":
             aspect = 'tracks'
@@ -2756,7 +2715,7 @@ class EventFrontend(AbstractUserFrontend):
     @event_guard(check_offline=True)
     def manage_attendees_form(self, rs, event_id, course_id):
         """Render form."""
-        tracks = event_gather_tracks(rs.ambience['event'])
+        tracks = rs.ambience['event']['tracks']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(rs, tuple(
@@ -2875,7 +2834,7 @@ class EventFrontend(AbstractUserFrontend):
 
         :type event: {str: object}
         """
-        tracks = event_gather_tracks(event)
+        tracks = event['tracks']
         spec = copy.deepcopy(QUERY_SPECS['qview_registration'])
         ## note that spec is an ordered dict and we should respect the order
         for part_id in event['parts']:
@@ -2940,7 +2899,7 @@ class EventFrontend(AbstractUserFrontend):
         :rtype: ({str: dict}, {str: str})
         :returns: Choices for select inputs and titles for columns.
         """
-        tracks = event_gather_tracks(event)
+        tracks = event['tracks']
         ## First we construct the choices
         choices = {'persona.gender': self.enum_choice(rs, const.Genders)}
         lodgement_choices =  {
@@ -3137,9 +3096,7 @@ class EventFrontend(AbstractUserFrontend):
             ("reg.id", "persona.given_names", "persona.family_name",
              "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
-              deduct_years(min(p['part_begin']
-                               for p in rs.ambience['event']['parts'].values()),
-                           18)),),
+              deduct_years(rs.ambience['event']['begin'], 18)),),
             (("persona.birthday", True), ("reg.id", True)),)
         params = {
             'spec': spec, 'choices': choices, 'query': query,
@@ -3196,7 +3153,7 @@ class EventFrontend(AbstractUserFrontend):
         for registration in registrations.values():
             registration['age'] = determine_age_class(
                 personas[registration['persona_id']]['birthday'],
-                self.event_begin(rs.ambience['event']))
+                rs.ambience['event']['begin'])
         return self.render(rs, "checkin", {
             'registrations': registrations, 'personas': personas,
             'lodgements': lodgements})

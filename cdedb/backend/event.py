@@ -17,7 +17,7 @@ from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, event_gather_tracks, PsycoJson)
+    REGISTRATION_TRACK_FIELDS, PsycoJson)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -469,6 +469,24 @@ class EventBackend(AbstractBackend):
                 fields = {d['id']: d for d in data if d['event_id'] == anid}
                 assert('fields' not in ret[anid])
                 ret[anid]['fields'] = fields
+        for anid in ids:
+            ret[anid]['begin'] = min((p['part_begin']
+                                      for p in ret[anid]['parts'].values()))
+            ret[anid]['end'] = max((p['part_end']
+                                    for p in ret[anid]['parts'].values()))
+            ret[anid]['is_open'] = (
+                ret[anid]['registration_start']
+                and ret[anid]['registration_start'] <= now()
+                and (ret[anid]['registration_hard_limit'] is None
+                     or ret[anid]['registration_hard_limit'] >= now()))
+            ret[anid]['tracks'] =  {
+                track_id: {
+                    'part_id': part_id,
+                    'title': title
+                }
+                for part_id, part in ret[anid]['parts'].items()
+                for track_id, title in part['tracks'].items()
+            }
         return ret
 
     def _set_tracks(self, rs, event_id, part_id, data, cautious=False):
@@ -927,7 +945,7 @@ class EventBackend(AbstractBackend):
         with Atomizer(rs):
             ## Check for existence of course tracks
             event = self.get_event(rs, data['event_id'])
-            if not event_gather_tracks(event):
+            if not event['tracks']:
                 raise RuntimeError(_("Event without tracks forbids courses"))
 
             cdata = {k: v for k, v in data.items() if k in COURSE_FIELDS}
@@ -1255,7 +1273,7 @@ class EventBackend(AbstractBackend):
                     raise NotImplementedError(_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
-                all_tracks = set(event_gather_tracks(event))
+                all_tracks = set(event['tracks'])
                 if not(all_tracks >= set(tracks)):
                     raise ValueError(_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(

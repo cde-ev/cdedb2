@@ -86,6 +86,12 @@ class TestEventBackend(BackendTest):
         data['is_visible'] = False
         data['lodge_field'] = None
         data['reserve_field'] = None
+        data['begin'] = datetime.date(2109, 8, 7)
+        data['end'] = datetime.date(2110, 8, 20)
+        data['is_open'] = True
+        # TODO dynamically adapt ids from the database result
+        data['tracks'] = {4: {'part_id': 4, 'title': 'Second lecture'},
+                          5: {'part_id': 5, 'title': 'First lecture'}}
         ## correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -182,6 +188,11 @@ class TestEventBackend(BackendTest):
         changed_field['event_id'] = new_id
         changed_field['field_name'] = "preferred_excursion_date"
         data['fields'][field_map["preferred_excursion_date"]] = changed_field
+        data['begin'] = datetime.date(2110, 9, 8)
+        data['end'] = datetime.date(2111, 8, 20)
+        # TODO dynamically adapt ids from the database result
+        data['tracks'] = {4: {'part_id': 4, 'title': 'Second lecture v2'},
+                          6: {'part_id': 6, 'title': 'Third lecture'}}
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))

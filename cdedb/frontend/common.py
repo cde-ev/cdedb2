@@ -46,7 +46,7 @@ from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
     _, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
-    json_serialize, event_gather_tracks, open_utf8)
+    json_serialize, open_utf8)
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.enums import ENUMS_DICT
@@ -620,11 +620,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'CDEDB_DEV': self.conf.CDEDB_DEV,
             'GIT_COMMIT': self.conf.GIT_COMMIT,
         }
-        ## patch data to bypass jinja short-comings (no list comprehension)
-        if 'event' in data['ambience']:
-            assert('tracks' not in data['ambience']['event'])
-            data['ambience']['event']['tracks'] = event_gather_tracks(
-                data['ambience']['event'])
         ## check that default values are not overridden
         assert(not set(data) & set(params))
         merge_dicts(data, params)
@@ -1690,20 +1685,6 @@ def make_transaction_subject(persona):
     return "{}, {}, {}".format(cdedbid_filter(persona['id']),
                                asciificator(persona['family_name']),
                                asciificator(persona['given_names']))
-
-def registration_is_open(event):
-    """Small helper to determine if an event is open for registration.
-
-    This is a somewhat verbose condition encapsulated here for brevity.
-
-    :type event: {str: object}
-    :param event: event dataset as returned by the backend
-    :rtype: bool
-    """
-    return (event['registration_start']
-            and event['registration_start'] <= now()
-            and (event['registration_hard_limit'] is None
-                 or event['registration_hard_limit'] >= now()))
 
 def csv_output(data, fields, replace_newlines=True, substitutions=None):
     """Generate a csv representation of the passed data.

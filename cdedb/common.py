@@ -717,25 +717,6 @@ def unwrap(single_element_list, keys=False):
             single_element_list = single_element_list.values()
     return next(i for i in single_element_list)
 
-def event_gather_tracks(event):
-    """Helper to assemble all tracks of an event into one dict.
-
-    The tracks of an event are stored inside their respective parts. This
-    makes it some thing better, but other things (especially lookup)
-    harder. Thus we provide this helper to allow easy lookup.
-
-    :type event: {str: object}
-    :rtype: {int: {str: object}}
-    """
-    return {
-        track_id: {
-            'part_id': part_id,
-            'title': title
-        }
-        for part_id, part in event['parts'].items()
-        for track_id, title in part['tracks'].items()
-    }
-
 @enum.unique
 class AgeClasses(enum.IntEnum):
 
