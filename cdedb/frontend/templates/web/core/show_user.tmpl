@@ -174,7 +174,13 @@
                     </dd>
 
                     <dt>Guthaben</dt>
-                    <dd>{{ data['balance']|e }}€</dd>
+                    <dd>{{ data['balance']|e }}€</dd> {# TODO change markup if active lastschrift exists #}
+                    {% if 'cde_admin' in user.roles %} {# TODO or active lastschrift exists #}
+                        <dd>
+                            {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                         "Einzugsermächtigung …", icon="euro") }}
+                        </dd>
+                    {% endif %}
 
                     {% if data['is_member'] %}
                         <dt>Sichtbarkeit</dt>
@@ -206,11 +212,6 @@
                     <dd>
                         {{ util.deko_checkbox(checked=data['cloud_account']) }}
                         {% if data['cloud_account'] %}Zugriff aktiv{% endif %}
-                    </dd>
-
-                    <dd>
-                        {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                     "Einzugsermächtigung …", icon="euro") }}
                     </dd>
                 </dl>
             {% endif %}

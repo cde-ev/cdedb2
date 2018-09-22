@@ -78,12 +78,13 @@
             </dl>
         {% endwith %}
     {% else %}
-        Keine aktive Einzugsermächtigung – {{ util.href(cdedblink('cde/lastschrift_create_form'), "Erstellen") }}
+        Keine aktive Einzugsermächtigung
+        {% if is_admin %} – {{ util.href(cdedblink('cde/lastschrift_create_form'), "Erstellen") }}{% endif %}
     {% endif %}
 
     {% if transactions or active_open %}
         <h2>Getätigte Lastschriften</h2>
-		{% if active_open %}
+		{% if active_open and is_admin %}
             <div class="p">
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions')|e }}" method="POST"
                     id="generatetransactionform" style="display: inline;">
