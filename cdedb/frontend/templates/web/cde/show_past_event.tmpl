@@ -25,7 +25,9 @@
     
     {{ ambience['pevent']['description']|rst }}
 
-    <h2>Kurse</h2>
+    {% if courses or is_admin %}
+        <h2>Kurse</h2>
+    {% endif %}
     {% if is_admin %}
         <div class="p">
             {{ util.href(cdedblink('cde/create_past_course_form'), "Kurs hinzufügen", icon="plus",
