@@ -116,7 +116,9 @@
                                     <br />
                                     {% if event['registration_start'] <= dashboard['present'] %}
                                         {{ event['registrations']|e }} Anmeldungen
-                                        {% if event['registration_hard_limit'] >= dashboard['present'] %}
+                                        {% if not event['registration_hard_limit'] %}
+                                            (Anmeldung offen)
+                                        {% elif event['registration_hard_limit'] >= dashboard['present'] %}
                                             (Anmeldung bis {{ event['registration_hard_limit']|datetime(lang=lang) }})
                                         {% endif %}
                                     {% else %}
@@ -186,7 +188,7 @@
                                                      "Fragebogen", icon='edit') -}}
                                     {% endif -%}
                                     )
-                                {% elif event['registration_start'] and event['registration_start'] >= now() %}
+                                {% elif event['registration_start'] and event['registration_start'] <= now() %}
                                     {{ util.href(cdedblink('event/register_form', {'event_id': event_id}), "anmelden",
                                                  icon='log-in') }}
                                     {% if event['registration_soft_limit'] %}
