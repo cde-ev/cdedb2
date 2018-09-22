@@ -114,17 +114,19 @@
             {{ print_history('birth_name') }}
         {% endcall %}
 
-        {% call history_field("Geburtstag") %}
-            {% call(c) print_history('birthday') %}
-                 {{ entries[c]['birthday']|date(lang=lang)|e }}
+        {% if current['is_cde_realm'] or current['is_event_realm'] %}
+            {% call history_field("Geburtstag") %}
+                {% call(c) print_history('birthday') %}
+                     {{ entries[c]['birthday']|date(lang=lang)|e }}
+                {% endcall %}
             {% endcall %}
-        {% endcall %}
 
-        {% call history_field("Geschlecht") %}
-            {% call(c) print_history('gender') %}
-                 {{ gettext(enums['Genders'](entries[c]['gender'])|string)|e }}
+            {% call history_field("Geschlecht") %}
+                {% call(c) print_history('gender') %}
+                     {{ gettext(enums['Genders'](entries[c]['gender'])|string)|e }}
+                {% endcall %}
             {% endcall %}
-        {% endcall %}
+        {% endif %}
 
 
         <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
@@ -167,42 +169,44 @@
             {% endcall %}
         {% endcall %}
 
-        {% call history_field('CdE-Mitgliedschaft') %}
-            {% call(c) print_multifield_history(['is_member', 'trial_member']) %}
-                {% if entries[c]['is_member'] %}
-                    {% if entries[c]['trial_member'] %}
-                        Probemitgliedschaft
+        {% if current['is_cde_realm'] %}
+            {% call history_field('CdE-Mitgliedschaft') %}
+                {% call(c) print_multifield_history(['is_member', 'trial_member']) %}
+                    {% if entries[c]['is_member'] %}
+                        {% if entries[c]['trial_member'] %}
+                            Probemitgliedschaft
+                        {% else %}
+                            Mitglied
+                        {% endif %}
                     {% else %}
-                        Mitglied
+                        Kein Mitglied
                     {% endif %}
-                {% else %}
-                    Kein Mitglied
-                {% endif %}
+                {% endcall %}
             {% endcall %}
-        {% endcall %}
 
-        {% call history_field('Sichtbarkeit') %}
-            {% call(c) print_multifield_history(['is_searchable', 'decided_search']) %}
-                {% if entries[c]['decided_search'] %}
-                    {% if entries[c]['is_searchable'] %}
-                        sichtbar
+            {% call history_field('Sichtbarkeit') %}
+                {% call(c) print_multifield_history(['is_searchable', 'decided_search']) %}
+                    {% if entries[c]['decided_search'] %}
+                        {% if entries[c]['is_searchable'] %}
+                            sichtbar
+                        {% else %}
+                            nicht sichtbar
+                        {% endif %}
                     {% else %}
-                        nicht sichtbar
+                        (unentschieden)
                     {% endif %}
-                {% else %}
-                    (unentschieden)
-                {% endif %}
+                {% endcall %}
             {% endcall %}
-        {% endcall %}
 
-        {% for name, field in (("Guthaben", 'balance'),
-                               ("Sichtbar für BuB", 'bub_search'),
-                               ("Wolken-Zugriff", 'cloud_account'),
-                               ("Notizen", 'notes')) %}
-            {% call history_field(name) %}
-                {{ print_history(field) }}
-            {% endcall %}
-        {% endfor %}
+            {% for name, field in (("Guthaben", 'balance'),
+                                   ("Sichtbar für BuB", 'bub_search'),
+                                   ("Wolken-Zugriff", 'cloud_account'),
+                                   ("Notizen", 'notes')) %}
+                {% call history_field(name) %}
+                    {{ print_history(field) }}
+                {% endcall %}
+            {% endfor %}
+        {% endif %}
 
         <h4 class="heading-underline">Kontakt</h4>
 
@@ -215,39 +219,45 @@
             {% endcall %}
         {% endfor %}
 
-        {% call history_field('Adresse') %}
-            {% call(c) print_multifield_history(
-                    ['address','address_supplement', 'postal_code', 'location', 'country']) %}
-                {{ entries[c]['address'] }}{% if entries[c]['address'] %}<br />{% endif %}
-                {{ entries[c]['address_supplement'] }}{% if entries[c]['address_supplement'] %}<br />{% endif %}
-                {{ entries[c]['postal_code'] }} {{ entries[c]['location'] }}
-                {% if entries[c]['location'] %}<br />{% endif %}
-                {{ entries[c]['country'] }}
+        {% if current['is_event_realm'] or current['is_cde_realm'] %}
+            {% call history_field('Adresse') %}
+                {% call(c) print_multifield_history(
+                        ['address','address_supplement', 'postal_code', 'location', 'country']) %}
+                    {{ entries[c]['address'] }}{% if entries[c]['address'] %}<br />{% endif %}
+                    {{ entries[c]['address_supplement'] }}{% if entries[c]['address_supplement'] %}<br />{% endif %}
+                    {{ entries[c]['postal_code'] }} {{ entries[c]['location'] }}
+                    {% if entries[c]['location'] %}<br />{% endif %}
+                    {{ entries[c]['country'] }}
+                {% endcall %}
             {% endcall %}
-        {% endcall %}
+        {% endif %}
 
-        {% call history_field('Adresse') %}
-            {% call(c) print_multifield_history(
-                    ['address2','address_supplement2', 'postal_code2', 'location2', 'country2']) %}
-                {{ entries[c]['address2'] }}{% if entries[c]['address2'] %}<br />{% endif %}
-                {{ entries[c]['address_supplement2'] }}{% if entries[c]['address_supplement2'] %}<br />{% endif %}
-                {{ entries[c]['postal_code2'] }} {{ entries[c]['location2'] }}
-                {% if entries[c]['location2'] %}<br />{% endif %}
-                {{ entries[c]['country2'] }}
+        {% if current['is_cde_realm'] %}
+            {% call history_field('Zweitadresse') %}
+                {% call(c) print_multifield_history(
+                        ['address2','address_supplement2', 'postal_code2', 'location2', 'country2']) %}
+                    {{ entries[c]['address2'] }}{% if entries[c]['address2'] %}<br />{% endif %}
+                    {{ entries[c]['address_supplement2'] }}{% if entries[c]['address_supplement2'] %}<br />{% endif %}
+                    {{ entries[c]['postal_code2'] }} {{ entries[c]['location2'] }}
+                    {% if entries[c]['location2'] %}<br />{% endif %}
+                    {{ entries[c]['country2'] }}
+                {% endcall %}
             {% endcall %}
-        {% endcall %}
+        {% endif %}
 
-        <h4 class="heading-underline">Lebenslauf</h4>
+        {% if current['is_cde_realm'] %}
+            <h4 class="heading-underline">Lebenslauf</h4>
 
-        {% for name, field in (("Fachgebiet", 'specialisation'),
-                               ("Schule, Uni, …", 'affiliation'),
-                               ("Jahrgang, Matrikel, …", 'timeline'),
-                               ("Interessen", 'interests'),
-                               ("Sonstiges …", 'free_form')) %}
-            {% call history_field(name) %}
-                {{ print_history(field) }}
-            {% endcall %}
-        {% endfor %}
+            {% for name, field in (("Fachgebiet", 'specialisation'),
+                                   ("Schule, Uni, …", 'affiliation'),
+                                   ("Jahrgang, Matrikel, …", 'timeline'),
+                                   ("Interessen", 'interests'),
+                                   ("Sonstiges …", 'free_form')) %}
+                {% call history_field(name) %}
+                    {{ print_history(field) }}
+                {% endcall %}
+            {% endfor %}
+        {% endif %}
 
     </div>
 
