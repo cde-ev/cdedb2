@@ -63,7 +63,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% endif %}
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
-                {% for course_id, course in courses|xdictsort('nr') %}
+                {% for course_id, course in courses|xdictsort('nr', pad=True) %}
                     {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
                 {% endfor %}
                 den Kurs
@@ -128,7 +128,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     <div class="form-group">
                         {# jinja does not support list comprehension ... #}
                         {% set myentries = [] %}
-                        {% for course_id, course in courses|dictsort %}
+                        {% for course_id, course in courses|xdictsort('nr', pad=True) %}
                             {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname'])))|e }}
                         {% endfor %}
                         {{ util.input_select(name="course_id", anid="input-course_id", entries=myentries,
