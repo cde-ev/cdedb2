@@ -151,6 +151,9 @@ See cde realm.
 Implementation Details
 ----------------------
 
+Before everything else ensure, that the trial migration workaround in
+modify_password in cdedb/backend/core.py is disabled.
+
 First export the data on the old database server::
 
     sudo -u postgres pg_dump cdedbxy > /tmp/cdedbv1.sql
@@ -169,13 +172,14 @@ Now we reset the working copy of the new database::
 
     sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-users.sql
     sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-db.sql -v cdb_database_name=cdb
-    sudo -u postgres psql -U postgres -f /cdedb2/cdedb/database/cdedb-tables.sql -v cdb_database_name=cdb
+    sudo -u postgres psql -U postgres -d cdb -f /cdedb2/cdedb/database/cdedb-tables.sql
     echo 'ou=personas,dc=cde-ev,dc=de' | ldapdelete -c -r -x -D 'cn=root,dc=cde-ev,dc=de' -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0
     ldapadd -c -x -D 'cn=root,dc=cde-ev,dc=de'  -w s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0 -f /cdedb2/cdedb/database/init.ldif
 
-We can now execute the migration script::
+We can now execute the migration script (it might be a good idea to turn of
+fsync in the postgres configuration before running this)::
 
-    sudo -u www-data PYTHONPATH="/cdedb2:${PYTHONPATH}" /cdedb2/bin/migrate_execute.py
+    time sudo -u www-data PYTHONPATH="/cdedb2:${PYTHONPATH}" /cdedb2/bin/migrate_execute.py > /tmp/conversion.log
 
 Take note of the output and double-check any suspicious cases. One more
 manual step has to be done -- initialize the meta info table::
