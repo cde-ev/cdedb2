@@ -1,7 +1,11 @@
 {% set sidenav_active='event_show' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block scripts %}
+    {% if values['event_id'] in user.orga or is_admin %}
+        {{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}
+    {% endif %}
+{% endblock %}
 {% if values['event_id'] in user.orga or is_admin %}
     {% set jshint = 'strong' %}
 {% endif %}

@@ -2172,6 +2172,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
+        registrations = self.eventproxy.list_registrations(rs, event_id)
         course_choices = {
             track_id: [course_id
                        for course_id, course
@@ -2182,7 +2183,8 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         return self.render(rs, "add_registration", {
             'courses': courses, 'course_choices': course_choices,
-            'lodgements': lodgements,})
+            'lodgements': lodgements,
+            'registered_personas': registrations.values()})
 
     @access("event", modi={"POST"})
     @event_guard(check_offline=True)

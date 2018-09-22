@@ -1,6 +1,8 @@
 {% set sidenav_active='event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint = 'strong' %}
 {% block title %}Neue Anmeldung ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -18,7 +20,14 @@
     <form action="{{ cdedblink('event/add_registration')|e }}" method="POST" id="addregistrationform"
           class="form-horizontal">
         <h3 class="heading-underline">Personendaten</h3>
-        {{ util.form_input_text(name="persona.persona_id", label="CdEDB-ID") }}
+        {{ util.form_input_text(name="persona.persona_id", label="CdEDB-ID", anid="input-persona-persona_id",
+                                placeholder='DB-XXXX-X') }}
+        <script type="text/javascript">
+            $('#input-persona-persona_id').cdedbSearchPerson(
+                '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + (ambience['event']['id']|string) }}',
+                {{ registered_personas|list|json }}
+            );
+        </script>
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
             {{ util.form_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
         {% endif %}
@@ -93,4 +102,7 @@
 
         {{ util.form_input_submit(value="Anmelden", cancellink=cdedblink('event/registration_query')) }}
     </form>
+    <script type="text/javascript">
+        $('#addregistrationform').cdedbProtectChanges();
+    </script>
 {% endblock %}
