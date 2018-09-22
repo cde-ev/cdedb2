@@ -1606,6 +1606,10 @@ class CdEFrontend(AbstractUserFrontend):
         persona per event (easiest example multiple courses in multiple
         parts). So here we fuse these entries into one per persona.
 
+        Additionally, this function takes care of privacy: Participants
+        are removed from the result if they are not searchable and the viewing
+        user is neither admin nor participant of the past event themselves.
+
         Note that the returned dict of participants is already sorted.
 
         :type rs: :py:class:`FrontendRequestState`
@@ -1622,6 +1626,8 @@ class CdEFrontend(AbstractUserFrontend):
             rs, pevent_id=pevent_id)
         is_participant = any(anid == rs.user.persona_id
                              for anid, _ in participant_infos.keys())
+        # We are privileged to see other participants if we are admin or
+        # participant by ourselves
         privileged = is_participant or self.is_admin(rs)
         participants = {}
         personas = {}
@@ -1651,17 +1657,23 @@ class CdEFrontend(AbstractUserFrontend):
             personas = self.coreproxy.get_personas(rs, participants.keys())
             participants = OrderedDict(sorted(
                 participants.items(), key=lambda x: name_key(personas[x[0]])))
+        # Delete unsearchable participants if we are not privileged
         if participants and not privileged:
             for anid, persona in personas.items():
-                if not persona['is_searchable'] or not persona['is_member']:
+                if not persona['is_searchable'] or not persona['is_member']\
+                        or not persona['is_active']:
                     del participants[anid]
                     extra_participants += 1
+        # Flag linkable user profiles (own profile + all searchable profiles
+        # + all (if we are admin))
         for anid in participants:
             participants[anid]['viewable'] = (self.is_admin(rs)
                                               or anid == rs.user.persona_id)
         if "searchable" in rs.user.roles:
             for anid in participants:
-                if personas[anid]['is_searchable']:
+                if personas[anid]['is_searchable']\
+                        and personas[anid]['is_member']\
+                        and personas[anid]['is_active']:
                     participants[anid]['viewable'] = True
         return participants, personas, extra_participants
 
