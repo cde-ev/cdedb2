@@ -108,7 +108,7 @@
                 <div class="col-md-6">
                 {% call util.bootstrap_panel(title="Orga-Veranstaltungen", icon='blackboard', aclass='panel-warning') %}
                     <ul class="slim">
-                        {% for event_id, event in dashboard['orga']|xdictsort('start') %}
+                        {% for event_id, event in dashboard['orga']|xdictsort('begin') %}
                             <li>
                                 {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
                                         icon='blackboard') }}
@@ -169,12 +169,12 @@
                 {% call util.bootstrap_panel(title="Aktuelle Veranstaltungen", icon='blackboard',
                                              aclass='panel-success') %}
                     <ul class="slim">
-                        {% for event_id, event in dashboard['events']|xdictsort('start') %}
+                        {% for event_id, event in dashboard['events']|xdictsort('begin') %}
                             <li>
                                 {{ util.href(cdedblink('event/show_event', {'event_id': event_id}), event['title'],
                                              icon='blackboard') }}
                                 <br />
-                                {{ event['start']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
+                                {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
                                 <br />
                                 {% if event['registration'] %}
                                     (bereits

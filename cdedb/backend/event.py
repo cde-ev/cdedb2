@@ -473,6 +473,8 @@ class EventBackend(AbstractBackend):
         for anid in ids:
             ret[anid]['tracks'] = event_gather_tracks(ret[anid])
             ret[anid]['is_open'] = registration_is_open(ret[anid])
+            ret[anid]['begin'] = max((p['part_begin'] for p in ret[anid]['parts'].values()))
+            ret[anid]['end'] = max((p['part_end'] for p in ret[anid]['parts'].values()))
         return ret
 
     def _set_tracks(self, rs, event_id, part_id, data, cautious=False):

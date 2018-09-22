@@ -92,14 +92,11 @@ class CoreFrontend(AbstractFrontend):
                 events = self.eventproxy.get_events(rs, orga_info)
                 present = now()
                 for event_id, event in events.items():
-                    start = min((part['part_begin']
-                                 for part in event['parts'].values()),
-                                default=None)
-                    if (not start or start >= present.date()
-                            or abs(start.year - present.year) < 2):
+                    begin = event['begin']
+                    if (not begin or begin >= present.date()
+                            or abs(begin.year - present.year) < 2):
                         regs = self.eventproxy.list_registrations(rs,
                                                                   event['id'])
-                        event['start'] = start
                         event['registrations'] = len(regs)
                         orga[event_id] = event
                 dashboard['orga'] = orga
@@ -119,14 +116,6 @@ class CoreFrontend(AbstractFrontend):
                 final = {}
                 for event_id, event in events.items():
                     if event_id not in orga_info:
-                        event['start'] = min(
-                            (part['part_begin']
-                             for part in event['parts'].values()),
-                            default=None)
-                        event['end'] = max(
-                            (part['part_end']
-                             for part in event['parts'].values()),
-                            default=None)
                         registration = self.eventproxy.list_registrations(
                             rs, event_id, rs.user.persona_id)
                         event['registration'] = bool(registration)
