@@ -1,0 +1,48 @@
+{% set mainnav_active='assembly' %}
+{% extends "web/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% macro assembly_inner_navigation(data) %}
+        <div class="list-group tear-down">
+            {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), "Übersicht",
+                    aclass="list-group-item", icon="triangle-right", active=(sidenav_active == 'assembly_show')) }}
+
+                {{ util.href(cdedblink("assembly/list_attendees", {'assembly_id': data['id']}), "Teilnehmer",
+                        aclass="list-group-item", icon="user", active=(sidenav_active == 'assembly_attendees')) }}
+
+                {{ util.href(cdedblink("assembly/list_ballots", {'assembly_id': data['id']}), "Abstimmungen",
+                        aclass="list-group-item", icon="thumbs-up", active=(sidenav_active == 'assembly_ballots')) }}
+
+            {% if is_admin %}
+                {{ util.href(cdedblink("assembly/change_assembly_form", {'assembly_id': data['id']}), "Konfiguration",
+                        aclass="list-group-item", icon="cog", active=(sidenav_active == 'assembly_config')) }}
+            {% endif %}
+        </div>
+{% endmacro %}
+
+{% block navigation %}
+    {% if ambience['assembly'] %}
+        <p>
+            {{ util.href(cdedblink("assembly/index"), "Zur Versammlungs-Übersicht", icon="circle-arrow-up") }}
+        </p>
+
+        <h4>{{ util.make_icon('bullhorn', arialabel='Versammlung') }}
+            {{ ambience['assembly']['title'] }}</h4>
+        {{ assembly_inner_navigation(ambience['assembly']) }}
+    {% else %}
+        <h4>Versammlungen</h4>
+        <div class="list-group tear-down">
+            {{ util.href(cdedblink("assembly/index"), "Übersicht", icon="triangle-right",
+                    aclass="list-group-item", active=(sidenav_active == 'assembly_index')) }}
+        </div>
+        {% if is_admin %}
+            <div class="list-group tear-down">
+                {{ util.href(cdedblink("assembly/user_search"), "Nutzer verwalten", icon="user",
+                        aclass="list-group-item", active=(sidenav_active == 'assembly_users')) }}
+                {{ util.href(cdedblink("assembly/view_log"), "Log", icon="list-alt", aclass="list-group-item",
+                        active=(sidenav_active == 'assembly_log')) }}
+            </div>
+        {% endif %}
+    {% endif %}
+    <hr class="strong visible-xs visible-sm" />
+{% endblock %}

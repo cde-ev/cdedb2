@@ -1,0 +1,51 @@
+{% set sidenav_active='assembly_ballots' %}
+{% extends "web/assembly/base.tmpl" %}
+{% block title %}{{ ambience['assembly']['title']|e }} – Abstimmungen{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Abstimmungen
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen", active=True) }}
+{% endblock %}
+{% block content %}
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink("assembly/create_ballot"), "Abstimmung anlegen", aclass="btn btn-success btn-sm",
+                    icon="plus") }}
+        </div>
+    {% endif %}
+    {% for heading, sample, show_state in (("Zukünftige Abstimmungen", future, False),
+                                           ("Laufende Abstimmungen", current, True),
+                                           ("Abgeschlossene Abstimmungen", done, False)) %}
+        {% if sample %}
+        <h3> {{ heading|e }} </h3>
+        <ul>
+            {% for ballot_id, ballot in sample|dictsort %}
+                <li>
+                    {{ util.href(cdedblink("assembly/show_ballot", {'ballot_id': ballot_id}), ballot['title'])}}
+                    {% if ballot_id in votes and show_state %}
+                        ({% if votes[ballot_id] -%}
+                            {% if ">" in votes[ballot_id] -%}
+                                <span class="text-success">{{ util.make_icon('check') }} bereits abgestimmt</span>
+                            {%- else -%}
+                                <span class="text-warning">{{ util.make_icon('unchecked') }} enthalten</span>
+                            {%- endif -%}
+                        {% else -%}
+                            <span class="text-danger">noch nicht abgestimmt</span>
+                        {%- endif -%})
+                    {% endif %}
+                    {% if is_admin and now() < ballot['vote_begin'] %}
+                        {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), "Bearbeiten",
+                                     aclass="btn btn-xs btn-warning", icon="pencil")}}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    {% endfor %}
+{% endblock %}

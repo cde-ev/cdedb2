@@ -1,0 +1,133 @@
+{% set sidenav_active='assembly_show' %}
+{% extends "web/assembly/base.tmpl" %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}{{ ambience['assembly']['title']|e }}{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn",
+            active=True) }}
+{% endblock %}
+{% block content %}
+    <div class="p">
+        {% if is_admin and ambience['assembly']['is_active'] %}
+            {{ util.href(cdedblink('assembly/change_assembly'), "Konfiguration", aclass="btn btn-sm btn-warning",
+                         icon="cog") }}
+            {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), "Log",
+                    icon="list-alt") }}
+        {% endif %}
+    </div>
+
+    {{ ambience['assembly']['description']|rst }}
+
+    <dl class="dl-horizontal">
+        <dt>Anmeldeschluss</dt>
+        <dd>{{ ambience['assembly']['signup_end']|datetime(lang=lang)|e }}</dd>
+        <dt>Partizipationsstatus</dt>
+        <dd>
+            {% if attends %}
+                <strong class="text-success">Du nimmst an der Versammlung teil.</strong>
+            {% else %}
+                <p><strong class="text-muted">Du nimmst nicht teil.</strong></p>
+                {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
+                    <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
+                        {{ util.input_submit(value="Teilnehmen", icon="log-in") }}
+                    </form>
+                {% endif %}
+            {% endif %}
+        </dd>
+    </dl>
+
+    {% if is_admin and ambience['assembly']['notes'] %}
+        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+            {{ ambience['assembly']['notes']|rst }}
+        {% endcall %}
+    {% endif %}
+    
+    {% if attachments or is_admin or has_ballot_attachments %}
+        {% call util.bootstrap_panel(title="Dateien", icon='file') %}
+        <div class="row">
+            {% if attachments or is_admin %}
+                <div class="col-sm-6">
+                    <h4>Allgemeine Dateien</h4>
+                    <ul class="slim">
+                        {% for attachment_id, attachment in attachments|dictsort %}
+                            <li>
+                                {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
+                                        attachment['title'])}}
+                                {% if is_admin %}
+                                    <form action="{{ cdedblink('assembly/remove_attachment',
+                                                               {'attachment_id': attachment_id})|e }}"
+                                            method="POST" id="removeattachmentform{{ attachment_id|e }}",
+                                            style="display: inline;">
+                                        {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
+                                                title="Datei löschen") }}
+                                    </form>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <div class="p">
+                        {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
+                                     aclass="btn btn-success btn-sm", icon="plus") }}
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if has_ballot_attachments %}
+                <div class="col-sm-6">
+                <h4>Dateien zu Abstimmungen</h4>
+                    {% for ballot_id, ballot in ballots|dictsort %}
+                        {% if ballot_attachments[ballot_id] %}
+                            <ul class="slim">
+                                {% for battachment_id, battachment in ballot_attachments[ballot_id]|dictsort %}
+                                    <li>
+                                        {{ util.href(cdedblink("assembly/get_attachment",
+                                                     {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
+                                                     battachment['title'])}}
+                                        (<small class="text-muted nowrap">
+                                            {{- util.make_icon('thumbs-up', arialabel="Zu Abstimmung") }}
+                                            {{ ballot['title']|e -}}
+                                         </small>)
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        {% endcall %}
+    {% endif %}
+
+    {% if is_admin %}
+        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST"
+                              id="concludeassemblyform" style="display: inline;">
+                            {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-danger",
+                                                 icon="folder-close") }}
+                            {{ util.input_checkbox(name="ack_conclude", label="sicher?") }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        Archiviert die Versammlung. Anschließend können keine Einstellungen der Versammlung oder ihrer
+                        Abstimmungen mehr geändert werden. Außerdem werden die geheimen Schlüssel zur Signatur der
+                        Stimmen aus der Datenbank gelöscht.
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+        <script type="text/javascript">
+            $(function() {
+                $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
+                $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();
+            });
+        </script>
+    {% endif %}
+    
+{% endblock %}

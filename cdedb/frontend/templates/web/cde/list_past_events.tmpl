@@ -1,0 +1,32 @@
+{% set sidenav_active='cde_past_events' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}Abgeschlossene Veranstaltungen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen", active="True") }}
+{% endblock %}
+{% block content %}
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen",
+                    aclass="btn btn-success btn-sm", icon="plus") }}
+        </div>
+    {% endif %}
+    
+    {% for year, year_events in years|dictsort|reverse %}
+        <h4 class="heading-underline">{{ year }}</h4>
+        <ul>
+            {% for pevent_id in year_events %}
+                <li>
+                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
+                    ({{ stats[pevent_id]['institution_moniker'] }})&emsp;
+                    <small class="text-muted nowrap">
+                        {{ stats[pevent_id]['courses'] }} Kurs{% if stats[pevent_id]['courses'] != 1 %}e{% endif %},
+                        {{ stats[pevent_id]['participants'] }} Teilnehmer
+                    </small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+{% endblock %}

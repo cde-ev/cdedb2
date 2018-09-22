@@ -29,5 +29,6 @@ try:
     import cdedb.testconfig
     CONSOLE_LOG_LEVEL = cdedb.testconfig.CONSOLE_LOG_LEVEL
     GLOBAL_LOG = cdedb.testconfig.GLOBAL_LOG
+    DB_PORT = cdedb.testconfig.DB_PORT
 except ImportError:
     pass

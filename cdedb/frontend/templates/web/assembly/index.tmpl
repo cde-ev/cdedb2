@@ -1,0 +1,34 @@
+{% set sidenav_active='assembly_index' %}
+{% extends "web/assembly/base.tmpl" %}
+{% block title %}Versammlungen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen", active=True) }}
+{% endblock %}
+{% block content %}
+    {% if is_admin %}
+        {{ util.href(cdedblink("assembly/create_assembly_form"), "Versammlung anlegen", icon="plus",
+                aclass="btn btn-sm btn-success") }}
+    {% else %}
+        <p>In diesem Bereich findest Du die Mitgliederversammlungen des CdE.</p>
+    {% endif %}
+    <h3>Aktive Versammlungen</h3>
+    <ul>
+        {% for assembly_id, data in assemblies|dictsort %}
+            {% if data['is_active'] %}
+                <li>
+                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    <h3>Inaktive Versammlungen</h3>
+    <ul>
+        {% for assembly_id, data in assemblies|dictsort %}
+            {% if not data['is_active'] %}
+                <li>
+                    {{ util.href(cdedblink("assembly/show_assembly", {'assembly_id': data['id']}), data['title']) }}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endblock %}

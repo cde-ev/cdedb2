@@ -1,0 +1,537 @@
+{% set sidenav_active='assembly_ballots' %}
+{% extends "web/assembly/base.tmpl" %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('voting') }}{% endblock %}
+{% set jshint = 'weak' %}
+{% block title %}{{ ambience['ballot']['title']|e }} ({{ ambience['assembly']['title']|e }}){% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {{ ambience['ballot']['title']|e }}
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up",
+                            active=True) }}
+{% endblock %}
+{% block content %}
+    {# Admin modification options (delete and edit) #}
+    {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
+        <div class="p">
+            {{ util.href(cdedblink("assembly/change_ballot_form"), "Bearbeiten", icon="pencil",
+                    aclass="btn btn-sm btn-warning") }}
+        </div>
+    {% endif %}
+
+    {# General information about ballot and personalized state info #}
+    {{ ambience['ballot']['description']|rst }}
+    
+    <dl class="dl-horizontal">
+        <dt>Abstimmungszeitraum</dt>
+        <dd>
+            {{ ambience['ballot']['vote_begin']|datetime(lang=lang)|e }}
+            bis {{ ambience['ballot']['vote_end']|datetime(lang=lang)|e }}
+            {% if ambience['ballot']['extended'] is none %}
+                {% if ambience['ballot']['quorum'] %}
+                    <br />
+                    Verlängerung bis {{ ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e }} falls Quorum =
+                    {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht werden.
+                {% endif %}
+            {% else %}
+                {% if ambience['ballot']['extended'] %}
+                    <br />
+                    Wurde bis {{ ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e }} verlängert, da
+                    {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht wurden.
+                {% elif ambience['ballot']['quorum'] %}
+                    <br />
+                    Keine Verlängerung nötig, da {{ ambience['ballot']['quorum']|e }} Stimmen erreicht wurden.
+                {% endif %}
+            {% endif %}
+        </dd>
+        <dt>Status</dt>
+        <dd>
+            {% if now() < ambience['ballot']['vote_begin'] %}
+                <strong>Diese Abstimmung hat noch nicht begonnen.</strong> Admins können noch Veränderungen
+                an der Beschreibung, den Dateien und der Liste der Kandidaten vornehmen.
+                {% if is_admin %}
+                    Alle CdE-Mitglieder und externe Teilnehmer der Veranstaltung können die Abstimmung und
+                    alle Details jedoch bereits sehen, um sich zu informieren.
+                {% endif %}
+            {% elif ambience['ballot']['is_tallied'] %}
+                <strong>Die Abstimmung ist beendet.</strong> Unten wird das Ergebnis angezeigt.
+            {% elif not attends %}
+                Du nimmst nicht an der Versammlung teil. Daher kannst Du nicht abstimmen.
+            {% elif ambience['ballot']['is_voting'] %}
+                <strong>Die Abstimmung läuft.</strong>
+                {% if values['vote'] %}
+                    {% if split_vote|length == 1 %}
+                        <span class="text-warning">Du hast Dich enthalten.</span> Du kannst unten bis zum Ende des
+                        Abstimmungszeitraums noch eine Auswahl treffen.
+                    {% else %}
+                        <span class="text-success">Du hast bereits abgestimmt.</span> Du kannst Deine Auswahl
+                        unten überprüfen und bis zum Ende des Abstimmungszeitraums verändern.
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        </dd>
+    </dl>
+    
+    {% if is_admin and ambience['ballot']['notes'] %}
+        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+            {{ ambience['ballot']['notes']|rst }}
+        {% endcall %}
+    {% endif %}
+
+    {# Add candidate form #}
+    {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
+        {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title="Kandidaten hinzufügen",
+                icon='plus') %}
+            <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform" class="row">
+                <div class="col-md-3">
+                    {{ util.input_text(name="moniker", placeholder="Kurzname", aclass="form-control input-sm",
+                                       arialabel="Kurzname") }}
+                </div>
+                <div class="col-md-6">
+                    {{ util.input_text(name="description", placeholder="Beschreibung",
+                                       aclass="form-control input-sm", arialabel="Beschreibung") }}
+                </div>
+                <div class="col-md-3">
+                    {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}
+                </div>
+            </form>
+        {% endcall %}
+    {% endif %}
+
+    {# Display of result #}
+    {% if ambience['ballot']['is_tallied'] %}
+        <h3>Ergebnis</h3>
+        {% if result['winners'] %}
+            <ol>
+                {% for candidate_ids in result['winners'] %}
+                    <li value="{{ loop.index|e }}">
+                        {% for candidate_id in candidate_ids %}
+                            {% if not ambience['ballot']['votes'] %}
+                                <span class="label label-primary">
+                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker']|e -}}
+                                </span>
+                            {% endif %}
+                            {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
+                            {% if result['counts'] %}
+                                ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
+                                 Stimmen)
+                            {% endif %}
+                            {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
+                        {% endfor %}
+                    </li>
+                {% endfor %}
+            </ol>
+        {% endif %}
+        {% if ambience['ballot']['use_bar'] and result['loosers'] %}
+            <p class="text-info">
+                {% if ambience['ballot']['votes'] %}
+                    Die folgenden Kandidaten haben weniger Stimmen erhalten als die „Gegen alle
+                    Kandidaten“-Option.
+                {% else %}
+                    Die folgenden Kandidaten haben gegen die Ablehnungs-Grenze (<code>{{ ASSEMBLY_BAR_MONIKER }}</code>)
+                    verloren.
+                {% endif %}
+            <ol>
+                {% for candidate_ids in result['loosers'] %}
+                    <li value="{{ (loop.index + result['winners']|length)|e }}">
+                        {% for candidate_id in candidate_ids %}
+                            {% if not ambience['ballot']['votes'] %}
+                                <span class="label label-primary">
+                                    {{- ambience['ballot']['candidates'][candidate_id]['moniker']|e -}}
+                                </span>
+                            {% endif %}
+                            {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
+                            {% if result['counts'] %}
+                                ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
+                                 Stimmen)
+                            {% endif %}
+                            {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
+                        {% endfor %}
+                    </li>
+                {% endfor %}
+            </ol>
+        {% endif %}
+        
+        <h4>Zusammenfassung</h4>
+        {% if not ambience['ballot']['votes'] %}
+            <pre style="max-width: 500px;">{{ result['result']|e }}</pre>
+        {% endif %}
+        <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen", icon="download")}}</p>
+        
+        <h3>Deine Stimme</h3>
+        <p>
+            {# Show own vote under result: Classical vote #}
+            {% if not attends %}
+                Du nimmst nicht an der Versammlung teil.
+            {% elif ambience['ballot']['votes'] %}
+                {% if not values['vote'] %}
+                    {% if ambience['assembly']['is_active'] %}
+                        Du hast noch nicht abgestimmt.
+                    {% endif %}
+                {% else %}
+                    {% if split_vote|length == 1 %}
+                        Du hast Dich enthalten.
+                    {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
+                        Du hast Dich gegen alle Kandidaten entschieden.
+                    {% else %}
+                        Du hast für folgende Kandidaten gestimmt:<br />
+                        {% for voted in split_vote[0] %}
+                            {{ candidates[voted]['description']|e }}{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+                
+            {# Show own vote under result: Classical vote #}
+            {% else %}
+                {% if values['vote'] %}
+                    Du hast mit <code>{{ values['vote']|e }}</code> gestimmt.
+                {% elif ambience['assembly']['is_active'] %}
+                    Du hast nicht abgestimmt.
+                {% endif %}
+            {% endif %}
+        </p>
+    {% else %}
+    
+        {# Classical voting, not tallied #}
+        {% if ambience['ballot']['votes'] %}
+
+            {# Classical voting: Voting form #}
+            {% if ambience['ballot']['is_voting'] and attends %}
+                <h3>Abstimmung</h3>
+                <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
+                    {% if ambience['ballot']['votes'] > 1 %}
+                        {{ util.form_input_static(value='Du hast {} Stimmen'.format(ambience['ballot']['votes']),
+                                                  small=True) }}
+                    {% endif %}
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
+                    {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
+                        {{ myentries.append((candidate['moniker'], candidate['description']))|e }}
+                    {% endfor %}
+                    {{ util.form_input_checkboxes("vote", label="Kandidaten", entries=myentries,
+                                                  radio=(ambience['ballot']['votes'] == 1), small=True) }}
+                    {% if ambience['ballot']['use_bar'] %}
+                        {{ util.form_input_checkboxes(
+                            "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER,"Gegen alle Kandidaten")],
+                            small=True, radio=(ambience['ballot']['votes'] == 1),
+                            info="Mit dieser Option kannst Du Dein Ablehnung aller Kandidaten ausdrücken. Sollte eine "
+                                 "Mehrheit dafür stimmen, so kann der Vorstand ggf. weitere Maßnahmen ergreifen.") }}
+                    {% endif %}
+                    {{ util.form_input_submit(value="Abstimmen", small=True) }}
+                </form>
+                <script type="text/javascript">
+                    {% if ambience['ballot']['votes'] > 1 %}
+                        $('#voteform').cdedbMultiVote({{ ambience['ballot']['votes'] }}, '{{ ASSEMBLY_BAR_MONIKER }}');
+                    {% endif %}
+                    $('#voteform').cdedbProtectChanges();
+                </script>
+
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <div class="col-sm-2 control-label">
+                            <strong>Weitere Optionen</strong>
+                        </div>
+                        <div class="col-sm-10">
+                            <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
+                                    style="display: inline;">
+                                {{ util.input_hidden(name="vote", value="special: abstain") }}
+                                {{ util.input_submit(value="Enthalten", icon="stop") }}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            {# Classical voting: Presentation of candidates #}
+            {% else %}
+                <h3>Kandidaten</h3>
+                <ul>
+                    {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
+                        <li>
+                            {{ candidate['description']|e }}
+                            {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                                <form action="{{ cdedblink('assembly/remove_candidate',
+                                                           {'candidate_id': candidate_id})|e }}"
+                                        method="POST" id="removecandidateform{{ candidate_id|e }}"
+                                        style="display: inline;" class="remove-candiate-form">
+                                    {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
+                                                         title="Kandidaten löschen") }}
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                    <script type="text/javascript">
+                        $('.remove-candiate-form').cdedbProtectAction("Der Kandidat wird gelöscht.");
+                    </script>
+                {% endif %}
+            {% endif %}
+
+        {% else %}
+            {# Preferential voting: Presentation of candidates #}
+            <h3>Kandidaten</h3>
+            <ul>
+                {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
+                    <li>
+                        {% if attends %}<span class="label label-primary">{{ candidate['moniker']|e }}</span>{% endif %}
+                        {{ candidate['description']|e }}
+                        {% if is_admin and now() < ambience['ballot']['vote_begin']
+                                and candidate['moniker'] != ASSEMBLY_BAR_MONIKER %}
+                            <form action="{{ cdedblink('assembly/remove_candidate',
+                                                       {'candidate_id': candidate_id})|e }}"
+                                  method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;"
+                                  class="remove-candiate-form">
+                                {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
+                                                     title="Kandidaten löschen") }}
+                            </form>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                <script type="text/javascript">
+                    $('.remove-candiate-form').cdedbProtectAction("Der Kandidat wird gelöscht.");
+                </script>
+            {% endif %}
+
+            {# Preferential voting: Voting form #}
+            {% if ambience['ballot']['is_voting'] and attends %}
+                <h3>Abstimmung</h3>
+                
+                {# Tab controls to switch to javascript preferential voting form #}
+                <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
+                    <li role="presentation" class="active">
+                        <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab">
+                            {{ util.make_icon('console') }} Text-basierte Abstimmung</a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
+                                id="tablink-jsform">
+                            {{ util.make_icon('flash') }} Interaktive Abstimmung
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    {# Text based preferential voting form #}
+                    <div role="tabpanel" class="tab-pane active" id="tab-textform">
+                        <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
+                                class="form-horizontal">
+                            {{ util.form_input_text(name="vote", label="Präferenzliste", small=True,
+                                                    anid='input-preferencelist') }}
+                            {{ util.form_input_submit(value="Abstimmen", small=True) }}
+                        </form>
+                        <script type="text/javascript">
+                            $('#voteform').cdedbProtectChanges();
+                        </script>
+                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
+                            <p>
+                                Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld eine Präferenzliste
+                                eintragen, um die Kandidaten in eine persönliche Rangfolge zu bringen. Später werden die
+                                Präferenzlisten aller Teilnehmer mit der
+                                <a href="https://de.wikipedia.org/wiki/Schulze-Methode">Schulze-Methode</a> ausgewertet, um die
+                                Wahlsieger zu bestimmen.
+                            </p>
+                            <p>
+                                Um die Präferenzliste einzugeben, verwende bitte die in der Kandidatenliste angegebenen
+                                Kurzbezeichnungen der Kandidaten und die Zeichen <code>&gt;</code> und <code>=</code>. Mit dem
+                                Größer-als-Zeichen <code>&gt;</code> bevorzugst Du die Kandidaten links des Zeichens gegenüber
+                                denen auf der rechten Seite. Mit dem Gleichheitszeichen <code>=</code> bewertest Du zwei
+                                Kandidaten gleich. In der Präferenzliste müssen alle Kandidaten genannt werden.
+                            </p>
+                            {% if ambience['ballot']['use_bar'] %}
+                                <p>
+                                    Zusätzlich musst Du die Ablehnungsgrenze <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> in der
+                                    Präferenzliste verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt an,
+                                    welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet hältst, solltest Du höher als
+                                    <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> bewerten, Kandidaten, die Du ablehnst, niedriger,
+                                    d.h. rechts von <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code>. Sollte in der Auszählung kein
+                                    Kandidat gegen die Ablehnungsgrenze gewinnen, so kann der Vorstand ggf. weitere Maßnahmen
+                                    ergreifen.
+                                </p>
+                            {% endif %}
+                            <p>
+                                <strong>Beispiele:</strong> Wir nehmen folgende beispielhafte Kandidatenliste an:
+                            </p>
+                            <ul>
+                                <li>[Luke] Luke Skywalker</li>
+                                <li>[Leia] Princess Leia Organa von Alderaan</li>
+                                <li>[Han] Han Solo</li>
+                                <li>[ObiWan] Obi-Wan „Ben“ Kenobi</li>
+                            </ul>
+                            <p>
+                                Deine Wahl könnte dann z.B. so aussehen:
+                            </p>
+                            {% if ambience['ballot']['use_bar'] %}
+                                <ul>
+                                    <li>Du hältst alle Kandidaten für geeignet, aber Leia ist die Beste, bei den anderen gibt
+                                        es keinen Unterschied<br />
+                                        <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
+                                    <li>Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab und Han Solo
+                                        geht echt gar nicht<br />
+                                        <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}&gt;Luke&gt;Han</code></li>
+                                    <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
+                                        hast du keine Meinung<br />
+                                        <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}=Han=Leia</code></li>
+                                    <li>Du möchtest dich komplett enthalten<br />
+                                        <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
+                                </ul>
+                            {% else %}
+                                <ul>
+                                    <li>Du findest Leia am geeignetsten, bei den anderen gibt es keinen Unterschied<br />
+                                        <code>Leia&gt;Luke=Han=ObiWan</code></li>
+                                    <li>Du hältst Leia und Obi-Wan für (gleich) geeignet, Luke geht so und Han Solo eher nicht
+                                        <br />
+                                        <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
+                                    <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
+                                        hast du keine Meinung<br />
+                                        <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
+                                    <li>Du möchtest dich komplett enthalten<br />
+                                        <code>Luke=ObiWan=Han=Leia</code></li>
+                                </ul>
+                            {% endif %}
+                        {% endcall %}
+                    </div>
+                    
+                    {# Javascript preferential voting form #}
+                    <div role="tabpanel" class="tab-pane" id="tab-jsform">
+                        <p class="sr-only">
+                            Hier folgt das interaktive Absitummgs-Formular. Dieses ist mit der Tastatur nur mäßig gut
+                            zu bedienen. Verwende den obigen Link, um zum Text-basierten Formular zu wechseln.
+                        </p>
+                        <div class="prefvote_container" id="prefvote_container">
+                            <div class="indicator">
+                                steigende Präferenz →
+                            </div>
+                        </div>
+                        <div class="p clearfix">
+                            <button class="btn btn-primary pull-right" id="button-jsvote">
+                                {{ util.make_icon('ok') }} Abstimmen
+                            </button>
+                        </div>
+                        <script type="text/javascript">
+                            /* Show tabs */
+                            $('#tablist-formselect').show();
+                            /* Initialize JS Fancy form */
+                            $('#prefvote_container').cdedbPrefVote(
+                                {{ ambience['ballot']['candidates']|dictsort|json }},
+                                {{ "'"+ASSEMBLY_BAR_MONIKER+"'" if ambience['ballot']['use_bar'] else "null" }},
+                                "Neutral",
+                                $('#input-preferencelist'));
+                            /* Register callback to refresh fancy form every time the tab is shown */
+                            $('#tablink-jsform').on('show.bs.tab',
+                                                    $('#prefvote_container').data('cdedbPrefVote').readPreferenceList);
+                            /* Show the tab */
+                            $('#tablink-jsform').tab('show');
+                            $('#button-jsvote').click(function(){$('#voteform').submit();});
+                        </script>
+                        
+                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
+                            <p>
+                                Diese Abstimmung findet als Präferenzwahl statt. Du kannst die Kandidaten in dem oben
+                                angezeigten Feld in eine persönliche Rangfolge zu bringen. Später werden die
+                                Präferenzlisten aller Teilnehmer mit der
+                                <a href="https://de.wikipedia.org/wiki/Schulze-Methode">Schulze-Methode</a> ausgewertet,
+                                um die Wahlsieger zu bestimmen.
+                            </p>
+                            <p>
+                                Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. Eine Einordnung
+                                in einer höheren Box drückt eine höhere Präferenz dieses Kandidaten aus. Kandidaten, die
+                                sich in der gleichen Box befinden, werden mit gleicher Präferenz gewertet. Bewegst Du
+                                einen Kandidaten in den Zwischenraum ober- und unterhalb der Boxen, ensteht dort eine
+                                neue Box.
+                            </p>
+                            <p>
+                                Zum Bewegen der Kandidaten hast du drei Möglichkeiten: Verschiebe sie mit Drag’n’Drop in
+                                eine andere Box oder klicke zuerst den Kandidaten, dann die gewünschte Box an. Mit der
+                                Tastatur kannst Du Kandidaten und Boxen mit <kbd>TAB</kbd> fokussieren und so
+                                zunächst den Kandidaten und dann die Ziel-Box mit <kbd>ENTER</kbd> oder
+                                <kbd>Leertaste</kbd> auswählen.
+                            </p>
+                            {% if ambience['ballot']['use_bar'] %}
+                                <p>
+                                    Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne Kandidaten, die
+                                    Du für geeignet hältst, oberhalb dieser Box an (Boxen werden grün hinterlegt) und
+                                    Kandidaten die Du ablehnst unterhalb (Boxen werden rot hinterlegt). Sollten in der
+                                    Auszählung alle Kandidaten abgelehnt werden, so kann der Vorstand ggf. weitere
+                                    Maßnahmen ergreifen.
+                                </p>
+                                <p>
+                                    Um Dich zu enthalten, positioniere alle Kandidaten in der Neutral-Box.
+                                </p>
+                            {% else %}
+                                <p>
+                                    Um Dich zu enthalten, positioniere alle Kandidaten in einer Box.
+                                </p>
+                            {% endif %}
+                            
+                        {% endcall %}
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
+    {# Attachments #}
+    {% if attachments or is_admin and now() < ambience['ballot']['vote_begin'] %}
+        {% call util.bootstrap_panel(title="Dateien", icon='file') %}
+            {% if attachments %}
+                <ul>
+                    {% for attachment_id, attachment in attachments|dictsort %}
+                        <li>
+                            {{ util.href(cdedblink("assembly/get_attachment", {'attachment_id': attachment_id}),
+                                    attachment['title'])}}
+                            {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                                <form action="{{ cdedblink('assembly/remove_attachment',
+                                                           {'attachment_id': attachment_id})|e }}"
+                                        method="POST" id="removeattachmentform{{ attachment_id|e }}",
+                                        style="display: inline;">
+                                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
+                                            title="Datei löschen") }}
+                                </form>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
+                {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
+                             aclass="btn btn-success btn-sm", icon="plus") }}
+            {% endif %}
+        {% endcall %}
+    {% endif %}
+
+    {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
+        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                         <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST" id="deleteballotform"
+                               style="display: inline;">
+                             {{ util.input_submit(value="Löschen", icon="trash", aclass="btn btn-danger") }}
+                             {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                         </form>
+                         <script type="text/javascript">
+                             $(function() {
+                                 $('#deleteballotform').cdedbProtectAction(
+                                     "Die Abstimmung wird irreversibel mit allen Daten gelöscht.");
+                                 $('#deleteballotform').find('[name="ack_delete"]').prop('checked', true)
+                                     .parent().hide();
+                             });
+                         </script>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        Löscht die Abstimmung und alle dazugehörigen Einstellungen und Kandidaten.
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+    {% endif %}
+{% endblock %}

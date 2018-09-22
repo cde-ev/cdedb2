@@ -1,0 +1,174 @@
+{% set sidenav_active='ml_manage' %}
+{% extends "web/ml/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('search-persona') }}{% endblock %}
+{% set jshint='strong' %}
+{% block title %}{{ ambience['mailinglist']['title']|e }} -- Verwalten{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
+{{ util.breadcrumb_link(cdedblink("ml/management"), "Verwalten", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Mailingliste verwalten
+        <small>{{ util.make_icon('envelope') }} {{ ambience['mailinglist']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    {% if is_admin %}
+        <div class="p">
+            {{ util.href(cdedblink('ml/check_states'), "Konsistenzcheck", aclass="btn btn-info btn-sm", icon="check") }}
+        </div>
+    {% endif %}
+    {% call util.bootstrap_panel() %}
+        Beachte, dass als Moderatoren und Abonennten nur DB-Accounts und
+        keine beliebigen E-Mail-Adressen eingetragen werden können. Bei der
+        Whitelist hingegen werden beliebige E-Mail-Adressen eingetragen.
+    {% endcall %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <h2>Moderatoren</h2>
+            <form action="{{ cdedblink('ml/add_moderator')|e }}" method="POST" id="addmoderatorform" class="p">
+                <div class="input-group has-success">
+                    <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+                    {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X",
+                                       arialabel="ID des neuen Moderators") }}
+                    <script type="text/javascript">
+                        {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
+                                                enums['AudiencePolicy'].require_assembly: 'assembly_user',
+                                                enums['AudiencePolicy'].require_event: 'event_user',
+                                                enums['AudiencePolicy'].require_cde: 'cde_user',
+                                                enums['AudiencePolicy'].require_member: 'member'} %}
+                            $('#input-add-moderator').cdedbSearchPerson(
+                                '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
+                                {{ ambience['mailinglist']['moderators']|list|json }}
+                            );
+                        {% endwith %}
+                    </script>
+                    <div class="input-group-btn">
+                        {{ util.input_submit(value="Moderator hinzufügen", aclass="btn btn-success") }}
+                    </div>
+                </div>
+                {{ util.output_errors('moderator_id') }}
+            </form>
+
+            <ul>
+                {% for moderator in ambience['mailinglist']['moderators']|sort %}
+                    <li>
+                        {{ util.persona_anchor(personas[moderator]) }}
+                        <form action="{{ cdedblink('ml/remove_moderator')|e }}" method="POST"
+                                id="removemoderatorform{{ moderator|e }}" style="display: inline;">
+                            {{ util.input_hidden(name="moderator_id", value=moderator) }}
+                            {{ util.input_submit(value='', aclass="btn btn-xs btn-danger", icon="minus",
+                                    title=glue(personas[moderator]['given_names'], personas[moderator]['family_name'],
+                                               "als Moderator entfernen")) }}
+                        </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="col-md-6">
+            <h2>Abonnement-Anfragen</h2>
+            {# TODO Restyle #}
+            {% if requests|length > 0 %}
+                <ul>
+                    {% for request in requests|sort %}
+                        <li>
+                            {{ util.persona_anchor(personas[request]) }}
+                            <span class="nowrap">
+                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
+                                    id="nackrequestform{{ request|e }}" style="display: inline;">
+                                {{ util.input_hidden(name="ack", value=False) }}
+                                {{ util.input_hidden(name="persona_id", value=request) }}
+                                {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-xs btn-danger") }}
+                            </form>
+                            <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
+                                    id="ackrequestform{{ request|e }}" style="display: inline;">
+                                {{ util.input_hidden(name="ack", value=True) }}
+                                {{ util.input_hidden(name="persona_id", value=request) }}
+                                {{ util.input_submit(value="Genehmigen", aclass="btn btn-xs btn-success") }}
+                            </form>
+                        </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Zur Zeit liegen keine Abonnement-Anfragen vor.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2>Whitelist</h2>
+    <form action="{{ cdedblink('ml/add_whitelist')|e }}" method="POST" id="addwhitelistform" class="p">
+        <div class="input-group has-success">
+            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+            {{ util.input_text(name="email", type="email", placeholder="mail@example.com",
+                               arialabel="E-Mail-Adresse zum Whitelisten") }}
+            <div class="input-group-btn">
+                {{ util.input_submit(value="Eintrag hinzufügen", aclass="btn btn-success") }}
+            </div>
+        </div>
+        {{ util.output_errors('email') }}
+    </form>
+    <ul>
+        {% for email in ambience['mailinglist']['whitelist']|sort %}
+            <li>
+                {{ email|e }}
+                <form action="{{ cdedblink('ml/remove_whitelist')|e }}" method="POST"
+                        id="removewhitelistform{{ loop.index|e }}" style="display: inline;">
+                    {{ util.input_hidden(name="email", value=email) }}
+                    {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="minus",
+                            title="Diese Adresse aus der Whitelist löschen") }}
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+    <h2>Abonennten</h2>
+    <form action="{{ cdedblink('ml/add_subscriber')|e }}" method="POST" id="addsubscriberform" class="p">
+        <div class="input-group has-success">
+            <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
+            {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
+                               arialabel="ID des neuen Abonnenten") }}
+            <script type="text/javascript">
+                {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml_user',
+                                        enums['AudiencePolicy'].require_assembly: 'assembly_user',
+                                        enums['AudiencePolicy'].require_event: 'event_user',
+                                        enums['AudiencePolicy'].require_cde: 'cde_user',
+                                        enums['AudiencePolicy'].require_member: 'member'} %}
+                    $('#input-add-subscriber').cdedbSearchPerson(
+                        '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
+                        {{ subscribers|list|json }}
+                    );
+                {% endwith %}
+            </script>
+            <div class="input-group-btn">
+                {{ util.input_submit(value="Abonnent eintragen", aclass="btn btn-success") }}
+            </div>
+        </div>
+        {{ util.output_errors('subscriber_id') }}
+    </form>
+
+    <div class="row">
+        {% for list in subscribers | slice(3 if subscribers|length > 10 else 2 if subscribers|length > 5 else 1) %}
+            <div class="col-sm-4">
+                <ul class="nosp slim">
+                    {% for anid in list %}
+                        <li>
+                            {{ util.persona_anchor(personas[anid]) }}
+                            <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
+                                    id="removesubscriberform{{ anid|e }}" style="display: inline;">
+                                {{ util.input_hidden(name="subscriber_id", value=anid) }}
+                                {{ util.input_submit(value="", icon="minus", aclass="btn btn-xs btn-danger",
+                                        title=(personas[anid]['given_names'] + " " + personas[anid]['family_name'] +
+                                        " als Abonnent entfernen")) }}
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

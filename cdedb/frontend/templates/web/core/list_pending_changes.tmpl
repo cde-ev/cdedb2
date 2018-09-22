@@ -1,0 +1,18 @@
+{% set sidenav_active='core_pending_changes' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}Zu prüfende Profiländerungen [{{ pending|length|e }}]{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), "Änderungen prüfen", active="True") }}
+{% endblock %}
+{% block content %}
+   <ul>
+        {% for persona_id, entry in pending|dictsort %}
+           <li>
+               {{ util.href(cdedblink('core/inspect_change', {'persona_id': persona_id}),
+                            "{} {}".format(entry['given_names'], entry['family_name'])) }}
+           </li>
+        {% endfor %}
+   </ul>
+{% endblock %}

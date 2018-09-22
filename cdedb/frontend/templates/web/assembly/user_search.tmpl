@@ -1,0 +1,14 @@
+{% set sidenav_active='assembly_users' %}
+{% extends "web/assembly/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}Versammlungs-Nutzerverwaltung{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Nutzer verwalten", active=True) }}
+{% endblock %}
+{% block content %}
+    {{ generic.user_search('assembly') }}
+{% endblock %}

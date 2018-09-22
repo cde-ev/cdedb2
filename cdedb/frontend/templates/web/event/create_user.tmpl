@@ -1,0 +1,15 @@
+{% set sidenav_active='event_users' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint = 'weak' %}
+{% import "web/generic.tmpl" as generic with context %}
+{% block title %}Neuen Veranstaltungsnutzer anlegen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/user_search"), "Nutzer verwalten") }}
+{{ util.breadcrumb_link(cdedblink("event/create_user"), "Nutzer anlegen", active="True") }}
+{% endblock %}
+{% block content %}
+    {{ generic.create_user("event") }}
+{% endblock %}

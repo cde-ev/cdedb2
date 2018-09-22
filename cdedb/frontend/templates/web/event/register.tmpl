@@ -1,0 +1,161 @@
+{% set sidenav_active='event_register' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}Anmeldung für {{ ambience['event']['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
+                        readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
+{{ util.breadcrumb_link(cdedblink("event/register"), "Anmelden", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Anmeldung
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <p>
+        {% if ambience['event']['registration_soft_limit'] >= now() %}
+            Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss
+            ({{ ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }}) geändert werden.
+        {% else %}
+            Der Anmeldeschluss ist bereits vorbei. Deine Anmeldung wird nach Möglichkeit berücksichtigt.
+        {% endif %}
+    </p>
+
+    <form action="{{ cdedblink('event/register')|e }}" method="POST" id="registerform" class="form-horizontal">
+        <h3 class="heading-underline">Meine Daten</h3>
+        <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd>
+                {{ persona['title']|e }}
+                {{ persona['given_names']|e }}
+                {{ persona['family_name']|e }}
+                {{ persona['name_supplement']|e }}
+            </dd>
+
+            <dt>Geburtstag</dt>
+            <dd>{{ persona['birthday']|e }}</dd>
+            <dt>Geschlecht</dt>
+            <dd>{{ gettext(enums['Genders'](persona['gender'])|string)|e }}</dd>
+            <dt>E-Mail</dt>
+            <dd> {{ persona['username']|e }} </dd>
+            <dt>Telefon</dt>
+            <dd>{{ persona['telephone']|e }}</dd>
+            <dt>Mobiltelefon</dt>
+            <dd>{{ persona['mobile']|e }}</dd>
+            <dt>Straße</dt>
+            <dd>{{ persona['address']|e }}</dd>
+            <dt>Adresszusatz</dt>
+            <dd>{{ persona['address_supplement']|e }}</dd>
+            <dt>Stadt</dt>
+            <dd>{{ persona['postal_code']|e }} {{ persona['location']|e }}</dd>
+            <dt>Land</dt>
+            <dd>{{ persona['country']|e }}</dd>
+        </dl>
+        <p>
+            Diese Daten werden werden aus Deinem persönlichen Profil übernommen. Um sie zu ändern, verwende bitte das
+            {{ util.href(cdedblink('core/change_user'), "Formular zum Bearbeiten des Profils") }}.
+        </p>
+
+        {% if ambience['event']['parts']|length > 1
+                or (ambience['event']['parts']|length == 1 and course_choices[(course_choices|list)[0]]|length > 0) %}
+            <h3 class="heading-underline">Anmeldung</h3>
+        {% endif %}
+        {% if ambience['event']['parts']|length > 1 %}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                {{ myentries.append((part_id, part['title']))|e }}
+            {% endfor %}
+            {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
+        {% elif ambience['event']['parts']|length == 1 %}
+            {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
+        {% endif %}
+
+        {% for track_id, course_list in course_choices|dictsort %}
+            {% if course_list %}
+                <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
+                     data-part="{{ ambience['event']['tracks'][track_id]['part_id'] }}">
+                    <h4>
+                        Kurswahl
+                        {% if course_choices|length > 1 %}
+                            für {{ ambience['event']['tracks'][track_id]['title']|e }}
+                        {% endif %}
+                    </h4>
+
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [] %}
+                    {% for course_id in course_list %}
+                        {{ myentries.append((course_id,
+                                             "{}. {}".format(courses[course_id]['nr'],
+                                                             courses[course_id]['title'])))|e }}
+                    {% endfor %}
+                    {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=myentries,
+                                             label="Erstwahl") }}
+                    {{ util.form_input_select(name="course_choice{}_1".format(track_id), entries=myentries,
+                                             label="Zweitwahl") }}
+                    {{ util.form_input_select(name="course_choice{}_2".format(track_id), entries=myentries,
+                                             label="Drittwahl") }}
+
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [("", "— Ich bin kein Kursleiter —")] + myentries %}
+                    {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=myentries,
+                                             label="Kursleiter",
+                                             info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <h3 class="heading-underline">Weitere Angaben</h3>
+        {% if not age.may_mix() %}
+            {{ util.input_hidden(name="mixed_lodging", value=False) }}
+            {{ util.form_input_static(label="Geschlechter-getrennte Unterbringung", value="Gemischte Unterbringung nicht möglich.") }}
+        {% else %}
+            {% if age.is_minor() %}
+                {% set mix_info = glue("Die Auswahl muss mit der Einverständniserklärung der",
+                                       "Erziehungsberechtigten kompatibel sein.") %}
+            {% else %}
+                {% set mix_info = "" %}
+            {% endif %}
+            {{ util.form_input_select(name="mixed_lodging", entries=(
+                (True, "Ich bin mit gemischter Unterbringung einverstanden."),
+                (False, "Ich will geschlechter-getrennt untergebracht werden.")),
+                label="Geschlechter-getrennte Unterbringung", info=mix_info) }}
+        {% endif %}
+        {{ util.form_input_checkbox(name="foto_consent", label=glue(
+                "Ich bin damit einverstanden, dass Fotos und Aufnahmen meiner Person, die im Rahmen dieser",
+                "Veranstaltung entstehen, für die Veranstaltungsdokumentation und eine CdE-interne,",
+                "passwortgeschützte Fotogalerie verwendet werden. Einzelne Fotos können auf gesonderten",
+                "Wunsch davon ausgenommen werden.")) }}
+        {{ util.form_input_textarea(name="notes", label="Anmerkungen für Orgas und Kursleiter", rows="5") }}
+
+        {{ util.form_input_submit(value="Anmelden", cancellink=cdedblink('event/show_event')) }}
+    </form>
+    <script type="text/javascript">
+        var $form = $('#registerform');
+        $form.cdedbProtectChanges();
+        var checkboxes = $form.find('[type="checkbox"][name="parts"]');
+        /* Map part to part selection checkbox ($-encapsulated) */
+        checkbox_map = {};
+        checkboxes.each(function(){
+            checkbox_map[$(this).val()] = $(this);
+        });
+        var containers = $('.course_choice_container');
+        var updateCourseChoiceContainers = function() {
+            containers.each(function(){
+               if (checkbox_map[$(this).attr('data-part')].prop('checked'))
+                   $(this).show();
+               else
+                   $(this).hide();
+            });
+        };
+
+        if (checkboxes.length) {
+            checkboxes.change(updateCourseChoiceContainers);
+            updateCourseChoiceContainers();
+        }
+    </script>
+{% endblock %}

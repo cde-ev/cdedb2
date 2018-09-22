@@ -1444,7 +1444,7 @@ class CoreFrontend(AbstractFrontend):
         code = self.coreproxy.dearchive_persona(rs, persona_id)
         self.notify_return_code(rs, code)
         return self.redirect_show_user(rs, persona_id)
-    
+
     @access("core_admin", "cde_admin", modi={"POST"})
     @REQUESTdata(("ack_delete", "bool"))
     def purge_persona(self, rs, persona_id, ack_delete):

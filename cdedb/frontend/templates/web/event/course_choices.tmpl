@@ -1,0 +1,278 @@
+{% set sidenav_active='event_course_choices' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% set jshint='weak' %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}
+Kurswahlen ({{ ambience['event']['title']|e }})
+{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/course_choices"), "Kurseinteilung", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Kurseinteilung
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% macro course_cell(course_id, track_id, border_left=False, complain_empty=False, primary=False, filtered=False) %}
+    {% if course_id %}
+        {% with course = courses[course_id] %}
+            {% set attendees = course_infos[(course_id, track_id)]['assigned'] %}
+            {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] else
+                           ('course-manyp' if course['max_size'] and attendees > course['max_size'] else
+                            ('course-fewp' if course['min_size'] and attendees < course['min_size'] else '')) %}
+            <td class="{% if border_left %}b-left{% endif %} text-center {% if primary %}course-primary{% endif %}
+                       {% if filtered %}filtered_column{% endif %} {{ aclass }}">
+                <span title="{{ course['nr'] }}. {{ course['shortname'] }}
+                             ({{ attendees|e }}
+                              {% if course['max_size']|e %} von {{ course['max_size']|e }}{% endif %} TN)"
+                      data-id="{{ course_id|e }}"
+                      class="event_course_id">
+                   {{ course['nr']|e }}
+                </span>
+            </td>
+        {% endwith %}
+    {% else %}
+        {% set aclass = 'course-cancelled' if complain_empty else '' %}
+        <td class="{% if border_left %}b-left{% endif %} {% if primary %}course-primary{% endif %} {{ aclass }}
+                   {% if filtered %}filtered_column{% endif %}">
+        </td>
+    {% endif %}
+{% endmacro %}
+
+{% block content %}
+    {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
+        <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform"
+              aria-label="Filter">
+            <p>
+                Teilnehmer, die
+                {% if ambience['event']['tracks']|length > 1 %}
+                    in Kursschiene
+                    {# jinja does not support list comprehension ... #}
+                    {% set myentries = [('', '— egal —')] %}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {{ myentries.append((track_id, track['title']))|e }}
+                    {% endfor %}
+                    {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim input-sm",
+                                         arialabel="Filter: Kursschiene") }}
+                {% else %}
+                    {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
+                {% endif %}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id, course in courses|xdictsort('nr') %}
+                    {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
+                {% endfor %}
+                den Kurs
+                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim input-sm",
+                                     arialabel="Filter: Kurs") }}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [('', "— kein Filter —"),
+                                    (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
+                                    (enums.CourseFilterPositions.assigned.value, "besuchen"),
+                                    (enums.CourseFilterPositions.instructor.value, "anbieten"),
+                                    (enums.CourseFilterPositions.any_choice.value, "gewählt haben"),
+                                    (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
+                                    (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
+                                    (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
+                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim input-sm",
+                                     arialabel="Filter: Kursoperator") }}<br />
+                mit einer der folgenden Teilnehmer-IDs:
+                {{ util.input_text(name='ids', aclass="form-control input-slim input-sm",
+                                   arialabel="Filter: Anmeldungs-ID") }}
+            </p>
+            <p class="nosp">
+                {{ util.input_submit(value="anzeigen", icon="search") }}
+                &emsp;oder
+                {{ util.href(cdedblink("event/course_choices",{}), "alle anzeigen", icon="remove",
+                             aclass="btn btn-default") }}
+            </p>
+        </form>
+    {% endcall %}
+
+    <form action="{{ cdedblink('event/course_choices')|e }}" method="POST" id="choiceactionform"
+          aria-label="Zuteilung">
+        {% call util.bootstrap_panel(title="Zuteilen", icon="screenshot", aclass='panel-warning',
+                                     anid="assignment-options") %}
+            <div class="row">
+                <div class="col-md-3">
+                    Markierte Personen in
+                </div>
+                {% if ambience['event']['tracks']|length == 1 %}
+                    {{ util.input_hidden(name="track_ids", value=(ambience['event']['tracks']|list)[0]) }}
+                {% else %}
+                    <label class="sr-only" id="input-track_ids-label">Kursschienen</label>
+                    <div class="col-md-3 strip-inner-space">
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            {{ myentries.append((track_id, track['title']))|e }}
+                        {% endfor %}
+                        {{ util.input_checkboxes(name="track_ids", entries=myentries,
+                                                 arialabeledby="input-track_ids-label") }}
+                    </div>
+                {% endif %}
+                <div class="col-md-4">
+                    <div class="form-group">
+                        {{ util.input_select(name="action", anid="input-action", entries=(
+                            (enums.CourseChoiceToolActions.assign_first_choice.value, "in ihre Erstwahl"),
+                            (enums.CourseChoiceToolActions.assign_second_choice.value, "in ihre Zweitwahl"),
+                            (enums.CourseChoiceToolActions.assign_third_choice.value, "in ihre Drittwahl"),
+                            (enums.CourseChoiceToolActions.assign_fixed.value, "in den Kurs …"),
+                            (enums.CourseChoiceToolActions.assign_auto.value, "automatisch")),
+                                arialabel="Einteilungsverfahren") }}
+                    </div>
+                    <div class="form-group">
+                        {# jinja does not support list comprehension ... #}
+                        {% set myentries = [] %}
+                        {% for course_id, course in courses|dictsort %}
+                            {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname'])))|e }}
+                        {% endfor %}
+                        {{ util.input_select(name="course_id", anid="input-course_id", entries=myentries,
+                                             nulloption=True, arialabel="Einteilung in Kurs") }}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    {{ util.input_submit(value="einteilen.") }}
+                </div>
+                <script type="text/javascript">
+                    {
+                        var $actionSelect = $('#input-action');
+                        var $courseSelect = $('#input-course_id');
+                        var updateCourseVisibility = function() {
+                            if ($actionSelect.val() == {{ enums.CourseChoiceToolActions.assign_fixed.value|e }})
+                                $courseSelect.show();
+                            else
+                                $courseSelect.hide();
+                        };
+                        $actionSelect.change(updateCourseVisibility);
+                        updateCourseVisibility();
+                    }
+                </script>
+            </div>
+        {% endcall %}
+
+        <div class="pull-right">
+            {{ util.href(cdedblink('event/registration_query', corresponding_query|querytoparams),
+                         "in Anmeldungsliste", icon='list', aclass='btn btn-sm btn-default') }}
+        </div>
+        <div class="p softhide" id="js-button-group">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">alle</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                </button>
+            </div>
+        </div>
+
+        <table class="table table-condensed table-hover ls-list" id="course_choice_table">
+            <thead>
+                {% if ambience['event']['tracks']|length > 1 %}
+                    <tr>
+                        <th rowspan="2"></th>
+                        <th rowspan="2">Name</th>
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            <th colspan="5" class="b-left">{{ track['title']|e }}</th>
+                        {% endfor %}
+                    </tr>
+                {% endif %}
+                <tr>
+                    {% if ambience['event']['tracks']|length <= 1 %}
+                        <th></th>
+                        <th>Name</th>
+                    {% endif %}
+
+                    {# Some definitions to hight the headings of the filtered columns #}
+                    {% set cfp = enums.CourseFilterPositions %}
+                    {% macro filtered_col_class(track_id, position) -%}
+                        {% if values.get('track_id')|int == '' or values.get('track_id')|int == track_id -%}
+                            {% if position == values.get('position')|int
+                                  or values.get('position')|int == cfp.anywhere.value
+                                  or (values.get('position')|int == cfp.any_choice.value
+                                      and position in (cfp.first_choice.value,
+                                                       cfp.second_choice.value,
+                                                       cfp.third_choice.value)) -%}
+                                filtered_column
+                            {% endif -%}
+                        {% endif -%}
+                    {% endmacro %}
+                    {% for track_id in ambience['event']['tracks']|sort %}
+                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
+                            {{ util.make_icon('screenshot', title="eingeteilt in") }}
+                        </th>
+                        <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">KL</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.first_choice.value) }}">1.</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.second_choice.value) }}">2.</th>
+                        <th class="text-center {{ filtered_col_class(track_id, cfp.third_choice.value) }}">3.</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for reg_id, registration in registrations|dictsort %}
+                    {% set persona = personas[registration['persona_id']] %}
+                    <tr class="ls-item">
+                        <td>
+                            {{ util.input_checkbox("registration_ids", value=reg_id, aclass="rowSelector",
+                                    arialabel="{} {} auswählen".format(persona['given_names'], persona['family_name']))
+                                    }}
+                        </td>
+                        <td>
+                            {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
+                                         "{} {}".format(persona['given_names'], persona['family_name'])) }}
+                        </td>
+                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                            {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
+                            {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
+                                {{ course_cell(registration['tracks'][track_id]['course_id'], track_id, border_left=True,
+                                               complain_empty=True, primary=True) }}
+                                {{ course_cell(registration['tracks'][track_id]['course_instructor'], track_id,
+                                               border_left=True) }}
+                                {% for j in range(3) %}
+                                    {{ course_cell(registration['tracks'][track_id]['choices'][j]
+                                                   if registration['tracks'][track_id]['choices']|length > j else None,
+                                                   track_id) }}
+                                {% endfor %}
+                            {% else %}
+                                <td class="b-left"></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <script type="text/javascript">
+            $('#course_choice_table').cdedbListSelect();
+            var lsObj = $('#course_choice_table').data('listSelect');
+            $('#btn-select-all').click(function(){
+                lsObj.selectAll();
+            });
+            $('#btn-select-none').click(function(){
+                lsObj.selectNone();
+            });
+            $('#btn-select-swap').click(function(){
+                lsObj.invertSelection();
+            });
+            $('#js-button-group').show();
+        </script>
+    </form>
+    <script type="text/javascript">
+        $('.event_course_id').dblclick(function() {
+            location.href =
+                "{{ cdedblink('event/show_course', magic_placeholders=['course_id']) }}"
+                    .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', $(this).attr('data-id'));
+        });
+    </script>
+{% endblock %}

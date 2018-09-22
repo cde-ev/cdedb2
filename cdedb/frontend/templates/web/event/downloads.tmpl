@@ -1,0 +1,51 @@
+{% set sidenav_active='event_downloads' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}Downloads zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/downloads"), "Downloads", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Downloads <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <h3>Drucksachen</h3>
+    <table class="table table-slim">
+        <tbody>
+            {% for name, endpoint in [("Namensschilder", 'event/download_nametags'),
+                                      ("Bastelsatz Kurseinteilung",'event/download_course_puzzle'),
+                                      ("Bastelsatz Unterkunftseinteilung",'event/download_lodgement_puzzle'),
+                                      ("Teilnehmerliste",'event/download_participant_list'),
+                                      ("Kurslisten",'event/download_course_lists'),
+                                      ("Unterkunftslisten",'event/download_lodgement_lists')] %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ util.href(cdedblink(endpoint, {'runs': 0}), "LaTeX", icon='download') }}</td>
+                    <td>{{ util.href(cdedblink(endpoint, {'runs': 2}), "PDF", icon='file') }}</td>
+                </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+
+    <h3>Datenexport</h3>
+    <table class="table table-slim">
+        <tbody>
+            <tr>
+                <td>Kursliste für den ExPuls</td>
+                <td>{{ util.href(cdedblink('event/download_expuls'), "Download", icon='download') }}</td>
+            </tr>
+            <tr>
+                <td>
+                    JSON-Export der Veranstaltung<br />
+                    <small>(für Initialisierung der Offline-VM)</small>
+                </td>
+                <td>{{ util.href(cdedblink('event/download_export'), "Download", icon='download') }}</td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}

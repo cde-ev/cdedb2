@@ -639,7 +639,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             jinja_env = self.jinja_env
         t = jinja_env.get_template(str(pathlib.Path(
-            modus, rs.lang, self.realm, "{}.tmpl".format(templatename))))
+            modus, self.realm, "{}.tmpl".format(templatename))))
         return t.render(**data)
 
     @staticmethod

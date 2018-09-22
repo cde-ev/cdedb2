@@ -1,0 +1,96 @@
+{% set sidenav_active='event_registration' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}Neue Anmeldung ({{ ambience['event']['title']|e }}){% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/add_registration"), "Hinzufügen", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Neue Anmeldung
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/add_registration')|e }}" method="POST" id="addregistrationform"
+          class="form-horizontal">
+        <h3 class="heading-underline">Personendaten</h3>
+        {{ util.form_input_text(name="persona.persona_id", label="CdEDB-ID") }}
+        {% if CDEDB_OFFLINE_DEPLOYMENT %}
+            {{ util.form_input_text(name="reg.real_persona_id", label="Online CdEDB-ID") }}
+        {% endif %}
+
+        <h3 class="heading-underline">Status</h3>
+        {{ util.form_input_textarea(name="reg.orga_notes", label="Orga-Notizen", rows="5") }}
+        {{ util.form_input_text(name="reg.payment", label="Teilnehmerbeitrag bezahlt am", type="date",
+                            placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_checkbox(name="reg.parental_agreement", label="Einverständniserklärung der Eltern") }}
+        {{ util.form_input_text(name="reg.checkin", label="Eingecheckt am", type="datetime-local",
+                                placeholder="YYYY-MM-DDThh:ii") }}
+
+        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+            {% if ambience['event']['parts']|length > 1 %}
+                <h4>{{ part['title']|e }}</h4>
+            {% endif %}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for s in enums['RegistrationPartStati'] %}
+                {{ myentries.append((s.value, gettext(s|string)))|e }}
+            {% endfor %}
+            {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
+            {# jinja does not support list comprehension ... #}
+            {% set myentries = [] %}
+            {% for lodgement_id, lodgement in lodgements|dictsort %}
+                {{ myentries.append((lodgement_id, lodgement['moniker']))|e }}
+            {% endfor %}
+            {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
+                                     entries=myentries, nulloption=True) }}
+            {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in part['tracks'] %}
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id in course_choices[track_id] %}
+                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
+                {% endfor %}
+                {{ util.form_input_select(name="track{}.course_id".format(track_id),
+                                          label="Kurs {}".format(track['title'])
+                                                if ambience['event']['tracks']|length > 1  else "Kurs",
+                                          entries=myentries,
+                                          nulloption=True) }}
+            {% endfor %}
+        {% endfor %}
+
+        <h3 class="heading-underline">Anmeldedaten</h3>
+        {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
+        {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
+        {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
+        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+            {% if course_choices[track_id]|length > 0 %}
+                <h4>
+                    Kurswahl
+                    {% if ambience['event']['tracks']|length > 1 %}
+                    {{ track['title']|e }}
+                    {% endif %}
+                </h4>
+                {# jinja does not support list comprehension ... #}
+                {% set myentries = [] %}
+                {% for course_id in course_choices[track_id] %}
+                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                    courses[course_id]['shortname'])))|e }}
+                {% endfor %}
+                {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter von",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.form_input_select(name="track{}.course_choice_0".format(track_id), label="Erstwahl",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.form_input_select(name="track{}.course_choice_1".format(track_id), label="Zweitwahl",
+                                         entries=myentries, nulloption=True) }}
+                {{ util.form_input_select(name="track{}.course_choice_2".format(track_id), label="Drittwahl",
+                                         entries=myentries, nulloption=True) }}
+            {% endif %}
+        {% endfor %}
+
+        {{ util.form_input_submit(value="Anmelden", cancellink=cdedblink('event/registration_query')) }}
+    </form>
+{% endblock %}

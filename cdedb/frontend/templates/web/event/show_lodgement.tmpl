@@ -1,0 +1,147 @@
+{% extends "web/event/base.tmpl" %}
+{% set sidenav_active='event_lodgements' %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+    {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft") }}
+    {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker'], active=True,
+                            icon='home') }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        {{ ambience['lodgement']['moniker']|e }}
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block title %}Unterkunft {{ ambience['lodgement']['moniker'] }} ({{ ambience['event']['title']|e }}){% endblock %}
+{% block content %}
+    <div class="p">
+        {{ util.href(cdedblink("event/change_lodgement_form"), "Bearbeiten", readonly=is_locked,
+                     aclass="btn btn-sm btn-warning", icon='pencil') }}
+        {{ util.href(cdedblink("event/manage_inhabitants_form"), "Belegung ändern", readonly=is_locked, aclass="btn btn-sm btn-warning", icon='user') }}
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <dl class="dl-horizontal">
+                <dt>normale Plätze</dt>
+                <dd>{{ ambience['lodgement']['capacity']|e }}</dd>
+                <dt>Isomattenplätze</dt>
+                <dd>{{ ambience['lodgement']['reserve']|e }}</dd>
+            </dl>
+
+            <dl class="dl-horizontal">
+                {% for field_id, field in ambience['event']['fields']|dictsort %}
+                    {% if field['association'] == enums['FieldAssociations'].lodgement %}
+                        <dt>{{ field['field_name']|e }}</dt>
+                        <dd>
+                            {% if field['entries'] %}
+                                {% for value, description in field['entries'] %}
+                                    {% if ambience['lodgement']['fields'].get(field['field_name']) == value %}
+                                        {{ description|e }}
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                {% if field['kind'] == "bool" %}
+                                    {{ util.deko_checkbox(
+                                        checked=ambience['lodgement']['fields'].get(field['field_name'])) }}
+                                {% elif field['kind'] == "date" %}
+                                    {{ ambience['lodgement']['fields'].get(field['field_name'])
+                                       |date(lang=lang, passthrough=True)|e }}
+                                {% elif field['kind'] == "datetime" %}
+                                    {{ ambience['lodgement']['fields'].get(field['field_name'])
+                                       |datetime(lang=lang, passthrough=True)|e }}
+                                {% else %}
+                                    {{ ambience['lodgement']['fields'].get(field['field_name'])|e|linebreaks }}
+                                {% endif %}
+                            {% endif %}
+                        </dd>
+                    {% endif %}
+                {% endfor %}
+            </dl>
+        </div>
+
+        {% if ambience['lodgement']['notes'] %}
+            <div class="col-md-6">
+                {% call util.bootstrap_panel("Orga-Notizen", icon='tag',
+                                             aclass='panel panel-default panel-condensed') %}
+                    {{ ambience['lodgement']['notes']|rst }}
+                {% endcall %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <h2>Belegung</h2>
+    <div class="row">
+        {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+            <div class="col-md-4">
+                <div class="panel panel-info panel-condensed">
+                    <div class="panel-heading">
+                        <div class="pull-right">{{ inhabitants[(values['lodgement_id'], part_id)]|length|e }}</div>
+                        <h3 class="panel-title">
+                            {% if ambience['event']['parts']|length > 1 %}{{ part['title']|e }}{% else %}Bewohner{% endif %}
+                        </h3>
+                    </div>
+
+                    <div class="panel-body">
+                        {% for description, lodgement_id, problem_part, affected_regs, severeness in problems
+                                if problem_part == part_id %}
+                            <p class="{% if severeness > 1 %}text-danger{% else %}text-warning{% endif %}">
+                                {{ gettext(description)|e }}
+                                {% if affected_regs %}
+                                    (
+                                        {%- for reg_id in affected_regs -%}
+                                            {{ personas[registrations[reg_id]['persona_id']]['given_names']|e }}
+                                            {{ personas[registrations[reg_id]['persona_id']]['family_name']|e }}
+                                            {%- if not loop.last %}, {% endif %}
+                                        {%- endfor -%}
+                                    )
+                                {% endif %}
+                            </p>
+                        {% endfor %}
+
+                        <ul class="slim">
+                            {% for registration_id in inhabitants[(values['lodgement_id'], part_id)] %}
+                                <li>
+                                    {{ util.href(cdedblink('event/show_registration',
+                                                           {'registration_id': registration_id}),
+                                                 "{} {}".format(personas[registrations[registration_id]['persona_id']]['given_names'],
+                                                                personas[registrations[registration_id]['persona_id']]['family_name'])) }}
+                                    {% if registrations[registration_id]['parts'][part_id]['is_reserve'] %}
+                                        {{ util.make_icon('tent', title="Isomattenplatz") }}
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="p">
+                    <form action="{{ cdedblink('event/delete_lodgement')|e }}" method="POST" id="deletelodgementform" style="display: inline;">
+                        {{ util.input_submit("Löschen", readonly=is_locked, aclass="btn btn-sm btn-danger", icon='trash') }}
+                        {{ util.input_checkbox(name="ack_delete", label="sicher?", readonly=is_locked) }}
+                    </form>
+                    <script type="text/javascript">
+                        $('#deletelodgementform').cdedbProtectAction("Die Unterkunft wird irreversibel gelöscht.");
+                        $('#deletelodgementform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+                    </script>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <p class="text-muted">
+                    Löscht die Unterkunft mit allen Informationen und lässt die aktuell eingeteilten Teilnehmer ohne
+                    Unterkunft zurück.
+                </p>
+            </div>
+        </div>
+    {% endcall %}
+{% endblock %}

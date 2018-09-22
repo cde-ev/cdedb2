@@ -1,0 +1,63 @@
+{% set sidenav_active='assembly_attendees' %}
+{% extends "web/assembly/base.tmpl" %}
+{% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='strong' %}
+{% block title %}Anwesenheitsliste ({{ ambience['assembly']['title']|e }}){% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Anwesenheitsliste
+        <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attendees"), "Teilnehmer", active=True) }}
+{% endblock %}
+{% block content %}
+    {% if is_admin and now() < ambience['assembly']['signup_end'] %}
+        {% call util.bootstrap_panel(title='Externe Teilnehmer hinzufügen', aclass='panel-success panel-condensed',
+                icon='plus') %}
+            <p class="text-muted">
+                {{ util.make_icon('info-sign') }} Derzeitige CdE-Mitglieder müssen sich selbst zur Versammlung
+                anmelden. Über dieses Formular können externe Teilnehmer von Admins hinzugefügt werden. Dies ist
+                ebenfalls nur innerhalb der Anmeldefrist möglich.
+            </p>
+            <form action="{{ cdedblink('assembly/external_signup')|e }}" method="POST" id="addattendeeform">
+                <div class="row">
+                    <div class="col-sm-7">
+                        {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
+                                anid="input-add-attendee", aclass="form-control input-sm",
+                                arialabel="Benutzer-ID des neuen Teilnehmers") }}
+                        {{ util.output_errors('persona_id') }}
+                    </div>
+                    <div class="col-sm-3">
+                        {{ util.input_submit(value="hinzufügen", icon="plus", aclass="btn btn-primary btn-sm") }}
+                    </div>
+                </div>
+            </form>
+            <script type="text/javascript">
+                $('#addattendeeform').cdedbProtectAction(
+                    "Der Benutzer wird als Teilnehmer hinzugefügt. Das kann nicht rückgängig gemacht werden.");
+                $('#input-add-attendee').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') + '?kind=pure_assembly_user&phrase=%s'}}',
+                    {{ attendees|list|json }}
+                );
+            </script>
+        {% endcall %}
+    {% endif %}
+
+    <p>Insgesamt {{ attendees|length|e }} Anwesende.</p>
+    <div class="row">
+        {% for list in attendees | dictsort | slice(3 if attendees|length > 20 else
+                                                    2 if attendees|length > 10 else 1) %}
+            <div class="col-sm-4">
+                <ul class="slim nosp">
+                    {% for persona_id, persona in list %}
+                        <li>{{ persona['given_names']|e }} {{ persona['family_name']|e }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

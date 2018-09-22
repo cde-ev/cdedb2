@@ -1,0 +1,624 @@
+{# This contains generic pages. Currently these are those for managing users. #}
+
+{% import "web/util.tmpl" as util with context %}
+
+{% macro create_user(realm) %}
+    <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform"
+      class="form-horizontal">
+        <h4 class="heading-underline">Person</h4>
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
+        {{ util.form_input_text(name="family_name", label="Nachname") }}
+        {% if realm == "cde" %}
+            {{ util.form_input_text(name="birth_name", label="Geburtsname") }}
+        {% endif %}
+        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+        {{ util.form_input_text(name="display_name", label="Rufname") }}
+        {% if realm == "cde" %}
+            {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
+            {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
+            {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
+            {{ util.form_input_textarea(name="interests", label="Interessen") }}
+            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
+        {% endif %}
+        {% if realm in ("cde", "event") %}
+            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
+        {% endif %}
+
+        <h4 class="heading-underline">Kontakt</h4>
+        {{ util.form_input_text(name="username", label="E-Mail") }}
+        {% if realm in ("cde", "event") %}
+            {{ util.form_input_text(name="telephone", label="Telefon") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+        {% endif %}
+        {% if realm == "cde" %}
+            {{ util.form_input_text(name="weblink", label="WWW") }}
+        {% endif %}
+
+        {% if realm in ("cde", "event") %}
+            <h4 class="heading-underline">Adresse</h4>
+            {{ util.form_input_text(name="address", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location", label="Stadt") }}
+            {{ util.form_input_text(name="country", label="Land") }}
+        {% endif %}
+        {% if realm == "cde" %}
+            <h4 class="heading-underline">Zweitadresse</h4>
+            {{ util.form_input_text(name="address2", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location2", label="Stadt") }}
+            {{ util.form_input_text(name="country2", label="Land") }}
+        {% endif %}
+
+        <h4 class="heading-underline">Account</h4>
+        {% if realm == "cde" %}
+            {{ util.form_input_checkbox(name="is_member", label="CdE-Mitgliedschaft",
+                                   anid="input_checkbox_is_member") }}
+            {{ util.form_input_checkbox(name="is_searchable", label="Sichtbarkeit (falls Einwilligung vorhanden)",
+                                   anid="input_checkbox_is_searchable") }}
+            {{ util.form_input_checkbox(name="trial_member", label="Probemitgliedschaft",
+                                       anid="input_checkbox_trial_member") }}
+            {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}
+        {% endif %}
+        {{ util.form_input_checkbox(name="cloud_account", label="Cloud Account",
+                                   anid="input_checkbox_cloud_account") }}
+        {{ util.form_input_textarea(name="notes", label="Notizen", rows="7", info="Unterstützt reStructuredText") }}
+
+
+        {{ util.form_input_submit(value="Nutzer anlegen", cancellink=cdedblink("{}/user_search".format(realm))) }}
+    </form>
+    <script type="text/javascript">
+        $('#newuserform').cdedbProtectChanges();
+    </script>
+{% endmacro %}
+
+{% macro genesis(realm) %}
+    <p>Hallo {{ case['given_names'] }},</p>
+
+    <p>
+        Um Dein Konto für die CdE Datenbank anzulegen, trage bitte in das folgende Formular Deine Daten ein. Sobald Du
+        dieses Formluar bestätigt hast, kannst Du ein Passwort einrichten und Dein Zugang wird freigeschaltet.
+    </p>
+
+    <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform" class="form-horizontal">
+        {{ util.input_hidden(name="case_id") }}
+        {{ util.input_hidden(name="secret") }}
+
+        <h4 class="heading-underline">Person</h4>
+        {{ util.form_input_text(name="title", label="Titel", info="z.B. Prof. Dr.") }}
+        {{ util.form_input_static(label="Vorname(n)", value=case['given_names']) }}
+        {{ util.form_input_static(label="Nachname", value=case['family_name']) }}
+        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
+        {{ util.form_input_text(name="display_name", label="Rufname", info="Wie wirst Du genannt?") }}
+        {% if realm == "event" %}
+            {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
+            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+        {% endif %}
+
+        <h4 class="heading-underline">Kontakt</h4>
+        {{ util.form_input_static(label="E-Mail-Adresse", value=case['username']) }}
+        {% if realm == "event" %}
+            {{ util.form_input_text(name="telephone", label="Telefon", placeholder="+49 (0000) 000000") }}
+            {{ util.form_input_text(name="mobile", label="Mobiltelefon", placeholder="+49 (000) 0000000") }}
+
+            <h4 class="heading-underline">Adresse</h4>
+            {{ util.form_input_text(name="address", label="Straße") }}
+            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
+            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
+            {{ util.form_input_text(name="location", label="Stadt") }}
+            {{ util.form_input_text(name="country", label="Land") }}
+        {% endif %}
+        {{ util.form_input_submit(value="Account anlegen", cancellink=cdedblink('core/index')) }}
+    </form>
+{% endmacro %}
+
+{% macro user_search(realm) %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="p button-par">
+                {{ util.href(cdedblink("{}/create_user".format(realm)), "Nutzer anlegen",
+                        icon="plus", aclass="btn btn-success btn-sm") }}
+            </div>
+        </div>
+        <div class="col-md-8">
+            {% with TITLES = {
+                "all": "Alle Accounts",} %}
+                <div>
+                    {{ place_default_queries("{}/user_search".format(realm), default_queries, TITLES) }}
+                </div>
+            {% endwith %}
+        </div>
+    </div>
+
+    {{ user_search_mask(realm) }}
+
+    {% if values['is_search'] %}
+        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        {{ user_search_result(result, realm) }}
+    {% endif %}
+{% endmacro %}
+
+
+{% macro user_search_mask(realm, selection_blacklist=[]) %}
+    {% with TITLES = {
+        "fulltext": "Volltext",
+        "personas.id": "ID",
+        "username": "E-Mail",
+        "is_active": "Aktiver Account",
+        "cloud_account": "Cloud Account",
+        "family_name": "Nachname",
+        "birth_name": "Geburtsname",
+        "given_names": "Vorname",
+        "display_name": "Rufname",
+        "title": "Titel",
+        "name_supplement": "Namenszusatz",
+        "gender": "Geschlecht",
+        "birthday": "Geburtstag",
+        "telephone": "Telefon",
+        "mobile": "Mobilfunk",
+        "address": "Anschrift",
+        "address_supplement": "Adresszusatz",
+        "postal_code": "PLZ",
+        "location": "Ort",
+        "country": "Land",
+        "address2": "Anschrift (2)",
+        "address_supplement2": "Adresszusatz (2)",
+        "postal_code2": "PLZ (2)",
+        "location2": "Ort (2)",
+        "country2": "Land (2)",
+        "weblink": "WWW",
+        "specialisation": "Fachgebiet",
+        "affiliation": "Schule, Uni, …",
+        "timeline": "Jahrgang, Matrikel, …",
+        "interests": "Interessen",
+        "free_form": "Sonstige Angaben",
+        "pevent_id": "abg. Veranstaltung",
+        "pcourse_id": "abg. Kurs",
+        "balance": "Mitgliedsbeitrag-Guthaben",
+        "decided_search": "Suchbarkeit entschieden",
+        "trial_member": "Probemitglied",
+        "bub_search": "Sichtbarkeit für BuB",
+        "notes": "Admin-Notizen",
+        'is_member': "CdE-Mitglied",
+        'is_searchable': "Suchbarkeit",
+        'is_ml_realm': "Bereich: Mailinglisten",
+        'is_event_realm': "Bereich: Veranstaltungen",
+        'is_assembly_realm': "Bereich: Versammlungen",
+        'is_cde_realm': "Bereich: CdE",
+        'is_ml_admin': "Admin: Mailinglisten",
+        'is_event_admin': "Admin: Veranstaltungen",
+        'is_assembly_admin': "Admin: Versammlungen",
+        'is_cde_admin': "Admin: CdE",
+        'is_core_admin': "Admin: Core",
+        'is_admin': "Admin: Super",
+    } %}
+
+            {% if realm == "archived" %}
+                {% set target=cdedblink('core/archived_user_search') %}
+            {% else %}
+                {% set target=cdedblink('{}/user_search'.format(realm)) %}
+            {% endif %}
+            {{ format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist) }}
+        </form>
+
+    {% endwith %}
+{% endmacro %}
+
+{% macro user_search_result(result, realm) %}
+    {# warning: titles will not be escaped! #}
+    {% with TITLES = {
+        "fulltext": "Volltext",
+        "personas.id": "ID",
+        "username": "E-Mail",
+        "is_active": "Aktiv",
+        "cloud_account": "Cloud",
+        "family_name": "Nachname",
+        "birth_name": "Geburtsname",
+        "given_names": "Vorname",
+        "display_name": "Rufname",
+        "title": "Titel",
+        "name_supplement": "Namenszusatz",
+        "gender": "Geschlecht",
+        "birthday": "Geburtstag",
+        "telephone": "Telefon",
+        "mobile": "Mobilfunk",
+        "address": "Anschrift",
+        "address_supplement": "Adresszusatz",
+        "postal_code": "PLZ",
+        "location": "Ort",
+        "country": "Land",
+        "address2": "Anschrift (2)",
+        "address_supplement2": "Adresszusatz (2)",
+        "postal_code2": "PLZ (2)",
+        "location2": "Ort (2)",
+        "country2": "Land (2)",
+        "weblink": "WWW",
+        "specialisation": "Fachgebiet",
+        "affiliation": "Schule, Uni, …",
+        "timeline": "Jahrgang, Matrikel, …",
+        "interests": "Interessen",
+        "free_form": "Sonstige Angaben",
+        "pevent_id": "abg. Veranstaltung",
+        "pcourse_id": "abg. Kurs",
+        "balance": "Guthaben",
+        "decided_search": "Suchbarkeit entschieden",
+        "trial_member": "Probemitglied",
+        "bub_search": "BuB-Sichtbar",
+        "notes": "Admin-Notizen",
+        'is_member': "Mitglied",
+        'is_searchable': "Suchbar",
+        'is_ml_realm': util.make_icon('envelope', title="Bereich: Mailinglisten"),
+        'is_event_realm': util.make_icon('blackboard', title="Bereich: Veranstaltungen"),
+        'is_assembly_realm': util.make_icon('bullhorn', title="Bereich: Versammlungen"),
+        'is_cde_realm': util.make_icon('education', title="Bereich: CdE"),
+        'is_ml_admin': "Admin " + util.make_icon('envelope', title="Admin: Mailinglisten"),
+        'is_event_admin': "Admin " + util.make_icon('blackboard', title="Admin: Veranstaltungen"),
+        'is_assembly_admin': "Admin " + util.make_icon('bullhorn', title="Admin: Versammlungen"),
+        'is_cde_admin': "Admin " + util.make_icon('education', title="Admin: CdE"),
+        'is_core_admin': "Admin " + util.make_icon('user', title="Admin: Core"),
+        'is_admin': "Admin " + util.make_icon('wrench', title="Admin: Super"),
+    } %}
+
+        {{ display_query_result(result, query, TITLES, choices) }}
+    {% endwith %}
+{% endmacro %}
+
+
+
+
+{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
+                      heading='Suchmaske') %}
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">{{ util.make_icon('search') }} {{ heading|e }}</h3>
+
+            <!-- Tabs to chose between NonJS- and JS-form -->
+            <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
+                <li role="presentation" class="active">
+                    <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab">
+                        {{ util.make_icon('list') }} Tabellarisch
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
+                        {{ util.make_icon('star-empty') }} Magisch
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="panel-body">
+            <form action="{{ target|e }}" method="GET" id="queryform">
+                {{ util.input_hidden(name="is_search", value=True) }}
+
+                <div class="tab-content" id="queryform_tabcontent">
+                    <!-- Non-JS form -->
+                    <div class="tab-pane active row" role="tabpanel" id="tab_qf_nojs">
+                        <div class="col-lg-7">
+                            <table class="query-form-cols table table-superdense">
+                            <thead>
+                                <tr>
+                                    <th>{{ util.make_icon('eye-open', title="Feld anzeigen") }}</th>
+                                    <th>Felder</th>
+                                    <th colspan="2">Filter</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field in spec %}
+                                    <tr class="query_field {% if field in errors %}errorInput{% endif %}
+                                               {% if field == query_mod.QUERY_PRIMARIES[query.scope] %}id-field{% endif %}"
+                                            data-type="{{ spec[field]|e }}" data-id="{{ field|e }}">
+                                        <td>
+                                            {# multi-fields are not reliably selectable, so we disable selection #}
+                                            {% if ',' not in field and field not in selection_blacklist %}
+                                                {% with name = "qsel_{}".format(field) %}
+                                                    {% if output_selection %}
+                                                        {{ util.input_checkbox(name, aclass='outputSelector',
+                                                                value=True,
+                                                                arialabel="{} anzeigen"
+                                                                          .format(titles.get(field, field)|e)) }}
+                                                    {% else %}
+                                                        {{ util.input_hidden(name, value=True) }}
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        </td>
+                                        <td class="name">{{ titles.get(field, field)|e }}</td>
+                                        <td>
+                                            {% with name = "qop_{}".format(field) %}
+                                                {% with theid = "qop_{}".format(field) %}
+                                                    {# jinja does not support list comprehension ... #}
+                                                    {% set myentries = [] %}
+                                                    {% for op in query_mod.VALID_QUERY_OPERATORS[spec[field]] %}
+                                                        {% if field not in choices
+                                                                or op in query_mod.SELECTION_VALUE_OPERATORS %}
+                                                            {{ myentries.append((op.value,
+                                                                gettext(op.value|enum(enums.QueryOperators))))|e }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    {{ util.input_select(name, entries=myentries, nulloption=True,
+                                                            aclass='form-control input-sm filter-op', anid=theid,
+                                                            arialabel="Filteroperator für {}"
+                                                                      .format(titles.get(field, field)|e)) }}
+                                                {% endwith %}
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            {% with name = "qval_{}".format(field) %}
+                                                {% if spec[field] == 'bool' %}
+                                                    {# Boolean fields are the only ones that don't need a text input field,
+                                                       for none of their filter operators. So we can provide a select box
+                                                       for none-javascript users. #}
+                                                    {{ util.input_select(name, anid="qinput_{}".format(field),
+                                                            aclass='form-control input-sm filter-value',
+                                                            entries=(('',''),(True, 'ja'),(False, 'nein')),
+                                                            arialabel="Vergleichswert für {}"
+                                                                      .format(titles.get(field, field)|e)) }}
+                                                {% else %}
+                                                    {{ util.input_text(name, anid="qinput_{}".format(field),
+                                                            aclass='form-control input-sm filter-value',
+                                                            arialabel="Vergleichswert für {}"
+                                                                      .format(titles.get(field, field)|e)) }}
+                                                {% endif %}
+                                                {{ util.output_errors(field, True) }}
+                                            {% endwith %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            </table>
+                        </div>
+                        <div class="col-lg-5">
+                            <table class="query-form-sort table table-superdense">
+                            <thead>
+                                <tr><th colspan="3">Sortierung</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for title, name in (("1.", "qord_primary"), ("2.", "qord_secondary"),
+                                                       ("3.", "qord_tertiary"))%}
+                                    <tr class="query_sort">
+                                        <td> {{ title|e }} </td>
+                                        <td>
+                                            {# jinja does not support list comprehension ... #}
+                                            {% set myentries = [] %}
+                                            {% for field in spec %}
+                                                {% if ',' not in field %}
+                                                    {{ myentries.append((field, titles.get(field,field)))|e }}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {{ util.input_select(name, entries=myentries, nulloption=True,
+                                                                 aclass="form-control input-sm sort-field",
+                                                                 attributes='aria-label="{} Sortierkriterium"'
+                                                                            .format(title))}}
+                                        </td>
+                                        <td>
+                                            {{ util.input_select(name + "_ascending", defaultvalue=True,
+                                                                 aclass="form-control input-sm sort-order",
+                                                                 entries=((True, "A→Z"), (False, "Z→A")),
+                                                                 arialabel="{} Sortierreihenfolge".format(title)) }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+                    <!-- JS Form -->
+                    <div class="tab-pane" role="tabpanel" id="tab_qf_js">
+                        <h4 class="filter-title nosp">{{ util.make_icon('filter') }} Filter</h4>
+                        <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
+                        <div class="input-group has-success queryform-add">
+                            <span class="input-group-addon">{{ util.make_icon('plus', title="Filter hinzufügen") }}</span>
+                            <select class="form-control input-sm input-slim addfilter" aria-label="Gefiltertes Feld"></select>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <h4 class="filter-title">{{ util.make_icon('eye-open') }} Angezeigte Felder</h4>
+                                <p class="viewfield-list"></p>
+                                <div class="input-group has-success">
+                                    <span class="input-group-addon">
+                                        {{ util.make_icon('plus', title="Angezeigtes Feld hinzufügen") }}
+                                    </span>
+                                    <select class="form-control input-sm addviewfield"
+                                            aria-label="Neues Feld"></select>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <h4 class="filter-title">{{ util.make_icon('sort-by-alphabet') }} Sortierung</h4>
+                                <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
+                                <div class="input-group has-success queryform-add">
+                                    <span class="input-group-addon">
+                                        {{ util.make_icon('plus', title="Sortierkriterium hinzufügen") }}
+                                    </span>
+                                    <select class="form-control input-sm addsortfield"
+                                            aria-label="Neues Sortierkriterium"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="pull-right nosp">
+                    <button type="submit" class="btn btn-primary">{{ util.make_icon('search') }} Suche</button>
+                    <span class="btn-group">
+                        <button type="submit" class="btn btn-default" name="download" value="csv">
+                            {{ util.make_icon('download') }} CSV-Datei
+                        </button>
+                        <button type="submit" class="btn btn-default" name="download" value="json">
+                            {{ util.make_icon('download') }} JSON-Datei
+                        </button>
+                    </span>
+                </p>
+                {{ util.output_errors('query') }}
+            </form>
+            <script type="text/javascript">
+                {
+                    $('#qf_tablist').css('display', 'block');
+                    var $qf = $('#queryform');
+                    $qf.cdedbQueryForm({"choices" : {{ choices|json }}});
+                    $('#tab_link_qf_js')
+                        .on('show.bs.tab', function() {
+                            $qf.data('cdedbQueryForm').initFromForm();
+                        })
+                        .tab('show');
+                }
+            </script>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro place_default_queries(target, queries, titles, title="Standardabfragen") %}
+    {% if queries %}
+        {% call util.bootstrap_panel(title=title) %}
+            <div class="row">
+                {% for list in queries | slice(2) %}
+                <div class="col-sm-6">
+                    <ul>
+                        {% for query in list %}
+                            <li>
+                                {{ util.href(cdedblink(target, queries[query]|querytoparams),
+                                        titles.get(query, query), aclass="default-query") }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        {% endcall %}
+        <script type="text/javascript">
+            $('.default-query').each(function(){
+                var url = $(this).attr('href');
+                var $link = $('<a></a>', {'href':'#',
+                                          'title':'im Formular anzeigen',
+                                          'aria-label':'im Formular anzeigen',
+                                          'class': 'btn btn-default btn-xs'})
+                    .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open', 'aria-hidden':'true'}))
+                    .click(function(){
+                        $('#queryform').data('cdedbQueryForm').queryFromURL(url);
+                        return false;
+                    });
+                $(this).after($link).after(' ');
+            });
+        </script>
+    {% endif %}
+{% endmacro %}
+
+{% macro display_query_result(result, query, titles, choices) %}
+    {% if not result|length %}
+        Keine Ergebnisse!
+    {% else %}
+        <script type="text/javascript">
+            $(function(){
+                $('.ls-list').cdedbListSelect();
+                $('#btn-select-all').click(function(){
+                    $('#query-result').data('listSelect').selectAll();
+                });
+                $('#btn-select-none').click(function(){
+                    $('#query-result').data('listSelect').selectNone();
+                });
+                $('#btn-select-swap').click(function(){
+                    $('#query-result').data('listSelect').invertSelection();
+                });
+                $('#btn-select-filter').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    $('#queryform').data('cdedbQueryForm').setIdFilter(list);
+                    $('#queryform').submit();
+                });
+                $('#result-container').cdedbMoveToWidePage($('.btn-trigger-wide'));
+                $('#js-button-group').css('display', 'block');
+            });
+        </script>
+        <div class="p softhide" id="js-button-group">
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">alle</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                </button>
+            </div>
+            <button type="button" class="btn btn-sm btn-info" title="Filter auf ausgewählte setzen"
+              id="btn-select-filter">
+                {{ util.make_icon('share') }} <span class="hidden-xs">nur ausgewählte</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-trigger-wide" title="Tabelle breiter darstellen">
+                {{ util.make_icon('resize-horizontal', arialabel="Tabelle breiter anzeigen") }}
+            </button>
+        </div>
+        <div class="table-container" id="result-container">
+        <table class="table table-condensed table-hover ls-list" id="query-result">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for csvfield in query.fields_of_interest %}
+                        {% for field in csvfield.split(',') %}
+                            <th>
+                                {{ titles.get(field, field) }}
+                                {% if values.get("qop_{}".format(field)) %}
+                                    <span class="label label-default" title="Gefilterte Spalte">
+                                        {{ util.make_icon('filter') }}
+                                    </span>
+                                {% endif %}
+                                {% if values.get("qord_primary") == field or
+                                        values.get("qord_secondary") == field or
+                                        values.get("qord_tertiary") == field %}
+                                    <span class="label label-default" title="Sortierte Spalte">
+                                        {{ util.make_icon('sort-by-alphabet') }}
+                                    </span>
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in result %}
+                {% set outerloopindex = loop.index0 %}
+                <tr class="ls-item" data-id="{{ row[query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1]]|e }}">
+                    <td>
+                        {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
+                                               aclass="rowSelector", arialabel="Zeile {}".format(outerloopindex)) }}
+                    </td>
+                    {% for csvfield in query.fields_of_interest %}
+                        {% for field in csvfield.split(',') %}
+                            {# NOTE that we split off any possible schema specification since they're not preserved
+                                    by the query #}
+                            {% with afield = field.split('.')[-1] %}
+                                <td data-col="{{ afield|e }}">  {# The data-col attribute is mainly used for testing #}
+                                    {% if field == "personas.id" or (query.scope == "qview_persona"
+                                                                     and field == "id") %}
+                                        {{ util.href(show_user_link(row[afield]), row[afield]|cdedbid,
+                                                aclass='nowrap') }}
+                                    {% elif field == "reg.id" %}
+                                        {# This should occur only if the context allows the following link. #}
+                                        {{ util.href(cdedblink("event/show_registration",
+                                                {'registration_id': row[afield]}), row[afield]) }}
+                                    {% elif query.spec[csvfield] == "bool" %}
+                                        {{ util.deko_checkbox(row.get(afield), titles=('falsch','wahr')) }}
+                                    {% else %}
+                                        {{ choices.get(csvfield, {}).get(row.get(afield),
+                                                                         row.get(afield, "UNDEFINED"))|e }}
+                                    {% endif %}
+                                </td>
+                            {% endwith %}
+                        {% endfor %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    {% endif %}
+{% endmacro %}

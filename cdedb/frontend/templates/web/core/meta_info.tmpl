@@ -1,0 +1,29 @@
+{% set sidenav_active='core_meta' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}Allgemeine Metainformationen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/meta_info_form"), "Metadaten", active="True") }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('core/change_meta_info')|e }}" method="POST" id="changeinfoform" class="form-horizontal">
+        {% for key in ("Finanzvorstand_Name", "Finanzvorstand_Vorname", "Finanzvorstand_Ort",
+                       "Finanzvorstand_Adresse_Einzeiler", "Finanzvorstand_Adresse_Zeile2",
+                       "Finanzvorstand_Adresse_Zeile3", "Finanzvorstand_Adresse_Zeile4",
+                       "CdE_Konto_Inhaber", "CdE_Konto_IBAN", "CdE_Konto_BIC", "CdE_Konto_Institut",) %}
+            {{ util.form_input_text(name=key, label=key) }}
+        {% endfor %}
+        {% for key in ("banner_before_login", "banner_after_login") %}
+            {{ util.form_input_textarea(name=key, label=key, info="Unterstützt reStructuredText", rows=5) }}
+        {% endfor %}
+        <div>
+            {{ util.form_input_submit(value="Ändern") }}
+        </div>
+    </form>
+{% endblock %}
+    ## Keys of the dict in the core.meta_info.info column
+    "META_INFO_KEYS": (
+        ),
+
+

@@ -1,0 +1,68 @@
+{% set sidenav_active='event_config' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}{{ ambience['event']['title']|e }} – Konfiguration{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/change_event"), "Konfiguration", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Konfiguration
+        <small>{{ util.make_icon('blackboard', arialabel="Veranstaltung") }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('event/change_event')|e }}" method="POST" id="changeeventform" class="form-horizontal">
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for value, title in institutions|dictsort %}
+            {{ myentries.append((value, title))|e }}
+        {% endfor %}
+        {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
+        {{ util.form_input_text(name="shortname", label="Kürzel") }}
+        {{ util.form_input_checkbox(name="is_visible", label="Sichtbarkeit der Veranstaltung") }}
+        {{ util.form_input_checkbox(name="is_course_list_visible", label="Sichtbarkeit der Kursliste") }}
+        {{ util.form_input_text(name="registration_start", label="Anmeldebeginn", type='datetime-local',
+                                placeholder="YYYY-MM-DD HH:MM:SS") }}
+        {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss", type='datetime-local',
+                                placeholder="YYYY-MM-DD HH:MM:SS") }}
+        {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss", type='datetime-local',
+                                placeholder="YYYY-MM-DD HH:MM:SS") }}
+        {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=(
+            ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
+            ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption=True) }}
+        {{ util.form_input_textarea(name="mail_text", label="Freitext Anmeldungsbestätigung", rows="5") }}
+        {{ util.form_input_checkbox(name="use_questionnaire", label="Fragebogen anzeigen") }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for field_id, field in ambience['event']['fields']|dictsort %}
+            {% if field['kind'] == "str" and field['association'] == enums['FieldAssociations'].registration %}
+                {{ myentries.append((field_id, field['field_name']))|e }}
+            {% endif %}
+        {% endfor %}
+        {{ util.form_input_select(name="lodge_field", label="Extrafeld für Hauswünsche", entries=myentries,
+                                  nulloption=True, info="In welchem Datenfeld werden Hauswünsche der Teilnehmer "
+                                                        "eingetragen?") }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for field_id, field in ambience['event']['fields']|dictsort %}
+            {% if field['kind'] == "bool" and field['association'] == enums['FieldAssociations'].registration %}
+                {{ myentries.append((field_id, field['field_name']))|e }}
+            {% endif %}
+        {% endfor %}
+        {{ util.form_input_select(name="reserve_field", label="Extrafeld für Isomattenschläfer", entries=myentries,
+                                  nulloption=True, info="In welchem Datenfeld wird eingetragen, ob Teilnehmer bereit "
+                                                        "sind, auf Isomatte zu schlafen?") }}
+        {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
+        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/show_event')) }}
+    </form>
+    <script type="text/javascript">
+        $('#changelistform').cdedbProtectChanges();
+    </script>
+{% endblock %}

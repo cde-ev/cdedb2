@@ -1,0 +1,39 @@
+{% set mainnav_active='core' %}
+{% extends "web/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block navigation %}
+    {% if "persona" in user.roles %}
+        <h4>Start</h4>
+        <div class="list-group tear-down">
+            {{ util.href(cdedblink("core/index"), "Start", aclass="list-group-item",
+                    icon="triangle-right", active=(sidenav_active=='core_index')) }}
+            {{ util.href(cdedblink("core/mydata"), "Meine Daten", aclass="list-group-item",
+                    icon="user", active=(sidenav_active=='core_mydata')) }}
+        </div>
+        {% if is_admin or "event_admin" in user.roles or "ml_admin" in user.roles %}
+            <div class="list-group tear-down">
+            {% if is_admin %}
+                {{ util.href(cdedblink("core/user_search"), "Nutzer verwalten", aclass="list-group-item",
+                        icon="user", active=(sidenav_active=='core_manage_users')) }}
+                {{ util.href(cdedblink("core/archived_user_search"), "Archivsuche", aclass="list-group-item",
+                        icon="inbox", active=(sidenav_active=='core_manage_archive')) }}
+                {{ util.href(cdedblink("core/list_pending_changes"), "Änderungen prüfen", aclass="list-group-item",
+                        icon="check", active=(sidenav_active=='core_pending_changes')) }}
+            {% endif %}
+                {{ util.href(cdedblink("core/genesis_list_cases"), "Accountanfragen", aclass="list-group-item",
+                        icon="flag", active=(sidenav_active=='core_genesis_list')) }}
+            {% if is_admin %}
+                {{ util.href(cdedblink("core/view_log"), "Account-Log", aclass="list-group-item",
+                        icon="list-alt", active=(sidenav_active=='core_log')) }}
+                {{ util.href(cdedblink("core/view_changelog_meta"), "Nutzerdaten-Log", aclass="list-group-item",
+                        icon="list-alt", active=(sidenav_active=='core_change_log')) }}
+                </div>
+                <div class="list-group tear-down">
+                {{ util.href(cdedblink("core/meta_info_form"), "Metadaten", aclass="list-group-item",
+                        icon="tags", active=(sidenav_active=='core_meta')) }}
+            {% endif %}
+            </div>
+        {% endif %}
+    {% endif %}
+    <hr class="strong visible-xs visible-sm" />
+{% endblock %}

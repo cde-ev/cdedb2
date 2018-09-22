@@ -1,0 +1,31 @@
+{% set sidenav_active='cde_past_events' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}{{ ambience['pcourse']['title']|e }} ({{ ambience['pevent']['title']|e }}) bearbeiten{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
+        ambience['pevent']['title']|e, icon="calendar") }}
+{{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
+        ambience['pcourse']['title']|e, icon="book") }}
+{{ util.breadcrumb_link(cdedblink("cde/change_past_course_form", {'pcourse_id' : ambience['pcourse']['id']}),
+        "Bearbeiten", active=True) }}
+{% endblock %}
+{% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#changecourseform').cdedbProtectChanges();
+        });
+    </script>
+    <form action="{{ cdedblink('cde/change_past_course')|e }}" method="POST" id="changecourseform"
+            class="form-horizontal">
+        {{ util.form_input_text(name="nr", label="Nummer") }}
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
+                                    info="Unterstützt reStructuredText") }}
+        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("cde/show_past_course")) }}
+    </form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% set sidenav_active='core_manage_archive' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
+{% block title %}Archivnutzersuche{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/archived_user_search"), "Archivsuche", active="True") }}
+{% endblock %}
+{% block content %}
+    {% with TITLES = {} %}
+        <div>
+            {{ generic.place_default_queries("core/archived_user_search", default_queries, TITLES) }}
+        </div>
+    {% endwith %}
+
+    {{ generic.user_search_mask("archived", ("pevent_id",)) }}
+
+    {% if values['is_search'] %}
+        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        {{ generic.user_search_result(result, "archived") }}
+    {% endif %}
+{% endblock %}

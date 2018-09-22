@@ -7,3 +7,4 @@ import pathlib
 
 GLOBAL_LOG = pathlib.Path("/tmp/test-cdedb.log")
 CONSOLE_LOG_LEVEL = None
+DB_PORT = 6432

@@ -1,0 +1,62 @@
+{% set sidenav_active='core_genesis_list' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}Accountanfrage bearbeiten{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
+                        "Accountanfrage von {} {} bearbeiten".format(values["given_names"], values["family_name"]),
+                        active="True", icon="user") }}
+{% endblock %}
+{% block content %}
+    <form action="{{ cdedblink('core/genesis_modify')|e }}" method="POST" id="genesismodifyform" class="form-horizontal">
+        <div>
+            {{ util.form_input_text(name="given_names", label="Vorname(n)", small=True) }}
+            {{ util.form_input_text(name="family_name", label="Nachname", small=True) }}
+            {{ util.form_input_text(name="username", label="E-Mail-Adresse", small=True, type="email") }}
+            {% if "core_admin" in user.roles %}
+                {{ util.form_input_select(
+                    name="realm", small=True, entries=(("event", "CdE-Veranstaltung"), ("ml", "CdE-Mailingliste")),
+                    label="Bereich", anid="realm-select") }}
+            {% else %}
+                {% with realms = {'event': ('Veranstaltung', 'blackboard'), 'ml': ('Mailingliste', 'envelope')} %}
+                    {{ util.make_icon(values['realm'][1]) }} {{ values['realm'][0] }}
+                {% endwith %}
+                {{ util.form_input_hidden(name="realm") }}
+            {% endif %}
+            {{ util.form_input_textarea(name="notes", label="Begründung (max. {} Zeichen)".format(max_rationale),
+                                        small=True, maxlength=max_rationale) }}
+            <div id="event-field-container">
+                <p class="text-muted">{{ util.make_icon('info-sign') }}
+                    Die folgenden Felder sind nur für Veranstaltungsanfragen relevant.</p>
+                {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht", small=True) }}
+                {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date", small=True) }}
+                {{ util.form_input_text(name="telephone", label="Telefon", small=True) }}
+                {{ util.form_input_text(name="mobile", label="Mobiltelefon", small=True) }}
+                {{ util.form_input_text(name="address", label="Straße", small=True) }}
+                {{ util.form_input_text(name="address_supplement", label="Addresszusatz", small=True) }}
+                {{ util.form_input_text(name="postal_code", label="Postleitzahl", small=True) }}
+                {{ util.form_input_text(name="location", label="Stadt", small=True) }}
+                {{ util.form_input_text(name="country", label="Land", small=True) }}
+            </div>
+
+            <script type="text/javascript">
+                var $select = $('#realm-select');
+                var show_event_fields = function() {
+                    if ($select.val() === 'event') {
+                        $('#event-field-container').show();
+                    } else {
+                        $('#event-field-container').hide();
+                    }
+                };
+                $select.change(show_event_fields);
+                show_event_fields();
+            </script>
+
+            {{ util.form_input_submit(value="Speichern", small=True, cancellink=cdedblink("core/genesis_list_cases")) }}
+        </div>
+    </form>
+{% endblock %}

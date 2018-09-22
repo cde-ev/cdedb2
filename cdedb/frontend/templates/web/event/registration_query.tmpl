@@ -1,0 +1,128 @@
+{% set sidenav_active='event_registration' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}Anmeldungen ({{ ambience['event']['title']|e }}){% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Anmeldungen
+        <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen", active=True) }}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="p button-par">
+                {{ util.href(cdedblink("event/add_registration_form"), "Neuer Teilnehmer",
+                             readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
+                {{ util.href(cdedblink("event/field_set_select"), "Datenfeld setzen",
+                              readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+            </div>
+        </div>
+        <div class="col-md-8">
+            {% with TITLES = {
+                    "all": "Alle Anmeldungen",
+                    "minors": "Minderjährige",} %}
+                {{ generic.place_default_queries("event/registration_query", default_queries, TITLES) }}
+            {% endwith %}
+        </div>
+    </div>
+
+    {{ titles.update({
+            "reg.id": "ID",
+            "reg.notes": "Anmerkungen",
+            "reg.orga_notes": "Orga-Notizen",
+            "reg.payment": "Bezahlung",
+            "reg.parental_agreement": "Einverständniserklärung",
+            "reg.mixed_lodging": "Gemischte Unterbringung",
+            "reg.checkin": "Checkin",
+            "reg.foto_consent": "Foto-Einwilligung",
+            "persona.id": "CdEDB-ID",
+            "persona.is_member": "CdE-Mitglied",
+            "persona.username": "E-Mail",
+            "persona.family_name": "Nachname",
+            "persona.given_names": "Vorname",
+            "persona.display_name": "Rufname",
+            "persona.title": "Titel",
+            "persona.name_supplement": "Namenszusatz",
+            "persona.gender": "Geschlecht",
+            "persona.birthday": "Geburtstag",
+            "persona.telephone": "Telefon",
+            "persona.mobile": "Mobilfunk",
+            "persona.address": "Anschrift",
+            "persona.address_supplement": "Adresszusatz",
+            "persona.postal_code": "PLZ",
+            "persona.location": "Ort",
+            "persona.country": "Land",
+            "ctime.creation_time": "Zeitstempel Erstellung",
+            "mtime.modification_time": "Zeitstempel letzte Änderung",})|e }}
+
+    {{ generic.format_query(spec, titles, choices, cdedblink('event/registration_query')) }}
+
+    {% if values['is_search'] %}
+        <h3>Ergebnis [{{ result|length|e }}]</h3>
+
+        <!-- Additional buttons for the registration_query -->
+        <div class="p pull-right">
+            <button type="button" class="btn btn-info btn-sm" id="btn-course-choices">
+                {{ util.make_icon('screenshot') }} Kurseinteilung
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" id="btn-set-field">
+                {{ util.make_icon('edit') }} Feld setzen
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" id="btn-edit">
+                {{ util.make_icon('pencil') }} Bearbeiten
+            </button>
+            <script type="text/javascript">
+                $('#btn-course-choices').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink('event/course_choices_form', magic_placeholders=['ids']) }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+                $('#btn-set-field').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    location.href =
+                        "{{ cdedblink('event/field_set_select', magic_placeholders=['reg_ids']) }}"
+                            .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+                $('#btn-edit').click(function(){
+                    var list = [];
+                    $('#query-result').find('.ls-selected').each(function(){
+                        list.push($(this).attr('data-id'));
+                    });
+                    if (list.length == 0)
+                        return;
+                    if (list.length == 1)
+                        location.href =
+                            "{{ cdedblink('event/change_registration_form', magic_placeholders=['registration_id']) }}"
+                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                    else
+                        location.href =
+                            "{{ cdedblink('event/change_registrations_form', magic_placeholders=['reg_ids']) }}"
+                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', list.join(','));
+                });
+            </script>
+        </div>
+
+        {{ generic.display_query_result(result, query, titles, choices) }}
+
+    {% endif %}
+{% endblock %}

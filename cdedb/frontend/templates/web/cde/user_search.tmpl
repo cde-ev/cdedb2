@@ -1,0 +1,38 @@
+{% set sidenav_active='cde_manage_users' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
+{% set jshint='strong' %}
+{% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
+{% block title %}CdE-Nutzerverwaltung{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten", active="True") }}
+{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="p button-par">
+                {{ util.href(cdedblink('cde/create_user'), "Nutzer anlegen", icon="plus",
+                             aclass="btn btn-success btn-sm") }}
+                {{ util.href(cdedblink('cde/batch_admission'), "Massenaufnahme", icon="import",
+                             aclass="btn btn-default btn-sm") }}
+            </div>
+        </div>
+        <div class="col-md-8">
+            {% with TITLES = {
+                    "trial members": "Probemitglieder",} %}
+                <div>
+                    {{ generic.place_default_queries("cde/user_search", default_queries, TITLES) }}
+                </div>
+            {% endwith %}
+        </div>
+    </div>
+
+    {{ generic.user_search_mask("cde", ("pevent_id", "pcourse_id")) }}
+
+    {% if values['is_search'] %}
+        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        {{ generic.user_search_result(result, "cde") }}
+    {% endif %}
+{% endblock %}

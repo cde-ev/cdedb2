@@ -106,7 +106,7 @@ class Application(BaseApp):
             'values': {},
             'error': error,
         }
-        t = self.jinja_env.get_template(str(pathlib.Path("web", lang, "error.tmpl")))
+        t = self.jinja_env.get_template(str(pathlib.Path("web", "error.tmpl")))
         html = t.render(**data)
         response = Response(html, mimetype='text/html', status=error.code)
         response.headers.add('X-Generation-Time', str(now() - begin))

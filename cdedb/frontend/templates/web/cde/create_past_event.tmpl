@@ -1,0 +1,35 @@
+{% set sidenav_active='cde_past_events' %}
+{% extends "web/cde/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
+{% set jshint='weak' %}
+{% block title %}Veranstaltung anlegen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/create_past_event"), "abg. Veranstaltung anlegen", active=True) }}
+{% endblock %}
+{% block content %}
+    <script type="text/javascript">
+        $(function() {
+            $('#createeventform').cdedbProtectChanges();
+        });
+    </script>
+    <form action="{{ cdedblink('cde/create_past_event')|e }}" method="POST" id="createeventform"
+        class="form-horizontal">
+        {{ util.form_input_text(name="title", label="Titel") }}
+        {{ util.form_input_text(name="shortname", label="Kürzel") }}
+        {# jinja does not support list comprehension ... #}
+        {% set myentries = [] %}
+        {% for value, title in institutions|dictsort %}
+            {{ myentries.append((value, title))|e }}
+        {% endfor %}
+        {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
+        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
+                                    info="Unterstützt reStructuredText") }}
+        {{ util.form_input_text(name="tempus", label="Stichtag", type="date", placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_textarea(name="courses", label="Kurse",
+                               info='Hier einen Kurs pro Zeile im Format "Nummer";"Titel";"Beschreibung" eingeben.') }}
+        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("cde/list_past_events")) }}
+    </form>
+{% endblock %}

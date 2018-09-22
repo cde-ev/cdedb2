@@ -1,0 +1,120 @@
+<<% extends "tex/event/base_article.tmpl" %>>
+<<% block extra_preamble %>>
+    \KOMAoptions{DIV=21}
+    \raggedright
+    \parindent 0pt\relax
+    \pagestyle{empty}
+    \usepackage{ifthen}
+    \usepackage{xcolor}
+
+    \newcommand\debugbox[1]{#1} % no debugging
+    % \renewcommand\debugbox[1]{\fbox{#1}} % frames around content
+
+    \newcommand\nametag[6]{\color{black}%\color{white}% eliminate frame
+        \framebox{\color{black}\parbox[t][5.3cm][t]{8.7cm}{%
+            % name
+            \parbox[t][0pt][t]{0pt}{%
+                \vspace{5pt}%
+                \hspace*{5pt}%
+                \debugbox{\parbox[t][2.75cm][t]{5.5cm}{%
+                    \raggedright%
+                    {\fontsize{30}{30}\selectfont \textbf{#1}\par}%
+                    \Large\textbf{#2}%
+                }}%
+            }%
+            % course
+            \parbox[t][0pt][t]{0pt}{%
+                \vspace{3.25cm}%
+                \hspace*{2.25cm}%
+                \debugbox{\parbox[t][.5cm][t]{6cm}{%
+                    #3%
+                }}%
+            }%
+            % lodgement
+            \parbox[t][0pt][t]{0pt}{%
+                \vspace{4.25cm}%
+                \hspace*{2.25cm}%
+                \debugbox{\parbox[t][.5cm][t]{5cm}{%
+                    #4%
+                }}%
+            }%
+            % course/orga logo
+            \parbox[t][0pt][t]{0pt}{%
+                \vspace{5pt}%
+                \hspace*{6cm}%
+                \debugbox{\parbox[t][2.5cm][t]{2.5cm}{%
+                    \ifthenelse{\equal{#5}{}}{}{%
+                        \includegraphics[keepaspectratio=true,width=2.5cm,height=2.5cm]{#5}%
+                    }%
+                }}%
+            }%
+            % event logo
+            \parbox[t][0pt][t]{0pt}{%
+                \vspace{3.25cm}%
+                \hspace*{5pt}%
+                \debugbox{\parbox[t][1.75cm][t]{1.75cm}{%
+                    \includegraphics[keepaspectratio=true,width=1.75cm,height=1.75cm]{./aka-logo}%
+                }}%
+            }%
+            % minor notifier
+            \parbox[t][0pt][t]{0pt}{%
+                \vspace{4.25cm}%
+                \hspace*{7.75cm}%
+                \debugbox{\parbox[t][.75cm][t]{.75cm}{%
+                    \ifthenelse{\equal{#6}{}}{~}{%
+                        \includegraphics[keepaspectratio=true,width=.75cm,height=.75cm]{#6}%
+                    }%
+                }}%
+            }%
+            ~%
+    }}\hskip 0pt\relax}
+<<% endblock %>>
+<<% block content %>>
+    <<% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') -%>>
+        <<% for registration_id, registration in registrations|dictsort -%>>
+            <<% if enums['RegistrationPartStati'](registration['parts'][part_id]['status']).is_present() -%>>
+                <<# jinja does not support list comprehension ... -#>>
+                <<% set mycourses = [] -%>>
+                <<% for track_id, track in registration['tracks'].items() -%>>
+                    <<% if ambience['event']['tracks'][track_id]['part_id'] == part_id and track['course_id'] -%>>
+                        <<< mycourses.append((track_id, track['course_id']))|te ->>>
+                    <<% endif -%>>
+                <<% endfor -%>>
+                \nametag{<<< personas[registration['persona_id']]['given_names']|te >>>}%
+                    {<<< personas[registration['persona_id']]['family_name']|te >>>}{
+                        <<%- if mycourses -%>>
+                            <<%- for track_id, course_id in mycourses -%>>
+                                <<%- if (course_id == registration['tracks'][track_id]['course_instructor']) -%>>
+                                    \emph{<<< courses[course_id]['title']|te >>>}
+                                <<%- else -%>>
+                                    <<< courses[course_id]['title']|te >>>
+                                <<%- endif -%>>
+                                <<%- if not loop.last -%>>
+                                    \\
+                                <<%- endif -%>>
+                            <<%- endfor -%>>
+                        <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
+                            \emph{Orga}
+                        <<%- endif -%>>
+                    }{
+                        <<%- if registration['parts'][part_id]['lodgement_id'] -%>>
+                            <<< lodgements[registration['parts'][part_id]['lodgement_id']]['moniker']|te >>>
+                        <<%- endif -%>>
+                    }{
+                        <<%- if mycourses|length == 1 -%>>
+                            ./logo-<<< mycourses[0][1]|te >>>
+                        <<%- elif mycourses|length > 1 -%>>
+                            ./multicourse-logo
+                        <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
+                            ./orga-logo
+                        <<%- endif -%>>
+                    }{
+                        <<%- if registration['age'].is_minor() -%>>
+                            ./minor-pictogram
+                        <<%- endif -%>>
+                    }% <<< registration_id|te >>> / <<< mycourses|te >>>
+            <<% endif -%>>
+        <<% endfor -%>>
+        \clearpage
+    <<% endfor -%>>
+<<% endblock %>>
