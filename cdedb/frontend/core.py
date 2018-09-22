@@ -1003,7 +1003,7 @@ class CoreFrontend(AbstractFrontend):
                     rs.user.persona_id))
             return self.change_password_form(rs)
         else:
-            return self.redirect(rs, "core/index")
+            return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("anonymous")
     def reset_password_form(self, rs):
