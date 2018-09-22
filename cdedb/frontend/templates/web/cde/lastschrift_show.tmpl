@@ -157,15 +157,15 @@
                                 </form>
                             {% endif %}
                         {% elif transaction['status'] == enums['LastschriftTransactionStati'].success %}
+                            <form action="{{ cdedblink('cde/lastschrift_receipt',
+                                                       {'lastschrift_id': transaction['lastschrift_id'],
+                                                        'transaction_id': transaction_id})|e }}"
+                                method="GET" id="receiptform{{ transaction_id|e }}"
+                                class="rollback-form">
+                                {{ util.input_submit(value="Spendenbescheinigung", aclass="btn btn-xs btn-default",
+                                                     icon='download') }}
+                            </form>
                             {% if is_admin %}
-                                <form action="{{ cdedblink('cde/lastschrift_receipt',
-                                                           {'lastschrift_id': transaction['lastschrift_id'],
-                                                            'transaction_id': transaction_id})|e }}"
-                                    method="GET" id="receiptform{{ transaction_id|e }}"
-                                    class="rollback-form">
-                                    {{ util.input_submit(value="Spendenbescheinigung", aclass="btn btn-xs btn-default",
-                                                         icon='download') }}
-                                </form>
                                 <form action="{{ cdedblink('cde/lastschrift_rollback_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id})|e }}"
