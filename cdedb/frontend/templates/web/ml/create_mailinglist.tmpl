@@ -16,7 +16,7 @@
     </script>
     <form action="{{ cdedblink('ml/create_mailinglist')|e }}" method="POST" id="createlistform" class="form-horizontal">
         <h4 class="heading-underline">Meta</h4>
-        {{ util.form_input_checkbox(name="is_active", label="Aktiv") }}
+        {{ util.form_input_checkbox(name="is_active", label="Aktiv", defaultvalue='True') }}
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_text(name="address", label="Adresse") }}
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
