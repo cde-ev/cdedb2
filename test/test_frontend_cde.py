@@ -913,7 +913,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
-        self.assertPresence("ExPuls trägt die Nummer 42")
+        self.assertPresence("exPuls trägt die Nummer 42")
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         count = 0
@@ -924,7 +924,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
-        self.assertPresence("ExPuls trägt die Nummer 43")
+        self.assertPresence("exPuls trägt die Nummer 43")
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
         count = 0
@@ -935,7 +935,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
-        self.assertPresence("ExPuls trägt die Nummer 43")
+        self.assertPresence("exPuls trägt die Nummer 43")
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         count = 0
@@ -946,7 +946,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
-        self.assertPresence("ExPuls trägt die Nummer 44")
+        self.assertPresence("exPuls trägt die Nummer 44")
         self.assertIn('addresscheckform', self.response.forms)
 
     @as_users("anton")
