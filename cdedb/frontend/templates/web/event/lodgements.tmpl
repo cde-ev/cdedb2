@@ -51,13 +51,13 @@
                                      lodgement['moniker']) }}</td>
                     {% set colors = ['', 'course-fewp', 'course-manyp', 'course-cancelled'] %}
                     {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
+                        {% set problem = problems[(lodgement_id, part_id)] %}
                         <td class="text-right {% if loop.first %} b-left{% endif %}
-                                   {{ colors[problems[(lodgement_id, part_id)][0]] }}"
-                            title="{{ gettext(problems[(lodgement_id, part_id)][1])|e }}">
+                            {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1])|e }}"{% endif %}>
                             {{ inhabitants[(lodgement_id, part_id)]|e }}
                         </td>
-                        <td class="text-right {{ colors[problems[(lodgement_id, part_id)][0]] }}"
-                            title="{{ gettext(problems[(lodgement_id, part_id)][1])|e }}">
+                        <td class="text-right {{ colors[problem[0]] }}"
+                            {% if problem[1] %}title="{{ gettext(problem[1])|e }}"{% endif %}>
                             {% if reserve_inhabitants[(lodgement_id, part_id)] %}
                                 ({{ reserve_inhabitants[(lodgement_id, part_id)]|e }})
                             {% endif %}
