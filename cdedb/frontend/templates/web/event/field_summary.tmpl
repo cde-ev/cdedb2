@@ -37,7 +37,7 @@
                     </label>
                     <div class="col-sm-5">
                         {{ util.input_select(name="kind_{}".format(field_id), entries=(
-                                ("str", "String"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
+                                ("str", "Text"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
                                 ("date", "Datum"), ("datetime", "Datum mit Uhrzeit")),
                             attributes=('data-basename="kind_"' if newrow else ''), aclass='drow-input form-control',
                             anid="input-select-kind_{}".format(field_id)) }}
