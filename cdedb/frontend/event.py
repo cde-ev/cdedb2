@@ -2181,6 +2181,12 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in tracks}
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        defaults = {
+            "part{}.status".format(part_id):
+            const.RegistrationPartStati.participant.value
+            for part_id in rs.ambience['event']['parts']
+        }
+        merge_dicts(rs.values, defaults)
         return self.render(rs, "add_registration", {
             'courses': courses, 'course_choices': course_choices,
             'lodgements': lodgements,
