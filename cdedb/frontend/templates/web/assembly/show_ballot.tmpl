@@ -427,8 +427,16 @@
                             $('#prefvote_container').cdedbPrefVote(
                                 {{ ambience['ballot']['candidates']|dictsort|json }},
                                 {{ "'"+ASSEMBLY_BAR_MONIKER+"'" if ambience['ballot']['use_bar'] else "null" }},
-                                "Neutral",
-                                $('#input-preferencelist'));
+                                $('#input-preferencelist'),
+                                {{ {'bar_name': gettext('neutral'),
+                                    'box': gettext('Box {0}'),
+                                    'box_highest': gettext('Box {0}: highest priority'),
+                                    'box_lowest': gettext('Box {0}: lowest priority'),
+                                    'spacer': gettext('Between box {0} and {1}'),
+                                    'spacer_highest': gettext('Above box with highest priority'),
+                                    'spacer_lowest': gettext('Below box with lowest priority'),
+                                    }|json }}
+                            );
                             /* Register callback to refresh fancy form every time the tab is shown */
                             $('#tablink-jsform').on('show.bs.tab',
                                                     $('#prefvote_container').data('cdedbPrefVote').readPreferenceList);

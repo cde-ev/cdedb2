@@ -2434,6 +2434,34 @@ msgstr "Diese Seite bietet mit JavaScript erweiterte Funktionalität."
 msgid "Diese Seite ist mit JavaScript einfacher nutzbar."
 msgstr "Diese Seite ist mit JavaScript einfacher nutzbar."
 
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:431
+msgid "neutral"
+msgstr "Neutral"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:432
+msgid "Box {0}"
+msgstr "Box {0}"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:433
+msgid "Box {0}: highest priority"
+msgstr "Box {0}: Höchste Priorität"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:434
+msgid "Box {0}: lowest priority"
+msgstr "Box {0}: Niedrigste Priorität"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:435
+msgid "Between box {0} and {1}"
+msgstr "Zwischen Box {0} und {1}"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:436
+msgid "Above box with highest priority"
+msgstr "Über Box mit höchster Priorität"
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:437
+msgid "Below box with lowest priority"
+msgstr "Unter Box mit niedrigster Priorität"
+
 #~ msgid "Year missing."
 #~ msgstr "Angabe des Jahres fehlt."
 

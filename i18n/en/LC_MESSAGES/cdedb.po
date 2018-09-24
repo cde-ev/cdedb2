@@ -2424,6 +2424,34 @@ msgstr ""
 msgid "Diese Seite ist mit JavaScript einfacher nutzbar."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:431
+msgid "neutral"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:432
+msgid "Box {0}"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:433
+msgid "Box {0}: highest priority"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:434
+msgid "Box {0}: lowest priority"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:435
+msgid "Between box {0} and {1}"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:436
+msgid "Above box with highest priority"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:437
+msgid "Below box with lowest priority"
+msgstr ""
+
 #~ msgid "course (part {})"
 #~ msgstr ""
 

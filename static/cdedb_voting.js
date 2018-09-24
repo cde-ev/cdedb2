@@ -1,3 +1,19 @@
+/**
+ * Helper function to do some python like string formatting.
+ * Source: https://stackoverflow.com/a/4673436/10315508
+ */
+if (!String.prototype.format) {
+  String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) {
+      return typeof args[number] != 'undefined'
+        ? args[number]
+        : match
+      ;
+    });
+  };
+}
+
 (function($) {
     /**
      * Simple jQuery plugin to disable checkboxes of a classic voting form with multiple votes.
@@ -49,7 +65,7 @@
      * new) stage is done by moveCandidate() and does three actions: moving the candidate, deleting the source stage if
      * empty, calling updatePreferenceList() to create the text based preference list and update the voting form.
      */
-    var PrefVote = function($container, candidates, bar_moniker, bar_name, $input_preferencelist) {
+    var PrefVote = function($container, candidates, bar_moniker, $input_preferencelist, labels) {
         /** Associative list of candidate jQuery DOM elements indexed by their moniker */
         var candidate_list = {};
         
@@ -171,6 +187,7 @@
             
             $new_stage.insertAfter($spacer);
             $new_spacer.insertAfter($new_stage);
+            updateAriaLabels();
             
             moveCandidate($candidate, $new_stage);
         }
@@ -188,6 +205,7 @@
                 // ... remove spacer and source stage
                 $source.next().detach();
                 $source.detach();
+                updateAriaLabels();
             }
             updatePreferenceList();
         }
@@ -231,6 +249,29 @@
             $st.on('keydown',getKeyboardHandler(stage_click));
             return $st;
         }
+        /** Add/update aria-label attributes of all stages and spacers. */
+        function updateAriaLabels() {
+            var i=0;
+            var num = $container.children('.prefvote_stage').length;
+            $container.children('.prefvote_stage,.prefvote_spacer').each(function() {
+                if ($(this).hasClass('prefvote_stage')) {
+                    ++i;
+                    if (i === 1)
+                        $(this).attr('aria-label', labels['box_highest'].format(i.toString()));
+                    else if (i === num)
+                        $(this).attr('aria-label', labels['box_lowest'].format(i.toString()));
+                    else
+                        $(this).attr('aria-label', labels['box'].format(i.toString()));
+                } else {
+                    if (i === 0)
+                        $(this).attr('aria-label', labels['spacer_highest']);
+                    else if (i === num)
+                        $(this).attr('aria-label', labels['spacer_lowest']);
+                    else
+                        $(this).attr('aria-label', labels['spacer'].format(i.toString(), (i+1).toString()));
+                }
+            });
+        }
         
         /**
          * Initialization function
@@ -243,6 +284,7 @@
                 var $cand = $('<span></span>', {'class': 'prefvote_candidate',
                                                 'draggable': 'true',
                                                 'id': 'vote-cand_' + candidates[i][1].id,
+                                                'aria-label': 'Kandidat: ' + candidates[i][1].description,
                                                 'data-moniker': moniker,
                                                 'tabindex': '0'});
                 $cand.text(candidates[i][1].description);
@@ -303,7 +345,7 @@
                         bar_option = true;
                         is_neutral = true;
                         $stage.addClass('neutral');
-                        $stage.append($('<div></div>', {'class': 'label'}).text(bar_name));
+                        $stage.append($('<div></div>', {'class': 'label'}).text(labels['bar_name']));
                     }
                 }
                 if (bar_moniker && !is_neutral) {
@@ -344,11 +386,13 @@
                     var $sp = createSpacer().appendTo($container);
                     if (bar_moniker) {
                         $stage.addClass('neutral');
-                        $stage.append($('<div></div>', {'class': 'label'}).text(bar_name));
+                        $stage.append($('<div></div>', {'class': 'label'}).text(labels['bar_name']));
                         $sp.addClass('negative');
                     }
                 }
             }
+
+            updateAriaLabels();
         };
     };
 
@@ -360,13 +404,15 @@
      * candidates: List of all candidates in form: [ [id, {'id', 'moniker', 'description'}] ]
      * bar_moniker: Moniker of bar option, null if bar is not used
      * bar_name: Label of bar option / neutral stage box
+     * labels : Object mapping some strings to internationalized/translated strings. It should contain the following
+     *          keys: bar_name, box, box_highest, box_lowest, spacer, spacer_highest, spacer_lowest
      * $input_preferencelist: jQuery object of text only voting form input field
      */
-    $.fn.cdedbPrefVote = function(candidates, bar_moniker, bar_name, $input_preferencelist) {
+    $.fn.cdedbPrefVote = function(candidates, bar_moniker, $input_preferencelist, labels) {
         if ($(this).data('cdedbPrefVote'))
             return;
 
-        var obj = new PrefVote($(this), candidates, bar_moniker, bar_name, $input_preferencelist);
+        var obj = new PrefVote($(this), candidates, bar_moniker, $input_preferencelist, labels);
         $(this).data('cdedbPrefVote',obj);
     }
 })(jQuery);
