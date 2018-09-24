@@ -30,9 +30,9 @@ class TestAssemblyFrontend(FrontendTest):
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_adminchangeuser(self, user):
-        self.admin_view_profile('kalif')
+        self.realm_admin_view_profile('kalif', 'assembly')
         self.traverse({'href': '/core/persona/11/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -42,9 +42,9 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertPresence("Zelda")
         self.assertTitle("Kalif ibn al-Ḥasan Karabatschi")
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_toggleactivity(self, user):
-        self.admin_view_profile('kalif')
+        self.realm_admin_view_profile('kalif', 'assembly')
         self.assertEqual(
             True,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
@@ -54,7 +54,7 @@ class TestAssemblyFrontend(FrontendTest):
             False,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_user_search(self, user):
         self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'})
         self.assertTitle("Versammlungs-Nutzerverwaltung")
@@ -69,7 +69,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertPresence("Ergebnis [1]")
         self.assertPresence("Karabatschi")
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_create_user(self, user):
         self.traverse({'href': '/assembly/$'}, {'href': '/assembly/search/user'},
                       {'href': '/assembly/user/create'})
@@ -132,7 +132,7 @@ class TestAssemblyFrontend(FrontendTest):
         with open("./bin/verify_votes.py", 'rb') as f:
             self.assertEqual(f.read(), value)
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_external_signup(self, user):
         self.traverse({'href': '/assembly/$'},
                       {'href': '/assembly/create'},)

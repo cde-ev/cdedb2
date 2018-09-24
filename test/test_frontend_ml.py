@@ -28,9 +28,9 @@ class TestMlFrontend(FrontendTest):
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_adminchangeuser(self, user):
-        self.admin_view_profile('janis')
+        self.realm_admin_view_profile('janis', 'ml')
         self.traverse({'href': '/core/persona/10/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -40,9 +40,9 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Zelda")
         self.assertTitle("Janis Jalapeño")
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_toggleactivity(self, user):
-        self.admin_view_profile('janis')
+        self.realm_admin_view_profile('janis', 'ml')
         self.assertEqual(
             True,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
@@ -52,7 +52,7 @@ class TestMlFrontend(FrontendTest):
             False,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_user_search(self, user):
         self.traverse({'href': '/ml/$'}, {'href': '/ml/search/user'})
         self.assertTitle("Mailinglisten-Nutzerverwaltung")
@@ -99,7 +99,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse({'href': '/ml/mailinglist/6'})
         self.assertTitle("Aktivenforum 2000")
 
-    @as_users("anton", "berta")
+    @as_users("anton", "ferdinand", "berta")
     def test_mailinglist_management(self, user):
         self.traverse({'href': '/ml/$'},
                       {'href': '/ml/mailinglist/4'},

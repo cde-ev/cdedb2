@@ -27,6 +27,7 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
+from cdedb.query import QueryOperators
 
 _BASICCONF = BasicConfig()
 
@@ -365,6 +366,17 @@ class FrontendTest(unittest.TestCase):
         self.submit(f)
         if check:
             self.assertTitle("{} {}".format(u['given_names'], u['family_name']))
+
+    def realm_admin_view_profile(self, user, realm):
+        u = USER_DICT[user]
+        self.traverse({'href': '/{}/$'.format(realm)},
+                      {'href': '/{}/search/user'.format(realm)})
+        f = self.response.forms['queryform']
+        f['qsel_id'].checked = True
+        f['qop_id'] = QueryOperators.equal.value
+        f['qval_id'] = u["id"]
+        self.submit(f)
+        self.traverse({'description': u["DB-ID"]})
 
     def fetch_mail(self):
         elements = self.response.lxml.xpath("//div[@class='alert alert-info']/span/text()")

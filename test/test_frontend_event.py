@@ -31,9 +31,9 @@ class TestEventFrontend(FrontendTest):
             "Zelda",
             self.response.lxml.get_element_by_id('displayname').text_content().strip())
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_adminchangeuser(self, user):
-        self.admin_view_profile('emilia')
+        self.realm_admin_view_profile('emilia', 'event')
         self.traverse({'href': '/core/persona/5/adminchange'})
         f = self.response.forms['changedataform']
         f['display_name'] = "Zelda"
@@ -44,9 +44,9 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Emilia E. Eventis")
         self.assertPresence("03.04.1933")
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_toggleactivity(self, user):
-        self.admin_view_profile('emilia')
+        self.realm_admin_view_profile('emilia', 'event')
         self.assertEqual(
             True,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
@@ -56,7 +56,7 @@ class TestEventFrontend(FrontendTest):
             False,
             self.response.lxml.get_element_by_id('activity_checkbox').get('data-checked') == 'True')
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_user_search(self, user):
         self.traverse({'href': '/event/$'}, {'href': '/event/search/user'})
         self.assertTitle("Veranstaltungsnutzersuche")
@@ -71,7 +71,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Ergebnis [4]")
         self.assertPresence("Hohle Gasse 13")
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_create_user(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/search/user'},
@@ -127,7 +127,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("ToFi")
         self.assertPresence("Wir werden die Bäume drücken.")
 
-    @as_users("anton", "garcia")
+    @as_users("anton", "garcia", "ferdinand")
     def test_change_event(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
@@ -286,7 +286,7 @@ etc;anything else""", f['entries_2'].value)
         with open("/tmp/cdedb-store/testfiles/form.pdf", 'rb') as f:
             self.assertEqual(f.read(), self.response.body)
 
-    @as_users("anton")
+    @as_users("anton", "ferdinand")
     def test_create_event(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/list'},
