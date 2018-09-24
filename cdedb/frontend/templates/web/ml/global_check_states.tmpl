@@ -12,11 +12,11 @@
 {% block content %}
     {% for mailinglist_id, title in mailinglists|dictsort %}
         <h2>{{ title|e }}</h2>
-        <h3>Problematische Abonennten</h3>
+        <h3>Problematische Abonnenten</h3>
         {% if not problems[mailinglist_id] %}
-            Alle Abonennten gehören zur konfigurierten Zielgruppe.
+            Alle Abonnenten gehören zur konfigurierten Zielgruppe.
         {% else %}
-            Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe.
+            Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe.
             <ul>
                 {% for problem in problems[mailinglist_id]|sort %}
                     <li>
@@ -41,7 +41,7 @@
         {% endif %}
         {% if overrides[mailinglist_id] %}
             <h3>Ausnahmen</h3>
-            Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe, wurden aber explizit markiert.
+            Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe, wurden aber explizit markiert.
             <ul>
                 {% for problem in overrides[mailinglist_id]|sort %}
                     <li>

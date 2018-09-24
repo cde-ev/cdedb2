@@ -17,11 +17,11 @@
     </h1>
 {% endblock %}
 {% block content %}
-    <h2>Problematische Abonennten</h2>
+    <h2>Problematische Abonnenten</h2>
     {% if not problems%}
-        Alle Abonennten gehören zur konfigurierten Zielgruppe.
+        Alle Abonnenten gehören zur konfigurierten Zielgruppe.
     {% else %}
-        Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe.
+        Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe.
         <ul>
             {% for problem in problems|sort %}
                 <li>
@@ -52,7 +52,7 @@
     {% endif %}
     {% if overrides %}
         <h2>Ausnahmen</h2>
-        Die folgenden Abonennten gehören nicht zur konfigurierten Zielgruppe, wurden aber explizit markiert.
+        Die folgenden Abonnenten gehören nicht zur konfigurierten Zielgruppe, wurden aber explizit markiert.
         <ul>
             {% for problem in overrides|sort %}
                 <li>

@@ -22,7 +22,7 @@
         </div>
     {% endif %}
     {% call util.bootstrap_panel() %}
-        Beachte, dass als Moderatoren und Abonennten nur DB-Accounts und
+        Beachte, dass als Moderatoren und Abonnenten nur DB-Accounts und
         keine beliebigen E-Mail-Adressen eingetragen werden können. Bei der
         Whitelist hingegen werden beliebige E-Mail-Adressen eingetragen.
     {% endcall %}
@@ -126,7 +126,7 @@
             </li>
         {% endfor %}
     </ul>
-    <h2>Abonennten</h2>
+    <h2>Abonnenten</h2>
     <form action="{{ cdedblink('ml/add_subscriber')|e }}" method="POST" id="addsubscriberform" class="p">
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
