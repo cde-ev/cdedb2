@@ -582,16 +582,16 @@ query = "SELECT * FROM veranstaltungen"
 events = query_all(cdedbxy, query, tuple())
 events = tuple(sorted(events, key=lambda e: e['shortname']))
 for event in events:
-    winter_name = None
-    if 'Winter' in event['name']:
-        ## Deduplicate WinterAkademie
-        winter_name = ' '.join(event['name'].split()[:2])
-        if winter_name in WINTER_AKA_MAP:
-            EVENT_MAP[event['id']] = WINTER_AKA_MAP[winter_name]
+    split_name = None
+    if 'Winter' in event['name'] or 'Musik' in event['name']:
+        ## Deduplicate WinterAkademie and MusikAkademie
+        split_name = ' '.join(event['name'].split()[:2])
+        if split_name in SPLIT_AKA_MAP:
+            EVENT_MAP[event['id']] = SPLIT_AKA_MAP[split_name]
             print("*** Deduplicated event {} ***".format(event['name']))
             continue
     new = {
-        'title': winter_name or event['name'],
+        'title': split_name or event['name'],
         'shortname': event['shortname'],
         'institution': INSTITUTION_MAP[event['organisator']],
         'description': None,
@@ -605,8 +605,8 @@ for event in events:
     new['tempus'] = datetime.date(year, 7, 1)
     new_id = past_event.create_past_event(rs(DEFAULT_ID), new)
     EVENT_MAP[event['id']] = new_id
-    if winter_name:
-        WINTER_AKA_MAP[winter_name] = new_id
+    if split_name:
+        SPLIT_AKA_MAP[split_name] = new_id
     print("Created event in {} -- {}".format(new['tempus'].year, new['title']))
 
 ## Import courses
@@ -634,7 +634,7 @@ for event_id in EVENT_MAP:
         ident = (new['pevent_id'], new['nr'])
         printprefix = ""
         if ident in COURSE_COMBINATIONS:
-            ## This can happen in case of deduplicated WinterAkademie
+            ## This can happen in case of deduplicated split academies
             COURSE_MAP[course['id']] = COURSE_COMBINATIONS[ident]
             printprefix = "*DUP*"
         else:
@@ -668,7 +668,7 @@ for persona_id in persona_ids:
         ident = (EVENT_MAP[participant['v_id']], course, persona_id, is_orga)
         printprefix = ""
         if ident in PARTICIPANT_COMBINATIONS:
-            ## This can mainly happen for deduplicated WinterAkademie
+            ## This can mainly happen for deduplicated split academies
             printprefix = "*DUP*"
         else:
             past_event.add_participant(
