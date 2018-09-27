@@ -3,11 +3,13 @@
 \kurs{<<< course['title']|te >>>}
 \von{<<< course['instructors']|te >>>}
 
+<<% if ambience['event']['tracks']|length > 1 -%>>
 In:
 <<%- for track_id in course['active_segments']|sort %>>
     <<< ambience['event']['tracks'][track_id]['title']|te >>>
     <<%- if not loop.last %>>,<<% endif %>>
 <<%- endfor %>>
+<<%- endif %>>
 
 <<< course['description']|te >>>
 
