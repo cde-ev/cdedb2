@@ -2494,6 +2494,10 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
+    if 'vote_begin' in val:
+        if val['vote_begin'] <= now():
+            print("XXX", now(), val['vote_begin'])
+            errs.append(("vote_begin", ValueError(_("Mustn't be in the past."))))
     if 'candidates' in val:
         oldcandidates, e = _mapping(val['candidates'], 'candidates',
                                     _convert=_convert)

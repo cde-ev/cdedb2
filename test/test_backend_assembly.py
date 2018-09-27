@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
+import datetime
+import decimal
+import time
+
+import pytz
+
 from test.common import BackendTest, as_users, USER_DICT, nearly_now
 from cdedb.query import QUERY_SPECS, QueryOperators
-from cdedb.common import PrivilegeError, FUTURE_TIMESTAMP
+from cdedb.common import PrivilegeError, FUTURE_TIMESTAMP, now
 import cdedb.database.constants as const
-import datetime
-import pytz
-import decimal
 
 class TestAssemblyBackend(BackendTest):
     used_backends = ("core", "assembly")
@@ -61,7 +64,7 @@ class TestAssemblyBackend(BackendTest):
         data = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
-            'signup_end': datetime.datetime.now(pytz.utc),
+            'signup_end': now(),
             'title': 'Außerordentliche Mitgliederversammlung'
         }
         self.assertEqual(2, self.assembly.create_assembly(self.key, data))
@@ -249,6 +252,8 @@ class TestAssemblyBackend(BackendTest):
 
     def test_extension(self):
         self.login(USER_DICT['anton'])
+        future = now() + datetime.timedelta(seconds=.5)
+        farfuture = now() + datetime.timedelta(seconds=1)
         data = {
             'assembly_id': 1,
             'use_bar': False,
@@ -258,13 +263,14 @@ class TestAssemblyBackend(BackendTest):
             'notes': None,
             'quorum': 10,
             'title': 'Verstehen wir Spaß',
-            'vote_begin': datetime.datetime(2002, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'vote_end': datetime.datetime.now(pytz.utc),
+            'vote_begin': future,
+            'vote_end': farfuture,
             'vote_extension_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222, tzinfo=pytz.utc),
             'votes': None}
         new_id = self.assembly.create_ballot(self.key, data)
         self.assertEqual(None, self.assembly.get_ballot(self.key, new_id)['extended'])
         self.login(USER_DICT['kalif'])
+        time.sleep(1)
         self.assertEqual(True, self.assembly.check_voting_priod_extension(self.key, new_id))
         self.assertEqual(True, self.assembly.get_ballot(self.key, new_id)['extended'])
 
@@ -325,6 +331,8 @@ class TestAssemblyBackend(BackendTest):
         }
         new_id = self.assembly.create_assembly(self.key, data)
         self.assembly.signup(self.key, new_id)
+        future = now() + datetime.timedelta(seconds=.5)
+        farfuture = now() + datetime.timedelta(seconds=1)
         data = {
             'assembly_id': new_id,
             'use_bar': False,
@@ -334,17 +342,18 @@ class TestAssemblyBackend(BackendTest):
             'notes': None,
             'quorum': 0,
             'title': 'Verstehen wir Spaß',
-            'vote_begin': datetime.datetime(2002, 2, 5, 13, 22, 22, 222222, tzinfo=pytz.utc),
-            'vote_end': datetime.datetime.now(pytz.utc),
+            'vote_begin': future,
+            'vote_end': farfuture,
             'vote_extension_end': None,
             'votes': None}
         ballot_id = self.assembly.create_ballot(self.key, data)
+        time.sleep(1)
         self.assembly.check_voting_priod_extension(self.key, ballot_id)
         self.assembly.external_signup(self.key, new_id,
                                       persona_id=USER_DICT['kalif']['id'])
         update = {
             'id': new_id,
-            'signup_end': datetime.datetime.now(pytz.utc),
+            'signup_end': now(),
         }
         self.assembly.set_assembly(self.key, update)
         self.assertEqual({1, 11}, self.assembly.list_attendees(self.key, new_id))

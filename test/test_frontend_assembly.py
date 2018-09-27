@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
+import datetime
+import email.parser
+import time
 import unittest
 import quopri
 import webtest
-import email.parser
+
 from test.common import as_users, USER_DICT, FrontendTest
 
-from cdedb.common import ASSEMBLY_BAR_MONIKER
+from cdedb.common import ASSEMBLY_BAR_MONIKER, now
 from cdedb.query import QueryOperators
 
 class TestAssemblyFrontend(FrontendTest):
@@ -192,14 +195,19 @@ class TestAssemblyFrontend(FrontendTest):
         f = self.response.forms['createballotform']
         f['title'] = 'Maximale Länge der Satzung'
         f['description'] = "Dann muss man halt eine alte Regel rauswerfen, wenn man eine neue will."
-        f['vote_begin'] = "2002-4-1 00:00:00"
-        f['vote_end'] = "2002-5-1 00:00:00"
+        future = now() + datetime.timedelta(seconds=.5)
+        farfuture = now() + datetime.timedelta(seconds=1)
+        f['vote_begin'] = future.isoformat()
+        f['vote_end'] = farfuture.isoformat()
         f['quorum'] = "0"
         f['votes'] = ""
         f['notes'] = "Kein Aprilscherz!"
         self.submit(f)
         self.assertTitle("Maximale Länge der Satzung (Drittes CdE-Konzil)")
-        self.traverse({'href': '/assembly/2/show'},)
+        time.sleep(1)
+        self.traverse({'href': '/assembly/2/ballot/list'},
+                      {'href': '/assembly/2/ballot/6/show'},
+                      {'href': '/assembly/2/show'},)
         self.assertTitle("Drittes CdE-Konzil")
         f = self.response.forms['concludeassemblyform']
         f['ack_conclude'].checked = True
@@ -400,12 +408,18 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/ballot/create'},)
         f = self.response.forms['createballotform']
         f['title'] = 'Maximale Länge der Satzung'
-        f['vote_begin'] = "2002-4-1 00:00:00"
-        f['vote_end'] = "2002-5-1 00:00:00"
+        future = now() + datetime.timedelta(seconds=.5)
+        farfuture = now() + datetime.timedelta(seconds=1)
+        f['vote_begin'] = future.isoformat()
+        f['vote_end'] = farfuture.isoformat()
         f['vote_extension_end'] = "2222-5-1 00:00:00"
         f['quorum'] = "1000"
         f['votes'] = ""
         self.submit(f)
+        self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
+        time.sleep(1)
+        self.traverse({'href': '/assembly/1/ballot/list'},
+                      {'href': '/assembly/1/ballot/6/show'},)
         self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
         self.assertPresence("verlängert, da 1000 Stimmen nicht erreicht wurden.")
 
