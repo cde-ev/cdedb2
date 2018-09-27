@@ -97,7 +97,8 @@ class CoreBackend(AbstractBackend):
         """
         if self.is_admin(rs):
             return True
-        roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))))
+        roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
+                              introspection_only=True)
         return bool(rs.user.roles & privilege_tier(roles))
 
     @staticmethod
@@ -1325,7 +1326,8 @@ class CoreBackend(AbstractBackend):
         :rtype: {int: {str: object}}
         """
         ids = affirm_set("id", ids)
-        if ids != {rs.user.persona_id} and not self.is_admin(rs):
+        if (ids != {rs.user.persona_id} and not self.is_admin(rs)
+                and any(not self.is_relative_admin(rs, anid) for anid in ids)):
             raise PrivilegeError(_("Must be privileged."))
         return self.retrieve_personas(rs, ids, columns=PERSONA_ALL_FIELDS)
 

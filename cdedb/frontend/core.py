@@ -255,7 +255,7 @@ class CoreFrontend(AbstractFrontend):
             access_levels.update(ALL_ACCESS_LEVELS)
         ## Other admins see their realm
         for realm in ("ml", "assembly", "event", "cde"):
-            if "{}_admin" in rs.user.roles:
+            if "{}_admin".format(realm) in rs.user.roles:
                 access_levels.add(realm)
         ## Relative admins can see core data
         if is_relative_admin:

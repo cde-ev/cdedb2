@@ -961,7 +961,7 @@ def diacritic_patterns(s):
         s = s.replace(normal, replacement)
     return s
 
-def extract_roles(session):
+def extract_roles(session, introspection_only=False):
     """Associate some roles to a data set.
 
     The data contains the relevant portion of attributes from the
@@ -972,12 +972,16 @@ def extract_roles(session):
     Note that this also works on non-personas (i.e. dicts of is_* flags).
 
     :type session: {str: object}
+    :type introspection_only: bool
+    :param introspection_only: If True the result should only be used to
+      take an extrinsic look on a persona and not the determine the privilege
+      level of the data set passed.
     :rtype: {str}
     """
     ret = {"anonymous"}
     if session['is_active']:
         ret.add("persona")
-    else:
+    elif not introspection_only:
         return ret
     realms = {"cde", "event", "ml", "assembly"}
     for realm in realms:
