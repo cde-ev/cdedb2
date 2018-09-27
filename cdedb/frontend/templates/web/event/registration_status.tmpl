@@ -78,7 +78,7 @@
     </dl>
 
     <h3 class="heading-underline">Anmeldedaten</h3>
-    {% if ambience['event']['registration_soft_limit'] >= now() %}
+    {% if ambience['event']['registration_soft_limit'] and ambience['event']['registration_soft_limit'] >= now() %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), "Ändern", aclass="btn btn-sm btn-warning",
                          icon='pencil') }}
