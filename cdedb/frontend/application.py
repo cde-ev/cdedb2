@@ -25,7 +25,7 @@ from cdedb.common import (
     roles_to_db_role, RequestState, User, extract_roles)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
-    JINJA_FILTERS)
+    docurl, JINJA_FILTERS)
 from cdedb.config import SecretsConfig, Config
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -102,6 +102,7 @@ class Application(BaseApp):
             'notifications': tuple(),
             'now': now,
             'staticurl': staticurl,
+            'docurl': docurl,
             'user': User(),
             'values': {},
             'error': error,

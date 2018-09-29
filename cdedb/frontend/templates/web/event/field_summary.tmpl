@@ -82,6 +82,7 @@
 
 
 {% block content %}
+    Eine Erklärung zu den Feldern findest du <a href="{{ docurl('Orga_Hints', 'special_fields')|e }}">hier</a>.
     <form action="{{ cdedblink('event/field_summary')|e }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {% set associations = (("Anmeldungsfelder", enums['FieldAssociations'].registration, 'user'),
                                ("Kursfelder", enums['FieldAssociations'].course, 'book'),

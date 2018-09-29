@@ -614,6 +614,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'query_mod': query_mod,
             'show_user_link': _show_user_link,
             'staticurl': staticurl,
+            'docurl': docurl,
             'user': rs.user,
             'values': rs.values,
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
@@ -1216,6 +1217,7 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
     :type magic_placeholders: [str]
     :param magic_placeholders: These are parameter names which behave as if
       the following code would be executed::
+
           for i, name in enumerate(magic_placeholders):
               params[name] = "_CDEDB_MAGIC_URL_PLACEHOLDER_{}_".format(i)
 
@@ -1272,6 +1274,18 @@ def staticurl(path):
     :rtype: str
     """
     return str(pathlib.Path("/static", path))
+
+def docurl(topic, anchor=None):
+    """Construct an HTTP URL to a doc page.
+
+    :type topic: str
+    :type anchor: str or None
+    :rtype: str
+    """
+    ret = str(pathlib.Path("/doc", topic + ".html"))
+    if anchor:
+        ret = ret + "#" + anchor
+    return ret
 
 def REQUESTdata(*spec):
     """Decorator to extract parameters from requests and validate them. This

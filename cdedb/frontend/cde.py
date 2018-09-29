@@ -682,6 +682,7 @@ class CdEFrontend(AbstractUserFrontend):
         :type sendmail: bool
         :rtype: bool, int, int
         :returns: Success information and
+
           * for positive outcome the number of recorded transfer as well as
             the number of new members or
           * for negative outcome the line where an exception was triggered
