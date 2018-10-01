@@ -66,7 +66,7 @@
 {%- endif %}
 {%- if active %} aria-current="page" {% endif %}{# We use the `active` attribute for navigation only #}
 {%- if title %} title="{{ title|e }}"{% endif %}>
-{%- if icon %}{{ make_icon(icon) }} {% endif %}{{ label|e }}
+{%- if icon %}{{ make_icon(icon) }}&nbsp;{% endif %}{{ label|e }}
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 

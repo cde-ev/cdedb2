@@ -38,9 +38,11 @@
                         &bull;
                         {{ util.href(cdedblink('event/stats', {'event_id': event_id}),
                                      "Statistik", icon='stats') }}
-                        &bull;
-                        {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
-                                     "Kurse", icon='book') }}
+                        {% if entry['tracks'] %}
+                            &bull;
+                            {{ util.href(cdedblink('event/course_stats', {'event_id': event_id}),
+                                         "Kurse", icon='book') }}
+                        {% endif %}
                     </span>
                 </li>
             {% endfor %}
