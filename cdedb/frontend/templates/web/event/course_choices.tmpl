@@ -276,4 +276,15 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', $(this).attr('data-id'));
         });
     </script>
+
+    <hr />
+    <p>
+        <strong>Farb-Legende:</strong> &emsp;
+        <span class="color-legend course-fewp"></span>&nbsp;Kurs ist zu leer &emsp;
+        <span class="color-legend course-manyp"></span>&nbsp;Kurs ist zu voll &emsp;
+        <span class="color-legend course-cancelled"></span>&nbsp;keine Kurseinteilung oder Kurs fällt aus &emsp;
+    </p>
+    <p>
+        {{ util.make_icon('info-sign') }} Doppelklick auf Kursnummer führt zum Kurs.
+    </p>
 {% endblock %}
