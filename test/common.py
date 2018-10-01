@@ -297,7 +297,9 @@ class FrontendTest(unittest.TestCase):
         self.response = None
 
     def basic_validate(self):
-        self.assertNotIn(b"cgitb", self.response.body)
+        if b"cgitb" in self.response.body:
+            # This is a manual implementation of assertNotIn() to make the test output less verbose on failure.
+            raise AssertionError("Found 'cgitb' in response body. A Python Exception seems to have occured.")
         if self.response.content_type == "text/html":
             texts = self.response.lxml.xpath('/html/head/title/text()')
             self.assertNotEqual(0, len(texts))
