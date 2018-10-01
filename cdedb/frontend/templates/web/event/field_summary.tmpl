@@ -10,6 +10,7 @@
 {{ util.breadcrumb_link(cdedblink("event/field_summary"), "Datenfelder konfigurieren", active=True) }}
 {% endblock %}
 {% block heading %}
+    {{ util.doclink('Orga_Hints', 'special_fields') }}
     <h1 class="title">
         Datenfelder konfigurieren
         <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
@@ -82,7 +83,6 @@
 
 
 {% block content %}
-    Eine Erklärung zu den Feldern findest du <a href="{{ docurl('Orga_Hints', 'special_fields')|e }}">hier</a>.
     <form action="{{ cdedblink('event/field_summary')|e }}" method="POST" id="fieldsummaryform" class="form-horizontal">
         {% set associations = (("Anmeldungsfelder", enums['FieldAssociations'].registration, 'user'),
                                ("Kursfelder", enums['FieldAssociations'].course, 'book'),

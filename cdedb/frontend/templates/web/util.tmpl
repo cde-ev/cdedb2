@@ -442,3 +442,11 @@
         {{ given_names|e }} ({{ display_name|e }})
     {% endif %}
 {% endmacro %}
+
+{# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
+   docurl(). #}
+{% macro doclink(topic, anchor=None) %}
+    <a href="{{ docurl(topic, anchor)|e }}" class="btn btn-info btn-lg pull-right" target="_blank">
+        {{ make_icon('question-sign') }} Hilfe <span class="sr-only">zu dieser Seite</span>
+    </a>
+{% endmacro %}
