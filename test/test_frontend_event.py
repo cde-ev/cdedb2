@@ -9,9 +9,17 @@ from test.common import as_users, USER_DICT, FrontendTest, nearly_now
 from cdedb.query import QueryOperators
 
 class TestEventFrontend(FrontendTest):
-    @as_users("anton", "berta", "emilia")
+    @as_users("emilia")
     def test_index(self, user):
         self.traverse({'href': '/event/'})
+        self.assertPresence("Große Testakademie 2222")
+        self.assertNonPresence("PfingstAkademie 2014")
+        self.assertNonPresence("CdE-Party 2050")
+
+    @as_users("anton", "berta")
+    def test_index_orga(self, user):
+        self.traverse({'href': '/event/'})
+        self.assertPresence("CdE-Party 2050")
 
     @as_users("emilia")
     def test_showuser(self, user):
@@ -107,6 +115,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({'href': '/event/$'}, {'href': '/event/event/list'})
         self.assertTitle("Veranstaltungen verwalten")
         self.assertPresence("Große Testakademie 2222")
+        self.assertPresence("CdE-Party 2050")
         self.assertNonPresence("PfingstAkademie 2014")
 
     @as_users("anton", "berta", "emilia")
@@ -172,23 +181,9 @@ class TestEventFrontend(FrontendTest):
     @as_users("anton")
     def test_part_summary_complex(self, user):
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/list'},
-                      {'href': '/event/event/create'})
-        f = self.response.forms['createeventform']
-        f['title'] = "Universale Akademie"
-        f['institution'] = 1
-        f['description'] = "Mit Co und Coco."
-        f['shortname'] = "UnAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
-        f['registration_start'] = "2000-01-01 00:00:00+0000"
-        f['notes'] = "Die spinnen die Orgas."
-        f['orga_ids'] = "DB-2-H, DB-7-I"
-        self.submit(f)
-        self.assertTitle("Universale Akademie")
-        ## Here we go
-        self.traverse({'href': '/event/event/2/part/summary'})
-        self.assertTitle("Universale Akademie Teile konfigurieren")
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/part/summary'})
+        self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('title_5', f.fields)
         f['create_-1'].checked = True
@@ -199,7 +194,7 @@ class TestEventFrontend(FrontendTest):
         f['track_create_-1_-1'].checked = True
         f['track_-1_-1'] = "Chillout"
         self.submit(f)
-        self.assertTitle("Universale Akademie Teile konfigurieren")
+        self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Cooldown", f['title_5'].value)
         self.assertEqual("Chillout", f['track_5_4'].value)
@@ -207,7 +202,7 @@ class TestEventFrontend(FrontendTest):
         f['fee_5'] = "99.99"
         self.submit(f)
         ## and now for tracks
-        self.assertTitle("Universale Akademie Teile konfigurieren")
+        self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('track_5_5', f.fields)
         f['track_5_-1'] = "Spätschicht"
@@ -221,16 +216,16 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("Nachtschicht", f['track_5_5'].value)
         f['track_delete_5_5'].checked = True
         self.submit(f)
-        self.assertTitle("Universale Akademie Teile konfigurieren")
+        self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('track_5_5', f.fields)
         ## finally deletion
-        self.assertTitle("Universale Akademie Teile konfigurieren")
+        self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Größere Hälfte", f['title_5'].value)
         f['delete_5'].checked = True
         self.submit(f)
-        self.assertTitle("Universale Akademie Teile konfigurieren")
+        self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('title_5', f.fields)
 
@@ -605,10 +600,10 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['addregistrationform']
         f['persona.persona_id'] = "DB-2-H"
         f['reg.orga_notes'] = "Du entkommst uns nicht."
-        f['reg.mixed_lodging'].checked = True
+        f['reg.mixed_lodging'].checked = False
         f['part1.status'] = 1
         f['part2.status'] = 3
-        f['part3.status'] = 2
+        f['part3.status'] = -1
         f['part1.lodgement_id'] = 4
         f['track1.course_id'] = 5
         f['track1.course_choice_0'] = 5
@@ -618,13 +613,29 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/5/change'})
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Du entkommst uns nicht.", f['reg.orga_notes'].value)
-        self.assertEqual(True, f['reg.mixed_lodging'].checked)
+        self.assertEqual(False, f['reg.mixed_lodging'].checked)
         self.assertEqual("1", f['part1.status'].value)
         self.assertEqual("3", f['part2.status'].value)
-        self.assertEqual("2", f['part3.status'].value)
+        self.assertEqual("-1", f['part3.status'].value)
         self.assertEqual("4", f['part1.lodgement_id'].value)
         self.assertEqual("5", f['track1.course_id'].value)
         self.assertEqual("5", f['track1.course_choice_0'].value)
+
+    @as_users("anton")
+    def test_add_empty_registration(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/registration/query'},
+                      {'href': '/event/event/2/registration/add'})
+        f = self.response.forms['addregistrationform']
+        f['persona.persona_id'] = "DB-5-B"
+        f['reg.parental_agreement'].checked = True
+        f['part4.status'] = -1
+        self.submit(f)
+        self.assertTitle("Anmeldung von Emilia E. Eventis (CdE-Party 2050)")
+        self.traverse({'href': '/event/event/2/registration/5/change'})
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual(True, f['reg.parental_agreement'].checked)
 
     @as_users("garcia")
     def test_delete_registration(self, user):
@@ -1143,21 +1154,8 @@ etc;anything else""", f['entries_2'].value)
 
     @as_users("anton")
     def test_one_track_no_courses(self, user):
-        # First, create a new event
         self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/list'},
-                      {'href': '/event/event/create'})
-        self.assertTitle("Veranstaltung anlegen")
-        f = self.response.forms['createeventform']
-        f['title'] = "Universale Akademie"
-        f['institution'] = 1
-        f['shortname'] = "UnAka"
-        f['event_begin'] = "2345-01-01"
-        f['event_end'] = "2345-6-7"
-        f['registration_start'] = "2000-01-01 00:00:00+0000"
-        f['orga_ids'] = "DB-2-H"
-        self.submit(f)
-
+                      {'href': '/event/event/2/show'})
         # Check if course list is present (though we have no course track)
         self.assertNonPresence('/event/event/2/course/list', div="sidebar")
         self.assertNonPresence('/event/event/2/course/stats', div="sidebar")
@@ -1166,7 +1164,6 @@ etc;anything else""", f['entries_2'].value)
         # Add course track
         self.traverse({'href': '/event/event/2/part/summary'})
         f = self.response.forms['partsummaryform']
-        f['title_4'] = "Partywoche"
         f['track_create_4_-1'].checked = True
         f['track_4_-1'] = "Chillout"
         self.submit(f)

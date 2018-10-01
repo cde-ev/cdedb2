@@ -93,11 +93,13 @@ INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instr
 -- events
 --
 INSERT INTO event.events (id, title, institution, description, shortname, registration_start, registration_soft_limit, registration_hard_limit, is_visible, is_course_list_visible, iban, mail_text, notes, offline_lock, lodge_field, reserve_field) VALUES
-    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96 3702 0500 0008 0689 01', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL);
+    (1, 'Große Testakademie 2222', 1, 'Everybody come!', 'TestAka', timestamp with time zone '2000-10-30 01:00:00+01', timestamp with time zone '2200-10-30 01:00:00+01', timestamp with time zone '2220-10-30 01:00:00+01', True, True, 'DE96 3702 0500 0008 0689 01', 'Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.', 'Todoliste ... just kidding ;)', False, NULL, NULL),
+    (2, 'CdE-Party 2050', 1, 'Let''s have a party!', 'Party50', timestamp with time zone '2049-12-01 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', timestamp with time zone '2049-12-31 01:00:00+01', False, True, 'DE96 3702 0500 0008 0689 01', '', 'Wird anstrengend …', False, NULL, NULL);
 INSERT INTO event.event_parts (id, event_id, title, part_begin, part_end, fee) VALUES
     (1, 1, 'Warmup', date '2222-2-2', date '2222-2-2', 10.50),
     (2, 1, 'Erste Hälfte', date '2222-11-01', date '2222-11-11', 123.00),
-    (3, 1, 'Zweite Hälfte', date '2222-11-11', date '2222-11-30', 450.99);
+    (3, 1, 'Zweite Hälfte', date '2222-11-11', date '2222-11-30', 450.99),
+    (4, 2, 'Party', date '2050-01-15', date '2050-01-15', 15.00);
 INSERT INTO event.course_tracks (id, part_id, title) VALUES
     (1, 2, 'Morgenkreis (Erste Hälfte)'),
     (2, 2, 'Kaffeekränzchen (Erste Hälfte)'),
@@ -129,7 +131,9 @@ INSERT INTO event.course_segments (course_id, track_id, is_active) VALUES
     (5, 2, True),
     (5, 3, False);
 INSERT INTO event.orgas (persona_id, event_id) VALUES
-    (7, 1);
+    (7, 1),
+    (1, 2),
+    (2, 2);
 INSERT INTO event.lodgements (id, event_id, moniker, capacity, reserve, notes, fields) VALUES
     (1, 1, 'Warme Stube', 5, 1, NULL, '{"lodgement_id": 1, "contamination": "high"}'::jsonb),
     (2, 1, 'Kalte Kammer', 10, 2, 'Dafür mit Frischluft.', '{"lodgement_id": 2, "contamination": "none"}'::jsonb),
@@ -352,8 +356,8 @@ SELECT setval('cde.lastschrift_id_seq', 2);
 SELECT setval('past_event.events_id_seq', 1);
 SELECT setval('past_event.courses_id_seq', 2);
 SELECT setval('past_event.institutions_id_seq', 1);
-SELECT setval('event.events_id_seq', 1);
-SELECT setval('event.event_parts_id_seq', 3);
+SELECT setval('event.events_id_seq', 2);
+SELECT setval('event.event_parts_id_seq', 4);
 SELECT setval('event.course_tracks_id_seq', 3);
 SELECT setval('event.courses_id_seq', 5);
 SELECT setval('event.field_definitions_id_seq', 6);
