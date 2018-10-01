@@ -371,10 +371,11 @@ class FrontendTest(unittest.TestCase):
         u = USER_DICT[user]
         self.traverse({'href': '/{}/$'.format(realm)},
                       {'href': '/{}/search/user'.format(realm)})
+        id_field = 'personas.id' if realm == 'event' else 'id'
         f = self.response.forms['queryform']
-        f['qsel_id'].checked = True
-        f['qop_id'] = QueryOperators.equal.value
-        f['qval_id'] = u["id"]
+        f['qsel_' + id_field].checked = True
+        f['qop_' + id_field] = QueryOperators.equal.value
+        f['qval_' + id_field] = u["id"]
         self.submit(f)
         self.traverse({'description': u["DB-ID"]})
 
