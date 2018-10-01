@@ -271,29 +271,29 @@
 
 {% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
                       heading='Suchmaske') %}
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title">{{ util.make_icon('search') }} {{ heading|e }}</h3>
+    <form action="{{ target|e }}" method="GET" id="queryform" aria-labelledby="qf_title">
+        {{ util.input_hidden(name="is_search", value=True) }}
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title" id="qf_title">{{ util.make_icon('search') }} {{ heading|e }}</h3>
 
-            <!-- Tabs to chose between NonJS- and JS-form -->
-            <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
-                <li role="presentation" class="active">
-                    <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab">
-                        {{ util.make_icon('list') }} Tabellarisch
-                    </a>
-                </li>
-                <li role="presentation">
-                    <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
-                        {{ util.make_icon('star-empty') }} Magisch
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <div class="panel-body">
-            <form action="{{ target|e }}" method="GET" id="queryform">
-                {{ util.input_hidden(name="is_search", value=True) }}
-
+                <!-- Tabs to chose between NonJS- and JS-form -->
+                <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
+                    <li role="presentation" class="active">
+                        <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab">
+                            {{ util.make_icon('list') }} Tabellarisch
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
+                            {{ util.make_icon('star-empty') }} Magisch
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="panel-body">
                 <div class="tab-content" id="queryform_tabcontent">
+
                     <!-- Non-JS form -->
                     <div class="tab-pane active row" role="tabpanel" id="tab_qf_nojs">
                         <div class="col-lg-7">
@@ -454,21 +454,21 @@
                     </span>
                 </p>
                 {{ util.output_errors('query') }}
-            </form>
-            <script type="text/javascript">
-                {
-                    $('#qf_tablist').css('display', 'block');
-                    var $qf = $('#queryform');
-                    $qf.cdedbQueryForm({"choices" : {{ choices|json }}});
-                    $('#tab_link_qf_js')
-                        .on('show.bs.tab', function() {
-                            $qf.data('cdedbQueryForm').initFromForm();
-                        })
-                        .tab('show');
-                }
-            </script>
+                <script type="text/javascript">
+                    {
+                        $('#qf_tablist').css('display', 'block');
+                        var $qf = $('#queryform');
+                        $qf.cdedbQueryForm({"choices" : {{ choices|json }}});
+                        $('#tab_link_qf_js')
+                            .on('show.bs.tab', function() {
+                                $qf.data('cdedbQueryForm').initFromForm();
+                            })
+                            .tab('show');
+                    }
+                </script>
+            </div>
         </div>
-    </div>
+    </form>
 {% endmacro %}
 
 {% macro place_default_queries(target, queries, titles, title="Standardabfragen") %}
