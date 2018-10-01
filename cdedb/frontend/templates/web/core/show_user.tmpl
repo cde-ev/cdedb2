@@ -174,12 +174,20 @@
                     </dd>
 
                     <dt>Guthaben</dt>
-                    <dd>{{ data['balance']|e }}€</dd> {# TODO change markup if active lastschrift exists #}
-                    {% if 'cde_admin' in user.roles %} {# TODO or active lastschrift exists #}
+                    {% if data['has_lastschrift'] %}
                         <dd>
+                            {{ data['balance']|e }}&#x202F;€ und
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                         "Einzugsermächtigung …", icon="euro") }}
+                                                   "Einzugsermächtigung", icon="euro") }}
                         </dd>
+                    {% else %}
+                        <dd>{{ data['balance']|e }}€</dd>
+                        {% if 'cde_admin' in user.roles %}
+                            <dd>
+                                {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
+                                             "Neue Einzugsermächtigung …", icon="euro") }}
+                            </dd>
+                        {% endif %}
                     {% endif %}
 
                     {% if data['is_member'] %}

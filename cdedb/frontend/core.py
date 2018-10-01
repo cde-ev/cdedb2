@@ -20,6 +20,7 @@ from cdedb.common import (
     _, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
     now, merge_dicts, ArchiveError, open_utf8)
 from cdedb.backend.core import CoreBackend
+from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.ml import MlBackend
 from cdedb.backend.event import EventBackend
@@ -43,6 +44,7 @@ class CoreFrontend(AbstractFrontend):
         """
         super().__init__(configpath)
         self.coreproxy = ProxyShim(CoreBackend(configpath))
+        self.cdeproxy = ProxyShim(CdEBackend(configpath))
         self.assemblyproxy = ProxyShim(AssemblyBackend(configpath))
         self.mlproxy = ProxyShim(MlBackend(configpath))
         self.eventproxy = ProxyShim(EventBackend(configpath))
@@ -286,6 +288,10 @@ class CoreFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_event_user(rs, persona_id))
         if "cde" in access_levels and "cde" in roles:
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
+            if "core" in access_levels:
+                user_lastschrift = self.cdeproxy.list_lastschrift(
+                    rs, persona_ids=(rs.user.persona_id,), active=True)
+                data['has_lastschrift'] = len(user_lastschrift) > 0
         if "admin" in access_levels:
             data.update(self.coreproxy.get_total_persona(rs, persona_id))
 
