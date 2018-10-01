@@ -1167,7 +1167,7 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("member")
+    @access("cde_admin")
     def lastschrift_receipt(self, rs, lastschrift_id, transaction_id):
         """Generate a donation certificate.
 
