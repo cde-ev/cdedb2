@@ -1,0 +1,165 @@
+{% set sidenav_active='json_import' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}Daten-Import zur Veranstaltung {{ ambience['event']['title']|e }} prüfen{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/json_import_form"), "Daten-Import", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Daten-Import prüfen <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <h2>Geänderte Anmeldedaten</h2>
+    {% if changed_registrations %}
+        {% call util.bootstrap_panel("Geänderte Anmeldungen", aclass='panel panel-info', icon='user') %}
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="slim">
+                        {% for registration in changed_registrations %}
+                            <li>{{ personas[registration['persona_id']]['given_names']|e }}
+                                {{ personas[registration['persona_id']]['last_name']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Betroffene Felder</h4>
+                    <ul class="slim">
+                        {% for field in changed_registration_fields %}
+                            <li>{{ field|e }}{# TODO translation/human readable #}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endcall %}
+    {% endif %}
+    <div class="row">
+        {% if new_registrations %}
+            <div class="col-md-6">
+                {% call util.bootstrap_panel("Neue Anmeldungen", aclass='panel panel-success', icon='user') %}
+                    <ul class="slim">
+                        {% for registration in new_registrations %}
+                            <li>{{ personas[registration['persona_id']]['given_names']|e }}
+                                {{ personas[registration['persona_id']]['last_name']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endcall %}
+            </div>
+        {% endif %}
+        {% if deleted_registrations %}
+            <div class="col-md-6">
+                {% call util.bootstrap_panel("Gelöschte Anmeldungen", aclass='panel panel-danger', icon='user') %}
+                    <ul class="slim">
+                        {% for registration in deleted_registrations %}
+                            <li>{{ personas[registration['persona_id']]['given_names']|e }}
+                                {{ personas[registration['persona_id']]['last_name']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endcall %}
+            </div>
+        {% endif %}
+    </div>
+
+
+    <h2>Geänderte Kursdaten</h2>
+    {% if changed_courses %}
+        {% call util.bootstrap_panel("Geänderte Kurse", aclass='panel panel-info', icon='book') %}
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="slim">
+                        {% for course in changed_courses %}
+                            <li>{{ course['nr']|e }}. {{ course['shortname']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Betroffene Felder</h4>
+                    <ul class="slim">
+                        {% for field in changed_course_fields %}
+                            <li>{{ field|e }}{# TODO translation/human readable #}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endcall %}
+    {% endif %}
+    <div class="row">
+        {% if new_courses %}
+            <div class="col-md-6">
+                {% call util.bootstrap_panel("Neue Kurse", aclass='panel panel-success', icon='book') %}
+                    <ul class="slim">
+                        {% for course in new_courses %}
+                            <li>{{ course['nr']|e }}. {{ course['shortname']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endcall %}
+            </div>
+        {% endif %}
+        {% if deleted_courses %}
+            <div class="col-md-6">
+                {% call util.bootstrap_panel("Gelöschte Kurse", aclass='panel panel-danger', icon='book') %}
+                    <ul class="slim">
+                        {% for course in deleted_courses %}
+                            <li>{{ course['nr']|e }}. {{ course['shortname']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endcall %}
+            </div>
+        {% endif %}
+    </div>
+
+
+    <h2>Geänderte Unterkunftdaten</h2>
+    {% if changed_lodgements %}
+        {% call util.bootstrap_panel("Geänderte Unterkünfte", aclass='panel panel-info', icon='home') %}
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="slim">
+                        {% for lodgement in changed_lodgements %}
+                            <li>{{ lodgement['moniker']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h4>Betroffene Felder</h4>
+                    <ul class="slim">
+                        {% for field in changed_lodgement_fields %}
+                            <li>{{ field|e }}{# TODO translation/human readable #}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endcall %}
+    {% endif %}
+    <div class="row">
+        {% if new_lodgements %}
+            <div class="col-md-6">
+                {% call util.bootstrap_panel("Neue Unterkünfte", aclass='panel panel-success', icon='home') %}
+                    <ul class="slim">
+                        {% for lodgement in new_lodgements %}
+                            <li>{{ lodgement['moniker']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endcall %}
+            </div>
+        {% endif %}
+        {% if deleted_lodgements %}
+            <div class="col-md-6">
+                {% call util.bootstrap_panel("Gelöschte Unterkünfte", aclass='panel panel-danger', icon='home') %}
+                    <ul class="slim">
+                        {% for lodgement in deleted_lodgements %}
+                            <li>{{ lodgement['moniker']|e }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endcall %}
+            </div>
+        {% endif %}
+    </div>
+
+
+    {{ util.input_submit('Daten übernehmen', 'submitform') }}
+    &emsp; {{ util.href(cancellink, 'Abbrechen', icon='remove', aclass="btn btn-default cancel") }}
+{% endblock %}

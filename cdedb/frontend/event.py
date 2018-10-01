@@ -2318,6 +2318,58 @@ class EventFrontend(AbstractUserFrontend):
                 filename="{}_assets.tar.gz".format(shortname))
 
     @access("event")
+    @event_guard()
+    def json_import_form(self, rs, event_id):
+        """1. Step of JSON import process: Render form to upload file"""
+        return self.render(rs, "json_import")
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    def json_import_check(self, rs, event_id):
+        """2. Step of JSON import process: Validate and save file, show
+        list of affected data to the user"""
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids).values()
+        personas = self.coreproxy.get_event_users(
+            rs, tuple(e['persona_id'] for e in registrations))
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids).values()
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids).values()
+
+        # TODO
+
+        # Testdata
+        rfields = set(itertools.chain(*(r.keys() for r in registrations)))
+        cfields = set(itertools.chain(*(c.keys() for c in courses)))
+        lfields = set(itertools.chain(*(l.keys() for l in lodgements)))
+        template_data = {
+            'new_registrations': registrations,
+            'changed_registrations': registrations,
+            'changed_registration_fields': rfields,
+            'deleted_registrations': registrations,
+            'new_courses': courses,
+            'changed_courses': courses,
+            'changed_course_fields': cfields,
+            'deleted_courses': courses,
+            'new_lodgements': lodgements,
+            'changed_lodgements': lodgements,
+            'changed_lodgement_fields': lfields,
+            'deleted_lodgements': lodgements,
+            'personas': personas
+        }
+        
+        return self.render(rs, "json_import_check", template_data)
+
+    @access("event", modi={"POST"})
+    @event_guard()
+    def json_import_commit(self, rs, event_id):
+        """3. Step of JSON import process: Read saved file and commit changes
+        to the database."""
+        # TODO
+        raise NotImplementedError()
+
+    @access("event")
     def register_form(self, rs, event_id):
         """Render form."""
         tracks = rs.ambience['event']['tracks']

@@ -1,0 +1,38 @@
+{% set sidenav_active='json_import' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}Daten-Import zur Veranstaltung {{ ambience['event']['title']|e }}{% endblock %}
+{% block breadcrumb %}
+{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
+{{ util.breadcrumb_link(cdedblink("event/json_import_form"), "Daten-Import", active=True) }}
+{% endblock %}
+{% block heading %}
+    <h1 class="title">
+        Daten-Import <small>{{ util.make_icon('blackboard') }} {{ ambience['event']['title']|e }}</small>
+    </h1>
+{% endblock %}
+{% block content %}
+    <p>
+        Aktualisierung oder Ergänzung der Veranstaltung-Daten (Anmeldungen, Kurse, Unterkünfte) mit externen Programmen
+        (z.B. zur Kurs- oder Zimmereinteilung) oder universellen Daten (z.B. bekannte Liste von Unterkünften). Nach dem
+        Upload wird eine Übersicht der Änderungen gezeigt und der Import muss bestätigt werden.
+    </p>
+
+    <form action="{{ cdedblink('event/json_import_check')|e }}" method="POST" id="importform" class="form-horizontal">
+        {{ util.form_input_file('file', label='JSON-Datei') }}
+        {{ util.form_input_submit('Validieren …') }}
+    </form>
+
+    <hr />
+
+    <p class="text-muted mosp">
+        {{ util.make_icon('info-sign', arialabel="Info:") }} Die hochgeladene Datei muss im JSON-Format kodiert sein.
+        Die Datenstruktur muss der des JSON-Exports
+        ({{ util.href(cdedblink('event/downloads'), 'Downloads') }}/<i>JSON-Export der Veranstaltung</i>) entsprechen,
+        wobei nur die „dynamischen“ Daten (Anmeldungen, Kurs, Unterkünfte) enthalten sein dürfen. Fehlende Datensätze
+        oder Felder werden ignoriert; es müssen nur die zu ändernden Daten enthalten sein. Zum Löschen von Datensätzen
+        kann dem entsprechenden Key <code>null</code> zugewiesen werden. Neue Datensätze können durch negative IDs
+        eingefügt werden.
+    </p>
+{% endblock %}
