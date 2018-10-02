@@ -41,7 +41,7 @@
                     "Der Benutzer wird als Teilnehmer hinzugefügt. Das kann nicht rückgängig gemacht werden.");
                 $('#input-add-attendee').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') + '?kind=pure_assembly_user&phrase=%s'}}',
-                    {{ attendees|list|json }}
+                    {{ attendees|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
                 );
             </script>
         {% endcall %}

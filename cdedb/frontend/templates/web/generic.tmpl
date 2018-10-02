@@ -611,10 +611,10 @@
                     <td>
                         {%- if query.scope == 'qview_registration' -%}
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
-                                         'Details', icon='user', aclass='btn btn-xs btn-info') }}
+                                         gettext('Details'), icon='user', aclass='btn btn-xs btn-info') }}
                         {%- else -%}
                             {{ util.href(show_user_link(row[primary_field]),
-                                         'Profil', icon='user', aclass='btn btn-xs btn-info') }}
+                                         gettext('Profile'), icon='user', aclass='btn btn-xs btn-info') }}
                         {%- endif -%}
                     </td>
                     {% for csvfield in query.fields_of_interest %}

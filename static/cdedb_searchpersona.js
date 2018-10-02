@@ -32,14 +32,15 @@
      * given url provided by our python code.
      *
      * The url parameter must contain '%s' wich will be replaced by the search pattern.
-     * 'exclude' may contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
-     * if 'freeform' is true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
-     * added as option.
-     * If multi is true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
+     * @param exclude May contain an array of (unformatted) persona ids, which will be excluded from the fetched result list.
+     * @param freeform' If true, all inputs will be accepted as new option, else only well-formed DB-Ids are accepted to be
+     *                  added as option.
+     * @param multi If true, a list of personas seperated by ',' is produced, otherwise only a single persona can be selected
+     * @param placeholder If given, this string is used as placeholder in the selectize.js control
      */
-    $.fn.cdedbSearchPerson = function(url,exclude,freeform,multi) {
+    $.fn.cdedbSearchPerson = function(url,exclude,freeform,multi,placeholder) {
         $(this).selectize({
-            'placeholder' : '',
+            'placeholder' : placeholder || '',
             'valueField' : 'cdedb_id',
             'labelField' : 'name',
             searchField: ['name','email','id'],

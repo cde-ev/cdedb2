@@ -63,7 +63,7 @@
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
                                     '{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s&sphere=cde'}}',
-                                    {{ participants.keys()|list|json }}
+                                    {{ participants.keys()|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
                                 );
                             </script>
                             {{ util.output_errors('persona_id') }}

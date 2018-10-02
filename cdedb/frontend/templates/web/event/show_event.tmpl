@@ -110,7 +110,7 @@
                         <script type="text/javascript">
                             $('#input-add-orga').cdedbSearchPerson(
                                 '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + (ambience['event']['id']|string) }}',
-                                {{ ambience['event']['orgas']|list|json }}
+                                {{ ambience['event']['orgas']|list|json }}, false, false, "CdEDB-ID, Name, E-Mail"
                             );
                         </script>
                         <div class="input-group-btn">

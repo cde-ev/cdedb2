@@ -43,7 +43,8 @@
                                                 enums['AudiencePolicy'].require_member: 'member'} %}
                             $('#input-add-moderator').cdedbSearchPerson(
                                 '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) + '&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
-                                {{ ambience['mailinglist']['moderators']|list|json }}
+                                {{ ambience['mailinglist']['moderators']|list|json }}, false, false,
+                                "CdEDB-ID, Name, E-Mail"
                             );
                         {% endwith %}
                     </script>
@@ -140,7 +141,7 @@
                                         enums['AudiencePolicy'].require_member: 'member'} %}
                     $('#input-add-subscriber').cdedbSearchPerson(
                         '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) + '&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
-                        {{ subscribers|list|json }}
+                        {{ subscribers|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
                     );
                 {% endwith %}
             </script>

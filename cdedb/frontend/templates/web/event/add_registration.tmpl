@@ -25,7 +25,7 @@
         <script type="text/javascript">
             $('#input-persona-persona_id').cdedbSearchPerson(
                 '{{ cdedblink('core/select_persona') + '?kind=orga_event_user&phrase=%s&aux=' + (ambience['event']['id']|string) }}',
-                {{ registered_personas|list|json }}
+                {{ registered_personas|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
             );
         </script>
         {% if CDEDB_OFFLINE_DEPLOYMENT %}
