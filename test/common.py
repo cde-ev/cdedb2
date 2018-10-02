@@ -379,7 +379,7 @@ class FrontendTest(unittest.TestCase):
         f['qop_' + id_field] = QueryOperators.equal.value
         f['qval_' + id_field] = u["id"]
         self.submit(f)
-        self.traverse({'description': u["DB-ID"]})
+        self.traverse({'description': 'Profil'})
 
     def fetch_mail(self):
         elements = self.response.lxml.xpath("//div[@class='alert alert-info']/span/text()")

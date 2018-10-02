@@ -90,8 +90,8 @@ class TestEventBackend(BackendTest):
         data['end'] = datetime.date(2110, 8, 20)
         data['is_open'] = True
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'part_id': 4, 'title': 'Second lecture'},
-                          5: {'part_id': 5, 'title': 'First lecture'}}
+        data['tracks'] = {4: {'part_id': 5, 'title': 'Second lecture'},
+                          5: {'part_id': 6, 'title': 'First lecture'}}
         ## correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -191,8 +191,8 @@ class TestEventBackend(BackendTest):
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'part_id': 4, 'title': 'Second lecture v2'},
-                          6: {'part_id': 6, 'title': 'Third lecture'}}
+        data['tracks'] = {4: {'part_id': 5, 'title': 'Second lecture v2'},
+                          6: {'part_id': 7, 'title': 'Third lecture'}}
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
@@ -213,7 +213,7 @@ class TestEventBackend(BackendTest):
             'max_size': 12,
             'min_size': None,
             'notes': "Beware of dragons.",
-            'segments': {part_map["Second coming"]},
+            'segments': {4}, # hardcoded value 4
         }
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
@@ -1832,15 +1832,15 @@ class TestEventBackend(BackendTest):
         stored_data['timestamp'] = nearly_now()
         ## Apply the same changes as above but this time with (guessed) correct IDs
         stored_data['event.events'][1]['description'] = "We are done!"
-        stored_data['event.event_parts'][4] = {
+        stored_data['event.event_parts'][5] = {
             'event_id': 1,
             'fee': decimal.Decimal('666.66'),
-            'id': 4,
+            'id': 5,
             'part_begin': datetime.date(2345, 1, 1),
             'part_end': datetime.date(2345, 12, 31),
             'title': 'Aftershowparty'}
         stored_data['event.course_tracks'][4] = {
-            'part_id': 4,
+            'part_id': 5,
             'id': 4,
             'title': 'Enlightnment'}
         stored_data['event.lodgements'][5] = {
@@ -1870,7 +1870,7 @@ class TestEventBackend(BackendTest):
             'id': 13,
             'is_reserve': False,
             'lodgement_id': 5,
-            'part_id': 4,
+            'part_id': 5,
             'registration_id': 5,
             'status': 1}
         stored_data['event.registration_tracks'][13] = {
@@ -1879,8 +1879,8 @@ class TestEventBackend(BackendTest):
             'id': 13,
             'track_id': 4,
             'registration_id': 5}
-        stored_data['event.orgas'][2] = {
-            'event_id': 1, 'id': 2, 'persona_id': 2}
+        stored_data['event.orgas'][4] = {
+            'event_id': 1, 'id': 4, 'persona_id': 2}
         stored_data['event.courses'][6] = {
             'description': 'Spontankurs',
             'event_id': 1,
@@ -2242,127 +2242,127 @@ class TestEventBackend(BackendTest):
             {'additional_info': 'instrument',
              'code': 22,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'preferred_excursion_date',
              'code': 21,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'kuea',
              'code': 20,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'First coming',
              'code': 17,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 37,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Second coming',
              'code': 16,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Second lecture v2',
              'code': 36,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Third coming',
              'code': 15,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Third lecture',
              'code': 35,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 11,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': 2,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 10,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': 1,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 2,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 1,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'instrument',
              'code': 20,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'preferred_excursion_date',
              'code': 20,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 10,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': 7,
              'submitted_by': 1},
             {'additional_info': None,
              'code': 10,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': 2,
              'submitted_by': 1},
             {'additional_info': 'First coming',
              'code': 15,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'First lecture',
              'code': 35,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Second coming',
              'code': 15,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': 'Second lecture',
              'code': 35,
              'ctime': nearly_now(),
-             'event_id': 2,
+             'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
             {'additional_info': None,
