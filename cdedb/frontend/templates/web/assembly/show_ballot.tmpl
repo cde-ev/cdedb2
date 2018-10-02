@@ -335,7 +335,7 @@
                         <script type="text/javascript">
                             $('#voteform').cdedbProtectChanges();
                         </script>
-                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
+                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign', aclass='panel-default mosp') %}
                             <p>
                                 Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld eine Präferenzliste
                                 eintragen, um die Kandidaten in eine persönliche Rangfolge zu bringen. Später werden die
@@ -416,7 +416,7 @@
                             </div>
                         </div>
                         <div class="p clearfix">
-                            <button class="btn btn-primary pull-right" id="button-jsvote">
+                            <button class="btn btn-primary" id="button-jsvote">
                                 {{ util.make_icon('ok') }} Abstimmen
                             </button>
                         </div>
@@ -445,7 +445,7 @@
                             $('#button-jsvote').click(function(){$('#voteform').submit();});
                         </script>
                         
-                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign') %}
+                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign', aclass='panel-default mosp') %}
                             <p>
                                 Diese Abstimmung findet als Präferenzwahl statt. Du kannst die Kandidaten in dem oben
                                 angezeigten Feld in eine persönliche Rangfolge zu bringen. Später werden die

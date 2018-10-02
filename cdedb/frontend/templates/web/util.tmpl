@@ -328,7 +328,7 @@
 {% macro form_input_submit(value='Speichern', name="submitform", info='', readonly=False, anid='',
         aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue='Abbrechen',
         small=False, horizontal=True) %}
-    <div class="form-group">
+    <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
             {{ input_submit(value, name, anid, aclass, icon, readonly) }}

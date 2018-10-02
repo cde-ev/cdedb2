@@ -112,6 +112,9 @@ ul.slim {
     background-color: #a4eba4;
     background-image: linear-gradient(to right, #a4eba4 0, #fff 50%);
 }
+.help-block {
+    margin-bottom: 6px;
+}
 hr.strong {
     border-top: 1px solid #ddd;
 }
@@ -207,6 +210,9 @@ ul.nosp, ol.nosp {
 }
 .panel.mosp {
     margin-top: 20px;
+}
+.form-group.mosp {
+    margin-top: 16px;
 }
 .panel-body>:last-child {
     margin-bottom: 0;
