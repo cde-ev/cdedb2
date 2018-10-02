@@ -22,18 +22,24 @@
                         ambience['event']['fields'][values['field_id']|int]['field_name'], active=True, icon="tag") }}
 {% endblock %}
 {% block content %}
-    <form action="{{ cdedblink('event/field_set')|e }}" method="POST" id="fieldform" class="form-horizontal">
-        {% for registration_id in ordered %}
-            {{ util.form_event_field_input(
-                ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),
-                label="{} {}".format(
-                    personas[registrations[registration_id]['persona_id']]['given_names'],
-                    personas[registrations[registration_id]['persona_id']]['family_name']), force_label=True) }}
-        {% endfor %}
-        {{ util.input_hidden(name="field_id") }}
-        {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
-        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/registration_query')) }}
-    </form>
+    {% if ordered %}
+        <form action="{{ cdedblink('event/field_set')|e }}" method="POST" id="fieldform" class="form-horizontal">
+            {% for registration_id in ordered %}
+                {{ util.form_event_field_input(
+                    ambience['event']['fields'][values['field_id']|int], name="input{}".format(registration_id),
+                    label="{} {}".format(
+                        personas[registrations[registration_id]['persona_id']]['given_names'],
+                        personas[registrations[registration_id]['persona_id']]['family_name']), force_label=True) }}
+            {% endfor %}
+            {{ util.input_hidden(name="field_id") }}
+            {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
+            {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/registration_query')) }}
+        </form>
+    {% else %}
+        <p>
+            Keine Anmeldungen vorhanden.
+        </p>
+    {% endif %}
     <script type="text/javascript">
         $('#fieldform').cdedbProtectChanges();
     </script>

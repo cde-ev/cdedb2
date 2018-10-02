@@ -26,7 +26,7 @@
         {% endfor %}
         {{ util.form_input_select("field_id", label="Feld", entries=myentries, small=True) }}
         {{ util.input_hidden(name="reg_ids", value=reg_ids|join(',')) }}
-        {{ util.form_input_submit(value="Anzeigen", cancellink=cdedblink('event/registration_query'), icon="", small=True) }}
+        {{ util.form_input_submit(value="Anzeigen …", cancellink=cdedblink('event/registration_query'), icon="pencil", small=True) }}
     </form>
 
     {% if reg_ids %}

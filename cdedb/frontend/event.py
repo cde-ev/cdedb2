@@ -3093,6 +3093,7 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         choices, titles = self.make_registracion_query_aux(
             rs, rs.ambience['event'], courses, lodgements)
+        has_registrations = self.eventproxy.has_registrations(rs, event_id)
         default_queries = self.conf.DEFAULT_QUERIES['qview_registration']
         default_queries["all"] = Query(
             "qview_registration", spec,
@@ -3108,7 +3109,8 @@ class EventFrontend(AbstractUserFrontend):
             (("persona.birthday", True), ("reg.id", True)),)
         params = {
             'spec': spec, 'choices': choices, 'query': query,
-            'default_queries': default_queries, 'titles': titles,}
+            'default_queries': default_queries, 'titles': titles,
+            'has_registrations': has_registrations,}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_registration"

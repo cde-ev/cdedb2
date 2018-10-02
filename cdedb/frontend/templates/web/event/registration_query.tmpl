@@ -22,8 +22,10 @@
             <div class="p button-par">
                 {{ util.href(cdedblink("event/add_registration_form"), "Neuer Teilnehmer",
                              readonly=is_locked, icon='plus', aclass='btn btn-sm btn-success') }}
-                {{ util.href(cdedblink("event/field_set_select"), "Datenfeld setzen",
-                              readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+                {% if ambience['event']['fields'] and has_registrations %}
+                    {{ util.href(cdedblink("event/field_set_select"), "Datenfeld setzen",
+                                  readonly=is_locked, icon='edit', aclass='btn btn-sm btn-warning') }}
+                {% endif %}
             </div>
         </div>
         <div class="col-md-8">
