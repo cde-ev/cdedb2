@@ -562,6 +562,7 @@
             <thead>
                 <tr>
                     <th></th>
+                    <th></th>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
                             <th>
@@ -584,12 +585,22 @@
                 </tr>
             </thead>
             <tbody>
+            {% set primary_field = query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1] %}
             {% for row in result %}
                 {% set outerloopindex = loop.index0 %}
-                <tr class="ls-item" data-id="{{ row[query_mod.QUERY_PRIMARIES[query.scope].split('.')[-1]]|e }}">
+                <tr class="ls-item" data-id="{{ row[primary_field]|e }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
                                                aclass="rowSelector", arialabel="Zeile {}".format(outerloopindex)) }}
+                    </td>
+                    <td>
+                        {%- if query.scope == 'qview_registration' -%}
+                            {{ util.href(cdedblink("event/show_registration", {'registration_id': row[primary_field]}),
+                                         'Details', icon='user', aclass='btn btn-xs btn-info') }}
+                        {%- else -%}
+                            {{ util.href(show_user_link(row[primary_field]),
+                                         'Profil', icon='user', aclass='btn btn-xs btn-info') }}
+                        {%- endif -%}
                     </td>
                     {% for csvfield in query.fields_of_interest %}
                         {% for field in csvfield.split(',') %}
@@ -597,14 +608,9 @@
                                     by the query #}
                             {% with afield = field.split('.')[-1] %}
                                 <td data-col="{{ afield|e }}">  {# The data-col attribute is mainly used for testing #}
-                                    {% if field == "personas.id" or (query.scope == "qview_persona"
-                                                                     and field == "id") %}
-                                        {{ util.href(show_user_link(row[afield]), row[afield]|cdedbid,
-                                                aclass='nowrap') }}
-                                    {% elif field == "reg.id" %}
-                                        {# This should occur only if the context allows the following link. #}
-                                        {{ util.href(cdedblink("event/show_registration",
-                                                {'registration_id': row[afield]}), row[afield]) }}
+                                    {% if field in ("personas.id", "persona.id")
+                                            or (query.scope == "qview_persona" and field == "id") %}
+                                        <span class="nowrap">{{ row[afield]|cdedbid }}</span>
                                     {% elif query.spec[csvfield] == "bool" %}
                                         {{ util.deko_checkbox(row.get(afield), titles=('falsch','wahr')) }}
                                     {% else %}
