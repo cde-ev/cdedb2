@@ -10,8 +10,8 @@
         var settings = $.extend({
             choices : {},
             separator : ',',
-            escapechar : '\\\\' //double escaped backslash for usage in regex
-            // TODO add translation dictionary and translate german strings
+            escapechar : '\\\\', //double escaped backslash for usage in regex
+            labels : {}
         }, options || {});
         /**
          * List of all data fields listed in the query form. Each element has the following attributes:
@@ -108,7 +108,7 @@
                 obj.refreshViewFieldSelect();
             });
             $viewFieldSelect.selectize({
-                'placeholder': '– Angezeigtes Feld hinzufügen –',
+                'placeholder': settings.labels['add_field'] || '',
                 copyClassesToDropdown: false
             });
 
@@ -119,7 +119,7 @@
                 obj.refreshFilterFieldSelect();
             });
             $filterFieldSelect.selectize({
-                'placeholder': '– Filter hinzufügen –',
+                'placeholder': settings.labels['add_filter'] || '',
                 copyClassesToDropdown: false
             });
 
@@ -131,7 +131,7 @@
                 obj.refreshSortFieldSelect();
             });
             $sortFieldSelect.selectize({
-                'placeholder': '– Sortierung hinzufügen –',
+                'placeholder': settings.labels['add_sort'] || '',
                 copyClassesToDropdown: false
             });
 
@@ -152,7 +152,7 @@
             var $button = $('<button></button>', {
                 'class':"btn btn-sm btn-danger pull-right",
                 'type':"button",
-                'title':"Filter entfernen"
+                'title': settings.labels['del_filter'] || ''
             })
                 .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
                 .click(function() {
@@ -164,7 +164,7 @@
             var $fieldbox = $('<span></span>');
             var $opselector = $('<select></select>', {
                 'class':"form-control input-sm input-slim",
-                'aria-label': "Filter-Operation"
+                'aria-label': settings.labels['filter_op'] || ''
             })
                 .append(f.input_filter_op.children('option').slice(1).clone())
                 .change(function() {
@@ -245,7 +245,7 @@
                     var $s = $('<select>',{
                         'class' : "form-control input-sm input-slim",
                         'type': inputTypes[f.type],
-                        'aria-label': "Vergleichswert"
+                        'aria-label': settings.labels['filter_val'] || ''
                     })
                             .change(changeFunction);
                     if (f.type == 'list') {
@@ -268,7 +268,7 @@
                     $i = $('<input>',{
                         'class': "form-control input-sm input-slim",
                         'type': inputTypes[f.type],
-                        'aria-label': "Vergleichswert"
+                        'aria-label': settings.labels['filter_val'] || ''
                     })
                         .change(changeFunction)
                         .val(f.input_filter_value.val());
@@ -302,13 +302,13 @@
                 var $i1 = $('<input>',{
                     'class' : "form-control input-sm input-slim",
                     'type': 'text',
-                    'aria-label': "Bereichs-Anfang"
+                    'aria-label': settings.labels['filter_range_start'] || ''
                 })
                     .val(values[0]);
                 var $i2 = $('<input>',{
                     'class' : "form-control input-sm input-slim",
                     'type': 'text',
-                    'aria-label': "Bereichs-Ende"
+                    'aria-label': settings.labels['filter_range_end'] || ''
                 })
                     .val(values[1]);
 
@@ -322,7 +322,7 @@
                     f.input_filter_value.val(val);
                 });
 
-                $fieldbox.append($i1).append('&ensp;und&ensp;').append($i2);
+                $fieldbox.append($i1).append(settings.labels['filter_range_through'] || '').append($i2);
 
                 break;
             case 5: //oneof
@@ -343,7 +343,7 @@
                     'class' : "form-control input-sm input-slim",
                     'type': 'text',
                     'placeholder': placeholders[f.type],
-                    'aria-label': "Vergleichswerte"
+                    'aria-label': settings.labels['filter_vals'] || ''
                 })
                     .change(function() { f.input_filter_value.val($(this).val()); })
                     .attr('size','40')
@@ -383,7 +383,7 @@
             var $button = $('<button></button>', {
                 'class': "btn btn-xs btn-danger",
                 'type': "button",
-                'title': "Feld entfernen"
+                'title': settings.labels['del_field'] || ''
             })
                 .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
                 .click(function() {
@@ -420,7 +420,7 @@
             var $button = $('<button></button>', {
                 'class': "btn btn-sm btn-danger pull-right",
                 'type': "button",
-                'title': "Sortierung entfernen"
+                'title': settings.labels['del_sort'] || ''
             })
                 .append($('<span></span>',{'class':'glyphicon glyphicon-minus'}))
                 .click(function() {
@@ -430,7 +430,7 @@
                 });
             var $sortselector = $('<select></select>', {
                 'class': "form-control input-sm input-slim order",
-                'aria-label': "Sortierreihenfolge"
+                'aria-label': settings.labels['sort_order'] || ''
             })
                 .append(new Option(inputTypes[f.type][0],'True'))
                 .append(new Option(inputTypes[f.type][1],'False'))

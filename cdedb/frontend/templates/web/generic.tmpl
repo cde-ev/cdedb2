@@ -458,7 +458,20 @@
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
-                        $qf.cdedbQueryForm({"choices" : {{ choices|json }}});
+                        $qf.cdedbQueryForm({"choices" : {{ choices|json }},
+                                            "labels": {{ {'add_field': '– Angezeigtes Feld hinzufügen –',
+                                                          'add_filter': '– Filter hinzufügen –',
+                                                          'add_sort': '– Sortierung hinzufügen –',
+                                                          'del_filter': "Filter entfernen",
+                                                          'del_field': "Feld entfernen",
+                                                          'del_sort': "Sortierung entfernen",
+                                                          'filter_op': "Filter-Operation",
+                                                          'filter_val': "Vergleichswert",
+                                                          'filter_range_start': "Bereichs-Anfang",
+                                                          'filter_range_end': "Bereichs-Ende",
+                                                          'filter_range_through': "&ensp;und&ensp;",
+                                                          'filter_vals': "Vergleichswerte",
+                                                          'sort_order': "Sortierreihenfolge"}|json }}});
                         $('#tab_link_qf_js')
                             .on('show.bs.tab', function() {
                                 $qf.data('cdedbQueryForm').initFromForm();
