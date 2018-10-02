@@ -523,7 +523,7 @@ class EventBackend(AbstractBackend):
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
         if cautious and (new or deleted):
-            raise ValueError(_("Registrations exist, only modifications."))
+            raise ValueError(_("Registrations exist, modifications only."))
         ## new
         for x in reversed(sorted(new)):
             new_track = {

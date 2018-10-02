@@ -269,24 +269,23 @@
 
 
 
-{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[],
-                      heading='Suchmaske') %}
+{% macro format_query(spec, titles, choices, target, output_selection=True, selection_blacklist=[]) %}
     <form action="{{ target|e }}" method="GET" id="queryform" aria-labelledby="qf_title">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
             <div class="panel-heading">
-                <h3 class="panel-title" id="qf_title">{{ util.make_icon('search') }} {{ heading|e }}</h3>
+                <h3 class="panel-title" id="qf_title">{{ util.make_icon('search') }} {% trans %}Search Mask{% endtrans %}</h3>
 
                 <!-- Tabs to chose between NonJS- and JS-form -->
                 <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
                     <li role="presentation" class="active">
                         <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab">
-                            {{ util.make_icon('list') }} Tabellarisch
+                            {{ util.make_icon('list') }} {% trans %}Tabular{% endtrans %}
                         </a>
                     </li>
                     <li role="presentation">
                         <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
-                            {{ util.make_icon('star-empty') }} Magisch
+                            {{ util.make_icon('flash') }} {% trans %}Magic{% endtrans %}
                         </a>
                     </li>
                 </ul>
@@ -300,9 +299,9 @@
                             <table class="query-form-cols table table-superdense">
                             <thead>
                                 <tr>
-                                    <th>{{ util.make_icon('eye-open', title="Feld anzeigen") }}</th>
-                                    <th>Felder</th>
-                                    <th colspan="2">Filter</th>
+                                    <th>{{ util.make_icon('eye-open', title=gettext("show field")) }}</th>
+                                    <th>{% trans %}Fields{% endtrans %}</th>
+                                    <th colspan="2">{% trans %}Filter{% endtrans %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -317,7 +316,7 @@
                                                     {% if output_selection %}
                                                         {{ util.input_checkbox(name, aclass='outputSelector',
                                                                 value=True,
-                                                                arialabel="{} anzeigen"
+                                                                arialabel=gettext("show {}")
                                                                           .format(titles.get(field, field)|e)) }}
                                                     {% else %}
                                                         {{ util.input_hidden(name, value=True) }}
@@ -340,7 +339,7 @@
                                                     {% endfor %}
                                                     {{ util.input_select(name, entries=myentries, nulloption=True,
                                                             aclass='form-control input-sm filter-op', anid=theid,
-                                                            arialabel="Filteroperator für {}"
+                                                            arialabel=gettext("filter operator for {}")
                                                                       .format(titles.get(field, field)|e)) }}
                                                 {% endwith %}
                                             {% endwith %}
@@ -354,12 +353,12 @@
                                                     {{ util.input_select(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
                                                             entries=(('',''),(True, 'ja'),(False, 'nein')),
-                                                            arialabel="Vergleichswert für {}"
+                                                            arialabel=gettext("compare value for {}")
                                                                       .format(titles.get(field, field)|e)) }}
                                                 {% else %}
                                                     {{ util.input_text(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
-                                                            arialabel="Vergleichswert für {}"
+                                                            arialabel=gettext("compare value for {}")
                                                                       .format(titles.get(field, field)|e)) }}
                                                 {% endif %}
                                                 {{ util.output_errors(field, True) }}
@@ -390,14 +389,13 @@
                                             {% endfor %}
                                             {{ util.input_select(name, entries=myentries, nulloption=True,
                                                                  aclass="form-control input-sm sort-field",
-                                                                 attributes='aria-label="{} Sortierkriterium"'
-                                                                            .format(title))}}
+                                                                 arialabel=gettext("{} sort key").format(title)) }}
                                         </td>
                                         <td>
                                             {{ util.input_select(name + "_ascending", defaultvalue=True,
                                                                  aclass="form-control input-sm sort-order",
                                                                  entries=((True, "A→Z"), (False, "Z→A")),
-                                                                 arialabel="{} Sortierreihenfolge".format(title)) }}
+                                                                 arialabel=gettext("{} sort order").format(title)) }}
                                         </td>
                                     </tr>
                                 {% endfor %}
@@ -409,33 +407,36 @@
 
                     <!-- JS Form -->
                     <div class="tab-pane" role="tabpanel" id="tab_qf_js">
-                        <h4 class="filter-title nosp">{{ util.make_icon('filter') }} Filter</h4>
+                        <h4 class="filter-title nosp">{{ util.make_icon('filter') }} {% trans %}Filter{% endtrans %}</h4>
                         <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
                         <div class="input-group has-success queryform-add">
-                            <span class="input-group-addon">{{ util.make_icon('plus', title="Filter hinzufügen") }}</span>
-                            <select class="form-control input-sm input-slim addfilter" aria-label="Gefiltertes Feld"></select>
+                            <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("add filter")) }}</span>
+                            <select class="form-control input-sm input-slim addfilter"
+                                    aria-label="{% trans %}field to filter on{% endtrans %}"></select>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
-                                <h4 class="filter-title">{{ util.make_icon('eye-open') }} Angezeigte Felder</h4>
+                                <h4 class="filter-title">
+                                    {{ util.make_icon('eye-open') }} {% trans %}Displayed Fields{% endtrans %}</h4>
                                 <p class="viewfield-list"></p>
                                 <div class="input-group has-success">
                                     <span class="input-group-addon">
-                                        {{ util.make_icon('plus', title="Angezeigtes Feld hinzufügen") }}
+                                        {{ util.make_icon('plus', title=gettext("add displayed field")) }}
                                     </span>
                                     <select class="form-control input-sm addviewfield"
-                                            aria-label="Neues Feld"></select>
+                                            aria-label="{% trans %}field to add{% endtrans %}"></select>
                                 </div>
                             </div>
                             <div class="col-sm-6">
-                                <h4 class="filter-title">{{ util.make_icon('sort-by-alphabet') }} Sortierung</h4>
+                                <h4 class="filter-title">
+                                    {{ util.make_icon('sort-by-alphabet') }} {% trans %}Sorting{% endtrans %}</h4>
                                 <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
                                 <div class="input-group has-success queryform-add">
                                     <span class="input-group-addon">
-                                        {{ util.make_icon('plus', title="Sortierkriterium hinzufügen") }}
+                                        {{ util.make_icon('plus', title=gettext("add sort key")) }}
                                     </span>
                                     <select class="form-control input-sm addsortfield"
-                                            aria-label="Neues Sortierkriterium"></select>
+                                            aria-label="{% trans %}sort key to add{% endtrans %}"></select>
                                 </div>
                             </div>
                         </div>
@@ -443,13 +444,14 @@
                 </div>
 
                 <p class="pull-right nosp">
-                    <button type="submit" class="btn btn-primary">{{ util.make_icon('search') }} Suche</button>
+                    <button type="submit" class="btn btn-primary">
+                        {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</button>
                     <span class="btn-group">
                         <button type="submit" class="btn btn-default" name="download" value="csv">
-                            {{ util.make_icon('download') }} CSV-Datei
+                            {{ util.make_icon('download') }} {% trans %}CSV file{% endtrans %}
                         </button>
                         <button type="submit" class="btn btn-default" name="download" value="json">
-                            {{ util.make_icon('download') }} JSON-Datei
+                            {{ util.make_icon('download') }} {% trans %}JSON file{% endtrans %}
                         </button>
                     </span>
                 </p>
@@ -459,19 +461,19 @@
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
                         $qf.cdedbQueryForm({"choices" : {{ choices|json }},
-                                            "labels": {{ {'add_field': '– Angezeigtes Feld hinzufügen –',
-                                                          'add_filter': '– Filter hinzufügen –',
-                                                          'add_sort': '– Sortierung hinzufügen –',
-                                                          'del_filter': "Filter entfernen",
-                                                          'del_field': "Feld entfernen",
-                                                          'del_sort': "Sortierung entfernen",
-                                                          'filter_op': "Filter-Operation",
-                                                          'filter_val': "Vergleichswert",
-                                                          'filter_range_start': "Bereichs-Anfang",
-                                                          'filter_range_end': "Bereichs-Ende",
-                                                          'filter_range_through': "&ensp;und&ensp;",
-                                                          'filter_vals': "Vergleichswerte",
-                                                          'sort_order': "Sortierreihenfolge"}|json }}});
+                                            "labels": {{ {'add_field': gettext('– add displayed field –'),
+                                                          'add_filter': gettext('– add filter –'),
+                                                          'add_sort': gettext('– add sort key –'),
+                                                          'del_filter': gettext("remove filter"),
+                                                          'del_field': gettext("remove field"),
+                                                          'del_sort': gettext("remove sort key"),
+                                                          'filter_op': gettext("filter operation"),
+                                                          'filter_val': gettext("compare value"),
+                                                          'filter_range_start': gettext("range start"),
+                                                          'filter_range_end': gettext("range end"),
+                                                          'filter_range_through': gettext("&ensp;and&ensp;"),
+                                                          'filter_vals': gettext("compare values"),
+                                                          'sort_order': gettext("sort order")}|json }}});
                         $('#tab_link_qf_js')
                             .on('show.bs.tab', function() {
                                 $qf.data('cdedbQueryForm').initFromForm();
@@ -484,9 +486,9 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(target, queries, titles, title="Standardabfragen") %}
+{% macro place_default_queries(target, queries, titles) %}
     {% if queries %}
-        {% call util.bootstrap_panel(title=title) %}
+        {% call util.bootstrap_panel(title=gettext("Default Queries")) %}
             <div class="row">
                 {% for list in queries | slice(2) %}
                 <div class="col-sm-6">
@@ -506,8 +508,8 @@
             $('.default-query').each(function(){
                 var url = $(this).attr('href');
                 var $link = $('<a></a>', {'href':'#',
-                                          'title':'im Formular anzeigen',
-                                          'aria-label':'im Formular anzeigen',
+                                          'title':'{% trans %}show in search mask{% endtrans %}',
+                                          'aria-label':'{% trans %}show in search mask{% endtrans %}',
                                           'class': 'btn btn-default btn-xs'})
                     .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open', 'aria-hidden':'true'}))
                     .click(function(){
@@ -522,7 +524,7 @@
 
 {% macro display_query_result(result, query, titles, choices) %}
     {% if not result|length %}
-        Keine Ergebnisse!
+        {% trans %}No search results!{% endtrans %}
     {% else %}
         <script type="text/javascript">
             $(function(){
@@ -552,22 +554,22 @@
         </script>
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="Alle auswählen" id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">alle</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}select all{% endtrans %}" id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}all{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="Keines auswählen" id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">keines</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}select none{% endtrans %}" id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}none{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="Auswahl umkehren" id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">umkehren</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans %}invert selection{% endtrans %}" id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}invert{% endtrans %}</span>
                 </button>
             </div>
-            <button type="button" class="btn btn-sm btn-info" title="Filter auf ausgewählte setzen"
-              id="btn-select-filter">
-                {{ util.make_icon('share') }} <span class="hidden-xs">nur ausgewählte</span>
+            <button type="button" class="btn btn-sm btn-info" title="{% trans %}filter for selected rows{% endtrans %}"
+                    id="btn-select-filter">
+                {{ util.make_icon('share') }} <span class="hidden-xs">{% trans %}selected only{% endtrans %}</span>
             </button>
-            <button type="button" class="btn btn-sm btn-trigger-wide" title="Tabelle breiter darstellen">
-                {{ util.make_icon('resize-horizontal', arialabel="Tabelle breiter anzeigen") }}
+            <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans %}widen results table{% endtrans %}">
+                {{ util.make_icon('resize-horizontal', arialabel=gettext("widen results table")) }}
             </button>
         </div>
         <div class="table-container" id="result-container">
@@ -581,14 +583,14 @@
                             <th>
                                 {{ titles.get(field, field) }}
                                 {% if values.get("qop_{}".format(field)) %}
-                                    <span class="label label-default" title="Gefilterte Spalte">
+                                    <span class="label label-default" title="{% trans %}filtered column{% endtrans %}">
                                         {{ util.make_icon('filter') }}
                                     </span>
                                 {% endif %}
                                 {% if values.get("qord_primary") == field or
                                         values.get("qord_secondary") == field or
                                         values.get("qord_tertiary") == field %}
-                                    <span class="label label-default" title="Sortierte Spalte">
+                                    <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
                                         {{ util.make_icon('sort-by-alphabet') }}
                                     </span>
                                 {% endif %}
@@ -604,7 +606,7 @@
                 <tr class="ls-item" data-id="{{ row[primary_field]|e }}">
                     <td>
                         {{ util.input_checkbox("row_{}".format(outerloopindex), anid="row_{}".format(outerloopindex),
-                                               aclass="rowSelector", arialabel="Zeile {}".format(outerloopindex)) }}
+                                               aclass="rowSelector", arialabel=gettext("row {}").format(outerloopindex)) }}
                     </td>
                     <td>
                         {%- if query.scope == 'qview_registration' -%}
@@ -625,7 +627,8 @@
                                             or (query.scope == "qview_persona" and field == "id") %}
                                         <span class="nowrap">{{ row[afield]|cdedbid }}</span>
                                     {% elif query.spec[csvfield] == "bool" %}
-                                        {{ util.deko_checkbox(row.get(afield), titles=('falsch','wahr')) }}
+                                        {{ util.deko_checkbox(row.get(afield), titles=(gettext('false'),
+                                                                                       gettext('true'))) }}
                                     {% else %}
                                         {{ choices.get(csvfield, {}).get(row.get(afield),
                                                                          row.get(afield, "UNDEFINED"))|e }}
