@@ -3,64 +3,64 @@
 
 {% set script_files = [] %}
 {% macro cdedb_script(script) %}
-    {% if not script in script_files %}
-        {% if script == 'queryform' %}
+    {%- if not script in script_files %}
+        {%- if script == 'queryform' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_queryform.js")|e }}"></script>
             {{ cdedb_script('selectize') }}
-        {% elif script == 'dynamicrow' %}
+        {%- elif script == 'dynamicrow' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_dynamicrow.js")|e }}"></script>
-        {% elif script == 'historycollapse' %}
+        {%- elif script == 'historycollapse' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_historycollapse.js")|e }}"></script>
-        {% elif script == 'helper' %}
+        {%- elif script == 'helper' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_helper.js")|e }}"></script>
-        {% elif script == 'selectize' %}
+        {%- elif script == 'selectize' %}
             <script type="text/javascript" src="{{ staticurl("selectize/selectize.min.js")|e }}"></script>
             <link rel="stylesheet" type="text/css" href="{{ staticurl("selectize/selectize.bootstrap3.css")|e }}" />
-        {% elif script == 'csv-tools' %}
+        {%- elif script == 'csv-tools' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_csv_tools.js")|e }}"></script>
-        {% elif script == 'search-persona' %}
-            {{ cdedb_script('selectize') }}
+        {%- elif script == 'search-persona' %}
+            {{- cdedb_script('selectize') }}
             <script type="text/javascript" src="{{ staticurl("cdedb_searchpersona.js")|e }}"></script>
-        {% elif script == 'change-mailinglist' %}
+        {%- elif script == 'change-mailinglist' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_change_mailinglist.js")|e }}"></script>
-        {% elif script == 'voting' %}
+        {%- elif script == 'voting' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_voting.js")|e }}"></script>
-        {% elif script == 'questionnaire_config' %}
+        {%- elif script == 'questionnaire_config' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_questionnaire_config.js")|e }}"></script>
-        {% elif script == 'manage_participants' %}
-            {{ cdedb_script('selectize') }}
+        {%- elif script == 'manage_participants' %}
+            {{- cdedb_script('selectize') }}
             <script type="text/javascript" src="{{ staticurl("cdedb_manage_participants.js")|e }}"></script>
-        {% elif script == 'orderrow' %}
+        {%- elif script == 'orderrow' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_orderrow.js")|e }}"></script>
-        {% endif %}
-        {% do script_files.append(script) %}
-    {% endif %}
-{% endmacro %}
+        {%- endif %}
+        {%- do script_files.append(script) %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro make_icon(icon, aclass='', title='', arialabel='') -%}
     {% if title and not arialabel %}{% set arialabel = title %}{% endif -%}
-    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}" {% if title %}title="{{ title|e }}"{% endif %}
-            aria-hidden="true"></span>
+    <span class="glyphicon glyphicon-{{ icon|e }} {{aclass}}"
+            {%- if title %} title="{{ title|e }}"{% endif %} aria-hidden="true"></span>
     {%- if arialabel %}
         <span class="sr-only">{{ arialabel|e }}</span>
     {%- endif %}
 {%- endmacro %}
 
 {% macro deko_checkbox(checked, anid='', titles=[]) %}
-    {% if checked %}
+    {%- if checked %}
         <span class="glyphicon glyphicon-ok-sign"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="True"
-                {% if titles[1] %}title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{{ '' -}}
+                {%- if titles[1] %} title="{{ titles[1] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[1] %}{{ titles[1] }}{% endif %}</span>
-    {% else %}
+    {%- else %}
         <span class="glyphicon glyphicon-remove-circle"{% if anid %} id="{{ anid|e }}"{% endif %} data-checked="False"
-                {% if titles[0] %}title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{{ '' -}}
+                {%- if titles[0] %} title="{{ titles[0] }}"{% endif %} aria-hidden="true"></span>{#-#}
         <span class="sr-only">{% if titles[0] %}{{ titles[0] }}{% endif %}</span>
-    {% endif %}
-{% endmacro %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='') -%}
 {% if readonly %}<span {%- else -%}<a href="{{ ref|e }}"{% endif %}
-{% if aclass or active or readonly -%}
+{%- if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
            {% if readonly %} {% if not 'btn' in aclass %}link-{% endif%}disabled{% endif %}"
 {%- endif %}
@@ -71,34 +71,34 @@
 {%- endmacro %}
 
 {% macro output_errors(name, displayerrors=True) %}
-    {% if displayerrors and name in errors %}
+    {%- if displayerrors and name in errors %}
         <div class="input-error-block">
-            {% for error in errors.get(name, []) %}
-                {% if error %}
+            {%- for error in errors.get(name, []) %}
+                {%- if error -%}
                     {{ format_error(error) }}
-                {% endif %}
-            {% endfor %}
+                {%- endif %}
+            {%- endfor %}
         </div>
-    {% endif %}
-{% endmacro %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro format_error(error) %}
-    {% if error.args|length == 1 %}
-        {{ gettext(error.args[0]|string)|e }}<br />
-    {% elif error.args|length == 2 %}
-        {{ gettext(error.args[0]|string).format(**error.args[1])|e }}<br />
-    {% elif error.args|length == 0 %}
-        {# Display nothing if no message was supplied. #}
-    {% else %}
+    {%- if error.args|length == 1 %}
+        {{- gettext(error.args[0]|string)|e }}<br />
+    {%- elif error.args|length == 2 %}
+        {{- gettext(error.args[0]|string).format(**error.args[1])|e }}<br />
+    {%- elif error.args|length == 0 %}
+        {#- Display nothing if no message was supplied. #}
+    {%- else %}
         Nicht wohlgeformter Fehler.<br />
-    {% endif %}
-{% endmacro %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro output_info(info) %}
-    {% if info %}
+    {%- if info %}
         <p class="help-block">{{ make_icon('info-sign') }} {{ info|e }}</p>
-    {% endif %}
-{% endmacro %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro persona_anchor(persona, verbose=False, quote_me=False) %}
     {%- if verbose -%}
@@ -139,22 +139,22 @@
         horizontal=True, labelid='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         {%- if label %}
-            <label{% if labelid %} id="{{ labelid|e }}"{% endif %}{% if anid %} for="{{ anid|e }}"{% endif %}
-                    class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %}
+            <label{% if labelid %} id="{{ labelid|e }}"{% endif %}{% if anid %} for="{{ anid|e }}"{% endif %} {# -#}
+                    class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} {# -#}
                            control-label">
-                {{ label|e }}
+                {{- label|e -}}
             </label>
         {%- endif %}
         <div {%- if horizontal %} class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
                                        {%- if not label %}
                                            {%- if small %} col-sm-offset-2{% else %} col-sm-offset-4{% endif %}
                                        {%- endif %}"{% endif %}>
-            {{- caller() -}}
-            {{ output_errors(name, displayerrors) }}
-            {{ output_info(info) }}
+            {{- caller() }}
+            {{- output_errors(name, displayerrors) }}
+            {{- output_info(info) }}
         </div>
     </div>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, type='text',
         placeholder='', arialabel='', attributes='') %}
@@ -162,7 +162,7 @@
             {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {%- if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
             {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
-            {%- if anid %} id="{{ anid|e }}"{% endif %}
+            {%- if anid %} id="{{ anid|e }}"{% endif %} {# -#}
             name="{{ name|e }}"
             {%- if type != 'password' %}
                 {%- if type == 'date' %}
@@ -174,15 +174,15 @@
                 {%- endif %}
             {%- endif %}
             {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }} />
-{% endmacro %}
+{%- endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
     maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='') %}
-    {% if not anid %}{% set anid = "input-text-{}".format(name) %}{% endif %}
-    {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
-        {{ input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
+    {%- if not anid %}{% set anid = "input-text-{}".format(name) %}{% endif %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+        {{- input_text(name, readonly, defaultvalue, anid, maxlength=maxlength, type=type, placeholder=placeholder,
                 aclass="form-control " + aclass, attributes=attributes) }}
-    {% endcall %}
-{% endmacro %}
+    {%- endcall %}
+{%- endmacro %}
 
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
@@ -191,49 +191,49 @@
             {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
             {%- if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"{#-#}
             name="{{ name|e }}" {%- if readonly %} disabled="disabled"{% endif %} />
-{% endmacro %}
+{%- endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
         small=False, horizontal=True) %}
-    {% if not anid %}{% set anid = "input-file-{}".format(name) %}{% endif %}
-    {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
-        {{ input_file(name, readonly, defaultvalue, anid, accept=accept) }}
-    {% endcall %}
-{% endmacro %}
+    {%- if not anid %}{% set anid = "input-file-{}".format(name) %}{% endif %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+        {{- input_file(name, readonly, defaultvalue, anid, accept=accept) }}
+    {%- endcall %}
+{%- endmacro %}
 
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3,
                         arialabel='', attributes='') %}
     <textarea {% if aclass %} class="{{ aclass|e }}"{% endif %} rows="{{ rows }}"
-            {%- if anid %} id="{{ anid|e }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
+            {%- if anid %} id="{{ anid|e }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %} {# -#}
             name="{{ name|e }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
             {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }}>
         {{- values.get(name, defaultvalue)|e -}}
     </textarea>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
         aclass='', small=False, maxlength=0, rows=3, horizontal=True, attributes='') %}
-    {% if not anid %}{% set anid = "input-textarea-{}".format(name) %}{% endif %}
-    {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
-        {{ input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
+    {%- if not anid %}{% set anid = "input-textarea-{}".format(name) %}{% endif %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+        {{- input_textarea(name, readonly, defaultvalue, anid, maxlength=maxlength, rows=rows, attributes=attributes,
                           aclass='form-control '+aclass) }}
-    {% endcall %}
-{% endmacro %}
+    {%- endcall %}
+{%- endmacro %}
 
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label="", value=True, defaultvalue='', readonly=False, anid='', aclass='', inline=False,
-        radio=False, arialabel='', attributes='') %}
+        radio=False, arialabel='', attributes='') -%}
     <label{% if inline %} class="{% if radio %}radio{% else %}checkbox{% endif %}-inline"{% endif %}>
         <input type="{% if radio %}radio{% else %}checkbox{% endif %}" name="{{ name|e }}" value="{{ value|e }}"
-            {% if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue)  %}
+            {%- if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %} {# -#}
                 checked="checked"
-            {% endif %}
+            {%- endif %}
             {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
             {%- if readonly %} disabled="disabled"{% endif %} {%- if anid %} id="{{ anid|e }}"{% endif %}
             {%- if aclass %} class="{{ aclass|e }}"{% endif %} {{ attributes }} />
-        {{- label|e -}}
+        {{ label|e -}}
     </label>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
         arialabeledby="") %}
@@ -249,74 +249,73 @@
             {%- if not inline %}</div>{% endif %}
         {%- endfor %}
     </div>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False, defaultvalue='',
         anid='', horizontal=True, small=False, attributes='') %}
-    {# This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
-    {% if not anid %}{% set anid = "input-checkbox-{}".format(name) %}{% endif %}
+    {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
+    {%- if not anid %}{% set anid = "input-checkbox-{}".format(name) %}{% endif %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
         <div {% if horizontal %}class="{% if small %}col-sm-6 col-sm-offset-2{% else -%}
                 col-sm-8 col-sm-offset-4{% endif %}"{% endif %}>
             <div class="checkbox {% if readonly %}disabled{% endif %}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, anid, attributes=attributes) }}
             </div>
-            {{ output_errors(name, displayerrors) }}
-            {{ output_info(info) }}
+            {{- output_errors(name, displayerrors) }}
+            {{- output_info(info) }}
         </div>
     </div>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro form_input_checkboxes(name, entries, label='', info='', displayerrors=True, readonly=False, defaultvalue='',
         small=False, radio=False, horizontal=True, aclass='', labelid='') %}
-    {# This is the version for multiple checkboxes as opposed to input_checkbox().
+    {#- This is the version for multiple checkboxes as opposed to input_checkbox().
        entries is of type [(str, str)]. #}
-    {% if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
-    {% call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid) %}
-        {{ input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
+    {%- if not labelid %}{% set labelid = "inputgroup-{}-label".format(name) %}{% endif %}
+    {%- call form_input_general(name, label, '', small, info, displayerrors, horizontal, labelid) %}
+        {{- input_checkboxes(name, entries, readonly=readonly, defaultvalue=defaultvalue, radio=radio, aclass=aclass,
                 arialabeledby=labelid) }}
-    {% endcall %}
-{% endmacro %}
+    {%- endcall %}
+{%- endmacro %}
 
 
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
         nulloption=None, arialabel='', attributes="") %}
-    <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-            {% if aclass %} class="{{ aclass|e }}" {% endif %}{% if readonly %}disabled="disabled"{% endif %}
-            {% if arialabel %} aria-label="{{ arialabel|e }}" {% endif %} {{ attributes }}>
-        {% if nulloption is not none %}
-            <option value=""
-                     {%- if values.get(name, defaultvalue) == None %} selected="selected" {% endif %}>
+    <select name="{{ name|e }}" {%- if anid %} id="{{ anid|e }}"{% endif %}
+            {%- if aclass %} class="{{ aclass|e }}"{% endif %}{% if readonly %} disabled="disabled"{% endif %}
+            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %} {{ attributes }}>
+        {%- if nulloption is not none %}
+            <option value=""{% if values.get(name, defaultvalue) == None %} selected="selected"{% endif %}>
                 {{- nulloption|e -}}
             </option>
-        {% endif %}
-        {% for value, label in entries %}
+        {%- endif %}
+        {%- for value, label in entries %}
             <option value="{{ value|e }}"
-              {% if values.get(name, defaultvalue)|string == value|string %} selected="selected" {% endif %}>
+              {%- if values.get(name, defaultvalue)|string == value|string %} selected="selected"{% endif %}>
                 {{- label|e -}}
             </option>
-        {% endfor %}
+        {%- endfor %}
     </select>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
         nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="") %}
-    {% if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
-    {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
-        {{ input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
+    {%- if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
+    {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
+        {{- input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
                 aclass="form-control " + aclass, attributes=attributes) }}
-    {% endcall %}
-{% endmacro%}
+    {%- endcall %}
+{%- endmacro%}
 
 {% macro input_static(value, anid='') %}
     <div class="form-control-static"{% if anid %}id="{{ anid|e }}"{% endif %}>{{ value }}</div>
-{% endmacro %}
+{%- endmacro %}
 {% macro form_input_static(label="", info='', value='', anid='', small=False, horizontal=True) %}
-    {% if caller %}{% set value=caller() %}{% else %}{% set value=value|e %}{% endif %}
-    {% call form_input_general(None, label, anid, small, info, False, horizontal) %}
-        {{ input_static(value, anid) }}
-    {% endcall %}
-{% endmacro %}
+    {%- if caller %}{% set value=caller() %}{% else %}{% set value=value|e %}{% endif %}
+    {%- call form_input_general(None, label, anid, small, info, False, horizontal) %}
+        {{- input_static(value, anid) }}
+    {%- endcall %}
+{%- endmacro %}
 
 {% macro input_submit(value='Speichern', name="submitform", anid='', aclass='btn btn-primary', icon="ok",
         readonly=False, title='', arialabel='') %}
@@ -325,7 +324,7 @@
             {%- if title %} title="{{ title|e }}"{% endif %} value="True"
             {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}>
             {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ value|e -}}</button>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro form_input_submit(value='Speichern', name="submitform", readonly=False, anid='',
         aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue='Abbrechen',
@@ -333,19 +332,19 @@
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
-            {{ input_submit(value, name, anid, aclass, icon, readonly) }}
+            {{- input_submit(value, name, anid, aclass, icon, readonly) }}
             {%- if cancellink %}
                 &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro form_input_from_to(name1, name2, label='', info='', type='number', small=False, displayerrors=True,
         horizontal=True) %}
     <div class="form-group {% if name1 in errors or name2 in errors %}has-error{% endif %}">
         <label class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %} control-label">
-            {{ label|e }}
+            {{- label|e -}}
         </label>
         <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             <div class="input-group">
@@ -354,9 +353,9 @@
                 <span class="input-group-addon">bis</span>
                 {{ input_text(name=name2, type=type, arialabel='{} bis'.format(label)) }}
             </div>
-            {{ output_errors('start', displayerrors) }}
-            {{ output_errors('stop', displayerrors) }}
-            {{ output_info(info) }}
+            {{- output_errors('start', displayerrors) }}
+            {{- output_errors('stop', displayerrors) }}
+            {{- output_info(info) }}
         </div>
     </div>
 {% endmacro %}
@@ -373,7 +372,7 @@
             <div class="checkbox">
                 {{- input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, label=fields['field_name']) -}}
             </div>
-        {% elif fields['kind'] == "str" %}
+        {%- elif fields['kind'] == "str" %}
             {{- input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
         {%- elif fields['kind'] == "int" %}
             {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="number",
@@ -394,13 +393,13 @@
 
 {% macro form_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
                                 defaultvalue='', anid='', force_label=False) %}
-    {% if not label %}{% set label = fields['field_name'] %}{% endif %}
-    {% if not anid %}{% set anid = "event-input-{}".format(name) %}{% endif %}
-    {% call form_input_general(name, (None if fields['kind'] == "bool" and not force_label else label), anid, False,
+    {%- if not label %}{% set label = fields['field_name'] %}{% endif %}
+    {%- if not anid %}{% set anid = "event-input-{}".format(name) %}{% endif %}
+    {%- call form_input_general(name, (None if fields['kind'] == "bool" and not force_label else label), anid, False,
                                info, displayerrors, True) %}
-        {{ event_field_input(fields, name, readonly, defaultvalue, anid) }}
-    {% endcall %}
-{% endmacro %}
+        {{- event_field_input(fields, name, readonly, defaultvalue, anid) }}
+    {%- endcall %}
+{%- endmacro %}
 
 {% macro breadcrumb_link(ref, label, icon="", active=False, readonly=False) %}
     {%- if active or readonly -%}
@@ -416,16 +415,16 @@
 
 {% macro bootstrap_panel(title="", aclass="panel-default", icon="", anid="") %}
     <div class="panel {{ aclass|e }}"{% if anid %} id="{{ anid|e }}"{% endif %}>
-        {% if title or icon %}
+        {%- if title or icon %}
             <div class="panel-heading">
                 <h3 class="panel-title">{% if icon %}{{ make_icon(icon) }} {% endif %}{{ title|e }}</h3>
             </div>
-        {% endif %}
+        {%- endif %}
         <div class="panel-body">
-            {{ caller() }}
+            {{- caller() }}
         </div>
     </div>
-{% endmacro %}
+{%- endmacro %}
 
 {% macro output_given_displayname(given_names, display_name) %}
     {%- if display_name in given_names %}
@@ -445,4 +444,4 @@
     <a href="{{ docurl(topic, anchor)|e }}" class="btn btn-info btn-lg pull-right" target="_blank">
         {{ make_icon('question-sign') }} Hilfe <span class="sr-only">zu dieser Seite</span>
     </a>
-{% endmacro %}
+{%- endmacro %}
