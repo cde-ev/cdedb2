@@ -488,7 +488,7 @@ def dict_entries_filter(items, *args):
 
     Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}), (2, {'id': 2, 'name': 'b', 'active': False})]
              >>> dict_entries_filter(items, 'name', 'active')
-             [('a', True), 'b', ]
+             [('a', True), ('b', False)]
 
     :param items: A list of 2-element tuples. The first element of each tuple is ignored, the second must be a dict
     :param args: Additional positional arguments describing which keys of the dicts should be inserted in the resulting
@@ -497,6 +497,28 @@ def dict_entries_filter(items, *args):
              fields of the dicts
     """
     return [tuple(value[k] for k in args) for key, value in items]
+
+def xdict_entries_filter(items, *args, include=None):
+    """
+    Transform a list of dict items with dict-type values into a list of tuples of strings with specified format. Each
+    entry of the resulting tuples is built by applying the item's value dict to a format string.
+
+    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}), (2, {'id': 2, 'name': 'b', 'active': False})]
+             >>> xdict_entries_filter(items, '{id}', '{name} -- {active}')
+             [('1', 'a -- True'), ('2', 'b -- False')]
+
+    :param items: A list of 2-element tuples. The first element of each tuple is ignored, the second must be a dict
+    :param args: Additional positional arguments, which are format strings for the resulting tuples. They can use named
+                 format specifications to access the dicts' fields.
+    :param include: An iteratable to search for items' keys. Only items with their key being in `include` are included
+                    in the results list
+    :return: A list of tuples (e.g. to be used in the input_checkboxes or input_select macros), built from the selected
+             fields of the dicts
+    """
+    return [tuple(k.format(**value) for k in args)
+            for key, value in items
+            if (include is None or key in include)]
+
 
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
@@ -519,6 +541,7 @@ JINJA_FILTERS = {
     'te': tex_escape_filter,
     'enum_entries': enum_entries_filter,
     'dict_entries': dict_entries_filter,
+    'xdict_entries': xdict_entries_filter,
 }
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):

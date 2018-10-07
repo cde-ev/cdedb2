@@ -49,15 +49,12 @@
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                      entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption=True) }}
             {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in part['tracks'] %}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id in course_choices[track_id] %}
-                    {{ myentries.append((course_id, courses[course_id]['title']))|e }}
-                {% endfor %}
+                {% set course_entries = courses|xdictsort('nr', pad=True)
+                                        |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
                                           label="Kurs {}".format(track['title'])
                                                 if ambience['event']['tracks']|length > 1  else "Kurs",
-                                          entries=myentries,
+                                          entries=course_entries,
                                           nulloption=True) }}
             {% endfor %}
         {% endfor %}
@@ -74,20 +71,17 @@
                     {{ track['title']|e }}
                     {% endif %}
                 </h4>
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id in course_choices[track_id] %}
-                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                    courses[course_id]['shortname'])))|e }}
-                {% endfor %}
+
+                {% set course_entries = courses|xdictsort('nr', pad=True)
+                                        |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter von",
-                                         entries=myentries, nulloption=True) }}
+                                         entries=course_entries, nulloption=True) }}
                 {{ util.form_input_select(name="track{}.course_choice_0".format(track_id), label="Erstwahl",
-                                         entries=myentries, nulloption=True) }}
+                                         entries=course_entries, nulloption=True) }}
                 {{ util.form_input_select(name="track{}.course_choice_1".format(track_id), label="Zweitwahl",
-                                         entries=myentries, nulloption=True) }}
+                                         entries=course_entries, nulloption=True) }}
                 {{ util.form_input_select(name="track{}.course_choice_2".format(track_id), label="Drittwahl",
-                                         entries=myentries, nulloption=True) }}
+                                         entries=course_entries, nulloption=True) }}
             {% endif %}
         {% endfor %}
 

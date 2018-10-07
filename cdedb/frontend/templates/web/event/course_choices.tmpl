@@ -44,6 +44,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
 {% endmacro %}
 
 {% block content %}
+    {% set course_entries = courses|xdictsort('nr', pad=True)|xdict_entries('{id}', '{nr}. {shortname}') %}
+
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass='panel-primary') %}
         <form action="{{ cdedblink('event/course_choices_form')|e }}" method="GET" id="choicefilterform"
               aria-label="Filter">
@@ -61,15 +63,9 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% else %}
                     {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
                 {% endif %}
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id, course in courses|xdictsort('nr', pad=True) %}
-                    {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname']))) }}
-                {% endfor %}
                 den Kurs
-                {{ util.input_select(name="course_id", entries=myentries, nulloption=True, aclass="form-control input-slim input-sm",
-                                     arialabel="Filter: Kurs") }}
-                {# jinja does not support list comprehension ... #}
+                {{ util.input_select(name="course_id", entries=course_entries, nulloption=True,
+                                     aclass="form-control input-slim input-sm", arialabel="Filter: Kurs") }}
                 {% set myentries = [('', "— kein Filter —"),
                                     (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
                                     (enums.CourseFilterPositions.assigned.value, "besuchen"),
@@ -123,12 +119,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                 arialabel="Einteilungsverfahren") }}
                     </div>
                     <div class="form-group">
-                        {# jinja does not support list comprehension ... #}
-                        {% set myentries = [] %}
-                        {% for course_id, course in courses|xdictsort('nr', pad=True) %}
-                            {{ myentries.append((course_id, "{}. {}".format(course['nr'], course['shortname'])))|e }}
-                        {% endfor %}
-                        {{ util.input_select(name="course_id", anid="input-course_id", entries=myentries,
+                        {{ util.input_select(name="course_id", anid="input-course_id", entries=course_entries,
                                              nulloption=True, arialabel="Einteilung in Kurs") }}
                     </div>
                 </div>

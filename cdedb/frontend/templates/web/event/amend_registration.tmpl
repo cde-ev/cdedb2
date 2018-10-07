@@ -51,21 +51,17 @@
                     {% endif %}
                 </h4>
 
-                {# jinja does not support list comprehension ... #}
-                {% set myentries = [] %}
-                {% for course_id in course_list %}
-                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
-                                                                    courses[course_id]['title'])))|e }}
-                {% endfor %}
-                {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=myentries,
+                {% set course_entries = courses|xdictsort('nr', pad=True)
+                                        |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
+                {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=course_entries,
                                          label="Erstwahl", readonly=readonly) }}
-                {{ util.form_input_select(name="course_choice{}_1".format(track_id), entries=myentries,
+                {{ util.form_input_select(name="course_choice{}_1".format(track_id), entries=course_entries,
                                          label="Zweitwahl", readonly=readonly) }}
-                {{ util.form_input_select(name="course_choice{}_2".format(track_id), entries=myentries,
+                {{ util.form_input_select(name="course_choice{}_2".format(track_id), entries=course_entries,
                                          label="Drittwahl", readonly=readonly) }}
 
                 {# jinja does not support list comprehension ... #}
-                {% set myentries = [("", "— Ich bin kein Kursleiter —")] + myentries%}
+                {% set myentries = [("", "— Ich bin kein Kursleiter —")] + course_entries%}
                 {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=myentries,
                                          label="Kursleiter", readonly=readonly,
                                          info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
