@@ -479,8 +479,9 @@ class EventBackend(AbstractBackend):
                 and ret[anid]['registration_start'] <= now()
                 and (ret[anid]['registration_hard_limit'] is None
                      or ret[anid]['registration_hard_limit'] >= now()))
-            ret[anid]['tracks'] =  {
+            ret[anid]['tracks'] = {
                 track_id: {
+                    'id': track_id,
                     'part_id': part_id,
                     'title': title
                 }

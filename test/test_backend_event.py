@@ -90,8 +90,8 @@ class TestEventBackend(BackendTest):
         data['end'] = datetime.date(2110, 8, 20)
         data['is_open'] = True
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'part_id': 5, 'title': 'Second lecture'},
-                          5: {'part_id': 6, 'title': 'First lecture'}}
+        data['tracks'] = {4: {'id': 4, 'part_id': 5, 'title': 'Second lecture'},
+                          5: {'id': 5, 'part_id': 6, 'title': 'First lecture'}}
         ## correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -191,8 +191,8 @@ class TestEventBackend(BackendTest):
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'part_id': 5, 'title': 'Second lecture v2'},
-                          6: {'part_id': 7, 'title': 'Third lecture'}}
+        data['tracks'] = {4: {'id': 4, 'part_id': 5, 'title': 'Second lecture v2'},
+                          6: {'id': 6, 'part_id': 7, 'title': 'Third lecture'}}
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
