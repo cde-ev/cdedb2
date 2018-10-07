@@ -56,7 +56,7 @@ Versammlung – Logs [{{ values['start']|int|e }}–{{ (values['start']|int + lo
     <form action="{{ cdedblink('assembly/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
         {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                 entries=enums['AssemblyLogCodes']|enum_entries(processing=gettext), small=True) }}
-        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True,
+        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption="",
                                   entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
         {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
         {{ util.form_input_submit(value="Anzeigen", small=True) }}

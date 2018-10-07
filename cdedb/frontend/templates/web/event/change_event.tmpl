@@ -31,7 +31,7 @@
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=(
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
-            ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption=True) }}
+            ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption="") }}
         {{ util.form_input_textarea(name="mail_text", label="Freitext Anmeldungsbestätigung", rows="5") }}
         {{ util.form_input_checkbox(name="use_questionnaire", label="Fragebogen anzeigen") }}
         {#- jinja does not support list comprehension ... #}
@@ -41,7 +41,7 @@
             {%- do myentries.append((field_id, field['field_name']))|e %}
         {%- endfor %}
         {{ util.form_input_select(name="lodge_field", label="Extrafeld für Hauswünsche", entries=myentries,
-                                  nulloption=True, info="In welchem Datenfeld werden Hauswünsche der Teilnehmer "
+                                  nulloption="", info="In welchem Datenfeld werden Hauswünsche der Teilnehmer "
                                                         "eingetragen?") }}
         {#- jinja does not support list comprehension ... #}
         {%- set myentries = [] %}
@@ -50,7 +50,7 @@
             {%- do myentries.append((field_id, field['field_name']))|e %}
         {%- endfor %}
         {{ util.form_input_select(name="reserve_field", label="Extrafeld für Isomattenschläfer", entries=myentries,
-                                  nulloption=True, info="In welchem Datenfeld wird eingetragen, ob Teilnehmer bereit "
+                                  nulloption="", info="In welchem Datenfeld wird eingetragen, ob Teilnehmer bereit "
                                                         "sind, auf Isomatte zu schlafen?") }}
         {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('event/show_event')) }}

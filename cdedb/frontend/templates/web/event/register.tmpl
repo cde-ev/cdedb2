@@ -92,11 +92,9 @@
                     {{ util.form_input_select(name="course_choice{}_2".format(track_id), entries=course_entries,
                                              label="Drittwahl") }}
 
-                    {# jinja does not support list comprehension ... #}
-                    {% set myentries = [("", "— Ich bin kein Kursleiter —")] + course_entries %}
-                    {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=myentries,
-                                             label="Kursleiter",
-                                             info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
+                    {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=course_entries,
+                                              nulloption="— Ich bin kein Kursleiter —", label="Kursleiter",
+                                              info="Falls Du einen Kurs angeboten hast, gib bitte an, welchen.") }}
                 </div>
             {% endif %}
         {% endfor %}

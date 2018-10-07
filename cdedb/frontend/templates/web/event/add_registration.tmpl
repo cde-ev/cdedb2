@@ -47,7 +47,7 @@
             {{ util.form_input_select(name="part{}.status".format(part_id), label="Status",
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
-                                     entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption=True) }}
+                                     entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption="") }}
             {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in part['tracks'] %}
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
@@ -55,7 +55,7 @@
                                           label="Kurs {}".format(track['title'])
                                                 if ambience['event']['tracks']|length > 1  else "Kurs",
                                           entries=course_entries,
-                                          nulloption=True) }}
+                                          nulloption="") }}
             {% endfor %}
         {% endfor %}
 
@@ -75,13 +75,13 @@
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter von",
-                                         entries=course_entries, nulloption=True) }}
+                                         entries=course_entries, nulloption="") }}
                 {{ util.form_input_select(name="track{}.course_choice_0".format(track_id), label="Erstwahl",
-                                         entries=course_entries, nulloption=True) }}
+                                         entries=course_entries, nulloption="") }}
                 {{ util.form_input_select(name="track{}.course_choice_1".format(track_id), label="Zweitwahl",
-                                         entries=course_entries, nulloption=True) }}
+                                         entries=course_entries, nulloption="") }}
                 {{ util.form_input_select(name="track{}.course_choice_2".format(track_id), label="Drittwahl",
-                                         entries=course_entries, nulloption=True) }}
+                                         entries=course_entries, nulloption="") }}
             {% endif %}
         {% endfor %}
 

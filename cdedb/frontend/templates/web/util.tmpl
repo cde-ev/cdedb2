@@ -279,14 +279,15 @@
 
 
 {% macro input_select(name, entries, readonly=False, defaultvalue=None, anid='', aclass='form-control',
-        nulloption=False, arialabel='', attributes="") %}
+        nulloption=None, arialabel='', attributes="") %}
     <select name="{{ name|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
             {% if aclass %} class="{{ aclass|e }}" {% endif %}{% if readonly %}disabled="disabled"{% endif %}
             {% if arialabel %} aria-label="{{ arialabel|e }}" {% endif %} {{ attributes }}>
-        {% if nulloption %}
-             <option value=""
-                     {% if values.get(name, defaultvalue) == None %} selected="selected" {% endif %}>
-             </option>
+        {% if nulloption is not none %}
+            <option value=""
+                     {%- if values.get(name, defaultvalue) == None %} selected="selected" {% endif %}>
+                {{- nulloption|e -}}
+            </option>
         {% endif %}
         {% for value, label in entries %}
             <option value="{{ value|e }}"
@@ -298,7 +299,7 @@
 {% endmacro %}
 
 {% macro form_input_select(name, entries, label="", info='', displayerrors=True, readonly=False, defaultvalue=None,
-        nulloption=False, anid='', small=False, horizontal=True, aclass="", attributes="") %}
+        nulloption=None, anid='', small=False, horizontal=True, aclass="", attributes="") %}
     {% if not anid %}{% set anid = "input-select-{}".format(name) %}{% endif %}
     {% call form_input_general(name, label, anid, small, info, displayerrors, horizontal) %}
         {{ input_select(name, entries, readonly, defaultvalue, anid, nulloption=nulloption,
@@ -365,7 +366,7 @@
         {% set name = "fields.{}".format(fields['field_name']) %}
     {% endif %}
     {% if fields['entries'] %}
-        {{ input_select(name=name, entries=fields['entries'], nulloption=True,
+        {{ input_select(name=name, entries=fields['entries'], nulloption="",
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
     {% else %}
         {% if fields['kind'] == "bool" %}

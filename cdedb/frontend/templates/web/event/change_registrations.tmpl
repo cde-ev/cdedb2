@@ -103,7 +103,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label="Unterkunft",
                                         anid="part{}_lodgement_id".format(part_id)) %}
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id),
-                                     entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption=True,
+                                     entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption="",
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
             {% call form_input_optional("part{}.is_reserve".format(part_id),
@@ -122,7 +122,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                                                   if ambience['event']['tracks']|length > 1  else "Kurs",
                                             anid="track{}_course_id".format(track_id)) %}
                     {{ util.input_select(name="track{}.course_id".format(track_id), entries=course_entries,
-                                         nulloption=True, anid="track{}_course_id".format(track_id)) }}
+                                         nulloption="", anid="track{}_course_id".format(track_id)) }}
                 {% endcall %}
             {% endfor %}
         {% endfor %}
@@ -148,7 +148,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                                               if ambience['event']['tracks']|length > 1  else "Kursleiter von",
                                         anid="input_track{}_course_instructor".format(track_id)) %}
                 {{ util.input_select(name="track{}.course_instructor".format(track_id),
-                                     entries=course_entries, nulloption=True,
+                                     entries=course_entries, nulloption="",
                                      anid="input_track{}_course_instructor".format(track_id)) }}
             {% endcall %}
         {% endfor %}

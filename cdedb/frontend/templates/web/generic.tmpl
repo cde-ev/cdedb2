@@ -336,7 +336,7 @@
                                                         {%- do myentries.append((op.value,
                                                             gettext(op.value|enum(enums.QueryOperators))))|e %}
                                                     {%- endfor %}
-                                                    {{ util.input_select(name, entries=myentries, nulloption=True,
+                                                    {{ util.input_select(name, entries=myentries, nulloption="",
                                                             aclass='form-control input-sm filter-op', anid=theid,
                                                             arialabel=gettext("filter operator for {}")
                                                                       .format(titles.get(field, field)|e)) }}
@@ -384,7 +384,7 @@
                                             {%- for field in spec if ',' not in field %}
                                                 {%- do myentries.append((field, titles.get(field,field)))|e %}
                                             {%- endfor %}
-                                            {{ util.input_select(name, entries=myentries, nulloption=True,
+                                            {{ util.input_select(name, entries=myentries, nulloption="",
                                                                  aclass="form-control input-sm sort-field",
                                                                  arialabel=gettext("{} sort key").format(title)) }}
                                         </td>

@@ -36,12 +36,9 @@
                                                 horizontal=false) }}
                 </div>
                 <div class="col-md-6">
-                    {# jinja does not support list comprehension ... #}
-                    {% set field_entries = [("", "— Nur Text —")] %}
-                    {% for field_id, field in registration_fields|dictsort %}
-                        {{ field_entries.append((field_id, field['field_name']))|e }}
-                    {% endfor %}
-                    {{ util.form_input_select("field_id_{}".format(part_id), label="Abfrage", entries=field_entries,
+                    {{ util.form_input_select("field_id_{}".format(part_id), label="Abfrage",
+                                              entries=registration_fields|dictsort|dict_entries('id', 'field_name'),
+                                              nulloption="— Nur Text —",
                                               attributes=('data-basename="field_id_"' if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
                     {{ util.form_input_select(

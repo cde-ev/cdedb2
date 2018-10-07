@@ -57,7 +57,7 @@ Log: Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + lo
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                                           entries=enums['EventLogCodes']|enum_entries(processing=gettext),
                                           small=True) }}
-            {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True,
+            {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption="",
                                       entries=all_events|dictsort, small=True) }}
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}

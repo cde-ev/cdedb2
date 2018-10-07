@@ -53,18 +53,15 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 Teilnehmer, die
                 {% if ambience['event']['tracks']|length > 1 %}
                     in Kursschiene
-                    {# jinja does not support list comprehension ... #}
-                    {% set myentries = [('', '— egal —')] %}
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                        {{ myentries.append((track_id, track['title']))|e }}
-                    {% endfor %}
-                    {{ util.input_select(name="track_id", entries=myentries, aclass="form-control input-slim input-sm",
+                    {{ util.input_select(name="track_id",
+                                         entries=ambience['event']['tracks']|dictsort|dict_entries('id', 'title'),
+                                         nulloption='— egal —', aclass="form-control input-slim input-sm",
                                          arialabel="Filter: Kursschiene") }}
                 {% else %}
                     {{ util.input_hidden(name="track_id", value=(ambience['event']['tracks']|list)[0]) }}
                 {% endif %}
                 den Kurs
-                {{ util.input_select(name="course_id", entries=course_entries, nulloption=True,
+                {{ util.input_select(name="course_id", entries=course_entries, nulloption="",
                                      aclass="form-control input-slim input-sm", arialabel="Filter: Kurs") }}
                 {% set myentries = [('', "— kein Filter —"),
                                     (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
@@ -120,7 +117,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     </div>
                     <div class="form-group">
                         {{ util.input_select(name="course_id", anid="input-course_id", entries=course_entries,
-                                             nulloption=True, arialabel="Einteilung in Kurs") }}
+                                             nulloption="", arialabel="Einteilung in Kurs") }}
                     </div>
                 </div>
                 <div class="col-md-2">

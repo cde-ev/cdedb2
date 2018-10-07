@@ -57,7 +57,7 @@ Log: Mailinglisten [{{ values['start']|int|e }}–{{ (values['start']|int + log|
         <form action="{{ cdedblink('ml/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
                     entries=enums['MlLogCodes']|enum_entries(processing=gettext), small=True) }}
-            {{ util.form_input_select(name="mailinglist_id", label="Mailingliste", nulloption=True,
+            {{ util.form_input_select(name="mailinglist_id", label="Mailingliste", nulloption="",
                     entries=all_mailinglists|dictsort, small=True) }}
 
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}

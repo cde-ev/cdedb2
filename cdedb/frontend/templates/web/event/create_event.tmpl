@@ -30,7 +30,7 @@
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
         {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=(
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
-            ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption=True) }}
+            ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")), nulloption="") }}
         {{ util.form_input_textarea(name="mail_text", label="Freitext Anmeldungsbestätigung", rows="5") }}
         {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}
         {{ util.form_input_text(name="orga_ids", label="Orgas", placeholder="DB-XXXX-X,DB-XXXX-X,…",

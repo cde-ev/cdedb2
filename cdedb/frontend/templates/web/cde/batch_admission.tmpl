@@ -105,7 +105,7 @@
                                     {%- do myentries.append((resolution.value, gettext(resolution|string)))|e %}
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
-                                        nulloption=True, aclass="form-control select-action",
+                                        nulloption="", aclass="form-control select-action",
                                         arialabel="Operation für Zeile {}".format(dataset['lineno'])) }}
                             </div>
                         </div>
