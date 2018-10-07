@@ -21,15 +21,14 @@
                      'event': 'Veranstaltung',
                      'ml': 'Mailinglisten',
                      'assembly': 'Versammlung'} %}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% set not_my_realms = [] %}
-        {% for realm in realms %}
-            {% if not p['is_{}_realm'.format(realm)] %}
-                {{ myentries.append((realm, realms[realm]))|e }}
-                {{ not_my_realms.append(realm)|e }}
-            {% endif %}
-        {% endfor %}
+        {#- jinja does not support list comprehension ... #}
+        {%- set myentries = [] %}
+        {%- set not_my_realms = [] %}
+        {%- for realm in realms
+                if not p['is_{}_realm'.format(realm)] %}
+            {%- do myentries.append((realm, realms[realm]))|e %}
+            {%- do not_my_realms.append(realm)|e %}
+        {%- endfor %}
         
         {% if not values['target_realm'] %}
             <p>

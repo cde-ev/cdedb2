@@ -33,7 +33,7 @@
         {% elif script == 'orderrow' %}
             <script type="text/javascript" src="{{ staticurl("cdedb_orderrow.js")|e }}"></script>
         {% endif %}
-        {{ script_files.append(script) }}
+        {% do script_files.append(script) %}
     {% endif %}
 {% endmacro %}
 
