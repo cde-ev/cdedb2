@@ -126,30 +126,30 @@
    be used inside an form.form-horizontal.
 #}
 {% macro input_hidden(name, value=None, defaultvalue='', anid='', aclass='') %}
-    {% if value is none %}
+    {%- if value is none -%}
         <input type="hidden" name="{{ name|e }}" value="{{ values.get(name, defaultvalue)|e }}"
-          {% if anid %} id="{{ anid|e }}" {% endif %} {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-    {% else %}
-        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" {% if anid %} id="{{ anid|e }}" {% endif %}
-          {% if aclass %} class="{{ aclass|e }}" {% endif %}>
-    {% endif %}
+          {%- if anid %} id="{{ anid|e }}" {% endif %} {%- if aclass %} class="{{ aclass|e }}"{% endif %} />
+    {%- else -%}
+        <input type="hidden" name="{{ name|e }}" value="{{ value|e }}" {%- if anid %} id="{{ anid|e }}" {% endif %}
+          {%- if aclass %} class="{{ aclass|e }}"{% endif %} />
+    {%- endif -%}
 {% endmacro %}
 
 {% macro form_input_general(name='', label='', anid='', small=False, info='', displayerrors=True,
         horizontal=True, labelid='') %}
     <div class="form-group {% if name in errors %}has-error{% endif %}">
-        {% if label %}
+        {%- if label %}
             <label{% if labelid %} id="{{ labelid|e }}"{% endif %}{% if anid %} for="{{ anid|e }}"{% endif %}
                     class="{% if horizontal %}{% if small %}col-sm-2{% else %}col-sm-4{% endif %}{% endif %}
                            control-label">
                 {{ label|e }}
             </label>
-        {% endif %}
-        <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
-                                       {% if not label %}
-                                           {% if small %}col-sm-offset-2{% else %}col-sm-offset-4{% endif %}
-                                       {% endif %}"{% endif %}>
-            {{ caller() }}
+        {%- endif %}
+        <div {%- if horizontal %} class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}
+                                       {%- if not label %}
+                                           {%- if small %} col-sm-offset-2{% else %} col-sm-offset-4{% endif %}
+                                       {%- endif %}"{% endif %}>
+            {{- caller() -}}
             {{ output_errors(name, displayerrors) }}
             {{ output_info(info) }}
         </div>
@@ -158,22 +158,22 @@
 
 {% macro input_text(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, type='text',
         placeholder='', arialabel='', attributes='') %}
-    <input type="{{ type|e }}" {% if aclass %} class="{{ aclass|e }}"{% endif %}
-            {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {% if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
-            {% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
-            {% if anid %} id="{{ anid|e }}"{% endif %}
+    <input type="{{ type|e }}" {%- if aclass %} class="{{ aclass|e }}"{% endif %}
+            {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+            {%- if placeholder %} placeholder="{{ placeholder|e }}"{% endif %}
+            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
+            {%- if anid %} id="{{ anid|e }}"{% endif %}
             name="{{ name|e }}"
-            {% if type != 'password' %}
-                {% if type == 'date' %}
+            {%- if type != 'password' %}
+                {%- if type == 'date' %}
                     value="{{ values.get(name, defaultvalue)|date('%Y-%m-%d', passthrough=True) }}"
-                {% elif type == 'datetime-local' %}
+                {%- elif type == 'datetime-local' %}
                     value="{{ values.get(name, defaultvalue)|datetime('%Y-%m-%dT%H:%M:%S', passthrough=True) }}"
-                {% else %}
+                {%- else %}
                     value="{{ values.get(name, defaultvalue)|e }}"
-                {% endif %}
-            {% endif %}
-            {% if readonly %}disabled="disabled"{% endif %} {{ attributes }} />
+                {%- endif %}
+            {%- endif %}
+            {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }} />
 {% endmacro %}
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
     maxlength=0, type='text', placeholder='', small=False, horizontal=True, aclass="", attributes='') %}
@@ -186,11 +186,11 @@
 
 
 {% macro input_file(name, readonly=False, defaultvalue='', anid='', aclass='form-control', accept='', arialabel='') %}
-    <input type="file" {% if aclass %} class="{{ aclass|e }}"{% endif %}
-            {% if accept %} class="{{ accept|e }}"{% endif %}
-            {% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
-            {% if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"
-            name="{{ name|e }}" {% if readonly %}disabled="disabled"{% endif %} />
+    <input type="file" {%- if aclass %} class="{{ aclass|e }}"{% endif %}
+            {%- if accept %} class="{{ accept|e }}"{% endif %}
+            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
+            {%- if anid %} id="{{ anid|e }}"{% endif %} value="{{ values.get(name, defaultvalue)|e }}"{#-#}
+            name="{{ name|e }}" {%- if readonly %} disabled="disabled"{% endif %} />
 {% endmacro %}
 
 {% macro form_input_file(name, label='', info='', displayerrors=True, readonly=False, accept='', anid='',
@@ -204,10 +204,11 @@
 {% macro input_textarea(name, readonly=False, defaultvalue='', anid='', aclass='form-control', maxlength=0, rows=3,
                         arialabel='', attributes='') %}
     <textarea {% if aclass %} class="{{ aclass|e }}"{% endif %} rows="{{ rows }}"
-            {% if anid %} id="{{ anid|e }}"{% endif %}{% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
+            {%- if anid %} id="{{ anid|e }}"{% endif %} {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
             name="{{ name|e }}" {% if maxlength %} maxlength="{{ maxlength }}"{% endif %}
-            {% if readonly %}disabled="disabled"{% endif %} {{ attributes }}
-    >{{ values.get(name, defaultvalue)|e }}</textarea>
+            {%- if readonly %} disabled="disabled"{% endif %} {{ attributes }}>
+        {{- values.get(name, defaultvalue)|e -}}
+    </textarea>
 {% endmacro %}
 
 {% macro form_input_textarea(name, label='', info='', displayerrors=True, readonly=False, defaultvalue='', anid='',
@@ -227,26 +228,26 @@
             {% if value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue)  %}
                 checked="checked"
             {% endif %}
-            {% if arialabel %}aria-label="{{ arialabel|e }}"{% endif %}
-            {% if readonly %} disabled="disabled" {% endif %} {% if anid %} id="{{ anid|e }}" {% endif %}
-            {% if aclass %} class="{{ aclass|e }}"{% endif %} {{ attributes }} />
-        {{ label|e }}
+            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}
+            {%- if readonly %} disabled="disabled"{% endif %} {%- if anid %} id="{{ anid|e }}"{% endif %}
+            {%- if aclass %} class="{{ aclass|e }}"{% endif %} {{ attributes }} />
+        {{- label|e -}}
     </label>
 {% endmacro %}
 
 {% macro input_checkboxes(name, entries, readonly=False, defaultvalue='', inline=False, radio=False, aclass='',
         arialabeledby="") %}
     <div role="{% if radio %}radio{% endif %}group"
-            {% if arialabeledby %}aria-labeledby="{{ arialabeledby }}"{% endif %}>
-        {% if arialabel %}<legend class="sr-only">{{ arialabel|e }}</legend>{% endif %}
-        {% for entry_value, entry_label in entries %}
-            {% if not inline %}
-                <div class="{% if radio %}radio{% else %}checkbox{% endif %} {% if readonly %}disabled{% endif %}">
-            {% endif %}
+            {%- if arialabeledby %} aria-labeledby="{{ arialabeledby }}"{% endif %}>
+        {%- if arialabel %}<legend class="sr-only">{{ arialabel|e }}</legend>{% endif %}
+        {%- for entry_value, entry_label in entries %}
+            {% if not inline -%}
+                <div class="{% if radio %}radio{% else %}checkbox{% endif %}{% if readonly %} disabled{% endif %}">
+            {%- endif -%}
                 {{ input_checkbox(name, entry_label, entry_value, defaultvalue, readonly, inline=inline, radio=radio,
                                   aclass=aclass) }}
-            {% if not inline %}</div>{% endif %}
-        {% endfor %}
+            {%- if not inline %}</div>{% endif %}
+        {%- endfor %}
     </div>
 {% endmacro %}
 
@@ -319,24 +320,23 @@
 
 {% macro input_submit(value='Speichern', name="submitform", anid='', aclass='btn btn-primary', icon="ok",
         readonly=False, title='', arialabel='') %}
-    <button type="submit" name="{{ name|e }}" {% if readonly %} disabled="disabled"{% endif %} {% if anid %}
-            id="{{ anid|e }}"{% endif %} {% if aclass %} class="{{ aclass|e }}"{% endif %}
-            {% if title %} title="{{ title|e }}"{% endif %} value="True"
-            {% if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}>
-            {% if icon %}{{ make_icon(icon) }} {% endif %}{{ value|e }}</button>
+    <button type="submit" name="{{ name|e }}" {%- if readonly %} disabled="disabled"{% endif %}
+            {%- if anid %} id="{{ anid|e }}"{% endif %} {%- if aclass %} class="{{ aclass|e }}"{% endif %}
+            {%- if title %} title="{{ title|e }}"{% endif %} value="True"
+            {%- if arialabel %} aria-label="{{ arialabel|e }}"{% endif %}>
+            {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ value|e -}}</button>
 {% endmacro %}
 
-{% macro form_input_submit(value='Speichern', name="submitform", info='', readonly=False, anid='',
+{% macro form_input_submit(value='Speichern', name="submitform", readonly=False, anid='',
         aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue='Abbrechen',
         small=False, horizontal=True) %}
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
             {{ input_submit(value, name, anid, aclass, icon, readonly) }}
-            {% if cancellink %}
+            {%- if cancellink %}
                 &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default cancel") }}
-            {% endif %}
-            {% if info %}<div class="control-label">{{ info_hover(info) }}</div>{% endif %}
+            {%- endif %}
         </div>
     </div>
 {% endmacro %}
@@ -362,35 +362,35 @@
 {% endmacro %}
 
 {% macro event_field_input(fields, name='', readonly=False, defaultvalue='', anid='') %}
-    {% if not name %}
-        {% set name = "fields.{}".format(fields['field_name']) %}
-    {% endif %}
-    {% if fields['entries'] %}
-        {{ input_select(name=name, entries=fields['entries'], nulloption="",
+    {%- if not name %}
+        {%- set name = "fields.{}".format(fields['field_name']) %}
+    {%- endif %}
+    {%- if fields['entries'] %}
+        {{- input_select(name=name, entries=fields['entries'], nulloption="",
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-    {% else %}
-        {% if fields['kind'] == "bool" %}
+    {%- else %}
+        {%- if fields['kind'] == "bool" %}
             <div class="checkbox">
-                {{ input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, label=fields['field_name']) }}
+                {{- input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, label=fields['field_name']) -}}
             </div>
         {% elif fields['kind'] == "str" %}
-            {{ input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
-        {% elif fields['kind'] == "int" %}
-            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="number",
+            {{- input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, rows=3) }}
+        {%- elif fields['kind'] == "int" %}
+            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="number",
                           placeholder="0") }}
-        {% elif fields['kind'] == "float" %}
-            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, placeholder="0.0") }}
-        {% elif fields['kind'] == "date" %}
-            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="date",
+        {%- elif fields['kind'] == "float" %}
+            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, placeholder="0.0") }}
+        {%- elif fields['kind'] == "date" %}
+            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="date",
                           placeholder="YYYY-MM-DD") }}
-        {% elif fields['kind'] == "datetime" %}
-            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="datetime-local",
+        {%- elif fields['kind'] == "datetime" %}
+            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type="datetime-local",
                           placeholder="YYYY-MM-DDThh:ii:ss") }}
-        {% else %}
-            {{ input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
-        {% endif %}
-    {% endif %}
-{% endmacro %}
+        {%- else %}
+            {{- input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
+        {%- endif %}
+    {%- endif %}
+{%- endmacro %}
 
 {% macro form_event_field_input(fields, name='', label='', info='', displayerrors=True, readonly=False,
                                 defaultvalue='', anid='', force_label=False) %}
@@ -428,15 +428,15 @@
 {% endmacro %}
 
 {% macro output_given_displayname(given_names, display_name) %}
-    {% if display_name in given_names %}
-        {% if not display_name or display_name == given_names %}
+    {%- if display_name in given_names %}
+        {%- if not display_name or display_name == given_names -%}
             {{ given_names|e }}
-        {% else %}
+        {%- else -%}
             {{ '<em>{}</em>'.format(display_name|e).join((given_names|e).split(display_name|e)) }}
-        {% endif %}
-    {% else %}
+        {%- endif %}
+    {%- else -%}
         {{ given_names|e }} ({{ display_name|e }})
-    {% endif %}
+    {%- endif -%}
 {% endmacro %}
 
 {# Helper macro to create a large, left-floated 'Help' button, linking to the off-page documentation as referenced by
