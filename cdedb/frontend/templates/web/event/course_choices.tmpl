@@ -106,12 +106,9 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% else %}
                     <label class="sr-only" id="input-track_ids-label">Kursschienen</label>
                     <div class="col-md-3 strip-inner-space">
-                        {# jinja does not support list comprehension ... #}
-                        {% set myentries = [] %}
-                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                            {{ myentries.append((track_id, track['title']))|e }}
-                        {% endfor %}
-                        {{ util.input_checkboxes(name="track_ids", entries=myentries,
+                        {{ util.input_checkboxes(name="track_ids",
+                                                 entries=ambience['event']['tracks']|dictsort
+                                                    |dict_entries('id', 'title'),
                                                  arialabeledby="input-track_ids-label") }}
                     </div>
                 {% endif %}

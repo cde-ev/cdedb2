@@ -34,61 +34,28 @@
                                     info="Unterstützt reStructuredText") }}
 
         <h4 class="heading-underline">Moderation &amp; Abonnenten</h4>
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for policy in enums['ModerationPolicy'] %}
-            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="mod_policy", label="Moderation", entries=myentries) }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for policy in enums['AudiencePolicy'] %}
-            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="audience_policy", label="Empfängerkreis", entries=myentries) }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for policy in enums['SubscriptionPolicy'] %}
-            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="sub_policy", label="Einschreibung", entries=myentries) }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for event_id, title in events|dictsort %}
-            {{ myentries.append((event_id, title))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries,
+        {{ util.form_input_select(name="mod_policy", label="Moderation",
+                entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_select(name="audience_policy", label="Empfängerkreis",
+                entries=enums['AudiencePolicy']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_select(name="sub_policy", label="Einschreibung",
+                entries=enums['SubscriptionPolicy']|enum_entries(processing=gettext)) }}
+        {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=events|dictsort,
                 info="Die Teilnehmer dieser Veranstaltung werden der Liste hinzugefügt. (Opt-Out)") }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for status in enums['RegistrationPartStati'] %}
-            {{ myentries.append((status.value, gettext(status|string)))|e }}
-        {% endfor %}
         {{ util.form_input_checkboxes(name="registration_stati", label="Veranstaltungsempfänger",
-                entries=myentries, info="Keine Auswahl entspricht einer Orgaliste.") }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for assembly_id, assembly in assemblies|dictsort %}
-            {{ myentries.append((assembly_id, assembly['title']))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries,
+                entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
+                info="Keine Auswahl entspricht einer Orgaliste.") }}
+        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True,
+                entries=assemblies|dictsort|dict_entries('id', 'title'),
                 info="Die Teilnehmer dieser Versammlung werden der Liste hinzugefügt. (Opt-Out)") }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for mailinglist_id, title in mailinglists|dictsort %}
-            {{ myentries.append((mailinglist_id, title))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="gateway", label="Zugangsvererbung", nulloption=True, entries=myentries,
+        {{ util.form_input_select(name="gateway", label="Zugangsvererbung", nulloption=True,
+                entries=mailinglists|dictsort,
                 info="Die Abonnenten dieser Liste können sich immer eintragen. (Opt-In)") }}
 
         <h4 class="heading-underline">Mails</h4>
         {{ util.form_input_text(name="subject_prefix", label="Präfix (Betreffzeile)") }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for policy in enums['AttachmentPolicy'] %}
-            {{ myentries.append((policy.value, gettext(policy|string)))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="attachment_policy", label="Anhänge", entries=myentries) }}
+        {{ util.form_input_select(name="attachment_policy", label="Anhänge",
+                entries=enums['PastEventLogCodes']|enum_entries(processing=gettext)) }}
         {{ util.form_input_text(name="maxsize", label="max. Nachrichtengröße (in kB)") }}
         {{ util.form_input_submit(value="Speichern", cancellink=cdedblink('ml/show_mailinglist')) }}
     </form>

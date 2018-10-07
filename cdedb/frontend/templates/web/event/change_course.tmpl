@@ -34,12 +34,8 @@
             {# hide selection of course tracks/segments if the event has only one track #}
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                {{ myentries.append((track_id, track['title']))|e }}
-            {% endfor %}
-            {{ util.form_input_checkboxes(name="segments", label="Angeboten in", entries=myentries,
+            {{ util.form_input_checkboxes(name="segments", label="Angeboten in",
+                                          entries=ambience['event']['tracks']|dictsort|dict_entries('id', 'title'),
                                           aclass='checkbox_segment',
                                           info="Veranstaltungsteile, in denen der Kurs ursprünglich angeboten wurde.") }}
         {% endif %}
@@ -52,7 +48,8 @@
                                         info="Ausfallende Kurse sind nicht mehr von Teilnehmern wählbar und werden in"
                                              " der Kursliste und bei der Kurseinteilung markiert.") }}
         {% else %}
-            {{ util.form_input_checkboxes(name="active_segments", label="Findet statt in", entries=myentries,
+            {{ util.form_input_checkboxes(name="active_segments", label="Findet statt in",
+                                          entries=ambience['event']['tracks']|dictsort|dict_entries('id', 'title'),
                                           aclass='checkbox_active_segment',
                                           info="Ausfallende Kurse sind nicht mehr von Teilnehmern wählbar und werden in"
                                                " der Kursliste und bei der Kurseinteilung markiert.") }}

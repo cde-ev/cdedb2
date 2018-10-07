@@ -54,9 +54,8 @@
                 {# jinja does not support list comprehension ... #}
                 {% set myentries = [] %}
                 {% for course_id in course_list %}
-                    {{ myentries.append((course_id,
-                                         "{}. {}".format(courses[course_id]['nr'],
-                                                         courses[course_id]['title'])))|e }}
+                    {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                    courses[course_id]['title'])))|e }}
                 {% endfor %}
                 {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=myentries,
                                          label="Erstwahl", readonly=readonly) }}

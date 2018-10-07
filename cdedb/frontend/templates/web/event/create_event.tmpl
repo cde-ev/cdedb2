@@ -15,12 +15,7 @@
     {% endcall %}
     <form action="{{ cdedblink('event/create_event')|e }}" method="POST" id="createeventform" class="form-horizontal">
         {{ util.form_input_text(name="title", label="Titel") }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for value, title in institutions|dictsort %}
-            {{ myentries.append((value, title))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="institution", label="Organisation", entries=myentries) }}
+        {{ util.form_input_select(name="institution", label="Organisation", entries=institutions|dictsort) }}
         {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5") }}
         {{ util.form_input_text(name="shortname", label="Kürzel") }}
         {{ util.form_input_text(name="event_begin", label="Veranstaltungsbeginn", type="date",

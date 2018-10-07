@@ -39,19 +39,12 @@
                         {{ util.form_input_text(
                                 name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
                                 label="Interessen, …", aclass="input-sm") }}
-                        {% set myentries = [] %}
-                        {% for i in choices['pevent_id']|sort %}
-                            {{ myentries.append((i, choices['pevent_id'][i])) }}
-                        {% endfor %}
-                        {{ util.form_input_select(name="qval_pevent_id", entries=myentries, nulloption=True,
-                                label="Akademie", aclass="input-sm") }}
+                        {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_id']|dictsort,
+                                                  nulloption=True, label="Akademie", aclass="input-sm") }}
                         {% if values.get('qval_pevent_id') %}
-                            {% set myentries = [] %}
-                            {% for i in choices['pcourse_id']|sort %}
-                                {{ myentries.append((i, choices['pcourse_id'][i])) }}
-                            {% endfor %}
-                            {{ util.form_input_select(name="qval_pcourse_id", entries=myentries, nulloption=True,
-                                    label="Kurs", aclass="input-sm", defaultvalue='') }}
+                            {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_id']|dictsort,
+                                                      nulloption=True, label="Kurs", aclass="input-sm",
+                                                      defaultvalue='') }}
                         {% endif %}
                     </div>
                     <div class="col-sm-6">

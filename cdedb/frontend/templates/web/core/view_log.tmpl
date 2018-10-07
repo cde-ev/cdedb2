@@ -46,13 +46,8 @@ Account-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)
 
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('core/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for code in enums['CoreLogCodes'] %}
-                {{ myentries.append((code.value, gettext(code|string)))|e }}
-            {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                    entries=myentries, small=True) }}
+                    entries=enums['CoreLogCodes']|enum_entries(processing=gettext), small=True) }}
             {{ util.form_input_text(name="persona_id", label="Account", small=True, placeholder="DB-XXXX-X") }}
 
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}

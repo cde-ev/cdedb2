@@ -65,12 +65,9 @@
             <h3 class="heading-underline">Anmeldung</h3>
         {% endif %}
         {% if ambience['event']['parts']|length > 1 %}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for part_id, part in ambience['event']['parts']|xdictsort('part_begin') %}
-                {{ myentries.append((part_id, part['title']))|e }}
-            {% endfor %}
-            {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile", entries=myentries) }}
+            {{ util.form_input_checkboxes(name="parts", label="Veranstaltungsteile",
+                                          entries=ambience['event']['parts']|xdictsort('part_begin')
+                                              |dict_entries('id', 'title')) }}
         {% elif ambience['event']['parts']|length == 1 %}
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
@@ -89,9 +86,8 @@
                     {# jinja does not support list comprehension ... #}
                     {% set myentries = [] %}
                     {% for course_id in course_list %}
-                        {{ myentries.append((course_id,
-                                             "{}. {}".format(courses[course_id]['nr'],
-                                                             courses[course_id]['title'])))|e }}
+                        {{ myentries.append((course_id, "{}. {}".format(courses[course_id]['nr'],
+                                                                        courses[course_id]['title'])))|e }}
                     {% endfor %}
                     {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=myentries,
                                              label="Erstwahl") }}

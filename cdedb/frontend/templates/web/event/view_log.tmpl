@@ -54,20 +54,11 @@ Log: Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + lo
     </table>
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('event/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for code in enums['EventLogCodes'] %}
-                {{ myentries.append((code.value, gettext(code|string)))|e }}
-            {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                                          entries=myentries, small=True) }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for event_id, title in all_events|dictsort %}
-                {{ myentries.append((event_id, title))|e }}
-            {% endfor %}
-            {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True, entries=myentries,
-                                      small=True) }}
+                                          entries=enums['EventLogCodes']|enum_entries(processing=gettext),
+                                          small=True) }}
+            {{ util.form_input_select(name="event_id", label="Veranstaltung", nulloption=True,
+                                      entries=all_events|dictsort, small=True) }}
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}
         </form>

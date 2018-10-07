@@ -24,13 +24,9 @@
             {% if entry['field_id'] %}
                 {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
                     {% if FIELD['entries'] %}
-                        {# jinja does not support list comprehension ... #}
-                        {% set myentries = [] %}
-                        {% for value, description in FIELD['entries'] %}
-                            {{ myentries.append((value, description))|e }}
-                        {% endfor %}
-                        {{ util.form_input_select(name=FIELD['field_name'], entries=myentries, label=entry['title'],
-                                                  info=entry['info'], readonly=(entry['readonly'] or is_locked)) }}
+                        {{ util.form_input_select(name=FIELD['field_name'], entries=FIELD['entries'],
+                                                  label=entry['title'], info=entry['info'],
+                                                  readonly=(entry['readonly'] or is_locked)) }}
                     {% else %}
                         {% if FIELD['kind'] == "bool" %}
                             {{ util.form_input_checkbox(

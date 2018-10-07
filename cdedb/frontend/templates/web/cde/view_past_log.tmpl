@@ -55,20 +55,11 @@ Log: Abgeschlossene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['s
     
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}    
         <form action="{{ cdedblink('cde/view_past_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for code in enums['PastEventLogCodes'] %}
-                {{ myentries.append((code.value, gettext(code|string)))|e }}
-            {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                     entries=myentries, small=True) }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for pevent_id, pe in pevents|dictsort %}
-                {{ myentries.append((pevent_id, pe['title']))|e }}
-            {% endfor %}
-            {{ util.form_input_select(name="pevent_id", label="Veranstaltung", nulloption=True, entries=myentries,
-                    small=True) }}
+                                          entries=enums['PastEventLogCodes']|enum_entries(processing=gettext),
+                                          small=True) }}
+            {{ util.form_input_select(name="pevent_id", label="Veranstaltung", nulloption=True,
+                                      entries=pevents|dictsort|dict_entries('id', 'title'), small=True) }}
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen",small=True) }}
         </form>

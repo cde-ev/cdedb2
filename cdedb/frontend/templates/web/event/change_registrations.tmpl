@@ -93,25 +93,17 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title']|e }}</h4>
             {% endif %}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for s in enums['RegistrationPartStati'] %}
-                {{ myentries.append((s.value, gettext(s|string)))|e }}
-            {% endfor %}
             {% call form_input_optional("part{}.status".format(part_id), label="Status",
                                         anid="part{}_status".format(part_id)) %}
-                {{ util.input_select(name="part{}.status".format(part_id), entries=myentries,
+                {{ util.input_select(name="part{}.status".format(part_id),
+                                     entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
                                      anid="part{}_status".format(part_id)) }}
             {% endcall %}
 
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for lodgement_id, lodgement in lodgements|dictsort %}
-                {{ myentries.append((lodgement_id, lodgement['moniker']))|e }}
-            {% endfor %}
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label="Unterkunft",
                                         anid="part{}_lodgement_id".format(part_id)) %}
-                {{ util.input_select(name="part{}.lodgement_id".format(part_id), entries=myentries, nulloption=True,
+                {{ util.input_select(name="part{}.lodgement_id".format(part_id),
+                                     entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption=True,
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
             {% call form_input_optional("part{}.is_reserve".format(part_id),

@@ -53,19 +53,10 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
             {% if ambience['event']['parts']|length > 1 %}
                 <h4>{{ part['title']|e }}</h4>
             {% endif %}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for s in enums['RegistrationPartStati'] %}
-                {{ myentries.append((s.value, gettext(s|string)))|e }}
-            {% endfor %}
-            {{ util.form_input_select(name="part{}.status".format(part_id), label="Status", entries=myentries) }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for lodgement_id, lodgement in lodgements|dictsort %}
-                {{ myentries.append((lodgement_id, lodgement['moniker']))|e }}
-            {% endfor %}
+            {{ util.form_input_select(name="part{}.status".format(part_id), label="Status",
+                                      entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
-                                     entries=myentries, nulloption=True) }}
+                                      entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption=True) }}
             {{ util.form_input_checkbox(name="part{}.is_reserve".format(part_id), label="Isomattenplatz") }}
 
             {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}

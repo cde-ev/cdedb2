@@ -468,6 +468,36 @@ def xdictsort_filter(value, attribute, pad=False):
         key = lambda item: to_str(item[1].get(attribute, None)).rjust(max_len, '\0')
     return sorted(value.items(), key=key)
 
+def enum_entries_filter(enum, processing=None):
+    """
+    Transform an Enum into a list of of (value, string) tuple entries. The string is piped trough gettext to get the
+    human readable and translated caption of the value.
+
+    :param enum: An Enum object
+    :param processing: A function to be applied on the value's string representation before adding it to the result
+                       tuple
+    :return: A list of tuples to be used in the input_checkboxes or input_select macros.
+    """
+    if processing is None:
+        processing = lambda x: x
+    return [(entry.value, processing(str(entry))) for entry in enum]
+
+def dict_entries_filter(items, *args):
+    """
+    Transform a list of dict items with dict-type values into a list of tuples of specified fields of the value dict.
+
+    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}), (2, {'id': 2, 'name': 'b', 'active': False})]
+             >>> dict_entries_filter(items, 'name', 'active')
+             [('a', True), 'b', ]
+
+    :param items: A list of 2-element tuples. The first element of each tuple is ignored, the second must be a dict
+    :param args: Additional positional arguments describing which keys of the dicts should be inserted in the resulting
+                 tuple
+    :return: A list of tuples (e.g. to be used in the input_checkboxes or input_select macros), built from the selected
+             fields of the dicts
+    """
+    return [tuple(value[k] for k in args) for key, value in items]
+
 #: Dictionary of custom filters we make available in the templates.
 JINJA_FILTERS = {
     'date': date_filter,
@@ -487,6 +517,8 @@ JINJA_FILTERS = {
     'xdictsort': xdictsort_filter,
     'tex_escape': tex_escape_filter,
     'te': tex_escape_filter,
+    'enum_entries': enum_entries_filter,
+    'dict_entries': dict_entries_filter,
 }
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):

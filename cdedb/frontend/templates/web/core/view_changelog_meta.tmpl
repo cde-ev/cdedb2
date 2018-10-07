@@ -66,13 +66,9 @@ Nutzerdaten-Log [{{ values['start']|int|e }}–{{ (values['start']|int + log|len
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('core/view_changelog_meta')|e }}" method="GET" id="logshowform"
           class="form-horizontal">
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for status in enums['MemberChangeStati1'] %}
-                {{ myentries.append((status.value, gettext(status|string)))|e }}
-            {% endfor %}
             {{ util.form_input_checkboxes("stati", label="Status", info="Keine Auswahl entspricht allem.",
-                                     entries=myentries, small=True) }}
+                                          entries=enums['MemberChangeStati1']|enum_entries(processing=gettext),
+                                          small=True) }}
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}
         </form>

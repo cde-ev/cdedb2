@@ -55,20 +55,10 @@ Log: Mailinglisten [{{ values['start']|int|e }}–{{ (values['start']|int + log|
 
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('ml/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for code in enums['MlLogCodes'] %}
-                {{ myentries.append((code.value, gettext(code|string)))|e }}
-            {% endfor %}
             {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                    entries=myentries, small=True) }}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for mailinglist_id, title in all_mailinglists|dictsort %}
-                {{ myentries.append((mailinglist_id, title))|e }}
-            {% endfor %}
+                    entries=enums['MlLogCodes']|enum_entries(processing=gettext), small=True) }}
             {{ util.form_input_select(name="mailinglist_id", label="Mailingliste", nulloption=True,
-                    entries=myentries, small=True) }}
+                    entries=all_mailinglists|dictsort, small=True) }}
 
             {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
             {{ util.form_input_submit(value="Anzeigen", small=True) }}

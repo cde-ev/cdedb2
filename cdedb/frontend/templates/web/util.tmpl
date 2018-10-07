@@ -365,12 +365,7 @@
         {% set name = "fields.{}".format(fields['field_name']) %}
     {% endif %}
     {% if fields['entries'] %}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for value, description in fields['entries'] %}
-            {{ myentries.append((value, description))|e }}
-        {% endfor %}
-        {{ input_select(name=name, entries=myentries, nulloption=True,
+        {{ input_select(name=name, entries=fields['entries'], nulloption=True,
                         readonly=readonly, defaultvalue=defaultvalue, anid=anid) }}
     {% else %}
         {% if fields['kind'] == "bool" %}

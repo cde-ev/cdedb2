@@ -54,20 +54,10 @@ Versammlung – Logs [{{ values['start']|int|e }}–{{ (values['start']|int + lo
     </table>
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
     <form action="{{ cdedblink('assembly/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for code in enums['AssemblyLogCodes'] %}
-            {{ myentries.append((code.value, gettext(code|string)))|e }}
-        {% endfor %}
         {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
-                entries=myentries, small=True) }}
-        {# jinja does not support list comprehension ... #}
-        {% set myentries = [] %}
-        {% for assembly_id, assembly in all_assemblies|dictsort %}
-            {{ myentries.append((assembly_id, assembly['title']))|e }}
-        {% endfor %}
-        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True, entries=myentries,
-                small=True) }}
+                entries=enums['AssemblyLogCodes']|enum_entries(processing=gettext), small=True) }}
+        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption=True,
+                                  entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
         {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
         {{ util.form_input_submit(value="Anzeigen", small=True) }}
     </form>

@@ -33,12 +33,8 @@
             {# hide selection of course tracks/segments if the event has only one track #}
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
-            {# jinja does not support list comprehension ... #}
-            {% set myentries = [] %}
-            {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                {{ myentries.append((track_id, track['title']))|e }}
-            {% endfor %}
-            {{ util.form_input_checkboxes(name="segments", label="Veranstaltungsteile", entries=myentries) }}
+            {{ util.form_input_checkboxes(name="segments", label="Veranstaltungsteile",
+                                          entries=ambience['event']['tracks']|dictsort|dict_entries('id', 'title')) }}
         {% endif %}
 
         <h4 class="heading-underline">Status</h4>
