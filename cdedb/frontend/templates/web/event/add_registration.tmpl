@@ -60,8 +60,8 @@
         {% endfor %}
 
         <h3 class="heading-underline">Anmeldedaten</h3>
-        {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
-        {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
+        {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung", defaultvalue='True') }}
+        {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung", defaultvalue='True') }}
         {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
         {% for track_id, track in ambience['event']['tracks']|dictsort %}
             {% if course_choices[track_id]|length > 0 %}
