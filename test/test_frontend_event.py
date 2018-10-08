@@ -561,7 +561,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/2/show'},
                       {'href': '/event/event/1/registration/2/change'})
-        self.assertTitle("\nAnmeldung von Emilia E. Eventis bearbeiten\n(Große Testakademie 2222)\n")
+        self.assertTitle("Anmeldung von Emilia E. Eventis bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("Unbedingt in die Einzelzelle.", f['reg.orga_notes'].value)
         f['reg.orga_notes'] = "Wir wllen mal nicht so sein."
@@ -730,7 +730,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
         self.submit(f)
-        self.assertTitle("Feld lodge setzen\n    (Große Testakademie 2222)")
+        self.assertTitle("Feld lodge setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("", f['input4'].value)
         f['input4'] = "Test\nmit\n\nLeerzeilen"
@@ -741,7 +741,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['selectfieldform']
         f['field_id'] = 3
         self.submit(f)
-        self.assertTitle("Feld lodge setzen\n    (Große Testakademie 2222)")
+        self.assertTitle("Feld lodge setzen (Große Testakademie 2222)")
         f = self.response.forms['fieldform']
         self.assertEqual("Test\nmit\n\nLeerzeilen", f['input4'].value)
 
@@ -761,7 +761,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/4/show'},
                       {'href': '/event/event/1/registration/4/change'})
-        self.assertTitle("\nAnmeldung von Inga Iota bearbeiten\n(Große Testakademie 2222)\n")
+        self.assertTitle("Anmeldung von Inga Iota bearbeiten (Große Testakademie 2222)")
         f = self.response.forms['changeregistrationform']
         self.assertEqual("1", f['track3.course_id'].value)
         f['track3.course_id'] = 5
