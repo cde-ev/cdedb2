@@ -1024,8 +1024,7 @@ class EventFrontend(AbstractUserFrontend):
              "persona.username"] + [
                 "track{0}.course_id{0}".format(track_id)
                 for track_id in tracks],
-            (("reg.id", QueryOperators.oneof,
-              ','.join(str(x) for x in registration_ids.keys())),),
+            (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
         return self.render(rs, "course_choices", {
