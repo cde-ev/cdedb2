@@ -20,10 +20,10 @@
     <div class="orderrow-container" id="rowlist">
         {% for entry in questionnaire %}
             <div class="orderrow-outer" data-id="{{ loop.index0|e }}" tabindex="0">
-                <div class="orderrow-inner" draggable="true">
+                <div class="orderrow-inner clearfix" draggable="true">
                     <div class="orderrow-indicator"><span class="label label-primary">{{ loop.index0|e }}</span></div>
                     {% if entry['field_id'] %}
-                        <div class="miniature-label">{{ entry['title']|e }}</div>
+                        <div class="miniature-label">{% if entry['title'] %}{{ entry['title']|truncate(50,False,' …') }}{% endif %}</div>
                         {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
                             {% if FIELD['entries'] %}
                                 <div class="miniature-text">
@@ -51,7 +51,7 @@
                             <div class="miniature-heading">{{ entry['title']|e }}</div>
                         {% endif %}
                         {% if entry['info'] %}
-                            <div class="miniature-pre">{{ entry['info']|truncate(200,True,' …')|e }}</div>
+                            <div class="miniature-pre">{{ entry['info']|truncate(200,False,' …')|e }}</div>
                         {% endif %}
                     {% endif %}
                 </div>
