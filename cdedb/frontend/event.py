@@ -2075,7 +2075,7 @@ class EventFrontend(AbstractUserFrontend):
         reg_params = (
             ("reg.notes", "str_or_None"), ("reg.orga_notes", "str_or_None"),
             ("reg.payment", "date_or_None"), ("reg.parental_agreement", "bool"),
-            ("reg.mixed_lodging", "bool"), ("reg.checkin", "date_or_None"),
+            ("reg.mixed_lodging", "bool"), ("reg.checkin", "datetime_or_None"),
             ("reg.foto_consent", "bool"))
         part_params = []
         for part_id in event['parts']:

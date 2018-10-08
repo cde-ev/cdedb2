@@ -99,7 +99,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
         <dt>Eingecheckt</dt>
         <dd>
             {% if ambience['registration']['checkin'] %}
-                eingecheckt am {{ ambience['registration']['checkin'] |date(lang=lang)|e }}
+                eingecheckt am {{ ambience['registration']['checkin'] |datetime(lang=lang)|e }} Uhr
             {% else %}
                 —
             {% endif %}
