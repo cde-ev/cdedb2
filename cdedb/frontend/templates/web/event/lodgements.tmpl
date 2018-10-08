@@ -54,17 +54,17 @@
                         {% set problem = problems[(lodgement_id, part_id)] %}
                         <td class="text-right {% if loop.first %} b-left{% endif %}
                             {{ colors[problem[0]] }}" {% if problem[1] %}title="{{ gettext(problem[1])|e }}"{% endif %}>
-                            {{ inhabitants[(lodgement_id, part_id)]|e }}
+                            {{ (inhabitants[(lodgement_id, part_id)] - reserve_inhabitants[(lodgement_id, part_id)])|e }}
                         </td>
                         <td class="text-right {{ colors[problem[0]] }}"
                             {% if problem[1] %}title="{{ gettext(problem[1])|e }}"{% endif %}>
                             {% if reserve_inhabitants[(lodgement_id, part_id)] %}
-                                ({{ reserve_inhabitants[(lodgement_id, part_id)]|e }})
+                                + {{ reserve_inhabitants[(lodgement_id, part_id)]|e }}
                             {% endif %}
                         </td>
                     {% endfor %}
                     <td class="b-left text-right">{{ lodgement['capacity']|e }}</td>
-                    <td class=" text-right">({{ lodgement['reserve']|e }})</td>
+                    <td class=" text-right">+ {{ lodgement['reserve']|e }}</td>
                     <td class="b-left">
                         {{ util.href(cdedblink("event/change_lodgement_form", {'lodgement_id': lodgement_id}),
                                      readonly=is_locked, aclass='btn btn-xs btn-warning', icon='pencil',
