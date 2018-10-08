@@ -561,6 +561,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None)
         self.jinja_env.filters.update(JINJA_FILTERS)
+        self.jinja_env_tex = self.jinja_env.overlay(
+            block_start_string="<<%",
+            block_end_string="%>>",
+            variable_start_string="<<<",
+            variable_end_string=">>>",
+            comment_start_string="<<#",
+            comment_end_string="#>>",
+        )
 
     @abc.abstractmethod
     def finalize_session(self, rs, connpool, auxilliary=False):
@@ -680,14 +688,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         assert(not set(data) & set(params))
         merge_dicts(data, params)
         if modus == "tex":
-            jinja_env = self.jinja_env.overlay(
-                block_start_string="<<%",
-                block_end_string="%>>",
-                variable_start_string="<<<",
-                variable_end_string=">>>",
-                comment_start_string="<<#",
-                comment_end_string="#>>",
-            )
+            jinja_env = self.jinja_env_tex
         else:
             jinja_env = self.jinja_env
         t = jinja_env.get_template(str(pathlib.Path(
