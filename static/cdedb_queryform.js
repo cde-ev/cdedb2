@@ -733,14 +733,14 @@
                     var input_op = $(this).find('.filter-op');
                     if (input_op.val() === '') {
                         toDisable.push(input_op[0]);
-                        toDisable.push($(this).find('.filter-value'));
+                        toDisable.push($(this).find('.filter-value')[0]);
                     }
                 });
                 $(this).find('.query_sort').each(function() {
                     var input_field = $(this).find('.sort-field');
                     if (input_field.val() === '') {
                         toDisable.push(input_field[0]);
-                        toDisable.push($(this).find('.sort-order'));
+                        toDisable.push($(this).find('.sort-order')[0]);
                     }
                 });
 
