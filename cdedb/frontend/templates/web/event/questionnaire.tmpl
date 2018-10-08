@@ -32,17 +32,21 @@
                             {{ util.form_input_checkbox(
                                 name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                 readonly=(entry['readonly'] or is_locked)) }}
-                        {% else %}
-                            {% if FIELD['kind'] == "str" and entry['input_size'] %}
+                        {% elif FIELD['kind'] == "str"  %}
+                            {% if entry['input_size'] %}
                                 {{ util.form_input_textarea(
                                     name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or is_locked),
-                                    rows=(2 + entry['input_size']*2)) }}
+                                    rows=(1+entry['input_size']*2)) }}
                             {% else %}
-                                {{ util.form_event_field_input(
-                                    FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                                {{ util.form_input_text(
+                                    name=FIELD['field_name'], label=entry['title'], info=entry['info'],
                                     readonly=(entry['readonly'] or is_locked)) }}
                             {% endif %}
+                        {% else %}
+                            {{ util.form_event_field_input(
+                                FIELD, name=FIELD['field_name'], label=entry['title'], info=entry['info'],
+                                readonly=(entry['readonly'] or is_locked)) }}
                         {% endif %}
                     {% endif %}
                 {% endwith %}
