@@ -23,7 +23,7 @@
         </div>
     {% endif %}
     {% if courses %}
-        {% for anid, entry in courses|xdictsort('nr', pad=True) %}
+        {% for anid, entry in courses|xdictsort('nr', pad=True) if entry['segments'] %}
             <div class="hide-hover-container">
                 <h3>{{ entry['nr'] }}. {{ entry['title']|e }}</h3>
                 {% if ambience['event']['id'] in user.orga or is_admin %}
@@ -43,13 +43,14 @@
                         – <span class="text-info">
                         {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in entry['segments'] -%}
                             {% if not loop.first %}{% if loop.last %} und {% else %}, {% endif %}{% endif %}
-                            {% if track_id not in entry['active_segments'] and
-                                    (ambience['event']['id'] in user.orga or is_admin) %}
+                            {% if track_id not in entry['active_segments'] %}
                                 <i><s>{{ track['title']|e }}</s></i>
                             {%- else %}
                                 <i>{{ track['title']|e }}</i>
                             {%- endif %}
                         {%- endfor %}</span>.
+                    {% elif not entry['active_segments'] %}
+                        – <span class="text-info">fällt aus</span>
                     {% endif %}
                 </p>
                 {{ entry['description']|rst }}
