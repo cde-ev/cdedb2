@@ -623,9 +623,13 @@
                                     {% if field in ("personas.id", "persona.id")
                                             or (query.scope == "qview_persona" and field == "id") %}
                                         <span class="nowrap">{{ row[afield]|cdedbid }}</span>
+                                    {% elif query.spec[csvfield] == "date" %}
+                                        {{ row.get(afield, None)|date(lang=lang) }}
+                                    {% elif query.spec[csvfield] == "datetime" %}
+                                        {{ row.get(afield, None)|datetime(lang=lang) }}
                                     {% elif query.spec[csvfield] == "bool" %}
-                                        {{ util.deko_checkbox(row.get(afield), titles=(gettext('false'),
-                                                                                       gettext('true'))) }}
+                                        {{ util.deko_checkbox(row.get(afield, None), titles=(gettext('false'),
+                                                                                             gettext('true'))) }}
                                     {% else %}
                                         {{ choices.get(csvfield, {}).get(row.get(afield),
                                                                          row.get(afield, "UNDEFINED"))|e }}
