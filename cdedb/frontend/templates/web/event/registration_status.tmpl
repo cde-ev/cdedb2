@@ -137,7 +137,13 @@
                 {% endif %}
                 {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}
                     <dt>{{ prio|e }}</dt>
-                    <dd>{{ courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|e }}</dd>
+                    <dd>
+                        {% if registration['tracks'][track_id]['choices'][loop.index0] %}
+                            {{ courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|e }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
                 {% endfor %}
             </dl>
         {% endif %}
