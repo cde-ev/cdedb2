@@ -158,6 +158,16 @@ First export the data on the old database server::
 
     sudo -u postgres pg_dump cdedbxy > /tmp/cdedbv1.sql
 
+Now manually fix the dump for erroneous double quotes in course titles. Here is a preliminary list of affected courses::
+
+  _               title                 |                     title                     | id  |  id
+  --------------------------------------+-----------------------------------------------+-----+------
+  Multinationale Akademie Zakopane 2009 | XHTML oder Wie mache ich Websites""           | 230 | 1204
+  WinterAkademie 2013                   | Fisch schwimmt, Vogel fliegt - Mensch läuft"" | 363 | 1847
+  Multinationale Akademie Latky 2016    | Seminar, Workshops, Mitmachkurs""             | 476 | 2835
+  WinterAkademie 2018                   | Verrückte Zauber"würfel""                     | 538 | 3073
+
+
 Copy the dump to the new database server and import it into a separate
 postgres database::
 
