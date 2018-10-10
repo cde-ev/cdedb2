@@ -62,7 +62,7 @@ class TestCoreFrontend(FrontendTest):
                            'name': 'Ferdinand F. Findus'}]}
         self.assertEqual(expectation, self.response.json)
         self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5')
-        expectation = (1, 2, 3, 5, 6, 7, 9, 11)
+        expectation = (1, 2, 3, 6, 7, 9, 11)
         reality = tuple(e['id'] for e in self.response.json['personas'])
         self.assertEqual(expectation, reality)
         self.get('/core/persona/select?kind=mod_ml_user&phrase=@exam&aux=5&sphere=cde')

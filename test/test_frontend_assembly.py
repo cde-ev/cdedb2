@@ -206,7 +206,7 @@ class TestAssemblyFrontend(FrontendTest):
         self.assertTitle("Maximale Länge der Satzung (Drittes CdE-Konzil)")
         time.sleep(1)
         self.traverse({'href': '/assembly/2/ballot/list'},
-                      {'href': '/assembly/2/ballot/6/show'},
+                      {'description': 'Maximale Länge der Satzung'},
                       {'href': '/assembly/2/show'},)
         self.assertTitle("Drittes CdE-Konzil")
         f = self.response.forms['concludeassemblyform']
@@ -407,7 +407,7 @@ class TestAssemblyFrontend(FrontendTest):
                       {'href': '/assembly/1/ballot/list'},
                       {'href': '/assembly/1/ballot/create'},)
         f = self.response.forms['createballotform']
-        f['title'] = 'Maximale Länge der Satzung'
+        f['title'] = 'Maximale Länge der Verfassung'
         future = now() + datetime.timedelta(seconds=.5)
         farfuture = now() + datetime.timedelta(seconds=1)
         f['vote_begin'] = future.isoformat()
@@ -416,11 +416,11 @@ class TestAssemblyFrontend(FrontendTest):
         f['quorum'] = "1000"
         f['votes'] = ""
         self.submit(f)
-        self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
+        self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
         time.sleep(1)
         self.traverse({'href': '/assembly/1/ballot/list'},
-                      {'href': '/assembly/1/ballot/6/show'},)
-        self.assertTitle("Maximale Länge der Satzung (Internationaler Kongress)")
+                      {'description': 'Maximale Länge der Verfassung'},)
+        self.assertTitle("Maximale Länge der Verfassung (Internationaler Kongress)")
         self.assertPresence("verlängert, da 1000 Stimmen nicht erreicht wurden.")
 
     @as_users("anton")

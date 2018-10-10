@@ -472,7 +472,7 @@
         "5": {
             "is_event_realm": true,
             "display_name": "Emilia",
-            "is_assembly_realm": true,
+            "is_assembly_realm": false,
             "postal_code": "56767",
             "is_event_admin": false,
             "gender": 1,

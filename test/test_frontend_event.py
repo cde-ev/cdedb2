@@ -982,7 +982,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['questionnairesummaryform']
         self.assertEqual("3", f['field_id_5'].value)
         self.assertEqual("3", f['input_size_5'].value)
-        f['input_size_5'] = 4
+        f['input_size_5'] = 3
         self.assertEqual("2", f['field_id_4'].value)
         f['field_id_4'] = ""
         self.assertEqual("Weitere Überschrift", f['title_3'].value)
@@ -995,7 +995,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
         self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("4", f['input_size_5'].value)
+        self.assertEqual("3", f['input_size_5'].value)
         self.assertEqual("", f['field_id_4'].value)
         self.assertEqual("Immernoch Überschrift", f['title_3'].value)
         self.assertEqual(True, f['readonly_1'].checked)
@@ -1011,7 +1011,7 @@ etc;anything else""", f['entries_2'].value)
         f['field_id_-1'] = 3
         f['title_-1'] = "Input"
         f['readonly_-1'].checked = True
-        f['input_size_-1'] = 4
+        f['input_size_-1'] = 2
         self.submit(f)
         self.assertTitle("Fragebogen-Konfiguration (Große Testakademie 2222)")
         f = self.response.forms['questionnairesummaryform']
@@ -1214,16 +1214,16 @@ etc;anything else""", f['entries_2'].value)
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/event/$'},
                       {'href': '/event/log'})
-        self.assertTitle("Log: Veranstaltungen [0–17]")
+        self.assertTitle("Log: Veranstaltungen [0–10]")
         f = self.response.forms['logshowform']
         f['codes'] = [10, 27, 51]
         f['event_id'] = 1
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Log: Veranstaltungen [1–4]")
+        self.assertTitle("Log: Veranstaltungen [1–2]")
 
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/log'})
-        self.assertTitle("Log: Große Testakademie 2222 [0–13]")
+        self.assertTitle("Log: Große Testakademie 2222 [0–6]")
