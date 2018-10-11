@@ -33,7 +33,7 @@ import cdedb.database.constants as const
 #:    LEFT OUTER JOIN (SELECT registration_id, status AS status1, lodgement_id AS lodgement_id1, is_reserve AS is_reserve1
 #:                     FROM event.registration_parts WHERE part_id = 1)
 #:        AS part1 ON reg.id = part1.registration_id
-#:    LEFT OUTER JOIN (SELECT lodgement_id AS xfield_lodgement_id1, contamination AS xfield_contamination1
+#:    LEFT OUTER JOIN (SELECT lodgement_id AS xfield_lodgement_id_1, contamination AS xfield_contamination_1
 #:                     FROM json_to_recordset(to_json(array(
 #:                         SELECT fields FROM event.lodgements WHERE event_id=1)))
 #:                     AS X(lodgement_id integer, contamination varchar))
@@ -41,7 +41,7 @@ import cdedb.database.constants as const
 #:    LEFT OUTER JOIN (SELECT registration_id, status AS status2, lodgement_id AS lodgement_id2, is_reserve AS is_reserve2
 #:                     FROM event.registration_parts WHERE part_id = 2)
 #:        AS part2 ON reg.id = part2.registration_id
-#:    LEFT OUTER JOIN (SELECT lodgement_id AS xfield_lodgement_id2, contamination AS xfield_contamination2
+#:    LEFT OUTER JOIN (SELECT lodgement_id AS xfield_lodgement_id_2, contamination AS xfield_contamination_2
 #:                     FROM json_to_recordset(to_json(array(
 #:                         SELECT fields FROM event.lodgements WHERE event_id=1)))
 #:                     AS X(lodgement_id integer, contamination varchar))
@@ -49,7 +49,7 @@ import cdedb.database.constants as const
 #:    LEFT OUTER JOIN (SELECT registration_id, status AS status3, lodgement_id AS lodgement_id3, is_reserve AS is_reserve3
 #:                     FROM event.registration_parts WHERE part_id = 3)
 #:        AS part3 ON reg.id = part3.registration_id
-#:    LEFT OUTER JOIN (SELECT lodgement_id AS xfield_lodgement_id3, contamination AS xfield_contamination3
+#:    LEFT OUTER JOIN (SELECT lodgement_id AS xfield_lodgement_id_3, contamination AS xfield_contamination_3
 #:                     FROM json_to_recordset(to_json(array(
 #:                         SELECT fields FROM event.lodgements WHERE event_id=1)))
 #:                     AS X(lodgement_id integer, contamination varchar))
@@ -57,7 +57,7 @@ import cdedb.database.constants as const
 #:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1, course_instructor AS course_instructor1
 #:                     FROM event.registration_tracks WHERE track_id = 1)
 #:        AS track1 ON reg.id = track1.registration_id
-#:    LEFT OUTER JOIN (SELECT course_id AS xfield_course_id1, room AS xfield_room1
+#:    LEFT OUTER JOIN (SELECT course_id AS xfield_course_id_1, room AS xfield_room_1
 #:                     FROM json_to_recordset(to_json(array(
 #:                         SELECT fields FROM event.courses WHERE event_id=1)))
 #:                     AS X(course_id integer, room varchar))
@@ -65,7 +65,7 @@ import cdedb.database.constants as const
 #:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id2, course_instructor AS course_instructor2
 #:                     FROM event.registration_tracks WHERE track_id = 2)
 #:        AS track2 ON reg.id = track2.registration_id
-#:    LEFT OUTER JOIN (SELECT course_id AS xfield_course_id2, room AS xfield_room2
+#:    LEFT OUTER JOIN (SELECT course_id AS xfield_course_id_2, room AS xfield_room_2
 #:                     FROM json_to_recordset(to_json(array(
 #:                         SELECT fields FROM event.courses WHERE event_id=1)))
 #:                     AS X(course_id integer, room varchar))
@@ -73,7 +73,7 @@ import cdedb.database.constants as const
 #:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3, course_instructor AS course_instructor3
 #:                     FROM event.registration_tracks WHERE track_id = 3)
 #:        AS track3 ON reg.id = track3.registration_id
-#:    LEFT OUTER JOIN (SELECT course_id AS xfield_course_id3, room AS xfield_room3
+#:    LEFT OUTER JOIN (SELECT course_id AS xfield_course_id_3, room AS xfield_room_3
 #:                     FROM json_to_recordset(to_json(array(
 #:                         SELECT fields FROM event.courses WHERE event_id=1)))
 #:                     AS X(course_id integer, room varchar))
@@ -328,7 +328,7 @@ class EventBackend(AbstractBackend):
                 "{} {}".format(name, kind)
                 for name, kind in lodgement_fields.items())
             json_lodge_fields_alias_gen = lambda part_id: ", ".join(
-                "{} AS xfield_{}{}".format(name, name, part_id)
+                "{} AS xfield_{}_{}".format(name, name, part_id)
                 for name in lodgement_fields)
             part_table_template = glue(
                 ## first the per part table
@@ -341,7 +341,7 @@ class EventBackend(AbstractBackend):
                 "SELECT fields FROM event.lodgements WHERE event_id={event_id})))",
                 "AS X({json_lodge_fields_declaration})) AS lodge_fields{part_id}",
                 "ON part{part_id}.lodgement_id{part_id}",
-                " = lodge_fields{part_id}.xfield_lodgement_id{part_id}",
+                " = lodge_fields{part_id}.xfield_lodgement_id_{part_id}",
             )
             part_atoms = ("status", "lodgement_id", "is_reserve")
             part_columns_gen = lambda part_id: ", ".join(
@@ -357,7 +357,7 @@ class EventBackend(AbstractBackend):
                 "{} {}".format(name, kind)
                 for name, kind in course_fields.items())
             json_course_fields_alias_gen = lambda track_id: ", ".join(
-                "{} AS xfield_{}{}".format(name, name, track_id)
+                "{} AS xfield_{}_{}".format(name, name, track_id)
                 for name in course_fields)
             track_table_template = glue(
                 ## first the per track table
@@ -370,7 +370,7 @@ class EventBackend(AbstractBackend):
                 "SELECT fields FROM event.courses WHERE event_id={event_id})))",
                 "AS X({json_course_fields_declaration})) AS course_fields{track_id}",
                 "ON track{track_id}.course_id{track_id}",
-                " = course_fields{track_id}.xfield_course_id{track_id}",
+                " = course_fields{track_id}.xfield_course_id_{track_id}",
             )
             track_atoms = ("course_id", "course_instructor",)
             track_columns_gen = lambda track_id: ", ".join(

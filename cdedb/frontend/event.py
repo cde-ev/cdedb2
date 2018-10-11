@@ -2851,7 +2851,7 @@ class EventFrontend(AbstractUserFrontend):
             for f in sorted(event['fields'].values(),
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
-                    temp = "lodge_fields{0}.xfield_{1}{0}"
+                    temp = "lodge_fields{0}.xfield_{1}_{0}"
                     spec[temp.format(part_id, f['field_name'])] = f['kind']
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
@@ -2859,7 +2859,7 @@ class EventFrontend(AbstractUserFrontend):
                 for f in sorted(event['fields'].values(),
                                 key=lambda f: f['field_name']):
                     if f['association'] == const.FieldAssociations.course:
-                        temp = "course_fields{0}.xfield_{1}{0}"
+                        temp = "course_fields{0}.xfield_{1}_{0}"
                         spec[temp.format(track_id, f['field_name'])] = f['kind']
         if len(event['parts']) > 1:
             spec[",".join("part{0}.status{0}".format(part_id)
@@ -2872,7 +2872,7 @@ class EventFrontend(AbstractUserFrontend):
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.lodgement:
                     key = ",".join(
-                        "lodge_fields{0}.xfield_{1}{0}".format(
+                        "lodge_fields{0}.xfield_{1}_{0}".format(
                             part_id, f['field_name'])
                         for part_id in event['parts'])
                     spec[key] = f['kind']
@@ -2885,7 +2885,7 @@ class EventFrontend(AbstractUserFrontend):
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.course:
                     key = ",".join(
-                        "course_fields{0}.xfield_{1}{0}".format(
+                        "course_fields{0}.xfield_{1}_{0}".format(
                             track_id, f['field_name'])
                         for track_id in tracks)
                     spec[key] = f['kind']
@@ -2920,8 +2920,9 @@ class EventFrontend(AbstractUserFrontend):
                 "part{0}.lodgement_id{0}".format(part_id): lodgement_choices,
             })
             choices.update({
-                "lodge_fields{0}.xfield_{1}{0}".format(part_id, field['field_name']): {
-                    value: desc for value, desc in field['entries']}
+                "lodge_fields{0}.xfield_{1}_{0}".format(
+                    part_id, field['field_name']): {
+                        value: desc for value, desc in field['entries']}
                 for field in event['fields'].values()
                 if (field['association'] == const.FieldAssociations.lodgement
                     and field['entries'])})
@@ -2938,8 +2939,9 @@ class EventFrontend(AbstractUserFrontend):
                 "track{0}.course_instructor{0}".format(track_id):
                     course_choices})
             choices.update({
-                "course_fields{0}.xfield_{1}{0}".format(track_id, field['field_name']): {
-                    value: desc for value, desc in field['entries']}
+                "course_fields{0}.xfield_{1}_{0}".format(
+                    track_id, field['field_name']): {
+                        value: desc for value, desc in field['entries']}
                 for field in event['fields'].values()
                 if (field['association'] == const.FieldAssociations.course
                     and field['entries'])})
@@ -2984,8 +2986,9 @@ class EventFrontend(AbstractUserFrontend):
                         title=track['title']),
                 })
                 titles.update({
-                    "course_fields{0}.xfield_{1}{0}".format(track_id, field['field_name']):
-                        rs.gettext("{title} course: {field}")
+                    "course_fields{0}.xfield_{1}_{0}".format(
+                        track_id, field['field_name']):
+                    rs.gettext("{title} course: {field}")
                         .format(field=field['field_name'], title=track['title'])
                     for field in event['fields'].values()
                     if field['association'] == const.FieldAssociations.course
@@ -2999,9 +3002,11 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("any track: course instuctor")
             })
             titles.update({
-                ",".join("course_fields{0}.xfield_{1}{0}".format(track_id, field['field_name'])
+                ",".join("course_fields{0}.xfield_{1}_{0}".format(
+                    track_id, field['field_name'])
                          for track_id in tracks):
-                    rs.gettext("any track course: {field}").format(field=field['field_name'])
+                    rs.gettext("any track course: {field}").format(
+                        field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.course})
         elif len(tracks) == 1:
@@ -3012,7 +3017,7 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("course instructor"),
             })
             titles.update({
-                "course_fields{0}.xfield_{1}{0}".format(track_id, field['field_name']):
+                "course_fields{0}.xfield_{1}_{0}".format(track_id, field['field_name']):
                     rs.gettext("course: {field}").format(field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.course})
@@ -3028,7 +3033,7 @@ class EventFrontend(AbstractUserFrontend):
                         "{title}: reserve lodger").format(title=part['title']),
                 })
                 titles.update({
-                    "lodge_fields{0}.xfield_{1}{0}".format(part_id, field['field_name']):
+                    "lodge_fields{0}.xfield_{1}_{0}".format(part_id, field['field_name']):
                         rs.gettext("{title} lodgement: {field}")
                         .format(field=field['field_name'], title=part['title'])
                     for field in event['fields'].values()
@@ -3045,7 +3050,7 @@ class EventFrontend(AbstractUserFrontend):
                          for part_id in event['parts']): rs.gettext(
                              "any part: reserve lodger")})
             titles.update({
-                ",".join("lodge_fields{0}.xfield_{1}{0}".format(part_id, field['field_name'])
+                ",".join("lodge_fields{0}.xfield_{1}_{0}".format(part_id, field['field_name'])
                          for part_id in event['parts']):
                     rs.gettext("any part lodgement: {field}")
                     .format(field=field['field_name'])
@@ -3063,7 +3068,7 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("reserve lodger"),
             })
             titles.update({
-                "lodge_fields{0}.xfield_{1}{0}".format(part_id, field['field_name']):
+                "lodge_fields{0}.xfield_{1}_{0}".format(part_id, field['field_name']):
                 rs.gettext("lodgement: {field}").format(field=field['field_name'])
                 for field in event['fields'].values()
                 if field['association'] == const.FieldAssociations.lodgement})

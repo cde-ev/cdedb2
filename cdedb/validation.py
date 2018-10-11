@@ -1786,7 +1786,8 @@ _EVENT_FIELD_COMMON_FIELDS = lambda extra_suffix: {
     'entries{}'.format(extra_suffix): _any,
 }
 @_addvalidator
-def _event_field(val, argname=None, *, creation=False, _convert=True, extra_suffix=''):
+def _event_field(val, argname=None, *, creation=False, _convert=True,
+                 extra_suffix=''):
     """
     :type val: object
     :type argname: str or None
@@ -1803,9 +1804,10 @@ def _event_field(val, argname=None, *, creation=False, _convert=True, extra_suff
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    field_name_key = "field_name{}".format(extra_suffix)
     if creation:
         spec = _EVENT_FIELD_COMMON_FIELDS(extra_suffix)
-        spec["field_name{}".format(extra_suffix)] = _restrictive_identifier
+        spec[field_name_key] = _restrictive_identifier
         mandatory_fields = spec
         optional_fields = {}
     else:
@@ -1815,19 +1817,19 @@ def _event_field(val, argname=None, *, creation=False, _convert=True, extra_suff
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    fn = "field_name{}".format(extra_suffix)
-    if fn in val and val[fn][-1].isdigit():
-        errs.append(("field_name{}".format(extra_suffix),
-                     ValueError(_("Must not end with a digit."))))
-        return val, errs
+    if field_name_key in val:
+        if val[field_name_key].lower() != val[field_name_key]:
+            errs.append((field_name_key, ValueError(_("Must be lower case."))))
     entries_key = "entries{}".format(extra_suffix)
+    kind_key = "kind{}".format(extra_suffix)
     if not val.get(entries_key, True):
         val[entries_key] = None
     if entries_key in val and val[entries_key] is not None:
         if isinstance(val[entries_key], str) and _convert:
             val[entries_key] = tuple(tuple(y.strip() for y in x.split(';', 1))
-                                   for x in val[entries_key].split('\n'))
-        oldentries, e = _iterable(val[entries_key], entries_key, _convert=_convert)
+                                     for x in val[entries_key].split('\n'))
+        oldentries, e = _iterable(val[entries_key], entries_key,
+                                  _convert=_convert)
         seen_values = set()
         if e:
             errs.extend(e)
@@ -1840,10 +1842,16 @@ def _event_field(val, argname=None, *, creation=False, _convert=True, extra_suff
                     errs.append((entries_key, e))
                 else:
                     value, e = _str(value, entries_key, _convert=_convert)
+                    if not e and kind_key in val:
+                        # just validate, but in the end we store the string
+                        validator = getattr(current_module,
+                                            "_{}_or_None".format(val[kind_key]))
+                        _, e = validator(value, entries_key, _convert=_convert)
                     description, ee = _str(description, entries_key,
                                            _convert=_convert)
                     if value in seen_values:
-                        e.append((entries_key, ValueError(_("Duplicate value."))))
+                        e.append((entries_key,
+                                  ValueError(_("Duplicate value."))))
                     if e or ee:
                         errs.extend(e)
                         errs.extend(ee)
@@ -2123,6 +2131,7 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
     val, errs = _mapping(val, argname, _convert=_convert)
     if errs:
         return val, errs
+    raw = copy.deepcopy(val)
     optional_fields = {
         field['field_name']: getattr(current_module,
                                      "_{}_or_None".format(field['kind']))
@@ -2136,7 +2145,8 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
     for field in val:
         field_id = lookup[field]
         if fields[field_id]['entries'] is not None and val[field] is not None:
-            if val[field] not in (x for x, _ in fields[field_id]['entries']):
+            if not any(str(raw[field]) == x
+                       for x, _ in fields[field_id]['entries']):
                 errs.append((field, ValueError(_("Entry not in definition list."))))
     return val, errs
 
@@ -2496,7 +2506,6 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if 'vote_begin' in val:
         if val['vote_begin'] <= now():
-            print("XXX", now(), val['vote_begin'])
             errs.append(("vote_begin", ValueError(_("Mustn't be in the past."))))
     if 'candidates' in val:
         oldcandidates, e = _mapping(val['candidates'], 'candidates',

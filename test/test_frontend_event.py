@@ -267,6 +267,38 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['fieldsummaryform']
         self.assertNotIn('field_name_7', f.fields)
 
+
+    @as_users("anton")
+    def test_event_fields_boolean(self, user):
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/field/summary'})
+        f = self.response.forms['fieldsummaryform']
+        f['create_-1'].checked = True
+        f['field_name_-1'] = "notevil"
+        f['association_-1'] = "1"
+        f['kind_-1'] = "bool"
+        f['entries_-1'] = """True;definitely
+        False;no way!"""
+        self.submit(f)
+        self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
+        self.traverse({'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/change'})
+        f = self.response.forms['changeeventform']
+        f['use_questionnaire'].checked = True
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/questionnaire/summary'})
+        f = self.response.forms['questionnairesummaryform']
+        f['create_-1'].checked = True
+        f['title_-1'] = "foobar"
+        f['info_-1'] = "blaster master"
+        f['field_id_-1'] = "7"
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/questionnaire'})
+        f = self.response.forms['questionnaireform']
+        f['notevil'] = "True"
+        self.submit(f)
+
     @as_users("anton", "garcia")
     def test_change_minor_form(self, user):
         self.traverse({'href': '/event/$'},
