@@ -843,50 +843,50 @@ class TestEventBackend(BackendTest):
             fields_of_interest=(
                 "reg.id", "reg.payment", "is_cde_realm", "persona.family_name",
                 "birthday", "part1.lodgement_id1", "part3.status3", "track2.course_id2",
-                "lodge_fields2.contamination2", "course_fields1.room1",
-                "reg_fields.brings_balls", "reg_fields.transportation"),
+                "lodge_fields2.xfield_contamination2", "course_fields1.xfield_room1",
+                "reg_fields.xfield_brings_balls", "reg_fields.xfield_transportation"),
             constraints=[("reg.id", QueryOperators.nonempty, None),
                            ("persona.given_names", QueryOperators.regex, '[aeiou]'),
                            ("part2.status2", QueryOperators.nonempty, None),
-                           ("reg_fields.transportation", QueryOperators.oneof, ['pedes', 'etc'])],
+                           ("reg_fields.xfield_transportation", QueryOperators.oneof, ['pedes', 'etc'])],
             order=(("reg.id", True),),)
         ## fix query spec (normally done by frontend)
         query.spec.update({
             'part1.lodgement_id1': "int",
             'part3.status3': "int",
             'track2.course_id2': "int",
-            'lodge_fields2.contamination2': "str",
-            'course_fields1.room1': "str",
-            'reg_fields.brings_balls': "bool",
-            'reg_fields.transportation': "str",
+            'lodge_fields2.xfield_contamination2': "str",
+            'course_fields1.xfield_room1': "str",
+            'reg_fields.xfield_brings_balls': "bool",
+            'reg_fields.xfield_transportation': "str",
             'part2.status2': "int",
             })
         result = self.event.submit_general_query(self.key, query, event_id=1)
         expectation = (
             {'birthday': datetime.date(2012, 6, 2),
-             'brings_balls': True,
-             'contamination2': None,
+             'xfield_brings_balls': True,
+             'xfield_contamination2': 'high',
              'course_id2': None,
              'family_name': 'Eventis',
              'id': 2,
              'lodgement_id1': None,
              'payment': datetime.date(2014, 2, 2),
              'is_cde_realm': False,
-             'room1': None,
+             'xfield_room1': None,
              'status3': 2,
-             'transportation': 'pedes'},
+             'xfield_transportation': 'pedes'},
             {'birthday': datetime.date(2222, 1, 1),
-             'brings_balls': False,
-             'contamination2': None,
+             'xfield_brings_balls': False,
+             'xfield_contamination2': None,
              'course_id2': None,
              'family_name': 'Iota',
              'id': 4,
              'lodgement_id1': None,
              'payment': datetime.date(2014, 4, 4),
              'is_cde_realm': True,
-             'room1': None,
+             'xfield_room1': None,
              'status3': 2,
-             'transportation': 'etc'})
+             'xfield_transportation': 'etc'})
         self.assertEqual(expectation, result)
 
     @as_users("anton", "garcia")

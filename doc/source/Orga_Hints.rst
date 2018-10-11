@@ -21,55 +21,12 @@ registration is minimalistic and all additional information you want to
 exchange or store about a registration is delegated to additional per event
 fields which are managed through the normal event configuration. There you
 can also configure a questionnaire to let the participants fill in these
-fields. Note section :ref:`special_fields` about some fields with special
-behaviour.
+fields.
 
 The registrations can be queried with a sophisticated mask which should
 allow generation of pretty much any interesting data set. One exception are
 course choices which have their own place.
 
-.. _special_fields:
-
-Special fields
---------------
-
-Field names can be arbitrary, but there is one restriction: they should not
-have the same name as a column used internally by the DB out of the
-following list:
-
- * address
- * address_supplement
- * birthday
- * checkin
- * country
- * course_id
- * course_instructor
- * display_name
- * event_id
- * family_name
- * fields
- * foto_consent
- * gender
- * given_names
- * is_active
- * is_member
- * location
- * lodgement_id
- * mixed_lodging
- * mobile
- * name_supplement
- * notes
- * orga_notes
- * parental_agreement
- * payment
- * persona_id
- * postal_code
- * real_persona_id
- * registration_id
- * status
- * telephone
- * title
- * username
 
 Mailing lists
 -------------
