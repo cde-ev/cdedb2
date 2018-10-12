@@ -1817,9 +1817,6 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
-    if field_name_key in val:
-        if val[field_name_key].lower() != val[field_name_key]:
-            errs.append((field_name_key, ValueError(_("Must be lower case."))))
     entries_key = "entries{}".format(extra_suffix)
     kind_key = "kind{}".format(extra_suffix)
     if not val.get(entries_key, True):
