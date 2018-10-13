@@ -470,12 +470,15 @@ def xdictsort_filter(value, attribute, pad=False):
 
 def enum_entries_filter(enum, processing=None):
     """
-    Transform an Enum into a list of of (value, string) tuple entries. The string is piped trough gettext to get the
-    human readable and translated caption of the value.
+    Transform an Enum into a list of of (value, string) tuple entries. The
+    string is piped trough gettext to get the human readable and translated
+    caption of the value.
 
-    :param enum: An Enum object
-    :param processing: A function to be applied on the value's string representation before adding it to the result
-                       tuple
+    :type enum: enum.Enum
+    :type processing: callable object -> str
+    :param processing: A function to be applied on the value's string
+      representation before adding it to the result tuple
+    :rtype: [(object, object)]
     :return: A list of tuples to be used in the input_checkboxes or input_select macros.
     """
     if processing is None:
@@ -484,36 +487,50 @@ def enum_entries_filter(enum, processing=None):
 
 def dict_entries_filter(items, *args):
     """
-    Transform a list of dict items with dict-type values into a list of tuples of specified fields of the value dict.
+    Transform a list of dict items with dict-type values into a list of
+    tuples of specified fields of the value dict.
 
-    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}), (2, {'id': 2, 'name': 'b', 'active': False})]
+    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
+                          (2, {'id': 2, 'name': 'b', 'active': False})]
              >>> dict_entries_filter(items, 'name', 'active')
              [('a', True), ('b', False)]
 
-    :param items: A list of 2-element tuples. The first element of each tuple is ignored, the second must be a dict
-    :param args: Additional positional arguments describing which keys of the dicts should be inserted in the resulting
-                 tuple
-    :return: A list of tuples (e.g. to be used in the input_checkboxes or input_select macros), built from the selected
-             fields of the dicts
+    :type items: [(object, dict)]
+    :param items: A list of 2-element tuples. The first element of each
+      tuple is ignored, the second must be a dict
+    :type args: [object] or None
+    :param args: Additional positional arguments describing which keys of
+      the dicts should be inserted in the resulting tuple
+    :rtype: [[object]]
+    :return: A list of tuples (e.g. to be used in the input_checkboxes or
+      input_select macros), built from the selected fields of the dicts
     """
     return [tuple(value[k] for k in args) for key, value in items]
 
 def xdict_entries_filter(items, *args, include=None):
     """
-    Transform a list of dict items with dict-type values into a list of tuples of strings with specified format. Each
-    entry of the resulting tuples is built by applying the item's value dict to a format string.
+    Transform a list of dict items with dict-type values into a list of
+    tuples of strings with specified format. Each entry of the resulting
+    tuples is built by applying the item's value dict to a format string.
 
-    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}), (2, {'id': 2, 'name': 'b', 'active': False})]
+    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
+                          (2, {'id': 2, 'name': 'b', 'active': False})]
              >>> xdict_entries_filter(items, '{id}', '{name} -- {active}')
              [('1', 'a -- True'), ('2', 'b -- False')]
 
-    :param items: A list of 2-element tuples. The first element of each tuple is ignored, the second must be a dict
-    :param args: Additional positional arguments, which are format strings for the resulting tuples. They can use named
-                 format specifications to access the dicts' fields.
-    :param include: An iteratable to search for items' keys. Only items with their key being in `include` are included
-                    in the results list
-    :return: A list of tuples (e.g. to be used in the input_checkboxes or input_select macros), built from the selected
-             fields of the dicts
+    :type items: [(object, dict)]
+    :param items: A list of 2-element tuples. The first element of each
+      tuple is ignored, the second must be a dict
+    :type args: [str]
+    :param args: Additional positional arguments, which are format strings
+      for the resulting tuples. They can use named format specifications to
+      access the dicts' fields.
+    :type include: [str] or None
+    :param include: An iteratable to search for items' keys. Only items with
+      their key being in `include` are included in the results list
+    :rtype: [[str]]
+    :return: A list of tuples (e.g. to be used in the input_checkboxes or
+      input_select macros), built from the selected fields of the dicts
     """
     return [tuple(k.format(**value) for k in args)
             for key, value in items
