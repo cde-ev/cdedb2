@@ -1238,6 +1238,7 @@ class EventFrontend(AbstractUserFrontend):
         :type data: [{str: object}]
         :rtype: bool, int
         :returns: Success information and
+
           * for positive outcome the number of recorded transfers
           * for negative outcome the line where an exception was triggered
             or None if it was a DB serialization error

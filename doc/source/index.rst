@@ -14,8 +14,8 @@ Contents:
    Workflows
    Specification
    Paraphernalia
-   Orga_Hints
    Migration
+   Handbuch
 
 Indices and tables
 ==================

@@ -1,0 +1,14 @@
+Handbuch
+========
+
+Hier findet ihr längere Erklärungen zur Benutzung der CdEDB. Kurze Hinweise
+sind meist auf den Seiten direkt untergebracht, alles was nicht mehr
+hingepasst hat, ist hierhin ausgelagert.
+
+Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
+über Anregungen an cdedb ät lists.cde-ev.de.
+
+.. toctree::
+   :maxdepth: 2
+
+   Handbuch_Orga_Hinweise

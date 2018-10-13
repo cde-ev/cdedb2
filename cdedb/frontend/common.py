@@ -490,10 +490,12 @@ def dict_entries_filter(items, *args):
     Transform a list of dict items with dict-type values into a list of
     tuples of specified fields of the value dict.
 
-    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
-                          (2, {'id': 2, 'name': 'b', 'active': False})]
-             >>> dict_entries_filter(items, 'name', 'active')
-             [('a', True), ('b', False)]
+    Example::
+
+        >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
+                     (2, {'id': 2, 'name': 'b', 'active': False})]
+        >>> dict_entries_filter(items, 'name', 'active')
+        [('a', True), ('b', False)]
 
     :type items: [(object, dict)]
     :param items: A list of 2-element tuples. The first element of each
@@ -513,10 +515,11 @@ def xdict_entries_filter(items, *args, include=None):
     tuples of strings with specified format. Each entry of the resulting
     tuples is built by applying the item's value dict to a format string.
 
-    Example: >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
-                          (2, {'id': 2, 'name': 'b', 'active': False})]
-             >>> xdict_entries_filter(items, '{id}', '{name} -- {active}')
-             [('1', 'a -- True'), ('2', 'b -- False')]
+    Example::
+        >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
+                     (2, {'id': 2, 'name': 'b', 'active': False})]
+        >>> xdict_entries_filter(items, '{id}', '{name} -- {active}')
+        [('1', 'a -- True'), ('2', 'b -- False')]
 
     :type items: [(object, dict)]
     :param items: A list of 2-element tuples. The first element of each
