@@ -701,9 +701,14 @@ class EventFrontend(AbstractUserFrontend):
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
     @access("event", modi={"POST"})
+    @REQUESTdata(("ack_delete", "bool"))
     @event_guard(check_offline=True)
-    def delete_course(self, rs, event_id, course_id):
+    def delete_course(self, rs, event_id, course_id, ack_delete):
         """Delete a course from an event organized via DB."""
+        if not ack_delete:
+            rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
+        if rs.errors:
+            return self.show_course(rs, event_id, course_id)
         if not self.eventproxy.is_course_removable(rs, course_id):
             rs.notify("error", _("Course in use cannot be deleted."))
             return self.redirect(rs, 'event/show_course')
