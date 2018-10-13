@@ -790,11 +790,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs.notify("info", _("The database currently undergoes "
                                 "maintenance and is unavailable."))
         html = self.fill_template(rs, "web", templatename, params)
-        # eliminate multiple whitespace outside <pre>s and <textarea>s, since
-        # it doesn't matter
-        parts = REGEX_PRE.split(html)
-        html = ''.join(REGEX_WS.sub(' ', part) if i % 4 != 2 else part
-                       for i, part in enumerate(parts))
+        if not self.conf.CDEDB_DEV:
+            # eliminate multiple whitespace outside <pre>s and <textarea>s,
+            # since it doesn't matter (but keep it in development setting
+            # for better readability)
+            parts = REGEX_PRE.split(html)
+            html = ''.join(REGEX_WS.sub(' ', part) if i % 4 != 2 else part
+                           for i, part in enumerate(parts))
         rs.response = Response(html, mimetype='text/html')
         rs.response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return rs.response
