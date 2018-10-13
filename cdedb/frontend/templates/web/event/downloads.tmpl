@@ -36,15 +36,23 @@
     <table class="table table-slim">
         <tbody>
             <tr>
-                <td>Kursliste für den exPuls</td>
-                <td>{{ util.href(cdedblink('event/download_expuls'), "Download", icon='download') }}</td>
+                <td>
+                    Export der Veranstaltung<br />
+                    <small>(für Initialisierung der Offline-VM und andere Tools)</small>
+                </td>
+                <td>{{ util.href(cdedblink('event/download_export'), "JSON-Datei", icon='download') }}</td>
             </tr>
             <tr>
-                <td>
-                    JSON-Export der Veranstaltung<br />
-                    <small>(für Initialisierung der Offline-VM)</small>
-                </td>
-                <td>{{ util.href(cdedblink('event/download_export'), "Download", icon='download') }}</td>
+                <td>Kursliste</td>
+                <td>{{ util.href(cdedblink('event/download_csv_courses'), "CSV-Datei", icon='download') }}</td>
+            </tr>
+            <tr>
+                <td>Unterkunftsliste</td>
+                <td>{{ util.href(cdedblink('event/download_csv_lodgements'), "CSV-Datei", icon='download') }}</td>
+            </tr>
+            <tr>
+                <td>Kursliste für den exPuls</td>
+                <td>{{ util.href(cdedblink('event/download_expuls'), "TeX-Code", icon='download') }}</td>
             </tr>
         </tbody>
     </table>
