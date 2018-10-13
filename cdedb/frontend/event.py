@@ -626,6 +626,8 @@ class EventFrontend(AbstractUserFrontend):
             params['personas'] = personas
             params['registrations'] = registrations
             params['attendees'] = attendees
+            params['is_removable'] = self.eventproxy.is_course_removable(
+                rs, course_id)
         return self.render(rs, "show_course", params)
 
     @access("event")
@@ -697,6 +699,17 @@ class EventFrontend(AbstractUserFrontend):
         new_id = self.eventproxy.create_course(rs, data)
         self.notify_return_code(rs, new_id, success=_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
+
+    @access("event", modi={"POST"})
+    @event_guard(check_offline=True)
+    def delete_course(self, rs, event_id, course_id):
+        """Delete a course from an event organized via DB."""
+        if not self.eventproxy.is_course_removable(rs, course_id):
+            rs.notify("error", _("Course in use cannot be deleted."))
+            return self.redirect(rs, 'event/show_course')
+        code = self.eventproxy.delete_course(rs, course_id)
+        self.notify_return_code(rs, code)
+        return self.redirect(rs, "event/course_list")
 
     @access("event")
     @event_guard()

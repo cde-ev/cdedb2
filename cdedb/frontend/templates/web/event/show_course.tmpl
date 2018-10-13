@@ -1,6 +1,10 @@
 {% extends "web/event/base.tmpl" %}
 {% set sidenav_active='event_course_stats' %}
 {% import "web/util.tmpl" as util with context %}
+{% block scripts %}
+    {{ util.cdedb_script('helper') }}
+{% endblock %}
+{% set jshint = 'weak' %}
 {% block title %}Kurs {{ ambience['course']['shortname']|e }} ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
@@ -133,4 +137,29 @@
     {% call util.bootstrap_panel(title="Beschreibung", icon="pushpin", aclass="panel-default panel-condensed") %}
         {{ ambience['course']['description']|rst }}
     {% endcall %}
+    {% if is_removable %}
+        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            <div class="row">
+                <div class="col-sm-4">
+                    <div class="p">
+                        <form action="{{ cdedblink('event/delete_course')|e }}" method="POST" id="deletecourseform"
+                                style="display: inline;">
+                            {{ util.input_submit(value="Löschen", readonly=is_locked,
+                                                 aclass="btn btn-danger", icon="folder-close") }}
+                            {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                        </form>
+                    </div>
+                </div>
+                <div class="col-sm-8">
+                    <p class="text-muted">
+                        Entferne den Kurs.
+                    </p>
+                </div>
+            </div>
+        {% endcall %}
+        <script type="text/javascript">
+            $('#deletecourseform').cdedbProtectAction("Der Kurs wird irreversibel gelöscht.");
+            $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
+        </script>
+    {% endif %}
 {% endblock %}

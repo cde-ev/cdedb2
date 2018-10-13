@@ -405,7 +405,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("Canyon", f['fields.room'].value)
 
     @as_users("anton")
-    def test_create_course(self, user):
+    def test_create_delete_course(self, user):
         self.traverse({'href': '/event/$'},
                       {'href': '/event/event/1/show'},
                       {'href': '/event/event/1/course/list'})
@@ -435,6 +435,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("1", f.get('segments', index=0).value)
         self.assertEqual(None, f.get('segments', index=1).value)
         self.assertEqual("3", f.get('segments', index=2).value)
+        self.traverse({'href': '/event/event/1/course/6/show'})
+        f = self.response.forms['deletecourseform']
+        f['ack_delete'].checked = True
+        self.submit(f)
+        self.assertTitle("Kursliste Große Testakademie 2222")
+        self.assertNonPresence("Abstract Nonsense")
 
     @as_users("berta")
     def test_register(self, user):
@@ -1265,7 +1271,7 @@ etc;anything else""", f['entries_2'].value)
         ## First: generate data
         self.test_register()
         self.logout()
-        self.test_create_course()
+        self.test_create_delete_course()
         self.logout()
         self.test_lodgements()
         self.logout()

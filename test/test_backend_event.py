@@ -295,6 +295,32 @@ class TestEventBackend(BackendTest):
                          self.event.get_course(self.key, new_id))
 
     @as_users("anton", "garcia")
+    def test_course_non_removable(self, user):
+        self.assertEqual(False, self.event.is_course_removable(self.key, 1))
+
+    @as_users("anton", "garcia")
+    def test_course_delete(self, user):
+        event_id = 1
+        data = {
+            'event_id': event_id,
+            'title': "Topos theory for the kindergarden",
+            'description': """This is an interesting topic
+
+            which will be treated.""",
+            'nr': 'ζ',
+            'shortname': "Topos",
+            'instructors': "Alexander Grothendieck",
+            'notes': "Beware of dragons.",
+            'segments': {2, 3},
+            'active_segments': {2},
+            'max_size': 42,
+            'min_size': 23,
+        }
+        new_id = self.event.create_course(self.key, data)
+        self.assertEqual(True, self.event.is_course_removable(self.key, new_id))
+        self.assertLess(0, self.event.delete_course(self.key, new_id))
+
+    @as_users("anton", "garcia")
     def test_visible_events(self, user):
         expectation = {1: 'Große Testakademie 2222'}
         self.assertEqual(expectation, self.event.list_visible_events(self.key))

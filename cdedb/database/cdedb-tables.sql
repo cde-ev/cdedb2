@@ -625,7 +625,7 @@ CREATE TABLE event.courses (
         fields                  jsonb NOT NULL DEFAULT '{}'::jsonb
 );
 CREATE INDEX idx_courses_event_id ON event.courses(event_id);
-GRANT SELECT, INSERT, UPDATE ON event.courses TO cdb_persona;
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.courses TO cdb_persona;
 GRANT SELECT, UPDATE ON event.courses_id_seq TO cdb_persona;
 
 -- not an array inside event.courses since no ELEMENT REFERENCES in postgres

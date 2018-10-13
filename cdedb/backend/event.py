@@ -998,6 +998,56 @@ class EventBackend(AbstractBackend):
         return new_id
 
     @access("event")
+    @singularize("is_course_removable")
+    def are_courses_removable(self, rs, ids):
+        """Check if deleting these courses preserves referential integrity.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type ids: [int]
+        :rtype: {int: bool}
+        """
+        ids = affirm_set("id", ids)
+        if (not self.is_admin(rs)
+                and (len(ids) != 1
+                     or not self.is_orga(rs, course_id=unwrap(ids)))):
+            raise PrivilegeError(_("Not privileged."))
+        with Atomizer(rs):
+            used = set()
+            data = self.sql_select(rs, "event.registration_tracks",
+                                   ("course_id",), ids, entity_key="course_id")
+            used |= {e['course_id'] for e in data}
+            data = self.sql_select(rs, "event.course_choices",
+                                   ("course_id",), ids, entity_key="course_id")
+            used |= {e['course_id'] for e in data}
+            ret = {course_id: course_id not in used for course_id in ids}
+        return ret
+
+    @access("event")
+    def delete_course(self, rs, course_id):
+        """Remove a course organized via DB from the DB.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :type course_id: int
+        :rtype: int
+        :returns: standard return code
+        """
+        course_id = affirm("id", course_id)
+        if (not self.is_orga(rs, course_id=course_id)
+                and not self.is_admin(rs)):
+            raise PrivilegeError(_("Not privileged."))
+        self.assert_offline_lock(rs, course_id=course_id)
+        with Atomizer(rs):
+            if not self.is_course_removable(rs, course_id):
+                raise ValueError(_("Referential integrity violated."))
+            course = self.get_course(rs, course_id)
+            ret = self.sql_delete(rs, "event.course_segments", (course_id,),
+                                  entity_key="course_id")
+            ret *= self.sql_delete(rs, "event.courses", (course_id,))
+        self.event_log(rs, const.EventLogCodes.course_deleted,
+                       course['event_id'], additional_info=course['title'])
+        return ret
+
+    @access("event")
     def list_registrations(self, rs, event_id, persona_id=None):
         """List all registrations of an event.
 
@@ -1402,11 +1452,11 @@ class EventBackend(AbstractBackend):
         self.assert_offline_lock(rs, event_id=reg['event_id'])
         with Atomizer(rs):
             self.sql_delete(rs, "event.registration_parts", (registration_id,),
-                                  entity_key="registration_id")
+                            entity_key="registration_id")
             self.sql_delete(rs, "event.registration_tracks", (registration_id,),
-                                   entity_key="registration_id")
+                            entity_key="registration_id")
             self.sql_delete(rs, "event.course_choices", (registration_id,),
-                                   entity_key="registration_id")
+                            entity_key="registration_id")
             ret = self.sql_delete(rs, "event.registrations", (registration_id,))
         self.event_log(rs, const.EventLogCodes.registration_deleted,
                        reg['event_id'], persona_id=reg['persona_id'])
