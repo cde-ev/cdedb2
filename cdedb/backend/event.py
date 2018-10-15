@@ -377,9 +377,11 @@ class EventBackend(AbstractBackend):
                 "{col} AS {col}{track_id}".format(col=col, track_id=track_id)
                 for col in track_atoms)
             creation_date = glue(
-                "LEFT OUTER JOIN (SELECT persona_id, ctime AS creation_time",
+                "LEFT OUTER JOIN (",
+                "SELECT persona_id, MAX(ctime) AS creation_time",
                 "FROM event.log",
-                "WHERE event_id = {event_id} AND code = {reg_create_code})",
+                "WHERE event_id = {event_id} AND code = {reg_create_code}",
+                "GROUP BY persona_id)",
                 "AS ctime ON ctime.persona_id = reg.persona_id").format(
                     event_id=event_id,
                     reg_create_code=const.EventLogCodes.registration_created)
