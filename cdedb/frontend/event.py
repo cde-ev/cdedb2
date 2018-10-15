@@ -1540,10 +1540,12 @@ class EventFrontend(AbstractUserFrontend):
                    'min_size', 'notes', 'description']
         columns.extend('fields.' + field['field_name']
                        for field in rs.ambience['event']['fields'].values()
-                       if field['association'] == const.FieldAssociations.course)
+                       if field['association'] ==
+                           const.FieldAssociations.course)
         for part in sorted(rs.ambience['event']['parts'].values(),
                            key=lambda x: x['part_begin']):
-            columns.extend('track{}'.format(track_id) for track_id in part['tracks'])
+            columns.extend('track{}'.format(track_id)
+                           for track_id in part['tracks'])
 
         for course in courses.values():
             for track_id in rs.ambience['event']['tracks']:
@@ -1551,8 +1553,11 @@ class EventFrontend(AbstractUserFrontend):
                     'active' if track_id in course['active_segments']\
                     else ('cancelled' if track_id in course['segments']
                           else '')
-            for field_name in course['fields']:
-                course['fields.'+field_name] = course['fields'][field_name]
+            course.update({'fields.{}'.format(field['field_name']):
+                               course['fields'].get(field['field_name'], '')
+                           for field in rs.ambience['event']['fields'].values()
+                           if field['association'] ==
+                               const.FieldAssociations.course})
         csv_data = csv_output(sorted(courses.values(), key=lambda c: c['id']),
                               columns)
         return self.send_file(
@@ -1567,12 +1572,17 @@ class EventFrontend(AbstractUserFrontend):
         columns = ['id', 'moniker', 'capacity', 'reserve', 'notes']
         columns.extend('fields.' + field['field_name']
                        for field in rs.ambience['event']['fields'].values()
-                       if field['association'] == const.FieldAssociations.lodgement)
+                       if field['association'] ==
+                            const.FieldAssociations.lodgement)
 
         for lodgement in lodgements.values():
-            for field_name in lodgement['fields']:
-                lodgement['fields.'+field_name] = lodgement['fields'][field_name]
-        csv_data = csv_output(sorted(lodgements.values(), key=lambda c: c['id']),
+            lodgement.update(
+                {'fields.{}'.format(field['field_name']):
+                    lodgement['fields'].get(field['field_name'], '')
+                 for field in rs.ambience['event']['fields'].values()
+                 if field['association'] == const.FieldAssociations.lodgement})
+        csv_data = csv_output(sorted(lodgements.values(),
+                                     key=lambda c: c['id']),
                               columns)
         return self.send_file(
             rs, data=csv_data, inline=False,
