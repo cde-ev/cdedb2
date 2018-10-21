@@ -1,1094 +1,1148 @@
 {
-    "id": 1,
-    "event.event_parts": {
-        "3": {
-            "id": 3,
-            "title": "Zweite H\u00e4lfte",
-            "part_begin": "2222-11-11",
-            "fee": "450.99",
-            "event_id": 1,
-            "part_end": "2222-11-30"
-        },
-        "1": {
-            "id": 1,
-            "title": "Warmup",
-            "part_begin": "2222-02-02",
-            "fee": "10.50",
-            "event_id": 1,
-            "part_end": "2222-02-02"
-        },
-        "2": {
-            "id": 2,
-            "title": "Erste H\u00e4lfte",
-            "part_begin": "2222-11-01",
-            "fee": "123.00",
-            "event_id": 1,
-            "part_end": "2222-11-11"
-        }
-    },
-    "event.course_tracks": {
-        "3": {
-            "id": 3,
-            "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
-            "part_id": 3
-        },
-        "1": {
-            "id": 1,
-            "title": "Morgenkreis (Erste H\u00e4lfte)",
-            "part_id": 2
-        },
-        "2": {
-            "id": 2,
-            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
-            "part_id": 2
-        }
-    },
-    "event.field_definitions": {
-        "6": {
-            "id": 6,
-            "kind": "str",
-            "association": 3,
-            "field_name": "contamination",
-            "event_id": 1,
-            "entries": [
-                [
-                    "high",
-                    "lots of radiation"
-                ],
-                [
-                    "medium",
-                    "elevated level of radiation"
-                ],
-                [
-                    "low",
-                    "some radiation"
-                ],
-                [
-                    "none",
-                    "no radiation"
-                ]
-            ]
-        },
-        "2": {
-            "id": 2,
-            "kind": "str",
-            "association": 1,
-            "field_name": "transportation",
-            "event_id": 1,
-            "entries": [
-                [
-                    "pedes",
-                    "by feet"
-                ],
-                [
-                    "car",
-                    "own car available"
-                ],
-                [
-                    "etc",
-                    "anything else"
-                ]
-            ]
-        },
-        "3": {
-            "id": 3,
-            "kind": "str",
-            "association": 1,
-            "field_name": "lodge",
-            "event_id": 1,
-            "entries": null
-        },
-        "5": {
-            "id": 5,
-            "kind": "str",
-            "association": 2,
-            "field_name": "room",
-            "event_id": 1,
-            "entries": null
-        },
-        "1": {
-            "id": 1,
-            "kind": "bool",
-            "association": 1,
-            "field_name": "brings_balls",
-            "event_id": 1,
-            "entries": null
-        },
-        "4": {
-            "id": 4,
-            "kind": "bool",
-            "association": 1,
-            "field_name": "may_reserve",
-            "event_id": 1,
-            "entries": null
-        }
-    },
-    "timestamp": "2018-08-10T19:15:02.723591+00:00",
+    "kind": "full",
     "event.events": {
         "1": {
-            "id": 1,
-            "institution": 1,
-            "title": "Gro\u00dfe Testakademie 2222",
-            "is_visible": true,
-            "reserve_field": 4,
-            "iban": "DE96 3702 0500 0008 0689 01",
-            "use_questionnaire": false,
-            "offline_lock": false,
-            "notes": "Todoliste ... just kidding ;)",
-            "is_course_list_visible": true,
+            "questionnaire_rows": {
+                "5": {
+                    "field_id": 2,
+                    "info": null,
+                    "id": 5,
+                    "event_id": 1,
+                    "readonly": false,
+                    "title": "Vehikel",
+                    "pos": 4,
+                    "input_size": null
+                },
+                "4": {
+                    "field_id": null,
+                    "info": null,
+                    "id": 4,
+                    "event_id": 1,
+                    "readonly": null,
+                    "title": "Weitere \u00dcberschrift",
+                    "pos": 3,
+                    "input_size": null
+                },
+                "2": {
+                    "field_id": 1,
+                    "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
+                    "id": 2,
+                    "event_id": 1,
+                    "readonly": false,
+                    "title": "B\u00e4lle",
+                    "pos": 1,
+                    "input_size": null
+                },
+                "3": {
+                    "field_id": null,
+                    "info": "nur etwas Text",
+                    "id": 3,
+                    "event_id": 1,
+                    "readonly": null,
+                    "title": null,
+                    "pos": 2,
+                    "input_size": null
+                },
+                "6": {
+                    "field_id": 3,
+                    "info": null,
+                    "id": 6,
+                    "event_id": 1,
+                    "readonly": false,
+                    "title": "Hauswunsch",
+                    "pos": 5,
+                    "input_size": 3
+                },
+                "1": {
+                    "field_id": null,
+                    "info": "mit Text darunter",
+                    "id": 1,
+                    "event_id": 1,
+                    "readonly": null,
+                    "title": "Unter\u00fcberschrift",
+                    "pos": 0,
+                    "input_size": null
+                }
+            },
             "description": "Everybody come!",
+            "institution": 1,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
-            "registration_start": "2000-10-30T01:00:00+01:00",
-            "lodge_field": 3,
-            "is_archived": false,
-            "shortname": "TestAka",
+            "orgas": {
+                "7": {
+                    "id": 1,
+                    "persona_id": 7,
+                    "event_id": 1
+                }
+            },
+            "is_course_list_visible": true,
+            "iban": "DE96 3702 0500 0008 0689 01",
             "registration_soft_limit": "2200-10-30T01:00:00+01:00",
-            "registration_hard_limit": "2220-10-30T01:00:00+01:00"
+            "is_archived": false,
+            "registration_start": "2000-10-30T01:00:00+01:00",
+            "fields": {
+                "5": {
+                    "kind": "str",
+                    "id": 5,
+                    "event_id": 1,
+                    "entries": null,
+                    "field_name": "room",
+                    "association": 2
+                },
+                "4": {
+                    "kind": "bool",
+                    "id": 4,
+                    "event_id": 1,
+                    "entries": null,
+                    "field_name": "may_reserve",
+                    "association": 1
+                },
+                "2": {
+                    "kind": "str",
+                    "id": 2,
+                    "event_id": 1,
+                    "entries": [
+                        [
+                            "pedes",
+                            "by feet"
+                        ],
+                        [
+                            "car",
+                            "own car available"
+                        ],
+                        [
+                            "etc",
+                            "anything else"
+                        ]
+                    ],
+                    "field_name": "transportation",
+                    "association": 1
+                },
+                "3": {
+                    "kind": "str",
+                    "id": 3,
+                    "event_id": 1,
+                    "entries": null,
+                    "field_name": "lodge",
+                    "association": 1
+                },
+                "6": {
+                    "kind": "str",
+                    "id": 6,
+                    "event_id": 1,
+                    "entries": [
+                        [
+                            "high",
+                            "lots of radiation"
+                        ],
+                        [
+                            "medium",
+                            "elevated level of radiation"
+                        ],
+                        [
+                            "low",
+                            "some radiation"
+                        ],
+                        [
+                            "none",
+                            "no radiation"
+                        ]
+                    ],
+                    "field_name": "contamination",
+                    "association": 3
+                },
+                "1": {
+                    "kind": "bool",
+                    "id": 1,
+                    "event_id": 1,
+                    "entries": null,
+                    "field_name": "brings_balls",
+                    "association": 1
+                }
+            },
+            "offline_lock": false,
+            "registration_hard_limit": "2220-10-30T01:00:00+01:00",
+            "reserve_field": 4,
+            "is_visible": true,
+            "use_questionnaire": false,
+            "id": 1,
+            "title": "Gro\u00dfe Testakademie 2222",
+            "notes": "Todoliste ... just kidding ;)",
+            "shortname": "TestAka",
+            "parts": {
+                "3": {
+                    "part_begin": "2222-11-11",
+                    "event_id": 1,
+                    "fee": "450.99",
+                    "title": "Zweite H\u00e4lfte",
+                    "id": 3,
+                    "tracks": {
+                        "3": {
+                            "id": 3,
+                            "part_id": 3,
+                            "title": "Arbeitssitzung (Zweite H\u00e4lfte)"
+                        }
+                    },
+                    "part_end": "2222-11-30"
+                },
+                "2": {
+                    "part_begin": "2222-11-01",
+                    "event_id": 1,
+                    "fee": "123.00",
+                    "title": "Erste H\u00e4lfte",
+                    "id": 2,
+                    "tracks": {
+                        "2": {
+                            "id": 2,
+                            "part_id": 2,
+                            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)"
+                        },
+                        "1": {
+                            "id": 1,
+                            "part_id": 2,
+                            "title": "Morgenkreis (Erste H\u00e4lfte)"
+                        }
+                    },
+                    "part_end": "2222-11-11"
+                },
+                "1": {
+                    "part_begin": "2222-02-02",
+                    "event_id": 1,
+                    "fee": "10.50",
+                    "title": "Warmup",
+                    "id": 1,
+                    "tracks": {},
+                    "part_end": "2222-02-02"
+                }
+            },
+            "lodge_field": 3
+        }
+    },
+    "event.courses": {
+        "3": {
+            "segments": {
+                "2": {
+                    "track_id": 2,
+                    "id": 5,
+                    "course_id": 3,
+                    "is_active": true
+                }
+            },
+            "event_id": 1,
+            "instructors": "Heinrich und Thomas Mann",
+            "id": 3,
+            "title": "Kurzer Kurs",
+            "min_size": 5,
+            "fields": {
+                "room": "Seminarraum 42",
+                "course_id": 3
+            },
+            "max_size": 14,
+            "notes": null,
+            "shortname": "Kurz",
+            "nr": "\u03b3",
+            "description": "mit hoher Leistung."
+        },
+        "2": {
+            "segments": {
+                "2": {
+                    "track_id": 2,
+                    "id": 3,
+                    "course_id": 2,
+                    "is_active": false
+                },
+                "3": {
+                    "track_id": 3,
+                    "id": 4,
+                    "course_id": 2,
+                    "is_active": true
+                }
+            },
+            "event_id": 1,
+            "instructors": "Bernd Lucke",
+            "id": 2,
+            "title": "Lustigsein f\u00fcr Fortgeschrittene",
+            "min_size": 10,
+            "fields": {
+                "room": "Theater",
+                "course_id": 2
+            },
+            "max_size": 20,
+            "notes": "Kursleiter hat Sekt angefordert.",
+            "shortname": "Kabarett",
+            "nr": "\u03b2",
+            "description": "Inklusive Post, Backwaren und fr\u00fchzeitigem Ableben."
+        },
+        "5": {
+            "segments": {
+                "3": {
+                    "track_id": 3,
+                    "id": 11,
+                    "course_id": 5,
+                    "is_active": false
+                },
+                "2": {
+                    "track_id": 2,
+                    "id": 10,
+                    "course_id": 5,
+                    "is_active": true
+                },
+                "1": {
+                    "track_id": 1,
+                    "id": 9,
+                    "course_id": 5,
+                    "is_active": true
+                }
+            },
+            "event_id": 1,
+            "instructors": "TBA",
+            "id": 5,
+            "title": "Backup-Kurs",
+            "min_size": null,
+            "fields": {
+                "room": "Nirwana",
+                "course_id": 5
+            },
+            "max_size": null,
+            "notes": null,
+            "shortname": "Backup",
+            "nr": "\u03b5",
+            "description": "damit wir Auswahl haben"
+        },
+        "1": {
+            "segments": {
+                "3": {
+                    "track_id": 3,
+                    "id": 2,
+                    "course_id": 1,
+                    "is_active": true
+                },
+                "1": {
+                    "track_id": 1,
+                    "id": 1,
+                    "course_id": 1,
+                    "is_active": true
+                }
+            },
+            "event_id": 1,
+            "instructors": "ToFi & Co",
+            "id": 1,
+            "title": "Planetenretten f\u00fcr Anf\u00e4nger",
+            "min_size": 3,
+            "fields": {
+                "room": "Wald",
+                "course_id": 1
+            },
+            "max_size": 10,
+            "notes": "Promotionen in Mathematik und Ethik f\u00fcr Teilnehmer notwendig.",
+            "shortname": "Heldentum",
+            "nr": "\u03b1",
+            "description": "Wir werden die B\u00e4ume dr\u00fccken."
+        },
+        "4": {
+            "segments": {
+                "3": {
+                    "track_id": 3,
+                    "id": 8,
+                    "course_id": 4,
+                    "is_active": true
+                },
+                "2": {
+                    "track_id": 2,
+                    "id": 7,
+                    "course_id": 4,
+                    "is_active": true
+                },
+                "1": {
+                    "track_id": 1,
+                    "id": 6,
+                    "course_id": 4,
+                    "is_active": true
+                }
+            },
+            "event_id": 1,
+            "instructors": "Stephen Hawking und Richard Feynman",
+            "id": 4,
+            "title": "Langer Kurs",
+            "min_size": null,
+            "fields": {
+                "room": "Seminarraum 23",
+                "course_id": 4
+            },
+            "max_size": null,
+            "notes": null,
+            "shortname": "Lang",
+            "nr": "\u03b4",
+            "description": "mit hohem Umsatz."
+        }
+    },
+    "timestamp": "2018-10-21T20:18:43.414427+00:00",
+    "id": 1,
+    "event.log": {
+        "3": {
+            "ctime": "2014-01-01T04:06:07+01:00",
+            "additional_info": null,
+            "id": 3,
+            "event_id": 1,
+            "persona_id": 7,
+            "submitted_by": 7,
+            "code": 50
+        },
+        "2": {
+            "ctime": "2014-01-01T03:05:06+01:00",
+            "additional_info": null,
+            "id": 2,
+            "event_id": 1,
+            "persona_id": 5,
+            "submitted_by": 5,
+            "code": 50
+        },
+        "1": {
+            "ctime": "2014-01-01T02:04:05+01:00",
+            "additional_info": null,
+            "id": 1,
+            "event_id": 1,
+            "persona_id": 1,
+            "submitted_by": 1,
+            "code": 50
+        },
+        "4": {
+            "ctime": "2014-01-01T05:07:08+01:00",
+            "additional_info": null,
+            "id": 4,
+            "event_id": 1,
+            "persona_id": 9,
+            "submitted_by": 9,
+            "code": 50
         }
     },
     "event.registrations": {
         "3": {
-            "id": 3,
-            "checkin": null,
             "fields": {
-                "transportation": "car",
-                "registration_id": 3
+                "registration_id": 3,
+                "transportation": "car"
             },
+            "mixed_lodging": true,
+            "orga_notes": null,
             "event_id": 1,
+            "parts": {
+                "3": {
+                    "id": 9,
+                    "part_id": 3,
+                    "lodgement_id": 2,
+                    "registration_id": 3,
+                    "status": 2,
+                    "is_reserve": false
+                },
+                "2": {
+                    "id": 8,
+                    "part_id": 2,
+                    "lodgement_id": null,
+                    "registration_id": 3,
+                    "status": 2,
+                    "is_reserve": false
+                },
+                "1": {
+                    "id": 7,
+                    "part_id": 1,
+                    "lodgement_id": 2,
+                    "registration_id": 3,
+                    "status": 2,
+                    "is_reserve": false
+                }
+            },
+            "checkin": null,
             "payment": "2014-03-03",
+            "foto_consent": true,
+            "id": 3,
+            "persona_id": 7,
+            "real_persona_id": null,
             "notes": null,
             "parental_agreement": null,
+            "tracks": {
+                "3": {
+                    "id": 9,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 3,
+                    "registration_id": 3,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 3,
+                            "id": 25,
+                            "track_id": 3,
+                            "course_id": 2
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 3,
+                            "id": 26,
+                            "track_id": 3,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 3,
+                            "id": 27,
+                            "track_id": 3,
+                            "course_id": 1
+                        }
+                    ]
+                },
+                "2": {
+                    "id": 8,
+                    "course_id": 2,
+                    "course_instructor": null,
+                    "track_id": 2,
+                    "registration_id": 3,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 3,
+                            "id": 22,
+                            "track_id": 2,
+                            "course_id": 2
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 3,
+                            "id": 23,
+                            "track_id": 2,
+                            "course_id": 3
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 3,
+                            "id": 24,
+                            "track_id": 2,
+                            "course_id": 4
+                        }
+                    ]
+                },
+                "1": {
+                    "id": 7,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 1,
+                    "registration_id": 3,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 3,
+                            "id": 19,
+                            "track_id": 1,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 3,
+                            "id": 20,
+                            "track_id": 1,
+                            "course_id": 1
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 3,
+                            "id": 21,
+                            "track_id": 1,
+                            "course_id": 5
+                        }
+                    ]
+                }
+            }
+        },
+        "2": {
+            "fields": {
+                "brings_balls": true,
+                "registration_id": 2,
+                "transportation": "pedes"
+            },
             "mixed_lodging": true,
+            "orga_notes": "Unbedingt in die Einzelzelle.",
+            "event_id": 1,
+            "parts": {
+                "3": {
+                    "id": 6,
+                    "part_id": 3,
+                    "lodgement_id": 4,
+                    "registration_id": 2,
+                    "status": 2,
+                    "is_reserve": false
+                },
+                "2": {
+                    "id": 5,
+                    "part_id": 2,
+                    "lodgement_id": 4,
+                    "registration_id": 2,
+                    "status": 4,
+                    "is_reserve": false
+                },
+                "1": {
+                    "id": 4,
+                    "part_id": 1,
+                    "lodgement_id": null,
+                    "registration_id": 2,
+                    "status": 3,
+                    "is_reserve": false
+                }
+            },
+            "checkin": null,
+            "payment": "2014-02-02",
+            "foto_consent": true,
+            "id": 2,
+            "persona_id": 5,
             "real_persona_id": null,
+            "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
+            "parental_agreement": null,
+            "tracks": {
+                "3": {
+                    "id": 6,
+                    "course_id": 1,
+                    "course_instructor": 1,
+                    "track_id": 3,
+                    "registration_id": 2,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 2,
+                            "id": 16,
+                            "track_id": 3,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 2,
+                            "id": 17,
+                            "track_id": 3,
+                            "course_id": 2
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 2,
+                            "id": 18,
+                            "track_id": 3,
+                            "course_id": 1
+                        }
+                    ]
+                },
+                "2": {
+                    "id": 5,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 2,
+                    "registration_id": 2,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 2,
+                            "id": 13,
+                            "track_id": 2,
+                            "course_id": 3
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 2,
+                            "id": 14,
+                            "track_id": 2,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 2,
+                            "id": 15,
+                            "track_id": 2,
+                            "course_id": 2
+                        }
+                    ]
+                },
+                "1": {
+                    "id": 4,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 1,
+                    "registration_id": 2,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 2,
+                            "id": 10,
+                            "track_id": 1,
+                            "course_id": 5
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 2,
+                            "id": 11,
+                            "track_id": 1,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 2,
+                            "id": 12,
+                            "track_id": 1,
+                            "course_id": 1
+                        }
+                    ]
+                }
+            }
+        },
+        "1": {
+            "fields": {
+                "registration_id": 1,
+                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)"
+            },
+            "mixed_lodging": true,
             "orga_notes": null,
-            "persona_id": 7,
-            "foto_consent": true
+            "event_id": 1,
+            "parts": {
+                "3": {
+                    "id": 3,
+                    "part_id": 3,
+                    "lodgement_id": 1,
+                    "registration_id": 1,
+                    "status": 2,
+                    "is_reserve": false
+                },
+                "2": {
+                    "id": 2,
+                    "part_id": 2,
+                    "lodgement_id": null,
+                    "registration_id": 1,
+                    "status": 1,
+                    "is_reserve": false
+                },
+                "1": {
+                    "id": 1,
+                    "part_id": 1,
+                    "lodgement_id": null,
+                    "registration_id": 1,
+                    "status": -1,
+                    "is_reserve": false
+                }
+            },
+            "checkin": null,
+            "payment": null,
+            "foto_consent": true,
+            "id": 1,
+            "persona_id": 1,
+            "real_persona_id": null,
+            "notes": null,
+            "parental_agreement": null,
+            "tracks": {
+                "3": {
+                    "id": 3,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 3,
+                    "registration_id": 1,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 1,
+                            "id": 7,
+                            "track_id": 3,
+                            "course_id": 1
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 1,
+                            "id": 8,
+                            "track_id": 3,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 1,
+                            "id": 9,
+                            "track_id": 3,
+                            "course_id": 5
+                        }
+                    ]
+                },
+                "2": {
+                    "id": 2,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 2,
+                    "registration_id": 1,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 1,
+                            "id": 4,
+                            "track_id": 2,
+                            "course_id": 2
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 1,
+                            "id": 5,
+                            "track_id": 2,
+                            "course_id": 3
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 1,
+                            "id": 6,
+                            "track_id": 2,
+                            "course_id": 4
+                        }
+                    ]
+                },
+                "1": {
+                    "id": 1,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 1,
+                    "registration_id": 1,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 1,
+                            "id": 1,
+                            "track_id": 1,
+                            "course_id": 1
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 1,
+                            "id": 2,
+                            "track_id": 1,
+                            "course_id": 3
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 1,
+                            "id": 3,
+                            "track_id": 1,
+                            "course_id": 4
+                        }
+                    ]
+                }
+            }
         },
         "4": {
-            "id": 4,
-            "checkin": null,
             "fields": {
                 "brings_balls": false,
                 "may_reserve": true,
                 "registration_id": 4,
                 "transportation": "etc"
             },
-            "event_id": 1,
-            "payment": "2014-04-04",
-            "notes": null,
-            "parental_agreement": null,
             "mixed_lodging": false,
-            "real_persona_id": null,
             "orga_notes": null,
-            "persona_id": 9,
-            "foto_consent": true
-        },
-        "1": {
-            "id": 1,
-            "checkin": null,
-            "fields": {
-                "lodge": "Die \u00fcblichen Verd\u00e4chtigen :)",
-                "registration_id": 1
-            },
             "event_id": 1,
-            "payment": null,
+            "parts": {
+                "3": {
+                    "id": 12,
+                    "part_id": 3,
+                    "lodgement_id": 2,
+                    "registration_id": 4,
+                    "status": 2,
+                    "is_reserve": true
+                },
+                "2": {
+                    "id": 11,
+                    "part_id": 2,
+                    "lodgement_id": null,
+                    "registration_id": 4,
+                    "status": 5,
+                    "is_reserve": false
+                },
+                "1": {
+                    "id": 10,
+                    "part_id": 1,
+                    "lodgement_id": null,
+                    "registration_id": 4,
+                    "status": 6,
+                    "is_reserve": false
+                }
+            },
+            "checkin": null,
+            "payment": "2014-04-04",
+            "foto_consent": true,
+            "id": 4,
+            "persona_id": 9,
+            "real_persona_id": null,
             "notes": null,
             "parental_agreement": null,
-            "mixed_lodging": true,
-            "real_persona_id": null,
-            "orga_notes": null,
-            "persona_id": 1,
-            "foto_consent": true
-        },
-        "2": {
-            "id": 2,
-            "checkin": null,
-            "fields": {
-                "brings_balls": true,
-                "transportation": "pedes",
-                "registration_id": 2
-            },
-            "event_id": 1,
-            "payment": "2014-02-02",
-            "notes": "Extraw\u00fcnsche: Meerblick, Weckdienst und Fr\u00fchst\u00fcck am Bett",
-            "parental_agreement": null,
-            "mixed_lodging": true,
-            "real_persona_id": null,
-            "orga_notes": "Unbedingt in die Einzelzelle.",
-            "persona_id": 5,
-            "foto_consent": true
-        }
-    },
-    "event.courses": {
-        "3": {
-            "id": 3,
-            "nr": "\u03b3",
-            "title": "Kurzer Kurs",
-            "description": "mit hoher Leistung.",
-            "instructors": "Heinrich und Thomas Mann",
-            "max_size": 14,
-            "fields": {
-                "room": "Seminarraum 42",
-                "course_id": 3
-            },
-            "min_size": 5,
-            "event_id": 1,
-            "shortname": "Kurz",
-            "notes": null
-        },
-        "4": {
-            "id": 4,
-            "nr": "\u03b4",
-            "title": "Langer Kurs",
-            "description": "mit hohem Umsatz.",
-            "instructors": "Stephen Hawking und Richard Feynman",
-            "max_size": null,
-            "fields": {
-                "room": "Seminarraum 23",
-                "course_id": 4
-            },
-            "min_size": null,
-            "event_id": 1,
-            "shortname": "Lang",
-            "notes": null
-        },
-        "1": {
-            "id": 1,
-            "nr": "\u03b1",
-            "title": "Planetenretten f\u00fcr Anf\u00e4nger",
-            "description": "Wir werden die B\u00e4ume dr\u00fccken.",
-            "instructors": "ToFi & Co",
-            "max_size": 10,
-            "fields": {
-                "room": "Wald",
-                "course_id": 1
-            },
-            "min_size": 3,
-            "event_id": 1,
-            "shortname": "Heldentum",
-            "notes": "Promotionen in Mathematik und Ethik f\u00fcr Teilnehmer notwendig."
-        },
-        "5": {
-            "id": 5,
-            "nr": "\u03b5",
-            "title": "Backup-Kurs",
-            "description": "damit wir Auswahl haben",
-            "instructors": "TBA",
-            "max_size": null,
-            "fields": {
-                "room": "Nirwana",
-                "course_id": 5
-            },
-            "min_size": null,
-            "event_id": 1,
-            "shortname": "Backup",
-            "notes": null
-        },
-        "2": {
-            "id": 2,
-            "nr": "\u03b2",
-            "title": "Lustigsein f\u00fcr Fortgeschrittene",
-            "description": "Inklusive Post, Backwaren und fr\u00fchzeitigem Ableben.",
-            "instructors": "Bernd Lucke",
-            "max_size": 20,
-            "fields": {
-                "room": "Theater",
-                "course_id": 2
-            },
-            "min_size": 10,
-            "event_id": 1,
-            "shortname": "Kabarett",
-            "notes": "Kursleiter hat Sekt angefordert."
-        }
-    },
-    "event.course_segments": {
-        "10": {
-            "id": 10,
-            "is_active": true,
-            "track_id": 2,
-            "course_id": 5
-        },
-        "8": {
-            "id": 8,
-            "is_active": true,
-            "track_id": 3,
-            "course_id": 4
-        },
-        "11": {
-            "id": 11,
-            "is_active": false,
-            "track_id": 3,
-            "course_id": 5
-        },
-        "9": {
-            "id": 9,
-            "is_active": true,
-            "track_id": 1,
-            "course_id": 5
-        },
-        "6": {
-            "id": 6,
-            "is_active": true,
-            "track_id": 1,
-            "course_id": 4
-        },
-        "2": {
-            "id": 2,
-            "is_active": true,
-            "track_id": 3,
-            "course_id": 1
-        },
-        "3": {
-            "id": 3,
-            "is_active": false,
-            "track_id": 2,
-            "course_id": 2
-        },
-        "5": {
-            "id": 5,
-            "is_active": true,
-            "track_id": 2,
-            "course_id": 3
-        },
-        "1": {
-            "id": 1,
-            "is_active": true,
-            "track_id": 1,
-            "course_id": 1
-        },
-        "7": {
-            "id": 7,
-            "is_active": true,
-            "track_id": 2,
-            "course_id": 4
-        },
-        "4": {
-            "id": 4,
-            "is_active": true,
-            "track_id": 3,
-            "course_id": 2
+            "tracks": {
+                "3": {
+                    "id": 12,
+                    "course_id": 1,
+                    "course_instructor": null,
+                    "track_id": 3,
+                    "registration_id": 4,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 4,
+                            "id": 34,
+                            "track_id": 3,
+                            "course_id": 1
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 4,
+                            "id": 35,
+                            "track_id": 3,
+                            "course_id": 2
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 4,
+                            "id": 36,
+                            "track_id": 3,
+                            "course_id": 4
+                        }
+                    ]
+                },
+                "2": {
+                    "id": 11,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 2,
+                    "registration_id": 4,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 4,
+                            "id": 31,
+                            "track_id": 2,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 4,
+                            "id": 32,
+                            "track_id": 2,
+                            "course_id": 2
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 4,
+                            "id": 33,
+                            "track_id": 2,
+                            "course_id": 3
+                        }
+                    ]
+                },
+                "1": {
+                    "id": 10,
+                    "course_id": null,
+                    "course_instructor": null,
+                    "track_id": 1,
+                    "registration_id": 4,
+                    "choices": [
+                        {
+                            "rank": 0,
+                            "registration_id": 4,
+                            "id": 28,
+                            "track_id": 1,
+                            "course_id": 1
+                        },
+                        {
+                            "rank": 1,
+                            "registration_id": 4,
+                            "id": 29,
+                            "track_id": 1,
+                            "course_id": 4
+                        },
+                        {
+                            "rank": 2,
+                            "registration_id": 4,
+                            "id": 30,
+                            "track_id": 1,
+                            "course_id": 5
+                        }
+                    ]
+                }
+            }
         }
     },
     "core.personas": {
-        "7": {
-            "is_event_realm": true,
-            "display_name": "Garcia",
-            "is_assembly_realm": true,
-            "postal_code": "8888",
-            "is_event_admin": false,
-            "gender": 1,
-            "name_supplement": null,
-            "is_member": true,
-            "title": null,
-            "is_archived": false,
-            "given_names": "Garcia G.",
-            "cloud_account": true,
-            "is_admin": false,
-            "address_supplement": null,
-            "username": "garcia@example.cde",
-            "is_cde_admin": false,
-            "id": 7,
-            "is_active": true,
-            "address": "Bei der W\u00fcste 39",
-            "is_cde_realm": true,
-            "telephone": null,
-            "mobile": null,
-            "is_core_admin": false,
-            "is_ml_admin": false,
-            "is_searchable": false,
-            "is_ml_realm": true,
-            "location": "Weltstadt",
-            "birthday": "1978-12-12",
-            "family_name": "Generalis",
-            "country": null,
-            "is_assembly_admin": false
-        },
-        "1": {
-            "is_event_realm": true,
-            "display_name": "Anton",
-            "is_assembly_realm": true,
-            "postal_code": "03205",
-            "is_event_admin": true,
-            "gender": 2,
-            "name_supplement": null,
-            "is_member": true,
-            "title": null,
-            "is_archived": false,
-            "given_names": "Anton Armin A.",
-            "cloud_account": true,
-            "is_admin": true,
-            "address_supplement": null,
-            "username": "anton@example.cde",
-            "is_cde_admin": true,
-            "id": 1,
-            "is_active": true,
-            "address": "Auf der D\u00fcne 42",
-            "is_cde_realm": true,
-            "telephone": "+49 (234) 98765",
-            "mobile": null,
-            "is_core_admin": true,
-            "is_ml_admin": true,
-            "is_searchable": true,
-            "is_ml_realm": true,
-            "location": "Musterstadt",
-            "birthday": "1991-03-30",
-            "family_name": "Administrator",
-            "country": null,
-            "is_assembly_admin": true
-        },
         "9": {
             "is_event_realm": true,
-            "display_name": "Inga",
-            "is_assembly_realm": true,
-            "postal_code": "1111",
-            "is_event_admin": false,
-            "gender": 1,
-            "name_supplement": null,
+            "is_ml_realm": true,
+            "is_cde_realm": true,
             "is_member": true,
-            "title": null,
-            "is_archived": false,
-            "given_names": "Inga",
-            "cloud_account": true,
-            "is_admin": false,
-            "address_supplement": null,
-            "username": "inga@example.cde",
-            "is_cde_admin": false,
-            "id": 9,
-            "is_active": true,
+            "is_event_admin": false,
             "address": "Zwergstra\u00dfe 1",
-            "is_cde_realm": true,
-            "telephone": null,
-            "mobile": "0163/456897",
-            "is_core_admin": false,
-            "is_ml_admin": false,
-            "is_searchable": true,
-            "is_ml_realm": true,
-            "location": "Liliput",
-            "birthday": "2222-01-01",
             "family_name": "Iota",
+            "is_searchable": true,
+            "given_names": "Inga",
+            "birthday": "2222-01-01",
+            "is_assembly_admin": false,
+            "address_supplement": null,
+            "telephone": null,
+            "id": 9,
+            "is_assembly_realm": true,
+            "display_name": "Inga",
+            "name_supplement": null,
+            "is_core_admin": false,
+            "is_active": true,
+            "is_archived": false,
+            "is_admin": false,
+            "mobile": "0163/456897",
+            "postal_code": "1111",
+            "username": "inga@example.cde",
+            "location": "Liliput",
             "country": null,
-            "is_assembly_admin": false
+            "is_cde_admin": false,
+            "title": null,
+            "gender": 1,
+            "is_ml_admin": false,
+            "cloud_account": true
         },
         "5": {
             "is_event_realm": true,
-            "display_name": "Emilia",
-            "is_assembly_realm": false,
-            "postal_code": "56767",
-            "is_event_admin": false,
-            "gender": 1,
-            "name_supplement": null,
-            "is_member": false,
-            "title": null,
-            "is_archived": false,
-            "given_names": "Emilia E.",
-            "cloud_account": false,
-            "is_admin": false,
-            "address_supplement": null,
-            "username": "emilia@example.cde",
-            "is_cde_admin": false,
-            "id": 5,
-            "is_active": true,
-            "address": "Hohle Gasse 13",
-            "is_cde_realm": false,
-            "telephone": "+49 (5432) 555666777",
-            "mobile": null,
-            "is_core_admin": false,
-            "is_ml_admin": false,
-            "is_searchable": false,
             "is_ml_realm": true,
-            "location": "Wolkenkuckuksheim",
-            "birthday": "2012-06-02",
+            "is_cde_realm": false,
+            "is_member": false,
+            "is_event_admin": false,
+            "address": "Hohle Gasse 13",
             "family_name": "Eventis",
+            "is_searchable": false,
+            "given_names": "Emilia E.",
+            "birthday": "2012-06-02",
+            "is_assembly_admin": false,
+            "address_supplement": null,
+            "telephone": "+49 (5432) 555666777",
+            "id": 5,
+            "is_assembly_realm": false,
+            "display_name": "Emilia",
+            "name_supplement": null,
+            "is_core_admin": false,
+            "is_active": true,
+            "is_archived": false,
+            "is_admin": false,
+            "mobile": null,
+            "postal_code": "56767",
+            "username": "emilia@example.cde",
+            "location": "Wolkenkuckuksheim",
             "country": "Deutschland",
-            "is_assembly_admin": false
-        }
-    },
-    "CDEDB_EXPORT_EVENT_VERSION": 1,
-    "event.questionnaire_rows": {
-        "6": {
-            "id": 6,
-            "title": "Hauswunsch",
-            "readonly": false,
-            "info": null,
-            "field_id": 3,
-            "event_id": 1,
-            "input_size": 3,
-            "pos": 5
-        },
-        "2": {
-            "id": 2,
-            "title": "B\u00e4lle",
-            "readonly": false,
-            "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
-            "field_id": 1,
-            "event_id": 1,
-            "input_size": null,
-            "pos": 1
-        },
-        "3": {
-            "id": 3,
+            "is_cde_admin": false,
             "title": null,
-            "readonly": null,
-            "info": "nur etwas Text",
-            "field_id": null,
-            "event_id": 1,
-            "input_size": null,
-            "pos": 2
-        },
-        "5": {
-            "id": 5,
-            "title": "Vehikel",
-            "readonly": false,
-            "info": null,
-            "field_id": 2,
-            "event_id": 1,
-            "input_size": null,
-            "pos": 4
+            "gender": 1,
+            "is_ml_admin": false,
+            "cloud_account": false
         },
         "1": {
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_cde_realm": true,
+            "is_member": true,
+            "is_event_admin": true,
+            "address": "Auf der D\u00fcne 42",
+            "family_name": "Administrator",
+            "is_searchable": true,
+            "given_names": "Anton Armin A.",
+            "birthday": "1991-03-30",
+            "is_assembly_admin": true,
+            "address_supplement": null,
+            "telephone": "+49 (234) 98765",
             "id": 1,
-            "title": "Unter\u00fcberschrift",
-            "readonly": null,
-            "info": "mit Text darunter",
-            "field_id": null,
-            "event_id": 1,
-            "input_size": null,
-            "pos": 0
-        },
-        "4": {
-            "id": 4,
-            "title": "Weitere \u00dcberschrift",
-            "readonly": null,
-            "info": null,
-            "field_id": null,
-            "event_id": 1,
-            "input_size": null,
-            "pos": 3
-        }
-    },
-    "kind": "full",
-    "event.course_choices": {
-        "21": {
-            "id": 21,
-            "rank": 2,
-            "course_id": 5,
-            "registration_id": 3,
-            "track_id": 1
-        },
-        "18": {
-            "id": 18,
-            "rank": 2,
-            "course_id": 1,
-            "registration_id": 2,
-            "track_id": 3
-        },
-        "32": {
-            "id": 32,
-            "rank": 1,
-            "course_id": 2,
-            "registration_id": 4,
-            "track_id": 2
-        },
-        "15": {
-            "id": 15,
-            "rank": 2,
-            "course_id": 2,
-            "registration_id": 2,
-            "track_id": 2
-        },
-        "34": {
-            "id": 34,
-            "rank": 0,
-            "course_id": 1,
-            "registration_id": 4,
-            "track_id": 3
-        },
-        "13": {
-            "id": 13,
-            "rank": 0,
-            "course_id": 3,
-            "registration_id": 2,
-            "track_id": 2
-        },
-        "16": {
-            "id": 16,
-            "rank": 0,
-            "course_id": 4,
-            "registration_id": 2,
-            "track_id": 3
-        },
-        "29": {
-            "id": 29,
-            "rank": 1,
-            "course_id": 4,
-            "registration_id": 4,
-            "track_id": 1
-        },
-        "35": {
-            "id": 35,
-            "rank": 1,
-            "course_id": 2,
-            "registration_id": 4,
-            "track_id": 3
-        },
-        "19": {
-            "id": 19,
-            "rank": 0,
-            "course_id": 4,
-            "registration_id": 3,
-            "track_id": 1
-        },
-        "36": {
-            "id": 36,
-            "rank": 2,
-            "course_id": 4,
-            "registration_id": 4,
-            "track_id": 3
-        },
-        "33": {
-            "id": 33,
-            "rank": 2,
-            "course_id": 3,
-            "registration_id": 4,
-            "track_id": 2
-        },
-        "12": {
-            "id": 12,
-            "rank": 2,
-            "course_id": 1,
-            "registration_id": 2,
-            "track_id": 1
-        },
-        "2": {
-            "id": 2,
-            "rank": 1,
-            "course_id": 3,
-            "registration_id": 1,
-            "track_id": 1
-        },
-        "4": {
-            "id": 4,
-            "rank": 0,
-            "course_id": 2,
-            "registration_id": 1,
-            "track_id": 2
-        },
-        "25": {
-            "id": 25,
-            "rank": 0,
-            "course_id": 2,
-            "registration_id": 3,
-            "track_id": 3
-        },
-        "30": {
-            "id": 30,
-            "rank": 2,
-            "course_id": 5,
-            "registration_id": 4,
-            "track_id": 1
-        },
-        "24": {
-            "id": 24,
-            "rank": 2,
-            "course_id": 4,
-            "registration_id": 3,
-            "track_id": 2
-        },
-        "14": {
-            "id": 14,
-            "rank": 1,
-            "course_id": 4,
-            "registration_id": 2,
-            "track_id": 2
-        },
-        "31": {
-            "id": 31,
-            "rank": 0,
-            "course_id": 4,
-            "registration_id": 4,
-            "track_id": 2
-        },
-        "26": {
-            "id": 26,
-            "rank": 1,
-            "course_id": 4,
-            "registration_id": 3,
-            "track_id": 3
-        },
-        "22": {
-            "id": 22,
-            "rank": 0,
-            "course_id": 2,
-            "registration_id": 3,
-            "track_id": 2
-        },
-        "17": {
-            "id": 17,
-            "rank": 1,
-            "course_id": 2,
-            "registration_id": 2,
-            "track_id": 3
-        },
-        "23": {
-            "id": 23,
-            "rank": 1,
-            "course_id": 3,
-            "registration_id": 3,
-            "track_id": 2
-        },
-        "28": {
-            "id": 28,
-            "rank": 0,
-            "course_id": 1,
-            "registration_id": 4,
-            "track_id": 1
-        },
-        "1": {
-            "id": 1,
-            "rank": 0,
-            "course_id": 1,
-            "registration_id": 1,
-            "track_id": 1
-        },
-        "5": {
-            "id": 5,
-            "rank": 1,
-            "course_id": 3,
-            "registration_id": 1,
-            "track_id": 2
-        },
-        "10": {
-            "id": 10,
-            "rank": 0,
-            "course_id": 5,
-            "registration_id": 2,
-            "track_id": 1
-        },
-        "11": {
-            "id": 11,
-            "rank": 1,
-            "course_id": 4,
-            "registration_id": 2,
-            "track_id": 1
-        },
-        "27": {
-            "id": 27,
-            "rank": 2,
-            "course_id": 1,
-            "registration_id": 3,
-            "track_id": 3
-        },
-        "6": {
-            "id": 6,
-            "rank": 2,
-            "course_id": 4,
-            "registration_id": 1,
-            "track_id": 2
-        },
-        "3": {
-            "id": 3,
-            "rank": 2,
-            "course_id": 4,
-            "registration_id": 1,
-            "track_id": 1
-        },
-        "8": {
-            "id": 8,
-            "rank": 1,
-            "course_id": 4,
-            "registration_id": 1,
-            "track_id": 3
-        },
-        "9": {
-            "id": 9,
-            "rank": 2,
-            "course_id": 5,
-            "registration_id": 1,
-            "track_id": 3
-        },
-        "20": {
-            "id": 20,
-            "rank": 1,
-            "course_id": 1,
-            "registration_id": 3,
-            "track_id": 1
+            "is_assembly_realm": true,
+            "display_name": "Anton",
+            "name_supplement": null,
+            "is_core_admin": true,
+            "is_active": true,
+            "is_archived": false,
+            "is_admin": true,
+            "mobile": null,
+            "postal_code": "03205",
+            "username": "anton@example.cde",
+            "location": "Musterstadt",
+            "country": null,
+            "is_cde_admin": true,
+            "title": null,
+            "gender": 2,
+            "is_ml_admin": true,
+            "cloud_account": true
         },
         "7": {
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_cde_realm": true,
+            "is_member": true,
+            "is_event_admin": false,
+            "address": "Bei der W\u00fcste 39",
+            "family_name": "Generalis",
+            "is_searchable": false,
+            "given_names": "Garcia G.",
+            "birthday": "1978-12-12",
+            "is_assembly_admin": false,
+            "address_supplement": null,
+            "telephone": null,
             "id": 7,
-            "rank": 0,
-            "course_id": 1,
-            "registration_id": 1,
-            "track_id": 3
-        }
-    },
-    "event.registration_parts": {
-        "12": {
-            "id": 12,
-            "lodgement_id": 2,
-            "is_reserve": true,
-            "registration_id": 4,
-            "part_id": 3,
-            "status": 2
-        },
-        "6": {
-            "id": 6,
-            "lodgement_id": 4,
-            "is_reserve": false,
-            "registration_id": 2,
-            "part_id": 3,
-            "status": 2
-        },
-        "3": {
-            "id": 3,
-            "lodgement_id": 1,
-            "is_reserve": false,
-            "registration_id": 1,
-            "part_id": 3,
-            "status": 2
-        },
-        "1": {
-            "id": 1,
-            "lodgement_id": null,
-            "is_reserve": false,
-            "registration_id": 1,
-            "part_id": 1,
-            "status": -1
-        },
-        "5": {
-            "id": 5,
-            "lodgement_id": 4,
-            "is_reserve": false,
-            "registration_id": 2,
-            "part_id": 2,
-            "status": 4
-        },
-        "10": {
-            "id": 10,
-            "lodgement_id": null,
-            "is_reserve": false,
-            "registration_id": 4,
-            "part_id": 1,
-            "status": 6
-        },
-        "11": {
-            "id": 11,
-            "lodgement_id": null,
-            "is_reserve": false,
-            "registration_id": 4,
-            "part_id": 2,
-            "status": 5
-        },
-        "9": {
-            "id": 9,
-            "lodgement_id": 2,
-            "is_reserve": false,
-            "registration_id": 3,
-            "part_id": 3,
-            "status": 2
-        },
-        "2": {
-            "id": 2,
-            "lodgement_id": null,
-            "is_reserve": false,
-            "registration_id": 1,
-            "part_id": 2,
-            "status": 1
-        },
-        "4": {
-            "id": 4,
-            "lodgement_id": null,
-            "is_reserve": false,
-            "registration_id": 2,
-            "part_id": 1,
-            "status": 3
-        },
-        "8": {
-            "id": 8,
-            "lodgement_id": null,
-            "is_reserve": false,
-            "registration_id": 3,
-            "part_id": 2,
-            "status": 2
-        },
-        "7": {
-            "id": 7,
-            "lodgement_id": 2,
-            "is_reserve": false,
-            "registration_id": 3,
-            "part_id": 1,
-            "status": 2
-        }
-    },
-    "event.registration_tracks": {
-        "12": {
-            "id": 12,
-            "course_id": 1,
-            "course_instructor": null,
-            "registration_id": 4,
-            "track_id": 3
-        },
-        "6": {
-            "id": 6,
-            "course_id": 1,
-            "course_instructor": 1,
-            "registration_id": 2,
-            "track_id": 3
-        },
-        "3": {
-            "id": 3,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 1,
-            "track_id": 3
-        },
-        "1": {
-            "id": 1,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 1,
-            "track_id": 1
-        },
-        "5": {
-            "id": 5,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 2,
-            "track_id": 2
-        },
-        "10": {
-            "id": 10,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 4,
-            "track_id": 1
-        },
-        "11": {
-            "id": 11,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 4,
-            "track_id": 2
-        },
-        "9": {
-            "id": 9,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 3,
-            "track_id": 3
-        },
-        "2": {
-            "id": 2,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 1,
-            "track_id": 2
-        },
-        "4": {
-            "id": 4,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 2,
-            "track_id": 1
-        },
-        "8": {
-            "id": 8,
-            "course_id": 2,
-            "course_instructor": null,
-            "registration_id": 3,
-            "track_id": 2
-        },
-        "7": {
-            "id": 7,
-            "course_id": null,
-            "course_instructor": null,
-            "registration_id": 3,
-            "track_id": 1
-        }
-    },
-    "event.log": {
-        "1": {"additional_info": null,
-              "code": 50,
-              "ctime": "2014-01-01T02:04:05+01:00",
-              "event_id": 1,
-              "id": 1,
-              "persona_id": 1,
-              "submitted_by": 1},
-        "2": {"additional_info": null,
-              "code": 50,
-              "ctime": "2014-01-01T03:05:06+01:00",
-              "event_id": 1,
-              "id": 2,
-              "persona_id": 5,
-              "submitted_by": 5},
-        "3": {"additional_info": null,
-              "code": 50,
-              "ctime": "2014-01-01T04:06:07+01:00",
-              "event_id": 1,
-              "id": 3,
-              "persona_id": 7,
-              "submitted_by": 7},
-        "4": {"additional_info": null,
-              "code": 50,
-              "ctime": "2014-01-01T05:07:08+01:00",
-              "event_id": 1,
-              "id": 4,
-              "persona_id": 9,
-              "submitted_by": 9}},
-    "event.orgas": {
-        "1": {
-            "id": 1,
-            "event_id": 1,
-            "persona_id": 7
+            "is_assembly_realm": true,
+            "display_name": "Garcia",
+            "name_supplement": null,
+            "is_core_admin": false,
+            "is_active": true,
+            "is_archived": false,
+            "is_admin": false,
+            "mobile": null,
+            "postal_code": "8888",
+            "username": "garcia@example.cde",
+            "location": "Weltstadt",
+            "country": null,
+            "is_cde_admin": false,
+            "title": null,
+            "gender": 1,
+            "is_ml_admin": false,
+            "cloud_account": true
         }
     },
     "event.lodgements": {
         "3": {
-            "id": 3,
-            "capacity": 0,
-            "moniker": "Kellerverlies",
-            "fields": {
-                "lodgement_id": 3,
-                "contamination": "low"
-            },
-            "event_id": 1,
             "reserve": 100,
-            "notes": "Nur f\u00fcr Notf\u00e4lle."
-        },
-        "4": {
-            "id": 4,
-            "capacity": 1,
-            "moniker": "Einzelzelle",
+            "capacity": 0,
+            "id": 3,
             "fields": {
-                "lodgement_id": 4,
-                "contamination": "high"
+                "contamination": "low",
+                "lodgement_id": 3
             },
-            "event_id": 1,
-            "reserve": 0,
-            "notes": null
-        },
-        "1": {
-            "id": 1,
-            "capacity": 5,
-            "moniker": "Warme Stube",
-            "fields": {
-                "lodgement_id": 1,
-                "contamination": "high"
-            },
-            "event_id": 1,
-            "reserve": 1,
-            "notes": null
+            "moniker": "Kellerverlies",
+            "notes": "Nur f\u00fcr Notf\u00e4lle.",
+            "event_id": 1
         },
         "2": {
-            "id": 2,
-            "capacity": 10,
-            "moniker": "Kalte Kammer",
-            "fields": {
-                "lodgement_id": 2,
-                "contamination": "none"
-            },
-            "event_id": 1,
             "reserve": 2,
-            "notes": "Daf\u00fcr mit Frischluft."
+            "capacity": 10,
+            "id": 2,
+            "fields": {
+                "contamination": "none",
+                "lodgement_id": 2
+            },
+            "moniker": "Kalte Kammer",
+            "notes": "Daf\u00fcr mit Frischluft.",
+            "event_id": 1
+        },
+        "1": {
+            "reserve": 1,
+            "capacity": 5,
+            "id": 1,
+            "fields": {
+                "contamination": "high",
+                "lodgement_id": 1
+            },
+            "moniker": "Warme Stube",
+            "notes": null,
+            "event_id": 1
+        },
+        "4": {
+            "reserve": 0,
+            "capacity": 1,
+            "id": 4,
+            "fields": {
+                "contamination": "high",
+                "lodgement_id": 4
+            },
+            "moniker": "Einzelzelle",
+            "notes": null,
+            "event_id": 1
         }
-    }
+    },
+    "CDEDB_EXPORT_EVENT_VERSION": 1
 }

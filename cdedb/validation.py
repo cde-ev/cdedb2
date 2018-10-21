@@ -2247,24 +2247,15 @@ def _serialized_event(val, argname=None, *, _convert=True):
             "Currently only full exports are supported")))]
 
     mandatory_fields = {
-        'CDEDB_EXPORT_EVENT_VERSION': _int,
-        'kind': _str,
         'id': _id,
         'timestamp': _datetime,
+        'CDEDB_EXPORT_EVENT_VERSION': _int,
+        'kind': _str,
         'event.events': _mapping,
-        'event.event_parts': _mapping,
-        'event.course_tracks': _mapping,
         'event.courses': _mapping,
-        'event.course_segments': _mapping,
         'event.log': _mapping,
-        'event.orgas': _mapping,
-        'event.field_definitions': _mapping,
         'event.lodgements': _mapping,
         'event.registrations': _mapping,
-        'event.registration_parts': _mapping,
-        'event.registration_tracks': _mapping,
-        'event.course_choices': _mapping,
-        'event.questionnaire_rows': _mapping,
     }
     val, errs = _examine_dictionary_fields(
         val, mandatory_fields, {'core.personas': _mapping}, _convert=_convert)
@@ -2275,56 +2266,113 @@ def _serialized_event(val, argname=None, *, _convert=True):
     ## We reuse the existing validators, but have to augment them since the
     ## data looks a bit different.
     table_validators = {
-        'event.events': _event,
-        'event.event_parts': _augment_dict_validator(
-            _event_part, {'id': _id, 'event_id': _id}),
-        'event.course_tracks': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'part_id': _id, 'title': _str}),
+        'event.events': _augment_dict_validator(
+            _event, {'fields': _mapping, 'orgas': _mapping, 'parts': _mapping,
+                     'questionnaire_rows': _mapping}),
         'event.courses': _augment_dict_validator(
-            _course, {'event_id': _id}),
-        'event.course_segments': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'course_id': _id, 'track_id': _id,
-                          'is_active': _bool}),
+            _course, {'event_id': _id, 'segments': _mapping}),
         'event.log': _augment_dict_validator(
             _empty_dict, {'id': _id, 'ctime': _datetime, 'code': _int,
                           'submitted_by': _id, 'event_id': _id_or_None,
                           'persona_id': _id_or_None,
                           'additional_info': _str_or_None}),
-        'event.orgas': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
-        'event.field_definitions': _augment_dict_validator(
-            _event_field, {'id': _id, 'event_id': _id,
-                           'field_name': _restrictive_identifier}),
         'event.lodgements': _augment_dict_validator(
             _lodgement, {'event_id': _id}),
         'event.registrations': _augment_dict_validator(
-            _registration, {'event_id': _id, 'persona_id': _id}),
-        'event.registration_parts': _augment_dict_validator(
-            _registration_part, {'id': _id, 'part_id': _id,
-                                 'registration_id': _id}),
-        'event.registration_tracks': _augment_dict_validator(
-            _registration_track, {'id': _id, 'track_id': _id,
-                                  'registration_id': _id}),
-        'event.course_choices': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'course_id': _id, 'track_id': _id,
-                          'registration_id': _id, 'rank': _int}),
-        'event.questionnaire_rows': _augment_dict_validator(
-            _empty_dict, {'id': _id, 'event_id': _id, 'pos': _int,
-                          'field_id': _id_or_None, 'title': _str_or_None,
-                          'info': _str_or_None, 'input_size': _int_or_None,
-                          'readonly': _bool_or_None,}),
+            _registration, {'event_id': _id, 'persona_id': _id,
+                            'parts': _mapping, 'tracks': _mapping}),
     }
     for table, validator in table_validators.items():
         new_table = {}
         for key, entry in val[table].items():
             new_entry, e = validator(entry, table, _convert=_convert)
-            new_key, ee = _int(key, table, _convert=True) # fix JSON key restriction
+            new_key, ee = _int(key, table, _convert=True) # fix JSON keys
             if e or ee:
                 errs.extend(e)
                 errs.extend(ee)
             else:
                 new_table[new_key] = new_entry
         val[table] = new_table
+    if errs:
+        return None, errs
+    recursive_event_validators = {
+        'parts': _augment_dict_validator(
+            _event_part, {'id': _id, 'event_id': _id, 'tracks': _mapping}),
+        'orgas': _augment_dict_validator(
+            _empty_dict, {'id': _id, 'event_id': _id, 'persona_id': _id}),
+        'fields': _augment_dict_validator(
+            _event_field, {'id': _id, 'event_id': _id,
+                           'field_name': _restrictive_identifier}),
+        'questionnaire_rows': _augment_dict_validator(
+            _empty_dict, {'id': _id, 'event_id': _id, 'pos': _int,
+                          'field_id': _id_or_None, 'title': _str_or_None,
+                          'info': _str_or_None, 'input_size': _int_or_None,
+                          'readonly': _bool_or_None,}),
+    }
+    recursive_course_validators = {
+        'segments': _augment_dict_validator(
+            _empty_dict, {'id': _id, 'course_id': _id, 'track_id': _id,
+                          'is_active': _bool}),
+    }
+    recursive_registration_validators = {
+        'parts': _augment_dict_validator(
+            _registration_part, {'id': _id, 'part_id': _id,
+                                 'registration_id': _id}),
+        'tracks': _augment_dict_validator(
+            _registration_track, {'id': _id, 'track_id': _id,
+                                  'registration_id': _id,
+                                  'choices': _iterable}),
+    }
+    for table, validators in (('event.events', recursive_event_validators),
+                              ('event.courses', recursive_course_validators),
+                              ('event.registrations',
+                               recursive_registration_validators)):
+        for entity in val[table].values():
+            for struct, validator in validators.items():
+                new_struct = {}
+                tag = "{}/{}".format(table, struct)
+                for key, entry in entity[struct].items():
+                    new_entry, e = validator(entry, tag, _convert=_convert)
+                    new_key, ee = _int(key, tag, _convert=True) # fix JSON keys
+                    if e or ee:
+                        errs.extend(e)
+                        errs.extend(ee)
+                    else:
+                        new_struct[new_key] = new_entry
+                entity[struct] = new_struct
+    if errs:
+        return None, errs
+    course_tracks_validator = _augment_dict_validator(
+        _empty_dict, {'id': _id, 'part_id': _id, 'title': _str})
+    for event in val['event.events'].values():
+        for part in event['parts'].values():
+            tag = "events/parts/tracks"
+            new_tracks = {}
+            for id, track in part['tracks'].items():
+                new_track, e = course_tracks_validator(track, tag,
+                                                       _convert=_convert)
+                new_id, ee = _int(id, tag, _convert=True) # fix JSON keys
+                if e or ee:
+                    errs.extend(e)
+                    errs.extend(ee)
+                else:
+                    new_tracks[new_id] = new_track
+            part['tracks'] = new_tracks
+    course_choices_validator = _augment_dict_validator(
+        _empty_dict, {'id': _id, 'course_id': _id, 'track_id': _id,
+                      'registration_id': _id, 'rank': _int})
+    for registration in val['event.registrations'].values():
+        for track in registration['tracks'].values():
+            tag = "registrations/tracks/choices"
+            new_choices = []
+            for choice in track['choices']:
+                new_choice, e = course_choices_validator(choice, tag,
+                                                         _convert=_convert)
+                if e:
+                    errs.extend(e)
+                else:
+                    new_choices.append(new_choice)
+            track['choices'] = new_choices
     if errs:
         return None, errs
     ## Third a consistency check
