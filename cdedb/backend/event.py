@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     cast_fields)
 from cdedb.backend.cde import CdEBackend
 from cdedb.common import (
-    _, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
+    n_, glue, PrivilegeError, EVENT_PART_FIELDS, EVENT_FIELDS, COURSE_FIELDS,
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
@@ -130,9 +130,9 @@ class EventBackend(AbstractBackend):
         :rtype: bool
         """
         if event_id is None and course_id is None:
-            raise ValueError(_("No input specified."))
+            raise ValueError(n_("No input specified."))
         if event_id is not None and course_id is not None:
-            raise ValueError(_("Too many inputs specified."))
+            raise ValueError(n_("Too many inputs specified."))
         if course_id is not None:
             event_id = unwrap(self.sql_select_one(rs, "event.courses",
                                                   ("event_id",), course_id))
@@ -151,9 +151,9 @@ class EventBackend(AbstractBackend):
         :rtype: bool
         """
         if event_id is None and course_id is None:
-            raise ValueError(_("No input specified."))
+            raise ValueError(n_("No input specified."))
         if event_id is not None and course_id is not None:
-            raise ValueError(_("Too many inputs specified."))
+            raise ValueError(n_("Too many inputs specified."))
         if event_id is not None:
             anid = affirm("id", event_id)
             query = "SELECT offline_lock FROM event.events WHERE id = %s"
@@ -180,7 +180,7 @@ class EventBackend(AbstractBackend):
         is_locked = self.is_offline_locked(rs, event_id=event_id,
                                            course_id=course_id)
         if is_locked != self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            raise RuntimeError(_("Event offline lock error."))
+            raise RuntimeError(n_("Event offline lock error."))
 
     @access("persona")
     @singularize("orga_info")
@@ -246,7 +246,7 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id_or_None", event_id)
         if (not (event_id and self.is_orga(rs, event_id=event_id))
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, "enum_eventlogcodes", "event", "event.log", codes, event_id,
             start, stop)
@@ -316,7 +316,7 @@ class EventBackend(AbstractBackend):
             event_id = affirm("id", event_id)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
-                raise PrivilegeError(_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             lodgement_fields = {
                 e['field_name']: PYTHON_TO_SQL_MAP[e['kind']]
@@ -433,7 +433,7 @@ class EventBackend(AbstractBackend):
             query.spec['event_id'] = "id"
         elif query.scope == "qview_event_user":
             if not self.is_admin(rs):
-                raise PrivilegeError(_("Admin only."))
+                raise PrivilegeError(n_("Admin only."))
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
@@ -441,7 +441,7 @@ class EventBackend(AbstractBackend):
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
         else:
-            raise RuntimeError(_("Bad scope."))
+            raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, view=view)
 
     @access("event")
@@ -546,14 +546,14 @@ class EventBackend(AbstractBackend):
         current = {e['id']: e['title'] for e in current}
         existing = set(current)
         if not(existing >= {x for x in data if x > 0}):
-            raise ValueError(_("Non-existing tracks specified."))
+            raise ValueError(n_("Non-existing tracks specified."))
         new = {x for x in data if x < 0}
         updated = {x for x in data
                    if x > 0 and data[x] is not None}
         deleted = {x for x in data
                    if x > 0 and data[x] is None}
         if cautious and (new or deleted):
-            raise ValueError(_("Registrations exist, modifications only."))
+            raise ValueError(n_("Registrations exist, modifications only."))
         ## new
         for x in reversed(sorted(new)):
             new_track = {
@@ -621,7 +621,7 @@ class EventBackend(AbstractBackend):
         """
         data = affirm("event", data)
         if not self.is_orga(rs, event_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['id'])
         ret = 1
         with Atomizer(rs):
@@ -643,7 +643,7 @@ class EventBackend(AbstractBackend):
                         if (lodge_data['event_id'] != data['id']
                                or lodge_data['kind'] != "str"
                                or lodge_data['association'] != correct_assoc):
-                            raise ValueError(_("Unfit field for lodge_field"))
+                            raise ValueError(n_("Unfit field for lodge_field"))
                     if edata.get('reserve_field'):
                         reserve_data = unwrap(
                             [x for x in indirect_data
@@ -651,7 +651,7 @@ class EventBackend(AbstractBackend):
                         if (reserve_data['event_id'] != data['id']
                                or reserve_data['kind'] != "bool"
                                or reserve_data['association'] != correct_assoc):
-                            raise ValueError(_("Unfit field for reserve_field"))
+                            raise ValueError(n_("Unfit field for reserve_field"))
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(rs, const.EventLogCodes.event_changed,
                                data['id'])
@@ -684,7 +684,7 @@ class EventBackend(AbstractBackend):
                                           (data['id'],), entity_key="event_id")
                 existing = {unwrap(e) for e in current}
                 if not(existing >= {x for x in parts if x > 0}):
-                    raise ValueError(_("Non-existing parts specified."))
+                    raise ValueError(n_("Non-existing parts specified."))
                 new = {x for x in parts if x < 0}
                 updated = {x for x in parts
                            if x > 0 and parts[x] is not None}
@@ -692,9 +692,9 @@ class EventBackend(AbstractBackend):
                            if x > 0 and parts[x] is None}
                 if has_registrations and (deleted or new):
                     raise ValueError(
-                        _("Registrations exist, modifications only."))
+                        n_("Registrations exist, modifications only."))
                 if deleted >= existing | new:
-                    raise ValueError(_("At least one event part required."))
+                    raise ValueError(n_("At least one event part required."))
                 for x in new:
                     new_part = copy.deepcopy(parts[x])
                     new_part['event_id'] = data['id']
@@ -740,7 +740,7 @@ class EventBackend(AbstractBackend):
                     entity_key="event_id")
                 existing = {e['id'] for e in current}
                 if not(existing >= {x for x in fields if x > 0}):
-                    raise ValueError(_("Non-existing fields specified."))
+                    raise ValueError(n_("Non-existing fields specified."))
                 new = {x for x in fields if x < 0}
                 updated = {x for x in fields
                            if x > 0 and fields[x] is not None}
@@ -790,7 +790,7 @@ class EventBackend(AbstractBackend):
         """
         data = affirm("event", data, creation=True)
         if 'parts' not in data:
-            raise ValueError(_("At least one event part required."))
+            raise ValueError(n_("At least one event part required."))
         with Atomizer(rs):
             edata = {k: v for k, v in data.items() if k in EVENT_FIELDS}
             new_id = self.sql_insert(rs, "event.events", edata)
@@ -824,7 +824,7 @@ class EventBackend(AbstractBackend):
             if ret:
                 events = {e['event_id'] for e in data}
                 if len(events) != 1:
-                    raise ValueError(_(
+                    raise ValueError(n_(
                         "Only courses from exactly one event allowed!"))
                 event = self.get_event(rs, unwrap(events))
             data = self.sql_select(
@@ -862,7 +862,7 @@ class EventBackend(AbstractBackend):
         """
         data = affirm("course", data)
         if not self.is_orga(rs, course_id=data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, course_id=data['id'])
         ret = 1
         with Atomizer(rs):
@@ -912,7 +912,7 @@ class EventBackend(AbstractBackend):
                         rs, "event.event_parts", ("event_id",), associated_parts)
                     event_ids = {e['event_id'] for e in associated_events}
                     if {current['event_id']} != event_ids:
-                        raise ValueError(_("Non-associated tracks found."))
+                        raise ValueError(n_("Non-associated tracks found."))
 
                     for anid in new:
                         insert = {
@@ -937,7 +937,7 @@ class EventBackend(AbstractBackend):
                 ## check that all active segments are actual segments of this
                 ## course
                 if not existing >= data['active_segments']:
-                    raise ValueError(_("Wrong-associated segments found."))
+                    raise ValueError(n_("Wrong-associated segments found."))
                 active = {e['track_id'] for e in current_segments
                           if e['is_active']}
                 activated = data['active_segments'] - active
@@ -970,13 +970,13 @@ class EventBackend(AbstractBackend):
         data = affirm("course", data, creation=True)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
             ## Check for existence of course tracks
             event = self.get_event(rs, data['event_id'])
             if not event['tracks']:
-                raise RuntimeError(_("Event without tracks forbids courses"))
+                raise RuntimeError(n_("Event without tracks forbids courses"))
 
             cdata = {k: v for k, v in data.items() if k in COURSE_FIELDS}
             new_id = self.sql_insert(rs, "event.courses", cdata)
@@ -1012,7 +1012,7 @@ class EventBackend(AbstractBackend):
         if (not self.is_admin(rs)
                 and (len(ids) != 1
                      or not self.is_orga(rs, course_id=unwrap(ids)))):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         with Atomizer(rs):
             used = set()
             data = self.sql_select(rs, "event.registration_tracks",
@@ -1036,11 +1036,11 @@ class EventBackend(AbstractBackend):
         course_id = affirm("id", course_id)
         if (not self.is_orga(rs, course_id=course_id)
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, course_id=course_id)
         with Atomizer(rs):
             if not self.is_course_removable(rs, course_id):
-                raise ValueError(_("Referential integrity violated."))
+                raise ValueError(n_("Referential integrity violated."))
             course = self.get_course(rs, course_id)
             ret = self.sql_delete(rs, "event.course_segments", (course_id,),
                                   entity_key="course_id")
@@ -1064,7 +1064,7 @@ class EventBackend(AbstractBackend):
         if (persona_id != rs.user.persona_id
                 and not self.is_orga(rs, event_id=event_id)
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         query = glue("SELECT id, persona_id FROM event.registrations",
                      "WHERE event_id = %s")
         params = (event_id,)
@@ -1098,7 +1098,7 @@ class EventBackend(AbstractBackend):
         reg_ids = affirm_set("id", reg_ids)
         if (not self.is_admin(rs)
                 and not self.is_orga(rs, event_id=event_id)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         query = glue(
             "SELECT DISTINCT regs.id, regs.persona_id",
             "FROM event.registrations AS regs",
@@ -1174,13 +1174,13 @@ class EventBackend(AbstractBackend):
             events = {e['event_id'] for e in associated}
             personas = {e['persona_id'] for e in associated}
             if len(events) != 1:
-                raise ValueError(_(
+                raise ValueError(n_(
                     "Only registrations from exactly one event allowed!"))
             event_id = unwrap(events)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)
                     and not {rs.user.persona_id} >= personas):
-                raise PrivilegeError(_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged."))
 
             ret = {e['id']: e for e in self.sql_select(
                 rs, "event.registrations", REGISTRATION_FIELDS, ids)}
@@ -1224,7 +1224,7 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         with Atomizer(rs):
             query = glue("SELECT COUNT(*) FROM event.registrations",
                          "WHERE event_id = %s LIMIT 1")
@@ -1252,7 +1252,7 @@ class EventBackend(AbstractBackend):
             return ret
         for course_id in choices:
             if track_id not in courses[course_id]['segments']:
-                raise ValueError(_("Wrong track for course."))
+                raise ValueError(n_("Wrong track for course."))
         query = glue("DELETE FROM event.course_choices",
                      "WHERE registration_id = %s AND track_id = %s")
         self.query_exec(rs, query, (registration_id, track_id))
@@ -1301,7 +1301,7 @@ class EventBackend(AbstractBackend):
             if (persona_id != rs.user.persona_id
                     and not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
-                raise PrivilegeError(_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             courses = self.get_courses(rs, self.list_db_courses(rs, event_id))
 
@@ -1329,7 +1329,7 @@ class EventBackend(AbstractBackend):
             if 'parts' in data:
                 parts = data['parts']
                 if not(set(event['parts'].keys()) >= {x for x in parts}):
-                    raise ValueError(_("Non-existing parts specified."))
+                    raise ValueError(n_("Non-existing parts specified."))
                 existing = {e['part_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_parts", ("id", "part_id"),
                     (data['id'],), entity_key="registration_id")}
@@ -1350,12 +1350,12 @@ class EventBackend(AbstractBackend):
                     ret *= self.sql_update(rs, "event.registration_parts",
                                            update)
                 if deleted:
-                    raise NotImplementedError(_("This is not useful."))
+                    raise NotImplementedError(n_("This is not useful."))
             if 'tracks' in data:
                 tracks = data['tracks']
                 all_tracks = set(event['tracks'])
                 if not(all_tracks >= set(tracks)):
-                    raise ValueError(_("Non-existing tracks specified."))
+                    raise ValueError(n_("Non-existing tracks specified."))
                 existing = {e['track_id']: e['id'] for e in self.sql_select(
                     rs, "event.registration_tracks", ("id", "track_id"),
                     (data['id'],), entity_key="registration_id")}
@@ -1380,7 +1380,7 @@ class EventBackend(AbstractBackend):
                     ret *= self.sql_update(rs, "event.registration_tracks",
                                            update)
                 if deleted:
-                    raise NotImplementedError(_("This is not useful."))
+                    raise NotImplementedError(n_("This is not useful."))
         self.event_log(
             rs, const.EventLogCodes.registration_changed, event_id,
             persona_id=persona_id)
@@ -1403,19 +1403,19 @@ class EventBackend(AbstractBackend):
         if (data['persona_id'] != rs.user.persona_id
                 and not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
             part_ids = {e['id'] for e in self.sql_select(
                 rs, "event.event_parts", ("id",), (data['event_id'],),
                 entity_key="event_id")}
             if part_ids != set(data['parts'].keys()):
-                raise ValueError(_("Missing part dataset."))
+                raise ValueError(n_("Missing part dataset."))
             track_ids = {e['id'] for e in self.sql_select(
                 rs, "event.course_tracks", ("id",), part_ids,
                 entity_key="part_id")}
             if track_ids != set(data['tracks'].keys()):
-                raise ValueError(_("Missing track dataset."))
+                raise ValueError(n_("Missing track dataset."))
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
             new_id = self.sql_insert(rs, "event.registrations", rdata)
             with Silencer(rs):
@@ -1450,7 +1450,7 @@ class EventBackend(AbstractBackend):
         reg = unwrap(self.get_registrations(rs, (registration_id,)))
         if (not self.is_orga(rs, event_id=reg['event_id'])
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=reg['event_id'])
         with Atomizer(rs):
             self.sql_delete(rs, "event.registration_parts", (registration_id,),
@@ -1475,7 +1475,7 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, "event.lodgements", ("id", "moniker"),
                                (event_id,), entity_key="event_id")
         return {e['id']: e['moniker'] for e in data}
@@ -1499,12 +1499,12 @@ class EventBackend(AbstractBackend):
                                    ids)
             events = {e['event_id'] for e in data}
             if len(events) != 1:
-                raise ValueError(_(
+                raise ValueError(n_(
                     "Only lodgements from exactly one event allowed!"))
             event_id = unwrap(events)
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
-                raise PrivilegeError(_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
             ret = {e['id']: e for e in data}
             for entry in ret.values():
@@ -1527,7 +1527,7 @@ class EventBackend(AbstractBackend):
             event_id, moniker = current['event_id'], current['moniker']
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
-                raise PrivilegeError(_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
             event = self.get_event(rs, event_id)
             if 'fields' in data:
@@ -1568,7 +1568,7 @@ class EventBackend(AbstractBackend):
         data = affirm("lodgement", data, creation=True)
         if (not self.is_orga(rs, event_id=data['event_id'])
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=data['event_id'])
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "event.lodgements", data)
@@ -1604,7 +1604,7 @@ class EventBackend(AbstractBackend):
             event_id, moniker = current['event_id'], current['moniker']
             if (not self.is_orga(rs, event_id=event_id)
                     and not self.is_admin(rs)):
-                raise PrivilegeError(_("Not privileged."))
+                raise PrivilegeError(n_("Not privileged."))
             self.assert_offline_lock(rs, event_id=event_id)
             if cascade:
                 reg_ids = self.list_registrations(rs, event_id)
@@ -1657,7 +1657,7 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         data = affirm("questionnaire", data)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         self.assert_offline_lock(rs, event_id=event_id)
         with Atomizer(rs):
             self.sql_delete(rs, "event.questionnaire_rows", (event_id,),
@@ -1682,9 +1682,9 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            raise RuntimeError(_("It makes no sense to offline lock an event."))
+            raise RuntimeError(n_("It makes no sense to offline lock an event."))
         self.assert_offline_lock(rs, event_id=event_id)
         update = {
             'id': event_id,
@@ -1828,7 +1828,7 @@ class EventBackend(AbstractBackend):
         """
         event_id = affirm("id", event_id)
         if not self.is_orga(rs, event_id=event_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
 
         def list_to_dict(alist):
             return {e['id']: e for e in alist}
@@ -1978,13 +1978,13 @@ class EventBackend(AbstractBackend):
         data = affirm("serialized_event", data)
         data = self.destill_import(data)
         if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-            raise RuntimeError(_("It makes no sense to do this."))
+            raise RuntimeError(n_("It makes no sense to do this."))
         if not self.is_offline_locked(rs, event_id=data['id']):
-            raise RuntimeError(_("Not locked."))
+            raise RuntimeError(n_("Not locked."))
         if data["CDEDB_EXPORT_EVENT_VERSION"] != _CDEDB_EXPORT_EVENT_VERSION:
-            raise ValueError(_("Version mismatch -- aborting."))
+            raise ValueError(n_("Version mismatch -- aborting."))
         if data["kind"] != "full":
-            raise ValueError(_("Not a full export, unable to proceed."))
+            raise ValueError(n_("Not a full export, unable to proceed."))
 
         with Atomizer(rs):
             current = self.destill_import(self.export_event(rs, data['id']))
@@ -1994,7 +1994,7 @@ class EventBackend(AbstractBackend):
                        for e in data['event.registrations'].values()
                        if not e['real_persona_id']}
             if claimed - set(current['core.personas']):
-                raise ValueError(_("Non-transferred persona found"))
+                raise ValueError(n_("Non-transferred persona found"))
 
             ret = 1
             ## Second synchronize the data sets

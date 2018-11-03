@@ -44,7 +44,7 @@ import werkzeug.wrappers
 
 from cdedb.config import BasicConfig, Config, SecretsConfig
 from cdedb.common import (
-    _, glue, merge_dicts, compute_checkdigit, now, asciificator,
+    n_, glue, merge_dicts, compute_checkdigit, now, asciificator,
     roles_to_db_role, RequestState, make_root_logger, CustomJSONEncoder,
     json_serialize, open_utf8)
 from cdedb.database import DATABASE_ROLES
@@ -151,7 +151,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         """
         params = params or {}
         if rs.errors and not rs.notifications:
-            rs.notify("error", _("Failed validation."))
+            rs.notify("error", n_("Failed validation."))
         url = cdedburl(rs, target, params, force_external=True)
         ret = basic_redirect(rs, url)
         if rs.notifications:
@@ -742,9 +742,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :rtype: :py:class:`werkzeug.wrappers.Response`
         """
         if not path and not afile and not data:
-            raise ValueError(_("No input specified."))
+            raise ValueError(n_("No input specified."))
         if (path and afile) or (path and data) or (afile and data):
-            raise ValueError(_("Ambiguous input."))
+            raise ValueError(n_("Ambiguous input."))
         if path and not pathlib.Path(path).is_file():
             raise werkzeug.exceptions.NotFound()
         if path:
@@ -805,9 +805,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     rs.request.remote_addr, rs.request.values, rs.ambience)
             params['debugstring'] = debugstring
         if rs.errors and not rs.notifications:
-            rs.notify("error", _("Failed validation."))
+            rs.notify("error", n_("Failed validation."))
         if self.conf.LOCKDOWN:
-            rs.notify("info", _("The database currently undergoes "
+            rs.notify("info", n_("The database currently undergoes "
                                 "maintenance and is unavailable."))
         html = self.fill_template(rs, "web", templatename, params)
         if not self.conf.CDEDB_DEV:
@@ -853,7 +853,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         ret = self._send_mail(msg)
         if ret:
             ## This is mostly intended for the test suite.
-            rs.notify("info", _("Stored email to hard drive at {path}"),
+            rs.notify("info", n_("Stored email to hard drive at {path}"),
                       {'path': ret})
         return ret
 
@@ -1015,7 +1015,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif code < 0:
             rs.notify("info", pending)
         else:
-            raise RuntimeError(_("Impossible."))
+            raise RuntimeError(n_("Impossible."))
 
     def latex_compile(self, data, runs=2):
         """Run LaTeX on the provided document.
@@ -1277,11 +1277,11 @@ def access(*roles, modi=None):
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     notifications = json_serialize([
                         rs._coders['encode_notification'](
-                            "error", _("You must login."))])
+                            "error", n_("You must login."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 raise werkzeug.exceptions.Forbidden(
-                    _("Access denied to {realm}/{endpoint}.").format(
+                    n_("Access denied to {realm}/{endpoint}.").format(
                         realm=obj, endpoint=fun.__name__))
         new_fun.access_list = access_list
         new_fun.modi = modi
@@ -1334,7 +1334,7 @@ def cdedburl(rs, endpoint, params=None, force_external=False,
                        for i in range(len(magic_placeholders))):
                     continue
                 return attempt
-        raise RuntimeError(_("Magic URL parameter replacement failed."))
+        raise RuntimeError(n_("Magic URL parameter replacement failed."))
     ## Second we come to the normal case
     allparams = werkzeug.datastructures.MultiDict()
     for arg in rs.requestargs:
@@ -1452,7 +1452,7 @@ def REQUESTdatadict(*proto_spec):
                     data[name] = tuple(
                         val.strip() for val in rs.request.values.getlist(name))
                 else:
-                    raise ValueError(_("Invalid argtype {t} found.").format(
+                    raise ValueError(n_("Invalid argtype {t} found.").format(
                         t=argtype))
                 rs.values[name] = data[name]
             return fun(obj, rs, *args, data=data, **kwargs)

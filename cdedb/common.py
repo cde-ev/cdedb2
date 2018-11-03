@@ -112,7 +112,7 @@ class RequestState:
         :type message: str
         """
         if ntype not in NOTIFICATION_TYPES:
-            raise ValueError(_("Invalid notification type {t} found."),
+            raise ValueError(n_("Invalid notification type {t} found."),
                              {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))
@@ -257,7 +257,7 @@ class ProxyShim:
                     if not self._internal:
                         rs.conn = None
             else:
-                raise PrivilegeError(_("Not in access list."))
+                raise PrivilegeError(n_("Not in access list."))
         return new_fun
 
     def __getattr__(self, name):
@@ -433,7 +433,7 @@ def _small_int_to_words(num, lang):
     :rtype: str
     """
     if num < 0 or num > 999:
-        raise ValueError(_("Out of supported scope."))
+        raise ValueError(n_("Out of supported scope."))
     digits = tuple((num // 10**i) % 10 for i in range(3))
     if lang == "de":
         atoms = ("null", "ein", "zwei", "drei", "vier", "fünf", "sechs",
@@ -457,7 +457,7 @@ def _small_int_to_words(num, lang):
             ret += tens[digits[1]]
         return ret
     else:
-        raise NotImplementedError(_("Not supported."))
+        raise NotImplementedError(n_("Not supported."))
 
 def int_to_words(num, lang):
     """Convert an integer into a written representation.
@@ -470,7 +470,7 @@ def int_to_words(num, lang):
     :rtype: str
     """
     if num < 0 or num > 999999:
-        raise ValueError(_("Out of supported scope."))
+        raise ValueError(n_("Out of supported scope."))
     if lang == "de":
         if num == 0:
             return "null"
@@ -487,7 +487,7 @@ def int_to_words(num, lang):
                 ret += number_word + multiplier
         return ret
     else:
-        raise NotImplementedError(_("Not supported."))
+        raise NotImplementedError(n_("Not supported."))
 
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
@@ -630,7 +630,7 @@ def schulze_evaluate(votes, candidates):
         for index, sublist in enumerate(alist):
             if element in sublist:
                 return index
-        raise ValueError(_("Not in list."))
+        raise ValueError(n_("Not in list."))
     ## First we count the number of votes prefering x to y
     counts = {(x, y): 0 for x in candidates for y in candidates}
     for vote in split_votes:
@@ -709,7 +709,7 @@ def unwrap(single_element_list, keys=False):
     """
     if (not isinstance(single_element_list, collections.abc.Iterable)
             or len(single_element_list) != 1):
-        raise RuntimeError(_("Unable to unwrap!"))
+        raise RuntimeError(n_("Unable to unwrap!"))
     if isinstance(single_element_list, collections.abc.Mapping):
         if keys:
             single_element_list = single_element_list.keys()
@@ -871,7 +871,7 @@ class SubscriptionStates(enum.IntEnum):
     subscribed = 2 #:
     requested = 10 #: A subscription request is waiting for moderation.
 
-def _(x):
+def n_(x):
     """
     Alias of the identity for i18n.
     Identity function that shadows the gettext alias to trick pybabel into

@@ -13,7 +13,7 @@ from cdedb.frontend.common import (
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input
 from cdedb.common import (
-    _, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates,
+    n_, name_key, merge_dicts, unwrap, ProxyShim, SubscriptionStates,
     json_serialize)
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -436,7 +436,7 @@ class MlFrontend(AbstractUserFrontend):
         code = self.mlproxy.change_subscription_state(
             rs, mailinglist_id, rs.user.persona_id, subscribe)
         self.notify_return_code(
-            rs, code, pending=_("Subscription request awaits moderation."))
+            rs, code, pending=n_("Subscription request awaits moderation."))
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -451,13 +451,13 @@ class MlFrontend(AbstractUserFrontend):
         is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
                                                    mailinglist_id)
         if not is_subscribed:
-            rs.notify("error", _("Not subscribed."))
+            rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(False)
         if email and not may_toggle:
-            rs.notify("warning", _("Disallowed to change address."))
+            rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
         subscriptions = self.mlproxy.subscriptions(rs, rs.user.persona_id)
@@ -470,11 +470,11 @@ class MlFrontend(AbstractUserFrontend):
             self.do_mail(
                 rs, "confirm_address",
                 {'To': (email,),
-                 'Subject': _("Confirm email address for CdE mailing list")},
+                 'Subject': n_("Confirm email address for CdE mailing list")},
                 {'email': self.encode_parameter(
                     "ml/do_address_change", "email", email,
                     timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),})
-            rs.notify("info", _("Confirmation email sent."))
+            rs.notify("info", n_("Confirmation email sent."))
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
@@ -485,18 +485,18 @@ class MlFrontend(AbstractUserFrontend):
         This is not a POST since the link is shared via email.
         """
         if rs.errors:
-            rs.notify("error", _("Link expired."))
+            rs.notify("error", n_("Link expired."))
             return self.show_mailinglist(rs, mailinglist_id)
         is_subscribed = self.mlproxy.is_subscribed(rs, rs.user.persona_id,
                                                    mailinglist_id)
         if not is_subscribed:
-            rs.notify("error", _("Not subscribed."))
+            rs.notify("error", n_("Not subscribed."))
             return self.redirect(rs, "ml/show_mailinglist")
         policy = const.SubscriptionPolicy(
             rs.ambience['mailinglist']['sub_policy'])
         may_toggle = not policy.privileged_transition(False)
         if not may_toggle:
-            rs.notify("warning", _("Disallowed to change address."))
+            rs.notify("warning", n_("Disallowed to change address."))
             return self.redirect(rs, "ml/show_mailinglist")
 
         code = self.mlproxy.change_subscription_state(

@@ -11,7 +11,7 @@ dependencies.
 
 import abc
 
-from cdedb.common import _, merge_dicts, ProxyShim, PERSONA_DEFAULTS
+from cdedb.common import n_, merge_dicts, ProxyShim, PERSONA_DEFAULTS
 from cdedb.frontend.common import AbstractFrontend
 from cdedb.frontend.common import check_validation as check
 from cdedb.backend.core import CoreBackend
@@ -57,9 +57,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         new_id = self.coreproxy.create_persona(rs, data)
         self.do_mail(rs, "welcome",
                      {'To': (data['username'],),
-                      'Subject': _('CdEDB account creation'),},
+                      'Subject': n_('CdEDB account creation'), },
                      {'data': data})
-        self.notify_return_code(rs, new_id, success=_("User created."))
+        self.notify_return_code(rs, new_id, success=n_("User created."))
         if new_id:
             return self.redirect_show_user(rs, new_id)
         else:

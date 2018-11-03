@@ -22,7 +22,7 @@ import cdedb.database.constants as const
 import cdedb.validation as validate
 from cdedb.database.connection import Atomizer
 from cdedb.common import (
-    _, merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
+    n_, merge_dicts, name_key, lastschrift_reference, now, glue, unwrap,
     int_to_words, determine_age_class, LineResolutions, PERSONA_DEFAULTS,
     ProxyShim, diacritic_patterns, open_utf8, shutil_copy)
 from cdedb.frontend.common import (
@@ -148,7 +148,7 @@ class CdEFrontend(AbstractUserFrontend):
         code = self.coreproxy.change_persona(
             rs, new, generation=None, may_wait=False,
             change_note=change_note)
-        message = _("Consent noted.") if ack else _("Decision noted.")
+        message = n_("Consent noted.") if ack else n_("Decision noted.")
         self.notify_return_code(rs, code, success=message)
         if not code:
             return self.consent_decision_form(rs, stay=True)
@@ -190,7 +190,7 @@ class CdEFrontend(AbstractUserFrontend):
             if (len(result) > self.conf.MAX_MEMBER_SEARCH_RESULTS
                     and not self.is_admin(rs)):
                 result = result[:self.conf.MAX_MEMBER_SEARCH_RESULTS]
-                rs.notify("info", _("Too many query results."))
+                rs.notify("info", n_("Too many query results."))
         return self.render(rs, "member_search", {
             'spec': spec, 'choices': choices, 'result': result})
 
@@ -314,7 +314,7 @@ class CdEFrontend(AbstractUserFrontend):
             ## remove resolution in case of a change
             datum['resolution'] = None
             rs.values['resolution{}'.format(datum['lineno'] - 1)] = None
-            warnings.append((None, ValueError(_("Entry changed."))))
+            warnings.append((None, ValueError(n_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
         ## Adapt input of gender from old convention
         GENDER_CONVERT = {
@@ -351,37 +351,37 @@ class CdEFrontend(AbstractUserFrontend):
             warnings.extend(w)
             problems.extend(p)
         else:
-            warnings.append(("course", ValueError(_("No course available."))))
+            warnings.append(("course", ValueError(n_("No course available."))))
         doppelgangers = tuple()
         if persona:
             temp = copy.deepcopy(persona)
             temp['id'] = 1
             doppelgangers = self.coreproxy.find_doppelgangers(rs, temp)
         if doppelgangers:
-            warnings.append(("persona", ValueError(_("Doppelgangers found."))))
+            warnings.append(("persona", ValueError(n_("Doppelgangers found."))))
         if (datum['resolution'] is not None and
                 (bool(datum['doppelganger_id'])
                  != datum['resolution'].is_modification())):
             problems.append(
                 ("doppelganger",
                  RuntimeError(
-                     _("Doppelganger choice doesn't fit resolution."))))
+                     n_("Doppelganger choice doesn't fit resolution."))))
         if datum['doppelganger_id']:
             if datum['doppelganger_id'] not in doppelgangers:
                 problems.append(
-                    ("doppelganger", KeyError(_("Doppelganger unavailable."))))
+                    ("doppelganger", KeyError(n_("Doppelganger unavailable."))))
             else:
                 if not doppelgangers[datum['doppelganger_id']]['is_cde_realm']:
                     problems.append(
                         ("doppelganger",
-                         ValueError(_("Doppelganger not a CdE-Account."))))
+                         ValueError(n_("Doppelganger not a CdE-Account."))))
         if datum['doppelganger_id'] and pevent_id:
             existing = self.pasteventproxy.list_participants(
                 rs, pevent_id=pevent_id)
             if (datum['doppelganger_id'], pcourse_id) in existing:
                 problems.append(
                     ("pevent_id",
-                     KeyError(_("Participation already recorded."))))
+                     KeyError(n_("Participation already recorded."))))
         datum.update({
             'persona': persona,
             'pevent_id': pevent_id,
@@ -450,7 +450,7 @@ class CdEFrontend(AbstractUserFrontend):
                                 rs, datum['doppelganger_id'],
                                 datum['persona']['username'], password=None)
                     else:
-                        raise RuntimeError(_("Impossible."))
+                        raise RuntimeError(n_("Impossible."))
                     if datum['pevent_id']:
                         ## TODO preserve instructor/orga information
                         self.pasteventproxy.add_participant(
@@ -479,7 +479,7 @@ class CdEFrontend(AbstractUserFrontend):
                 if datum['resolution'] == LineResolutions.create:
                     self.do_mail(rs, "welcome",
                                  {'To': (datum['raw']['username'],),
-                                  'Subject': _('CdE admission'),},
+                                  'Subject': n_('CdE admission'), },
                                  {'data': datum['persona']})
         return True, count
 
@@ -560,20 +560,20 @@ class CdEFrontend(AbstractUserFrontend):
             similarity = self.similarity_score(ds1, ds2)
             if similarity == "high":
                 problem = (None, ValueError(
-                    _("Lines {first} and {second} are the same."),
+                    n_("Lines {first} and {second} are the same."),
                     {'first': ds1['lineno'], 'second': ds2['lineno']}))
                 ds1['problems'].append(problem)
                 ds2['problems'].append(problem)
             elif similarity == "medium":
                 warning = (None, ValueError(
-                    _("Lines {first} and {second} look the same."),
+                    n_("Lines {first} and {second} look the same."),
                     {'first': ds1['lineno'], 'second': ds2['lineno']}))
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)
             elif similarity == "low":
                 pass
             else:
-                raise RuntimeError(_("Impossible."))
+                raise RuntimeError(n_("Impossible."))
         for dataset in data:
             if (dataset['resolution'] is None
                     and not dataset['doppelgangers']
@@ -585,11 +585,11 @@ class CdEFrontend(AbstractUserFrontend):
                   LineResolutions.create.value
         if lineno != len(accountlines):
             rs.errors.append(("accounts",
-                              ValueError(_("Lines didn't match up."))))
+                              ValueError(n_("Lines didn't match up."))))
         if not membership:
             rs.errors.append(("membership",
                               ValueError(
-                                  _("Only member admission supported."))))
+                                  n_("Only member admission supported."))))
         open_issues = any(
             e['resolution'] is None
             or (e['problems'] and e['resolution'] != LineResolutions.skip)
@@ -604,13 +604,13 @@ class CdEFrontend(AbstractUserFrontend):
         success, num = self.perform_batch_admission(rs, data, trial_membership,
                                                     consent, sendmail)
         if success:
-            rs.notify("success", _("Created {num} accounts."), {'num': num})
+            rs.notify("success", n_("Created {num} accounts."), {'num': num})
             return self.redirect(rs, "cde/index")
         else:
             if num is None:
-                rs.notify("warning", _("DB serialization error."))
+                rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", _("Unexpected error on line {num}."),
+                rs.notify("error", n_("Unexpected error on line {num}."),
                           {'num': num})
             return self.batch_admission_form(rs, data=data, csvfields=fields)
 
@@ -657,15 +657,15 @@ class CdEFrontend(AbstractUserFrontend):
             persona = self.coreproxy.get_persona(rs, persona_id)
             if persona['is_archived']:
                 problems.append(('persona_id',
-                                 ValueError(_("Persona is archived."))))
+                                 ValueError(n_("Persona is archived."))))
             if not re.search(diacritic_patterns(family_name),
                              persona['family_name'], flags=re.IGNORECASE):
                 problems.append(('family_name',
-                                 ValueError(_("Family name doesn't match."))))
+                                 ValueError(n_("Family name doesn't match."))))
             if not re.search(diacritic_patterns(given_names),
                              persona['given_names'], flags=re.IGNORECASE):
                 problems.append(('given_names',
-                                 ValueError(_("Given names don't match."))))
+                                 ValueError(n_("Given names don't match."))))
         datum.update({
             'persona_id': persona_id,
             'amount': amount,
@@ -730,7 +730,7 @@ class CdEFrontend(AbstractUserFrontend):
                                + datum['amount'])
                 self.do_mail(rs, "transfer_received",
                              {'To': (persona['username'],),
-                              'Subject': _('CdE money transfer received'),},
+                              'Subject': n_('CdE money transfer received'), },
                              {'persona': persona, 'address': address,
                               'new_balance': new_balance})
         return True, count, memberships_gained
@@ -765,14 +765,14 @@ class CdEFrontend(AbstractUserFrontend):
         for ds1, ds2 in itertools.combinations(data, 2):
             if ds1['persona_id'] and ds1['persona_id'] == ds2['persona_id']:
                 warning = (None, ValueError(
-                    _("More than one transfer for this account "
+                    n_("More than one transfer for this account "
                       "(lines {first} and {second})."),
                     {'first': ds1['lineno'], 'second': ds2['lineno']}))
                 ds1['warnings'].append(warning)
                 ds2['warnings'].append(warning)
         if lineno != len(transferlines):
             rs.errors.append(("transfers",
-                              ValueError(_("Lines didn't match up."))))
+                              ValueError(n_("Lines didn't match up."))))
         open_issues = any(e['problems'] for e in data)
         if rs.errors or not data or open_issues:
             rs.values['checksum'] = None
@@ -786,15 +786,15 @@ class CdEFrontend(AbstractUserFrontend):
         success, num, new_members = self.perform_money_transfers(
             rs, data, sendmail)
         if success:
-            rs.notify("success", _("Committed {num} transfers. "
+            rs.notify("success", n_("Committed {num} transfers. "
                                    "There were {new_members} new members."),
                       {'num': num, 'new_members': new_members})
             return self.redirect(rs, "cde/index")
         else:
             if num is None:
-                rs.notify("warning", _("DB serialization error."))
+                rs.notify("warning", n_("DB serialization error."))
             else:
-                rs.notify("error", _("Unexpected error on line {num}."),
+                rs.notify("error", n_("Unexpected error on line {num}."),
                           {'num': num})
             return self.money_transfers_form(rs, data=data, csvfields=fields)
 
@@ -928,7 +928,7 @@ class CdEFrontend(AbstractUserFrontend):
             'revoked_at': now(),
         }
         code = self.cdeproxy.set_lastschrift(rs, data)
-        self.notify_return_code(rs, code, success=_("Permit revoked."))
+        self.notify_return_code(rs, code, success=n_("Permit revoked."))
         return self.redirect(rs, "cde/lastschrift_show", {
             'persona_id': rs.ambience['lastschrift']['persona_id']})
 
@@ -1055,7 +1055,7 @@ class CdEFrontend(AbstractUserFrontend):
             for transaction_id in transaction_ids:
                 self.cdeproxy.finalize_lastschrift_transaction(
                     rs, transaction_id, stati.cancelled)
-            rs.notify("error", _("Creation of SEPA-PAIN-file failed."))
+            rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.redirect(rs, "cde/lastschrift_index")
         return self.send_file(rs, data=sepapain_file, inline=False,
                               filename=rs.gettext("sepa.cdd"))
@@ -1073,9 +1073,9 @@ class CdEFrontend(AbstractUserFrontend):
             return self.lastschrift_index(rs)
         success = self.cdeproxy.lastschrift_skip(rs, lastschrift_id)
         if not success:
-            rs.notify("warning", _("Unable to skip transaction."))
+            rs.notify("warning", n_("Unable to skip transaction."))
         else:
-            rs.notify("success", _("Skipped."))
+            rs.notify("success", n_("Skipped."))
         if persona_id:
             return self.redirect(rs, "cde/lastschrift_show",
                                  {'persona_id': persona_id})
@@ -1126,11 +1126,11 @@ class CdEFrontend(AbstractUserFrontend):
                                           cancelled, failure):
         """Finish many transaction."""
         if sum(1 for s in (success, cancelled, failure) if s) != 1:
-            rs.errors.append((None, ValueError(_("Wrong number of actions."))))
+            rs.errors.append((None, ValueError(n_("Wrong number of actions."))))
         if rs.errors:
             return self.lastschrift_index(rs)
         if not transaction_ids:
-            rs.notify("warning", _("No transactions selected."))
+            rs.notify("warning", n_("No transactions selected."))
             return self.redirect(rs, "cde/lastschrift_index")
         status = None
         if success:
@@ -1245,7 +1245,7 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if period['billing_done']:
-            rs.notify("error", _("Billing already done."))
+            rs.notify("error", n_("Billing already done."))
             return self.redirect(rs, "show/semester")
         open_lastschrift = self.determine_open_permits(rs)
         ## The rs parameter shadows the outer request state, making sure that
@@ -1283,7 +1283,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.do_mail(
                     rrs, "billing",
                     {'To': (persona['username'],),
-                     'Subject': _('Renew your CdE membership')},
+                     'Subject': n_('Renew your CdE membership')},
                     {'persona': persona,
                      'fee': self.conf.MEMBERSHIP_FEE,
                      'lastschrift': lastschrift,
@@ -1302,7 +1302,7 @@ class CdEFrontend(AbstractUserFrontend):
                 return True
         worker = Worker(self.conf, task, rs)
         worker.start()
-        rs.notify("success", _("Started sending mail."))
+        rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin", modi={"POST"})
@@ -1311,7 +1311,7 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['billing_done'] or period['ejection_done']:
-            rs.notify("error", _("Wrong timing for ejection."))
+            rs.notify("error", n_("Wrong timing for ejection."))
             return self.redirect(rs, "show/semester")
         ## The rs parameter shadows the outer request state, making sure that
         ## it doesn't leak
@@ -1340,7 +1340,7 @@ class CdEFrontend(AbstractUserFrontend):
                     self.do_mail(
                         rrs, "ejection",
                         {'To': (persona['username'],),
-                         'Subject': _('Ejection from CdE')},
+                         'Subject': n_('Ejection from CdE')},
                         {'persona': persona,
                          'fee': self.conf.MEMBERSHIP_FEE,
                          'transaction_subject': transaction_subject,})
@@ -1352,7 +1352,7 @@ class CdEFrontend(AbstractUserFrontend):
                 return True
         worker = Worker(self.conf, task, rs)
         worker.start()
-        rs.notify("success", _("Started ejection."))
+        rs.notify("success", n_("Started ejection."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin", modi={"POST"})
@@ -1361,7 +1361,7 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['ejection_done'] or period['balance_done']:
-            rs.notify("error", _("Wrong timing for balance update."))
+            rs.notify("error", n_("Wrong timing for balance update."))
             return self.redirect(rs, "show/semester")
         ## The rs parameter shadows the outer request state, making sure that
         ## it doesn't leak
@@ -1384,7 +1384,7 @@ class CdEFrontend(AbstractUserFrontend):
                 persona = self.coreproxy.get_cde_user(rrs, persona_id)
                 if (persona['balance'] < self.conf.MEMBERSHIP_FEE
                         and not persona['trial_member']):
-                    raise ValueError(_("Balance too low."))
+                    raise ValueError(n_("Balance too low."))
                 else:
                     if persona['trial_member']:
                         update = {
@@ -1393,7 +1393,7 @@ class CdEFrontend(AbstractUserFrontend):
                         }
                         self.coreproxy.change_persona(
                             rrs, update, change_note=rrs.gettext(
-                                _("End trial membership.")))
+                                n_("End trial membership.")))
                     else:
                         new_b = persona['balance'] - self.conf.MEMBERSHIP_FEE
                         self.coreproxy.change_persona_balance(
@@ -1407,7 +1407,7 @@ class CdEFrontend(AbstractUserFrontend):
                 return True
         worker = Worker(self.conf, task, rs)
         worker.start()
-        rs.notify("success", _("Started updating balance."))
+        rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin", modi={"POST"})
@@ -1416,10 +1416,10 @@ class CdEFrontend(AbstractUserFrontend):
         period_id = self.cdeproxy.current_period(rs)
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['balance_done']:
-            rs.notify("error", _("Wrong timing for advancing the semester."))
+            rs.notify("error", n_("Wrong timing for advancing the semester."))
             return self.redirect(rs, "show/semester")
         self.cdeproxy.create_period(rs)
-        rs.notify("success", _("New period started."))
+        rs.notify("success", n_("New period started."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin", modi={"POST"})
@@ -1433,7 +1433,7 @@ class CdEFrontend(AbstractUserFrontend):
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if expuls['addresscheck_done']:
-            rs.notify("error", _("Addresscheck already done."))
+            rs.notify("error", n_("Addresscheck already done."))
             return self.redirect(rs, "show/semester")
         ## The rs parameter shadows the outer request state, making sure that
         ## it doesn't leak
@@ -1468,7 +1468,7 @@ class CdEFrontend(AbstractUserFrontend):
                 self.do_mail(
                     rrs, "addresscheck",
                     {'To': (persona['username'],),
-                     'Subject': _('Address check mail for exPuls')},
+                     'Subject': n_('Address check mail for exPuls')},
                     {'persona': persona,
                      'lastschrift': lastschrift,
                      'fee': self.conf.MEMBERSHIP_FEE,
@@ -1488,11 +1488,11 @@ class CdEFrontend(AbstractUserFrontend):
                 'addresscheck_done': now(),
                 }
             self.cdeproxy.set_expuls(rs, expuls_update)
-            rs.notify("success", _("Not sending mail."))
+            rs.notify("success", n_("Not sending mail."))
         else:
             worker = Worker(self.conf, task, rs)
             worker.start()
-            rs.notify("success", _("Started sending mail."))
+            rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin", modi={"POST"})
@@ -1501,10 +1501,10 @@ class CdEFrontend(AbstractUserFrontend):
         expuls_id = self.cdeproxy.current_expuls(rs)
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if not expuls['addresscheck_done']:
-            rs.notify("error", _("Addresscheck not done."))
+            rs.notify("error", n_("Addresscheck not done."))
             return self.redirect(rs, "show/semester")
         self.cdeproxy.create_expuls(rs)
-        rs.notify("success", _("New expuls started."))
+        rs.notify("success", n_("New expuls started."))
         return self.redirect(rs, "cde/show_semester")
 
     @access("cde_admin")
@@ -1774,7 +1774,7 @@ class CdEFrontend(AbstractUserFrontend):
                 if entry:
                     thecourses.append(entry)
                 else:
-                    rs.notify("warning", _("Line {lineno} is faulty."),
+                    rs.notify("warning", n_("Line {lineno} is faulty."),
                               {'lineno': lineno})
         if rs.errors:
             return self.create_past_event_form(rs)
@@ -1783,7 +1783,7 @@ class CdEFrontend(AbstractUserFrontend):
             for course in thecourses:
                 course['pevent_id'] = new_id
                 self.pasteventproxy.create_past_course(rs, course)
-        self.notify_return_code(rs, new_id, success=_("Event created."))
+        self.notify_return_code(rs, new_id, success=n_("Event created."))
         return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
 
     @access("cde_admin")
@@ -1818,7 +1818,7 @@ class CdEFrontend(AbstractUserFrontend):
         if rs.errors:
             return self.create_past_course_form(rs, pevent_id)
         new_id = self.pasteventproxy.create_past_course(rs, data)
-        self.notify_return_code(rs, new_id, success=_("Course created."))
+        self.notify_return_code(rs, new_id, success=n_("Course created."))
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})
 
     @access("cde_admin", modi={"POST"})
@@ -1829,7 +1829,7 @@ class CdEFrontend(AbstractUserFrontend):
         This also deletes all participation information w.r.t. this course.
         """
         if not ack_delete:
-            rs.errors.append(("ack_delete", ValueError(_("Must be checked."))))
+            rs.errors.append(("ack_delete", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
@@ -1855,7 +1855,7 @@ class CdEFrontend(AbstractUserFrontend):
             param = {'pevent_id': pevent_id}
         participants = self.pasteventproxy.list_participants(rs, **param)
         if persona_id in participants:
-            rs.notify("warning", _("Participant already present."))
+            rs.notify("warning", n_("Participant already present."))
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:

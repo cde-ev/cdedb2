@@ -12,7 +12,7 @@ from cdedb.backend.common import (
     access, affirm_validation as affirm, Silencer, AbstractBackend,
     affirm_set_validation as affirm_set, singularize)
 from cdedb.common import (
-    _, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS, SubscriptionStates,
+    n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS, SubscriptionStates,
     extract_roles)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -104,7 +104,7 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id_or_None", mailinglist_id)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         return self.generic_retrieve_log(
             rs, "enum_mllogcodes", "mailinglist", "ml.log", codes,
             mailinglist_id, start, stop)
@@ -127,7 +127,7 @@ class MlBackend(AbstractBackend):
             query.spec["is_ml_realm"] = "bool"
             query.spec["is_archived"] = "bool"
         else:
-            raise RuntimeError(_("Bad scope."))
+            raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)
 
     @access("ml")
@@ -210,7 +210,7 @@ class MlBackend(AbstractBackend):
         """
         data = affirm("mailinglist", data)
         if not self.is_moderator(rs, data['id']) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         ret = 1
         with Atomizer(rs):
             mdata = {k: v for k, v in data.items() if k in MAILINGLIST_FIELDS}
@@ -220,7 +220,7 @@ class MlBackend(AbstractBackend):
                 current = unwrap(self.get_mailinglists(rs, (data['id'],)))
                 if current['sub_policy'] != mdata['sub_policy']:
                     raise PrivilegeError(
-                        _("Only admin may set opt out policies."))
+                        n_("Only admin may set opt out policies."))
             if len(mdata) > 1:
                 ret *= self.sql_update(rs, "ml.mailinglists", mdata)
                 self.ml_log(rs, const.MlLogCodes.list_changed, data['id'])
@@ -347,7 +347,7 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id", mailinglist_id)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         event_list_query = glue(
             "SELECT DISTINCT regs.persona_id FROM event.registrations AS regs",
             "JOIN event.registration_parts AS parts",
@@ -433,7 +433,7 @@ class MlBackend(AbstractBackend):
         if (persona_id != rs.user.persona_id
                 and not self.is_admin(rs)
                 and not all(self.is_moderator(rs, anid) for anid in lists)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         event_list_query = glue(
             "SELECT DISTINCT regs.persona_id FROM event.registrations AS regs",
             "JOIN event.registration_parts AS parts",
@@ -501,7 +501,7 @@ class MlBackend(AbstractBackend):
                 and (len(mailinglist_ids) > 1
                      or not self.is_moderator(rs, unwrap(mailinglist_ids)))
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
         ret = {}
         for persona_id in persona_ids:
             query = glue("SELECT mailinglist_id FROM ml.subscription_requests",
@@ -577,7 +577,7 @@ class MlBackend(AbstractBackend):
         if (persona_id != rs.user.persona_id
                 and not self.is_moderator(rs, mailinglist_id)
                 and not self.is_admin(rs)):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
 
         privileged = self.is_moderator(rs, mailinglist_id) or self.is_admin(rs)
         with Atomizer(rs):
@@ -626,7 +626,7 @@ class MlBackend(AbstractBackend):
                 return -self.sql_insert(rs, "ml.subscription_requests", request)
             if (policy(ml['sub_policy']).privileged_transition(subscribe)
                     and not privileged and not gateway):
-                raise PrivilegeError(_("Must be moderator."))
+                raise PrivilegeError(n_("Must be moderator."))
             if subscribe:
                 code = const.MlLogCodes.subscribed
             else:
@@ -646,7 +646,7 @@ class MlBackend(AbstractBackend):
         """
         mailinglist_id = affirm("id", mailinglist_id)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
 
         data = self.sql_select(
             rs, "ml.subscription_requests", ("persona_id",),
@@ -668,7 +668,7 @@ class MlBackend(AbstractBackend):
         persona_id = affirm("id", persona_id)
         ack = affirm("bool", ack)
         if not self.is_moderator(rs, mailinglist_id) and not self.is_admin(rs):
-            raise PrivilegeError(_("Not privileged."))
+            raise PrivilegeError(n_("Not privileged."))
 
         with Atomizer(rs):
             query = glue("DELETE FROM ml.subscription_requests",

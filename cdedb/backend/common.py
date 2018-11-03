@@ -12,7 +12,7 @@ import enum
 import logging
 
 from cdedb.common import (
-    _, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
+    n_, glue, make_root_logger, ProxyShim, unwrap, diacritic_patterns)
 from cdedb.validation import parse_date, parse_datetime
 from cdedb.query import QueryOperators, QUERY_VIEWS, QUERY_PRIMARIES
 from cdedb.config import Config
@@ -163,7 +163,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
         realms = realms or {self.realm}
         actual_realms = self.core.get_realms_multi(rs, ids)
         if any(not x >= realms for x in actual_realms.values()):
-            raise ValueError(_("Wrong realm for personas."))
+            raise ValueError(n_("Wrong realm for personas."))
         return
 
     @classmethod

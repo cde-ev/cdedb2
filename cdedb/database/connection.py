@@ -17,7 +17,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 from psycopg2.extensions import ISOLATION_LEVEL_SERIALIZABLE as SERIALIZABLE
 
-from cdedb.common import _
+from cdedb.common import n_
 from cdedb.config import BasicConfig
 _BASICCONF = BasicConfig()
 
@@ -83,19 +83,19 @@ def connection_pool_factory(dbname, roles, secrets, port,
 
         def __getitem__(self, role):
             if not role in self.roles:
-                raise ValueError(_("role {role} not available"), {'role': role})
+                raise ValueError(n_("role {role} not available"), {'role': role})
             return _create_connection(
                 dbname, role, secrets.CDB_DATABASE_ROLES[role], port,
                 isolation_level)
 
         def __delitem__(self, key):
-            raise NotImplementedError(_("Not available for instant pool"))
+            raise NotImplementedError(n_("Not available for instant pool"))
 
         def __len__(self):
-            raise NotImplementedError(_("Not available for instant pool"))
+            raise NotImplementedError(n_("Not available for instant pool"))
 
         def __setitem__(self, key, val):
-            raise NotImplementedError(_("Not available for instant pool"))
+            raise NotImplementedError(n_("Not available for instant pool"))
 
     _LOGGER.info("Initialised instant connection pool for roles {}".format(
         roles))
@@ -170,7 +170,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
             return self
         else:
             if self.status != psycopg2.extensions.STATUS_READY:
-                raise RuntimeError(_("Connection in use!"))
+                raise RuntimeError(n_("Connection in use!"))
             ## clear saved exception
             self._saved_etype = None
             self._saved_evalue = None
@@ -194,7 +194,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
                 super().__exit__(self._saved_etype, self._saved_evalue,
                                  self._saved_tb)
                 ## second we raise an exception to complain
-                raise RuntimeError(_("Suppressed exception detected"))
+                raise RuntimeError(n_("Suppressed exception detected"))
             return super().__exit__(etype, evalue, tb)
 
     def contaminate(self):
@@ -204,7 +204,7 @@ class IrradiatedConnection(psycopg2.extensions.connection):
     def decontaminate(self):
         """Reduce recursion by one."""
         if self._radiation_level <= 0:
-            raise RuntimeError(_("No contamination!"))
+            raise RuntimeError(n_("No contamination!"))
         self._radiation_level -= 1
 
     @property

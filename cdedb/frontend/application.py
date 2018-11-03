@@ -21,7 +21,7 @@ from cdedb.frontend.event import EventFrontend
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.ml import MlFrontend
 from cdedb.common import (
-    _, glue, QuotaException, PrivilegeError, now,
+    n_, glue, QuotaException, PrivilegeError, now,
     roles_to_db_role, RequestState, User, extract_roles)
 from cdedb.frontend.common import (
     BaseApp, construct_redirect, Response, sanitize_None, staticurl,
@@ -69,7 +69,7 @@ class Application(BaseApp):
         if pathlib.Path("/DBVM").is_file():
             ## Sanity checks for the live instance
             if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
-                raise RuntimeError(_("Refusing to start in debug mode."))
+                raise RuntimeError(n_("Refusing to start in debug mode."))
 
     def make_error_page(self, error, request):
         """Helper to format an error page.
@@ -138,7 +138,7 @@ class Application(BaseApp):
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
                     notifications = json.dumps([self.encode_notification(
-                        "error", _("Session expired."))])
+                        "error", n_("Session expired."))])
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 coders = {

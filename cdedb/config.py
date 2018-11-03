@@ -19,13 +19,13 @@ import uuid
 import pytz
 
 from cdedb.query import Query, QUERY_SPECS, QueryOperators
-from cdedb.common import _, deduct_years, now
+from cdedb.common import n_, deduct_years, now
 
 _LOGGER = logging.getLogger(__name__)
 
 _currentpath = pathlib.Path(__file__).resolve().parent
 if _currentpath.parts[0] != '/' or _currentpath.parts[-1] != 'cdedb':
-    raise RuntimeError(_("Failed to locate repository"))
+    raise RuntimeError(n_("Failed to locate repository"))
 _repopath = _currentpath.parent
 _git_commit = subprocess.check_output(
     ("git", "rev-parse", "HEAD"), cwd=str(_repopath)).decode().strip()
@@ -69,54 +69,54 @@ def generate_event_registration_default_queries(event, spec):
                     ("reg.id", True))
     
     queries = {
-        _("00_query_event_registration_all"): Query(
+        n_("00_query_event_registration_all"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
             tuple(),
             (("reg.id", True),)),
-        _("01_query_event_registration_not_paid"): Query(
+        n_("01_query_event_registration_not_paid"): Query(
             "qview_registraion", spec,
             ("persona.given_names", "persona.family_name"),
             (("reg.payment", QueryOperators.empty, None),),
             default_sort),
-        _("02_query_event_registration_paid"): Query(
+        n_("02_query_event_registration_paid"): Query(
             "qview_registraion", spec,
             ("persona.given_names", "persona.family_name", "reg.payment"),
             (("reg.payment", QueryOperators.nonempty, None),),
             (("reg.payment", False), ("persona.family_name", True),
              ("persona.given_names", True),)),
-        _("03_query_event_registration_non_members"): Query(
+        n_("03_query_event_registration_non_members"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name"),
             (("persona.is_member", QueryOperators.equal, False),),
             default_sort),
-        _("04_query_event_registration_orga_notes"): Query(
+        n_("04_query_event_registration_orga_notes"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "reg.orga_notes"),
             (("reg.orga_notes", QueryOperators.nonempty, None),),
             default_sort),
-        _("05_query_event_registration_u18"): Query(
+        n_("05_query_event_registration_u18"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),),
             (("persona.birthday", True), ("persona.family_names", True),
              ("persona.given_names", True)), ),
-        _("06_query_event_registration_u16"): Query(
+        n_("06_query_event_registration_u16"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 16)),),
             (("persona.birthday", True), ("persona.family_names", True),
              ("persona.given_names", True)), ),
-        _("07_query_event_registration_u14"): Query(
+        n_("07_query_event_registration_u14"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 14)),),
             (("persona.birthday", True), ("persona.family_names", True),
              ("persona.given_names", True)), ),
-        _("08_query_event_registration_minors_no_consent"): Query(
+        n_("08_query_event_registration_minors_no_consent"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
@@ -300,14 +300,14 @@ _DEFAULTS = {
     ## dialing"
     "DEFAULT_QUERIES": {
         "qview_cde_user": {
-            _("00_query_cde_trial_members"): Query(
+            n_("00_query_cde_trial_members"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True)), ),
             },
         "qview_archived_persona": {
-            _("00_query_archived_persona_with_notes"): Query(
+            n_("00_query_archived_persona_with_notes"): Query(
                 "qview_archived_persona",
                 QUERY_SPECS['qview_archived_persona'],
                 ("personas.id", "given_names", "family_name", "birth_name"),
@@ -315,7 +315,7 @@ _DEFAULTS = {
                 (("family_name", True), ("given_names", True)), ),
             },
         "qview_event_user": {
-            _("00_query_event_user_minors"): Query(
+            n_("00_query_event_user_minors"): Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
                 ("persona.persona_id", "given_names", "family_name",
                  "birthday"),
@@ -325,14 +325,14 @@ _DEFAULTS = {
                  ("given_names", True)), ),
             },
         "qview_core_user": {
-            _("00_query_core_user_all"): Query(
+            n_("00_query_core_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_core_user'],
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("personas.id", True),), )
             },
         "qview_persona": {
-            _("00_query_mailinglist_persona_all"): Query(
+            n_("00_query_mailinglist_persona_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
                 ("id", "given_names", "family_name"),
                 tuple(),

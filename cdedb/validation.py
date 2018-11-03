@@ -45,7 +45,7 @@ import pytz
 import werkzeug.datastructures
 
 from cdedb.common import (
-    _, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
+    n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
     ASSEMBLY_BAR_MONIKER)
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
@@ -107,11 +107,11 @@ def _examine_dictionary_fields(adict, mandatory_fields, optional_fields=None,
             else:
                 retval[key] = v
         elif not allow_superfluous:
-            errs.append((key, KeyError(_("Superfluous key found."))))
+            errs.append((key, KeyError(n_("Superfluous key found."))))
     if len(mandatory_fields) != len(mandatory_fields_found):
         missing = set(mandatory_fields) - set(mandatory_fields_found)
         for key in missing:
-            errs.append((key, KeyError(_("Mandatory key missing."))))
+            errs.append((key, KeyError(n_("Mandatory key missing."))))
         retval = None
     return retval, errs
 
@@ -200,7 +200,7 @@ def _None(val, argname=None, *, _convert=True):
     """
     if val is None:
         return val, []
-    return None, [(argname, ValueError(_("Must be None.")))]
+    return None, [(argname, ValueError(n_("Must be None.")))]
 
 @_addvalidator
 def _any(val, argname=None, *, _convert=True):
@@ -232,10 +232,10 @@ def _int(val, argname=None, *, _convert=True):
                 return None, [(argname, e)]
         elif isinstance(val, float):
             if abs(val - int(val)) > EPSILON:
-                return None, [(argname, ValueError(_("Precision loss.")))]
+                return None, [(argname, ValueError(n_("Precision loss.")))]
             val = int(val)
     if not isinstance(val, int):
-        return None, [(argname, TypeError(_("Must be an integer.")))]
+        return None, [(argname, TypeError(n_("Must be an integer.")))]
     return val, []
 
 @_addvalidator
@@ -251,7 +251,7 @@ def _id(val, argname=None, *, _convert=True):
     if not errs:
         if val <= 0:
             val = None
-            errs.append((argname, ValueError(_("Must be positive."))))
+            errs.append((argname, ValueError(n_("Must be positive."))))
     return val, errs
 
 @_addvalidator
@@ -269,7 +269,7 @@ def _float(val, argname=None, *, _convert=True):
             return None, [(argname, e)]
     if not isinstance(val, float):
         return None, [(argname,
-                       TypeError(_("Must be a floating point number.")))]
+                       TypeError(n_("Must be a floating point number.")))]
     return val, []
 
 @_addvalidator
@@ -286,7 +286,7 @@ def _decimal(val, argname=None, *, _convert=True):
         except (ValueError, TypeError, decimal.InvalidOperation) as e:
             return None, [(argname, e)]
     if not isinstance(val, decimal.Decimal):
-        return None, [(argname, TypeError(_("Must be a decimal.Decimal.")))]
+        return None, [(argname, TypeError(n_("Must be a decimal.Decimal.")))]
     return val, []
 
 @_addvalidator
@@ -300,7 +300,7 @@ def _non_negative_decimal(val, argname=None, *, _convert=True):
     val, err = _decimal(val, argname, _convert=_convert)
     if not err and val < 0:
         val = None
-        err.append((argname, ValueError(_("Transfer saldo is negative."))))
+        err.append((argname, ValueError(n_("Transfer saldo is negative."))))
     return val, err
 
 @_addvalidator
@@ -321,7 +321,7 @@ def _str_type(val, argname=None, *, zap='', sieve='', _convert=True):
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, str):
-        return None, [(argname, TypeError(_("Must be a string.")))]
+        return None, [(argname, TypeError(n_("Must be a string.")))]
     if zap:
         val = val.translate(str.maketrans("", "", zap))
     if sieve:
@@ -343,7 +343,7 @@ def _str(val, argname=None, *, zap='', sieve='', _convert=True):
     """
     val, errs = _str_type(val, argname, zap=zap, sieve=sieve, _convert=_convert)
     if val is not None and not val.strip():
-        errs.append((argname, ValueError(_("Mustn't be empty."))))
+        errs.append((argname, ValueError(n_("Mustn't be empty."))))
     return val, errs
 
 @_addvalidator
@@ -356,7 +356,7 @@ def _mapping(val, argname=None, *, _convert=True):
     :rtype: (dict or None, [(str or None, exception)])
     """
     if not isinstance(val, collections.abc.Mapping):
-        return None, [(argname, TypeError(_("Must be a mapping.")))]
+        return None, [(argname, TypeError(n_("Must be a mapping.")))]
     return val, []
 
 @_addvalidator
@@ -369,7 +369,7 @@ def _iterable(val, argname=None, *, _convert=True):
     :rtype: ([object] or None, [(str or None, exception)])
     """
     if not isinstance(val, collections.abc.Iterable):
-        return None, [(argname, TypeError(_("Must be an iterable.")))]
+        return None, [(argname, TypeError(n_("Must be an iterable.")))]
     return val, []
 
 @_addvalidator
@@ -390,7 +390,7 @@ def _bool(val, argname=None, *, _convert=True):
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, bool):
-        return None, [(argname, TypeError(_("Must be a boolean.")))]
+        return None, [(argname, TypeError(n_("Must be a boolean.")))]
     return val, []
 
 @_addvalidator
@@ -402,7 +402,7 @@ def _empty_dict(val, argname=None, *, _convert=True):
     :rtype: (dict or None, [(str or None, exception)])
     """
     if val != {}:
-        return None, [(argname, ValueError(_("Must be an empty dict.")))]
+        return None, [(argname, ValueError(n_("Must be an empty dict.")))]
     return val, []
 
 @_addvalidator
@@ -417,7 +417,7 @@ def _realm(val, argname=None, *, _convert=True):
     val, errs = _str(val, argname, _convert=_convert)
     if val not in ("session", "core", "cde", "event", "ml", "assembly"):
         val = None
-        errs.append((argname, ValueError(_("Not a valid realm."))))
+        errs.append((argname, ValueError(n_("Not a valid realm."))))
     return val, errs
 
 _CDEDBID = re.compile('^DB-([0-9]*)-([A-K])$')
@@ -434,12 +434,12 @@ def _cdedbid(val, argname=None, *, _convert=True):
         return val, errs
     mo = _CDEDBID.search(val)
     if mo is None:
-        return None, [(argname, ValueError(_("Wrong formatting.")))]
+        return None, [(argname, ValueError(n_("Wrong formatting.")))]
     value = mo.group(1)
     checkdigit = mo.group(2)
     value, errs = _id(value, argname, _convert=True)
     if not errs and compute_checkdigit(value) != checkdigit:
-        errs.append((argname, ValueError(_("Checksum failure."))))
+        errs.append((argname, ValueError(n_("Checksum failure."))))
     return value, errs
 
 _PRINTABLE_ASCII = re.compile('^[ -~]*$')
@@ -453,7 +453,7 @@ def _printable_ascii_type(val, argname=None, *, _convert=True):
     """
     val, errs = _str_type(val, argname, _convert=_convert)
     if not errs and not _PRINTABLE_ASCII.search(val):
-        errs.append((argname, ValueError(_("Must be printable ASCII."))))
+        errs.append((argname, ValueError(n_("Must be printable ASCII."))))
     return val, errs
 
 @_addvalidator
@@ -468,7 +468,7 @@ def _printable_ascii(val, argname=None, *, _convert=True):
     """
     val, errs = _printable_ascii_type(val, argname, _convert=_convert)
     if val is not None and not val.strip():
-        errs.append((argname, ValueError(_("Mustn't be empty."))))
+        errs.append((argname, ValueError(n_("Mustn't be empty."))))
     return val, errs
 
 _ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+$')
@@ -484,7 +484,7 @@ def _alphanumeric(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if not _ALPHANUMERIC_REGEX.search(val):
-        errs.append((argname, ValueError(_("Must be alphanumeric."))))
+        errs.append((argname, ValueError(n_("Must be alphanumeric."))))
     return val, errs
 
 _CSV_ALPHANUMERIC_REGEX = re.compile(r'^[a-zA-Z0-9]+(,[a-zA-Z0-9]+)*$')
@@ -501,7 +501,7 @@ def _csv_alphanumeric(val, argname=None, *, _convert=True):
         return val, errs
     if not _CSV_ALPHANUMERIC_REGEX.search(val):
         errs.append((argname,
-                     ValueError(_("Must be comma separated alphanumeric."))))
+                     ValueError(n_("Must be comma separated alphanumeric."))))
     return val, errs
 
 _IDENTIFIER_REGEX = re.compile(r'^[a-zA-Z0-9_.-]+$')
@@ -519,7 +519,7 @@ def _identifier(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if not _IDENTIFIER_REGEX.search(val):
-        errs.append((argname, ValueError(_(
+        errs.append((argname, ValueError(n_(
             "Must be an identifier "
             "(only letters, numbers, underscore, dot and hyphen)."))))
     return val, errs
@@ -541,7 +541,7 @@ def _restrictive_identifier(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if not _RESTRICTIVE_IDENTIFIER_REGEX.search(val):
-        errs.append((argname, ValueError(_(
+        errs.append((argname, ValueError(n_(
             "Must be a restrictive identifier "
             "(only letters, numbers and underscore)."))))
     return val, errs
@@ -560,7 +560,7 @@ def _csv_identifier(val, argname=None, *, _convert=True):
         return val, errs
     if not _CSV_IDENTIFIER_REGEX.search(val):
         errs.append((argname,
-                     ValueError(_("Must be comma separated identifiers."))))
+                     ValueError(n_("Must be comma separated identifiers."))))
     return val, errs
 
 @_addvalidator
@@ -584,10 +584,10 @@ def _int_csv_list(val, argname=None, *, _convert=True):
                     return val, errs
                 val.append(entry)
     if not isinstance(val, collections.abc.Sequence):
-        return None, [(argname, TypeError(_("Must be sequence.")))]
+        return None, [(argname, TypeError(n_("Must be sequence.")))]
     for entry in val:
         if not isinstance(entry, int):
-            return None, [(argname, TypeError(_("Must contain integers.")))]
+            return None, [(argname, TypeError(n_("Must contain integers.")))]
     return val, []
 
 @_addvalidator
@@ -620,7 +620,7 @@ def _password_strength(val, argname=None, *, _convert=True):
     if val:
         if len(val) < 9:
             errors.append((argname,
-                           ValueError(_("Must be at least 9 characters."))))
+                           ValueError(n_("Must be at least 9 characters."))))
         num_classes = 0
         INPUT = {c for c in val}
         if INPUT & LOWER:
@@ -634,11 +634,11 @@ def _password_strength(val, argname=None, *, _convert=True):
         if num_classes < 3:
             errors.append(
                 (argname, ValueError(
-                    _("Must contain at least three character classes."))))
+                    n_("Must contain at least three character classes."))))
         for entry in BLACKLIST:
             if entry in val.lower():
                 errors.append(
-                    (argname, ValueError(_("Contains blacklisted substring."))))
+                    (argname, ValueError(n_("Contains blacklisted substring."))))
     return val, errors
 
 _EMAIL_REGEX = re.compile(r'^[a-z0-9._+-]+@[a-z0-9.-]+\.[a-z]{2,}$')
@@ -658,7 +658,7 @@ def _email(val, argname=None, *, _convert=True):
     ## normalize email addresses to lower case
     val = val.strip().lower()
     if not _EMAIL_REGEX.search(val):
-        errs.append((argname, ValueError(_("Must be a valid email address."))))
+        errs.append((argname, ValueError(n_("Must be a valid email address."))))
     return val, errs
 
 _PERSONA_TYPE_FIELDS = {
@@ -832,7 +832,7 @@ def _persona(val, argname=None, *, creation=False, transition=False,
         return val, errs
     if creation and transition:
         raise RuntimeError(
-            _("Only one of creation, transition may be specified."))
+            n_("Only one of creation, transition may be specified."))
     if creation:
         temp, errs = _examine_dictionary_fields(
             val, _PERSONA_TYPE_FIELDS, {}, allow_superfluous=True,
@@ -923,7 +923,7 @@ def _date(val, argname=None, *, _convert=True):
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, datetime.date):
-        return None, [(argname, TypeError(_("Must be a datetime.date.")))]
+        return None, [(argname, TypeError(n_("Must be a datetime.date.")))]
     if isinstance(val, datetime.datetime):
         ## necessary, since isinstance(datetime.datetime.now(),
         ## datetime.date) == True
@@ -973,7 +973,7 @@ def parse_datetime(val, default_date=None):
                 and val[-5:-3].isdecimal() and val[-2:].isdecimal()):
             new_val = val[:-3] + val[-2:]
             return parse_datetime(new_val, default_date=default_date)
-        raise ValueError(_("Invalid datetime string ({}).".format(val)))
+        raise ValueError(n_("Invalid datetime string ({}).".format(val)))
     if ret.tzinfo is None:
         ret = _BASICCONF.DEFAULT_TIMEZONE.localize(ret)
     return ret.astimezone(pytz.utc)
@@ -996,7 +996,7 @@ def _datetime(val, argname=None, *, _convert=True, default_date=None):
         except (ValueError, TypeError) as e:
             return None, [(argname, e)]
     if not isinstance(val, datetime.datetime):
-        return None, [(argname, TypeError(_("Must be a datetime.datetime.")))]
+        return None, [(argname, TypeError(n_("Must be a datetime.datetime.")))]
     return val, []
 
 @_addvalidator
@@ -1012,7 +1012,7 @@ def _single_digit_int(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if val > 9 or val < -9:
-        return None, [(argname, ValueError(_("More than one digit.")))]
+        return None, [(argname, ValueError(n_("More than one digit.")))]
     return val, []
 
 @_addvalidator
@@ -1029,7 +1029,7 @@ def _phone(val, argname=None, *, _convert=True):
     orig = val.strip()
     val = ''.join(c for c in val if c in '+1234567890')
     if len(val) < 7:
-        errs.append((argname, ValueError(_("Too short."))))
+        errs.append((argname, ValueError(n_("Too short."))))
         return None, errs
 
     ## This is pretty horrible, but seems to be the best way ...
@@ -1047,7 +1047,7 @@ def _phone(val, argname=None, *, _convert=True):
                 val = val[len(code):]
                 break
         else:
-            errs.append((argname, ValueError(_("Invalid international part."))))
+            errs.append((argname, ValueError(n_("Invalid international part."))))
         if retval == "+49" and not val.startswith("0"):
             val = "0" + val
     else:
@@ -1056,23 +1056,23 @@ def _phone(val, argname=None, *, _convert=True):
     if retval == "+49":
         ## german stuff here
         if not val.startswith("0"):
-            errs.append((argname, ValueError(_("Invalid national part."))))
+            errs.append((argname, ValueError(n_("Invalid national part."))))
         else:
             val = val[1:]
         for length in range(1, 7):
             if val[:length] in GERMAN_PHONE_CODES:
                 retval += " ({}) {}".format(val[:length], val[length:])
                 if length + 2 >= len(val):
-                    errs.append((argname, ValueError(_("Invalid local part."))))
+                    errs.append((argname, ValueError(n_("Invalid local part."))))
                 break
         else:
-            errs.append((argname, ValueError(_("Invalid national part."))))
+            errs.append((argname, ValueError(n_("Invalid national part."))))
     else:
         index = 0
         try:
             index = orig.index(retval[1:]) + len(retval) - 1
         except ValueError:
-            errs.append((argname, ValueError(_("Invalid international part."))))
+            errs.append((argname, ValueError(n_("Invalid international part."))))
         ## this will terminate since we know that there are sufficient digits
         while not orig[index] in string.digits:
             index += 1
@@ -1101,7 +1101,7 @@ def _german_postal_code(val, argname=None, *, _convert=True):
         return val, errs
     val = val.strip()
     if val not in GERMAN_POSTAL_CODES:
-        errs.append((argname, ValueError(_("Invalid german postal code."))))
+        errs.append((argname, ValueError(n_("Invalid german postal code."))))
     return val, errs
 
 _GENESIS_CASE_COMMON_FIELDS = lambda: {
@@ -1167,9 +1167,9 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if 'realm' in val:
          if val['realm'] == "cde":
-             errs.append(('realm', ValueError(_("CdE not supported for genesis."))))
+             errs.append(('realm', ValueError(n_("CdE not supported for genesis."))))
          if val['realm'] == "assembly":
-             errs.append(('realm', ValueError(_("Assembly not supported for genesis."))))
+             errs.append(('realm', ValueError(n_("Assembly not supported for genesis."))))
          elif val['realm'] =="ml":
              pass
          elif val['realm'] == "event":
@@ -1181,7 +1181,7 @@ def _genesis_case(val, argname=None, *, creation=False, _convert=True):
                      val, interesting, uninteresting, _convert=_convert)
                  errs.extend(e)
          else:
-             errs.append(('realm', ValueError(_("Invalid target realm."))))
+             errs.append(('realm', ValueError(n_("Invalid target realm."))))
     return val, errs
 
 @_addvalidator
@@ -1193,10 +1193,10 @@ def _input_file(val, argname=None, *, _convert=True):
     :rtype: (bytes or None, [(str or None, exception)])
     """
     if not isinstance(val, werkzeug.datastructures.FileStorage):
-        return None, [(argname, TypeError(_("Not a FileStorage.")))]
+        return None, [(argname, TypeError(n_("Not a FileStorage.")))]
     blob = val.read()
     if not blob:
-        return None, [(argname, ValueError(_("Empty FileStorage.")))]
+        return None, [(argname, ValueError(n_("Empty FileStorage.")))]
     return blob, []
 
 @_addvalidator
@@ -1211,20 +1211,20 @@ def _profilepic(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if len(val) < 2**10:
-        errs.append((argname, ValueError(_("Too small."))))
+        errs.append((argname, ValueError(n_("Too small."))))
     if len(val) > 2**17:
-        errs.append((argname, ValueError(_("Too big."))))
+        errs.append((argname, ValueError(n_("Too big."))))
     mime = magic.from_buffer(val, mime=True)
     if mime not in ("image/jpeg", "image/jpg", "image/png"):
-        errs.append((argname, ValueError(_("Only jpg and png allowed."))))
+        errs.append((argname, ValueError(n_("Only jpg and png allowed."))))
     if errs:
         return None, errs
     image = PIL.Image.open(io.BytesIO(val))
     width, height = image.size
     if width / height < 0.9 or height / width < 0.9:
-        errs.append((argname, ValueError(_("Not square enough."))))
+        errs.append((argname, ValueError(n_("Not square enough."))))
     if width * height < 5000:
-        errs.append((argname, ValueError(_("Resolution too small."))))
+        errs.append((argname, ValueError(n_("Resolution too small."))))
     return val, errs
 
 @_addvalidator
@@ -1240,7 +1240,7 @@ def _pdffile(val, argname=None, *, _convert=True):
         return val, errs
     mime = magic.from_buffer(val, mime=True)
     if mime != "application/pdf":
-        errs.append((argname, ValueError(_("Only pdf allowed."))))
+        errs.append((argname, ValueError(n_("Only pdf allowed."))))
     return val, errs
 
 
@@ -1325,7 +1325,7 @@ def _lastschrift(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if 'max_dsa' in val and val['max_dsa'] > decimal.Decimal(1):
-        errs.append(('max_dsa', ValueError(_("Can be at most 1."))))
+        errs.append(('max_dsa', ValueError(n_("Can be at most 1."))))
     return val, errs
 
 @_addvalidator
@@ -1343,19 +1343,19 @@ def _iban(val, argname=None, *, _convert=True):
     val = val.upper()
     tmp = val.replace(' ', '')
     if len(tmp) < 5:
-        errs.append((argname, ValueError(_("Too short."))))
+        errs.append((argname, ValueError(n_("Too short."))))
         return None, errs
     for char in tmp[:2]:
         if char not in string.ascii_uppercase:
             errs.append((argname,
-                         ValueError(_("Must start with country code."))))
+                         ValueError(n_("Must start with country code."))))
     for char in tmp[2:]:
         if char not in string.digits:
             errs.append((argname,
-                         ValueError(_("Must continue with digits."))))
+                         ValueError(n_("Must continue with digits."))))
     temp = tmp[4:] + str(ord(tmp[0]) - 55) + str(ord(tmp[1]) - 55) + tmp[2:4]
     if int(temp) % 97 != 1:
-        errs.append((argname, ValueError(_("Invalid checksum."))))
+        errs.append((argname, ValueError(n_("Invalid checksum."))))
     return val, errs
 
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
@@ -1444,9 +1444,9 @@ def _sepa_transactions(val, argname=None, *, _convert=True):
                 entry[attribute] = asciificator(entry[attribute])
             if attribute in _SEPA_TRANSACTIONS_LIMITS:
                 if len(entry[attribute]) > _SEPA_TRANSACTIONS_LIMITS[attribute]:
-                    errs.append((attribute, ValueError(_("Too long."))))
+                    errs.append((attribute, ValueError(n_("Too long."))))
         if entry['type'] not in ("OOFF", "FRST", "RCUR"):
-            errs.append(('type', ValueError(_("Invalid constant."))))
+            errs.append(('type', ValueError(n_("Invalid constant."))))
         if errs:
             continue
         ret.append(entry)
@@ -1501,21 +1501,21 @@ def _sepa_meta(val, argname=None, *, _convert=True):
             val[attribute] = asciificator(val[attribute])
         if attribute in _SEPA_META_LIMITS:
             if len(val[attribute]) > _SEPA_META_LIMITS[attribute]:
-                errs.append((attribute, ValueError(_("Too long."))))
+                errs.append((attribute, ValueError(n_("Too long."))))
     if val['sender']['country'] != "DE":
-        errs.append(('country', ValueError(_("Unsupported constant."))))
+        errs.append(('country', ValueError(n_("Unsupported constant."))))
     if len(val['sender']['address']) != 2:
-        errs.append(('address', ValueError(_("Exactly two lines required."))))
+        errs.append(('address', ValueError(n_("Exactly two lines required."))))
     val['sender']['address'] = tuple(asciificator(x)
                                      for x in val['sender']['address'])
     for line in val['sender']['address']:
         if len(line) > 70:
-            errs.append(('address', ValueError(_("Too long."))))
+            errs.append(('address', ValueError(n_("Too long."))))
     for attribute, validator in _SEPA_SENDER_FIELDS.items():
         if validator == _str:
             val['sender'][attribute] = asciificator(val['sender'][attribute])
     if len(val['sender']['name']) > 70:
-        errs.append(('name', ValueError(_("Too long."))))
+        errs.append(('name', ValueError(n_("Too long."))))
     if errs:
         return None, errs
     return val, errs
@@ -1536,7 +1536,7 @@ def _safe_str(val, argname=None, *, _convert=True):
     for char in val:
         if not (char.isalnum() or char.isspace() or char in ALLOWED):
             errs.append((argname, ValueError(
-                _("Forbidden character ({char})."), {'char': char})))
+                n_("Forbidden character ({char})."), {'char': char})))
     if errs:
         return None, errs
     return val, errs
@@ -1959,7 +1959,7 @@ def _course(val, argname=None, *, creation=False, _convert=True):
     if 'segments' in val and 'active_segments' in val:
         if not val['active_segments'] <= val['segments']:
             errs.append(('segments',
-                         ValueError(_("Must be a superset of active segments."))))
+                         ValueError(n_("Must be a superset of active segments."))))
     ## the check of fields is delegated to _event_associated_fields
     return val, errs
 
@@ -2243,7 +2243,7 @@ def _serialized_event(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if 'kind' not in val or val['kind'] != "full":
-        return None, [(argname, KeyError(_(
+        return None, [(argname, KeyError(n_(
             "Currently only full exports are supported")))]
 
     mandatory_fields = {
@@ -2378,14 +2378,14 @@ def _serialized_event(val, argname=None, *, _convert=True):
     ## Third a consistency check
     if len(val['event.events']) != 1:
         errs.append(('event.events',
-                     ValueError(_("Only a single event is supported."))))
+                     ValueError(n_("Only a single event is supported."))))
     if len(val['event.events']) and val['id'] != val['event.events'][val['id']]['id']:
-        errs.append(('event.events', ValueError(_("Wrong event specified."))))
+        errs.append(('event.events', ValueError(n_("Wrong event specified."))))
     for k, v in val.items():
         if k not in ('id', 'CDEDB_EXPORT_EVENT_VERSION', 'timestamp', 'kind'):
             for e in v.values():
                 if e.get('event_id') and e['event_id'] != val['id']:
-                    errs.append((k, ValueError(_("Mismatched event."))))
+                    errs.append((k, ValueError(n_("Mismatched event."))))
     if errs:
         val = None
     return val, errs
@@ -2440,7 +2440,7 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     specials = sum(1 for x in (val.get('gateway'), val.get('event_id'),
                                val.get('assembly_id')) if x)
     if specials > 1:
-        error = ValueError(_("Only one allowed of gateway, event_id and "
+        error = ValueError(n_("Only one allowed of gateway, event_id and "
                              "assembly_id."))
         errs.append(('gateway', error))
         errs.append(('event_id', error))
@@ -2448,12 +2448,12 @@ def _mailinglist(val, argname=None, *, creation=False, _convert=True):
     apol = ENUMS_DICT['AudiencePolicy']
     if (val.get('assembly_id')
             and val.get('audience_policy') != apol.require_assembly):
-        error = ValueError(_("Linked assembly requires assembly audience."))
+        error = ValueError(n_("Linked assembly requires assembly audience."))
         errs.append(('assembly_id', error))
         errs.append(('audience_policy', error))
     if (val.get('event_id')
             and val.get('audience_policy') != apol.require_event):
-        error = ValueError(_("Linked event requires event audience."))
+        error = ValueError(n_("Linked event requires event audience."))
         errs.append(('event_id', error))
         errs.append(('audience_policy', error))
     for key, validator in (('registration_stati', _enum_registrationpartstati),
@@ -2551,7 +2551,7 @@ def _ballot(val, argname=None, *, creation=False, _convert=True):
         return val, errs
     if 'vote_begin' in val:
         if val['vote_begin'] <= now():
-            errs.append(("vote_begin", ValueError(_("Mustn't be in the past."))))
+            errs.append(("vote_begin", ValueError(n_("Mustn't be in the past."))))
     if 'candidates' in val:
         oldcandidates, e = _mapping(val['candidates'], 'candidates',
                                     _convert=_convert)
@@ -2605,7 +2605,7 @@ def _ballot_candidate(val, argname=None, *, creation=False, _convert=True):
     if errs:
         return val, errs
     if val.get('moniker') == ASSEMBLY_BAR_MONIKER:
-        errs.append(("moniker", ValueError(_("Mustn't be the bar moniker."))))
+        errs.append(("moniker", ValueError(n_("Mustn't be the bar moniker."))))
     return val, errs
 
 _ASSEMBLY_ATTACHMENT_COMMON_FIELDS = {
@@ -2635,9 +2635,9 @@ def _assembly_attachment(val, argname=None, *, _convert=True):
     if errs:
         return val, errs
     if "assembly_id" in val and "ballot_id" in val:
-        errs.append((argname, ValueError(_("Only one host allowed."))))
+        errs.append((argname, ValueError(n_("Only one host allowed."))))
     if "assembly_id" not in val and "ballot_id" not in val:
-        errs.append((argname, ValueError(_("No host given."))))
+        errs.append((argname, ValueError(n_("No host given."))))
     if errs:
         return None, errs
     return val, errs
@@ -2665,9 +2665,9 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
     if ballot['use_bar']:
         reference.add(ASSEMBLY_BAR_MONIKER)
     if set(entries) - reference:
-        errs.append((argname, KeyError(_("Superfluous candidates."))))
+        errs.append((argname, KeyError(n_("Superfluous candidates."))))
     if reference - set(entries):
-        errs.append((argname, KeyError(_("Missing candidates."))))
+        errs.append((argname, KeyError(n_("Missing candidates."))))
     if errs:
         return None, errs
     if ballot['votes'] and '>' in val:
@@ -2675,13 +2675,13 @@ def _vote(val, argname=None, ballot=None, *, _convert=True):
         ## if no strictly greater we have a valid abstention
         groups = val.split('>')
         if len(groups) > 2:
-            errs.append((argname, ValueError(_("Too many levels."))))
+            errs.append((argname, ValueError(n_("Too many levels."))))
         if len(groups[0].split('=')) > ballot['votes']:
-            errs.append((argname, ValueError(_("Too many votes."))))
+            errs.append((argname, ValueError(n_("Too many votes."))))
         first_group = groups[0].split('=')
         if (ASSEMBLY_BAR_MONIKER in first_group
                 and first_group != [ASSEMBLY_BAR_MONIKER]):
-            errs.append((argname, ValueError(_("Misplaced bar."))))
+            errs.append((argname, ValueError(n_("Misplaced bar."))))
         if errs:
             return None, errs
     return val, errs
@@ -2732,7 +2732,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
     :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
     if spec is None:
-        raise RuntimeError(_("Query must be specified."))
+        raise RuntimeError(n_("Query must be specified."))
     val, errs = _mapping(val, argname, _convert=_convert)
     fields_of_interest = []
     constraints = []
@@ -2755,7 +2755,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
             continue
         if operator not in VALID_QUERY_OPERATORS[validator]:
             errs.append((field,
-                         ValueError(_("Invalid operator for this field."))))
+                         ValueError(n_("Invalid operator for this field."))))
             continue
         if operator in NO_VALUE_OPERATORS:
             constraints.append((field, operator, None))
@@ -2784,7 +2784,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
                 continue
             if (operator in (QueryOperators.between, QueryOperators.outside)
                     and len(value) != 2):
-                errs.append((field, ValueError(_("Two endpoints required."))))
+                errs.append((field, ValueError(n_("Two endpoints required."))))
                 continue
         elif operator in (QueryOperators.regex, QueryOperators.notregex):
             value, e = _regex_or_None(value, field, _convert=_convert)
@@ -2800,7 +2800,7 @@ def _query_input(val, argname=None, *, spec=None, allow_empty=False,
         if value is not None:
             constraints.append((field, operator, value))
     if not fields_of_interest and not allow_empty:
-        errs.append((argname, ValueError(_("Selection may not be empty."))))
+        errs.append((argname, ValueError(n_("Selection may not be empty."))))
 
     ## Third the ordering
     for postfix in ("primary", "secondary", "tertiary"):
@@ -2936,7 +2936,7 @@ def _enum_validator_maker(anenum, name=None):
                         return None, [(argname, e)]
                 else:
                     return None, [
-                        (argname, TypeError(_("Must be a {type}."),
+                        (argname, TypeError(n_("Must be a {type}."),
                                             {'type': anenum}))]
         return val, []
 
