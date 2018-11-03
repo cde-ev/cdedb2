@@ -202,7 +202,6 @@
                 {% set target=cdedblink('{}/user_search'.format(realm)) %}
             {% endif %}
             {{ format_query(spec, TITLES, choices, target, selection_blacklist=selection_blacklist) }}
-        </form>
 
     {% endwith %}
 {% endmacro %}
