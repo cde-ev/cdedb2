@@ -30,6 +30,8 @@ sudo -u cdedb git remote set-url origin ssh://gitea@cde-tracker/cdedb/cdedb2.git
 chmod 600 /cdedb2/.ldap_rootpw
 # build the documentation
 sudo -u cdedb make doc
+# build the i18n files
+sudo -u cdedb make i18n-compile
 
 echo ""
 echo "Creating storage directory for uploads..."
