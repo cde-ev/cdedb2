@@ -91,7 +91,8 @@ echo "--------------------------------------------"
 useradd -s /bin/bash -m cdb
 useradd -s /bin/bash -m -p REw.iVaxV7gAI cdedb # password: akademie
 
-echo -e "\nexport EDITOR=nano\n" >> /home/cdedb/.profile
+sudo -u cdedb touch /home/cdedb/.bashrc
+echo -e "\nexport EDITOR=nano\n" >> /home/cdedb/.bashrc
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 cat > /etc/motd <<EOF
