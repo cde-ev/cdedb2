@@ -3176,12 +3176,12 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event'], courses, lodgements)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         default_queries = self.conf.DEFAULT_QUERIES['qview_registration']
-        default_queries["all"] = Query(
+        default_queries[_("all")] = Query(
             "qview_registration", spec,
             ("reg.id", "persona.given_names", "persona.family_name"),
             tuple(),
             (("reg.id", True),),)
-        default_queries["minors"] = Query(
+        default_queries[_("minors")] = Query(
             "qview_registration", spec,
             ("reg.id", "persona.given_names", "persona.family_name",
              "persona.birthday"),

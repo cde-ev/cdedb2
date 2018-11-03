@@ -10,11 +10,7 @@
 {{ util.breadcrumb_link(cdedblink("core/archived_user_search"), "Archivsuche", active="True") }}
 {% endblock %}
 {% block content %}
-    {% with TITLES = {} %}
-        <div>
-            {{ generic.place_default_queries("core/archived_user_search", default_queries, TITLES) }}
-        </div>
-    {% endwith %}
+    {{ generic.place_default_queries("core/archived_user_search", default_queries) }}
 
     {{ generic.user_search_mask("archived", ("pevent_id",)) }}
 

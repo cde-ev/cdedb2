@@ -187,78 +187,78 @@ _DEFAULTS = {
     "SEPA_PAYMENT_OFFSET": datetime.timedelta(days=17),
     ## processing fee we incur if a transaction is rolled back
     "SEPA_ROLLBACK_FEE": decimal.Decimal('4.50'),
-
+    
     ### event stuff
-
+    
     ## log
     "EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-event.log"),
-
+    
     ### past event stuff
-
+    
     ## log
     "PAST_EVENT_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-past-event.log"),
-
+    
     ### ml stuff
-
+    
     ## log
     "ML_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-ml.log"),
-
+    
     ### assembly stuff
-
+    
     ## log
     "ASSEMBLY_BACKEND_LOG": pathlib.Path("/tmp/cdedb-backend-assembly.log"),
-
+    
     ###
     ### Query stuff
     ###
-
+    
     ## dict where the values are dicts mapping titles to queries for "speed
     ## dialing"
     "DEFAULT_QUERIES": {
         "qview_cde_user": {
-            "trial members": Query(
+            _("trial members"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
-                (("family_name", True), ("given_names", True)),),
-        },
+                (("family_name", True), ("given_names", True)), ),
+            },
         "qview_archived_persona": {
-            "with notes": Query(
+            _("with notes"): Query(
                 "qview_archived_persona",
                 QUERY_SPECS['qview_archived_persona'],
                 ("personas.id", "given_names", "family_name", "birth_name"),
                 (("notes", QueryOperators.nonempty, None),),
-                (("family_name", True), ("given_names", True)),),
-        },
+                (("family_name", True), ("given_names", True)), ),
+            },
         "qview_event_user": {
-            "minors": Query(
+            _("minors"): Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
                 ("persona.persona_id", "given_names", "family_name",
                  "birthday"),
                 (("birthday", QueryOperators.greater,
                   deduct_years(now().date(), 18)),),
                 (("birthday", True), ("family_name", True),
-                 ("given_names", True)),),
-        },
+                 ("given_names", True)), ),
+            },
         "qview_registration": {
             ## none since they need additional input, will be created on the fly
-        },
+            },
         "qview_core_user": {
-            "all": Query(
+            _("all"): Query(
                 "qview_persona", QUERY_SPECS['qview_core_user'],
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
-                (("personas.id", True),),)
-        },
+                (("personas.id", True),), )
+            },
         "qview_persona": {
-            "all": Query(
+            _("all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
                 ("id", "given_names", "family_name"),
                 tuple(),
-                tuple(),)
+                tuple(), )
+            },
         },
-    },
-}
+    }
 
 #: defaults for :py:class:`SecretsConfig`
 _SECRECTS_DEFAULTS = {

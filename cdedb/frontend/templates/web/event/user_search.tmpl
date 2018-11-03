@@ -19,13 +19,7 @@
             </div>
         </div>
         <div class="col-md-8">
-            {% with TITLES = {
-                "minors": "Minderjährige",} %}
-
-                <div>
-                    {{ generic.place_default_queries("event/user_search", default_queries, TITLES) }}
-                </div>
-            {% endwith %}
+            {{ generic.place_default_queries("event/user_search", default_queries) }}
         </div>
     </div>
 

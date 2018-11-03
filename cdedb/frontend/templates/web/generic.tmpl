@@ -124,12 +124,7 @@
             </div>
         </div>
         <div class="col-md-8">
-            {% with TITLES = {
-                "all": "Alle Accounts",} %}
-                <div>
-                    {{ place_default_queries("{}/user_search".format(realm), default_queries, TITLES) }}
-                </div>
-            {% endwith %}
+            {{ place_default_queries("{}/user_search".format(realm), default_queries) }}
         </div>
     </div>
 
@@ -482,7 +477,7 @@
     </form>
 {% endmacro %}
 
-{% macro place_default_queries(target, queries, titles) %}
+{% macro place_default_queries(target, queries) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries")) %}
             <div class="row">
@@ -492,7 +487,7 @@
                         {% for query in list %}
                             <li>
                                 {{ util.href(cdedblink(target, queries[query]|querytoparams),
-                                        titles.get(query, query), aclass="default-query") }}
+                                        gettext(query), aclass="default-query") }}
                             </li>
                         {% endfor %}
                     </ul>

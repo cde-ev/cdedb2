@@ -14,9 +14,7 @@
 {{ util.breadcrumb_link(cdedblink("core/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}
-    {% with TITLES = {} %}
-        {{ generic.place_default_queries("core/user_search", default_queries, TITLES) }}
-    {% endwith %}
+    {{ generic.place_default_queries("core/user_search", default_queries) }}
 
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 

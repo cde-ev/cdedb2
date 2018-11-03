@@ -872,7 +872,11 @@ class SubscriptionStates(enum.IntEnum):
     requested = 10 #: A subscription request is waiting for moderation.
 
 def _(x):
-    """Alias of the identity for i18n."""
+    """
+    Alias of the identity for i18n.
+    Identity function that shadows the gettext alias to trick pybabel into
+    adding string to the translated strings.
+    """
     return x
 
 def asciificator(s):
