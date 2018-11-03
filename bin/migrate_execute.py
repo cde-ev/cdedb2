@@ -794,6 +794,10 @@ for alist in lists:
         raise ValueError("Impossible!")
     if alist['cde_only']:
         new['audience_policy'] = 4
+    elif "@aka.cde-ev.de" in alist['address']:
+        new['audience_policy'] = 3
+    elif alist['address'].startswith("mgv"):
+        new['audience_policy'] = 2
     else:
         new['audience_policy'] = 1
     new_id = ml.create_mailinglist(rs(DEFAULT_ID), new)
