@@ -1,15 +1,15 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Abgeschlossene Veranstaltungen{% endblock %}
+{% block title %}Vergangene Veranstaltungen{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen", active="True") }}
 {% endblock %}
 {% block content %}
     {% if is_admin %}
         <div class="p">
-            {{ util.href(cdedblink("cde/create_past_event_form"), "abg. Veranstaltung anlegen",
+            {{ util.href(cdedblink("cde/create_past_event_form"), "verg. Veranstaltung anlegen",
                     aclass="btn btn-success btn-sm", icon="plus") }}
         </div>
     {% endif %}

@@ -2,11 +2,11 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-Log: Abgeschlossene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+Log: Vergangene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/view_past_log"), "Log (abg. Veranstaltungen)", active=True) }}
+{{ util.breadcrumb_link(cdedblink("cde/view_past_log"), "Log (verg. Veranstaltungen)", active=True) }}
 {% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">

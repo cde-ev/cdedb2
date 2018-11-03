@@ -6,8 +6,8 @@
 {% block title %}Veranstaltung anlegen{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
-{{ util.breadcrumb_link(cdedblink("cde/create_past_event"), "abg. Veranstaltung anlegen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/create_past_event"), "verg. Veranstaltung anlegen", active=True) }}
 {% endblock %}
 {% block content %}
     <script type="text/javascript">
@@ -29,7 +29,7 @@
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="form-control-static text-info">
                     {{ util.make_icon('info-sign') }} Achtung: Die neue Veranstaltung ist direkt für alle CdE-Mitglieder
-                    in der Liste der abg. Veranstaltungen sichtbar.
+                    in der Liste der verg. Veranstaltungen sichtbar.
                 </div>
             </div>
         </div>

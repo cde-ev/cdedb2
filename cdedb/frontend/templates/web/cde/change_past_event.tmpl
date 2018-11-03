@@ -6,7 +6,7 @@
 {% block title %}{{ ambience['pevent']['title']|e }} bearbeiten{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
         ambience['pevent']['title']|e, icon="calendar") }}
 {{ util.breadcrumb_link(cdedblink("cde/change_past_event_form", {"pevent_id": ambience['pevent']['id']}), "Bearbeiten",
