@@ -196,7 +196,6 @@ _DEFAULTS = {
     ## second is a web label for orgas
     "EVENT_BANK_ACCOUNTS": (
             ("DE96 3702 0500 0008 0689 01", "DE96 3702 0500 0008 0689 01"),
-            ("DE96 3702 0500 0008 0689 02", "DE96 3702 0500 0008 0689 02")
     ),
     
     ### past event stuff
