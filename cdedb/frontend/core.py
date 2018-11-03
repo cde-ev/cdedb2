@@ -270,7 +270,7 @@ class CoreFrontend(AbstractFrontend):
             access_levels.add("cde")
         ## Orgas see their participants
         if "event" not in access_levels:
-            for event_id in self.eventproxy.orga_info(rs, persona_id):
+            for event_id in self.eventproxy.orga_info(rs, rs.user.persona_id):
                 if self.eventproxy.list_registrations(rs, event_id, persona_id):
                     access_levels.add("event")
                     access_levels.add("orga")
@@ -291,7 +291,7 @@ class CoreFrontend(AbstractFrontend):
             data.update(self.coreproxy.get_cde_user(rs, persona_id))
             if "core" in access_levels:
                 user_lastschrift = self.cdeproxy.list_lastschrift(
-                    rs, persona_ids=(rs.user.persona_id,), active=True)
+                    rs, persona_ids=(persona_id,), active=True)
                 data['has_lastschrift'] = len(user_lastschrift) > 0
         if "admin" in access_levels:
             data.update(self.coreproxy.get_total_persona(rs, persona_id))
