@@ -45,7 +45,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for lodgement_id, lodgement in lodgements|dictsort %}
+            {% for lodgement_id, lodgement in lodgements|xdictsort('moniker') %}
                 <tr>
                     <td>{{ util.href(cdedblink("event/show_lodgement", {'lodgement_id': lodgement_id}),
                                      lodgement['moniker']) }}</td>

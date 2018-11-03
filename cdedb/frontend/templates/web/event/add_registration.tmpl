@@ -47,7 +47,7 @@
             {{ util.form_input_select(name="part{}.status".format(part_id), label="Status",
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
-                                     entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption="") }}
+                                     entries=lodgements|xdictsort('moniker')|dict_entries('id', 'moniker'), nulloption="") }}
             {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in part['tracks'] %}
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}

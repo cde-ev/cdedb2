@@ -103,7 +103,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
             {% call form_input_optional("part{}.lodgement_id".format(part_id), label="Unterkunft",
                                         anid="part{}_lodgement_id".format(part_id)) %}
                 {{ util.input_select(name="part{}.lodgement_id".format(part_id),
-                                     entries=lodgements|dictsort|dict_entries('id', 'moniker'), nulloption="",
+                                     entries=lodgements|xdictsort('moniker')|dict_entries('id', 'moniker'), nulloption="",
                                      anid="part{}_lodgement_id".format(part_id)) }}
             {% endcall %}
             {% call form_input_optional("part{}.is_reserve".format(part_id),
