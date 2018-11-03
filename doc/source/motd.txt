@@ -3,7 +3,7 @@ sudo -u cdb psql -U cdb -d cdb
 
 # reload (update the running state with current code,
 # i.e. restart backend and frontend)
-/cdedb2/bin/reload-vm.sh
+cd /cdedb2 && make reload
 
 # run test suite
 cd /cdedb2 && make check
