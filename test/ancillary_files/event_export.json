@@ -76,9 +76,9 @@
             },
             "is_course_list_visible": true,
             "iban": "DE96 3702 0500 0008 0689 01",
-            "registration_soft_limit": "2200-10-30T01:00:00+01:00",
+            "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "is_archived": false,
-            "registration_start": "2000-10-30T01:00:00+01:00",
+            "registration_start": "2000-10-30T00:00:00+00:00",
             "fields": {
                 "5": {
                     "kind": "str",
@@ -160,7 +160,7 @@
                 }
             },
             "offline_lock": false,
-            "registration_hard_limit": "2220-10-30T01:00:00+01:00",
+            "registration_hard_limit": "2220-10-30T00:00:00+00:00",
             "reserve_field": 4,
             "is_visible": true,
             "use_questionnaire": false,
@@ -379,7 +379,7 @@
     "id": 1,
     "event.log": {
         "3": {
-            "ctime": "2014-01-01T04:06:07+01:00",
+            "ctime": "2014-01-01T03:06:07+00:00",
             "additional_info": null,
             "id": 3,
             "event_id": 1,
@@ -388,7 +388,7 @@
             "code": 50
         },
         "2": {
-            "ctime": "2014-01-01T03:05:06+01:00",
+            "ctime": "2014-01-01T02:05:06+00:00",
             "additional_info": null,
             "id": 2,
             "event_id": 1,
@@ -397,7 +397,7 @@
             "code": 50
         },
         "1": {
-            "ctime": "2014-01-01T02:04:05+01:00",
+            "ctime": "2014-01-01T01:04:05+00:00",
             "additional_info": null,
             "id": 1,
             "event_id": 1,
@@ -406,7 +406,7 @@
             "code": 50
         },
         "4": {
-            "ctime": "2014-01-01T05:07:08+01:00",
+            "ctime": "2014-01-01T04:07:08+00:00",
             "additional_info": null,
             "id": 4,
             "event_id": 1,

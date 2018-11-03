@@ -47,7 +47,7 @@ class TestAssemblyBackend(BackendTest):
             'id': 1,
             'is_active': True,
             'notes': None,
-            'signup_end': datetime.datetime(2111, 11, 10, 23, 0, tzinfo=pytz.utc),
+            'signup_end': datetime.datetime(2111, 11, 11, 0, 0, tzinfo=pytz.utc),
             'title': 'Internationaler Kongress'}
         self.assertEqual(expectation, self.assembly.get_assembly(
             self.key, 1))

@@ -116,7 +116,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "nonsense asorecuhasoecurhkgdgdckgdoao"
         self.submit(f)
-        self.assertTitle("CdE Datenbank")
+        self.assertTitle("CdE-Datenbank")
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
         f['phrase'] = "@example.cde"
@@ -200,7 +200,7 @@ class TestCoreFrontend(FrontendTest):
                 f = self.response.forms['passwordresetform']
                 f['email'] = user['username']
                 self.submit(f)
-                self.assertTitle("CdE Datenbank")
+                self.assertTitle("CdE-Datenbank")
                 if u in {"anton"}:
                     ## admins are not resettable
                     self.assertEqual([], self.fetch_mail())
@@ -648,6 +648,6 @@ class TestCoreFrontend(FrontendTest):
 
         ## Now check it
         self.login(USER_DICT['anton'])
-        self.traverse({'description': 'Start', 'href': '^/d?b?/?$'},
+        self.traverse({'description': 'Index', 'href': '^/d?b?/?$'},
                       {'href': '/core/log'})
         self.assertTitle("Account-Log [0–1]")

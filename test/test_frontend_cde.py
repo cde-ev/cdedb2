@@ -67,8 +67,8 @@ class TestCdEFrontend(FrontendTest):
         user = USER_DICT["garcia"]
         self.login(user)
         self.assertTitle("Einwilligung zur Mitgliedersuche")
-        self.traverse({'description': 'Start'})
-        self.assertTitle("CdE Datenbank")
+        self.traverse({'description': 'Index'})
+        self.assertTitle("CdE-Datenbank")
         self.traverse({'href': '/core/self/show'},
                       {'href': '/cde/self/consent'})
         f = self.response.forms['ackconsentform']
@@ -88,7 +88,7 @@ class TestCdEFrontend(FrontendTest):
         # up upon login. CdE Member search should be disabled
         self.logout()
         self.login(USER_DICT["berta"])
-        self.assertTitle("CdE Datenbank")
+        self.assertTitle("CdE-Datenbank")
         self.traverse({'href': '/cde'})
         self.assertNotIn("membersearchform", self.response.forms)
         self.traverse({'href': '/cde/self/consent'})
@@ -720,7 +720,7 @@ class TestCdEFrontend(FrontendTest):
 
         ## validate
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Abgeschlossene Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Willy Brandt")
@@ -952,7 +952,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_institutions(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/institution/summary'})
-        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
+        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
         self.assertNotIn("title_2", f.fields)
@@ -960,20 +960,20 @@ class TestCdEFrontend(FrontendTest):
         f['title_-1'] = "Bildung und Begabung"
         f['moniker_-1'] = "BuB"
         self.submit(f)
-        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
+        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Club der Ehemaligen", f['title_1'].value)
         self.assertEqual("Bildung und Begabung", f['title_2'].value)
         f['title_1'] = "Monster Academy"
         f['moniker_1'] = "MA"
         self.submit(f)
-        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
+        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
         self.assertEqual("Bildung und Begabung", f['title_2'].value)
         f['delete_2'].checked = True
         self.submit(f)
-        self.assertTitle("Organisationen der abg. Veranstaltungen verwalten")
+        self.assertTitle("Organisationen der verg. Veranstaltungen verwalten")
         f = self.response.forms['institutionsummaryform']
         self.assertEqual("Monster Academy", f['title_1'].value)
         self.assertNotIn("title_2", f.fields)
@@ -981,13 +981,13 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_list_past_events(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Abgeschlossene Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
 
     @as_users("anton")
     def test_show_past_event_course(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Abgeschlossene Veranstaltungen")
+        self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
@@ -1152,13 +1152,13 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/past/log'})
-        self.assertTitle("Log: Abgeschlossene Veranstaltungen [0–8]")
+        self.assertTitle("Log: Vergangene Veranstaltungen [0–8]")
         f = self.response.forms['logshowform']
         f['codes'] = [1, 10, 21]
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Log: Abgeschlossene Veranstaltungen [1–4]\n")
+        self.assertTitle("Log: Vergangene Veranstaltungen [1–4]\n")
 
     def test_cde_log(self):
         ## First: generate data

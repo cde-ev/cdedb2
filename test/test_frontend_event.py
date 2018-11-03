@@ -534,8 +534,8 @@ etc;anything else""", f['entries_2'].value)
         f['force'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/registration/query'},
-                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/query'})
+        self.traverse({'description': 'Alle Anmeldungen'},
                       {'href': '/event/event/1/registration/1/show'})
         self.assertTitle("Anmeldung von Anton Armin A. Administrator (Große Testakademie 2222)")
         self.assertPresence("bezahlt am 01.04.2018")
