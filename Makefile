@@ -37,7 +37,7 @@ doc:
 
 reload:
 	make i18n-compile
-	touch wsgi/cdedb.wsgi
+	sudo systemctl restart apache2
 
 i18n-refresh:
 	pybabel extract -F ./babel.cfg -k "rs.gettext","rs.ngettext" -o ./i18n/cdedb.pot .

@@ -199,7 +199,7 @@ Changes to the code can be propagate as follows to the current instance. For
 templates no action is necessary. For the python code updating the mtime of
 the wsgi file resets the apache workers::
 
-  touch wsgi/cdedb.wsgi
+  sudo systemctl restart apache2
 
 You can use the make target reload to re-compile i18n and trigger the worker
 reload::
