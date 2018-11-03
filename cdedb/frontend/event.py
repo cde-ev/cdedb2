@@ -224,7 +224,9 @@ class EventFrontend(AbstractUserFrontend):
         """Render form."""
         institutions = self.pasteventproxy.list_institutions(rs)
         merge_dicts(rs.values, rs.ambience['event'])
-        return self.render(rs, "change_event", {'institutions': institutions})
+        return self.render(rs, "change_event",
+                       {'institutions': institutions,
+                        'accounts': self.conf.EVENT_BANK_ACCOUNTS})
 
     @access("event", modi={"POST"})
     @REQUESTdatadict(
@@ -572,7 +574,9 @@ class EventFrontend(AbstractUserFrontend):
     def create_event_form(self, rs):
         """Render form."""
         institutions = self.pasteventproxy.list_institutions(rs)
-        return self.render(rs, "create_event", {'institutions': institutions})
+        return self.render(rs, "create_event",
+                           {'institutions': institutions,
+                            'accounts': self.conf.EVENT_BANK_ACCOUNTS})
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata(("event_begin", "date"), ("event_end", "date"),
