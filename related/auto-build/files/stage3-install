@@ -26,7 +26,7 @@ chown cdedb:cdedb /cdedb2
 sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cdedb2 || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332/cdedb/cdedb2.git /cdedb2
 cd /cdedb2
 # correct upstream URL after auto-build
-sudo -u cdedb git remote set-url origin ssh://gitea@cde-tracker/cdedb/cdedb2.git
+sudo -u cdedb git remote set-url origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 chmod 600 /cdedb2/.ldap_rootpw
 # build the documentation
 sudo -u cdedb make doc
