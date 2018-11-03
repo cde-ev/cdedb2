@@ -318,9 +318,10 @@ class CdEFrontend(AbstractUserFrontend):
         persona = copy.deepcopy(datum['raw'])
         ## Adapt input of gender from old convention
         GENDER_CONVERT = {
-            "0": str(const.Genders.unknown.value),
+            "0": str(const.Genders.other.value),
             "1": str(const.Genders.male.value),
             "2": str(const.Genders.female.value),
+            "3": str(const.Genders.not_speficied.value),
         }
         persona['gender'] = GENDER_CONVERT.get(persona.get('gender').strip(),
                                                persona.get('gender'))

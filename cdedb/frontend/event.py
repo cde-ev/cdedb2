@@ -2496,10 +2496,10 @@ class EventFrontend(AbstractUserFrontend):
         ## first some un-inlined code pieces (otherwise nesting is a bitch)
         def _mixed(group):
             """Un-inlined check whether both genders are present."""
-            return any(
-                personas[registrations[a]['persona_id']]['gender']
-                != personas[registrations[b]['persona_id']]['gender']
-                for a, b in itertools.combinations(group, 2))
+            return any({personas[registrations[a]['persona_id']]['gender'],
+                        personas[registrations[b]['persona_id']]['gender']} ==
+                       {const.Genders.male, const.Genders.female}
+                       for a, b in itertools.combinations(group, 2))
         def _mixing_problem(lodgement_id, part_id):
             """Un-inlined code to generate an entry for mixing problems."""
             return (
@@ -2541,6 +2541,13 @@ class EventFrontend(AbstractUserFrontend):
                         not registrations[reg_id]['mixed_lodging']
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
+                if any(personas[registrations[reg_id]['persona_id']]['gender']
+                       in (const.Genders.other, const.Genders.not_speficied)
+                       for reg_id in group):
+                    ret.append((n_("Non-Binary Participant."), lodgement_id,
+                                part_id,
+                                tuple(reg_id for reg_id in group), 1))
+                    
         return ret
 
     @access("event")

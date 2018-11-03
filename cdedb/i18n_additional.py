@@ -105,8 +105,9 @@ I18N_STRINGS = (
     
     n_("Genders.female"),
     n_("Genders.male"),
-    n_("Genders.unknown"),
-    
+    n_("Genders.other"),
+    n_("Genders.not_specified"),
+
     n_("LineResolutions.create"),
     n_("LineResolutions.skip"),
     n_("LineResolutions.renew_trial"),

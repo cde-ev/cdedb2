@@ -16,8 +16,9 @@ class Genders(enum.IntEnum):
     """Spec for field gender of core.personas."""
     female = 1 #:
     male = 2 #:
+    not_speficied = 9 #:
     #: this is a catch-all for complicated reality
-    unknown = 10
+    other = 10
 
 @enum.unique
 class MemberChangeStati(enum.IntEnum):

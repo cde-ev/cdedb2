@@ -386,7 +386,7 @@ for persona_id in persona_ids:
         ## female
         data['gender'] = 1
     else:
-        ## unknown
+        ## other
         data['gender'] = 10
     for old, new in ATTR_MAP.items():
         if new not in data:
@@ -476,7 +476,7 @@ for persona_id in persona_ids:
                 ## female
                 data['gender'] = 1
             else:
-                ## unknown
+                ## other
                 data['gender'] = 10
         for old, new in ATTR_MAP.items():
             if new not in ('username', 'gender'):
