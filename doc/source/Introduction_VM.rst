@@ -71,14 +71,15 @@ summary of useful commands is displayed -- this is reproduced below.
 Performance
 -----------
 
-To increase performance two things are very effective, but can cause serious
-data loss. So they are only recomended when working with test data.
+To increase performance it is very effective to do one of these two things,
+but they can cause serious data loss. So they are only recommended when
+working with test data.
 
 * Replace ``cache=writethrough`` by ``cache=writeback`` or even
   ``cache=unsafe`` when running the VM.
 
-* In the file `/etc/postgresql/9.4/main/postgresql.conf` in the VM set the
-  following options::
+* In the file `/etc/postgresql/9.6/main/postgresql.conf` in the VM set the
+  following options in the ``WRITE AHEAD LOG`` section::
 
     fsync = off
     synchronous_commit = off
