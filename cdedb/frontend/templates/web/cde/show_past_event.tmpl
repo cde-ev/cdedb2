@@ -6,7 +6,7 @@
 {% endblock %}
 {% block title %}{{ ambience['pevent']['title']|e }}{% endblock %}
 {% block heading %}
-    <h1 class="title">{{ ambience['pevent']['title']|e }} <small>({{ ambience['pevent']['shortname']|e }})</small></h1>
+    <h1 class="title">{{ ambience['pevent']['title']|e }}</h1>
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
@@ -21,7 +21,14 @@
                 aclass="btn btn-warning btn-sm") }}
         </div>
     {% endif %}
-    <p><strong>Organisation</strong>: {{ institutions[ambience['pevent']['institution']]|e }}</p>
+    <dl class="dl-horizontal">
+        {% if is_admin %}
+            <dt>Kurzname</dt>
+            <dd>{{ ambience['pevent']['shortname']|e }}</dd>
+        {% endif %}
+        <dt>Organisation</dt>
+        <dd>{{ institutions[ambience['pevent']['institution']]|e }}</dd>
+    </dl>
     
     {{ ambience['pevent']['description']|rst }}
 
