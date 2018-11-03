@@ -309,7 +309,7 @@
             {% for info in participation_info|sort(attribute="tempus") %}
                 <li>
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": info['pevent_id']}),
-                                 info['event_name']) -}}
+                                 info['event_name'], readonly='cde' not in user.roles) -}}
                     {% if info['is_orga'] %}
                         (Orga)
                     {% else -%}
@@ -318,7 +318,7 @@
                             {{ info['nr']|e }}.
                             {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": info['pevent_id'],
                                                                             "pcourse_id": info['pcourse_id']}),
-                                         info['course_name']) }}
+                                         info['course_name'], readonly='cde' not in user.roles) }}
                             {% if info['is_instructor'] %}
                                 (Kursleiter)
                             {% endif %}
