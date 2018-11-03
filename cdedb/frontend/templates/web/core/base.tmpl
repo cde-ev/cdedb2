@@ -2,13 +2,13 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ util.breadcrumb_link(cdedblink("core/index"), "Index") }}
 {% endblock %}
 {% block navigation %}
     {% if "persona" in user.roles %}
-        <h4>Start</h4>
+        <h4>Index</h4>
         <div class="list-group tear-down">
-            {{ util.href(cdedblink("core/index"), "Start", aclass="list-group-item",
+            {{ util.href(cdedblink("core/index"), "Übersicht", aclass="list-group-item",
                     icon="triangle-right", active=(sidenav_active=='core_index')) }}
             {{ util.href(cdedblink("core/mydata"), "Meine Daten", aclass="list-group-item",
                     icon="user", active=(sidenav_active=='core_mydata')) }}

@@ -97,11 +97,11 @@
 
                     <ul class="nav navbar-nav">
                         <li {% if mainnav_active == 'core' %}class="active" aria-current="page"{% endif %}>
-                            {{ util.href(cdedblink("core/index"), "Start", icon="dashboard") }}
+                            {{ util.href(cdedblink("core/index"), "Index", icon="home") }}
                             </li>
                         {% if "cde" in user.roles %}
                             <li {% if mainnav_active == 'cde' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("cde/index"), "CdE", icon="education") }}
+                                {{ util.href(cdedblink("cde/index"), "Mitglieder", icon="education") }}
                                 </li>
                         {% endif %}
                         {% if "event" in user.roles %}

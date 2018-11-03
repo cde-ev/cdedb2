@@ -2,10 +2,10 @@
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+    {{ util.breadcrumb_link(cdedblink("cde/index"), "Mitglieder") }}
 {% endblock %}
 {% block navigation %}
-    <h4>CdE</h4>
+    <h4>Mitglieder</h4>
     <div class="list-group tear-down">
         {{ util.href(cdedblink("cde/index"), "Übersicht", aclass="list-group-item",
                 icon="triangle-right", active=(sidenav_active=='cde_index')) }}
