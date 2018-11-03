@@ -264,7 +264,8 @@ class CoreFrontend(AbstractFrontend):
             access_levels.add("core")
         ## Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
-            if not rs.ambience['persona']['is_searchable']:
+            if (not rs.ambience['persona']['is_searchable']
+                    and not "cde_admin" in access_levels):
                 raise PrivilegeError(n_("Access to non-searchable member data."))
             access_levels.add("cde")
         ## Orgas see their participants
