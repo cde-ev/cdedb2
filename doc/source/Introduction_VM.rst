@@ -55,6 +55,10 @@ password for the ``cdedb`` user (used for access via ssh etc.) is
 
     sshfs cdedb@localhost:/cdedb2/ /path/to/mountpoint/ -p 20022
 
+For ease of use it may be advisable to put these commands into script
+files. Additionally it helps to put your ssh public key into the (new)
+file ``/home/cdedb2/.ssh/authorized_keys`` to suppress password queries.
+
 Developing
 ----------
 
@@ -79,6 +83,35 @@ data loss. So they are only recomended when working with test data.
     fsync = off
     synchronous_commit = off
 
+
+Sample dev setup
+----------------
+
+Here is a description of my setup hopefully aiding new devs in
+setup. This is by no means a mandatory setup. First an overview of the
+directory structure::
+  
+  /home/markus/DB/
+  ├── cdedb2/
+  │   └── ...
+  ├── vm-repo/
+  │   └── ...
+  ├── image.qcow2
+  ├── run-vm.sh
+  └── ssh-vm.sh
+
+Everything lives inside the directory ``/home/markus/DB/`` where
+``cdedb2/`` is a clone of the git repository. Most development happens
+in this directory. Then there is the VM image ``image.qcow2`` which is
+started by the script ``run-vm.sh``. This script additionally uses
+sshfs to mount the git repository inside the VM to the directory
+``vm-repo/``. Finally the script ``ssh-vm.sh`` logs into the VM.
+
+The typical change is developed in ``cdedb2/`` and committed
+there. Then the commit is transferred to the VM by issuing the command
+``git pull ../cdedb2/`` inside the ``vm-repo/`` directory. Now the
+test suite is executed inside the VM and if successful the change is
+pushed from ``cdedb2/`` to the server.
 
 Offline Usage
 -------------
