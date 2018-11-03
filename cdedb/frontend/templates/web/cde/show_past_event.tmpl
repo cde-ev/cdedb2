@@ -94,7 +94,7 @@
                 <li>
 
                     {% if participant['viewable'] %}
-                        {{ util.persona_anchor(personas[anid], quote_me=True) }}
+                        {{ util.persona_anchor(personas[anid], quote_me=not is_admin) }}
                     {% else %}
                         {{ personas[anid]['given_names']|e }} {{ personas[anid]['family_name']|e }}
                     {% endif %}
