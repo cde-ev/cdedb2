@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-11-03 15:43+0100\n"
+"POT-Creation-Date: 2018-11-03 16:34+0100\n"
 "PO-Revision-Date: 2017-12-10 13:36+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -46,23 +46,59 @@ msgstr "Fehler bei unwrap!"
 msgid "Failed to locate repository"
 msgstr "Konnte das Repository nicht finden."
 
-#: cdedb/config.py:219
+#: cdedb/config.py:67
+msgid "00_query_event_registration_all"
+msgstr "Alle Anmeldungen"
+
+#: cdedb/config.py:72
+msgid "01_query_event_registration_not_paid"
+msgstr "Noch nicht bezahlt"
+
+#: cdedb/config.py:77
+msgid "02_query_event_registration_paid"
+msgstr "Bezahlt"
+
+#: cdedb/config.py:83
+msgid "03_query_event_registration_non_members"
+msgstr "Nicht-Miglieder"
+
+#: cdedb/config.py:88
+msgid "04_query_event_registration_orga_notes"
+msgstr "Orga-Notizen"
+
+#: cdedb/config.py:93
+msgid "05_query_event_registration_u18"
+msgstr "U18"
+
+#: cdedb/config.py:100
+msgid "06_query_event_registration_u16"
+msgstr "U16"
+
+#: cdedb/config.py:107
+msgid "07_query_event_registration_u14"
+msgstr "U14"
+
+#: cdedb/config.py:114
+msgid "08_query_event_registration_minors_no_consent"
+msgstr "U18 ohne Einverständniserklärung"
+
+#: cdedb/config.py:293
 msgid "00_query_cde_trial_members"
 msgstr "Probemitglieder"
 
-#: cdedb/config.py:226
+#: cdedb/config.py:300
 msgid "00_query_archived_persona_with_notes"
 msgstr "Personen mit Notizen"
 
-#: cdedb/config.py:234
+#: cdedb/config.py:308
 msgid "00_query_event_user_minors"
 msgstr "Minderjährige"
 
-#: cdedb/config.py:247
+#: cdedb/config.py:318
 msgid "00_query_core_user_all"
 msgstr "Alle Nutzer"
 
-#: cdedb/config.py:254
+#: cdedb/config.py:325
 msgid "00_query_mailinglist_persona_all"
 msgstr "Alle Nutzer"
 
@@ -1696,7 +1732,7 @@ msgstr "Die Sitzung ist abgelaufen."
 
 #: cdedb/frontend/assembly.py:127 cdedb/frontend/cde.py:230
 #: cdedb/frontend/core.py:698 cdedb/frontend/core.py:746
-#: cdedb/frontend/event.py:172 cdedb/frontend/event.py:3264
+#: cdedb/frontend/event.py:172 cdedb/frontend/event.py:3201
 #: cdedb/frontend/ml.py:126
 msgid "result.csv"
 msgstr "Ergebnis.csv"
@@ -1704,7 +1740,7 @@ msgstr "Ergebnis.csv"
 #: cdedb/frontend/assembly.py:132 cdedb/frontend/assembly.py:659
 #: cdedb/frontend/cde.py:236 cdedb/frontend/core.py:704
 #: cdedb/frontend/core.py:752 cdedb/frontend/event.py:178
-#: cdedb/frontend/event.py:3270 cdedb/frontend/ml.py:131
+#: cdedb/frontend/event.py:3207 cdedb/frontend/ml.py:131
 msgid "result.json"
 msgstr "Ergebnis.json"
 
@@ -1724,7 +1760,7 @@ msgstr "Bereits angemeldet."
 #: cdedb/frontend/cde.py:1832 cdedb/frontend/core.py:1422
 #: cdedb/frontend/core.py:1449 cdedb/frontend/event.py:709
 #: cdedb/frontend/event.py:2309 cdedb/frontend/event.py:2669
-#: cdedb/frontend/event.py:3474
+#: cdedb/frontend/event.py:3411
 msgid "Must be checked."
 msgstr "Muss markiert sein."
 
@@ -2420,69 +2456,33 @@ msgstr "Isomattenplatz"
 msgid "lodgement: {field}"
 msgstr "Unterkunft: {field}"
 
-#: cdedb/frontend/event.py:3182
-msgid "00_query_event_registration_all"
-msgstr "Alle Anmeldungen"
-
-#: cdedb/frontend/event.py:3187
-msgid "01_query_event_registration_not_paid"
-msgstr "noch nicht bezahlt"
-
-#: cdedb/frontend/event.py:3192
-msgid "02_query_event_registration_paid"
-msgstr "bezahlt"
-
-#: cdedb/frontend/event.py:3199
-msgid "03_query_event_registration_non_members"
-msgstr "Nicht-Miglieder"
-
-#: cdedb/frontend/event.py:3204
-msgid "04_query_event_registration_orga_notes"
-msgstr "Orga-Notizen"
-
-#: cdedb/frontend/event.py:3210
-msgid "05_query_event_registration_u18"
-msgstr "U18"
-
-#: cdedb/frontend/event.py:3218
-msgid "06_query_event_registration_u16"
-msgstr "U16"
-
-#: cdedb/frontend/event.py:3226
-msgid "07_query_event_registration_u14"
-msgstr "U14"
-
-#: cdedb/frontend/event.py:3234
-msgid "08_query_event_registration_minors_no_consent"
-msgstr "U18 ohne Einverständniserklärung"
-
-#: cdedb/frontend/event.py:3315 cdedb/frontend/event.py:3345
-#: cdedb/frontend/event.py:3362 cdedb/frontend/event.py:3395
+#: cdedb/frontend/event.py:3252 cdedb/frontend/event.py:3282
+#: cdedb/frontend/event.py:3299 cdedb/frontend/event.py:3332
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/frontend/event.py:3317
+#: cdedb/frontend/event.py:3254
 msgid "Allready checked in."
 msgstr "Bereits eingecheckt."
 
-#: cdedb/frontend/event.py:3349 cdedb/frontend/event.py:3365
-#: cdedb/frontend/event.py:3398
+#: cdedb/frontend/event.py:3286 cdedb/frontend/event.py:3302
+#: cdedb/frontend/event.py:3335
 msgid "Wrong associated field."
 msgstr "Feld einer anderen Veranstaltung angegeben."
 
-#: cdedb/frontend/event.py:3447
+#: cdedb/frontend/event.py:3384
 msgid "Data from wrong event."
 msgstr "Daten passen nicht zur Veranstaltung."
 
-#: cdedb/frontend/event.py:3454
+#: cdedb/frontend/event.py:3391
 msgid "There exist unmigrated personas."
 msgstr "Unmigrierte Accounts gefunden."
 
-#: cdedb/frontend/event.py:3471
+#: cdedb/frontend/event.py:3408
 msgid "Event already archived."
 msgstr "Veranstaltung bereits archiviert."
 
-#: cdedb/frontend/event.py:3481
+#: cdedb/frontend/event.py:3418
 msgid "Event archived."
 msgstr "Veranstaltung archiviert."
 

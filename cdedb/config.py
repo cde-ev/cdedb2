@@ -50,6 +50,85 @@ _BASIC_DEFAULTS = {
     "TIMING_LOG": pathlib.Path("/tmp/cdedb-timing.log"),
 }
 
+
+def generate_event_registration_default_queries(event, spec):
+    """
+    Generate default queries for registration_query.
+    
+    Some of these contain dynamic information about the event's Parts,
+    Tracks, etc.
+    
+    :param event: The Event for which to generate the queries
+    :type event:
+    :param spec: The Query Spec, dynamically generated for the event
+    :type spec:
+    :return: Dict of default queries
+    """
+    default_sort = (("persona.family_name", True),
+                    ("persona.given_names", True),
+                    ("reg.id", True))
+    
+    queries = {
+        _("00_query_event_registration_all"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name"),
+            tuple(),
+            (("reg.id", True),)),
+        _("01_query_event_registration_not_paid"): Query(
+            "qview_registraion", spec,
+            ("persona.given_names", "persona.family_name"),
+            (("reg.payment", QueryOperators.empty, None),),
+            default_sort),
+        _("02_query_event_registration_paid"): Query(
+            "qview_registraion", spec,
+            ("persona.given_names", "persona.family_name", "reg.payment"),
+            (("reg.payment", QueryOperators.nonempty, None),),
+            (("reg.payment", False), ("persona.family_name", True),
+             ("persona.given_names", True),)),
+        _("03_query_event_registration_non_members"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name"),
+            (("persona.is_member", QueryOperators.equal, False),),
+            default_sort),
+        _("04_query_event_registration_orga_notes"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name", "reg.orga_notes"),
+            (("reg.orga_notes", QueryOperators.nonempty, None),),
+            default_sort),
+        _("05_query_event_registration_u18"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name", "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(event['begin'], 18)),),
+            (("persona.birthday", True), ("persona.family_names", True),
+             ("persona.given_names", True)), ),
+        _("06_query_event_registration_u16"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name", "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(event['begin'], 16)),),
+            (("persona.birthday", True), ("persona.family_names", True),
+             ("persona.given_names", True)), ),
+        _("07_query_event_registration_u14"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name", "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(event['begin'], 14)),),
+            (("persona.birthday", True), ("persona.family_names", True),
+             ("persona.given_names", True)), ),
+        _("08_query_event_registration_minors_no_consent"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name", "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(event['begin'], 18)),
+             ("reg.parental_agreement", QueryOperators.empty, None)),
+            (("persona.birthday", True), ("persona.family_names", True),
+             ("persona.given_names", True)), ),
+        }
+    
+    return queries
+
+
 #: defaults for :py:class:`Config`
 _DEFAULTS = {
     ###
@@ -245,9 +324,6 @@ _DEFAULTS = {
                 (("birthday", True), ("family_name", True),
                  ("given_names", True)), ),
             },
-        "qview_registration": {
-            ## none since they need additional input, will be created on the fly
-            },
         "qview_core_user": {
             _("00_query_core_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_core_user'],
@@ -263,7 +339,12 @@ _DEFAULTS = {
                 tuple(), )
             },
         },
+    
+    "DEFAULT_QUERIES_REGISTRATION":
+        generate_event_registration_default_queries,
+    
     }
+
 
 #: defaults for :py:class:`SecretsConfig`
 _SECRECTS_DEFAULTS = {
