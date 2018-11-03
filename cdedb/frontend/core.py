@@ -270,7 +270,7 @@ class CoreFrontend(AbstractFrontend):
             access_levels.add("cde")
         ## Orgas see their participants
         if "event" not in access_levels:
-            for event_id in self.eventproxy.orga_info(rs, rs.user.persona_id):
+            for event_id in self.eventproxy.orga_info(rs, persona_id):
                 if self.eventproxy.list_registrations(rs, event_id, persona_id):
                     access_levels.add("event")
                     access_levels.add("orga")
