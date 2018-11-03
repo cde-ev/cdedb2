@@ -448,11 +448,11 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:106
 msgid "Genders.female"
-msgstr ""
+msgstr "female"
 
 #: cdedb/i18n_additional.py:107
 msgid "Genders.male"
-msgstr ""
+msgstr "male"
 
 #: cdedb/i18n_additional.py:108
 msgid "Genders.other"
