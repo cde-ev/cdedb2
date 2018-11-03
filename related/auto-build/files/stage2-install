@@ -79,6 +79,11 @@ do
 done
 
 echo ""
+echo "Disable private temp for Apache (this should be dev only)..."
+echo "--------------------------------------------"
+sed -i -e '/PrivateTmp=true/PrivateTmp=false/' /lib/systemd/system/apache2.service
+
+echo ""
 echo "Setting up system..."
 echo "--------------------------------------------"
 
