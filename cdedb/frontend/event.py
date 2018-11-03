@@ -2542,7 +2542,7 @@ class EventFrontend(AbstractUserFrontend):
                         for reg_id in group):
                     ret.append(_mixing_problem(lodgement_id, part_id))
                 if any(personas[registrations[reg_id]['persona_id']]['gender']
-                       in (const.Genders.other, const.Genders.not_speficied)
+                       in (const.Genders.other, const.Genders.not_specified)
                        for reg_id in group):
                     ret.append((n_("Non-Binary Participant."), lodgement_id,
                                 part_id,
