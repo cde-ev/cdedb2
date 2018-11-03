@@ -216,14 +216,14 @@ _DEFAULTS = {
     ## dialing"
     "DEFAULT_QUERIES": {
         "qview_cde_user": {
-            _("trial members"): Query(
+            _("00_query_cde_trial_members"): Query(
                 "qview_cde_user", QUERY_SPECS['qview_cde_user'],
                 ("personas.id", "given_names", "family_name"),
                 (("trial_member", QueryOperators.equal, True),),
                 (("family_name", True), ("given_names", True)), ),
             },
         "qview_archived_persona": {
-            _("with notes"): Query(
+            _("00_query_archived_persona_with_notes"): Query(
                 "qview_archived_persona",
                 QUERY_SPECS['qview_archived_persona'],
                 ("personas.id", "given_names", "family_name", "birth_name"),
@@ -231,7 +231,7 @@ _DEFAULTS = {
                 (("family_name", True), ("given_names", True)), ),
             },
         "qview_event_user": {
-            _("minors"): Query(
+            _("00_query_event_user_minors"): Query(
                 "qview_event_user", QUERY_SPECS['qview_event_user'],
                 ("persona.persona_id", "given_names", "family_name",
                  "birthday"),
@@ -244,14 +244,14 @@ _DEFAULTS = {
             ## none since they need additional input, will be created on the fly
             },
         "qview_core_user": {
-            _("all"): Query(
+            _("00_query_core_user_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_core_user'],
                 ("personas.id", "given_names", "family_name"),
                 tuple(),
                 (("personas.id", True),), )
             },
         "qview_persona": {
-            _("all"): Query(
+            _("00_query_mailinglist_persona_all"): Query(
                 "qview_persona", QUERY_SPECS['qview_persona'],
                 ("id", "given_names", "family_name"),
                 tuple(),

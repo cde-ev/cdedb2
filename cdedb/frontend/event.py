@@ -3176,18 +3176,72 @@ class EventFrontend(AbstractUserFrontend):
             rs, rs.ambience['event'], courses, lodgements)
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         default_queries = self.conf.DEFAULT_QUERIES['qview_registration']
-        default_queries[_("all")] = Query(
+        default_sort = (("persona.family_name", True),
+                        ("persona.given_names", True), ("reg.id", True),)
+        default_queries.update({
+        _("00_query_event_registration_all"): Query(
             "qview_registration", spec,
-            ("reg.id", "persona.given_names", "persona.family_name"),
+            ("persona.given_names", "persona.family_name"),
             tuple(),
-            (("reg.id", True),),)
-        default_queries[_("minors")] = Query(
+            (("reg.id", True), )),
+        _("01_query_event_registration_not_paid"): Query(
+            "qview_registraion", spec,
+            ("persona.given_names", "persona.family_name"),
+            (("reg.payment", QueryOperators.empty, None), ),
+            default_sort),
+        _("02_query_event_registration_paid"): Query(
+            "qview_registraion", spec,
+            ("persona.given_names", "persona.family_name",
+             "reg.payment"),
+            (("reg.payment", QueryOperators.nonempty, None),),
+            (("reg.payment", False), ("persona.family_name", True),
+             ("persona.given_names", True),)),
+        _("03_query_event_registration_non_members"): Query(
             "qview_registration", spec,
-            ("reg.id", "persona.given_names", "persona.family_name",
+            ("persona.given_names", "persona.family_name"),
+            (("persona.is_member", QueryOperators.equal, False), ),
+            default_sort),
+        _("04_query_event_registration_orga_notes"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name",
+             "reg.orga_notes"),
+            (("reg.orga_notes", QueryOperators.nonempty, None),),
+            default_sort),
+        _("05_query_event_registration_u18"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name",
              "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(rs.ambience['event']['begin'], 18)),),
-            (("persona.birthday", True), ("reg.id", True)),)
+            (("persona.birthday", True), ("persona.family_names", True), 
+             ("persona.given_names", True)),),
+        _("06_query_event_registration_u16"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name",
+             "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(rs.ambience['event']['begin'], 16)),),
+            (("persona.birthday", True), ("persona.family_names", True),
+             ("persona.given_names", True)),),
+        _("07_query_event_registration_u14"): Query(
+            "qview_registration", spec,
+            ("persona.given_names", "persona.family_name",
+             "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(rs.ambience['event']['begin'], 14)),),
+            (("persona.birthday", True), ("persona.family_names", True),
+             ("persona.given_names", True)),),
+        _("08_query_event_registration_minors_no_consent"): \
+            Query("qview_registration", spec,
+            ("persona.given_names", "persona.family_name",
+             "persona.birthday"),
+            (("persona.birthday", QueryOperators.greater,
+              deduct_years(rs.ambience['event']['begin'], 18)),
+             ("reg.parental_agreement", QueryOperators.empty, None)),
+            (("persona.birthday", True), ("persona.family_names", True),
+             ("persona.given_names", True)),),
+        })
+        
         params = {
             'spec': spec, 'choices': choices, 'query': query,
             'default_queries': default_queries, 'titles': titles,

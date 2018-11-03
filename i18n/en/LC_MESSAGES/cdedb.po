@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-11-03 13:47+0100\n"
+"POT-Creation-Date: 2018-11-03 15:43+0100\n"
 "PO-Revision-Date: 2016-11-24 16:06+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -42,26 +42,29 @@ msgstr ""
 msgid "Unable to unwrap!"
 msgstr ""
 
-#: cdedb/config.py:40
+#: cdedb/config.py:28
 msgid "Failed to locate repository"
 msgstr ""
 
-#: cdedb/config.py:231
-msgid "trial members"
-msgstr ""
+#: cdedb/config.py:219
+msgid "00_query_cde_trial_members"
+msgstr "Trial Members"
 
-#: cdedb/config.py:238
-msgid "with notes"
-msgstr ""
+#: cdedb/config.py:226
+msgid "00_query_archived_persona_with_notes"
+msgstr "Personas with Notes"
 
-#: cdedb/config.py:246 cdedb/frontend/event.py:3184
-msgid "minors"
-msgstr ""
+#: cdedb/config.py:234
+msgid "00_query_event_user_minors"
+msgstr "Minors"
 
-#: cdedb/config.py:259 cdedb/config.py:266 cdedb/frontend/event.py:3179
-#: cdedb/frontend/templates/web/generic.tmpl:549
-msgid "all"
-msgstr ""
+#: cdedb/config.py:247
+msgid "00_query_core_user_all"
+msgstr "All Users"
+
+#: cdedb/config.py:254
+msgid "00_query_mailinglist_persona_all"
+msgstr "All Users"
 
 #: cdedb/i18n_additional.py:11
 msgid "AgeClasses.full"
@@ -1687,7 +1690,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly.py:127 cdedb/frontend/cde.py:230
 #: cdedb/frontend/core.py:698 cdedb/frontend/core.py:746
-#: cdedb/frontend/event.py:172 cdedb/frontend/event.py:3210
+#: cdedb/frontend/event.py:172 cdedb/frontend/event.py:3264
 #: cdedb/frontend/ml.py:126
 msgid "result.csv"
 msgstr ""
@@ -1695,7 +1698,7 @@ msgstr ""
 #: cdedb/frontend/assembly.py:132 cdedb/frontend/assembly.py:659
 #: cdedb/frontend/cde.py:236 cdedb/frontend/core.py:704
 #: cdedb/frontend/core.py:752 cdedb/frontend/event.py:178
-#: cdedb/frontend/event.py:3216 cdedb/frontend/ml.py:131
+#: cdedb/frontend/event.py:3270 cdedb/frontend/ml.py:131
 msgid "result.json"
 msgstr ""
 
@@ -1715,7 +1718,7 @@ msgstr ""
 #: cdedb/frontend/cde.py:1832 cdedb/frontend/core.py:1422
 #: cdedb/frontend/core.py:1449 cdedb/frontend/event.py:709
 #: cdedb/frontend/event.py:2309 cdedb/frontend/event.py:2669
-#: cdedb/frontend/event.py:3420
+#: cdedb/frontend/event.py:3474
 msgid "Must be checked."
 msgstr ""
 
@@ -2407,33 +2410,69 @@ msgstr ""
 msgid "lodgement: {field}"
 msgstr ""
 
-#: cdedb/frontend/event.py:3261 cdedb/frontend/event.py:3291
-#: cdedb/frontend/event.py:3308 cdedb/frontend/event.py:3341
+#: cdedb/frontend/event.py:3182
+msgid "00_query_event_registration_all"
+msgstr "All Registrations"
+
+#: cdedb/frontend/event.py:3187
+msgid "01_query_event_registration_not_paid"
+msgstr "Not yet Paid"
+
+#: cdedb/frontend/event.py:3192
+msgid "02_query_event_registration_paid"
+msgstr "Paid"
+
+#: cdedb/frontend/event.py:3199
+msgid "03_query_event_registration_non_members"
+msgstr "Non-Members"
+
+#: cdedb/frontend/event.py:3204
+msgid "04_query_event_registration_orga_notes"
+msgstr "Orga Notes"
+
+#: cdedb/frontend/event.py:3210
+msgid "05_query_event_registration_u18"
+msgstr "U18"
+
+#: cdedb/frontend/event.py:3218
+msgid "06_query_event_registration_u16"
+msgstr "U16"
+
+#: cdedb/frontend/event.py:3226
+msgid "07_query_event_registration_u14"
+msgstr "U14"
+
+#: cdedb/frontend/event.py:3234
+msgid "08_query_event_registration_minors_no_consent"
+msgstr "U18 without Parental Agreement"
+
+#: cdedb/frontend/event.py:3315 cdedb/frontend/event.py:3345
+#: cdedb/frontend/event.py:3362 cdedb/frontend/event.py:3395
 msgid "Wrong associated event."
 msgstr ""
 
-#: cdedb/frontend/event.py:3263
+#: cdedb/frontend/event.py:3317
 msgid "Allready checked in."
 msgstr ""
 
-#: cdedb/frontend/event.py:3295 cdedb/frontend/event.py:3311
-#: cdedb/frontend/event.py:3344
+#: cdedb/frontend/event.py:3349 cdedb/frontend/event.py:3365
+#: cdedb/frontend/event.py:3398
 msgid "Wrong associated field."
 msgstr ""
 
-#: cdedb/frontend/event.py:3393
+#: cdedb/frontend/event.py:3447
 msgid "Data from wrong event."
 msgstr ""
 
-#: cdedb/frontend/event.py:3400
+#: cdedb/frontend/event.py:3454
 msgid "There exist unmigrated personas."
 msgstr ""
 
-#: cdedb/frontend/event.py:3417
+#: cdedb/frontend/event.py:3471
 msgid "Event already archived."
 msgstr ""
 
-#: cdedb/frontend/event.py:3427
+#: cdedb/frontend/event.py:3481
 msgid "Event archived."
 msgstr ""
 
@@ -2630,6 +2669,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:548
 msgid "select all"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:549
+msgid "all"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:551
@@ -2887,4 +2930,3 @@ msgstr ""
 
 #~ msgid "Registrations exist, only modifications."
 #~ msgstr ""
-
