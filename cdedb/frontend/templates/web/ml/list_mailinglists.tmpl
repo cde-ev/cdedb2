@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Mailinglisten Komplettübersicht{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), "Alle Mailinglisten", active=True) }}
 {% endblock %}
 {% macro format_entry(mailinglist_id, title) %}

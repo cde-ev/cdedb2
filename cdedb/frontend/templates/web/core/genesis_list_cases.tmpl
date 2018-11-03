@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}Accountanfragen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen", active="True") }}
 {% endblock %}
 {% block content %}

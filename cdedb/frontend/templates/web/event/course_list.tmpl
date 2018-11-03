@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Kursliste {{ ambience['event']['title']|e }}{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard",
                         readonly=not (ambience['event']['is_visible'] or ambience['event']['id'] in user.orga or is_admin)) }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), "Kursliste", active=True) }}

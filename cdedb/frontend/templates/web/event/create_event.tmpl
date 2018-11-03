@@ -5,7 +5,7 @@
 {% set jshint='strong' %}
 {% block title %}Veranstaltung anlegen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Veranstaltungen verwalten") }}
 {{ util.breadcrumb_link(cdedblink("event/create_event"), "Veranstaltung anlegen", active=True) }}
 {% endblock %}

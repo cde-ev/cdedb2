@@ -1,6 +1,9 @@
 {% set mainnav_active='core' %}
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{% endblock %}
 {% block navigation %}
     {% if "persona" in user.roles %}
         <h4>Start</h4>

@@ -6,7 +6,7 @@
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Veranstaltungsnutzersuche{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}

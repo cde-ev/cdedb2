@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}Versammlung anlegen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Versammlung anlegen", active=True) }}
 {% endblock %}
 {% block content %}

@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Veranstaltungen verwalten{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/list_db_events"), "Veranstaltungen verwalten", active="True") }}
 {% endblock %}
 

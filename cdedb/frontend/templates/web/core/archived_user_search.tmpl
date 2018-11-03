@@ -6,7 +6,7 @@
 {% block scripts %}{{ util.cdedb_script('queryform') }}{% endblock %}
 {% block title %}Archivnutzersuche{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/archived_user_search"), "Archivsuche", active="True") }}
 {% endblock %}
 {% block content %}

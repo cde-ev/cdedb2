@@ -5,7 +5,7 @@
 Versammlung – Logs [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("assembly/view_log"), "Log", active=True) }}
 {% endblock %}
 {% block content %}

@@ -7,7 +7,7 @@
     Unterkunft {{ ambience['lodgement']['moniker']|e }} bearbeiten ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/lodgements"), "Unterkunft") }}
     {{ util.breadcrumb_link(cdedblink("event/show_lodgement"), ambience['lodgement']['moniker']|e, icon='home') }}

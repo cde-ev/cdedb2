@@ -6,7 +6,7 @@
 {% block inner_navigation %}{{assembly_inner_navigation(ambience['assembly'])}}{% endblock %}
 {% block title %}Abstimmung anlegen{% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
     {{ util.breadcrumb_link(cdedblink("assembly/create_ballot"), "Abstimmung anlegen", active=True) }}

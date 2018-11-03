@@ -10,7 +10,7 @@
 {% endblock %}
 {% block title %}Allgemeine Nutzerverwaltung{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}

@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Allgemeine Metainformationen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/meta_info_form"), "Metadaten", active="True") }}
 {% endblock %}
 {% block content %}

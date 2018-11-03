@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}Mailingliste anlegen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("ml/create_mailinglist"), "Mailingliste anlegen", active=True) }}
 {% endblock %}
 {% block content %}

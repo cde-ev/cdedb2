@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}Offene Änderung für {{ current['given_names']|e }} {{ current['family_name']|e }}{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), "Änderungen prüfen") }}
 {{ util.breadcrumb_link(cdedblink('core/inspect_change', {'persona_id': pending['id']}),
         "{} {}".format(current['given_names'], current['family_name']), icon="user", active="True") }}

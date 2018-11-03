@@ -6,7 +6,7 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% block title %}Neuen Veranstaltungsnutzer anlegen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/user_search"), "Nutzer verwalten") }}
 {{ util.breadcrumb_link(cdedblink("event/create_user"), "Nutzer anlegen", active="True") }}
 {% endblock %}

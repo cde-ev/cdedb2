@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Einwilligung zur Mitgliedersuche{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung", active="True") }}
 {% endblock %}
 {% block content %}

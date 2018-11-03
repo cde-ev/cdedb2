@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('csv-tools') }}{% endblock %}
 {% block title %}Überweisungen eintragen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten") }}
 {{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), "Überweisungen eintragen", active=True) }}
 {% endblock %}

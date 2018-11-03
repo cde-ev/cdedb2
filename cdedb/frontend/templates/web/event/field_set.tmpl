@@ -14,7 +14,7 @@
     </h1>
 {% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
 {{ util.breadcrumb_link(cdedblink("event/registration_query"), "Anmeldungen") }}
 {{ util.breadcrumb_link(cdedblink("event/field_set_select"), "Datenfeld setzen") }}

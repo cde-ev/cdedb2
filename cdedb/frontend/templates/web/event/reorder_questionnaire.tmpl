@@ -5,7 +5,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('orderrow') }}{% endblock %}
 {% block title %}Fragebogen umordnen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/questionnaire_summary"), "Fragebogen konfigurieren") }}
     {{ util.breadcrumb_link(cdedblink("event/reorder_questionnaire"), "Anordnung ändern", active=True) }}

@@ -71,6 +71,10 @@
     {% endif %}
 {% endmacro %}
 
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+{% endblock %}
+
 {% block navigation %}
     {% if ambience['event'] %}
         <p>

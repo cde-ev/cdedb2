@@ -13,7 +13,7 @@
     </h1>
 {% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Abg. Veranstaltungen") }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
         ambience['pevent']['title']|e, icon="calendar") }}

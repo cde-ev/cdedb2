@@ -20,6 +20,9 @@
         </div>
 {% endmacro %}
 
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{% endblock %}
 {% block navigation %}
     {% if ambience['mailinglist'] %}
         <p>

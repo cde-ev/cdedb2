@@ -6,7 +6,7 @@
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}CdE-Nutzerverwaltung{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten", active="True") }}
 {% endblock %}
 {% block content %}

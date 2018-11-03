@@ -11,7 +11,7 @@ Log: {{ ambience['event']['title']|e }} [{{ values['start']|int|e }}–{{ (value
     </h1>
 {% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='blackboard') }}
     {{ util.breadcrumb_link(cdedblink("event/view_event_log"), "Log", active="True") }}
 {% endblock %}

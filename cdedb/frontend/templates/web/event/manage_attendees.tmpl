@@ -7,7 +7,7 @@
 Kursteilnehmer für Kurs {{ ambience['course']['title']|e }} verwalten ({{ ambience['event']['title']|e }})
 {% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse") }}
     {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}

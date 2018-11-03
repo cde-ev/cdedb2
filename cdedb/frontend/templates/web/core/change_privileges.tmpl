@@ -4,7 +4,7 @@
 Privilegien ändern für {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }}
 {% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ super() }}
     {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']),
             ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_privileges_form"), "Privilegien anpassen", active=True) }}

@@ -2,7 +2,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Initiative 25+{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
     {{ util.breadcrumb_link(cdedblink("cde/i25p_index"), "Initiative 25+ (weitere Informationen)", active=True) }}
 {% endblock %}
 {% block content %}

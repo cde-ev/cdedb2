@@ -5,7 +5,7 @@
 Log: Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/view_log"), "Log", active="True") }}
 {% endblock %}
 {% block content %}

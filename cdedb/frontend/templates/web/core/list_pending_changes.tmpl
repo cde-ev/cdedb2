@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}Zu prüfende Profiländerungen [{{ pending|length|e }}]{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), "Änderungen prüfen", active="True") }}
 {% endblock %}
 {% block content %}

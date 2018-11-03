@@ -5,7 +5,7 @@
 {% set jshint = 'weak' %}
 {% block title %}Semesterverwaltung{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/show_semester"), "Semesterverwaltung", active="True") }}
 {% endblock %}
 {% block content %}

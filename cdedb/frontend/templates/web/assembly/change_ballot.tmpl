@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}{{ ambience['ballot']['title']|e }} bearbeiten ({{ ambience['assembly']['title']|e }}){% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}

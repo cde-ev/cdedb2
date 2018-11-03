@@ -20,6 +20,9 @@
         </div>
 {% endmacro %}
 
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{% endblock %}
 {% block navigation %}
     {% if ambience['assembly'] %}
         <p>

@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}Eigene Daten bearbeiten{% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ super() }}
     {{ util.breadcrumb_link(show_user_link(values['id']), values['given_names'] + " " + values['family_name'],
             icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_user_form"), "Bearbeiten", active=True) }}

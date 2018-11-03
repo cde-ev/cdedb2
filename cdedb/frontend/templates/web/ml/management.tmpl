@@ -5,7 +5,7 @@
 {% set jshint='strong' %}
 {% block title %}{{ ambience['mailinglist']['title']|e }} -- Verwalten{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("ml/show_mailinglist"), ambience['mailinglist']['title'], icon="envelope") }}
 {{ util.breadcrumb_link(cdedblink("ml/management"), "Verwalten", active=True) }}
 {% endblock %}

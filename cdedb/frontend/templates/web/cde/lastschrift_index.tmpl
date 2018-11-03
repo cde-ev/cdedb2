@@ -4,7 +4,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Übersicht Einzugsermächtigungen{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), "Einzugsermächtigungen", active="True") }}
 {% endblock %}
 {% block content %}

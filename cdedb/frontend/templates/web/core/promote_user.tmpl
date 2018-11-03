@@ -6,7 +6,7 @@
     {% endwith %}
 {% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+    {{ super() }}
     {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']),
             ambience['persona']['given_names'] + " " + ambience['persona']['family_name'], icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), "Bereich hinzufügen",

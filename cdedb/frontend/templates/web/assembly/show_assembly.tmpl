@@ -4,7 +4,7 @@
 {% set jshint = 'weak' %}
 {% block title %}{{ ambience['assembly']['title']|e }}{% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn",
             active=True) }}
 {% endblock %}

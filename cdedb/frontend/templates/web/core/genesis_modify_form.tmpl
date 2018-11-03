@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}Accountanfrage bearbeiten{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Start") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen") }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
                         "Accountanfrage von {} {} bearbeiten".format(values["given_names"], values["family_name"]),

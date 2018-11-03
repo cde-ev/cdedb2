@@ -5,7 +5,7 @@
 {% set jshint='weak' %}
 {% block title %}Kurs hinzufügen ({{ ambience['event']['title']|e }}){% endblock %}
 {% block breadcrumb %}
-    {{ util.breadcrumb_link(cdedblink("event/index"), "Veranstaltungen") }}
+    {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="blackboard") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), "Kurse") }}
     {{ util.breadcrumb_link(cdedblink("event/create_course"), "Kurs hinzufügen", active=True) }}

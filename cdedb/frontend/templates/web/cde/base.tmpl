@@ -1,6 +1,9 @@
 {% set mainnav_active='cde' %}
 {% extends "web/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% block breadcrumb %}
+    {{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{% endblock %}
 {% block navigation %}
     <h4>CdE</h4>
     <div class="list-group tear-down">

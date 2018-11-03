@@ -6,7 +6,7 @@
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% block title %}Versammlungs-Nutzerverwaltung{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("assembly/index"), "Versammlungen") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Nutzer verwalten", active=True) }}
 {% endblock %}
 {% block content %}

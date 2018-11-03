@@ -5,7 +5,7 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
 {% block title %}Organisationen der abg. Veranstaltungen verwalten{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "CdE") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("cde/institution_summary"), "Organisationen verwalten", active="True") }}
 {% endblock %}
 {# Macro for a general institution row, that can have each role in the DynamicRow workflow.

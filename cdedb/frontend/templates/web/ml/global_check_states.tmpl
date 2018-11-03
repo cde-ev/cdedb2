@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}globaler Konsistenzcheck{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("ml/index"), "Mailinglisten") }}
+{{ super() }}
 {{ util.breadcrumb_link(cdedblink("ml/global_check_states"), "Konsistenzcheck", active=True) }}
 {% endblock %}
 {% block heading %}
