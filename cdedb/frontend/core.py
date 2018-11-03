@@ -1000,7 +1000,7 @@ class CoreFrontend(AbstractFrontend):
         new_password = check(rs, "password_strength", new_password, "strength")
         if rs.errors:
             if any(name == "strength" for name, _ in rs.errors):
-                rs.notify("error", _("Password too weak."))
+                rs.notify("error", n_("Password too weak."))
             return self.change_password_form(rs)
         code, message = self.coreproxy.change_password(
             rs, rs.user.persona_id, old_password, new_password)
@@ -1085,7 +1085,7 @@ class CoreFrontend(AbstractFrontend):
         new_password = check(rs, "password_strength", new_password, "strength")
         if rs.errors:
             if any(name == "strength" for name, _ in rs.errors):
-                rs.notify("error", _("Password too weak."))
+                rs.notify("error", n_("Password too weak."))
             ## Redirect so that encoded parameter works.
             params = {
                 'email': self.encode_parameter(

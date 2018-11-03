@@ -515,7 +515,7 @@ class AbstractBackend(metaclass=abc.ABCMeta):
                 phrase = "{} > %s"
                 params.extend((value,)*len(columns))
             else:
-                raise RuntimeError(_("Impossible."))
+                raise RuntimeError(n_("Impossible."))
             constraints.append(" OR ".join(phrase.format(c) for c in columns))
         if constraints:
             q = glue(q, "WHERE", "({})".format(" ) AND ( ".join(constraints)))

@@ -907,7 +907,7 @@ def parse_date(val):
             return datetime.datetime.strptime(val[:length], fmt).date()
         except ValueError:
             pass
-    raise ValueError(_("Invalid date string."))
+    raise ValueError(n_("Invalid date string."))
 
 @_addvalidator
 def _date(val, argname=None, *, _convert=True):
@@ -1848,7 +1848,7 @@ def _event_field(val, argname=None, *, creation=False, _convert=True,
                                            _convert=_convert)
                     if value in seen_values:
                         e.append((entries_key,
-                                  ValueError(_("Duplicate value."))))
+                                  ValueError(n_("Duplicate value."))))
                     if e or ee:
                         errs.extend(e)
                         errs.extend(ee)
@@ -2144,7 +2144,7 @@ def _event_associated_fields(val, argname=None, fields=None, association=None,
         if fields[field_id]['entries'] is not None and val[field] is not None:
             if not any(str(raw[field]) == x
                        for x, _ in fields[field_id]['entries']):
-                errs.append((field, ValueError(_("Entry not in definition list."))))
+                errs.append((field, ValueError(n_("Entry not in definition list."))))
     return val, errs
 
 _LODGEMENT_COMMON_FIELDS = lambda: {
@@ -2833,11 +2833,11 @@ def _query(val, argname=None, *, _convert=None):
     :rtype: (:py:class:`cdedb.query.Query` or None, [(str or None, exception)])
     """
     if not isinstance(val, Query):
-        return None, [(argname, TypeError(_("Not a Query.")))]
+        return None, [(argname, TypeError(n_("Not a Query.")))]
     ## scope
     _, errs = _identifier(val.scope, "scope", _convert=False)
     if not val.scope.startswith("qview_"):
-        errs.append(("scope", ValueError(_("Must start with 'qview_'."))))
+        errs.append(("scope", ValueError(n_("Must start with 'qview_'."))))
     ## spec
     for field, validator in val.spec.items():
         _, e = _csv_identifier(field, "spec", _convert=False)
@@ -2849,7 +2849,7 @@ def _query(val, argname=None, *, _convert=None):
         _, e = _csv_identifier(field, "fields_of_interest", _convert=False)
         errs.extend(e)
     if not val.fields_of_interest:
-        errs.append(("fields_of_interest", ValueError(_("Mustn't be empty."))))
+        errs.append(("fields_of_interest", ValueError(n_("Mustn't be empty."))))
     ## constraints
     for x in val.constraints:
         try:
@@ -2860,14 +2860,14 @@ def _query(val, argname=None, *, _convert=None):
         field, e = _csv_identifier(field, "constraints", _convert=False)
         errs.extend(e)
         if field not in val.spec:
-            errs.append(("constraints", KeyError(_("Invalid field."))))
+            errs.append(("constraints", KeyError(n_("Invalid field."))))
             continue
         operator, e = _enum_queryoperators(
             operator, "constraints/{}".format(field), _convert=False)
         errs.extend(e)
         if operator not in VALID_QUERY_OPERATORS[val.spec[field]]:
             errs.append(("constraints/{}".format(field),
-                         ValueError(_("Invalid operator."))))
+                         ValueError(n_("Invalid operator."))))
             continue
         if operator in NO_VALUE_OPERATORS:
             value = None
