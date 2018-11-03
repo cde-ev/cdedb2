@@ -4,7 +4,7 @@
 {% block scripts %}
     {% if 'core_admin' in user.roles %}{{ util.cdedb_script('search-persona') }}{% endif %}
 {% endblock %}
-{% block title %}CdE Datenbank{% endblock %}
+{% block title %}CdE-Datenbank{% endblock %}
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("core/index"), "Index", active="True") }}
 {% endblock %}

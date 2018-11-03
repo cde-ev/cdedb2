@@ -41,7 +41,7 @@
         <div class="container page" id="maincontainer">
             <div class="clearfix" role="banner">
                 <div class="logo pull-left">
-                    <img src="{{ staticurl("logo.jpg")|e }}" alt="CdE Datenbank" />
+                    <img src="{{ staticurl("logo.jpg")|e }}" alt="CdE-Datenbank" />
                 </div>
                 
                 {% if jshint %}
@@ -174,7 +174,7 @@
         <div id="footer" class="container">
             {% block footer %}
                 © Club der Ehemaligen e.V. – Datenbank-Entwicklungs-Team
-                <a href="mailto:cdedb@lists.cde-ev.de">&lt;cdedb@lists.cde-ev.de&gt;</a>
+                <a href="mailto:CdE-Datenbankentwicklungsteam <cdedb@lists.cde-ev.de>">&lt;cdedb@lists.cde-ev.de&gt;</a>
                 <br /> Version {{ GIT_COMMIT|e }}
                 {% if CDEDB_DEV %}
                     <br /><br />

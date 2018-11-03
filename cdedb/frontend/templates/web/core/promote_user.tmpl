@@ -32,7 +32,7 @@
         
         {% if not values['target_realm'] %}
             <p>
-                Mit diesem Formular kann der Benutzer zu weiteren Bereichen der CdE Datenbank hinzugefügt werden. Damit
+                Mit diesem Formular kann der Benutzer zu weiteren Bereichen der CdE-Datenbank hinzugefügt werden. Damit
                 erhält er Zugriff auf die entsprechenden Seiten und erhält ggf. neue Nutzer-Attribute.
             </p>
             <form action="{{ cdedblink('core/promote_user_form')|e }}" method="GET" id="realmselectionform"
