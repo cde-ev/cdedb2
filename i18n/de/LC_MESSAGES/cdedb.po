@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-11-03 23:37+0100\n"
+"POT-Creation-Date: 2018-11-04 11:57+0100\n"
 "PO-Revision-Date: 2017-12-10 13:36+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -1149,7 +1149,7 @@ msgstr "Unzulässiger Bereich."
 
 #: cdedb/backend/assembly.py:208 cdedb/backend/assembly.py:946
 #: cdedb/backend/event.py:133 cdedb/backend/event.py:154
-#: cdedb/backend/past_event.py:458 cdedb/frontend/common.py:745
+#: cdedb/backend/past_event.py:458 cdedb/frontend/common.py:740
 msgid "No input specified."
 msgstr "Keine Eingabe gemacht."
 
@@ -1289,7 +1289,7 @@ msgstr "Erfolgreicher Lastschrifteneinzug."
 #: cdedb/backend/cde.py:380 cdedb/backend/common.py:518
 #: cdedb/database/constants.py:184 cdedb/database/constants.py:202
 #: cdedb/frontend/cde.py:454 cdedb/frontend/cde.py:577
-#: cdedb/frontend/common.py:1018
+#: cdedb/frontend/common.py:1013
 msgid "Impossible."
 msgstr "Unmöglich."
 
@@ -2023,50 +2023,50 @@ msgstr "Kurs erstellt"
 msgid "Participant already present."
 msgstr "Teilnehmer bereits vorhanden."
 
-#: cdedb/frontend/common.py:154 cdedb/frontend/common.py:808
+#: cdedb/frontend/common.py:154 cdedb/frontend/common.py:803
 #: cdedb/frontend/core.py:814
 msgid "Failed validation."
 msgstr "Validierung fehlgeschlagen."
 
-#: cdedb/frontend/common.py:747
+#: cdedb/frontend/common.py:742
 msgid "Ambiguous input."
 msgstr "Uneindeutige Eingabe."
 
-#: cdedb/frontend/common.py:810
+#: cdedb/frontend/common.py:805
 msgid "The database currently undergoes maintenance and is unavailable."
 msgstr ""
 "Es werden derzeit Wartungsarbeiten an der Datenbank vorgenommen und diese"
 " ist daher leider nicht verfügbar."
 
-#: cdedb/frontend/common.py:851
+#: cdedb/frontend/common.py:846
 msgid "Subject"
 msgstr "Betreff"
 
-#: cdedb/frontend/common.py:856
+#: cdedb/frontend/common.py:851
 msgid "Stored email to hard drive at {path}"
 msgstr "E-Mail als {path} auf der Festplatte gespeichert."
 
-#: cdedb/frontend/common.py:1061
+#: cdedb/frontend/common.py:1056
 msgid "{}.tex"
 msgstr ""
 
-#: cdedb/frontend/common.py:1066
+#: cdedb/frontend/common.py:1061
 msgid "{}.pdf"
 msgstr ""
 
-#: cdedb/frontend/common.py:1280
+#: cdedb/frontend/common.py:1275
 msgid "You must login."
 msgstr "Login benötigt."
 
-#: cdedb/frontend/common.py:1284
+#: cdedb/frontend/common.py:1279
 msgid "Access denied to {realm}/{endpoint}."
 msgstr "Zugriff auf {realm}/{endpoint} verweigert."
 
-#: cdedb/frontend/common.py:1337
+#: cdedb/frontend/common.py:1332
 msgid "Magic URL parameter replacement failed."
 msgstr "Ersetzung magischer URL-Parameter fehlgeschlagen."
 
-#: cdedb/frontend/common.py:1455
+#: cdedb/frontend/common.py:1450
 msgid "Invalid argtype {t} found."
 msgstr "Ungültiger Argumenttyp {t}."
 
@@ -2530,223 +2530,223 @@ msgstr "Diese Seite bietet mit JavaScript erweiterte Funktionalität."
 msgid "Diese Seite ist mit JavaScript einfacher nutzbar."
 msgstr "Diese Seite ist mit JavaScript einfacher nutzbar."
 
-#: cdedb/frontend/templates/web/generic.tmpl:271
+#: cdedb/frontend/templates/web/generic.tmpl:273
 msgid "Search Mask"
 msgstr "Suchmaske"
 
-#: cdedb/frontend/templates/web/generic.tmpl:277
+#: cdedb/frontend/templates/web/generic.tmpl:279
 msgid "Tabular"
 msgstr "Tabellarisch"
 
-#: cdedb/frontend/templates/web/generic.tmpl:282
+#: cdedb/frontend/templates/web/generic.tmpl:284
 msgid "Magic"
 msgstr "Magisch"
 
-#: cdedb/frontend/templates/web/generic.tmpl:296
+#: cdedb/frontend/templates/web/generic.tmpl:298
 msgid "show field"
 msgstr "Feld anzeigen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:297
+#: cdedb/frontend/templates/web/generic.tmpl:299
 msgid "Fields"
 msgstr "Felder"
 
-#: cdedb/frontend/templates/web/generic.tmpl:298
-#: cdedb/frontend/templates/web/generic.tmpl:401
+#: cdedb/frontend/templates/web/generic.tmpl:300
+#: cdedb/frontend/templates/web/generic.tmpl:403
 msgid "Filter"
 msgstr "Filter"
 
-#: cdedb/frontend/templates/web/generic.tmpl:313
+#: cdedb/frontend/templates/web/generic.tmpl:315
 msgid "show {}"
 msgstr "{} anzeigen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:335
+#: cdedb/frontend/templates/web/generic.tmpl:337
 msgid "filter operator for {}"
 msgstr "Filteroperator für {}"
 
-#: cdedb/frontend/templates/web/generic.tmpl:349
-#: cdedb/frontend/templates/web/generic.tmpl:354
+#: cdedb/frontend/templates/web/generic.tmpl:351
+#: cdedb/frontend/templates/web/generic.tmpl:356
 msgid "compare value for {}"
 msgstr "Vergleichswert für {}"
 
-#: cdedb/frontend/templates/web/generic.tmpl:383
+#: cdedb/frontend/templates/web/generic.tmpl:385
 msgid "{} sort key"
 msgstr "{} Sortierkriterium"
 
-#: cdedb/frontend/templates/web/generic.tmpl:389
+#: cdedb/frontend/templates/web/generic.tmpl:391
 msgid "{} sort order"
 msgstr "{} Sortierreihenfolge"
 
-#: cdedb/frontend/templates/web/generic.tmpl:404
+#: cdedb/frontend/templates/web/generic.tmpl:406
 msgid "add filter"
 msgstr "Filter hinzufügen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:406
+#: cdedb/frontend/templates/web/generic.tmpl:408
 msgid "field to filter on"
 msgstr "neues Filter-Feld"
 
-#: cdedb/frontend/templates/web/generic.tmpl:411
+#: cdedb/frontend/templates/web/generic.tmpl:413
 msgid "Displayed Fields"
 msgstr "Angezeigte Felder"
 
-#: cdedb/frontend/templates/web/generic.tmpl:415
+#: cdedb/frontend/templates/web/generic.tmpl:417
 msgid "add displayed field"
 msgstr "Feld hinzufügen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:418
+#: cdedb/frontend/templates/web/generic.tmpl:420
 msgid "field to add"
 msgstr "Neues Feld"
 
-#: cdedb/frontend/templates/web/generic.tmpl:423
+#: cdedb/frontend/templates/web/generic.tmpl:425
 msgid "Sorting"
 msgstr "Sortierung"
 
-#: cdedb/frontend/templates/web/generic.tmpl:427
+#: cdedb/frontend/templates/web/generic.tmpl:429
 msgid "add sort key"
 msgstr "Sortierkriterium hinzufügen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:430
+#: cdedb/frontend/templates/web/generic.tmpl:432
 msgid "sort key to add"
 msgstr "Neues Sortierkriterium"
 
-#: cdedb/frontend/templates/web/generic.tmpl:439
+#: cdedb/frontend/templates/web/generic.tmpl:441
 msgid "Search"
 msgstr "Suche"
 
-#: cdedb/frontend/templates/web/generic.tmpl:442
+#: cdedb/frontend/templates/web/generic.tmpl:444
 msgid "CSV file"
 msgstr "CSV-Datei"
 
-#: cdedb/frontend/templates/web/generic.tmpl:445
+#: cdedb/frontend/templates/web/generic.tmpl:447
 msgid "JSON file"
 msgstr "JSON-Datei"
 
-#: cdedb/frontend/templates/web/generic.tmpl:455
+#: cdedb/frontend/templates/web/generic.tmpl:457
 msgid "– add displayed field –"
 msgstr "– Angezeigtes Feld hinzufügen –"
 
-#: cdedb/frontend/templates/web/generic.tmpl:456
+#: cdedb/frontend/templates/web/generic.tmpl:458
 msgid "– add filter –"
 msgstr "– Filter hinzufügen –"
 
-#: cdedb/frontend/templates/web/generic.tmpl:457
+#: cdedb/frontend/templates/web/generic.tmpl:459
 msgid "– add sort key –"
 msgstr "– Sortierung hinzufügen –"
 
-#: cdedb/frontend/templates/web/generic.tmpl:458
+#: cdedb/frontend/templates/web/generic.tmpl:460
 msgid "remove filter"
 msgstr "– Filter entfernen –"
 
-#: cdedb/frontend/templates/web/generic.tmpl:459
+#: cdedb/frontend/templates/web/generic.tmpl:461
 msgid "remove field"
 msgstr "– Feld entfernen –"
 
-#: cdedb/frontend/templates/web/generic.tmpl:460
+#: cdedb/frontend/templates/web/generic.tmpl:462
 msgid "remove sort key"
 msgstr "– Sortierung entfernen –"
 
-#: cdedb/frontend/templates/web/generic.tmpl:461
+#: cdedb/frontend/templates/web/generic.tmpl:463
 msgid "filter operation"
 msgstr "Filteroperation"
 
-#: cdedb/frontend/templates/web/generic.tmpl:462
+#: cdedb/frontend/templates/web/generic.tmpl:464
 msgid "compare value"
 msgstr "Vergleichswert"
 
-#: cdedb/frontend/templates/web/generic.tmpl:463
+#: cdedb/frontend/templates/web/generic.tmpl:465
 msgid "range start"
 msgstr "Bereichs-Anfang"
 
-#: cdedb/frontend/templates/web/generic.tmpl:464
+#: cdedb/frontend/templates/web/generic.tmpl:466
 msgid "range end"
 msgstr "Bereichs-Ende"
 
-#: cdedb/frontend/templates/web/generic.tmpl:465
+#: cdedb/frontend/templates/web/generic.tmpl:467
 msgid "&ensp;and&ensp;"
 msgstr "&ensp;und&ensp;"
 
-#: cdedb/frontend/templates/web/generic.tmpl:466
+#: cdedb/frontend/templates/web/generic.tmpl:468
 msgid "compare values"
 msgstr "Vergleichswerte"
 
-#: cdedb/frontend/templates/web/generic.tmpl:467
+#: cdedb/frontend/templates/web/generic.tmpl:469
 msgid "sort order"
 msgstr "Sortierreihenfolge"
 
-#: cdedb/frontend/templates/web/generic.tmpl:482
+#: cdedb/frontend/templates/web/generic.tmpl:484
 msgid "Default Queries"
 msgstr "Standardabfragen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:502
-#: cdedb/frontend/templates/web/generic.tmpl:503
+#: cdedb/frontend/templates/web/generic.tmpl:504
+#: cdedb/frontend/templates/web/generic.tmpl:505
 msgid "show in search mask"
 msgstr "In Suchmaske anzeigen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:518
+#: cdedb/frontend/templates/web/generic.tmpl:520
 msgid "No search results!"
 msgstr "Keine Ergebnisse!"
 
-#: cdedb/frontend/templates/web/generic.tmpl:548
+#: cdedb/frontend/templates/web/generic.tmpl:550
 msgid "select all"
 msgstr "Alle auswählen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:549
+#: cdedb/frontend/templates/web/generic.tmpl:551
 msgid "all"
 msgstr "alle"
 
-#: cdedb/frontend/templates/web/generic.tmpl:551
+#: cdedb/frontend/templates/web/generic.tmpl:553
 msgid "select none"
 msgstr "Keines auswählen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:552
+#: cdedb/frontend/templates/web/generic.tmpl:554
 msgid "none"
 msgstr "keines"
 
-#: cdedb/frontend/templates/web/generic.tmpl:554
+#: cdedb/frontend/templates/web/generic.tmpl:556
 msgid "invert selection"
 msgstr "Auswahl umkehren"
 
-#: cdedb/frontend/templates/web/generic.tmpl:555
+#: cdedb/frontend/templates/web/generic.tmpl:557
 msgid "invert"
 msgstr "umkehren"
 
-#: cdedb/frontend/templates/web/generic.tmpl:558
+#: cdedb/frontend/templates/web/generic.tmpl:560
 msgid "filter for selected rows"
 msgstr "Nach ausgewählten Zeilen filtern"
 
-#: cdedb/frontend/templates/web/generic.tmpl:560
+#: cdedb/frontend/templates/web/generic.tmpl:562
 msgid "selected only"
 msgstr "nur ausgewählte"
 
-#: cdedb/frontend/templates/web/generic.tmpl:562
-#: cdedb/frontend/templates/web/generic.tmpl:563
+#: cdedb/frontend/templates/web/generic.tmpl:564
+#: cdedb/frontend/templates/web/generic.tmpl:565
 msgid "widen results table"
 msgstr "Ergebnis-Tabelle breiter anzeigen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:577
+#: cdedb/frontend/templates/web/generic.tmpl:579
 msgid "filtered column"
 msgstr "Gefilterte Spalte"
 
-#: cdedb/frontend/templates/web/generic.tmpl:584
+#: cdedb/frontend/templates/web/generic.tmpl:586
 msgid "sorted column"
 msgstr "Sortierte Spalte"
 
-#: cdedb/frontend/templates/web/generic.tmpl:600
+#: cdedb/frontend/templates/web/generic.tmpl:602
 msgid "row {}"
 msgstr "Zeile {}"
 
-#: cdedb/frontend/templates/web/generic.tmpl:605
+#: cdedb/frontend/templates/web/generic.tmpl:607
 msgid "Details"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:608
+#: cdedb/frontend/templates/web/generic.tmpl:610
 msgid "Profile"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:625
+#: cdedb/frontend/templates/web/generic.tmpl:627
 msgid "false"
 msgstr "falsch"
 
-#: cdedb/frontend/templates/web/generic.tmpl:626
+#: cdedb/frontend/templates/web/generic.tmpl:628
 msgid "true"
 msgstr "wahr"
 
@@ -2777,6 +2777,10 @@ msgstr "Über Box mit höchster Priorität"
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:433
 msgid "Below box with lowest priority"
 msgstr "Unter Box mit niedrigster Priorität"
+
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:51
+msgid "Course choices will be displayed after first search "
+msgstr "Kursauswahl wird nach Suche angezeigt"
 
 #~ msgid "Year missing."
 #~ msgstr "Angabe des Jahres fehlt."
