@@ -30,7 +30,8 @@
         {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
         {{ util.form_input_text(name="display_name", label="Rufname") }}
         {% if values['is_cde_realm'] or values['is_event_realm'] %}
-            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
+                                      label="Geschlecht") }}
             {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date") }}
         {% endif %}
 

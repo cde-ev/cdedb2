@@ -483,7 +483,7 @@ def enum_entries_filter(enum, processing=None):
     """
     if processing is None:
         processing = lambda x: x
-    return [(entry.value, processing(str(entry))) for entry in enum]
+    return sorted((entry.value, processing(str(entry))) for entry in enum)
 
 def dict_entries_filter(items, *args):
     """
@@ -674,10 +674,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if quote_me is not None:
                 params['quote_me'] = True
             return cdedburl(rs, 'core/show_user', params)
-        default_selections = {
-            'gender': tuple((k, v) for k, v in
-                            self.enum_choice(rs, const.Genders).items()),
-        }
         errorsdict = {}
         for key, value in rs.errors:
             errorsdict.setdefault(key, []).append(value)
@@ -685,7 +681,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
-            'default_selections': default_selections,
             'encode_parameter': self.encode_parameter,
             'enums': ENUMS_DICT,
             'errors': errorsdict,

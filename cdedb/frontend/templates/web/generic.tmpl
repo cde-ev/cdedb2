@@ -22,7 +22,8 @@
             {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
         {% endif %}
         {% if realm in ("cde", "event") %}
-            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
+                                      label="Geschlecht", defaultvalue=enums['Genders'].not_specified.value) }}
             {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
         {% endif %}
 
@@ -95,7 +96,8 @@
         {{ util.form_input_text(name="display_name", label="Rufname", info="Wie wirst Du genannt?") }}
         {% if realm == "event" %}
             {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
-            {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht") }}
+            {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
+                                      label="Geschlecht") }}
         {% endif %}
 
         <h4 class="heading-underline">Kontakt</h4>

@@ -32,7 +32,8 @@
             <div id="event-field-container">
                 <p class="text-muted">{{ util.make_icon('info-sign') }}
                     Die folgenden Felder sind nur für Veranstaltungsanfragen relevant.</p>
-                {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht", small=True) }}
+                {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
+                                          label="Geschlecht", small=True) }}
                 {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date", small=True) }}
                 {{ util.form_input_text(name="telephone", label="Telefon", small=True) }}
                 {{ util.form_input_text(name="mobile", label="Mobiltelefon", small=True) }}

@@ -74,8 +74,8 @@
                     {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
                     {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD")
                             }}
-                    {{ util.form_input_select(name="gender", entries=default_selections['gender'], label="Geschlecht")
-                            }}
+                    {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
+                                              label="Geschlecht") }}
                 {% endif %}
                 {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
                     {{ util.form_input_text(name="telephone", label="Telefon") }}
