@@ -443,7 +443,7 @@ def rst_filter(val):
                                       settings_overrides=defaults)
     return ret['html_body']
 
-def xdictsort_filter(value, attribute, pad=False):
+def xdictsort_filter(value, attribute, pad=False, reverse=False):
     """Allow sorting by an arbitrary attribute of the value.
 
     Jinja only provides sorting by key or entire value. Also Jinja does
@@ -457,6 +457,8 @@ def xdictsort_filter(value, attribute, pad=False):
     :type pad: bool
     :param pad: If True the attribute's value is interpreted as string and
       padded before sorting. The important use-case is numerical sorting.
+    :type reverse: bool
+    :param reverse: Sort in reversed order
     :rtype: [(object, dict)]
     """
     key = lambda item: item[1].get(attribute)
@@ -466,7 +468,7 @@ def xdictsort_filter(value, attribute, pad=False):
         to_str = lambda val: '' if val is None else str(val)
         max_len = max(len(to_str(v.get(attribute, ""))) for v in value.values())
         key = lambda item: to_str(item[1].get(attribute, None)).rjust(max_len, '\0')
-    return sorted(value.items(), key=key)
+    return sorted(value.items(), key=key, reverse=reverse)
 
 def enum_entries_filter(enum, processing=None):
     """
