@@ -94,7 +94,9 @@ class TestPastEventBackend(BackendTest):
     @as_users("anton")
     def test_entity_participant(self, user):
         expectation = {(2, 1): {'pcourse_id': 1, 'is_instructor': True,
-                                'is_orga': False, 'persona_id': 2}}
+                                'is_orga': False, 'persona_id': 2},
+                       (5, 2): {'pcourse_id': 2, 'is_instructor': False,
+                                'is_orga': False, 'persona_id': 5}}
         self.assertEqual(expectation,
                          self.pastevent.list_participants(self.key, pevent_id=1))
         self.pastevent.add_participant(self.key, 1, None, 5, False, False)

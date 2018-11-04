@@ -1108,32 +1108,32 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/past/event/1/show'},
                       {'href': '/past/event/1/course/1/show'},)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertNonPresence("Emilia")
+        self.assertNonPresence("Garcia")
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-5-B"
+        f['persona_id'] = "DB-7-I"
         f['is_orga'].checked = True
         f['is_instructor'].checked = True
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertPresence("Emilia")
-        f = self.response.forms['removeparticipantform5']
+        self.assertPresence("Garcia")
+        f = self.response.forms['removeparticipantform7']
         self.submit(f)
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertNonPresence("Emilia")
+        self.assertNonPresence("Garcia")
 
         self.traverse({'href': '/cde/$'},
                       {'href': '/past/event/list'},
                       {'href': '/past/event/1/show'})
         f = self.response.forms['addparticipantform']
-        f['persona_id'] = "DB-5-B"
+        f['persona_id'] = "DB-7-I"
         f['is_orga'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
-        self.assertPresence("Emilia")
-        f = self.response.forms['removeparticipantform5']
+        self.assertPresence("Garcia")
+        f = self.response.forms['removeparticipantform7']
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
-        self.assertNonPresence("Emilia")
+        self.assertNonPresence("Garcia")
 
     def test_past_log(self):
         ## First: generate data

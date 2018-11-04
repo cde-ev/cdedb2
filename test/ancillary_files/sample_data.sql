@@ -88,7 +88,9 @@ INSERT INTO past_event.courses (id, pevent_id, nr, title, description) VALUES
     (1, 1, '1a', 'Swish -- und alles ist gut', 'Ringelpiez mit anfassen.'),
     (2, 1, 'Ω', 'Goethe zum Anfassen', 'Hier werden die Reime getanzt.');
 INSERT INTO past_event.participants (persona_id, pevent_id, pcourse_id, is_instructor, is_orga) VALUES
-    (2, 1, 1, True, False);
+    (2, 1, 1, True, False),
+    (5, 1, 2, False, False);
+
 --
 -- events
 --
