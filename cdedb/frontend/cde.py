@@ -1715,8 +1715,8 @@ class CdEFrontend(AbstractUserFrontend):
         events = self.pasteventproxy.list_past_events(rs)
         stats = self.pasteventproxy.past_event_stats(rs)
         # Generate (reverse) chronologically sorted list of past event ids
-        stats_sorter = sorted(
-            stats.keys(), key=lambda x: stats[x]['tempus'], reverse=True)
+        stats_sorter = sorted(stats.keys(), key=lambda x: events[x])
+        stats_sorter.sort(key=lambda x: stats[x]['tempus'], reverse=True)
         # Bunch past events by years
         # Using idea from http://stackoverflow.com/a/8983196
         years = {}
