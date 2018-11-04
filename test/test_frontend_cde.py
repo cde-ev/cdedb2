@@ -392,7 +392,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Übersicht Einzugsermächtigungen")
         self.traverse({'href': '^/$'})
         self.admin_view_profile('berta')
-        self.assertPresence("17.50€")
+        self.assertPresence("17.50 €")
         self.traverse({'href': '/cde/user/2/lastschrift'})
         f = self.response.forms['transactionrollbackform4']
         self.submit(f)
