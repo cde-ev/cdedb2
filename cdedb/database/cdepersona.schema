@@ -4,15 +4,6 @@
 #   InetOrgPerson (RFC2798) (inetorgperson.schema)
 #       (which depends on core.schema and cosine.schema)
 
-# cloudAccount
-# Controles whether this account is granted access to the CdE cloud.
-attributetype ( 2.25.424242424242424242420002
-        NAME 'cloudAccount'
-        DESC 'CdE cloud access'
-        EQUALITY booleanMatch
-        SYNTAX 1.3.6.1.4.1.1466.115.121.1.7
-        SINGLE-VALUE )
-
 # isActive
 # Controles whether this account is active and thus allowed to log in.
 attributetype ( 2.25.424242424242424242420003
@@ -30,6 +21,6 @@ objectclass     ( 2.25.424242424242424242420001
     SUP inetOrgPerson
     STRUCTURAL
         MUST (
-             cloudAccount $ isActive
+             isActive
         )
     )

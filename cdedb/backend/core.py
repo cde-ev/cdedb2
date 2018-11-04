@@ -588,9 +588,6 @@ class CoreBackend(AbstractBackend):
         if 'display_name' in data:
             ldap_ops['displayName'] = [(ldap3.MODIFY_REPLACE,
                                         [ldap_str(data['display_name'])])]
-        if 'cloud_account' in data:
-            ldap_ops['cloudAccount'] = [(ldap3.MODIFY_REPLACE,
-                                         [ldap_bool(data['cloud_account'])])]
         if 'is_active' in data:
             ldap_ops['isActive'] = [(ldap3.MODIFY_REPLACE,
                                      [ldap_bool(data['is_active'])])]
@@ -686,9 +683,6 @@ class CoreBackend(AbstractBackend):
             raise PrivilegeError(n_("Modification of username prevented."))
         if "foto" in data and "foto" not in allow_specials:
             raise PrivilegeError(n_("Modification of foto prevented."))
-        if ("cloud_account" in data
-                and not ({"core_admin", "cde_admin"} & rs.user.roles)):
-            raise PrivilegeError(n_("Modification of cloud access prevented."))
         if data.get("is_active") and rs.user.persona_id == data['id']:
             raise PrivilegeError(n_("Own activation prevented."))
 
@@ -943,7 +937,6 @@ class CoreBackend(AbstractBackend):
                 'is_assembly_realm': False,
                 # 'is_member' already adjusted
                 'is_searchable': False,
-                'cloud_account': False,
                 # 'is_archived' will be done later
                 # 'display_name' kept for later recognition
                 # 'given_names' kept for later recognition
@@ -1377,7 +1370,6 @@ class CoreBackend(AbstractBackend):
             'userPassword': "{SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWV",
             'cn': ldap_str(data['given_names']),
             'displayName': ldap_str(data['display_name']),
-            'cloudAccount': ldap_bool(data['cloud_account']),
             'isActive': ldap_bool(data['is_active'])}
         with Atomizer(rs):
             new_id = self.sql_insert(rs, "core.personas", data)

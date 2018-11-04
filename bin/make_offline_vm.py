@@ -26,7 +26,6 @@ defaults = {
         'is_event_realm': True,
         'is_searchable': False,
         'is_active': True,
-        'cloud_account': False,
         'birth_name': None,
         'address_supplement2': None,
         'address2': None,

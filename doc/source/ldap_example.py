@@ -12,6 +12,6 @@ with ldap3.Connection(ldap_server, user=user, password=password) as ldap_conn:
         search_base="ou=personas-test,dc=cde-ev,dc=de",
         search_scope=ldap3.LEVEL,
         search_filter='(|(uid=1)(uid=2))',
-        attributes=['dn', 'cn', 'displayName', 'mail', 'cloudAccount']))
+        attributes=['dn', 'cn', 'displayName', 'mail']))
     print(ldap_conn.entries)
     e = ldap_conn.entries[0]

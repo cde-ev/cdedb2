@@ -114,7 +114,6 @@ class EventFrontend(AbstractUserFrontend):
         defaults = {
             'is_member': False,
             'bub_search': False,
-            'cloud_account': False,
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
@@ -124,7 +123,7 @@ class EventFrontend(AbstractUserFrontend):
         "title", "given_names", "family_name", "name_supplement",
         "display_name", "gender", "birthday", "username", "telephone",
         "mobile", "address", "address_supplement", "postal_code",
-        "location", "country", "cloud_account", "notes")
+        "location", "country", "notes")
     def create_user(self, rs, data):
         defaults = {
             'is_cde_realm': False,

@@ -55,8 +55,6 @@ CREATE TABLE core.personas (
         -- a persona is visible/may search
         -- iff is_searchable and is_member are both TRUE
         is_searchable           boolean NOT NULL DEFAULT False,
-        -- grant access to the CdE cloud (this is utilized via LDAP)
-        cloud_account           boolean NOT NULL DEFAULT False,
         -- signal a data set of a former member which was stripped of all
         -- non-essential attributes to implement data protection
         is_archived             boolean NOT NULL DEFAULT False,
@@ -277,7 +275,6 @@ CREATE TABLE core.changelog (
         is_assembly_realm       boolean,
         is_member               boolean,
         is_searchable           boolean,
-        cloud_account           boolean,
         is_archived             boolean,
         display_name            varchar,
         given_names             varchar,

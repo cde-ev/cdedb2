@@ -80,7 +80,6 @@ class TestCdEBackend(BackendTest):
                 'birth_name': None,
                 'birthday': datetime.date(1991, 3, 30),
                 'bub_search': True,
-                'cloud_account': True,
                 'country': None,
                 'country2': None,
                 'decided_search': True,
@@ -129,7 +128,6 @@ class TestCdEBackend(BackendTest):
                 'birth_name': 'Gemeinser',
                 'birthday': datetime.date(1981, 2, 11),
                 'bub_search': True,
-                'cloud_account': True,
                 'country': None,
                 'country2': 'Far Away',
                 'decided_search': True,
@@ -176,7 +174,6 @@ class TestCdEBackend(BackendTest):
                     'address': 'Auf der Düne 42',
                     'address_supplement': None,
                     'birthday': datetime.date(1991, 3, 30),
-                    'cloud_account': True,
                     'country': None,
                     'display_name': 'Anton',
                     'family_name': 'Administrator',
@@ -208,7 +205,6 @@ class TestCdEBackend(BackendTest):
                     'address': 'Im Garten 77',
                     'address_supplement': 'bei Spielmanns',
                     'birthday': datetime.date(1981, 2, 11),
-                    'cloud_account': True,
                     'country': None,
                     'display_name': 'Bertå',
                     'family_name': 'Beispiel',
@@ -239,7 +235,7 @@ class TestCdEBackend(BackendTest):
             self.assertEqual(expectation, data)
         expectation = {
             1: {
-                'cloud_account': True,
+
                 'display_name': 'Anton',
                 'family_name': 'Administrator',
                 'given_names': 'Anton Armin A.',
@@ -262,7 +258,6 @@ class TestCdEBackend(BackendTest):
                 'is_searchable': True,
                 'username': 'anton@example.cde'},
             2: {
-                'cloud_account': True,
                 'display_name': 'Bertå',
                 'family_name': 'Beispiel',
                 'given_names': 'Bertålotta',

@@ -194,7 +194,6 @@ class TestValidation(unittest.TestCase):
             "family_name": "the First",
             "is_active": True,
             "is_ml_realm": False,
-            "cloud_account": True,
             "notes": None,
             }
         stripped_example = { "id": 42 }
@@ -307,7 +306,6 @@ class TestValidation(unittest.TestCase):
             "display_name": "Blübb the First",
             "is_active": True,
             "is_cde_realm": True,
-            "cloud_account": True,
             "family_name": "Thør",
             "given_names": "Blubberwing",
             "title": "Sir",
@@ -362,7 +360,6 @@ class TestValidation(unittest.TestCase):
             "is_active": True,
             "is_event_realm": True,
             "is_cde_realm": False,
-            "cloud_account": False,
             "family_name": "Thør",
             "given_names": "Blubberwing",
             "title": "Sir",

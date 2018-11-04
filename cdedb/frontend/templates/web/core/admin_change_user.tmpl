@@ -40,9 +40,6 @@
             {{ util.form_input_checkbox(name="is_searchable", label="Suchbar (Datenschutz-Zustimmung)") }}
             {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
         {% endif %}
-        {% if values['is_cde_realm'] or values['is_event_realm'] %}
-            {{ util.form_input_checkbox(name="cloud_account", label="Cloud Account") }}
-        {% endif %}
         {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="7",
                                     info="Für alle Admins sichtbar, unterstützt reStructuredText") }}
 

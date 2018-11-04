@@ -303,7 +303,7 @@ class CoreFrontend(AbstractFrontend):
                 "is_event_admin", "is_ml_admin", "is_assembly_admin",
                 "is_cde_realm", "is_event_realm", "is_ml_realm",
                 "is_assembly_realm", "is_searchable",
-                "cloud_account", "is_archived", "balance", "decided_search",
+                "is_archived", "balance", "decided_search",
                 "trial_member", "bub_search")
             for key in masks:
                 if key in data:

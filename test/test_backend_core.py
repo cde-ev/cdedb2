@@ -20,7 +20,6 @@ PERSONA_TEMPLATE = {
     'is_member': False,
     'is_searchable': False,
     'is_active': True,
-    'cloud_account': False,
     'display_name': "Zelda",
     'family_name': "Zeruda-Hime",
     'given_names': "Zelda",
@@ -157,8 +156,6 @@ class TestCoreBackend(BackendTest):
             'display_name': new_name,
             'username': new_address,
         }
-        if user['id'] == 1:
-            update['cloud_account'] = False
         self.core.set_persona(self.key, update, allow_specials=("username",))
         ldap_server = ldap3.Server("ldap://localhost")
         with ldap3.Connection(ldap_server, "cn=root,dc=cde-ev,dc=de",
@@ -167,16 +164,13 @@ class TestCoreBackend(BackendTest):
                 search_base="ou=personas-test,dc=cde-ev,dc=de",
                 search_scope=ldap3.LEVEL,
                 search_filter='(uid={})'.format(user['id']),
-                attributes=['cn', 'displayName', 'mail', 'cloudAccount'])
+                attributes=['cn', 'displayName', 'mail'])
             self.assertTrue(ret)
-            cloud_expectation = True
-            if user['id'] == 1:
-                cloud_expectation = False
             expectation = {
                 'cn': user['given_names'],
                 'displayName': new_name,
                 'mail': new_address,
-                'cloudAccount': cloud_expectation,}
+            }
             self.assertEqual(1, len(l.entries))
             try:
                 found_dn = l.entries[0].entry_dn
@@ -225,7 +219,6 @@ class TestCoreBackend(BackendTest):
                 'bub_search': None,
                 'change_note': 'Account erstellt.',
                 'change_status': 2,
-                'cloud_account': False,
                 'country': None,
                 'country2': None,
                 'ctime': nearly_now(),
@@ -278,7 +271,7 @@ class TestCoreBackend(BackendTest):
                 search_base="ou=personas-test,dc=cde-ev,dc=de",
                 search_scope=ldap3.LEVEL,
                 search_filter='(uid={})'.format(new_id),
-                attributes=['cn', 'displayName', 'mail', 'cloudAccount',
+                attributes=['cn', 'displayName', 'mail',
                             'isActive'])
             self.assertTrue(ret)
             dn = "uid={},{}".format(new_id, "ou=personas-test,dc=cde-ev,dc=de")
@@ -286,7 +279,6 @@ class TestCoreBackend(BackendTest):
                 'cn': data['display_name'],
                 'displayName': data['display_name'],
                 'mail': data['username'],
-                'cloudAccount': False,
                 'isActive': True}
             self.assertEqual(1, len(l.entries))
             try:
@@ -530,7 +522,6 @@ class TestCoreBackend(BackendTest):
             'is_member': False,
             'is_ml_admin': False,
             'id': new_id,
-            'cloud_account': False,
             'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
@@ -599,7 +590,6 @@ class TestCoreBackend(BackendTest):
             'is_member': False,
             'is_ml_admin': False,
             'id': new_id,
-            'cloud_account': False,
             'display_name': 'Zelda',
             'is_active': True,
             'is_assembly_realm': False,
@@ -621,7 +611,6 @@ class TestCoreBackend(BackendTest):
     @as_users("anton")
     def test_user_getters(self, user):
         expectation = {
-            'cloud_account': True,
             'display_name': 'Bertå',
             'family_name': 'Beispiel',
             'given_names': 'Bertålotta',
@@ -650,7 +639,6 @@ class TestCoreBackend(BackendTest):
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),
-            'cloud_account': True,
             'country': None,
             'gender': 1,
             'location': 'Utopia',

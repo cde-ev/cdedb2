@@ -75,7 +75,6 @@ class AssemblyFrontend(AbstractUserFrontend):
         defaults = {
             'is_member': False,
             'bub_search': False,
-            'cloud_account': False,
         }
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)

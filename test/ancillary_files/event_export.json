@@ -991,8 +991,7 @@
             "is_cde_admin": false,
             "title": null,
             "gender": 1,
-            "is_ml_admin": false,
-            "cloud_account": true
+            "is_ml_admin": false
         },
         "5": {
             "is_event_realm": true,
@@ -1024,8 +1023,7 @@
             "is_cde_admin": false,
             "title": null,
             "gender": 1,
-            "is_ml_admin": false,
-            "cloud_account": false
+            "is_ml_admin": false
         },
         "1": {
             "is_event_realm": true,
@@ -1057,8 +1055,7 @@
             "is_cde_admin": true,
             "title": null,
             "gender": 2,
-            "is_ml_admin": true,
-            "cloud_account": true
+            "is_ml_admin": true
         },
         "7": {
             "is_event_realm": true,
@@ -1090,8 +1087,7 @@
             "is_cde_admin": false,
             "title": null,
             "gender": 1,
-            "is_ml_admin": false,
-            "cloud_account": true
+            "is_ml_admin": false
         }
     },
     "event.lodgements": {

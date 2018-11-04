@@ -310,12 +310,10 @@ class TestCdEFrontend(FrontendTest):
         self.assertEqual(None, self.response.lxml.get_element_by_id('input_checkbox_is_searchable').value)
         self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_trial_member').checked)
         self.assertFalse(self.response.lxml.get_element_by_id('input_checkbox_bub_search').checked)
-        self.assertTrue(self.response.lxml.get_element_by_id('input_checkbox_cloud_account').checked)
         f['is_searchable'].checked = True
         f['is_member'].checked = True
         f['trial_member'].checked = True
         f['bub_search'].checked = True
-        f['cloud_account'].checked = False
         for key, value in data.items():
             f.set(key, value)
         self.submit(f)

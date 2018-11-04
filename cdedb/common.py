@@ -1043,7 +1043,6 @@ PERSONA_DEFAULTS = {
     'is_member': False,
     'is_searchable': False,
     'is_active': True,
-    'cloud_account': False,
     'title': None,
     'name_supplement': None,
     'gender': None,
@@ -1127,7 +1126,7 @@ PERSONA_STATUS_FIELDS = (
 #: This does not include the ``password_hash`` for security reasons.
 PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
     "id", "username", "display_name", "family_name", "given_names",
-    "cloud_account", "title", "name_supplement")
+    "title", "name_supplement")
 
 #: Names of columns associated to a cde (formor)member
 PERSONA_CDE_FIELDS = PERSONA_CORE_FIELDS + (

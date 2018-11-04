@@ -6,7 +6,6 @@ displayName: Anton
 uid: 1
 mail: anton@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: TRUE
 isActive: TRUE
 
 dn: uid=2,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -17,7 +16,6 @@ displayName: Bertå
 uid: 2
 mail: berta@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: TRUE
 isActive: TRUE
 
 dn: uid=3,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -28,7 +26,6 @@ displayName: Charly
 uid: 3
 mail: charly@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: TRUE
 isActive: TRUE
 
 dn: uid=4,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -39,7 +36,6 @@ displayName: Daniel
 uid: 4
 mail: daniel@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: FALSE
 isActive: TRUE
 
 dn: uid=5,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -50,7 +46,6 @@ displayName: Emilia
 uid: 5
 mail: emilia@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: FALSE
 isActive: TRUE
 
 dn: uid=6,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -61,7 +56,6 @@ displayName: Ferdinand
 uid: 6
 mail: ferdinand@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: TRUE
 isActive: TRUE
 
 dn: uid=7,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -72,7 +66,6 @@ displayName: Garcia
 uid: 7
 mail: garcia@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: TRUE
 isActive: TRUE
 
 dn: uid=8,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -83,7 +76,6 @@ displayName: Hades
 uid: 8
 mail: hades@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: FALSE
 isActive: FALSE
 
 dn: uid=9,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -94,7 +86,6 @@ displayName: Inga
 uid: 9
 mail: inga@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: TRUE
 isActive: TRUE
 
 dn: uid=10,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -105,7 +96,6 @@ displayName: Janis
 uid: 10
 mail: janis@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: FALSE
 isActive: TRUE
 
 dn: uid=11,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -116,7 +106,6 @@ displayName: Kalif
 uid: 11
 mail: kalif@example.cde
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: FALSE
 isActive: TRUE
 
 dn: uid=12,ou={LDAP_ORGANIZATION},dc=cde-ev,dc=de
@@ -127,5 +116,4 @@ displayName: Lisa
 uid: 12
 mail: 
 userPassword: {SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWU
-cloudAccount: TRUE
 isActive: TRUE

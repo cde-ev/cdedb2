@@ -200,7 +200,6 @@
 
             {% for name, field in (("Guthaben", 'balance'),
                                    ("Sichtbar für BuB", 'bub_search'),
-                                   ("Wolken-Zugriff", 'cloud_account'),
                                    ("Notizen", 'notes')) %}
                 {% call history_field(name) %}
                     {{ print_history(field) }}

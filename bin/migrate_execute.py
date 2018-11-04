@@ -367,7 +367,6 @@ for persona_id in persona_ids:
         'is_ml_realm': True,
         'is_assembly_realm': True,
         'is_searchable': initial['server_einwilligung'],
-        'cloud_account': auth['active_account'],
         'is_archived': False,
         'display_name': initial['vorname'],
         'name_supplement': None,
@@ -400,7 +399,6 @@ for persona_id in persona_ids:
         'userPassword': "{SSHA}D5JG6KwFxs11jv0LnEmFSeBCjGrHCDWV",
         'cn': data['given_names'],
         'displayName': data['display_name'],
-        'cloudAccount': ldap_bool(data['cloud_account']),
         'isActive': ldap_bool(data['is_active'])
     }
     dn = "uid={},ou=personas,dc=cde-ev,dc=de".format(persona_id)
