@@ -10,12 +10,13 @@ import pathlib
 import quopri
 import tempfile
 import datetime
+import operator
 
 from cdedb.frontend.common import (
     AbstractFrontend, REQUESTdata, REQUESTdatadict, access, basic_redirect,
     check_validation as check, request_extractor, REQUESTfile,
     request_dict_extractor, event_usage, querytoparams_filter, ml_usage,
-    csv_output, query_result_to_json)
+    csv_output, query_result_to_json, enum_entries_filter)
 from cdedb.common import (
     n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
     now, merge_dicts, ArchiveError, open_utf8)
@@ -677,10 +678,13 @@ class CoreFrontend(AbstractFrontend):
             query = check(rs, "query_input", query_input, "query",
                           spec=spec, allow_empty=False)
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {'pevent_id': events}
+        choices = {
+            'pevent_id': collections.OrderedDict(
+                sorted(events.items(), key=operator.itemgetter(0)))}
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf.DEFAULT_QUERIES['qview_core_user']
         params = {
-            'spec': spec, 'choices': choices,
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
@@ -724,11 +728,16 @@ class CoreFrontend(AbstractFrontend):
         else:
             query = None
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {'pevent_id': events,
-                   'gender': self.enum_choice(rs, const.Genders)}
+        choices = {
+            'pevent_id': collections.OrderedDict(
+                sorted(events.items(), key=operator.itemgetter(0))),
+            'gender': collections.OrderedDict(
+                enum_entries_filter(const.Genders, rs.gettext))
+        }
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf.DEFAULT_QUERIES['qview_archived_persona']
         params = {
-            'spec': spec, 'choices': choices,
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:

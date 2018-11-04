@@ -107,7 +107,7 @@ class MlFrontend(AbstractUserFrontend):
         default_queries = self.conf.DEFAULT_QUERIES['qview_persona']
         params = {
             'spec': spec, 'default_queries': default_queries, 'choices': {},
-            'query': query}
+            'choices_lists': {}, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_persona"

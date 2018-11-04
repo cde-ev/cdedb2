@@ -473,13 +473,14 @@ def xdictsort_filter(value, attribute, pad=False, reverse=False):
 def enum_entries_filter(enum, processing=None):
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
-    string is piped trough gettext to get the human readable and translated
-    caption of the value.
+    string is piped trough the passed processing callback function to get the
+    human readable and translated caption of the value.
 
     :type enum: enum.Enum
     :type processing: callable object -> str
     :param processing: A function to be applied on the value's string
-      representation before adding it to the result tuple
+      representation before adding it to the result tuple. Typically this is
+      gettext()
     :rtype: [(object, object)]
     :return: A list of tuples to be used in the input_checkboxes or input_select macros.
     """
@@ -975,18 +976,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if quote_me is not None:
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
-
-    @staticmethod
-    def enum_choice(rs, anenum):
-        """Convert an enum into a dict suitable for consumption by the template
-        code (this will turn into an HTML select in the end).
-
-        :type rs: :py:class:`RequestState`
-        :type anenum: :py:class:`enum.Enum`
-        :rtype: {int: str}
-        """
-        return {case.value: rs.gettext(str(case))
-                for case in anenum}
 
     @staticmethod
     def notify_return_code(rs, code, success="Change committed.",

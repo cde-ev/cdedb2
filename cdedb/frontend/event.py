@@ -13,6 +13,7 @@ import pathlib
 import re
 import sys
 import tempfile
+import operator
 
 import psycopg2.extensions
 import werkzeug
@@ -21,7 +22,7 @@ from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, csv_output,
     check_validation as check, event_guard, query_result_to_json,
     REQUESTfile, request_extractor, cdedbid_filter, querytoparams_filter,
-    xdictsort_filter)
+    xdictsort_filter, enum_entries_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
@@ -148,11 +149,16 @@ class EventFrontend(AbstractUserFrontend):
         else:
             query = None
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {'pevent_id': events,
-                   'gender': self.enum_choice(rs, const.Genders)}
+        choices = {
+            'pevent_id': OrderedDict(
+                sorted(events.items(), key=operator.itemgetter(0))),
+            'gender': OrderedDict(
+                enum_entries_filter(const.Genders, rs.gettext))
+        }
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf.DEFAULT_QUERIES['qview_event_user']
         params = {
-            'spec': spec, 'choices': choices,
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
@@ -2995,31 +3001,34 @@ class EventFrontend(AbstractUserFrontend):
         """
         tracks = event['tracks']
         ## First we construct the choices
-        choices = {'persona.gender': self.enum_choice(rs, const.Genders)}
-        lodgement_choices =  {
-            lodgement_id: lodgement['moniker']
-            for lodgement_id, lodgement in lodgements.items()
+        choices = {
+            'persona.gender': OrderedDict(
+                enum_entries_filter(const.Genders, rs.gettext))
         }
+        lodgement_choices = OrderedDict(
+            sorted(((lodgement_id, lodgement['moniker'])
+                    for lodgement_id, lodgement in lodgements.items()),
+                   key=operator.itemgetter(1)))
         for part_id in event['parts']:
             choices.update({
-                "part{0}.status{0}".format(part_id): self.enum_choice(
-                    rs, const.RegistrationPartStati),
+                "part{0}.status{0}".format(part_id):
+                    OrderedDict(enum_entries_filter(
+                        const.RegistrationPartStati, rs.gettext)),
                 "part{0}.lodgement_id{0}".format(part_id): lodgement_choices,
             })
             choices.update({
                 "lodge_fields{0}.xfield_{1}_{0}".format(
-                    part_id, field['field_name']): {
-                        value: desc for value, desc in field['entries']}
+                    part_id, field['field_name']): OrderedDict(field['entries'])
                 for field in event['fields'].values()
                 if (field['association'] == const.FieldAssociations.lodgement
                     and field['entries'])})
         for track_id in tracks:
-            course_choices = {
-                course_id: "{}. {}".format(courses[course_id]['nr'],
-                                           courses[course_id]['shortname'])
+            course_choices = OrderedDict(
+                (course_id, "{}. {}".format(courses[course_id]['nr'],
+                                            courses[course_id]['shortname']))
                 for course_id, course
                 in xdictsort_filter(courses, 'nr', pad=True)
-                if track_id in course['segments']}
+                if track_id in course['segments'])
             choices.update({
                 "track{0}.course_id{0}".format(track_id):
                     course_choices,
@@ -3027,17 +3036,17 @@ class EventFrontend(AbstractUserFrontend):
                     course_choices})
             choices.update({
                 "course_fields{0}.xfield_{1}_{0}".format(
-                    track_id, field['field_name']): {
-                        value: desc for value, desc in field['entries']}
+                    track_id, field['field_name']):
+                    OrderedDict(field['entries'])
                 for field in event['fields'].values()
                 if (field['association'] == const.FieldAssociations.course
                     and field['entries'])})
         if len(tracks) > 1:
-            course_choices = {
-                course_id: "{}. {}".format(courses[course_id]['nr'],
-                                           courses[course_id]['shortname'])
+            course_choices = OrderedDict(
+                (course_id, "{}. {}".format(courses[course_id]['nr'],
+                                            courses[course_id]['shortname']))
                 for course_id, course
-                in xdictsort_filter(courses, 'nr', pad=True)}
+                in xdictsort_filter(courses, 'nr', pad=True))
             choices[",".join("track{0}.course_id{0}".format(track_id)
                              for track_id in tracks)] = course_choices
             choices[",".join("track{0}.course_instructor{0}".format(track_id)
@@ -3046,17 +3055,19 @@ class EventFrontend(AbstractUserFrontend):
             choices.update({
                 ",".join("part{0}.status{0}".format(part_id)
                          for part_id in event['parts']):
-                    self.enum_choice(rs, const.RegistrationPartStati),
+                    OrderedDict(enum_entries_filter(const.RegistrationPartStati,
+                                                    rs.gettext)),
                 ",".join("part{0}.lodgement{0}".format(part_id)
                          for part_id in event['parts']):
                     lodgement_choices,
             })
         choices.update({
-            "reg_fields.xfield_{}".format(field['field_name']): {
-                value: desc for value, desc in field['entries']}
+            "reg_fields.xfield_{}".format(field['field_name']):
+                OrderedDict(field['entries'])
             for field in event['fields'].values()
             if (field['association'] == const.FieldAssociations.registration
                 and field['entries'])})
+
         ## Second we construct the titles
         titles = {
             "reg_fields.xfield_{}".format(field['field_name']): field['field_name']
@@ -3184,15 +3195,16 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         choices, titles = self.make_registration_query_aux(
             rs, rs.ambience['event'], courses, lodgements)
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         
         default_queries = \
             self.conf.DEFAULT_QUERIES_REGISTRATION(rs.ambience['event'], spec)
         
         params = {
-            'spec': spec, 'choices': choices, 'query': query,
-            'default_queries': default_queries, 'titles': titles,
-            'has_registrations': has_registrations,}
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
+            'query': query, 'default_queries': default_queries,
+            'titles': titles, 'has_registrations': has_registrations,}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
             query.scope = "qview_registration"

@@ -3,12 +3,22 @@
  * The jQuery method defined at the end of this file should be applied to the query form dom object onload.
  */
 (function($) {
+    /**
+     * Create QueryForm object upon a given HTML DOM elemnt
+     * @param element (DOM object) The DOM object of the query form container
+     * @param options (object) A dict of options passed by the appliction. Should contain:
+     *                         choices: An object mapping fields to a list of chosable values for this field
+     *                         seperator: The seperator character/string to seperate multiple values
+     *                         escapechar: The escape character to escape the seperator if present within a value
+     *                         labels: An object of translated labels to be used as button captions and titles
+     * @constructor
+     */
     var QueryForm = function(element,options) {
         /** jQuery DOM object of the form */
         var $element = $(element);
         var obj = this;
         var settings = $.extend({
-            choices : {},
+            choices : {},  // Format: {field_name: [[value, title]]}
             separator : ',',
             escapechar : '\\\\', //double escaped backslash for usage in regex
             labels : {}
@@ -18,7 +28,8 @@
          * id: database id of this field (string),
          * type: data type (string: bool, int, string, list, date, datetime, float)
          * name: human readable name of the field
-         * choices: List of choices if type==list. Each choice has the format {'id' : 'name'}
+         * choices: List of choices if type==list. Each choice has the format {'value': v, 'text': t}, which is the
+         *          format required by selectize.js for options.
          * sortable: Can this field be used for sorting? (bool)
          * input_select: jQuery DOM object of the non-js field select checkbox
          * input_filter_op: jQuery DOM object of the non-js filter operator select box
@@ -57,11 +68,19 @@
             var input_select = $(this).find('.outputSelector');
             var error_block = $(this).find('.input-error-block');
 
+            /* Reformat list of choices from [[v, t]] to [{'value': v, 'text': t}] */
+            var choices = [];
+            if (settings.choices[id]) {
+                for (var i=0; i < settings.choices[id].length; i++) {
+                    choices.push({'value': settings.choices[id][i][0], 'text': settings.choices[id][i][1]})
+                }
+            }
+
             fieldList.push({
                 id: id,
                 type: settings.choices[id] ? 'list' : $(this).attr('data-type'),
                 name: $(this).find('.name').text(),
-                choices: settings.choices[id] ? settings.choices[id] : null,
+                choices: choices,
                 sortable : false,
                 input_select: input_select.length ? input_select : null,
                 input_filter_op: $(this).find('.filter-op'),
@@ -145,6 +164,7 @@
          * array.
          *
          * @param number (int) Id of the field in fieldList
+         * @param focus (bool) If true, the operator select box will get keyboard focus
          */
         this.addFilterRow = function(number, focus) {
             var f = fieldList[number];
@@ -249,8 +269,8 @@
                     })
                             .change(changeFunction);
                     if (f.type == 'list') {
-                        for (var i in f.choices)
-                            $s.append($('<option>',{'value' : i}).text(f.choices[i]))
+                        for (var i=0; i < f.choices.length; i++)
+                            $s.append($('<option>',{'value' : f.choices[i]['value']}).text(f.choices[i]['text']))
                     } else {
                         $s.append($('<option>',{'value' : 'True'}).text('wahr'))
                             .append($('<option>',{'value' : 'False'}).text('falsch'));
@@ -351,12 +371,9 @@
                     .appendTo($fieldbox);
 
                 if (f.type == 'list') {
-                    var options = [];
-                    for (var i in f.choices)
-                        options.push({value: i, text: f.choices[i]});
                     $i.attr('placeholder','');
                     $i.selectize({
-                        options: options
+                        options: f.choices
                     });
                 }
 
@@ -713,6 +730,8 @@
      * The actual "jQuery plugin" - a function to be used on the jQuery object of the query form.
      * It constructs and initializes the above defined object which does everything neccessary for the fancy js form.
      * It also attaches a special submit-handler to the query form to shorten query URLs.
+     *
+     * @param options: Object of options to be passed to the QueryForm object
      */
     $.fn.cdedbQueryForm = function(options) {
         $(this).each(function() {

@@ -449,7 +449,7 @@
                     {
                         $('#qf_tablist').css('display', 'block');
                         var $qf = $('#queryform');
-                        $qf.cdedbQueryForm({"choices" : {{ choices|json }},
+                        $qf.cdedbQueryForm({"choices" : {{ choices_lists|json }},
                                             "labels": {{ {'add_field': gettext('– add displayed field –'),
                                                           'add_filter': gettext('– add filter –'),
                                                           'add_sort': gettext('– add sort key –'),

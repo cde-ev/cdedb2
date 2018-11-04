@@ -14,6 +14,7 @@ import re
 import string
 import sys
 import tempfile
+import operator
 
 import psycopg2.extensions
 import werkzeug
@@ -28,7 +29,8 @@ from cdedb.common import (
 from cdedb.frontend.common import (
     REQUESTdata, REQUESTdatadict, access, Worker, csv_output,
     check_validation as check, cdedbid_filter, request_extractor,
-    make_postal_address, make_transaction_subject, query_result_to_json)
+    make_postal_address, make_transaction_subject, query_result_to_json,
+    enum_entries_filter)
 from cdedb.frontend.uncommon import AbstractUserFrontend
 from cdedb.query import QUERY_SPECS, mangle_query_input, QueryOperators
 from cdedb.backend.event import EventBackend
@@ -207,11 +209,16 @@ class CdEFrontend(AbstractUserFrontend):
         else:
             query = None
         events = self.pasteventproxy.list_past_events(rs)
-        choices = {'pevent_id': events,
-                   'gender': self.enum_choice(rs, const.Genders)}
+        choices = {
+            'pevent_id': OrderedDict(
+                sorted(events.items(), key=operator.itemgetter(0))),
+            'gender': OrderedDict(
+                enum_entries_filter(const.Genders, rs.gettext))
+        }
+        choices_lists = {k: list(v.items()) for k, v in choices.items()}
         default_queries = self.conf.DEFAULT_QUERIES['qview_cde_user']
         params = {
-            'spec': spec, 'choices': choices,
+            'spec': spec, 'choices': choices, 'choices_lists': choices_lists,
             'default_queries': default_queries, 'query': query}
         ## Tricky logic: In case of no validation errors we perform a query
         if not rs.errors and is_search:
