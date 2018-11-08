@@ -35,7 +35,7 @@ body{
     background: url(dots.png);
 }
 .logo {
-    padding-bottom: 6px;
+    padding-bottom: 10px;
 }
 .logo img {
     max-width: 80%;
