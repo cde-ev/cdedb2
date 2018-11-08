@@ -771,8 +771,10 @@
                 this.submit();
 
                 // And reenable fields after some milliseconds (in case user submitted CSV-Form or navigates back)
+                var $form = $(this);
                 setTimeout(function(){
-                    $toDisable.removeAttr("disabled");
+                    $(toDisable).removeAttr("disabled");
+                    $form.find('.submit-value').detach();
                 },100);
             });
             var $form = $(this);
@@ -780,6 +782,7 @@
                 // Add submit button value as a hidden input to pass it through the above submit handler
                 if ($(this).attr('name')) {
                     $form.append($('<input />', {
+                        'class': 'submit-value',
                         'type': 'hidden',
                         'name': $(this).attr('name'),
                         'value': $(this).attr('value')
