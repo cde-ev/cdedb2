@@ -19,7 +19,7 @@ from cdedb.frontend.common import (
     csv_output, query_result_to_json, enum_entries_filter)
 from cdedb.common import (
     n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
-    now, merge_dicts, ArchiveError, open_utf8)
+    now, merge_dicts, ArchiveError, open_utf8, implied_realms)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -910,12 +910,8 @@ class CoreFrontend(AbstractFrontend):
             if key not in reference and key != 'id':
                 del data[key]
         data['is_{}_realm'.format(target_realm)] = True
-        ## implicit addition of realms as semantically sensible
-        if target_realm == "cde":
-            data['is_event_realm'] = True
-            data['is_assembly_realm'] = True
-        if target_realm in ("cde", "event", "assembly"):
-            data['is_ml_realm'] = True
+        for realm in implied_realms(target_realm):
+            data['is_{}_realm'.format(realm)] = True
         data = check(rs, "persona", data, transition=True)
         if rs.errors:
             return self.promote_user_form(rs, persona_id, target_realm)

@@ -1009,6 +1009,25 @@ def extract_roles(session, introspection_only=False):
         ret = ret | realms | {"member", "searchable"}
     return ret
 
+# This dict is not evaluated recursively, so recursively implied realms must
+# be added manually to make the implication transitive.
+REALM_INHERITANCE = {
+    'cde': {'event', 'assembly', 'ml'},
+    'event': {'ml'},
+    'assembly': {'ml'},
+    'ml': set(),
+}
+
+def implied_realms(realm):
+    """Get additional realms implied by membership in one realm
+
+    :param realm: The name of the realm to check
+    :type realm: str
+    :return: A set of the names of all implied realms
+    :rtype: {str}
+    """
+    return REALM_INHERITANCE.get(realm, set())
+
 def privilege_tier(roles):
     """Check admin privilege level.
 
@@ -1019,16 +1038,16 @@ def privilege_tier(roles):
     :rtype: {str}
     :returns: Admin roles that may edit this user.
     """
-    relevant = roles & {"cde", "event", "ml", "assembly"}
+    # Get primary user realms (those, that don't imply other realms)
+    relevant = roles & REALM_INHERITANCE.keys()
+    implied_roles = set()
+    for k in relevant:
+        implied_roles |= REALM_INHERITANCE.get(k, set())
+    relevant -= implied_roles
+
     ret = {"core_admin", "admin"}
-    if relevant == {"ml"}:
-        return ret | {"ml_admin"}
-    if "assembly" in relevant and relevant <= {"ml", "assembly"}:
-        return ret | {"assembly_admin"}
-    if "event" in relevant and relevant <= {"ml", "event"}:
-        return ret | {"event_admin"}
-    if "cde" in relevant and relevant <= {"ml", "event", "assembly", "cde"}:
-        return ret | {"cde_admin"}
+    for realm in relevant:
+        ret.add(realm + "_admin")
     return ret
 
 #: Creating a persona requires one to supply values for nearly all fields,
