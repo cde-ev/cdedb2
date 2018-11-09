@@ -18,15 +18,17 @@
         {% if CDEDB_DEV %}
             <!-- script for adding links to view emails -->
             <script type="text/javascript">
-                $(window).on('load', function() {
+                $(function() {
                     $("div.alert-info").append(function(index, html){
+                        /* search for paths of temporary mail files and create link */
                         var pos = html.indexOf(" /tmp/cdedb-mail-");
                         if (pos >= 0) {
                             var endpos = html.indexOf(".txt ", pos);
                             var token = html.substring(pos + 17, endpos);
-                            return '(<a href="core/debugemail/' + token + '">View Email in Browser</a>)';
+                            var link = "{{ cdedblink('core/debug_email', magic_placeholders=['token']) }}"
+                                .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', token);
+                            return '(<a href="' + link + '">View Email in Browser</a>)';
                         }
-                        return "";
                     });
                 });
             </script>
