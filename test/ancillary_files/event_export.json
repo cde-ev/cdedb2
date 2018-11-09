@@ -1008,7 +1008,7 @@
             "address_supplement": null,
             "telephone": "+49 (5432) 555666777",
             "id": 5,
-            "is_assembly_realm": false,
+            "is_assembly_realm": true,
             "display_name": "Emilia",
             "name_supplement": null,
             "is_core_admin": false,
