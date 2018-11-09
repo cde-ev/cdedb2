@@ -519,13 +519,22 @@ class CoreFrontend(AbstractFrontend):
         The kind parameter specifies the purpose of the query which decides
         the privilege level required and the basic search paramaters.
 
+        Allowed kinds:
+        * admin_persona: Search for users in a realm as an admin
+        * pure_assembly_user: Search for an assembly only user as assembly_admin
+        * mod_ml_user: Search for a mailinglist user as a moderator
+        * orga_event_user: Search of an event user as event orga
+
         The aux parameter allows to supply an additional id for example
         in the case of a moderator this would be the relevant
         mailinglist id.
 
-        The sphere parameter allows to restrict results to a specific realm
-        or to members only. This is only useful for certain kinds of queries
-        and ignored in the rest.
+        Required aux value based on the 'kind':
+        * admin_persona: Realm to search users for (or 'member' to search
+                         CdE-Members)
+        * pure_assembly_user: --
+        * mod_ml_user: Id of the mailinglist you are moderator of
+        * orga_event_user: Id of the event you are orga of
         """
         if not rs.errors and sphere:
             if sphere not in ("cde", "event", "ml", "assembly", "member"):
@@ -583,6 +592,8 @@ class CoreFrontend(AbstractFrontend):
         if sphere:
             search_additions.append(sphere_additions[sphere])
 
+        # FIXME: Searchadditions are not applied here. Anyone can query users
+        # by user by incrementing IDs!
         data = None
         anid, errs = validate.check_cdedbid(phrase, "phrase")
         if not errs:
@@ -600,6 +611,8 @@ class CoreFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             search = [("username,family_name,given_names,display_name",
                        QueryOperators.similar, t) for t in terms]
+            # FIXME: Add is_archived == False if not (kind == admin_persona,
+            # sphere == None and user is core_admin)
             search.extend(search_additions)
             spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
             spec["username,family_name,given_names,display_name"] = "str"
@@ -610,6 +623,7 @@ class CoreFrontend(AbstractFrontend):
                  "display_name"), search, (("personas.id", True),))
             data = self.coreproxy.submit_select_persona_query(rs, query)
 
+        # Filter result to get only valid audience, if mailinglist is given
         if mailinglist:
             persona_ids = tuple(e['id'] for e in data)
             personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -631,6 +645,7 @@ class CoreFrontend(AbstractFrontend):
             else:
                 return "{} {}".format(
                     entry['given_names'], entry['family_name'])
+        # Check if name occurs multiple times to add email address in this case
         for entry in data:
             counter[formatter(entry)] += 1
         ret = []
