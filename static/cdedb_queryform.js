@@ -125,6 +125,7 @@
                     return;
                 obj.addViewRow($(this).val());
                 obj.refreshViewFieldSelect();
+                $viewFieldSelect[0].selectize.focus();
             });
             $viewFieldSelect.selectize({
                 'placeholder': settings.labels['add_field'] || '',
