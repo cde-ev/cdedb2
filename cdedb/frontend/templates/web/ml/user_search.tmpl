@@ -10,5 +10,5 @@
 {{ util.breadcrumb_link(cdedblink("ml/user_search"), "Nutzer verwalten", active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('ml') }}
+    {{ generic.user_search('ml', info="Diese Nutzer-Suche findet nur reine Mailinglisten-Benutzer.") }}
 {% endblock %}

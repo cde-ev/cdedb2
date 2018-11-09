@@ -115,13 +115,16 @@
     </form>
 {% endmacro %}
 
-{% macro user_search(realm) %}
+{% macro user_search(realm, info="") %}
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
                 {{ util.href(cdedblink("{}/create_user".format(realm)), "Nutzer anlegen",
                         icon="plus", aclass="btn btn-success btn-sm") }}
             </div>
+            {% if info %}
+                <p class="text-muted">{{ util.make_icon('info-sign') }} {{ info|e }}</p>
+            {% endif %}
         </div>
         <div class="col-md-8">
             {{ place_default_queries("{}/user_search".format(realm), default_queries) }}

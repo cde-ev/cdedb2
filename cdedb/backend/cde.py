@@ -14,7 +14,8 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set, singularize, batchify)
 from cdedb.common import (
     n_, glue, merge_dicts, PrivilegeError, unwrap, now, LASTSCHRIFT_FIELDS,
-    LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS)
+    LASTSCHRIFT_TRANSACTION_FIELDS, ORG_PERIOD_FIELDS, EXPULS_PERIOD_FIELDS,
+    implying_realms)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -675,6 +676,11 @@ class CdEBackend(AbstractBackend):
                 ("is_archived", QueryOperators.equal, False))
             query.spec['is_cde_realm'] = "bool"
             query.spec["is_archived"] = "bool"
+            # Exclude users of any higher realm (implying event)
+            for realm in implying_realms('cde'):
+                query.constraints.append(
+                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
+                query.spec["is_{}_realm".format(realm)] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

@@ -1028,11 +1028,25 @@ def implied_realms(realm):
     """
     return REALM_INHERITANCE.get(realm, set())
 
+def implying_realms(realm):
+    """Get all realms where membership implies the given realm.
+
+    This can be used to determine the realms in which a user must *not* be to be
+    listed in a specific realm ore be edited by its admins.
+
+    :param realm: The realm to search implying realms for
+    :type realm: str
+    :return: A set of all realms implying
+    """
+    return set(r
+               for r, implied in REALM_INHERITANCE.items()
+               if realm in implied)
+
 def privilege_tier(roles):
     """Check admin privilege level.
 
     If a user has access to the passed realms, what kind of admin
-    privileg does one need to edit the user?
+    privilege does one need to edit the user?
 
     :type roles: {str}
     :rtype: {str}
