@@ -375,7 +375,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                     rule("/csv_courses", methods=_GET,
                          endpoint="download_csv_courses"),
                     rule("/csv_lodgements", methods=_GET,
-                         endpoint="download_csv_lodgements"),)),
+                         endpoint="download_csv_lodgements"),
+                    rule("/csv_registrations", methods=_GET,
+                         endpoint="download_csv_registrations"),)),
                 sub('/course/<int:course_id>', (
                     rule("/show", methods=_GET,
                          endpoint="show_course"),

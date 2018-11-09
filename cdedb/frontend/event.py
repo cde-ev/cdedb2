@@ -1599,6 +1599,130 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @event_guard()
+    def download_csv_registrations(self, rs, event_id):
+        """Create CSV file with all registrations"""
+        # Get data
+        registration_ids = self.eventproxy.list_registrations(rs, event_id)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
+        personas = self.coreproxy.get_event_users(
+            rs, tuple(e['persona_id'] for e in registrations.values()))
+        lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
+        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        course_ids = self.eventproxy.list_db_courses(rs, event_id)
+        courses = self.eventproxy.get_courses(rs, course_ids)
+
+        # Construct CSV columns
+        columns = ['id', 'persona.id', 'persona.birthday', 'persona.telephone',
+                   'persona.mobile', 'persona.address',
+                   'persona.address_supplement', 'persona.postal_code',
+                   'persona.location', 'persona.country', 'payment',
+                   'parental_agreement', 'mixed_lodging', 'foto_consent',
+                   'notes', 'orga_notes', 'checkin',
+                   # 'creation_time', 'modification_time',
+                   ]
+        columns.extend('fields.' + field['field_name']
+                       for field in rs.ambience['event']['fields'].values()
+                       if field['association'] ==
+                            const.FieldAssociations.registration)
+        # Construct columns for parts and lodgement data
+        for part_id in sorted(rs.ambience['event']['parts'].keys()):
+            columns.extend("part{}.{}".format(part_id, f)
+                           for f in ('status', 'lodgement.id', 'is_reserve',
+                                     'lodgement.moniker'))
+            columns.extend(
+                "part{}.lodgement.fields.{}".format(part_id,
+                                                    field['field_name'])
+                for field in rs.ambience['event']['fields'].values()
+                if field['association'] == const.FieldAssociations.lodgement)
+        # Construct columns for courses' data for each track
+        for part in sorted(rs.ambience['event']['parts'].values(),
+                           key=lambda x: x['part_begin']):
+            for track_id in sorted(part['tracks']):
+                columns.extend(
+                    'track{}.{}'.format(track_id, f)
+                    for f in ('course.id', 'course.nr', 'course.shortname',
+                              'course.title'))
+                columns.extend([
+                    "track{}.course.fields.{}".format(track_id,
+                                                      field['field_name'])
+                    for field in rs.ambience['event']['fields'].values()
+                    if field['association'] == const.FieldAssociations.course])
+                columns.extend('track{}.choice{}.{}'.format(track_id, i, f)
+                               for i in range(3)
+                               for f in ('id', 'nr'))
+                columns.extend(
+                    'track{}.course_instructor.{}'.format(track_id, f)
+                    for f in ('id', 'nr'))
+
+        # Flatten registrations and insert course/lodement data:
+        for registration in registrations.values():
+            # Persona data and data fields
+            registration.update({
+                'persona.{}'.format(k): v
+                for k, v in personas[registration['persona_id']].items()})
+            registration.update({
+                'fields.{}'.format(field['field_name']):
+                    registration['fields'].get(field['field_name'], '')
+                for field in rs.ambience['event']['fields'].values()
+                if field['association'] ==
+                    const.FieldAssociations.registration})
+            # Parts and lodgement data
+            for part_id, part in registration['parts'].items():
+                registration.update({'part{}.{}'.format(part_id, k): v
+                                     for k, v in part.items()})
+                registration.update({
+                    'part{}.lodgement.{}'.format(part_id, f):
+                        lodgements[part['lodgement_id']][f]
+                        if part['lodgement_id'] else ''
+                    for f in ('id', 'moniker')})
+                registration.update({
+                    'part{}.lodgement.fields.{}'.format(part_id,
+                                                        field['field_name']):
+                        lodgements[part['lodgement_id']]['fields'].get(
+                            field['field_name'], '')
+                        if part['lodgement_id'] else ''
+                    for field in rs.ambience['event']['fields'].values()
+                    if field['association'] ==
+                        const.FieldAssociations.lodgement})
+            # Courses' data for each track
+            for track_id, track in registration['tracks'].items():
+                registration.update({
+                    'track{}.course.{}'.format(track_id, f):
+                        courses[track['course_id']][f]
+                        if track['course_id'] else ''
+                    for f in ('id', 'nr', 'shortname', 'title')})
+                registration.update({
+                    'track{}.course.fields.{}'.format(track_id,
+                                                      field['field_name']):
+                        courses[track['course_id']]['fields']
+                            .get(field['field_name'], '')
+                        if track['course_id'] else ''
+                    for field in rs.ambience['event']['fields'].values()
+                    if field['association'] == const.FieldAssociations.course})
+                for i, choice in enumerate(track['choices']):
+                    registration.update({
+                        'track{}.choice{}.{}'.format(track_id, i, f):
+                            courses[choice][f] if choice else ''
+                        for f in ('id', 'nr')})
+                for i in range(len(track['choices']), 3):
+                    registration.update({
+                        'track{}.choice{}.{}'.format(track_id, i, f): ''
+                        for f in ('id', 'nr')})
+                registration.update({
+                    'track{}.course_instructor.{}'.format(track_id, f):
+                        courses[track['course_instructor']][f]
+                        if track['course_instructor'] else ''
+                    for f in ('id', 'nr')})
+
+        csv_data = csv_output(sorted(registrations.values(),
+                                     key=lambda c: c['id']),
+                              columns)
+        return self.send_file(
+            rs, data=csv_data, inline=False,
+            filename=rs.gettext("registrations.csv"))
+
+    @access("event")
+    @event_guard()
     def download_export(self, rs, event_id):
         """Retrieve all data for this event to initialize an offline
         instance."""
