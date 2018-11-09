@@ -2,6 +2,7 @@
 
 echo "This is basically impossible, so use this at your own risk."
 echo "We now chicken out. The code below is mainly for documentation purposes."
+exit 0
 
 #
 # First delete personas
