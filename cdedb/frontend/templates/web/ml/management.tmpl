@@ -36,17 +36,11 @@
                     {{ util.input_text(name="moderator_id", anid="input-add-moderator", placeholder="DB-XXXX-X",
                                        arialabel="ID des neuen Moderators") }}
                     <script type="text/javascript">
-                        {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml',
-                                                enums['AudiencePolicy'].require_assembly: 'assembly',
-                                                enums['AudiencePolicy'].require_event: 'event',
-                                                enums['AudiencePolicy'].require_cde: 'cde',
-                                                enums['AudiencePolicy'].require_member: 'member'} %}
-                            $('#input-add-moderator').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) + '&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
-                                {{ ambience['mailinglist']['moderators']|list|json }}, false, false,
-                                "CdEDB-ID, Name, E-Mail"
-                            );
-                        {% endwith %}
+                        $('#input-add-moderator').cdedbSearchPerson(
+                            '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) }}',
+                            {{ ambience['mailinglist']['moderators']|list|json }}, false, false,
+                            "CdEDB-ID, Name, E-Mail"
+                        );
                     </script>
                     <div class="input-group-btn">
                         {{ util.input_submit(value="Moderator hinzufügen", aclass="btn btn-success") }}
@@ -134,16 +128,10 @@
             {{ util.input_text(name="subscriber_id", placeholder="DB-XXXX-X", anid="input-add-subscriber",
                                arialabel="ID des neuen Abonnenten") }}
             <script type="text/javascript">
-                {% with search_realm = {enums['AudiencePolicy'].everybody: 'ml',
-                                        enums['AudiencePolicy'].require_assembly: 'assembly',
-                                        enums['AudiencePolicy'].require_event: 'event',
-                                        enums['AudiencePolicy'].require_cde: 'cde',
-                                        enums['AudiencePolicy'].require_member: 'member'} %}
-                    $('#input-add-subscriber').cdedbSearchPerson(
-                        '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) + '&sphere=' + search_realm[ambience['mailinglist']['audience_policy']] }}',
-                        {{ subscribers|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
-                    );
-                {% endwith %}
+                $('#input-add-subscriber').cdedbSearchPerson(
+                    '{{ cdedblink('core/select_persona') + '?kind=mod_ml_user&phrase=%s&aux=' + (ambience['mailinglist']['id']|string) }}',
+                    {{ subscribers|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
+                );
             </script>
             <div class="input-group-btn">
                 {{ util.input_submit(value="Abonnent eintragen", aclass="btn btn-success") }}
