@@ -76,12 +76,10 @@
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_instructor".format(track_id), label="Kursleiter von",
                                          entries=course_entries, nulloption="") }}
-                {{ util.form_input_select(name="track{}.course_choice_0".format(track_id), label="Erstwahl",
-                                         entries=course_entries, nulloption="") }}
-                {{ util.form_input_select(name="track{}.course_choice_1".format(track_id), label="Zweitwahl",
-                                         entries=course_entries, nulloption="") }}
-                {{ util.form_input_select(name="track{}.course_choice_2".format(track_id), label="Drittwahl",
-                                         entries=course_entries, nulloption="") }}
+                {% for i in range(track['num_choices']) %}
+                    {{ util.form_input_select(name="track{}.course_choice_{}".format(track_id, i),
+                                              label="{}. Wahl".format(i + 1), entries=course_entries, nulloption="") }}
+                {% endfor %}
             {% endif %}
         {% endfor %}
 

@@ -135,11 +135,12 @@
                     <dt>Kursleiter von</dt>
                     <dd><em>{{ courses[track['course_instructor']]['title']|e }}</em>.</dd>
                 {% endif %}
-                {% for prio in ("Erstwahl", "Zweitwahl", "Drittwahl") %}
-                    <dt>{{ prio|e }}</dt>
+                {% for i in range(ambience['event']['tracks'][track_id]['num_choices']) %}
+                    <dt>{{ "{}. Wahl".format(i + 1) }}</dt>
                     <dd>
-                        {% if registration['tracks'][track_id]['choices'][loop.index0] %}
-                            {{ courses[registration['tracks'][track_id]['choices'][loop.index0]]['title']|e }}
+                        {% if registration['tracks'][track_id]['choices']|length > i %}
+                            {{ courses[registration['tracks'][track_id]['choices'][i]]['nr']|e }}.
+                            {{ courses[registration['tracks'][track_id]['choices'][i]]['title']|e }}
                         {% else %}
                             —
                         {% endif %}

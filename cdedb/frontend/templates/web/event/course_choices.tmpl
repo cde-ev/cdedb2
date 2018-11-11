@@ -63,6 +63,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 den Kurs
                 {{ util.input_select(name="course_id", entries=course_entries, nulloption="",
                                      aclass="form-control input-slim input-sm", arialabel="Filter: Kurs") }}
+                {# FIXME: Add filters for arbitrary course choices #}
                 {% set myentries = [('', "— kein Filter —"),
                                     (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
                                     (enums.CourseFilterPositions.assigned.value, "besuchen"),
@@ -107,6 +108,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% endif %}
                 <div class="col-md-4">
                     <div class="form-group">
+                        {# FIXME: Add assignment to arbitrary course choices #}
                         {{ util.input_select(name="action", anid="input-action", entries=(
                             (enums.CourseChoiceToolActions.assign_first_choice.value, "in ihre Erstwahl"),
                             (enums.CourseChoiceToolActions.assign_second_choice.value, "in ihre Zweitwahl"),
@@ -165,7 +167,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                         <th rowspan="2"></th>
                         <th rowspan="2">Name</th>
                         {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                            <th colspan="5" class="b-left">{{ track['title']|e }}</th>
+                            <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title']|e }}</th>
                         {% endfor %}
                     </tr>
                 {% endif %}
@@ -189,14 +191,16 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             {% endif -%}
                         {% endif -%}
                     {% endmacro %}
-                    {% for track_id in ambience['event']['tracks']|sort %}
+                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
                             {{ util.make_icon('screenshot', title="eingeteilt in") }}
                         </th>
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">KL</th>
-                        <th class="text-center {{ filtered_col_class(track_id, cfp.first_choice.value) }}">1.</th>
-                        <th class="text-center {{ filtered_col_class(track_id, cfp.second_choice.value) }}">2.</th>
-                        <th class="text-center {{ filtered_col_class(track_id, cfp.third_choice.value) }}">3.</th>
+                        {% for i in range(track['num_choices']) %}
+                            {# FIXME: highlight filters for arbitrary number of course choices #}
+                            <th class="text-center {{ filtered_col_class(track_id, cfp.first_choice.value) }}">
+                                {{ (i + 1)|e }}.</th>
+                        {% endfor %}
                     {% endfor %}
                 </tr>
             </thead>
@@ -221,7 +225,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                                                complain_empty=True, primary=True) }}
                                 {{ course_cell(registration['tracks'][track_id]['course_instructor'], track_id,
                                                border_left=True) }}
-                                {% for j in range(3) %}
+                                {% for j in range(track['num_choices']) %}
                                     {{ course_cell(registration['tracks'][track_id]['choices'][j]
                                                    if registration['tracks'][track_id]['choices']|length > j else None,
                                                    track_id) }}
@@ -229,9 +233,9 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             {% else %}
                                 <td class="b-left"></td>
                                 <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                {% for j in range(track['num_choices']) %}
+                                    <td></td>
+                                {% endfor %}
                             {% endif %}
                         {% endfor %}
                     </tr>

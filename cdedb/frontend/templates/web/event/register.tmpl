@@ -85,12 +85,10 @@
 
                     {% set course_entries = courses|xdictsort('nr', pad=True)
                                             |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
-                    {{ util.form_input_select(name="course_choice{}_0".format(track_id), entries=course_entries,
-                                             label="Erstwahl") }}
-                    {{ util.form_input_select(name="course_choice{}_1".format(track_id), entries=course_entries,
-                                             label="Zweitwahl") }}
-                    {{ util.form_input_select(name="course_choice{}_2".format(track_id), entries=course_entries,
-                                             label="Drittwahl") }}
+                    {% for i in range(track['num_choices']) %}
+                        {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i),
+                                                  label="{}. Wahl".format(i + 1), entries=course_entries) }}
+                    {% endfor %}
 
                     {{ util.form_input_select(name="course_instructor{}".format(track_id), entries=course_entries,
                                               nulloption="— Ich bin kein Kursleiter —", label="Kursleiter",

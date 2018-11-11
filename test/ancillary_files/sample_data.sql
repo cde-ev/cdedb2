@@ -103,7 +103,7 @@ INSERT INTO event.event_parts (id, event_id, title, part_begin, part_end, fee) V
     (3, 1, 'Zweite Hälfte', date '2222-11-11', date '2222-11-30', 450.99),
     (4, 2, 'Party', date '2050-01-15', date '2050-01-15', 15.00);
 INSERT INTO event.course_tracks (id, part_id, title, shortname, num_choices, sortkey) VALUES
-    (1, 2, 'Morgenkreis (Erste Hälfte)', 'Morgenkreis', 3, 1),
+    (1, 2, 'Morgenkreis (Erste Hälfte)', 'Morgenkreis', 4, 1),
     (2, 2, 'Kaffeekränzchen (Erste Hälfte)', 'Kaffee', 1, 2),
     (3, 3, 'Arbeitssitzung (Zweite Hälfte)', 'Sitzung', 2, 1);
 INSERT INTO event.field_definitions (id, event_id, field_name, kind, association, entries) VALUES

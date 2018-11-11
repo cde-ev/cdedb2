@@ -821,24 +821,15 @@ class EventFrontend(AbstractUserFrontend):
             ('no course', (lambda e, r, p, t: (
                 p['status'] == stati.participant
                 and not t['course_id']
-                and r['persona_id'] not in e['orgas']))),
-            ('first choice', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and len(t['choices']) > 0
-                and (t['choices'][0] == t['course_id'])))),
-            ('second choice', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and len(t['choices']) > 1
-                and (t['choices'][1] == t['course_id'])))),
-            ('third choice', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and len(t['choices']) > 2
-                and (t['choices'][2] == t['course_id'])))),))
+                and r['persona_id'] not in e['orgas']))),))
         per_track_statistics = OrderedDict()
         if tracks:
+            for i in range(max(t['num_choices'] for t in tracks.values())):
+                tests2['in {}. choice'.format(i+1)] = (lambda e, r, p, t: (
+                    p['status'] == stati.participant
+                    and t['course_id']
+                    and len(t['choices']) > i
+                    and (t['choices'][i] == t['course_id'])))
             for key, test in tests2.items():
                 per_track_statistics[key] = {
                     track_id: sum(
@@ -1160,8 +1151,8 @@ class EventFrontend(AbstractUserFrontend):
                         and (reg['parts'][tracks[track_id]['part_id']]['status']
                              == const.RegistrationPartStati.participant)
                         and reg['persona_id'] not in event['orgas']))
-                for track_id in tracks
-                for i in range(3)
+                for track_id, track in tracks.items()
+                for i in range(track['num_choices'])
             }
             for course_id in course_ids
         }
@@ -1417,8 +1408,8 @@ class EventFrontend(AbstractUserFrontend):
                         and (reg['parts'][track['part_id']]['status']
                              == const.RegistrationPartStati.participant)
                         and reg['persona_id'] not in event['orgas']))
-                for track_id, track in tracks.items()
-                for i in range(3)
+                for track_id, track in tracks.items() for i in
+                range(track['num_choices'])
             }
             for course_id in course_ids
         }
@@ -1656,7 +1647,8 @@ class EventFrontend(AbstractUserFrontend):
                     for field in rs.ambience['event']['fields'].values()
                     if field['association'] == const.FieldAssociations.course])
                 columns.extend('track{}.choice{}.{}'.format(track_id, i, f)
-                               for i in range(3)
+                               for i in range(part['tracks'][track_id]
+                                              ['num_choices'])
                                for f in ('id', 'nr'))
                 columns.extend(
                     'track{}.course_instructor.{}'.format(track_id, f)
@@ -1712,7 +1704,7 @@ class EventFrontend(AbstractUserFrontend):
                         'track{}.choice{}.{}'.format(track_id, i, f):
                             courses[choice][f] if choice else ''
                         for f in ('id', 'nr')})
-                for i in range(len(track['choices']), 3):
+                for i in range(len(track['choices']), track['num_choices']):
                     registration.update({
                         'track{}.choice{}.{}'.format(track_id, i, f): ''
                         for f in ('id', 'nr')})
@@ -1810,7 +1802,8 @@ class EventFrontend(AbstractUserFrontend):
         choice_params = (("course_choice{}_{}".format(track_id, i), "id")
                          for part_id in standard['parts']
                          for track_id in event['parts'][part_id]['tracks']
-                         for i in range(3))
+                         for i in range(event['tracks'][track_id]
+                                        ['num_choices']))
         choices = request_extractor(rs, choice_params)
         instructor_params = (
             ("course_instructor{}".format(track_id), "id_or_None")
@@ -1822,15 +1815,15 @@ class EventFrontend(AbstractUserFrontend):
                               ValueError(n_("Must select at least one part."))))
         present_tracks = set()
         for part_id in standard['parts']:
-            for track_id in event['parts'][part_id]['tracks']:
+            for track_id, track in event['parts'][part_id]['tracks'].items():
                 present_tracks.add(track_id)
                 cids = {choices["course_choice{}_{}".format(track_id, i)]
-                        for i in range(3)}
-                if len(cids) != 3:
+                        for i in range(track['num_choices'])}
+                if len(cids) != track['num_choices']:
                     rs.errors.extend(
                         ("course_choice{}_{}".format(track_id, i),
                          ValueError(n_("Must choose three different courses.")))
-                        for i in range(3))
+                        for i in range(track['num_choices']))
         if not standard['foto_consent']:
             rs.errors.append(("foto_consent",
                               ValueError(n_("Must consent for participation."))))
@@ -1851,7 +1844,8 @@ class EventFrontend(AbstractUserFrontend):
         }
         for track_id in present_tracks:
             reg_tracks[track_id]['choices'] = tuple(
-                choices["course_choice{}_{}".format(track_id, i)] for i in range(3))
+                choices["course_choice{}_{}".format(track_id, i)]
+                for i in range(tracks[track_id]['num_choices']))
         registration = {
             'mixed_lodging': standard['mixed_lodging'],
             'foto_consent': standard['foto_consent'],
@@ -2302,12 +2296,13 @@ class EventFrontend(AbstractUserFrontend):
                 ("part{}.lodgement_id".format(part_id), "id_or_None"),
                 ("part{}.is_reserve".format(part_id), "bool")))
         track_params = []
-        for track_id in tracks:
+        for track_id, track in tracks.items():
             track_params.extend(
                 ("track{}.{}".format(track_id, key), "id_or_None")
-                for key in ("course_id", "course_choice_0",
-                            "course_choice_1", "course_choice_2",
-                            "course_instructor"))
+                for key in ("course_id", "course_instructor"))
+            track_params.extend(
+                ("track{}.course_choice_{}".format(track_id, i), "id_or_None")
+                for i in range(track['num_choices']))
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
              "{}_or_None".format(field['kind']))
@@ -2339,16 +2334,17 @@ class EventFrontend(AbstractUserFrontend):
             }
             for track_id in tracks
         }
-        # Build course choices (but only if all 3 choices are present)
-        for track_id in tracks:
+        # Build course choices (but only if all choices are present)
+        for track_id, track in tracks.items():
             if not all("track{}.course_choice_{}".format(track_id, i)
                             in raw_tracks
-                       for i in range(3)):
+                       for i in range(track['num_choices'])):
                 continue
             extractor = lambda i: raw_tracks["track{}.course_choice_{}".format(
                 track_id, i)]
             new_tracks[track_id]['choices'] = tuple(
-                extractor(i) for i in range(3) if extractor(i))
+                extractor(i)
+                for i in range(track['num_choices']) if extractor(i))
         new_fields = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
 
