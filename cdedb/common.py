@@ -1056,7 +1056,7 @@ def implying_realms(realm):
     """Get all realms where membership implies the given realm.
 
     This can be used to determine the realms in which a user must *not* be to be
-    listed in a specific realm ore be edited by its admins.
+    listed in a specific realm or be edited by its admins.
 
     :param realm: The realm to search implying realms for
     :type realm: str
