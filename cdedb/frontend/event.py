@@ -320,8 +320,9 @@ class EventFrontend(AbstractUserFrontend):
             for part_id, part in rs.ambience['event']['parts'].items()
             for key, value in part.items() if key not in ('id', 'tracks')}
         for part_id, part in rs.ambience['event']['parts'].items():
-            for track_id, title in part['tracks'].items():
-                current["track_{}_{}".format(part_id, track_id)] = title
+            for track_id, track in part['tracks'].items():
+                current["track_{}_{}".format(part_id, track_id)] = \
+                    track['title']
         merge_dicts(rs.values, current)
         referenced_parts = set()
         referenced_tracks = set()
@@ -418,7 +419,10 @@ class EventFrontend(AbstractUserFrontend):
                 (data['track_{}_{}'.format(part_id, track_id)]
                  if track_id not in track_deletes else None)
             ret[part_id]['tracks'] = {
-                track_id: track_excavator(part_id, track_id)
+                track_id: {'title': track_excavator(part_id, track_id),
+                           'shortname': track_excavator(part_id, track_id),
+                           'num_choices': 3,
+                           'sortkey': 1}
                 for track_id in part['tracks']}
             marker = 1
             while marker < 2**5:
@@ -430,7 +434,11 @@ class EventFrontend(AbstractUserFrontend):
                         raise ValueError(n_("Registrations exist, no creation."))
                     params = (("track_{}_-{}".format(part_id, marker), "str"),)
                     newtrack = unwrap(request_extractor(rs, params))
-                    ret[part_id]['tracks'][-marker] = newtrack
+                    ret[part_id]['tracks'][-marker] = {
+                        'title': newtrack,
+                        'shortname': newtrack,
+                        'num_choices': 3,
+                        'sortkey': 1}
                 else:
                     break
                 marker += 1
