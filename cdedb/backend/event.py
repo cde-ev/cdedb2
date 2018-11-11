@@ -480,10 +480,11 @@ class EventBackend(AbstractBackend):
                                    all_parts, entity_key="part_id")
             for anid in ids:
                 for part_id in ret[anid]['parts']:
-                    tracks = {d['id']: d['title'] for d in data
+                    tracks = {d['id']: d for d in data
                               if d['part_id'] == part_id}
                     assert('tracks' not in ret[anid]['parts'][part_id])
                     ret[anid]['parts'][part_id]['tracks'] = tracks
+                ret[anid]['tracks'] = {d['id']: d for d in data}
             data = self.sql_select(
                 rs, "event.orgas", ("persona_id", "event_id"), ids,
                 entity_key="event_id")
@@ -508,15 +509,6 @@ class EventBackend(AbstractBackend):
                 and ret[anid]['registration_start'] <= now()
                 and (ret[anid]['registration_hard_limit'] is None
                      or ret[anid]['registration_hard_limit'] >= now()))
-            ret[anid]['tracks'] = {
-                track_id: {
-                    'id': track_id,
-                    'part_id': part_id,
-                    'title': title
-                }
-                for part_id, part in ret[anid]['parts'].items()
-                for track_id, title in part['tracks'].items()
-            }
         return ret
 
     def _set_tracks(self, rs, event_id, part_id, data, cautious=False):
@@ -529,7 +521,7 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :type part_id: int
-        :type data: {int: str}
+        :type data: {int: {str: object} or None}
         :type cautious: bool
         :param cautious: If True only modification of existing tracks is
           allowed. That is creation and deletion of tracks is disallowed.
@@ -558,23 +550,23 @@ class EventBackend(AbstractBackend):
         for x in reversed(sorted(new)):
             new_track = {
                 "part_id": part_id,
-                "title": data[x],
+                **data[x]
             }
             ret *= self.sql_insert(rs, "event.course_tracks", new_track)
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
-                additional_info=data[x])
+                additional_info=data[x]['title'])
         ## updated
         for x in updated:
             if current[x] != data[x]:
                 update = {
                     'id': x,
-                    'title': data[x],
+                    **data[x]
                 }
                 ret *= self.sql_update(rs, "event.course_tracks", update)
                 self.event_log(
                     rs, const.EventLogCodes.track_updated, event_id,
-                    additional_info=data[x])
+                    additional_info=x)
 
         ## deleted
         if deleted:
@@ -583,7 +575,7 @@ class EventBackend(AbstractBackend):
             for x in deleted:
                 self.event_log(
                     rs, const.EventLogCodes.track_removed, event_id,
-                    additional_info=data[x])
+                    additional_info=x)
         return ret
 
     @access("event")

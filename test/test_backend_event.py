@@ -49,13 +49,23 @@ class TestEventBackend(BackendTest):
             'orgas': {2, 7},
             'parts': {
                 -1: {
-                    'tracks': {-1: "First lecture"},
+                    'tracks': {
+                        -1: {'title': "First lecture",
+                             'shortname': "First",
+                             'num_choices': 3,
+                             'sortkey': 1}
+                    },
                     'title': "First coming",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
                 -2: {
-                    'tracks': {-1: "Second lecture"},
+                    'tracks': {
+                        -1: {'title': "Second lecture",
+                             'shortname': "Second",
+                             'num_choices': 3,
+                             'sortkey': 1}
+                    },
                     'title': "Second coming",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
@@ -91,8 +101,10 @@ class TestEventBackend(BackendTest):
         data['end'] = datetime.date(2110, 8, 20)
         data['is_open'] = True
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'id': 4, 'part_id': 5, 'title': 'Second lecture'},
-                          5: {'id': 5, 'part_id': 6, 'title': 'First lecture'}}
+        data['parts'][-1]['tracks'][-1].update({'id': 5, 'part_id': 6})
+        data['parts'][-2]['tracks'][-1].update({'id': 4, 'part_id': 5})
+        data['tracks'] = {5: data['parts'][-1]['tracks'][-1],
+                          4: data['parts'][-2]['tracks'][-1]}
         ## correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -103,8 +115,10 @@ class TestEventBackend(BackendTest):
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
-                    self.assertEqual(set(data['parts'][part]['tracks'].values()),
-                                     set(tmp['parts'][part]['tracks'].values()))
+                    self.assertEqual(set(x['title']
+                                         for x in data['parts'][part]['tracks'].values()),
+                                     set(x['title']
+                                         for x in tmp['parts'][part]['tracks'].values()))
                     data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
                     break
             del data['parts'][oldpart]
@@ -125,7 +139,12 @@ class TestEventBackend(BackendTest):
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
         newpart = {
-            'tracks': {-1: "Third lecture"},
+            'tracks': {
+                -1: {'title': "Third lecture",
+                     'shortname': "Third",
+                     'num_choices': 2,
+                     'sortkey': 2}
+            },
             'title': "Third coming",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
@@ -135,7 +154,12 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
-            'tracks': {4: "Second lecture v2"}} # hardcoded value 4
+            'tracks': {
+                4: {'title': "Second lecture v2",  # hardcoded id 4
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'sortkey': 3}
+            }}
         newfield = {
             'association': 3,
             'field_name': "kuea",
@@ -171,12 +195,15 @@ class TestEventBackend(BackendTest):
                 data['parts'][part] = newpart
                 data['parts'][part]['id'] = part
                 data['parts'][part]['event_id'] = new_id
-                self.assertEqual(set(data['parts'][part]['tracks'].values()),
-                                 set(tmp['parts'][part]['tracks'].values()))
+                self.assertEqual(set(x['title']
+                                     for x in data['parts'][part]['tracks'].values()),
+                                 set(x['title']
+                                     for x in tmp['parts'][part]['tracks'].values()))
                 data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
+        changed_part['tracks'][4].update({'part_id': 5, 'id': 4})
         data['parts'][part_map["Second coming"]] = changed_part
         for field in tmp['fields']:
             if tmp['fields'][field]['field_name'] == "kuea":
@@ -192,8 +219,18 @@ class TestEventBackend(BackendTest):
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'id': 4, 'part_id': 5, 'title': 'Second lecture v2'},
-                          6: {'id': 6, 'part_id': 7, 'title': 'Third lecture'}}
+        data['tracks'] = {4: {'id': 4,
+                              'part_id': 5,
+                              'title': 'Second lecture v2',
+                              'shortname': "Second v2",
+                              'num_choices': 5,
+                              'sortkey': 3},
+                          6: {'id': 6,
+                              'part_id': 7,
+                              'title': 'Third lecture',
+                              'shortname': 'Third',
+                              'num_choices': 2,
+                              'sortkey': 2}}
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
@@ -214,7 +251,7 @@ class TestEventBackend(BackendTest):
             'max_size': 12,
             'min_size': None,
             'notes': "Beware of dragons.",
-            'segments': {4}, # hardcoded value 4
+            'segments': {4},  # hardcoded value 4
         }
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
@@ -1222,11 +1259,19 @@ class TestEventBackend(BackendTest):
                                                'tracks': {1: {'id': 1,
                                                               'part_id': 2,
                                                               'title': 'Morgenkreis '
-                                                              '(Erste Hälfte)'},
+                                                              '(Erste Hälfte)',
+                                                              'shortname': 
+                                                                  'Morgenkreis',
+                                                              'num_choices': 3,
+                                                              'sortkey': 1},
                                                           2: {'id': 2,
                                                               'part_id': 2,
                                                               'title': 'Kaffeekränzchen '
-                                                              '(Erste Hälfte)'}}},
+                                                              '(Erste Hälfte)',
+                                                              'shortname':
+                                                                  'Kaffee',
+                                                              'num_choices': 1,
+                                                              'sortkey': 2}}},
                                            3: {'event_id': 1,
                                                'fee': decimal.Decimal('450.99'),
                                                'id': 3,
@@ -1237,7 +1282,11 @@ class TestEventBackend(BackendTest):
                                                               'part_id': 3,
                                                               'title': 'Arbeitssitzung '
                                                               '(Zweite '
-                                                              'Hälfte)'}}}},
+                                                              'Hälfte)',
+                                                              'shortname': 
+                                                                  'Sitzung',
+                                                              'num_choices': 2,
+                                                              'sortkey': 1}}}},
                                  'questionnaire_rows': {1: {'event_id': 1,
                                                             'field_id': None,
                                                             'id': 1,
@@ -1767,7 +1816,10 @@ class TestEventBackend(BackendTest):
         event['parts'][4000]['tracks'][1100] = {
             'part_id': 4000,
             'id': 1100,
-            'title': 'Enlightnment'}
+            'title': 'Enlightnment',
+            'shortname': 'Enlightnment',
+            'num_choices': 2,
+            'sortkey': 1}
         ## lodgements
         new_data['event.lodgements'][6000] = {
             'capacity': 1,
@@ -1882,7 +1934,10 @@ class TestEventBackend(BackendTest):
             'tracks': {4: {
                 'part_id': 5,
                 'id': 4,
-                'title': 'Enlightnment'}}}
+                'title': 'Enlightnment',
+                'shortname': 'Enlightnment',
+                'num_choices': 2,
+                'sortkey': 1}}}
         stored_data['event.lodgements'][5] = {
             'capacity': 1,
             'event_id': 1,
@@ -1996,13 +2051,21 @@ class TestEventBackend(BackendTest):
             'orgas': {2, 7},
             'parts': {
                 -1: {
-                    'tracks': {-1: 'First lecture'},
+                    'tracks': {
+                        -1: {'title': "First lecture",
+                             'shortname': "First",
+                             'num_choices': 3,
+                             'sortkey': 1}},
                     'title': "First coming",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
                 -2: {
-                    'tracks': {-1: 'Second lecture'},
+                    'tracks': {
+                        -1: {'title': "Second lecture",
+                             'shortname': "Second",
+                             'num_choices': 3,
+                             'sortkey': 1}},
                     'title': "Second coming",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
@@ -2052,7 +2115,11 @@ class TestEventBackend(BackendTest):
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
         newpart = {
-            'tracks': {-1: "Third lecture"},
+            'tracks': {
+                -1: {'title': "Third lecture",
+                     'shortname': "Third",
+                     'num_choices': 2,
+                     'sortkey': 2}},
             'title': "Third coming",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
@@ -2062,7 +2129,11 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
-            'tracks': {4: "Second lecture v2"}, # hardcoded value 4
+            'tracks': {
+                4: {'title': "Second lecture v2",  # hardcoded id 4
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'sortkey': 3}}
         }
         newfield = {
             'association': 1,
@@ -2303,7 +2374,7 @@ class TestEventBackend(BackendTest):
              'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
-            {'additional_info': None,
+            {'additional_info': '5',
              'code': 37,
              'ctime': nearly_now(),
              'event_id': 3,
@@ -2315,7 +2386,7 @@ class TestEventBackend(BackendTest):
              'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
-            {'additional_info': 'Second lecture v2',
+            {'additional_info': '4',
              'code': 36,
              'ctime': nearly_now(),
              'event_id': 3,

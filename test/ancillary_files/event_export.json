@@ -179,7 +179,10 @@
                         "3": {
                             "id": 3,
                             "part_id": 3,
-                            "title": "Arbeitssitzung (Zweite H\u00e4lfte)"
+                            "title": "Arbeitssitzung (Zweite H\u00e4lfte)",
+                            "shortname": "Sitzung",
+                            "num_choices": 2,
+                            "sortkey": 1
                         }
                     },
                     "part_end": "2222-11-30"
@@ -194,12 +197,18 @@
                         "2": {
                             "id": 2,
                             "part_id": 2,
-                            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)"
+                            "title": "Kaffeekr\u00e4nzchen (Erste H\u00e4lfte)",
+                            "shortname": "Kaffee",
+                            "num_choices": 1,
+                            "sortkey": 2
                         },
                         "1": {
                             "id": 1,
                             "part_id": 2,
-                            "title": "Morgenkreis (Erste H\u00e4lfte)"
+                            "title": "Morgenkreis (Erste H\u00e4lfte)",
+                            "shortname": "Morgenkreis",
+                            "num_choices": 3,
+                            "sortkey": 1
                         }
                     },
                     "part_end": "2222-11-11"

@@ -1760,22 +1760,56 @@ def _event_part(val, argname=None, *, creation=False, _convert=True):
             errs.extend(e)
         else:
             newtracks = {}
-            for anid, title in oldtracks.items():
+            for anid, track in oldtracks.items():
                 anid, e = _int(anid, 'tracks', _convert=_convert)
                 if e:
                     errs.extend(e)
                 else:
                     creation = (anid < 0)
                     if creation:
-                        title, ee = _str(title, 'title', _convert=_convert)
+                        track, ee = _event_track(
+                            track, 'tracks', _convert=_convert, creation=True)
                     else:
-                        title, ee = _str_or_None(title, 'title',
-                                                 _convert=_convert)
+                        track, ee = _event_track_or_None(
+                            track, 'tracks', _convert=_convert)
                     if ee:
                         errs.extend(ee)
                     else:
-                        newtracks[anid] = title
+                        newtracks[anid] = track
             val['tracks'] = newtracks
+    return val, errs
+
+_EVENT_TRACK_COMMON_FIELDS = {
+    'title': _str,
+    'shortname': _str,
+    'num_choices': _int,
+    'sortkey': _int,
+}
+@_addvalidator
+def _event_track(val, argname=None, *, creation=False, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :type creation: bool
+    :param creation: If ``True`` test the data set on fitness for creation
+      of a new entity.
+    :rtype: (dict or None, [(str or None, exception)])
+    """
+    argname = argname or "tracks"
+    val, errs = _mapping(val, argname, _convert=_convert)
+    if errs:
+        return val, errs
+    if creation:
+        mandatory_fields = _EVENT_TRACK_COMMON_FIELDS
+        optional_fields = {}
+    else:
+        mandatory_fields = {}
+        optional_fields = _EVENT_TRACK_COMMON_FIELDS
+    val, errs = _examine_dictionary_fields(val, mandatory_fields,
+                                           optional_fields, _convert=_convert)
+    if errs:
+        return val, errs
     return val, errs
 
 _EVENT_FIELD_COMMON_FIELDS = lambda extra_suffix: {
@@ -2341,7 +2375,8 @@ def _serialized_event(val, argname=None, *, _convert=True):
     if errs:
         return None, errs
     course_tracks_validator = _augment_dict_validator(
-        _empty_dict, {'id': _id, 'part_id': _id, 'title': _str})
+        _empty_dict, {'id': _id, 'part_id': _id, 'title': _str,
+                      'shortname': _str, 'num_choices': _int, 'sortkey': _int})
     for event in val['event.events'].values():
         for part in event['parts'].values():
             tag = "events/parts/tracks"
