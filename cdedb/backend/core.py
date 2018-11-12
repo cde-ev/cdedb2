@@ -24,7 +24,8 @@ from cdedb.common import (
     PERSONA_CORE_FIELDS, PERSONA_CDE_FIELDS, PERSONA_EVENT_FIELDS,
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
-    merge_dicts, PERSONA_DEFAULTS, ArchiveError)
+    merge_dicts, PERSONA_DEFAULTS, ArchiveError, extract_realms,
+    implied_realms, check_create_privilege)
 from cdedb.security import secure_random_ascii, secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -1350,8 +1351,8 @@ class CoreBackend(AbstractBackend):
             'is_event_admin': False,
             'is_ml_admin': False,
         })
-        tier = privilege_tier(extract_roles(data))
-        if not (tier & rs.user.roles):
+        ## Check if admin has rights to create the user in its realms
+        if not check_create_privilege(extract_roles(data), rs.user.roles):
             raise PrivilegeError(n_("Unable to create this sort of persona."))
         ## modified version of hash for 'secret' and thus safe/unknown plaintext
         data['password_hash'] = (
@@ -1939,8 +1940,9 @@ class CoreBackend(AbstractBackend):
             data = affirm("persona", data, creation=True)
             if case['case_status'] != const.GenesisStati.approved:
                 raise ValueError(n_("Invalid genesis state."))
-            tier = privilege_tier(extract_roles(data))
-            if "{}_admin".format(case['realm']) not in tier:
+            roles = extract_roles(data)
+            if extract_realms(roles) != \
+                    ({case['realm']} | implied_realms(case['realm'])):
                 raise PrivilegeError(n_("Wrong target realm."))
             ret = self.create_persona(
                 rs, data, submitted_by=case['reviewer'])
