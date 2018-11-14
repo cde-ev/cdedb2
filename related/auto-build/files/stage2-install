@@ -92,7 +92,9 @@ useradd -s /bin/bash -m cdb
 useradd -s /bin/bash -m -p REw.iVaxV7gAI cdedb # password: akademie
 
 sudo -u cdedb touch /home/cdedb/.bashrc
-echo -e "\nexport EDITOR=nano\n" >> /home/cdedb/.bashrc
+echo "" >> /home/cdedb/.bashrc
+echo "export EDITOR=nano" >> /home/cdedb/.bashrc
+echo "" >> /home/cdedb/.bashrc
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 cat > /etc/motd <<EOF
