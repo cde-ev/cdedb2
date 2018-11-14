@@ -1241,6 +1241,11 @@ class CoreFrontend(AbstractFrontend):
             rs.notify("error",
                       n_("Email address already in DB. Reset password."))
             return self.redirect(rs, "core/index")
+        # We have to force a None here since the template should not have a
+        # null option for event cases and the validator for ml users
+        # requires this
+        if data['realm'] == "ml":
+            data['gender'] = None
         case_id = self.coreproxy.genesis_request(rs, data)
         if not case_id:
             rs.notify("error", n_("Failed."))
