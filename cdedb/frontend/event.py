@@ -321,8 +321,9 @@ class EventFrontend(AbstractUserFrontend):
             for key, value in part.items() if key not in ('id', 'tracks')}
         for part_id, part in rs.ambience['event']['parts'].items():
             for track_id, track in part['tracks'].items():
-                current["track_{}_{}".format(part_id, track_id)] = \
-                    track['title']
+                for k in ('title', 'shortname', 'num_choices', 'sortkey'):
+                    current["track_{}_{}_{}".format(k, part_id, track_id)] = \
+                        track[k]
         merge_dicts(rs.values, current)
         referenced_parts = set()
         referenced_tracks = set()
@@ -374,6 +375,25 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in parts if part_id not in deletes
         }
 
+        def track_params(part_id, track_id):
+            """
+            Helper function to create the parameter extraction configuration
+            for the data of a single track.
+            """
+            return (
+                ("track_{}_{}_{}".format(k, part_id, track_id), t)
+                for k, t in (('title', 'str'), ('shortname', 'str'),
+                             ('num_choices', 'int'), ('sortkey', 'int')))
+
+        def track_excavator(req_data, part_id, track_id):
+            """
+            Helper function to create a single track's data dict from the
+            extracted request data.
+            """
+            return {
+                k: req_data['track_{}_{}_{}'.format(k, part_id, track_id)]
+                for k in ('title', 'shortname', 'num_choices', 'sortkey')}
+
         ## Handle newly created parts
         marker = 1
         while marker < 2**10:
@@ -406,23 +426,19 @@ class EventFrontend(AbstractUserFrontend):
                                  part_id, track_id)]}
         if has_registrations and track_deletes:
             raise ValueError(n_("Registrations exist, no deletion."))
-        params = tuple(("track_{}_{}".format(part_id, track_id), "str")
-                       for part_id, part in parts.items()
-                       for track_id in part['tracks']
-                       if track_id not in track_deletes)
+        params = tuple(itertools.chain.from_iterable(
+            track_params(part_id, track_id)
+            for part_id, part in parts.items()
+            for track_id in part['tracks']
+            if track_id not in track_deletes))
         data = request_extractor(rs, params)
         rs.values['track_create_last_index'] = {}
         for part_id, part in parts.items():
             if part_id in deletes:
                 continue
-            track_excavator = lambda part_id, track_id: \
-                (data['track_{}_{}'.format(part_id, track_id)]
-                 if track_id not in track_deletes else None)
             ret[part_id]['tracks'] = {
-                track_id: {'title': track_excavator(part_id, track_id),
-                           'shortname': track_excavator(part_id, track_id),
-                           'num_choices': 3,
-                           'sortkey': 1}
+                track_id: (track_excavator(data, part_id, track_id)
+                           if track_id not in track_deletes else None)
                 for track_id in part['tracks']}
             marker = 1
             while marker < 2**5:
@@ -431,14 +447,12 @@ class EventFrontend(AbstractUserFrontend):
                     (("track_create_{}_-{}".format(part_id, marker), "bool"),)))
                 if will_create:
                     if has_registrations:
-                        raise ValueError(n_("Registrations exist, no creation."))
-                    params = (("track_{}_-{}".format(part_id, marker), "str"),)
-                    newtrack = unwrap(request_extractor(rs, params))
-                    ret[part_id]['tracks'][-marker] = {
-                        'title': newtrack,
-                        'shortname': newtrack,
-                        'num_choices': 3,
-                        'sortkey': 1}
+                        raise ValueError(
+                            n_("Registrations exist, no creation."))
+                    params = tuple(track_params(part_id, -marker))
+                    newtrack = track_excavator(request_extractor(rs, params),
+                                               part_id, -marker)
+                    ret[part_id]['tracks'][-marker] = newtrack
                 else:
                     break
                 marker += 1
@@ -451,10 +465,12 @@ class EventFrontend(AbstractUserFrontend):
             while marker < 2**5:
                 will_create = unwrap(request_extractor(
                     rs,
-                    (("track_create_-{}_-{}".format(new_part_id, marker), "bool"),)))
+                    (("track_create_-{}_-{}".format(new_part_id, marker),
+                      "bool"),)))
                 if will_create:
-                    params = (("track_-{}_-{}".format(new_part_id, marker), "str"),)
-                    newtrack = unwrap(request_extractor(rs, params))
+                    params = tuple(track_params(new_part_id, -marker))
+                    newtrack = track_excavator(request_extractor(rs, params),
+                                               new_part_id, -marker)
                     ret[-new_part_id]['tracks'][-marker] = newtrack
                 else:
                     break
