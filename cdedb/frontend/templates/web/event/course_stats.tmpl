@@ -23,13 +23,15 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">Kurs</th>
-                {% if ambience['event']['tracks']|length == 1 %}
-                    <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">Teilnehmer &amp; Kurswahl</th>
-                {% else %}
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                        <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title']|e }}</th>
-                    {% endfor %}
-                {% endif %}
+                {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
+                        {%- if ambience['event']['tracks']|length == 1 -%}
+                            Teilnehmer &amp; Kurswahl
+                        {%- else -%}
+                            {{ track['title']|e }}
+                        {%- endif -%}
+                    </th>
+                {% endfor %}
                 <th colspan="2" class="b-left">Grenzen</th>
                 {% if ambience['event']['tracks']|length < 4 %}
                     <th rowspan="2" class="b-left"></th>

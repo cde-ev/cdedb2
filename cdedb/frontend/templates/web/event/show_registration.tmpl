@@ -181,8 +181,8 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
                         <dt>Kursleiter von</dt>
                         <dd>
                             {% if ambience['registration']['tracks'][track_id]['course_instructor'] %}
-                                {{ courses[ambience['registration']['tracks'][track_id]['choices'][loop.index0]]['nr']|e }}.
-                                {{ courses[ambience['registration']['tracks'][track_id]['choices'][loop.index0]]['shortname']|e }}
+                                {{ courses[ambience['registration']['tracks'][track_id]['course_instructor']]['nr']|e }}.
+                                {{ courses[ambience['registration']['tracks'][track_id]['course_instructor']]['shortname']|e }}
                             {% else %}
                                 —
                             {% endif %}

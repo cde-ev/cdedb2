@@ -468,9 +468,9 @@ class EventFrontend(AbstractUserFrontend):
                     (("track_create_-{}_-{}".format(new_part_id, marker),
                       "bool"),)))
                 if will_create:
-                    params = tuple(track_params(new_part_id, -marker))
+                    params = tuple(track_params(-new_part_id, -marker))
                     newtrack = track_excavator(request_extractor(rs, params),
-                                               new_part_id, -marker)
+                                               -new_part_id, -marker)
                     ret[-new_part_id]['tracks'][-marker] = newtrack
                 else:
                     break
@@ -875,7 +875,9 @@ class EventFrontend(AbstractUserFrontend):
             'wrong choice': (lambda e, r, p, t: (
                 p['status'] == stati.participant
                 and t['course_id']
-                and (t['course_id'] not in t['choices']))),
+                and t['course_id'] != t['course_instructor']
+                and (t['course_id'] not in t['choices']
+                     [:e['tracks'][t['track_id']]['num_choices']]))),
         }
         sorter = lambda registration_id: name_key(
             personas[registrations[registration_id]['persona_id']])
