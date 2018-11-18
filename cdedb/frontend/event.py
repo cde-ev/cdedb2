@@ -28,7 +28,7 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    diacritic_patterns, open_utf8, shutil_copy)
+    CourseFilterPositions, diacritic_patterns, open_utf8, shutil_copy)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.database.connection import Atomizer
@@ -1014,7 +1014,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
-                 ("position", "enum_coursefilterpositions_or_None"),
+                 ("position", "int_or_None"),
                  ("ids", "int_csv_list_or_None"))
     @event_guard()
     def course_choices_form(self, rs, event_id, course_id, track_id, position, ids):
@@ -1069,17 +1069,33 @@ class EventFrontend(AbstractUserFrontend):
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
+        filter_entries = [
+            (CourseFilterPositions.anywhere.value, "know somehow"),
+            (CourseFilterPositions.assigned.value, "participate in"),
+            (CourseFilterPositions.instructor.value, "offer"),
+            (CourseFilterPositions.any_choice.value, "chose")]
+        filter_entries.extend(
+            (i, "have as {}. choice".format(i+1))
+            for i in range(max(t['num_choices'] for t in tracks.values())))
+        action_entries = [
+            (i, "into their {}. choice".format(i+1))
+            for i in range(max(t['num_choices'] for t in tracks.values()))]
+        action_entries.extend((
+            (CourseChoiceToolActions.assign_fixed.value, "in the course …"),
+            (CourseChoiceToolActions.assign_auto.value, "automatically")))
         return self.render(rs, "course_choices", {
             'courses': courses, 'personas': personas,
             'registrations': OrderedDict(
                 sorted(registrations.items(),
                        key=lambda reg: name_key(personas[reg[1]['persona_id']]))),
             'course_infos': course_infos,
-            'corresponding_query': corresponding_query})
+            'corresponding_query': corresponding_query,
+            'filter_entries': filter_entries,
+            'action_entries': action_entries})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("registration_ids", "[int]"), ("track_ids", "[int]"),
-                 ("action", "enum_coursechoicetoolactions"),
+                 ("action", "int"),
                  ("course_id", "id_or_None"))
     @event_guard(check_offline=True)
     def course_choices(self, rs, event_id, registration_ids, track_ids, action,
@@ -1112,33 +1128,37 @@ class EventFrontend(AbstractUserFrontend):
                 if (reg_part['status']
                         != const.RegistrationPartStati.participant):
                     continue
-                if action.choice_rank() is not None:
+                if action >= 0:
                     try:
-                        choice = reg_track['choices'][action.choice_rank()]
+                        choice = reg_track['choices'][action]
                     except IndexError:
                         rs.notify("error", n_("No choice available."))
                     else:
                         tmp['tracks'][track_id] = {'course_id': choice}
-                elif action == CourseChoiceToolActions.assign_fixed:
-                    tmp['tracks'][track_id] = {'course_id': course_id}
-                elif action == CourseChoiceToolActions.assign_auto:
-                    cid = reg_track['course_id']
-                    if cid and track_id in courses[cid]['active_segments']:
-                        ## Do not modify a valid assignment
-                        continue
-                    instructor = reg_track['course_instructor']
-                    if (instructor
-                            and track_id in courses[instructor]['active_segments']):
-                        ## Let instructors instruct
-                        tmp['tracks'][track_id] = {'course_id': instructor}
-                        continue
-                    for choice in reg_track['choices']:
-                        if track_id in courses[choice]['active_segments']:
-                            ## Assign first possible choice
-                            tmp['tracks'][track_id] = {'course_id': choice}
-                            break
-                    else:
-                        rs.notify("error", n_("No choice available."))
+                else:
+                    action = unwrap(request_extractor(
+                        rs, (('action', 'enum_coursechoicetoolactions'),)))
+                    if action == CourseChoiceToolActions.assign_fixed:
+                        tmp['tracks'][track_id] = {'course_id': course_id}
+                    elif action == CourseChoiceToolActions.assign_auto:
+                        cid = reg_track['course_id']
+                        if cid and track_id in courses[cid]['active_segments']:
+                            ## Do not modify a valid assignment
+                            continue
+                        instructor = reg_track['course_instructor']
+                        if (instructor
+                                and track_id in courses[instructor]
+                                ['active_segments']):
+                            ## Let instructors instruct
+                            tmp['tracks'][track_id] = {'course_id': instructor}
+                            continue
+                        for choice in reg_track['choices']:
+                            if track_id in courses[choice]['active_segments']:
+                                ## Assign first possible choice
+                                tmp['tracks'][track_id] = {'course_id': choice}
+                                break
+                        else:
+                            rs.notify("error", n_("No choice available."))
             if tmp['tracks']:
                 code *= self.eventproxy.set_registration(rs, tmp)
         self.notify_return_code(rs, code)

@@ -825,43 +825,26 @@ class CourseFilterPositions(enum.IntEnum):
     We want to find registrations which have a specific course as choice
     or something else. Where exactly we search for the course is
     specified via this enum.
+
+    The enum members' values are all <0 to be distinguished from a specific
+    course choice rank (>=0)
     """
-    instructor = 1 #: Being a course instructor for the course in question.
-    first_choice = 2 #:
-    second_choice = 3 #:
-    third_choice = 4 #:
-    any_choice = 5 #:
-    assigned = 6 #: Being in this course either as participant or as instructor.
-    anywhere = 7 #:
+    instructor = -1  #: Being a course instructor for the course in question.
+    any_choice = -5  #: Having chosen the course (in any choice)
+    assigned = -6  #: Being in this course either as participant or instructor.
+    anywhere = -7  #: Having chosen the course, being instructor or participant.
 
 @enum.unique
 class CourseChoiceToolActions(enum.IntEnum):
     """Selection possibilities for the course assignment tool.
 
     Specify the action to take.
+
+    The enum members' values are all <0 to be distinguished from a specific
+    course choice rank (>=0)
     """
-    assign_first_choice = 1 #:
-    assign_second_choice = 2 #:
-    assign_third_choice = 3 #:
-    assign_fixed = 4 #: the course is specified separately
-    assign_auto = 5 #: somewhat intelligent algorithm
-
-    def choice_rank(self):
-        """Return the numerical rank of the required choice.
-
-        This is an index into the respective list. If we don't operate on
-        choices, we return None instead.
-
-        :rtype: int or None
-        """
-        if self == CourseChoiceToolActions.assign_first_choice:
-            return 0
-        elif self == CourseChoiceToolActions.assign_second_choice:
-            return 1
-        elif self == CourseChoiceToolActions.assign_third_choice:
-            return 2
-        else:
-            return None
+    assign_fixed = -4  #: the course is specified separately
+    assign_auto = -5  #: somewhat intelligent algorithm
 
 @enum.unique
 class SubscriptionStates(enum.IntEnum):

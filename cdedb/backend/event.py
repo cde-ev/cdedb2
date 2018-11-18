@@ -1077,7 +1077,9 @@ class EventBackend(AbstractBackend):
         :type event_id: int
         :type track_id: int or None
         :type course_id: int or None
-        :type position: :py:class:`cdedb.common.CourseFilterPositions`
+        :param position: A CourseFilterPositions member or an int >=0 for a
+          specific position
+        :type position: :py:class:`cdedb.common.CourseFilterPositions` or int
         :param reg_ids: List of registration ids to filter for
         :type reg_ids: [int] or None
         :rtype: {int: int}
@@ -1085,7 +1087,9 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         track_id = affirm("id_or_None", track_id)
         course_id = affirm("id_or_None", course_id)
-        position = affirm("enum_coursefilterpositions_or_None", position)
+        position = affirm("int_or_None", position)
+        if position is not None and position < 0:
+            position = affirm("enum_coursefilterpositions_or_None", position)
         reg_ids = reg_ids or set()
         reg_ids = affirm_set("id", reg_ids)
         if (not self.is_admin(rs)
@@ -1120,16 +1124,10 @@ class EventBackend(AbstractBackend):
             if position in (cfp.any_choice, cfp.anywhere):
                 conditions.append("choices.course_id = %s")
                 params += (course_id,)
-            elif position in (cfp.first_choice, cfp.second_choice,
-                              cfp.third_choice):
+            elif position >= 0:
                 conditions.append(
                     "(choices.course_id = %s AND choices.rank = %s)")
-                if position == cfp.first_choice:
-                    params += (course_id, 0)
-                elif position == cfp.second_choice:
-                    params += (course_id, 1)
-                elif position == cfp.third_choice:
-                    params += (course_id, 2)
+                params += (course_id, position)
             if position in (cfp.assigned, cfp.anywhere):
                 conditions.append("rtracks.course_id = %s")
                 params += (course_id,)
