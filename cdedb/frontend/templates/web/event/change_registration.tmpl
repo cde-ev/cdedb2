@@ -59,7 +59,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
                                       entries=lodgements|xdictsort('moniker')|dict_entries('id', 'moniker'), nulloption="") }}
             {{ util.form_input_checkbox(name="part{}.is_reserve".format(part_id), label="Isomattenplatz") }}
 
-            {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
+            {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') if track['part_id'] == part_id %}
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
@@ -74,7 +74,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} bear
         {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung") }}
         {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung") }}
         {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
-        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% if course_choices[track_id]|length > 0 %}
                 <h4>
                     Kurswahl

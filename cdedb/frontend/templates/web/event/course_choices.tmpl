@@ -54,7 +54,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% if ambience['event']['tracks']|length > 1 %}
                     in Kursschiene
                     {{ util.input_select(name="track_id",
-                                         entries=ambience['event']['tracks']|dictsort|dict_entries('id', 'title'),
+                                         entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
                                          nulloption='— egal —', aclass="form-control input-slim input-sm",
                                          arialabel="Filter: Kursschiene") }}
                 {% else %}
@@ -92,7 +92,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     <label class="sr-only" id="input-track_ids-label">Kursschienen</label>
                     <div class="col-md-3 strip-inner-space">
                         {{ util.input_checkboxes(name="track_ids",
-                                                 entries=ambience['event']['tracks']|dictsort
+                                                 entries=ambience['event']['tracks']|xdictsort('sortkey')
                                                     |dict_entries('id', 'title'),
                                                  arialabeledby="input-track_ids-label") }}
                     </div>
@@ -151,7 +151,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     <tr>
                         <th rowspan="2"></th>
                         <th rowspan="2">Name</th>
-                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title']|e }}</th>
                         {% endfor %}
                     </tr>
@@ -174,7 +174,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             {% endif -%}
                         {% endif -%}
                     {% endmacro %}
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
                             {{ util.make_icon('screenshot', title="eingeteilt in") }}
                         </th>
@@ -200,7 +200,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                         </td>
-                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
                             {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
                                 {{ course_cell(registration['tracks'][track_id]['course_id'], track_id, border_left=True,

@@ -48,7 +48,7 @@
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {{ util.form_input_select(name="part{}.lodgement_id".format(part_id), label="Unterkunft",
                                      entries=lodgements|xdictsort('moniker')|dict_entries('id', 'moniker'), nulloption="") }}
-            {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in part['tracks'] %}
+            {% for track_id, track in part['tracks']|xdictsort('sortkey') %}
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {{ util.form_input_select(name="track{}.course_id".format(track_id),
@@ -63,7 +63,7 @@
         {{ util.form_input_checkbox(name="reg.mixed_lodging", label="Gemischte Unterbringung", defaultvalue='True') }}
         {{ util.form_input_checkbox(name="reg.foto_consent", label="Foto-Einwilligung", defaultvalue='True') }}
         {{ util.form_input_textarea(name="reg.notes", label="Anmerkungen", rows="5") }}
-        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% if course_choices[track_id]|length > 0 %}
                 <h4>
                     Kurswahl

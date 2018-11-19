@@ -23,7 +23,7 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">Kurs</th>
-                {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                     <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
                         {%- if ambience['event']['tracks']|length == 1 -%}
                             Teilnehmer &amp; Kurswahl
@@ -38,7 +38,7 @@
                 {% endif %}
             </tr>
             <tr>
-                {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                     <th class="b-left"></th>
                     <th class="text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
                     {% for i in range(track['num_choices']) %}
@@ -55,7 +55,7 @@
                     <td>{{ course['nr']|e }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                      course['shortname']) }}</td>
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                         {% if track_id in course['segments'] %}
                             {% set attendees = assign_counts[course_id][track_id] %}
                             {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] and attendees > 0 else

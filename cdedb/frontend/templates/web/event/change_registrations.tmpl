@@ -114,7 +114,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                 </div>
             {% endcall %}
 
-            {% for track_id, track in ambience['event']['tracks']|dictsort if track['part_id'] == part_id %}
+            {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') if track['part_id'] == part_id %}
                 {% set course_entries = courses|xdictsort('nr', pad=True)
                                         |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
                 {% call form_input_optional("track{}.course_id".format(track_id),
@@ -140,7 +140,7 @@ Anmeldungen bearbeiten ({{ ambience['event']['title']|e }})
                                        label="Foto-Einwilligung") }}
             </div>
         {% endcall %}
-        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
             {% set course_entries = courses|xdictsort('nr', pad=True)
                                     |xdict_entries('{id}', '{nr}. {shortname}', include=course_choices[track_id]) %}
             {% call form_input_optional("track{}.course_instructor".format(track_id),

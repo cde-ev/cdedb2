@@ -72,20 +72,21 @@
             {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
         {% endif %}
 
-        {% for track_id, course_list in course_choices|dictsort %}
+        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
+            {% set course_list = course_choices[track_id] %}
             {% if course_list %}
                 <div id="course_choice_container-{{ track_id }}" class="course_choice_container"
-                     data-part="{{ ambience['event']['tracks'][track_id]['part_id'] }}">
+                     data-part="{{ track['part_id'] }}">
                     <h4>
                         Kurswahl
                         {% if course_choices|length > 1 %}
-                            für {{ ambience['event']['tracks'][track_id]['title']|e }}
+                            für {{ track['title']|e }}
                         {% endif %}
                     </h4>
 
                     {% set course_entries = courses|xdictsort('nr', pad=True)
                                             |xdict_entries('{id}', '{nr}. {title}', include=course_list) %}
-                    {% for i in range(ambience['event']['tracks'][track_id]['num_choices']) %}
+                    {% for i in range(track['num_choices']) %}
                         {{ util.form_input_select(name="course_choice{}_{}".format(track_id, i),
                                                   label="{}. Wahl".format(i + 1), entries=course_entries) }}
                     {% endfor %}

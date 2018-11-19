@@ -76,16 +76,13 @@
             'all instructors': "Kursleiter (theoretisch)",
             'instructors': "Kursleiter",
             'attendees': "Kursteilnehmer",
-            'first choice': "Erstwahl zugeteilt",
-            'second choice': "Zweitwahl zugeteilt",
-            'third choice': "Drittwahl zugeteilt",
         } %}
         {# TODO move headings into translation and translate in python code #}
             <table class="table table-condensed table-slim">
                 <thead>
                     <tr>
                         <th></th>
-                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             <th>
                                 {% if ambience['event']['tracks']|length > 1 %}{{ track['title']|e }}{% else %}Anzahl{% endif %}
                             </th>
@@ -96,13 +93,14 @@
                     {% for key, row in per_track_statistics.items() %}
                         <tr>
                             <th>{{ HEADINGS.get(key, key)|e }}</th>
-                                {% for track_id, datum in row|dictsort %}
+                                {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                                 <td>
                                     {% set query = get_query(key, track_id) %}
                                     {% if query %}
-                                        {{ util.href(cdedblink('event/registration_query', query|querytoparams), datum) }}
+                                        {{ util.href(cdedblink('event/registration_query', query|querytoparams),
+                                                     row[track_id]) }}
                                     {% else %}
-                                        {{ datum|e }}
+                                        {{ row[track_id]|e }}
                                     {% endif %}
                                 </td>
                                 {% endfor %}
@@ -145,7 +143,7 @@
 
                 <div class="col-md-6">
                     <h3>{{ heading|e }}</h3>
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                         <h4>{{ track['title']|e }} ({{ per_track_listings[key][track_id]|length|e }})</h4>
                         {% if 3*(per_track_listings[key][track_id]|length) < registrations|length %}
                             <ul>
