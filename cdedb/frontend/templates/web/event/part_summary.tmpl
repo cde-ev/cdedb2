@@ -48,10 +48,10 @@
         <td>
             <div class="drow-buttonspace1">
                 {% if newrow %}
-                    {{ util.input_checkbox("track_create_{}_{}".format(part_id, track_id), label="Hinzufügen",
+                    {{ util.input_checkbox("track_create_{}_{}".format(part_id, track_id), label="Hinz.",
                                            attributes='data-basename="track_create_"', aclass='drow-indicator1') }}
                 {% else %}
-                    {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Löschen",
+                    {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Entf.",
                                            readonly=(has_registrations or track_id in referenced_tracks),
                                            aclass='drow-indicator1') }}
                 {% endif %}
