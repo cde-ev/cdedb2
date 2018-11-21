@@ -1009,27 +1009,121 @@ def extract_roles(session, introspection_only=False):
         ret = ret | realms | {"member", "searchable"}
     return ret
 
+
+# The following dict defines the hierarchy of realms. This has direct impact on
+# the admin privileges: An admin of a specific realm can only query and edit
+# members of that realm, who are not member of another realm implying that
+# realm.
+#
+# This dict is not evaluated recursively, so recursively implied realms must
+# be added manually to make the implication transitive.
+REALM_INHERITANCE = {
+    'cde': {'event', 'assembly', 'ml'},
+    'event': {'ml'},
+    'assembly': {'ml'},
+    'ml': set(),
+}
+
+
+def extract_realms(roles):
+    """Get the set of realms from a set of user roles.
+
+    When checking admin privileges, we must often check, if the user's realms
+    are a subset of some other set of realms. To help with this, this function
+    helps with this task, by extracting only the actual realms from a user's
+    set of roles.
+
+    :param roles: All roles of a user
+    :type roles: {str}
+    :return: The realms the user is member of
+    :rtype: {str}
+    """
+    return roles & REALM_INHERITANCE.keys()
+
+
+def implied_realms(realm):
+    """Get additional realms implied by membership in one realm
+
+    :param realm: The name of the realm to check
+    :type realm: str
+    :return: A set of the names of all implied realms
+    :rtype: {str}
+    """
+    return REALM_INHERITANCE.get(realm, set())
+
+
+def implying_realms(realm):
+    """Get all realms where membership implies the given realm.
+
+    This can be used to determine the realms in which a user must *not* be to be
+    listed in a specific realm or be edited by its admins.
+
+    :param realm: The realm to search implying realms for
+    :type realm: str
+    :return: A set of all realms implying
+    """
+    return set(r
+               for r, implied in REALM_INHERITANCE.items()
+               if realm in implied)
+
+
 def privilege_tier(roles):
-    """Check admin privilege level.
+    """Get required admin privilege level to edit a user
 
     If a user has access to the passed realms, what kind of admin
-    privileg does one need to edit the user?
+    privilege does one need to edit the user?
+
+    The implemented logic grants admins permissions to the admin to (super)
+    admins, core_admins and admins of any of the user's realms, which is not
+    implied by another of its realms. This should not be used for creating
+    users; use privilege_create() instead.
 
     :type roles: {str}
     :rtype: {str}
     :returns: Admin roles that may edit this user.
     """
-    relevant = roles & {"cde", "event", "ml", "assembly"}
+    # Get primary user realms (those, that don't imply other realms)
+    relevant = roles & REALM_INHERITANCE.keys()
+    implied_roles = set()
+    for k in relevant:
+        implied_roles |= REALM_INHERITANCE.get(k, set())
+    relevant -= implied_roles
+
     ret = {"core_admin", "admin"}
-    if relevant == {"ml"}:
-        return ret | {"ml_admin"}
-    if "assembly" in relevant and relevant <= {"ml", "assembly"}:
-        return ret | {"assembly_admin"}
-    if "event" in relevant and relevant <= {"ml", "event"}:
-        return ret | {"event_admin"}
-    if "cde" in relevant and relevant <= {"ml", "event", "assembly", "cde"}:
-        return ret | {"cde_admin"}
+    for realm in relevant:
+        ret.add(realm + "_admin")
     return ret
+
+
+def check_create_privilege(user_roles, admin_roles):
+    """Check admin privileges for creating a user 
+
+    If a user will have access to the given realms, is the admin with the given
+    roles allowed to create that user? 
+
+    The implemented logic is slightly different from
+    `privilege_tier(user_roles) & admin_roles`: We don't want a realm admin to
+    smuggle users into another realm. Thus, an admin is only allowed to create
+    users in the realms he is admin of and -- if required -- the realms implied
+    by those. Except for (super) admins and core_admins; they can do anything.
+
+    :type user_roles: {str}
+    :type admin_roles: {str}
+    :rtype: bool
+    :returns: True if the admin user is allowed to create that user
+    """
+    if admin_roles & {"core_admin", "admin"}:
+        return True
+
+    relevant = user_roles & REALM_INHERITANCE.keys()
+    implied_roles = set()
+    for k in relevant:
+        implied_roles |= REALM_INHERITANCE.get(k, set())
+    relevant -= implied_roles
+
+    return all((realm + "_admin") in admin_roles
+               for realm in relevant)
+
 
 #: Creating a persona requires one to supply values for nearly all fields,
 #: although in some realms they are meaningless. Here we provide a base skeleton

@@ -36,7 +36,8 @@ from cdedb.backend.common import (
 from cdedb.common import (
     n_, glue, unwrap, ASSEMBLY_FIELDS, BALLOT_FIELDS, FUTURE_TIMESTAMP, now,
     ASSEMBLY_ATTACHMENT_FIELDS, schulze_evaluate, name_key, open_utf8,
-    extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize)
+    extract_roles, PrivilegeError, ASSEMBLY_BAR_MONIKER, json_serialize,
+    implying_realms)
 from cdedb.security import secure_random_ascii
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
@@ -177,12 +178,18 @@ class AssemblyBackend(AbstractBackend):
         """
         query = affirm("query", query)
         if query.scope == "qview_persona":
+            # Include only un-archived assembly-users
             query.constraints.append(("is_assembly_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       False))
             query.spec["is_assembly_realm"] = "bool"
             query.spec["is_archived"] = "bool"
+            # Exclude users of any higher realm (implying event)
+            for realm in implying_realms('assembly'):
+                query.constraints.append(
+                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
+                query.spec["is_{}_realm".format(realm)] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

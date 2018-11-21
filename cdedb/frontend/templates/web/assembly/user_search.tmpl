@@ -10,5 +10,6 @@
 {{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Nutzer verwalten", active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('assembly') }}
+    {{ generic.user_search('assembly', info="Diese Nutzerverwaltung findet nur (reine) Versammlungs-Nutzer, keine "
+                                            "CdE-Mitglieder, auch nicht ehemalige.") }}
 {% endblock %}

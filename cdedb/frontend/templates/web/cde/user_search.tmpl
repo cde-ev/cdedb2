@@ -18,6 +18,9 @@
                 {{ util.href(cdedblink('cde/batch_admission'), "Massenaufnahme", icon="import",
                              aclass="btn btn-default btn-sm") }}
             </div>
+            <p class="text-muted">{{ util.make_icon('info-sign') }}
+                Hier können nur CdEler gefunden werden (auch ehemalige).
+            </p>
         </div>
         <div class="col-md-8">
             {{ generic.place_default_queries("cde/user_search", default_queries) }}

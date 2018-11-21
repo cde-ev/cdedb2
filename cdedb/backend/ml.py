@@ -13,7 +13,7 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set, singularize)
 from cdedb.common import (
     n_, glue, PrivilegeError, unwrap, MAILINGLIST_FIELDS, SubscriptionStates,
-    extract_roles)
+    extract_roles, implying_realms)
 from cdedb.query import QueryOperators
 from cdedb.database.connection import Atomizer
 import cdedb.database.constants as const
@@ -120,12 +120,18 @@ class MlBackend(AbstractBackend):
         """
         query = affirm("query", query)
         if query.scope == "qview_persona":
+            # Include only un-archived ml-users
             query.constraints.append(("is_ml_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       False))
             query.spec["is_ml_realm"] = "bool"
             query.spec["is_archived"] = "bool"
+            # Exclude users of any higher realm (implying event)
+            for realm in implying_realms('ml'):
+                query.constraints.append(
+                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
+                query.spec["is_{}_realm".format(realm)] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query)

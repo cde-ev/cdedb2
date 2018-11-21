@@ -17,6 +17,9 @@
                 {{ util.href(cdedblink("event/create_user"), "Nutzer anlegen", icon="plus",
                              aclass="btn btn-success btn-sm") }}
             </div>
+            <p class="text-muted">{{ util.make_icon('info-sign') }}
+                Diese Nutzerverwaltung findet nur Veranstaltungs-Nutzer, keine CdE-Mitglieder, auch nicht ehemalige.
+            </p>
         </div>
         <div class="col-md-8">
             {{ generic.place_default_queries("event/user_search", default_queries) }}

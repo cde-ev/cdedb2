@@ -968,7 +968,7 @@ class TestEventBackend(BackendTest):
                                   'is_admin': False,
                                   'is_archived': False,
                                   'is_assembly_admin': False,
-                                  'is_assembly_realm': False,
+                                  'is_assembly_realm': True,
                                   'is_cde_admin': False,
                                   'is_cde_realm': False,
                                   'is_core_admin': False,

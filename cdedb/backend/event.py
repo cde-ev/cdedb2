@@ -17,7 +17,7 @@ from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, PsycoJson)
+    REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -434,12 +434,18 @@ class EventBackend(AbstractBackend):
         elif query.scope == "qview_event_user":
             if not self.is_admin(rs):
                 raise PrivilegeError(n_("Admin only."))
+            # Include only un-archived event-users
             query.constraints.append(("is_event_realm", QueryOperators.equal,
                                       True))
             query.constraints.append(("is_archived", QueryOperators.equal,
                                       False))
             query.spec["is_event_realm"] = "bool"
             query.spec["is_archived"] = "bool"
+            # Exclude users of any higher realm (implying event)
+            for realm in implying_realms('event'):
+                query.constraints.append(
+                    ("is_{}_realm".format(realm), QueryOperators.equal, False))
+                query.spec["is_{}_realm".format(realm)] = "bool"
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, view=view)
