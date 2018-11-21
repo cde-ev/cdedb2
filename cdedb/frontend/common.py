@@ -674,7 +674,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
                     "core/show_user", "confirm_id", persona_id, timeout=None)}
-            if quote_me is not None:
+            if quote_me:
                 params['quote_me'] = True
             return cdedburl(rs, 'core/show_user', params)
         errorsdict = {}
