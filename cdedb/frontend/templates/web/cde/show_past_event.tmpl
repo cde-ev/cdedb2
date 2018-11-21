@@ -102,6 +102,7 @@
                         (
                         {%- for pcourse_id in participant['pcourse_ids'] %}
                             {%- if pcourse_id -%}
+                                {{ courses[pcourse_id]['nr'] }}.
                                 {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
                                     courses[pcourse_id]['title']) }}
                                 {%- if not loop.last %}, {% endif -%}
