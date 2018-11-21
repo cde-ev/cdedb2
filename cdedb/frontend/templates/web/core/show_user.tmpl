@@ -297,26 +297,29 @@
             </dl>
         {% endif %}
 
-        {% if participation_info %}
+        {% if past_events %}
             <h4 class="heading-underline">Veranstaltungen</h4>
             <ul>
-            {% for info in participation_info|sort(attribute="tempus") %}
+            {#  FIXME: Sort by name if tempus is equal #}
+            {% for pevent_id, pevent in past_events|xdictsort('tempus') %}
                 <li>
-                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": info['pevent_id']}),
-                                 info['event_name'], readonly='cde' not in user.roles) -}}
-                    {% if info['is_orga'] %}
+                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
+                                 pevent['event_name'], readonly='cde' not in user.roles) -}}
+                    {% if pevent['is_orga'] %}
                         (Orga)
-                    {% else -%}
-                        {% if info['course_name'] -%}
-                            :
-                            {{ info['nr']|e }}.
-                            {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": info['pevent_id'],
-                                                                            "pcourse_id": info['pcourse_id']}),
-                                         info['course_name'], readonly='cde' not in user.roles) }}
-                            {% if info['is_instructor'] %}
+                    {%- endif -%}
+                    {% if pevent['courses'] -%}
+                        :
+                        {% for pcourse_id, pcourse in pevent['courses']|xdictsort('nr', pad=True) %}
+                            {{ pcourse['nr']|e }}.
+                            {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent_id,
+                                                                            "pcourse_id": pcourse_id}),
+                                         pcourse['course_name'], readonly='cde' not in user.roles) }}
+                            {%- if pcourse['is_instructor'] %}
                                 (Kursleiter)
-                            {% endif %}
-                        {% endif %}
+                            {%- endif -%}
+                            {% if not loop.last %}, {% endif %}
+                        {% endfor %}
                     {% endif %}
                 </li>
             {% endfor %}

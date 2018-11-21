@@ -314,12 +314,27 @@ class CoreFrontend(AbstractFrontend):
         if not is_relative_admin and "notes" in data:
             del data['notes']
 
-        ## Add participation info
-        participation_info = None
+        ## Add past event participation info
+        past_events = None
         if {"event", "cde"} & access_levels and {"event", "cde"} & roles:
             participation_info = self.pasteventproxy.participation_info(
                 rs, persona_id)
-
+            # Group participation data by pevent_id: First get distinct past
+            # events from participation data, afterwards add dict of courses
+            past_events = {
+                pi['pevent_id']: {
+                    k: pi[k]
+                    for k in ('pevent_id', 'event_name', 'tempus', 'is_orga')}
+                for pi in participation_info}
+            for past_event_id, past_event in past_events.items():
+                past_event['courses'] = {
+                    pi['pcourse_id']: {
+                        k: pi[k]
+                        for k in ('pcourse_id', 'course_name', 'nr',
+                                  'is_instructor')}
+                    for pi in participation_info
+                    if pi['pevent_id'] == past_event_id
+                }
 
         ## Check whether we should display an option for using the quota
         quoteable = (not quote_me
@@ -327,7 +342,7 @@ class CoreFrontend(AbstractFrontend):
                      and "searchable" in rs.user.roles
                      and rs.ambience['persona']['is_searchable'])
         return self.render(rs, "show_user", {
-            'data': data, 'participation_info': participation_info,
+            'data': data, 'past_events': past_events,
             'is_relative_admin': is_relative_admin, 'quoteable': quoteable})
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
