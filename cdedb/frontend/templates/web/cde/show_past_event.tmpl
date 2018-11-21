@@ -69,7 +69,7 @@
                                     arialabel="ID des neuen Teilnehmers") }}
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
-                                    '{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s&sphere=cde'}}',
+                                    '{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s&sphere=event'}}',
                                     {{ participants.keys()|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
                                 );
                             </script>
