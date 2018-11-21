@@ -1122,7 +1122,9 @@ class EventBackend(AbstractBackend):
                 conditions.append("rtracks.course_instructor = %s")
                 params += (course_id,)
             if position in (cfp.any_choice, cfp.anywhere):
-                conditions.append("choices.course_id = %s")
+                conditions.append(
+                    "(choices.course_id = %s AND "
+                    " choices.rank < course_tracks.num_choices)")
                 params += (course_id,)
             elif position >= 0:
                 conditions.append(
