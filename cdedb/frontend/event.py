@@ -1154,7 +1154,8 @@ class EventFrontend(AbstractUserFrontend):
                             ## Let instructors instruct
                             tmp['tracks'][track_id] = {'course_id': instructor}
                             continue
-                        for choice in reg_track['choices']:
+                        for choice in (reg_track['choices']
+                                       [:tracks[track_id]['num_choices']]):
                             if track_id in courses[choice]['active_segments']:
                                 ## Assign first possible choice
                                 tmp['tracks'][track_id] = {'course_id': choice}
