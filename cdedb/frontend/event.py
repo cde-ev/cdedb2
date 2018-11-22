@@ -1861,7 +1861,7 @@ class EventFrontend(AbstractUserFrontend):
                 if len(cids) != track['num_choices']:
                     rs.errors.extend(
                         ("course_choice{}_{}".format(track_id, i),
-                         ValueError(n_("Must choose three different courses.")))
+                         ValueError(n_("Must choose different courses.")))
                         for i in range(track['num_choices']))
         if not standard['foto_consent']:
             rs.errors.append(("foto_consent",
@@ -2295,7 +2295,7 @@ class EventFrontend(AbstractUserFrontend):
 
         This takes care of extracting the values and validating them. Which
         values to extract depends on the event. This puts less restrictions
-        on the input (like not requiring three different course choices).
+        on the input (like not requiring different course choices).
 
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}

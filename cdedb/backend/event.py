@@ -566,7 +566,7 @@ class EventBackend(AbstractBackend):
                 ret *= self.sql_update(rs, "event.course_tracks", update)
                 self.event_log(
                     rs, const.EventLogCodes.track_updated, event_id,
-                    additional_info=x)
+                    additional_info=data[x]['title'])
 
         ## deleted
         if deleted:
@@ -575,7 +575,7 @@ class EventBackend(AbstractBackend):
             for x in deleted:
                 self.event_log(
                     rs, const.EventLogCodes.track_removed, event_id,
-                    additional_info=x)
+                    additional_info=data[x]['title'])
         return ret
 
     @access("event")
