@@ -25,7 +25,7 @@ from cdedb.common import (
     PERSONA_ASSEMBLY_FIELDS, PERSONA_ML_FIELDS, PERSONA_ALL_FIELDS,
     privilege_tier, now, QuotaException, PERSONA_STATUS_FIELDS, PsycoJson,
     merge_dicts, PERSONA_DEFAULTS, ArchiveError, extract_realms,
-    implied_realms, check_create_privilege)
+    implied_realms)
 from cdedb.security import secure_random_ascii, secure_token_hex
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -100,7 +100,7 @@ class CoreBackend(AbstractBackend):
             return True
         roles = extract_roles(unwrap(self.get_personas(rs, (persona_id,))),
                               introspection_only=True)
-        return bool(rs.user.roles & privilege_tier(roles))
+        return any(admin <= rs.user.roles for admin in privilege_tier(roles))
 
     @staticmethod
     def verify_password(password, password_hash):
@@ -1352,7 +1352,9 @@ class CoreBackend(AbstractBackend):
             'is_ml_admin': False,
         })
         ## Check if admin has rights to create the user in its realms
-        if not check_create_privilege(extract_roles(data), rs.user.roles):
+        if not any(admin <= rs.user.roles
+                   for admin in privilege_tier(extract_roles(data),
+                                               conjunctive=True)):
             raise PrivilegeError(n_("Unable to create this sort of persona."))
         ## modified version of hash for 'secret' and thus safe/unknown plaintext
         data['password_hash'] = (

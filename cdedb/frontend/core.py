@@ -19,7 +19,8 @@ from cdedb.frontend.common import (
     csv_output, query_result_to_json, enum_entries_filter)
 from cdedb.common import (
     n_, ProxyShim, pairwise, extract_roles, unwrap, PrivilegeError, name_key,
-    now, merge_dicts, ArchiveError, open_utf8, implied_realms)
+    now, merge_dicts, ArchiveError, open_utf8, implied_realms,
+    REALM_INHERITANCE)
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.assembly import AssemblyBackend
@@ -779,6 +780,23 @@ class CoreFrontend(AbstractFrontend):
             rs.values['is_search'] = is_search = False
         return self.render(rs, "archived_user_search", params)
 
+    @staticmethod
+    def admin_bits(rs):
+        """Determine realms this admin can see.
+
+        This is somewhat involved due to realm inheritance.
+
+        :type rs: :py:class:`cdedb.common.RequestState`
+        :rtype: {str}
+        """
+        ret = set()
+        if rs.user.roles & {"core_admin", "admin"}:
+            ret |= REALM_INHERITANCE.keys()
+        for realm in REALM_INHERITANCE:
+            if "{}_admin".format(realm) in rs.user.roles:
+                ret |= {realm} | implied_realms(realm)
+        return ret
+
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin")
     def admin_change_user_form(self, rs, persona_id):
@@ -797,7 +815,8 @@ class CoreFrontend(AbstractFrontend):
         merge_dicts(rs.values, data)
         if data['change_status'] == const.MemberChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        return self.render(rs, "admin_change_user")
+        return self.render(rs, "admin_change_user",
+                           {'admin_bits': self.admin_bits(rs)})
 
     @access("core_admin", "cde_admin", "event_admin", "ml_admin",
             "assembly_admin", modi={"POST"})
@@ -829,7 +848,7 @@ class CoreFrontend(AbstractFrontend):
         attributes = REALM_ATTRIBUTES['persona']
         roles = extract_roles(rs.ambience['persona'])
         for realm in ('ml', 'assembly', 'event', 'cde'):
-            if realm in roles:
+            if realm in roles and realm in self.admin_bits(rs):
                 attributes = attributes.union(REALM_ATTRIBUTES[realm])
         data = request_dict_extractor(rs, attributes)
         data['id'] = persona_id

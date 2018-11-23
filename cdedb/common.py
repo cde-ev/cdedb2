@@ -1015,6 +1015,15 @@ def extract_roles(session, introspection_only=False):
 # members of that realm, who are not member of another realm implying that
 # realm.
 #
+# This defines an ordering on the realms making the realms a partially
+# ordered set. Later we will use the notion of maximal elements of subsets,
+# which are those which have nothing above them. To clarify this two examples:
+#
+# * in the set {'assembly', 'event', 'ml'} the elements 'assembly' and
+#   'event' are maximal
+#
+# * in the set {'cde', 'assembly', 'event'} only 'cde' is maximal
+#
 # This dict is not evaluated recursively, so recursively implied realms must
 # be added manually to make the implication transitive.
 REALM_INHERITANCE = {
@@ -1067,62 +1076,44 @@ def implying_realms(realm):
                if realm in implied)
 
 
-def privilege_tier(roles):
-    """Get required admin privilege level to edit a user
+def privilege_tier(roles, conjunctive=False):
+    """Required admin privilege relative to a persona (signified by its roles)
 
-    If a user has access to the passed realms, what kind of admin
-    privilege does one need to edit the user?
+    Basically this answers the question: If a user has access to the passed
+    realms, what kind of admin privilege does one need to perform an
+    operation on the user?
 
-    The implemented logic grants admins permissions to the admin to (super)
-    admins, core_admins and admins of any of the user's realms, which is not
-    implied by another of its realms. This should not be used for creating
-    users; use privilege_create() instead.
+    First we determine the relevant subset of the passed roles. These are
+    the maximal elements according to the realm inheritance. These apex
+    roles regulate the access.
+
+    The answer now depends on whether the operation pertains to some
+    specific realm (editing a user is the prime example here) or affects all
+    realms (creating a user is the corresponding example). This distinction
+    is controlled by the conjunctive parameter, if it is True the operation
+    lies in the intersection of all realms.
+
+    Note that core admins and super admins are always allowed access.
 
     :type roles: {str}
-    :rtype: {str}
-    :returns: Admin roles that may edit this user.
+    :type conjunctive: bool
+    :rtype: [{str}]
+    :returns: List of sets of admin roles. Any of these sets is sufficient.
+
     """
     # Get primary user realms (those, that don't imply other realms)
     relevant = roles & REALM_INHERITANCE.keys()
-    implied_roles = set()
-    for k in relevant:
-        implied_roles |= REALM_INHERITANCE.get(k, set())
-    relevant -= implied_roles
-
-    ret = {"core_admin", "admin"}
-    for realm in relevant:
-        ret.add(realm + "_admin")
+    if relevant:
+        implied_roles = set.union(*(
+            REALM_INHERITANCE.get(k, set()) for k in relevant))
+        relevant -= implied_roles
+    if conjunctive:
+        ret = ({realm + "_admin" for realm in relevant},
+               {"core_admin"}, {"admin"})
+    else:
+        ret = tuple({realm + "_admin"} for realm in relevant)
+        ret += ({"core_admin"}, {"admin"})
     return ret
-
-
-def check_create_privilege(user_roles, admin_roles):
-    """Check admin privileges for creating a user 
-
-    If a user will have access to the given realms, is the admin with the given
-    roles allowed to create that user? 
-
-    The implemented logic is slightly different from
-    `privilege_tier(user_roles) & admin_roles`: We don't want a realm admin to
-    smuggle users into another realm. Thus, an admin is only allowed to create
-    users in the realms he is admin of and -- if required -- the realms implied
-    by those. Except for (super) admins and core_admins; they can do anything.
-
-    :type user_roles: {str}
-    :type admin_roles: {str}
-    :rtype: bool
-    :returns: True if the admin user is allowed to create that user
-    """
-    if admin_roles & {"core_admin", "admin"}:
-        return True
-
-    relevant = user_roles & REALM_INHERITANCE.keys()
-    implied_roles = set()
-    for k in relevant:
-        implied_roles |= REALM_INHERITANCE.get(k, set())
-    relevant -= implied_roles
-
-    return all((realm + "_admin") in admin_roles
-               for realm in relevant)
 
 
 #: Creating a persona requires one to supply values for nearly all fields,

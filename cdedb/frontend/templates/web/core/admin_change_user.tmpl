@@ -24,19 +24,19 @@
         {{ util.form_input_text(name="title", label="Titel") }}
         {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
         {{ util.form_input_text(name="family_name", label="Nachname") }}
-        {% if values['is_cde_realm'] %}
+        {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             {{ util.form_input_text(name="birth_name", label="Geburtsname") }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
         {{ util.form_input_text(name="display_name", label="Rufname") }}
-        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+        {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
                                       label="Geschlecht") }}
             {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date") }}
         {% endif %}
 
         <h4 class="heading-underline">Account</h4>
-        {% if values['is_cde_realm'] %}
+        {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             {{ util.form_input_checkbox(name="is_searchable", label="Suchbar (Datenschutz-Zustimmung)") }}
             {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB") }}
         {% endif %}
@@ -45,15 +45,15 @@
 
         <h4 class="heading-underline">Kontakt</h4>
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}
-        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+        {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
             {{ util.form_input_text(name="telephone", label="Telefon") }}
             {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
         {% endif %}
-        {% if values['is_cde_realm'] %}
+        {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             {{ util.form_input_text(name="weblink", label="WWW") }}
         {% endif %}
 
-        {% if values['is_cde_realm'] or values['is_event_realm'] %}
+        {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
             <h4 class="heading-underline">Adresse</h4>
             {{ util.form_input_text(name="address", label="Straße") }}
             {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
@@ -61,7 +61,7 @@
             {{ util.form_input_text(name="location", label="Stadt") }}
             {{ util.form_input_text(name="country", label="Land") }}
         {% endif %}
-        {% if values['is_cde_realm'] %}
+        {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             <h4 class="heading-underline">Zweitadresse</h4>
             {{ util.form_input_text(name="address2", label="Straße") }}
             {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
@@ -70,7 +70,7 @@
             {{ util.form_input_text(name="country2", label="Land") }}
         {% endif %}
 
-        {% if values['is_cde_realm'] %}
+        {% if values['is_cde_realm'] and 'cde' in admin_bits %}
             <h4 class="heading-underline">Lebenslauf</h4>
             {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
             {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
