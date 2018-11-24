@@ -364,9 +364,9 @@
                                 {% endtrans %}
                             </p>
                             <p>
-                                {% trans %}
+                                {% trans gt="<code>></code>", eq="<code>=</code>" %}
                                     To enter Your preferencelist, use the Shortnames given in the list of Candidates and the
-                                    <code>></code> and <code>=</code> characters. Use the Greate-Than character <code>></code>
+                                    {{ gt }} and {{ eq }} characters. Use the Greater-Than character {{ gt }}
                                     to give the Candidates left of the character higher preference, than those on the right.
                                     Use the Equals character to give two Candidates the same preference. You need to have all
                                     Candidates in Your preferencelist.
@@ -374,11 +374,11 @@
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
-                                    {% trans %}
-                                        Additionally You need to use the Rejection Bar <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code>
-                                        in Your preferencelist. Use it in Your preferencelist like You would a Candidate. Put all
-                                        Candidates You deem suitable higher than <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> and all
-                                        Candidates You reject lower, i.e. to the right of <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code>.
+                                    {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER|e) %}
+                                        Additionally You need to use the Rejection Bar {{ abm }} in Your preferencelist.
+                                        Use it in Your preferencelist like You would a Candidate. Put all
+                                        Candidates You deem suitable higher than {{ abm }} and all
+                                        Candidates You reject lower, i.e. to the right of {{ abm }}.
                                         Should no Candidate win against the bar, the board may take additional measures.
                                     {% endtrans %}
                                 </p>
