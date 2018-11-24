@@ -36,9 +36,10 @@ body{
 }
 .logo {
     padding-bottom: 10px;
+    width: 80%;
 }
 .logo img {
-    max-width: 80%;
+    max-width: 100%;
 }
 
 /* ********************** *
