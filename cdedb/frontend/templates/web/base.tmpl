@@ -46,7 +46,8 @@
                     <form action="{{ cdedblink('core/change_locale') }}" method="post" style="display: inline;">
                             <input type="hidden" name="wants" value="{{ encode_parameter("core/change_locale", "wants", request_url)|e }}" />
                         {% for l in ('de', 'en') if l != lang %}
-                            <button type="submit" class="btn btn-link" name="locale" value="{{ l|e }}">{{ l|e }}</button>
+                            <button type="submit" class="btn btn-link" name="locale" value="{{ l|e }}">
+                                <img src="{{ staticurl("flags/{}.png".format(l))|e }}" /></button>
                         {% endfor %}
                     </form>
                 </div>
