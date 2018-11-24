@@ -332,9 +332,9 @@
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
-            {{- input_submit(value, name, anid, aclass, icon, readonly) }}
+            {{- input_submit(gettext(value), name, anid, aclass, icon, readonly) }}
             {%- if cancellink %}
-                &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default cancel") }}
+                &emsp; {{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>

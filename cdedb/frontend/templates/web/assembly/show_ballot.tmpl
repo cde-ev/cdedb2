@@ -31,7 +31,7 @@
         <dt>{% trans %}Voting Period{% endtrans %}</dt>
         <dd>
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang)|e,
-                     end= ambience['ballot']['vote_end']|datetime(lang=lang)|e %}
+                     end=ambience['ballot']['vote_end']|datetime(lang=lang)|e %}
             From {{ begin }} until {{ end }}.
             {% endtrans %}
             {% if ambience['ballot']['extended'] is none %}
@@ -148,7 +148,7 @@
         {% if ambience['ballot']['use_bar'] and result['losers'] %}
             <p class="text-info">
                 {% if ambience['ballot']['votes'] %}
-                    {% trans against_all=gettext("Against all Candidates.") %}
+                    {% trans against_all=gettext("Against all Candidates") %}
                         The following Candidates have less votes than the {{ against_all }} choice.
                     {% endtrans %}
                 {% else %}
@@ -546,7 +546,7 @@
                             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                                 <form action="{{ cdedblink('assembly/remove_attachment',
                                                            {'attachment_id': attachment_id})|e }}"
-                                        method="POST" id="removeattachmentform{{ attachment_id|e }}",
+                                        method="POST" id="removeattachmentform{{ attachment_id|e }}"
                                         style="display: inline;">
                                     {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
                                             title=gettext("Delete File")) }}

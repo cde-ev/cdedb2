@@ -28,7 +28,7 @@
             {% if attends %}
                 <strong class="text-success">{% trans %}You are participating in this assembly.{% endtrans %}</strong>
             {% else %}
-                <p><strong class="text-muted">{% trans %}You are not participating.") {% endtrans %}</strong></p>
+                <p><strong class="text-muted">{% trans %}You are not participating.{% endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
                         {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
@@ -76,7 +76,7 @@
             
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
-                <h4>{% trans %}Ballot File{% endtrans %}</h4>
+                <h4>{% trans %}Ballot Files{% endtrans %}</h4>
                     {% for ballot_id, ballot in ballots|dictsort %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
