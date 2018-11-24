@@ -227,7 +227,9 @@ class CoreFrontend(AbstractFrontend):
             self.redirect(rs, "core/index")
 
         if locale in self.conf.I18N_LANGUAGES:
-            rs.response.set_cookie("locale", locale)
+            rs.response.set_cookie(
+                "locale", locale,
+                expires=now() + datetime.timedelta(days=10 * 365))
         else:
             rs.notify("error", n_("Unsupported locale"))
         return rs.response
