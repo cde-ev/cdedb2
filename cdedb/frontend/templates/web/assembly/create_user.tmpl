@@ -4,11 +4,11 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint = 'weak' %}
 {% import "web/generic.tmpl" as generic with context %}
-{% block title %}Neuen Versammlungsnutzer anlegen{% endblock %}
+{% block title %}{{ gettext("Create new Assembly-User") }}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Versammlungs-Nutzer verwalten") }}
-{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Nutzer anlegen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Manage Assembly-Users")) }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Create User"), active=True) }}
 {% endblock %}
 {% block content %}
     {{ generic.create_user('assembly') }}

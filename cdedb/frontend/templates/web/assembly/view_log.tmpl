@@ -1,23 +1,23 @@
 {% set sidenav_active='assembly_log' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}
-Versammlung – Logs [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
-{% endblock %}
+{% block title %} {% trans start=values['start']|int|e, end=(values['start']|int + log|length)|e%}
+Assembly – Logs [{{ start }}–{{ end }}]
+{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("assembly/view_log"), "Log", active=True) }}
+{{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">
         <thead>
         <tr>
-            <th>Zeitstempel</th>
-            <th>Code</th>
-            <th>Verantwortlich</th>
-            <th>Versammlung</th>
-            <th>Betroffen</th>
-            <th>Zusatz</th>
+            <th>{% trans %}Timestamp{% endtrans %}</th>
+            <th>{% trans %}Code{% endtrans %}</th>
+            <th>{% trans %}Submitted By{% endtrans %}</th>
+            <th>{% trans %}Assembly{% endtrans %}</th>
+            <th>{% trans %}Affected{% endtrans %}</th>
+            <th>{% trans %}Additional Info{% endtrans %}</th>
         </tr>
         </thead>
         <tbody>
@@ -54,12 +54,12 @@ Versammlung – Logs [{{ values['start']|int|e }}–{{ (values['start']|int + lo
     </table>
     {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
     <form action="{{ cdedblink('assembly/view_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-        {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
+        {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
                 entries=enums['AssemblyLogCodes']|enum_entries(processing=gettext), small=True) }}
-        {{ util.form_input_select(name="assembly_id", label="Versammlung", nulloption="",
+        {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
                                   entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
-        {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
-        {{ util.form_input_submit(value="Anzeigen", small=True) }}
+        {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
+        {{ util.form_input_submit(value=gettext("Show"), small=True) }}
     </form>
     {% endcall %}
 {% endblock %}

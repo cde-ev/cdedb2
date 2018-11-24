@@ -72,24 +72,24 @@
                         {% if jshint == 'strong' %}
                             <div class="jshint pull-right text-danger">
                                 {{ util.make_icon('warning-sign') }}
-                                {% trans %}Diese Seite bietet mit JavaScript erweiterte Funktionalität.{% endtrans %}
+                                {% trans %}This site provides additional functionality with JavaScript enabled.{% endtrans %}
                             </div>
                         {% else %}
                             <div class="jshint pull-right text-warning">
                                 {{ util.make_icon('warning-sign') }}
-                                {% trans %}Diese Seite ist mit JavaScript einfacher nutzbar.{% endtrans %}
+                                {% trans %}This site can be used more easily with JavaScript enabled.{% endtrans %}
                             </div>
                         {% endif %}
                     </noscript>
                 {% endif %}
             </div>
             <!-- main navigation bar -->
-            <nav class="navbar navbar-default" aria-label="Hauptmenü">
+            <nav class="navbar navbar-default" aria-label="{% trans %}Main Menu{% endtrans %}">
                 <div class="navbar-header">
-                    <p class="navbar-collapse-header">Hauptmenü</p>
+                    <p class="navbar-collapse-header">{% trans %}Main Menu{% endtrans %}</p>
                     <button type="button" class="navbar-toggle collapsed hide" data-toggle="collapse"
                             data-target="#navbar-collapse-1" aria-expanded="false" id="button-navbar-toggle">
-                        <span class="sr-only">Hauptmenü einblenden</span>
+                        <span class="sr-only">{% trans %}Display Main Menu{% endtrans %}</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
@@ -103,15 +103,15 @@
                                 <form action="{{ cdedblink("core/logout")|e }}" method="POST" id="logoutform"
                                   class="navbar-form">
                                     <p class="navbar-text">
-                                        <span class="sr-only">Eingeloggt als</span>
+                                        <span class="sr-only">{% trans %}Logged-In as{% endtrans %}</span>
                                         <span id="displayname">
                                             {{ util.href(cdedblink("core/mydata"), user.display_name, icon="user") }}
                                         </span>
                                     </p>
-                                    <button type="submit" name="submitlogout" value="Abmelden"
-                                      class="btn navbar-button btn-default" title="Logout">
+                                    <button type="submit" name="submitlogout" value="{% trans %}Logout{% endtrans %}"
+                                      class="btn navbar-button btn-default" title="{% trans %}Logout{% endtrans %}">
                                         <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
-                                        <span class="visible-xs-inline-block">Logout</span>
+                                        <span class="visible-xs-inline-block">{% trans %}Logout{% endtrans %}</span>
                                     </button>
                                 </form>
                             </li>
@@ -120,26 +120,26 @@
 
                     <ul class="nav navbar-nav">
                         <li {% if mainnav_active == 'core' %}class="active" aria-current="page"{% endif %}>
-                            {{ util.href(cdedblink("core/index"), "Index", icon="home") }}
+                            {{ util.href(cdedblink("core/index"), gettext("Index"), icon="home") }}
                             </li>
                         {% if "cde" in user.roles %}
                             <li {% if mainnav_active == 'cde' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("cde/index"), "Mitglieder", icon="education") }}
+                                {{ util.href(cdedblink("cde/index"), gettext("Members"), icon="education") }}
                                 </li>
                         {% endif %}
                         {% if "event" in user.roles %}
                             <li {% if mainnav_active == 'event' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("event/index"), "Veranstaltungen", icon="blackboard") }}
+                                {{ util.href(cdedblink("event/index"), gettext("Events"), icon="blackboard") }}
                             </li>
                         {% endif %}
                         {% if "ml" in user.roles %}
                             <li {% if mainnav_active == 'ml' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("ml/index"), "Mailinglisten", icon="envelope") }}
+                                {{ util.href(cdedblink("ml/index"), gettext("Mailinglists"), icon="envelope") }}
                             </li>
                         {% endif %}
                         {% if "assembly" in user.roles %}
                             <li {% if mainnav_active == 'assembly' %}class="active" aria-current="page"{% endif %}>
-                                {{ util.href(cdedblink("assembly/index"), "Versammlungen", icon="bullhorn") }}
+                                {{ util.href(cdedblink("assembly/index"), gettext("Assemblies"), icon="bullhorn") }}
                             </li>
                         {% endif %}
                     </ul>
@@ -151,13 +151,13 @@
             </script>
 
             <div class="row">
-                <div class="col-md-3" role="navigation" id="sidebar" aria-label="Untermenü">
+                <div class="col-md-3" role="navigation" id="sidebar" aria-label="{% trans %}Sub Menu{% endtrans %}">
                     {% block navigation %}
                     {% endblock %}
                 </div>
                 <div class="col-md-9">
                     {% if self.breadcrumb %}
-                        <h6 id="bc-title" class="sr-only">Du bist hier:</h6>
+                        <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
                         <ol class="breadcrumb breadcrumb-hanging" role="navigation" aria-labelledby="bc-title">
                             {% block breadcrumb %}{% endblock %}
                         </ol>
@@ -168,8 +168,8 @@
                                              "warning" : "exclamation-sign", "error" : "remove-sign"},
                                 alerttypes = {"success" : "success", "info" : "info", "question" : "info",
                                               "warning" : "warning", "error" : "danger"},
-                                messagetypes = {"success" : "Erfolg!", "info" : "Info!", "question" : "Frage:",
-                                                "warning" : "Warnung!", "error" : "Fehler!"} %}
+                                messagetypes = {"success" : _("Success!"), "info" : _("Info!"), "question" : _("Question:"),
+                                                "warning" : _("Warning!"), "error" : _("Error!")} %}
                             {% for ntype, message, params in notifications %}
                                 <div class="alert alert-{{ alerttypes[ntype] }}" role="alert">
                                     <span class="glyphicon glyphicon-{{ icontypes[ntype] }}" aria-hidden="true"></span>
@@ -182,12 +182,12 @@
 
                     <div role="main">
                         {% block heading %}
-                            <h1 class="title">{{ self.title() }}</h1>
+                            <h1 class="title">{{ gettext(self.title()) }}</h1>
                         {% endblock %}
 
                         <div id="content">
                             {% block content %}
-                                This should not be visible.
+                                {% trans %}This should not be visible.{% endtrans %}
                             {% endblock %}
                         </div>
                     </div>
@@ -196,9 +196,9 @@
         </div>
         <div id="footer" class="container">
             {% block footer %}
-                © Club der Ehemaligen e.V. – Datenbank-Entwicklungs-Team
-                <a href="mailto:CdE-Datenbankentwicklungsteam <cdedb@lists.cde-ev.de>">&lt;cdedb@lists.cde-ev.de&gt;</a>
-                <br /> Version {{ GIT_COMMIT|e }}
+                © {% trans %}Club der Ehemaligen e.V.{% endtrans %} – {% trans %}Database-Development-Team{% endtrans %}
+                <a href="mailto:{% trans %}CdE-Database-Development-Team{% endtrans %} <cdedb@lists.cde-ev.de>">&lt;cdedb@lists.cde-ev.de&gt;</a>
+                <br /> {% trans %}Version{% endtrans %} {{ GIT_COMMIT|e }}
                 {% if CDEDB_DEV %}
                     <br /><br />
                     <div style="word-wrap: break-word;">{{ debugstring|e }} ; time taken: {{ generation_time()|e }}</div>

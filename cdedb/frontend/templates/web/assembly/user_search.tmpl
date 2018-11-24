@@ -4,12 +4,12 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}Versammlungs-Nutzerverwaltung{% endblock %}
+{% block title %}{% trans %}Assembly-User Management{%  endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), "Nutzer verwalten", active=True) }}
+{{ util.breadcrumb_link(cdedblink("assembly/create_assembly"), gettext("Manage Users"), active=True) }}
 {% endblock %}
 {% block content %}
-    {{ generic.user_search('assembly', info="Diese Nutzerverwaltung findet nur (reine) Versammlungs-Nutzer, keine "
-                                            "CdE-Mitglieder, auch nicht ehemalige.") }}
+    {{ generic.user_search('assembly', info=gettext("This User Management finds Assembly-Users only, "
+                                                    "not CdE-Members, not even past members.")) }}
 {% endblock %}

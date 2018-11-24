@@ -5,69 +5,70 @@
 {% macro create_user(realm) %}
     <form action="{{ cdedblink('{}/create_user'.format(realm))|e }}" method="POST" id="newuserform"
       class="form-horizontal">
-        <h4 class="heading-underline">Person</h4>
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_text(name="given_names", label="Vorname(n)") }}
-        {{ util.form_input_text(name="family_name", label="Nachname") }}
+        <h4 class="heading-underline">{{ gettext("Personal Information") }}</h4>
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
+        {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if realm == "cde" %}
-            {{ util.form_input_text(name="birth_name", label="Geburtsname") }}
+            {{ util.form_input_text(name="birth_name", label=gettext("Birth Name")) }}
         {% endif %}
-        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
-        {{ util.form_input_text(name="display_name", label="Rufname") }}
+        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("First Given Name")) }}
         {% if realm == "cde" %}
-            {{ util.form_input_textarea(name="specialisation", label="Fachgebiet") }}
-            {{ util.form_input_textarea(name="affiliation", label="Schule, Uni, ...") }}
-            {{ util.form_input_textarea(name="timeline", label="Jahrgang, Matrikel, ...") }}
-            {{ util.form_input_textarea(name="interests", label="Interessen") }}
-            {{ util.form_input_textarea(name="free_form", label="Sonstiges", rows="5") }}
+            {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation")) }}
+            {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …")) }}
+            {{ util.form_input_textarea(name="timeline", label=gettext("Year(s) of Graduation")) }}
+            {{ util.form_input_textarea(name="interests", label=gettext("Interests")) }}
+            {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5") }}
         {% endif %}
         {% if realm in ("cde", "event") %}
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label="Geschlecht", defaultvalue=enums['Genders'].not_specified.value) }}
-            {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
+                                      label=gettext("Gender"), defaultvalue=enums['Genders'].not_specified.value) }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", placeholder="YYYY-MM-DD") }}
         {% endif %}
 
-        <h4 class="heading-underline">Kontakt</h4>
-        {{ util.form_input_text(name="username", label="E-Mail") }}
+        <h4 class="heading-underline">{{ gettext("Contact Information") }}</h4>
+        {{ util.form_input_text(name="username", label=gettext("E-Mail")) }}
         {% if realm in ("cde", "event") %}
-            {{ util.form_input_text(name="telephone", label="Telefon") }}
-            {{ util.form_input_text(name="mobile", label="Mobiltelefon") }}
+            {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobilephone")) }}
         {% endif %}
         {% if realm == "cde" %}
-            {{ util.form_input_text(name="weblink", label="WWW") }}
+            {{ util.form_input_text(name="weblink", label=gettext("WWW")) }}
         {% endif %}
 
         {% if realm in ("cde", "event") %}
-            <h4 class="heading-underline">Adresse</h4>
-            {{ util.form_input_text(name="address", label="Straße") }}
-            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.form_input_text(name="location", label="Stadt") }}
-            {{ util.form_input_text(name="country", label="Land") }}
+            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
+            {{ util.form_input_text(name="address", label=gettext("Street")) }}
+            {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
+            {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
+            {{ util.form_input_text(name="location", label=gettext("City")) }}
+            {{ util.form_input_text(name="country", label=gettext("Country")) }}
         {% endif %}
         {% if realm == "cde" %}
-            <h4 class="heading-underline">Zweitadresse</h4>
-            {{ util.form_input_text(name="address2", label="Straße") }}
-            {{ util.form_input_text(name="address_supplement2", label="Addresszusatz") }}
-            {{ util.form_input_text(name="postal_code2", label="Postleitzahl") }}
-            {{ util.form_input_text(name="location2", label="Stadt") }}
-            {{ util.form_input_text(name="country2", label="Land") }}
+            <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
+            {{ util.form_input_text(name="address2", label=gettext("Street")) }}
+            {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
+            {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
+            {{ util.form_input_text(name="location2", label=gettext("City")) }}
+            {{ util.form_input_text(name="country2", label=gettext("Country")) }}
         {% endif %}
 
-        <h4 class="heading-underline">Account</h4>
+        <h4 class="heading-underline">{% trans %}Account{% endtrans %}</h4>
         {% if realm == "cde" %}
-            {{ util.form_input_checkbox(name="is_member", label="CdE-Mitgliedschaft",
+            {{ util.form_input_checkbox(name="is_member", label=gettext("CdE-Member"),
                                    anid="input_checkbox_is_member") }}
-            {{ util.form_input_checkbox(name="is_searchable", label="Sichtbarkeit (falls Einwilligung vorhanden)",
+            {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable"),
                                    anid="input_checkbox_is_searchable") }}
-            {{ util.form_input_checkbox(name="trial_member", label="Probemitgliedschaft",
+            {{ util.form_input_checkbox(name="trial_member", label=gettext("Trial Member"),
                                        anid="input_checkbox_trial_member") }}
-            {{ util.form_input_checkbox(name="bub_search", label="Zugriff für BuB", anid="input_checkbox_bub_search") }}
+            {{ util.form_input_checkbox(name="bub_search", label=gettext("Searchable for BuB"), anid="input_checkbox_bub_search") }}
         {% endif %}
-        {{ util.form_input_textarea(name="notes", label="Notizen", rows="7", info="Unterstützt reStructuredText") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="7",
+                                    info=gettext("Supports reStructuredText")) }}
 
 
-        {{ util.form_input_submit(value="Nutzer anlegen", cancellink=cdedblink("{}/user_search".format(realm))) }}
+        {{ util.form_input_submit(value=gettext("Create User"), cancellink=cdedblink("{}/user_search".format(realm))) }}
     </form>
     <script type="text/javascript">
         $('#newuserform').cdedbProtectChanges();
@@ -75,43 +76,44 @@
 {% endmacro %}
 
 {% macro genesis(realm) %}
-    <p>Hallo {{ case['given_names'] }},</p>
+    <p>{{ gettext("Hello %(given_names),")|
+            format(given_names=case['given_names']) }},</p>
 
     <p>
-        Um Dein Konto für die CdE-Datenbank anzulegen, trage bitte in das folgende Formular Deine Daten ein. Sobald Du
-        dieses Formluar bestätigt hast, kannst Du ein Passwort einrichten und Dein Zugang wird freigeschaltet.
+        {{ gettext("To create Your CdE-Database Account, enter Your data into this form. "
+                   "Then You can set up Your password. Your Account will be activated shortly.") }}
     </p>
 
     <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform" class="form-horizontal">
         {{ util.input_hidden(name="case_id") }}
         {{ util.input_hidden(name="secret") }}
 
-        <h4 class="heading-underline">Person</h4>
-        {{ util.form_input_text(name="title", label="Titel", info="z.B. Prof. Dr.") }}
-        {{ util.form_input_static(label="Vorname(n)", value=case['given_names']) }}
-        {{ util.form_input_static(label="Nachname", value=case['family_name']) }}
-        {{ util.form_input_text(name="name_supplement", label="Namenszusatz") }}
-        {{ util.form_input_text(name="display_name", label="Rufname", info="Wie wirst Du genannt?") }}
+        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
+        {{ util.form_input_text(name="title", label=gettext("Title"), info=gettext("Prof., Dr., etc.")) }}
+        {{ util.form_input_static(label=gettext("Given Names"), value=case['given_names']) }}
+        {{ util.form_input_static(label=gettesxt("Family Name"), value=case['family_name']) }}
+        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
+        {{ util.form_input_text(name="display_name", label=gettext("First Given Name"), info=gettext("What do people call you?")) }}
         {% if realm == "event" %}
-            {{ util.form_input_text(name="birthday", label="Geburtstag", type="date", placeholder="YYYY-MM-DD") }}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date", placeholder="YYYY-MM-DD") }}
             {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                      label="Geschlecht") }}
+                                      label=gettext("Gender")) }}
         {% endif %}
 
-        <h4 class="heading-underline">Kontakt</h4>
-        {{ util.form_input_static(label="E-Mail-Adresse", value=case['username']) }}
+        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
+        {{ util.form_input_static(label=gettext("E-Mail"), value=case['username']) }}
         {% if realm == "event" %}
-            {{ util.form_input_text(name="telephone", label="Telefon", placeholder="+49 (0000) 000000") }}
-            {{ util.form_input_text(name="mobile", label="Mobiltelefon", placeholder="+49 (000) 0000000") }}
+            {{ util.form_input_text(name="telephone", label=gettext("Phone"), placeholder="+49 (0000) 000000") }}
+            {{ util.form_input_text(name="mobile", label=gettext("Mobilephone"), placeholder="+49 (000) 0000000") }}
 
-            <h4 class="heading-underline">Adresse</h4>
-            {{ util.form_input_text(name="address", label="Straße") }}
-            {{ util.form_input_text(name="address_supplement", label="Addresszusatz") }}
-            {{ util.form_input_text(name="postal_code", label="Postleitzahl") }}
-            {{ util.form_input_text(name="location", label="Stadt") }}
-            {{ util.form_input_text(name="country", label="Land") }}
+            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
+            {{ util.form_input_text(name="address", label=gettext("Street")) }}
+            {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
+            {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
+            {{ util.form_input_text(name="location", label=gettext("City")) }}
+            {{ util.form_input_text(name="country", label=gettext("Country")) }}
         {% endif %}
-        {{ util.form_input_submit(value="Account anlegen", cancellink=cdedblink('core/index')) }}
+        {{ util.form_input_submit(value=gettext("Create Account"), cancellink=cdedblink('core/index')) }}
     </form>
 {% endmacro %}
 
@@ -119,7 +121,7 @@
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink("{}/create_user".format(realm)), "Nutzer anlegen",
+                {{ util.href(cdedblink("{}/create_user".format(realm)), gettext("Create User"),
                         icon="plus", aclass="btn btn-success btn-sm") }}
             </div>
             {% if info %}
@@ -134,7 +136,7 @@
     {{ user_search_mask(realm) }}
 
     {% if values['is_search'] %}
-        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        <h3>{% trans %}Result{% endtrans %} [{{ result|length|e }}]</h3>
         {{ user_search_result(result, realm) }}
     {% endif %}
 {% endmacro %}
@@ -142,55 +144,55 @@
 
 {% macro user_search_mask(realm, selection_blacklist=[]) %}
     {% with TITLES = {
-        "fulltext": "Volltext",
-        "personas.id": "ID",
-        "username": "E-Mail",
-        "is_active": "Aktiver Account",
-        "family_name": "Nachname",
-        "birth_name": "Geburtsname",
-        "given_names": "Vorname",
-        "display_name": "Rufname",
-        "title": "Titel",
-        "name_supplement": "Namenszusatz",
-        "gender": "Geschlecht",
-        "birthday": "Geburtstag",
-        "telephone": "Telefon",
-        "mobile": "Mobilfunk",
-        "address": "Anschrift",
-        "address_supplement": "Adresszusatz",
-        "postal_code": "PLZ",
-        "location": "Ort",
-        "country": "Land",
-        "address2": "Anschrift (2)",
-        "address_supplement2": "Adresszusatz (2)",
-        "postal_code2": "PLZ (2)",
-        "location2": "Ort (2)",
-        "country2": "Land (2)",
-        "weblink": "WWW",
-        "specialisation": "Fachgebiet",
-        "affiliation": "Schule, Uni, …",
-        "timeline": "Jahrgang, Matrikel, …",
-        "interests": "Interessen",
-        "free_form": "Sonstige Angaben",
-        "pevent_id": "verg. Veranstaltung",
-        "pcourse_id": "verg. Kurs",
-        "balance": "Mitgliedsbeitrag-Guthaben",
-        "decided_search": "Suchbarkeit entschieden",
-        "trial_member": "Probemitglied",
-        "bub_search": "Sichtbarkeit für BuB",
-        "notes": "Admin-Notizen",
-        'is_member': "CdE-Mitglied",
-        'is_searchable': "Suchbarkeit",
-        'is_ml_realm': "Bereich: Mailinglisten",
-        'is_event_realm': "Bereich: Veranstaltungen",
-        'is_assembly_realm': "Bereich: Versammlungen",
-        'is_cde_realm': "Bereich: CdE",
-        'is_ml_admin': "Admin: Mailinglisten",
-        'is_event_admin': "Admin: Veranstaltungen",
-        'is_assembly_admin': "Admin: Versammlungen",
-        'is_cde_admin': "Admin: CdE",
-        'is_core_admin': "Admin: Core",
-        'is_admin': "Admin: Super",
+        "fulltext": gettext("Fulltext"),
+        "personas.id": gettext("ID"),
+        "username": gettext("E-Mail"),
+        "is_active": gettext("Active Account"),
+        "family_name": gettext("Family Name"),
+        "birth_name": gettext("Birth Name"),
+        "given_names": gettext("Given Names"),
+        "display_name": gettext("First Given Name"),
+        "title": gettext("Title"),
+        "name_supplement": gettext("Name Affix"),
+        "gender": gettext("Gender"),
+        "birthday": gettext("Birthday"),
+        "telephone": gettext("Phone"),
+        "mobile": gettext("Mobilephone"),
+        "address": gettext("Address"),
+        "address_supplement": gettext("Address Supplement"),
+        "postal_code": gettext("ZIP"),
+        "location": gettext("City"),
+        "country": gettext("Country"),
+        "address2": gettext("Address (2)"),
+        "address_supplement2": gettext("Address Supplement (2)"),
+        "postal_code2": gettext("ZIP (2)"),
+        "location2": gettext("City (2)"),
+        "country2": gettext("Country (2)"),
+        "weblink": gettext("WWW"),
+        "specialisation": gettext("Specialisation"),
+        "affiliation": gettext("School, University, …"),
+        "timeline": gettext("Year(s) of Graduation"),
+        "interests": gettext("Interests"),
+        "free_form": gettext("Miscellaneous"),
+        "pevent_id": gettext("Past Event"),
+        "pcourse_id": gettext("Past Course"),
+        "balance": gettext("Membership-Fee Balance"),
+        "decided_search": gettext("Searchability Decided"),
+        "trial_member": gettext("Trial Member"),
+        "bub_search": gettext("Searchable for BuB"),
+        "notes": gettext("Admin-Notes"),
+        'is_member': gettext("CdE-Member"),
+        'is_searchable': gettext("Searchable"),
+        'is_ml_realm': gettext("Realm") + ": " + gettext("Mailinglists"),
+        'is_event_realm': gettext("Realm") + ": " + gettext("Events"),
+        'is_assembly_realm': gettext("Realm") + ": " + gettext("Assemblies"),
+        'is_cde_realm': gettext("Realm") + ": " + gettext("cde_realm"),
+        'is_ml_admin': gettext("Admin") + ": " + gettext("Mailinglists"),
+        'is_event_admin': gettext("Admin") + ": " + gettext("Events"),
+        'is_assembly_admin': gettext("Admin") + ": " + gettext("Assemblies"),
+        'is_cde_admin': gettext("Admin") + ": " + gettext("cde_realm"),
+        'is_core_admin': gettext("Admin") + ": " + gettext("Core"),
+        'is_admin': gettext("Admin") + ": " + gettext("Super"),
     } %}
 
             {% if realm == "archived" %}
@@ -206,55 +208,55 @@
 {% macro user_search_result(result, realm) %}
     {# warning: titles will not be escaped! #}
     {% with TITLES = {
-        "fulltext": "Volltext",
-        "personas.id": "ID",
-        "username": "E-Mail",
-        "is_active": "Aktiv",
-        "family_name": "Nachname",
-        "birth_name": "Geburtsname",
-        "given_names": "Vorname",
-        "display_name": "Rufname",
-        "title": "Titel",
-        "name_supplement": "Namenszusatz",
-        "gender": "Geschlecht",
-        "birthday": "Geburtstag",
-        "telephone": "Telefon",
-        "mobile": "Mobilfunk",
-        "address": "Anschrift",
-        "address_supplement": "Adresszusatz",
-        "postal_code": "PLZ",
-        "location": "Ort",
-        "country": "Land",
-        "address2": "Anschrift (2)",
-        "address_supplement2": "Adresszusatz (2)",
-        "postal_code2": "PLZ (2)",
-        "location2": "Ort (2)",
-        "country2": "Land (2)",
-        "weblink": "WWW",
-        "specialisation": "Fachgebiet",
-        "affiliation": "Schule, Uni, …",
-        "timeline": "Jahrgang, Matrikel, …",
-        "interests": "Interessen",
-        "free_form": "Sonstige Angaben",
-        "pevent_id": "verg. Veranstaltung",
-        "pcourse_id": "verg. Kurs",
-        "balance": "Guthaben",
-        "decided_search": "Suchbarkeit entschieden",
-        "trial_member": "Probemitglied",
-        "bub_search": "BuB-Sichtbar",
-        "notes": "Admin-Notizen",
-        'is_member': "Mitglied",
-        'is_searchable': "Suchbar",
-        'is_ml_realm': util.make_icon('envelope', title="Bereich: Mailinglisten"),
-        'is_event_realm': util.make_icon('blackboard', title="Bereich: Veranstaltungen"),
-        'is_assembly_realm': util.make_icon('bullhorn', title="Bereich: Versammlungen"),
-        'is_cde_realm': util.make_icon('education', title="Bereich: CdE"),
-        'is_ml_admin': "Admin " + util.make_icon('envelope', title="Admin: Mailinglisten"),
-        'is_event_admin': "Admin " + util.make_icon('blackboard', title="Admin: Veranstaltungen"),
-        'is_assembly_admin': "Admin " + util.make_icon('bullhorn', title="Admin: Versammlungen"),
-        'is_cde_admin': "Admin " + util.make_icon('education', title="Admin: CdE"),
-        'is_core_admin': "Admin " + util.make_icon('user', title="Admin: Core"),
-        'is_admin': "Admin " + util.make_icon('wrench', title="Admin: Super"),
+        "fulltext": gettext("Fulltext"),
+        "personas.id": gettext("ID"),
+        "username": gettext("E-Mail"),
+        "is_active": gettext("Active Account"),
+        "family_name": gettext("Family Name"),
+        "birth_name": gettext("Birth Name"),
+        "given_names": gettext("Given Names"),
+        "display_name": gettext("First Given Name"),
+        "title": gettext("Title"),
+        "name_supplement": gettext("Name Affix"),
+        "gender": gettext("Gender"),
+        "birthday": gettext("Birthday"),
+        "telephone": gettext("Phone"),
+        "mobile": gettext("Mobilephone"),
+        "address": gettext("Address"),
+        "address_supplement": gettext("Address Supplement"),
+        "postal_code": gettext("ZIP"),
+        "location": gettext("City"),
+        "country": gettext("Country"),
+        "address2": gettext("Address (2)"),
+        "address_supplement2": gettext("Address Supplement (2)"),
+        "postal_code2": gettext("ZIP (2)"),
+        "location2": gettext("City (2)"),
+        "country2": gettext("Country (2)"),
+        "weblink": gettext("WWW"),
+        "specialisation": gettext("Specialisation"),
+        "affiliation": gettext("School, University, …"),
+        "timeline": gettext("Year(s) of Graduation"),
+        "interests": gettext("Interests"),
+        "free_form": gettext("Miscellaneous"),
+        "pevent_id": gettext("Past Event"),
+        "pcourse_id": gettext("Past Course"),
+        "balance": gettext("Membership-Fee Balance"),
+        "decided_search": gettext("Searchability Decided"),
+        "trial_member": gettext("Trial Member"),
+        "bub_search": gettext("Searchable for BuB"),
+        "notes": gettext("Admin-Notes"),
+        'is_member': gettext("CdE-Member"),
+        'is_searchable': gettext("Searchable"),
+        'is_ml_realm': util.make_icon('envelope', title=gettext("Realm") + ": " + gettext("Mailinglists")),
+        'is_event_realm': util.make_icon('blackboard', title=gettext("Realm") + ": " + gettext("Events")),
+        'is_assembly_realm': util.make_icon('bullhorn', title=gettext("Realm") + ": " + gettext("Assemblies")),
+        'is_cde_realm': util.make_icon('education', title=gettext("Realm") + ": " + gettext("cde_realm")),
+        'is_ml_admin': "Admin " + util.make_icon('envelope', title=gettext("Admin") + ": " + gettext("Mailinglists")),
+        'is_event_admin': "Admin " + util.make_icon('blackboard', title=gettext("Admin") + ": " + gettext("Events")),
+        'is_assembly_admin': "Admin " + util.make_icon('bullhorn', title=gettext("Admin") + ": " + gettext("Assemblies")),
+        'is_cde_admin': "Admin " + util.make_icon('education', title=gettext("Admin") + ": " + gettext("cde_realm")),
+        'is_core_admin': "Admin " + util.make_icon('user', title=gettext("Admin") + ": " + gettext("Core")),
+        'is_admin': "Admin " + util.make_icon('wrench', title=gettext("Admin") + ": " + gettext("Super")),
     } %}
 
         {{ display_query_result(result, query, TITLES, choices) }}
@@ -346,7 +348,7 @@
                                                        for none-javascript users. #}
                                                     {{ util.input_select(name, anid="qinput_{}".format(field),
                                                             aclass='form-control input-sm filter-value',
-                                                            entries=(('',''),(True, 'ja'),(False, 'nein')),
+                                                            entries=(('',''),(True, gettext("Yes")),(False, gettext("No"))),
                                                             arialabel=gettext("compare value for {}")
                                                                       .format(titles.get(field, field)|e)) }}
                                                 {% else %}
