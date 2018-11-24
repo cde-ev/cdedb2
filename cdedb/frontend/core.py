@@ -68,12 +68,15 @@ class CoreFrontend(AbstractFrontend):
 
         :param wants: URL to redirect to upon login
         """
-        if wants:
-            rs.values['wants'] = self.encode_parameter("core/login", "wants",
-                                                       wants)
         meta_info = self.coreproxy.get_meta_info(rs)
         dashboard = {}
-        if rs.user.persona_id:
+        if not rs.user.persona_id:
+            if wants:
+                rs.values['wants'] = self.encode_parameter("core/login",
+                                                           "wants", wants)
+            return self.render(rs, "login", {'meta_info': meta_info})
+
+        else:
             ## genesis cases
             if {"core_admin", "event_admin", "ml_admin"} & rs.user.roles:
                 realms = []
@@ -152,8 +155,8 @@ class CoreFrontend(AbstractFrontend):
                         final[assembly_id] = assembly
                 if final:
                     dashboard['assemblies'] = final
-        return self.render(rs, "index", {
-            'meta_info': meta_info, 'dashboard': dashboard})
+            return self.render(rs, "index", {
+                'meta_info': meta_info, 'dashboard': dashboard})
 
     @access("anonymous")
     @REQUESTdata(("kind", "printable_ascii"), ("message", "str_or_None"))
