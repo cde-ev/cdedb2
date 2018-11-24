@@ -5,7 +5,7 @@
     {% if error.code == 403 %}
         <div class="alert alert-danger">
             {{ util.make_icon('remove-sign') }}
-            {% trans %}You do not have sufficient permissions to access this site:{% endtrans %}
+            {% trans -%}You do not have sufficient permissions to access this site:{%- endtrans %}
             {{ error.description|e }}
         </div>
         <p>
@@ -17,7 +17,7 @@
     {% elif error.code == 404 %}
         <div class="alert alert-danger">
             {{ util.make_icon('remove-sign') }}
-            {% trans %}Couldn't find the requested site:{% endtrans %}
+            {% trans -%}Couldn't find the requested site:{%- endtrans %}
             {{ error.description|e }}
         </div>
         <p>
@@ -33,7 +33,7 @@
         </p>
     {% else %}
         <div class="alert alert-danger">
-            {{ util.make_icon('remove-sign') }} {% trans %}An unknown Error occurred.{% endtrans %}
+            {{ util.make_icon('remove-sign') }} {% trans -%}An unknown Error occurred.{%- endtrans %}
         </div>
     {% endif %}
 {% endblock %}

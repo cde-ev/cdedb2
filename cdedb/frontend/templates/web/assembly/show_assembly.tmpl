@@ -23,12 +23,12 @@
     <dl class="dl-horizontal">
         <dt>Anmeldeschluss</dt>
         <dd>{{ ambience['assembly']['signup_end']|datetime(lang=lang)|e }}</dd>
-        <dt>{% trans %}Participationstatus{% endtrans %}</dt>
+        <dt>{% trans -%}Participationstatus{%- endtrans %}</dt>
         <dd>
             {% if attends %}
-                <strong class="text-success">{% trans %}You are participating in this assembly.{% endtrans %}</strong>
+                <strong class="text-success">{% trans -%}You are participating in this assembly.{%- endtrans %}</strong>
             {% else %}
-                <p><strong class="text-muted">{% trans %}You are not participating.{% endtrans %}</strong></p>
+                <p><strong class="text-muted">{% trans -%}You are not participating.{%- endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
                         {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
@@ -49,7 +49,7 @@
         <div class="row">
             {% if attachments or is_admin %}
                 <div class="col-sm-6">
-                    <h4>{% trans %}General Files{% endtrans %}</h4>
+                    <h4>{% trans -%}General Files{%- endtrans %}</h4>
                     <ul class="slim">
                         {% for attachment_id, attachment in attachments|dictsort %}
                             <li>
@@ -76,7 +76,7 @@
             
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
-                <h4>{% trans %}Ballot Files{% endtrans %}</h4>
+                <h4>{% trans -%}Ballot Files{%- endtrans %}</h4>
                     {% for ballot_id, ballot in ballots|dictsort %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
@@ -115,8 +115,8 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        {% trans %}Archives the assembly. Assembly and Ballot configuration cannot be changed after this.
-                            The private Keys used to sign the votes will be deleted from the database.{% endtrans %}
+                        {% trans -%}Archives the assembly. Assembly and Ballot configuration cannot be changed after this.
+                            The private Keys used to sign the votes will be deleted from the database.{%- endtrans %}
                     </p>
                 </div>
             </div>

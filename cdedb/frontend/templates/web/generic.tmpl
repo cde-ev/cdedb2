@@ -38,7 +38,7 @@
         {% endif %}
 
         {% if realm in ("cde", "event") %}
-            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
+            <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
             {{ util.form_input_text(name="address", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
@@ -46,7 +46,7 @@
             {{ util.form_input_text(name="country", label=gettext("Country")) }}
         {% endif %}
         {% if realm == "cde" %}
-            <h4 class="heading-underline">{% trans %}Second Address{% endtrans %}</h4>
+            <h4 class="heading-underline">{% trans -%}Second Address{%- endtrans %}</h4>
             {{ util.form_input_text(name="address2", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
@@ -54,7 +54,7 @@
             {{ util.form_input_text(name="country2", label=gettext("Country")) }}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans %}Account{% endtrans %}</h4>
+        <h4 class="heading-underline">{% trans -%}Account{%- endtrans %}</h4>
         {% if realm == "cde" %}
             {{ util.form_input_checkbox(name="is_member", label=gettext("CdE-Member"),
                                    anid="input_checkbox_is_member") }}
@@ -88,7 +88,7 @@
         {{ util.input_hidden(name="case_id") }}
         {{ util.input_hidden(name="secret") }}
 
-        <h4 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h4>
+        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title"), info=gettext("Prof., Dr., etc.")) }}
         {{ util.form_input_static(label=gettext("Given Names"), value=case['given_names']) }}
         {{ util.form_input_static(label=gettesxt("Family Name"), value=case['family_name']) }}
@@ -100,13 +100,13 @@
                                       label=gettext("Gender")) }}
         {% endif %}
 
-        <h4 class="heading-underline">{% trans %}Contact Information{% endtrans %}</h4>
+        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
         {{ util.form_input_static(label=gettext("E-Mail"), value=case['username']) }}
         {% if realm == "event" %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), placeholder="+49 (0000) 000000") }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobilephone"), placeholder="+49 (000) 0000000") }}
 
-            <h4 class="heading-underline">{% trans %}Address{% endtrans %}</h4>
+            <h4 class="heading-underline">{% trans -%}Address{%- endtrans %}</h4>
             {{ util.form_input_text(name="address", label=gettext("Street")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
@@ -136,7 +136,7 @@
     {{ user_search_mask(realm) }}
 
     {% if values['is_search'] %}
-        <h3>{% trans %}Result{% endtrans %} [{{ result|length|e }}]</h3>
+        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length|e }}]</h3>
         {{ user_search_result(result, realm) }}
     {% endif %}
 {% endmacro %}
@@ -271,18 +271,18 @@
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary">
             <div class="panel-heading">
-                <h3 class="panel-title" id="qf_title">{{ util.make_icon('search') }} {% trans %}Search Mask{% endtrans %}</h3>
+                <h3 class="panel-title" id="qf_title">{{ util.make_icon('search') }} {% trans -%}Search Mask{%- endtrans %}</h3>
 
                 <!-- Tabs to chose between NonJS- and JS-form -->
                 <ul class="nav nav-tabs softhide" role="tablist" id="qf_tablist">
                     <li role="presentation" class="active">
                         <a href="#tab_qf_nojs" data-toggle="tab" aria-controls="tab_qf_nojs" role="tab">
-                            {{ util.make_icon('list') }} {% trans %}Tabular{% endtrans %}
+                            {{ util.make_icon('list') }} {% trans -%}Tabular{%- endtrans %}
                         </a>
                     </li>
                     <li role="presentation">
                         <a href="#tab_qf_js" data-toggle="tab" aria-controls="tab_qf_js" role="tab" id="tab_link_qf_js">
-                            {{ util.make_icon('flash') }} {% trans %}Magic{% endtrans %}
+                            {{ util.make_icon('flash') }} {% trans -%}Magic{%- endtrans %}
                         </a>
                     </li>
                 </ul>
@@ -297,8 +297,8 @@
                             <thead>
                                 <tr>
                                     <th>{{ util.make_icon('eye-open', title=gettext("show field")) }}</th>
-                                    <th>{% trans %}Fields{% endtrans %}</th>
-                                    <th colspan="2">{% trans %}Filter{% endtrans %}</th>
+                                    <th>{% trans -%}Fields{%- endtrans %}</th>
+                                    <th colspan="2">{% trans -%}Filter{%- endtrans %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -401,36 +401,36 @@
 
                     <!-- JS Form -->
                     <div class="tab-pane" role="tabpanel" id="tab_qf_js">
-                        <h4 class="filter-title nosp">{{ util.make_icon('filter') }} {% trans %}Filter{% endtrans %}</h4>
+                        <h4 class="filter-title nosp">{{ util.make_icon('filter') }} {% trans -%}Filter{%- endtrans %}</h4>
                         <ul class="list-group list-group-condensed list-group-hover filterfield-list"></ul>
                         <div class="input-group has-success queryform-add">
                             <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("add filter")) }}</span>
                             <select class="form-control input-sm input-slim addfilter"
-                                    aria-label="{% trans %}field to filter on{% endtrans %}"></select>
+                                    aria-label="{% trans -%}field to filter on{%- endtrans %}"></select>
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
                                 <h4 class="filter-title">
-                                    {{ util.make_icon('eye-open') }} {% trans %}Displayed Fields{% endtrans %}</h4>
+                                    {{ util.make_icon('eye-open') }} {% trans -%}Displayed Fields{%- endtrans %}</h4>
                                 <p class="viewfield-list"></p>
                                 <div class="input-group has-success">
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add displayed field")) }}
                                     </span>
                                     <select class="form-control input-sm addviewfield"
-                                            aria-label="{% trans %}field to add{% endtrans %}"></select>
+                                            aria-label="{% trans -%}field to add{%- endtrans %}"></select>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <h4 class="filter-title">
-                                    {{ util.make_icon('sort-by-alphabet') }} {% trans %}Sorting{% endtrans %}</h4>
+                                    {{ util.make_icon('sort-by-alphabet') }} {% trans -%}Sorting{%- endtrans %}</h4>
                                 <ul class="list-group list-group-condensed list-group-hover sortfield-list"></ul>
                                 <div class="input-group has-success queryform-add">
                                     <span class="input-group-addon">
                                         {{ util.make_icon('plus', title=gettext("add sort key")) }}
                                     </span>
                                     <select class="form-control input-sm addsortfield"
-                                            aria-label="{% trans %}sort key to add{% endtrans %}"></select>
+                                            aria-label="{% trans -%}sort key to add{%- endtrans %}"></select>
                                 </div>
                             </div>
                         </div>
@@ -439,13 +439,13 @@
 
                 <p class="pull-right nosp">
                     <button type="submit" class="btn btn-primary">
-                        {{ util.make_icon('search') }} {% trans %}Search{% endtrans %}</button>
+                        {{ util.make_icon('search') }} {% trans -%}Search{%- endtrans %}</button>
                     <span class="btn-group">
                         <button type="submit" class="btn btn-default" name="download" value="csv">
-                            {{ util.make_icon('download') }} {% trans %}CSV file{% endtrans %}
+                            {{ util.make_icon('download') }} {% trans -%}CSV file{%- endtrans %}
                         </button>
                         <button type="submit" class="btn btn-default" name="download" value="json">
-                            {{ util.make_icon('download') }} {% trans %}JSON file{% endtrans %}
+                            {{ util.make_icon('download') }} {% trans -%}JSON file{%- endtrans %}
                         </button>
                     </span>
                 </p>
@@ -502,8 +502,8 @@
             $('.default-query').each(function(){
                 var url = $(this).attr('href');
                 var $link = $('<a></a>', {'href':'#',
-                                          'title':'{% trans %}show in search mask{% endtrans %}',
-                                          'aria-label':'{% trans %}show in search mask{% endtrans %}',
+                                          'title':'{% trans -%}show in search mask{%- endtrans %}',
+                                          'aria-label':'{% trans -%}show in search mask{%- endtrans %}',
                                           'class': 'btn btn-default btn-xs'})
                     .append($('<span></span>',{'class':'glyphicon glyphicon-eye-open', 'aria-hidden':'true'}))
                     .click(function(){
@@ -518,7 +518,7 @@
 
 {% macro display_query_result(result, query, titles, choices) %}
     {% if not result|length %}
-        {% trans %}No search results!{% endtrans %}
+        {% trans -%}No search results!{%- endtrans %}
     {% else %}
         <script type="text/javascript">
             $(function(){
@@ -548,21 +548,21 @@
         </script>
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}select all{% endtrans %}" id="btn-select-all">
-                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans %}all{% endtrans %}</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}select all{%- endtrans %}" id="btn-select-all">
+                    {{ util.make_icon('check') }} <span class="hidden-xs">{% trans -%}all{%- endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}select none{% endtrans %}" id="btn-select-none">
-                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans %}none{% endtrans %}</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}select none{%- endtrans %}" id="btn-select-none">
+                    {{ util.make_icon('unchecked') }} <span class="hidden-xs">{% trans -%}none{%- endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}invert selection{% endtrans %}" id="btn-select-swap">
-                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans %}invert{% endtrans %}</span>
+                <button type="button" class="btn btn-sm btn-info" title="{% trans -%}invert selection{%- endtrans %}" id="btn-select-swap">
+                    {{ util.make_icon('expand') }} <span class="hidden-xs">{% trans -%}invert{%- endtrans %}</span>
                 </button>
             </div>
-            <button type="button" class="btn btn-sm btn-info" title="{% trans %}filter for selected rows{% endtrans %}"
+            <button type="button" class="btn btn-sm btn-info" title="{% trans -%}filter for selected rows{%- endtrans %}"
                     id="btn-select-filter">
-                {{ util.make_icon('share') }} <span class="hidden-xs">{% trans %}selected only{% endtrans %}</span>
+                {{ util.make_icon('share') }} <span class="hidden-xs">{% trans -%}selected only{%- endtrans %}</span>
             </button>
-            <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans %}widen results table{% endtrans %}">
+            <button type="button" class="btn btn-sm btn-trigger-wide" title="{% trans -%}widen results table{%- endtrans %}">
                 {{ util.make_icon('resize-horizontal', arialabel=gettext("widen results table")) }}
             </button>
         </div>
@@ -577,14 +577,14 @@
                             <th>
                                 {{ titles.get(field, field) }}
                                 {% if values.get("qop_{}".format(field)) %}
-                                    <span class="label label-default" title="{% trans %}filtered column{% endtrans %}">
+                                    <span class="label label-default" title="{% trans -%}filtered column{%- endtrans %}">
                                         {{ util.make_icon('filter') }}
                                     </span>
                                 {% endif %}
                                 {% if values.get("qord_primary") == field or
                                         values.get("qord_secondary") == field or
                                         values.get("qord_tertiary") == field %}
-                                    <span class="label label-default" title="{% trans %}sorted column{% endtrans %}">
+                                    <span class="label label-default" title="{% trans -%}sorted column{%- endtrans %}">
                                         {{ util.make_icon('sort-by-alphabet') }}
                                     </span>
                                 {% endif %}

@@ -28,65 +28,65 @@
     {{ ambience['ballot']['description']|rst }}
     
     <dl class="dl-horizontal">
-        <dt>{% trans %}Voting Period{% endtrans %}</dt>
+        <dt>{% trans -%}Voting Period{%- endtrans %}</dt>
         <dd>
             {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang)|e,
-                     end=ambience['ballot']['vote_end']|datetime(lang=lang)|e %}
+                     end=ambience['ballot']['vote_end']|datetime(lang=lang)|e -%}
             From {{ begin }} until {{ end }}.
-            {% endtrans %}
+            {%- endtrans %}
             {% if ambience['ballot']['extended'] is none %}
                 {% if ambience['ballot']['quorum'] %}
                     <br />
                     {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
-                             quorum=ambience['ballot']['quorum']|e %}
+                             quorum=ambience['ballot']['quorum']|e -%}
                     Extension until {{ extension }} if Quorum = {{ quorum }} is not reached.
-                    {% endtrans %}
+                    {%- endtrans %}
                 {% endif %}
             {% else %}
                 {% if ambience['ballot']['extended'] %}
                     <br />
                     {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
-                             quorum=ambience['ballot']['quorum']|e %}
+                             quorum=ambience['ballot']['quorum']|e -%}
                     Extended until {{ extension }} because Quorum = {{ quorum }} was not reached.
-                    {% endtrans %}
+                    {%- endtrans %}
                 {% elif ambience['ballot']['quorum'] %}
                     <br />
-                    {% trans quorum=anbience['ballot']['quorum']|e %}
+                    {% trans quorum=anbience['ballot']['quorum']|e -%}
                     No Extension neccessary, because {{ quorum }} votes were reached.
-                    {% endtrans %}
+                    {%- endtrans %}
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>{% trans %}Status{% endtrans %}</dt>
+        <dt>{% trans -%}Status{%- endtrans %}</dt>
         <dd>
             {% if now() < ambience['ballot']['vote_begin'] %}
-                <strong>{% trans %}This Ballot has not yet begun.{% endtrans %}</strong><br />
-                {% trans %}Admins can still make changes to description, files and candidates.{% endtrans %}
+                <strong>{% trans -%}This Ballot has not yet begun.{%- endtrans %}</strong><br />
+                {% trans -%}Admins can still make changes to description, files and candidates.{%- endtrans %}
                 {% if is_admin %}
-                    {% trans %}
+                    {% trans -%}
                         All CdE-Members and external assembly participants can already
                         see this Ballot and all associated information.
-                    {% endtrans %}
+                    {%- endtrans %}
                 {% endif %}
             {% elif ambience['ballot']['is_tallied'] %}
-                <strong>{% trans %}This Ballot has been concluded.{% endtrans %}</strong><br />
-                {% trans %}You can see the results below.{% endtrans %}
+                <strong>{% trans -%}This Ballot has been concluded.{%- endtrans %}</strong><br />
+                {% trans -%}You can see the results below.{%- endtrans %}
             {% elif not attends %}
-                {% trans %}
+                {% trans -%}
                     You are not participating in this assembly, therefore You cannot vote in this ballot.
-                {% endtrans %}
+                {%- endtrans %}
             {% elif ambience['ballot']['is_voting'] %}
-                <strong>{% trans %}This Ballot is currently open for voting.{% endtrans %}</strong><br />
+                <strong>{% trans -%}This Ballot is currently open for voting.{%- endtrans %}</strong><br />
                 {% if values['vote'] %}
                     {% if split_vote|length == 1 %}
-                        <span class='text-warning'>{% trans %}You have abstained.{% endtrans %}</span>
-                        {% trans %}You can make your choice below, during the voting period.{% endtrans %}
+                        <span class='text-warning'>{% trans -%}You have abstained.{%- endtrans %}</span>
+                        {% trans -%}You can make your choice below, during the voting period.{%- endtrans %}
                     {% else %}
-                        <span class='text-success'>{% trans %}You already voted.{% endtrans %}</span>
-                        {% trans %}
+                        <span class='text-success'>{% trans -%}You already voted.{%- endtrans %}</span>
+                        {% trans -%}
                             You can check your vote below and change it
                             before the end of the voting period.
-                        {% endtrans %}
+                        {%- endtrans %}
                     {% endif %}
                 {% endif %}
             {% endif %}
@@ -123,7 +123,7 @@
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
-        <h3>{% trans %}Result{% endtrans %}</h3>
+        <h3>{% trans -%}Result{%- endtrans %}</h3>
         {% if result['winners'] %}
             <ol>
                 {% for candidate_ids in result['winners'] %}
@@ -139,7 +139,7 @@
                                 ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
                                  Stimmen)
                             {% endif %}
-                            {% if not loop.last %}<br /><span class="sr-only">{% trans %}and{% endtrans %}</span>{% endif %}
+                            {% if not loop.last %}<br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>{% endif %}
                         {% endfor %}
                     </li>
                 {% endfor %}
@@ -148,13 +148,13 @@
         {% if ambience['ballot']['use_bar'] and result['losers'] %}
             <p class="text-info">
                 {% if ambience['ballot']['votes'] %}
-                    {% trans against_all=gettext("Against all Candidates") %}
+                    {% trans against_all=gettext("Against all Candidates") -%}
                         The following Candidates have less votes than the {{ against_all }} choice.
-                    {% endtrans %}
+                    {%- endtrans %}
                 {% else %}
                     {% trans assembly_bar_moniker="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER) %}
                         The following Candidates lost against the bar ({{ assembly_bar_moniker }}).
-                    {% endtrans %}
+                    {%- endtrans %}
                 {% endif %}
             <ol>
                 {% for candidate_ids in result['losers'] %}
@@ -167,40 +167,40 @@
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
                             {% if result['counts'] %}
-                                {% trans count=result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e %}
+                                {% trans count=result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e -%}
                                     ({{ count }} votes)
-                                {% endtrans %}
+                                {%- endtrans %}
                             {% endif %}
-                            {% if not loop.last %}<br /><span class="sr-only">{% trans %}and{% endtrans %}</span>{% endif %}
+                            {% if not loop.last %}<br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>{% endif %}
                         {% endfor %}
                     </li>
                 {% endfor %}
             </ol>
         {% endif %}
         
-        <h4>{% trans %}Summary{% endtrans %}</h4>
+        <h4>{% trans -%}Summary{%- endtrans %}</h4>
         {% if not ambience['ballot']['votes'] %}
             <pre style="max-width: 500px;">{{ result['result']|e }}</pre>
         {% endif %}
         <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download results"), icon="download")}}</p>
         
-        <h3>{% trans %}Your vote{% endtrans %}</h3>
+        <h3>{% trans -%}Your vote{%- endtrans %}</h3>
         <p>
             {# Show own vote under result: Classical vote #}
             {% if not attends %}
-                {% trans %}You are not participating in this assembly.{% endtrans %}
+                {% trans -%}You are not participating in this assembly.{%- endtrans %}
             {% elif ambience['ballot']['votes'] %}
                 {% if not values['vote'] %}
                     {% if ambience['assembly']['is_active'] %}
-                        {% trans %}You have not voted yet.{% endtrans %}
+                        {% trans -%}You have not voted yet.{%- endtrans %}
                     {% endif %}
                 {% else %}
                     {% if split_vote|length == 1 %}
-                        {% trans %}You abstained.{% endtrans %}
+                        {% trans -%}You abstained.{%- endtrans %}
                     {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
-                        {% trans %}You voted against all Candidates.{% endtrans %}
+                        {% trans -%}You voted against all Candidates.{%- endtrans %}
                     {% else %}
-                        {% trans %}You voted for the following Candidates:{% endtrans %}<br />
+                        {% trans -%}You voted for the following Candidates:{%- endtrans %}<br />
                         {% for voted in split_vote[0] %}
                             {{ candidates[voted]['description']|e }}{% if not loop.last %},{% endif %}
                         {% endfor %}
@@ -210,13 +210,13 @@
             {# Show own vote under result: Classical vote #}
             {% else %}
                 {% if values['vote'] %}
-                    {% trans vote="<code>%(vote)s</code>"|format(vote=values['vote']|e) %}
+                    {%- trans vote="<code>%(vote)s</code>"|format(vote=values['vote']|e) -%}
                         You voted {{ vote }}.
-                    {% endtrans %}
+                    {%- endtrans -%}
                 {% elif ambience['assembly']['is_active'] %}
-                    {% trans %}
+                    {%- trans -%}
                         You did not vote.
-                    {% endtrans %}
+                    {%- endtrans -%}
                 {% endif %}
             {% endif %}
         </p>
@@ -227,7 +227,7 @@
 
             {# Classical voting: Voting form #}
             {% if ambience['ballot']['is_voting'] and attends %}
-                <h3>{% trans %}Ballot{% endtrans %}</h3>
+                <h3>{% trans -%}Ballot{%- endtrans %}</h3>
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
                     {% if ambience['ballot']['votes'] > 1 %}
                         {{ util.form_input_static(value=gettext("You have %(votes)s votes.")|
@@ -255,7 +255,7 @@
                 <div class="form-horizontal">
                     <div class="form-group">
                         <div class="col-sm-2 control-label">
-                            <strong>{% trans %}Additional Options{% endtrans %}</strong>
+                            <strong>{% trans -%}Additional Options{%- endtrans %}</strong>
                         </div>
                         <div class="col-sm-10">
                             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
@@ -269,7 +269,7 @@
 
             {# Classical voting: Presentation of candidates #}
             {% else %}
-                <h3>{% trans %}Candidates{% endtrans %}</h3>
+                <h3>{% trans -%}Candidates{%- endtrans %}</h3>
                 <ul>
                     {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                         <li>
@@ -295,13 +295,13 @@
 
         {% else %}
             {# Preferential voting: Presentation of candidates #}
-            <h3>{% trans %}Candidates{% endtrans %}</h3>
+            <h3>{% trans -%}Candidates{%- endtrans %}</h3>
             <ul>
                 {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                     <li>
                         {{ candidate['description']|e }}
                         {% if attends or is_admin %}
-                            <span class="label label-primary"><span class="sr-only">{% trans %}Short: {% endtrans %}</span>
+                            <span class="label label-primary"><span class="sr-only">{% trans -%}Short: {%- endtrans %}</span>
                                 {{ candidate['moniker']|e }}
                             </span>
                         {% endif %}
@@ -326,19 +326,19 @@
 
             {# Preferential voting: Voting form #}
             {% if ambience['ballot']['is_voting'] and attends %}
-                <h3>{% trans %}Ballot{% endtrans %}</h3>
+                <h3>{% trans -%}Ballot{%- endtrans %}</h3>
                 
                 {# Tab controls to switch to javascript preferential voting form #}
                 <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
                     <li role="presentation" class="active">
                         <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab">
-                            {{ util.make_icon('console') }} {% trans %}Text-based voting{% endtrans %}
+                            {{ util.make_icon('console') }} {% trans -%}Text-based voting{%- endtrans %}
                         </a>
                     </li>
                     <li role="presentation">
                         <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
                                 id="tablink-jsform">
-                            {{ util.make_icon('flash') }} {% trans %}Interactive voting{% endtrans %}
+                            {{ util.make_icon('flash') }} {% trans -%}Interactive voting{%- endtrans %}
                         </a>
                     </li>
                 </ul>
@@ -357,20 +357,20 @@
                         </script>
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
-                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") %}
+                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
                                     This vote is an Alternative vote. You can arrange the Candidates in the field above
                                     according to Your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
-                                {% endtrans %}
+                                {%- endtrans %}
                             </p>
                             <p>
-                                {% trans gt="<code>></code>", eq="<code>=</code>" %}
+                                {% trans  gt="<code>></code>", eq="<code>=</code>" -%}
                                     To enter Your preferencelist, use the Shortnames given in the list of Candidates and the
                                     {{ gt }} and {{ eq }} characters. Use the Greater-Than character {{ gt }}
                                     to give the Candidates left of the character higher preference, than those on the right.
                                     Use the Equals character to give two Candidates the same preference. You need to have all
                                     Candidates in Your preferencelist.
-                                {% endtrans %}
+                                {%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
@@ -380,63 +380,63 @@
                                         Candidates You deem suitable higher than {{ abm }} and all
                                         Candidates You reject lower, i.e. to the right of {{ abm }}.
                                         Should no Candidate win against the bar, the board may take additional measures.
-                                    {% endtrans %}
+                                    {%- endtrans %}
                                 </p>
                             {% endif %}
                             <p>
-                                {% trans %}
+                                {% trans  -%}
                                     <strong>Examples:</strong> Take the following examplatory Candidate list:
-                                {% endtrans %}
+                                {%- endtrans %}
                             </p>
                             <ul>
-                                <li>{% trans %}Luke Skywalker, short: [Luke]{% endtrans %}</li>
-                                <li>{% trans %}Princess Leia Organa of Alderaan, short: [Leia]{% endtrans %}</li>
-                                <li>{% trans %}Han Solo, short: [Han]{% endtrans %}</li>
-                                <li>{% trans %}Obi-Wan "Ben" Kenobi, short: [ObiWan]{% endtrans %}</li>
+                                <li>{% trans  -%}Luke Skywalker, short: [Luke]{%- endtrans %}</li>
+                                <li>{% trans  -%}Princess Leia Organa of Alderaan, short: [Leia]{%- endtrans %}</li>
+                                <li>{% trans  -%}Han Solo, short: [Han]{%- endtrans %}</li>
+                                <li>{% trans -%}Obi-Wan "Ben" Kenobi, short: [ObiWan]{%- endtrans %}</li>
                             </ul>
                             <p>
-                                {% trans %}Your Vote could look like this:{% endtrans %}
+                                {% trans -%}Your Vote could look like this:{%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <ul>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You deem all candidates suitable, but You like Leia the best,
                                             with no difference between the other Candidate.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You deem Leia and Obi-Wan (equally) suitable, You want to reject Luke
                                             and you absolutely can't stand Han Solo.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}&gt;Luke&gt;Han</code></li>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You want to vote for Luke and if he doesn't make it, You think Obi-Wan should.
                                             You don't have an opinion about the others.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}=Han=Leia</code></li>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You want to completely abstain.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
                                 </ul>
                             {% else %}
                                 <ul>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You like Leia the most, but You see no difference between the others.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Leia&gt;Luke=Han=ObiWan</code></li>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You deem Leia and Obi-Wan (equally) suitable, Luke less so and Han Solo not at all.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You want to vote for Luke and if he doensn't make it, You think Obi-Wan should.
                                             You don't have an opinion about the others.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
-                                    <li>{% trans %}
+                                    <li>{% trans -%}
                                             You want to completely abstain.
-                                        {% endtrans %}<br />
+                                        {%- endtrans %}<br />
                                         <code>Luke=ObiWan=Han=Leia</code></li>
                                 </ul>
                             {% endif %}
@@ -446,19 +446,19 @@
                     {# Javascript preferential voting form #}
                     <div role="tabpanel" class="tab-pane" id="tab-jsform">
                         <p class="sr-only">
-                            {% trans %}
+                            {% trans -%}
                                 This is the interactive voting form. It is not supposed to be used with a Keyboard only.
                                 Use the link above to switch to the text-based form.
-                            {% endtrans %}
+                            {%- endtrans %}
                         </p>
                         <div class="prefvote_container" id="prefvote_container">
                             <div class="indicator">
-                                {% trans %}Increasing preference{% endtrans %} →
+                                {% trans -%}Increasing preference{%- endtrans %} →
                             </div>
                         </div>
                         <div class="p clearfix">
                             <button class="btn btn-primary" id="button-jsvote">
-                                {{ util.make_icon('ok') }} {% trans %}Vote{% endtrans %}
+                                {{ util.make_icon('ok') }} {% trans -%}Vote{%- endtrans %}
                             </button>
                         </div>
                         <script type="text/javascript">
@@ -488,42 +488,42 @@
                         
                         {% call util.bootstrap_panel(title='Hilfe', icon='info-sign', aclass='panel-default mosp') %}
                             <p>
-                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") %}
+                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
                                     This vote is an Alternative vote. You can arrange the Candidates in the field above
                                     according to Your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
-                                {% endtrans %}
+                                {%- endtrans %}
                             </p>
                             <p>
-                                {% trans %}
+                                {% trans -%}
                                     To arrange the Candidates, move them into one of the shaded boxes. The higher up the box,
                                     the higher Your preference for that Candidate. Candidates within the same box will be
                                     evaluated with the same preference. Move a Candidate between two boxes to create a new box.
-                                {% endtrans %}
+                                {%- endtrans %}
                             </p>
                             <p>
-                                {% trans %}
+                                {% trans -%}
                                     There are three ways of moving Candidates: Drag'n'Drop them into a different box or
                                     click on a Candidate and then on a box. Or You can select a Candidate with <kbd>TAB</kbd>,
                                     confirm it with <kbd>Enter</kbd> or <kbd>Space</kbd>, then select a box with <kbd>TAB</kbd>
                                     and confirm the selection with <kbd>ENTER</kbd> or <kbd>Space</kbd>.
-                                {% endtrans %}
+                                {%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
-                                    {% trans %}
+                                    {% trans -%}
                                         One of the boxes is marked as "Neutral". Please place Candidates You deem suitable
                                         above this box (they will be highlighted in green) and Candidates you want to reject
                                         below this box (they will be highlighted in red). Should all Candidates be rejected,
                                         the board may take additional measures.
-                                    {% endtrans %}
+                                    {%- endtrans %}
                                 </p>
                                 <p>
-                                    {% trans %}To abstain, place all Candidates in the neutral box.{% endtrans %}
+                                    {% trans -%}To abstain, place all Candidates in the neutral box.{%- endtrans %}
                                 </p>
                             {% else %}
                                 <p>
-                                    {% trans %}To abstain, place all Candidates in the same box.{% endtrans %}
+                                    {% trans -%}To abstain, place all Candidates in the same box.{%- endtrans %}
                                 </p>
                             {% endif %}
                             
@@ -585,7 +585,7 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        {% trans %}Deletes the Ballot and all associated Settings and Candidates.{% endtrans %}
+                        {% trans -%}Deletes the Ballot and all associated Settings and Candidates.{%- endtrans %}
                     </p>
                 </div>
             </div>

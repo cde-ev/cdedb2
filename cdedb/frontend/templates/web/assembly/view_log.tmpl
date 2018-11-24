@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %} {% trans start=values['start']|int|e, end=(values['start']|int + log|length)|e%}
 Assembly – Logs [{{ start }}–{{ end }}]
-{% endtrans %}{% endblock %}
+{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Log"), active=True) }}
@@ -12,12 +12,12 @@ Assembly – Logs [{{ start }}–{{ end }}]
     <table class="table table-condensed table-hover">
         <thead>
         <tr>
-            <th>{% trans %}Timestamp{% endtrans %}</th>
-            <th>{% trans %}Code{% endtrans %}</th>
-            <th>{% trans %}Submitted By{% endtrans %}</th>
-            <th>{% trans %}Assembly{% endtrans %}</th>
-            <th>{% trans %}Affected{% endtrans %}</th>
-            <th>{% trans %}Additional Info{% endtrans %}</th>
+            <th>{% trans -%}Timestamp{%- endtrans %}</th>
+            <th>{% trans -%}Code{%- endtrans %}</th>
+            <th>{% trans -%}Submitted By{%- endtrans %}</th>
+            <th>{% trans -%}Assembly{%- endtrans %}</th>
+            <th>{% trans -%}Affected{%- endtrans %}</th>
+            <th>{% trans -%}Additional Info{%- endtrans %}</th>
         </tr>
         </thead>
         <tbody>
