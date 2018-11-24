@@ -696,6 +696,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'notifications': rs.notifications,
             'now': now,
             'query_mod': query_mod,
+            'request_url': rs.request.url,
             'show_user_link': _show_user_link,
             'staticurl': staticurl,
             'docurl': docurl,

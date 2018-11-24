@@ -42,6 +42,14 @@
     <body>
         <div class="container page" id="maincontainer">
             <div class="clearfix" role="banner">
+                <div class="pull-right">
+                    <form action="{{ cdedblink('core/change_locale') }}" method="post" style="display: inline;">
+                            <input type="hidden" name="wants" value="{{ encode_parameter("core/change_locale", "wants", request_url)|e }}" />
+                        {% for l in ('de', 'en') if l != lang %}
+                            <button type="submit" class="btn btn-link" name="locale" value="{{ l|e }}">{{ l|e }}</button>
+                        {% endfor %}
+                    </form>
+                </div>
                 <div class="logo pull-left">
                     <img src="{{ staticurl("logo.svg")|e }}" alt="CdE-Datenbank" />
                 </div>

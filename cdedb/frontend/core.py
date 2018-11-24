@@ -218,6 +218,20 @@ class CoreFrontend(AbstractFrontend):
         rs.response.delete_cookie("sessionkey")
         return rs.response
 
+    @access("anonymous", modi={"POST"})
+    @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
+    def change_locale(self, rs, locale, wants):
+        if wants:
+            basic_redirect(rs, wants)
+        else:
+            self.redirect(rs, "core/index")
+
+        if locale in self.conf.I18N_LANGUAGES:
+            rs.response.set_cookie("locale", locale)
+        else:
+            rs.notify("error", n_("Unsupported locale"))
+        return rs.response
+
     @access("persona")
     def mydata(self, rs):
         """Convenience entry point for own data."""
