@@ -77,6 +77,10 @@ class CoreFrontend(AbstractFrontend):
             return self.render(rs, "login", {'meta_info': meta_info})
 
         else:
+            # Redirect to wanted page, if user meanwhile logged in
+            if wants:
+                return basic_redirect(rs, wants)
+
             ## genesis cases
             if {"core_admin", "event_admin", "ml_admin"} & rs.user.roles:
                 realms = []
