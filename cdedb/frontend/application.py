@@ -147,10 +147,13 @@ class Application(BaseApp):
                     "encode_notification": self.encode_notification,
                     "decode_notification": self.decode_notification,
                 }
+                locale = self.get_locale(request)
                 rs = RequestState(
                     sessionkey, None, request, None, [], urls, args,
-                    self.urlmap, [], {}, "de", self.translations["de"].gettext,
-                    self.translations["de"].ngettext, coders, begin, scriptkey)
+                    self.urlmap, [], {}, locale,
+                    self.translations[locale].gettext,
+                    self.translations[locale].ngettext, coders, begin,
+                    scriptkey)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")
@@ -232,3 +235,24 @@ class Application(BaseApp):
             return construct_redirect(
                 request, urls.build("core/error", {'kind': "general",
                                                    'message': str(e)}))
+
+    def get_locale(self, request):
+        """
+        Extract a locale from the request headers (cookie and/or
+        Accept-Language)
+
+        :return: Language code of the requested locale
+        :rtype: str
+        """
+        if 'locale' in request.cookies \
+                and request.cookies['locale'] in self.conf.I18N_LANGUAGES:
+            return request.cookies['locale']
+
+        if 'Accept-Language' in request.headers:
+            for lang in request.headers['Accept-Language'].split(','):
+                lang_code = lang.split(';')[-1]
+                if lang_code in self.conf.I18N_LANGUAGES:
+                    return lang_code
+
+        # Default to 'de' which is currently best supported
+        return 'de'
