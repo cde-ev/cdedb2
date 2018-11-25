@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-11-25 00:54+0100\n"
+"POT-Creation-Date: 2018-11-25 15:01+0100\n"
 "PO-Revision-Date: 2017-12-10 13:36+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -2652,12 +2652,13 @@ msgid "You do not have sufficient permissions to access this site:"
 msgstr "Du hast keine ausreichende Berechtigung, um auf diese Seite zuzugreifen:"
 
 #: cdedb/frontend/templates/web/error.tmpl:12
+#, python-format
 msgid ""
-"If You think this is an error, please contact the %(team) at %(mail) and "
-"describe what You did."
+"If You think this is an error, please contact the %(team)s at %(mail)s "
+"and describe what You did."
 msgstr ""
 "Wenn Du diese Meldung für einen Fehler der CdE-Datenbank hälst, "
-"kontaktiere bitte das %(team) unter %(mail) und beschreibe, welche "
+"kontaktiere bitte das %(team)s unter %(mail)s und beschreibe, welche "
 "Aktionen Du durchgeführt hast."
 
 #: cdedb/frontend/templates/web/error.tmpl:20
@@ -2665,22 +2666,23 @@ msgid "Couldn't find the requested site:"
 msgstr "Die gewünschte Seite konnte leider nicht gefunden werden:"
 
 #: cdedb/frontend/templates/web/error.tmpl:24
+#, python-format
 msgid ""
 "If You got here via an internal CdE-Database Link, please constact the "
-"%(team) at %(mail) and describe what You did."
+"%(team)s at %(mail)s and describe what You did."
 msgstr ""
 "Wenn Du durch einen internen Link der CdE-Datenbank hierher gelangt bist,"
-" kontaktiere bitte das %(team) unter %(mail) und beschreibe, welche "
+" kontaktiere bitte das %(team)s unter %(mail)s und beschreibe, welche "
 "Aktionen Du durchgeführt hast."
 
 #: cdedb/frontend/templates/web/error.tmpl:31
 #, python-format
 msgid ""
-"Use the navigation bar of your Browser to get back or go to the %(link) "
-"of the %(db)"
+"Use the navigation bar of your Browser to get back or go to the %(link)s "
+"of the %(db)s"
 msgstr ""
 "Verwende die Navigations-Schaltflächen deines Browsers um zurück zur "
-"vorherigen Seite zu gelangen oder öffne die %(link) der %(db)."
+"vorherigen Seite zu gelangen oder öffne die %(link)s der %(db)s."
 
 #: cdedb/frontend/templates/web/error.tmpl:32
 msgid "Frontpage"
@@ -2917,8 +2919,9 @@ msgid "Create User"
 msgstr "Nutzer anlegen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:79
-msgid "Hello %(given_names),"
-msgstr "Hallo %(given_names),"
+#, python-format
+msgid "Hello %(given_names)s,"
+msgstr "Hallo %(given_names)s,"
 
 #: cdedb/frontend/templates/web/generic.tmpl:83
 msgid ""

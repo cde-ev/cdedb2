@@ -576,7 +576,7 @@
                          <script type="text/javascript">
                              $(function() {
                                  $('#deleteballotform').cdedbProtectAction(
-                                     {{ gettext("This Ballot and all its Data will be permanently deleted.") }});
+                                     "{{ gettext("This Ballot and all its Data will be permanently deleted.") }}");
                                  $('#deleteballotform').find('[name="ack_delete"]').prop('checked', true)
                                      .parent().hide();
                              });

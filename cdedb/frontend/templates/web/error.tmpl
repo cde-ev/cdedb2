@@ -9,7 +9,7 @@
             {{ error.description|e }}
         </div>
         <p>
-            {{ gettext("If You think this is an error, please contact the %(team) at %(mail) and describe what You did.")|
+            {{ gettext("If You think this is an error, please contact the %(team)s at %(mail)s and describe what You did.")|
                format(team=gettext("Database-Development-Team"),
                       mail="<a href='mailto:" + gettext("CdE-Database-Development-Team") +
                            "<cdedb@lists.cde-ev.de>'>{#-#}cdedb@lists.cde-ev.de</a>") }}
@@ -21,14 +21,14 @@
             {{ error.description|e }}
         </div>
         <p>
-            {{ gettext("If You got here via an internal CdE-Database Link, please constact the %(team) at %(mail) "
+            {{ gettext("If You got here via an internal CdE-Database Link, please constact the %(team)s at %(mail)s "
                        "and describe what You did.")|
                format(team=gettext("Database-Development-Team"),
                       mail="<a href='mailto:" + gettext("CdE-Database-Development-Team") +
                            "<cdedb@lists.cde-ev.de>'>{#-#}cdedb@lists.cde-ev.de</a>") }}
         </p>
         <p>
-            {{ gettext("Use the navigation bar of your Browser to get back or go to the %(link) of the %(db)")|
+            {{ gettext("Use the navigation bar of your Browser to get back or go to the %(link)s of the %(db)s")|
                format(link=util.href(cdedblink('core/index'), gettext("Frontpage")), db=gettext("CdE-Database")) }}
         </p>
     {% else %}
