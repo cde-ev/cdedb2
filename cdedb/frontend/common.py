@@ -586,7 +586,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None,
-            auto_reload=not self.conf.CDEDB_DEV)
+            auto_reload=(not self.conf.CDEDB_DEV))
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,

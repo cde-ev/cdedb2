@@ -60,7 +60,7 @@ class Application(BaseApp):
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None,
-            auto_reload=not self.conf.CDEDB_DEV)
+            auto_reload=(not self.conf.CDEDB_DEV))
         self.jinja_env.globals.update({
             'now': now,
             'staticurl': staticurl,
@@ -257,7 +257,7 @@ class Application(BaseApp):
 
         # if 'Accept-Language' in request.headers:
         #     for lang in request.headers['Accept-Language'].split(','):
-        #         lang_code = lang.split(';')[-1]
+        #         lang_code = lang.split('-')[0].split(';')[0].strip()
         #         if lang_code in self.conf.I18N_LANGUAGES:
         #             return lang_code
 
