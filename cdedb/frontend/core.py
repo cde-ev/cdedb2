@@ -335,6 +335,7 @@ class CoreFrontend(AbstractFrontend):
                                   'is_instructor')}
                     for pi in participation_info
                     if pi['pevent_id'] == past_event_id
+                       and pi['pcourse_id'] is not None
                 }
 
         ## Check whether we should display an option for using the quota
