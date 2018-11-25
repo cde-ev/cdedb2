@@ -124,7 +124,14 @@
                     {% endif %}
                 </li>
             {% endfor %}
+            {% if extra_participants %}
+                <li>und {{ extra_participants|e }} {{ extra_participants|numerus("weiterer", "weitere") }} …</li>
+            {% endif %}
         </ul>
+    {% elif extra_participants %}
+        <p>
+            <i>{{ extra_participants|e }} Teilnehmer.</i>
+        </p>
     {% else %}
         <p>
             <i>Keine Teilnehmer eingetragen.</i>
