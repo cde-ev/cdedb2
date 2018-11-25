@@ -598,6 +598,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
             'CDEDB_DEV': self.conf.CDEDB_DEV,
             'GIT_COMMIT': self.conf.GIT_COMMIT,
+            'I18N_LANGUAGES': self.conf.I18N_LANGUAGES,
         })
         self.jinja_env_tex = self.jinja_env.overlay(
             block_start_string="<<%",
