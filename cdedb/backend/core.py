@@ -610,7 +610,9 @@ class CoreBackend(AbstractBackend):
                           additional_info=change_note)
             if ldap_ops:
                 with self.ldap_connect() as l:
-                    l.modify(dn, ldap_ops)
+                    ## HACK FIXME Dirty hack: disable ldap
+                    # l.modify(dn, ldap_ops)
+                    pass
         return num
 
     @internal_access("persona")
@@ -1390,7 +1392,9 @@ class CoreBackend(AbstractBackend):
             dn = "uid={},{}".format(new_id, self.conf.LDAP_UNIT_NAME)
             self.core_log(rs, const.CoreLogCodes.persona_creation, new_id)
             with self.ldap_connect() as l:
-                l.add(dn, object_class='cdePersona', attributes=attributes)
+                ## HACK FIXME Dirty hack: disable ldap
+                # l.add(dn, object_class='cdePersona', attributes=attributes)
+                pass
         return new_id
 
     @access("anonymous")
@@ -1646,8 +1650,10 @@ class CoreBackend(AbstractBackend):
                     (self.encrypt_password(new_password), persona_id))
                 ret = cur.rowcount
                 with self.ldap_connect() as l:
-                    l.modify(dn, {'userPassword': [(ldap3.MODIFY_REPLACE,
-                                                    [ldap_passwd])]})
+                    ## HACK FIXME Dirty hack: disable ldap
+                    # l.modify(dn, {'userPassword': [(ldap3.MODIFY_REPLACE,
+                    #                                 [ldap_passwd])]})
+                    pass
         if orig_conn:
             ## deescalate
             rs.conn = orig_conn
