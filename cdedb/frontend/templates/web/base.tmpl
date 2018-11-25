@@ -50,10 +50,16 @@
                                 <input type="hidden" name="wants"
                                        value="{{ encode_parameter("core/change_locale", "wants", request_url)|e }}" />
                             {% endif %}
-                            {% for l in I18N_LANGUAGES if l != lang %}
-                                <button type="submit" class="btn btn-link" name="locale" value="{{ l|e }}">
-                                    <img src="{{ staticurl("flags/{}.png".format(l))|e }}" /></button>
-                            {% endfor %}
+                            {% with TITLES = {'de': ("deutsch", "auf deutsch umschalten"),
+                                              'en': ("engish", "switch to english"),} %}
+                                {% for l in I18N_LANGUAGES if l != lang %}
+                                    <button type="submit" class="btn btn-link" name="locale" value="{{ l|e }}"
+                                            title="{{ TITLES.get(l, (None, None))[1]|e }}">
+                                        <img src="{{ staticurl("flags/{}.png".format(l))|e }}"
+                                             alt="{{ TITLES.get(l, (None, None))[0]|e }}" />
+                                    </button>
+                                {% endfor %}
+                            {% endwith %}
                         </form>
                     </div>
                 {% endif %}
