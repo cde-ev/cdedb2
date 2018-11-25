@@ -1347,13 +1347,20 @@ def _iban(val, argname=None, *, _convert=True):
         if char not in string.ascii_uppercase:
             errs.append((argname,
                          ValueError(n_("Must start with country code."))))
-    for char in tmp[2:]:
+    for char in tmp[2:4]:
         if char not in string.digits:
             errs.append((argname,
-                         ValueError(n_("Must continue with digits."))))
-    temp = tmp[4:] + str(ord(tmp[0]) - 55) + str(ord(tmp[1]) - 55) + tmp[2:4]
-    if int(temp) % 97 != 1:
-        errs.append((argname, ValueError(n_("Invalid checksum."))))
+                         ValueError(n_("Must have digits for checksum."))))
+    for char in tmp[4:]:
+        if char not in string.digits + string.ascii_uppercase:
+            errs.append((argname,
+                         ValueError(n_("Invalid character in IBAN."))))
+    if not errs:
+        temp = tmp[4:] + tmp[:4]
+        temp = ''.join(c if c in string.digits else str(ord(c) - 55)
+                       for c in temp)
+        if int(temp) % 97 != 1:
+            errs.append((argname, ValueError(n_("Invalid checksum."))))
     return val, errs
 
 _LASTSCHRIFT_TRANSACTION_OPTIONAL_FIELDS = lambda: {
