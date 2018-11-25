@@ -100,21 +100,21 @@ def generate_event_registration_default_queries(event, spec):
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),),
-            (("persona.birthday", True), ("persona.family_names", True),
+            (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True)), ),
         n_("06_query_event_registration_u16"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 16)),),
-            (("persona.birthday", True), ("persona.family_names", True),
+            (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True)), ),
         n_("07_query_event_registration_u14"): Query(
             "qview_registration", spec,
             ("persona.given_names", "persona.family_name", "persona.birthday"),
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 14)),),
-            (("persona.birthday", True), ("persona.family_names", True),
+            (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True)), ),
         n_("08_query_event_registration_minors_no_consent"): Query(
             "qview_registration", spec,
@@ -122,7 +122,7 @@ def generate_event_registration_default_queries(event, spec):
             (("persona.birthday", QueryOperators.greater,
               deduct_years(event['begin'], 18)),
              ("reg.parental_agreement", QueryOperators.empty, None)),
-            (("persona.birthday", True), ("persona.family_names", True),
+            (("persona.birthday", True), ("persona.family_name", True),
              ("persona.given_names", True)), ),
         }
     
