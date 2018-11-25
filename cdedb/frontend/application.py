@@ -60,6 +60,12 @@ class Application(BaseApp):
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None)
+        self.jinja_env.globals.update({
+            'now': now,
+            'staticurl': staticurl,
+            'docurl': docurl,
+            'glue': glue,
+        })
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.translations = {
             lang: gettext.translation(
@@ -90,19 +96,16 @@ class Application(BaseApp):
         def _cdedblink(endpoint, params=None):
             return urls.build(endpoint, params or {})
         begin = now()
-        lang = "de"
+        lang = self.get_locale(request)
         data = {
             'ambience': {},
             'cdedblink': _cdedblink,
             'errors': {},
             'generation_time': lambda: (now() - begin),
-            'glue': glue,
             'gettext': self.translations[lang].gettext,
             'ngettext': self.translations[lang].ngettext,
+            'lang': lang,
             'notifications': tuple(),
-            'now': now,
-            'staticurl': staticurl,
-            'docurl': docurl,
             'user': User(),
             'values': {},
             'error': error,
@@ -147,12 +150,12 @@ class Application(BaseApp):
                     "encode_notification": self.encode_notification,
                     "decode_notification": self.decode_notification,
                 }
-                locale = self.get_locale(request)
+                lang = self.get_locale(request)
                 rs = RequestState(
                     sessionkey, None, request, None, [], urls, args,
-                    self.urlmap, [], {}, locale,
-                    self.translations[locale].gettext,
-                    self.translations[locale].ngettext, coders, begin,
+                    self.urlmap, [], {}, lang,
+                    self.translations[lang].gettext,
+                    self.translations[lang].ngettext, coders, begin,
                     scriptkey)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
