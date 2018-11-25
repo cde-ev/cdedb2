@@ -1,1 +1,0 @@
-grep -vE '^#:|POT-Creation-Date' $1
