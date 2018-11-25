@@ -587,6 +587,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
             finalize=sanitize_None)
         self.jinja_env.filters.update(JINJA_FILTERS)
+        self.jinja_env.globals.update({
+            'now': now,
+            'query_mod': query_mod,
+            'glue': glue,
+            'enums': ENUMS_DICT,
+            'encode_parameter': self.encode_parameter,
+            'staticurl': staticurl,
+            'docurl': docurl,
+            'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
+            'CDEDB_DEV': self.conf.CDEDB_DEV,
+            'GIT_COMMIT': self.conf.GIT_COMMIT,
+        })
         self.jinja_env_tex = self.jinja_env.overlay(
             block_start_string="<<%",
             block_end_string="%>>",
@@ -684,27 +696,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         data = {
             'ambience': rs.ambience,
             'cdedblink': _cdedblink,
-            'encode_parameter': self.encode_parameter,
-            'enums': ENUMS_DICT,
             'errors': errorsdict,
             'generation_time': lambda: (now() - rs.begin),
-            'glue': glue,
             'gettext': rs.gettext,
             'is_admin': self.is_admin(rs),
             'lang': rs.lang,
             'ngettext': rs.ngettext,
             'notifications': rs.notifications,
-            'now': now,
-            'query_mod': query_mod,
             'request_url': rs.request.url,
             'show_user_link': _show_user_link,
-            'staticurl': staticurl,
-            'docurl': docurl,
             'user': rs.user,
             'values': rs.values,
-            'CDEDB_OFFLINE_DEPLOYMENT': self.conf.CDEDB_OFFLINE_DEPLOYMENT,
-            'CDEDB_DEV': self.conf.CDEDB_DEV,
-            'GIT_COMMIT': self.conf.GIT_COMMIT,
         }
         ## check that default values are not overridden
         assert(not set(data) & set(params))
