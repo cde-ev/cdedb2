@@ -20,6 +20,7 @@ import gettext
 import random
 import re
 import sys
+import time
 
 import ldap3
 
@@ -893,9 +894,9 @@ for assembly_id in ASSEMBLY_MAP:
             'notes': ballot['agenda_item'],
             'quorum': quorum,
             'title': ballot['name'],
-            'vote_begin': ballot['starttime'],
-            'vote_end': ballot['deadline'],
-            'vote_extension_end': ballot['deadline_q'],
+            'vote_begin': now() + datetime.timedelta(seconds=1),
+            'vote_end': now() + datetime.timedelta(seconds=1.1),
+            'vote_extension_end': now() + datetime.timedelta(seconds=1.2),
             'votes': 0
         }
         new_id = assembly.create_ballot(rs(DEFAULT_ID), new)
@@ -947,6 +948,8 @@ for ballot_id in BALLOT_MAP:
     })
 
 ## Conclude assemblies
+print("Waiting for ballots")
+time.sleep(2)
 print("Concluding assemblies")
 query = "UPDATE assembly.assemblies SET is_active = False"
 query_exec(cdb, query, tuple())
