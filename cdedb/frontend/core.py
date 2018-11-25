@@ -221,6 +221,11 @@ class CoreFrontend(AbstractFrontend):
     @access("anonymous", modi={"POST"})
     @REQUESTdata(("locale", "printable_ascii"), ("wants", "#str_or_None"))
     def change_locale(self, rs, locale, wants):
+        """Set 'locale' cookie to override default locale for this user/browser.
+
+        :param locale: The target locale
+        :param wants: URL to redirect to (typically URL of the previous page)
+        """
         if wants:
             basic_redirect(rs, wants)
         else:
