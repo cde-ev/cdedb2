@@ -575,7 +575,7 @@ INSTITUTION_MAP[3] = new_id
 
 ## Import events
 EVENT_MAP = {}
-WINTER_AKA_MAP = {}
+SPLIT_AKA_MAP = {}
 query = "SELECT * FROM veranstaltungen"
 events = query_all(cdedbxy, query, tuple())
 events = tuple(sorted(events, key=lambda e: e['shortname']))
