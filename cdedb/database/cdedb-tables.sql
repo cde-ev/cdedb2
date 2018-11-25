@@ -677,9 +677,9 @@ CREATE TABLE event.registrations (
         payment                 date DEFAULT NULL,
         -- parental consent for minors (NULL if not (yet) given, e.g. non-minors)
         parental_agreement      boolean DEFAULT NULL,
-        mixed_lodging           boolean,
+        mixed_lodging           boolean NOT NULL,
         checkin                 timestamp WITH TIME ZONE DEFAULT NULL,
-        -- foto consent (documentation, password protected gallery)
+        -- foto consent (documentation, password protected gallery; NULL while unknown)
         foto_consent            boolean,
 
         -- only basic data should be defined here and everything else will
@@ -700,7 +700,7 @@ CREATE TABLE event.registration_parts (
         -- see cdedb.database.constants.RegistrationPartStati
         status                  integer NOT NULL,
         lodgement_id            integer REFERENCES event.lodgements(id) DEFAULT NULL,
-        is_reserve              boolean DEFAULT False
+        is_reserve              boolean NOT NULL DEFAULT False
 );
 CREATE INDEX idx_registration_parts_registration_id ON event.registration_parts(registration_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.registration_parts TO cdb_persona;
@@ -738,6 +738,7 @@ CREATE TABLE event.questionnaire_rows (
         title                   varchar,
         info                    varchar,
         input_size              integer,
+        -- may be NULL for text
         readonly                boolean
 );
 CREATE INDEX idx_questionnaire_rows_event_id ON event.questionnaire_rows(event_id);
@@ -776,7 +777,7 @@ CREATE TABLE assembly.assemblies (
         signup_end              timestamp WITH TIME ZONE NOT NULL,
         -- concluded assemblies get deactivated and all related secrets are
         -- purged
-        is_active               boolean DEFAULT True,
+        is_active               boolean NOT NULL DEFAULT True,
         notes                   varchar
 );
 GRANT SELECT ON assembly.assemblies TO cdb_persona;
@@ -802,7 +803,7 @@ CREATE TABLE assembly.ballots (
         --
         -- It will not be listed in the assembly.candidates table, but added
         -- on the fly. Its moniker will be "_bar_".
-        use_bar                 boolean,
+        use_bar                 boolean NOT NULL,
         -- number of submitted votes necessary to not trigger extension
         quorum                  integer NOT NULL DEFAULT 0,
         -- number of votes per ballot
@@ -818,7 +819,7 @@ CREATE TABLE assembly.ballots (
         --       to encode disapproval of all candidates (only if the bar is used)
         votes                   integer DEFAULT NULL,
         -- True after creation of the result summary file
-        is_tallied              boolean DEFAULT False,
+        is_tallied              boolean NOT NULL DEFAULT False,
         notes                   varchar
 );
 CREATE INDEX idx_ballots_assembly_id ON assembly.ballots(assembly_id);
@@ -853,7 +854,7 @@ CREATE TABLE assembly.voter_register (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
-        has_voted               boolean DEFAULT False NOT NULL
+        has_voted               boolean NOT NULL DEFAULT False
 );
 CREATE UNIQUE INDEX idx_voter_constraint ON assembly.voter_register(persona_id, ballot_id);
 GRANT SELECT, INSERT ON assembly.voter_register TO cdb_persona;
@@ -969,9 +970,9 @@ CREATE TABLE ml.subscription_states (
         mailinglist_id          integer NOT NULL REFERENCES ml.mailinglists(id),
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         address                 varchar,
-        is_subscribed           boolean,
+        is_subscribed           boolean NOT NULL,
         -- may subscribe even if not in audience
-        is_override             boolean DEFAULT False
+        is_override             boolean NOT NULL DEFAULT False
 );
 CREATE UNIQUE INDEX idx_subscription_constraint ON ml.subscription_states(mailinglist_id, persona_id);
 GRANT SELECT, INSERT, UPDATE ON ml.subscription_states TO cdb_persona;
