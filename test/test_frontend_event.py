@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import csv
 import json
 import unittest
 import quopri
@@ -1032,6 +1032,46 @@ etc;anything else""", f['entries_2'].value)
         result = json.loads(self.response.text)
         expectation['timestamp'] = result['timestamp'] # nearly_now() won't do
         self.assertEqual(expectation, result)
+
+    @as_users("garcia")
+    def test_downlaod_csv(self, user):
+        class dialect(csv.Dialect):
+            delimiter = ';'
+            quotechar = '"'
+            doublequote = False
+            escapechar = '\\'
+            lineterminator = '\n'
+            quoting = csv.QUOTE_MINIMAL
+
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/download'},)
+        save = self.response
+        self.response = save.click(href='/event/event/1/download/csv_registrations')
+
+        result = list(csv.DictReader(self.response.text.split('\n'),
+                                     dialect=dialect))
+        self.assertIn('2222-01-01', tuple(row['persona.birthday']
+                                          for row in result))
+        self.assertIn('high', tuple(row['part3.lodgement.fields.contamination']
+                                    for row in result))
+        self.assertIn('5', tuple(row['part2.status']
+                                 for row in result))
+        self.response = save.click(href='/event/event/1/download/csv_courses')
+
+        result = list(csv.DictReader(self.response.text.split('\n'),
+                                     dialect=dialect))
+        self.assertIn('ToFi & Co', tuple(row['instructors'] for row in result))
+        self.assertIn('cancelled', tuple(row['track2'] for row in result))
+        self.assertIn('Seminarraum 42', tuple(row['fields.room']
+                                              for row in result))
+        self.response = save.click(href='/event/event/1/download/csv_lodgements')
+
+        result = list(csv.DictReader(self.response.text.split('\n'),
+                                     dialect=dialect))
+        self.assertIn('100', tuple(row['reserve'] for row in result))
+        self.assertIn('low', tuple(row['fields.contamination']
+                                   for row in result))
 
     @as_users("garcia")
     def test_questionnaire_manipulation(self, user):
