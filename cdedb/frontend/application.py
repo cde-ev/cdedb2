@@ -59,7 +59,14 @@ class Application(BaseApp):
                 str(self.conf.REPOSITORY_PATH / "cdedb/frontend/templates")),
             extensions=('jinja2.ext.with_', 'jinja2.ext.i18n', 'jinja2.ext.do',
                         'jinja2.ext.loopcontrols', 'jinja2.ext.autoescape'),
-            finalize=sanitize_None)
+            finalize=sanitize_None,
+            auto_reload=self.conf.CDEDB_DEV)
+        self.jinja_env.globals.update({
+            'now': now,
+            'staticurl': staticurl,
+            'docurl': docurl,
+            'glue': glue,
+        })
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.translations = {
             lang: gettext.translation(
@@ -90,19 +97,16 @@ class Application(BaseApp):
         def _cdedblink(endpoint, params=None):
             return urls.build(endpoint, params or {})
         begin = now()
-        lang = "de"
+        lang = self.get_locale(request)
         data = {
             'ambience': {},
             'cdedblink': _cdedblink,
             'errors': {},
             'generation_time': lambda: (now() - begin),
-            'glue': glue,
             'gettext': self.translations[lang].gettext,
             'ngettext': self.translations[lang].ngettext,
+            'lang': lang,
             'notifications': tuple(),
-            'now': now,
-            'staticurl': staticurl,
-            'docurl': docurl,
             'user': User(),
             'values': {},
             'error': error,
@@ -147,10 +151,13 @@ class Application(BaseApp):
                     "encode_notification": self.encode_notification,
                     "decode_notification": self.decode_notification,
                 }
+                lang = self.get_locale(request)
                 rs = RequestState(
                     sessionkey, None, request, None, [], urls, args,
-                    self.urlmap, [], {}, "de", self.translations["de"].gettext,
-                    self.translations["de"].ngettext, coders, begin, scriptkey)
+                    self.urlmap, [], {}, lang,
+                    self.translations[lang].gettext,
+                    self.translations[lang].ngettext, coders, begin,
+                    scriptkey)
                 rs.values.update(args)
                 component, action = endpoint.split('/')
                 raw_notifications = rs.request.cookies.get("displaynote")
@@ -232,3 +239,27 @@ class Application(BaseApp):
             return construct_redirect(
                 request, urls.build("core/error", {'kind': "general",
                                                    'message': str(e)}))
+
+    def get_locale(self, request):
+        """
+        Extract a locale from the request headers (cookie and/or
+        Accept-Language)
+
+        :return: Language code of the requested locale
+        :rtype: str
+        """
+        if 'locale' in request.cookies \
+                and request.cookies['locale'] in self.conf.I18N_LANGUAGES:
+            return request.cookies['locale']
+
+        # TODO un-comment this, as soon as our english translation is (somehow)
+        #   complete
+
+        # if 'Accept-Language' in request.headers:
+        #     for lang in request.headers['Accept-Language'].split(','):
+        #         lang_code = lang.split('-')[0].split(';')[0].strip()
+        #         if lang_code in self.conf.I18N_LANGUAGES:
+        #             return lang_code
+
+        # Default to 'de' which is currently best supported
+        return 'de'

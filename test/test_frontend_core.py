@@ -35,6 +35,28 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence(user['display_name'])
         self.assertIn('loginform', self.response.forms)
 
+    @as_users("anton")
+    def test_change_locale(self, user):
+        # Test for german locale
+        self.traverse({'href': '/core/search/user'})
+        self.assertPresence("Suchmaske")
+        self.assertNonPresence("Search Mask")
+        # Test changing locale to english
+        f = self.response.forms['changelocaleform']
+        self.submit(f, 'locale', False)
+        self.assertPresence("Search Mask")
+        self.assertNonPresence("Suchmaske")
+        # Test storing of locale (via cookie)
+        self.traverse({'href': '/cde/'},
+                      {'href': '/cde/search/user'})
+        self.assertPresence("Search Mask")
+        self.assertNonPresence("Suchmaske")
+        # Test changing locale back to german
+        f = self.response.forms['changelocaleform']
+        self.submit(f, 'locale', False)
+        self.assertPresence("Suchmaske")
+        self.assertNonPresence("Search Mask")
+
     @as_users("anton", "berta", "emilia")
     def test_showuser(self, user):
         self.traverse({'href': '/core/self/show'})
