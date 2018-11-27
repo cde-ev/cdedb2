@@ -321,7 +321,8 @@ class CdEFrontend(AbstractUserFrontend):
             rs.values['resolution{}'.format(datum['lineno'] - 1)] = None
             warnings.append((None, ValueError(n_("Entry changed."))))
         persona = copy.deepcopy(datum['raw'])
-        ## Adapt input of gender from old convention
+        ## Adapt input of gender from old convention (this is the format
+        ## used by external processes, i.e. BuB)
         GENDER_CONVERT = {
             "0": str(const.Genders.other.value),
             "1": str(const.Genders.male.value),
