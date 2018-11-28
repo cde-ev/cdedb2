@@ -46,7 +46,7 @@
                 {% if has_lastschrift %}
                     <p>
                         {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
-                                 amount=25|money|e, idea=gettext("Idee Schülerakaedmie") -%}
+                                 amount=25|money|e, idea=gettext("Idee Schülerakademie") -%}
                             With the Initiative 25+ you can support the CdE and the "{{ idea }}" financially,
                             via Direct Debit of {{ amount }} or more annually. {{ link }}
                         {%- endtrans %}
@@ -128,7 +128,7 @@
                         <td>{{ meta_info['CdE_Konto_Institut']|e }}</td>
                     </tr>
                     <tr>
-                        <td>Payment reference</td>
+                        <td>{% trans -%}Payment reference{%- endtrans %}</td>
                         <td>{{ data['id']|cdedbid|e }}, {{ data['family_name']|e }},
                             {{ data['given_names']|e }}</td>
                     </tr>
