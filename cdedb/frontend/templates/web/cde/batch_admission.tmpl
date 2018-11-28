@@ -3,20 +3,20 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('csv-tools') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='strong' %}
-{% block title %}Accounts anlegen{% endblock %}
+{% block title %}{% trans -%}Create Accounts{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten") }}
-{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), "Massenaufnahme", active=True) }}
+{{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
+{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Batch Admission"), active=True) }}
 {% endblock %}
 {% macro ba_submit_button() %}
     {% if values['finalized'] %}
-        {{ util.form_input_submit(value="Anlegen", horizontal=False) }}
+        {{ util.form_input_submit(value=gettext("Create"), horizontal=False) }}
     {% else %}
         {% if data %}
-            {{ util.form_input_submit(value="Erneut validieren", horizontal=False) }}
+            {{ util.form_input_submit(value=gettext("Validate Again"), horizontal=False) }}
         {% else %}
-            {{ util.form_input_submit(value="Validieren", horizontal=False) }}
+            {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
         {% endif %}
     {% endif %}
 {% endmacro %}
@@ -25,38 +25,54 @@
         {{ util.input_hidden("finalized") }}
         <div class="row">
             <div class="col-md-6">
-                {{ util.form_input_checkbox("membership", label="CdE-Mitgliedschaft eintragen", horizontal=False) }}
-                {{ util.form_input_checkbox("trial_membership", label="Probemitgliedschaft gutschreiben",
+                {{ util.form_input_checkbox("membership", label=gettext("Set CdE-Membership"), horizontal=False) }}
+                {{ util.form_input_checkbox("trial_membership", label=gettext("Set Trial-Membership"),
                                             horizontal=False) }}
             </div>
             <div class="col-md-6">
-                {{ util.form_input_checkbox("consent", label="Datenschutzeinwilligung gegeben", horizontal=False) }}
-                {{ util.form_input_checkbox("sendmail", label="Willkommensmail verschicken", horizontal=False) }}
+                {{ util.form_input_checkbox("consent", label=gettext("Privacy Consent given"), horizontal=False) }}
+                {{ util.form_input_checkbox("sendmail", label=gettext("Send Welcome Mail"), horizontal=False) }}
             </div>
         </div>
-        {{ util.form_input_textarea(name="accounts", label="Daten", horizontal=False, rows=8, anid='input-data') }}
+        {{ util.form_input_textarea(name="accounts", label=gettext("Data"), horizontal=False, rows=8, anid='input-data') }}
 
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} Bitte einen Datensatz pro Zeile einfügen. Das Format ist
+            {{ util.make_icon('info-sign') }} {% trans -%}Enter one dataset per line.{%- endtrans %}
+            {% trans -%}Use the following format:{%- endtrans %}
         </p>
-        <pre>&quot;Akademie&quot;;&quot;Kurs&quot;;&quot;Nachname&quot;;&quot;Vorname&quot;;&quot;Titel&quot;;<!--
--->&quot;Namenszusatz&quot;;&quot;Geburtsname&quot;;&quot;Geschlecht&quot;;&quot;Adresszusatz&quot;;<!--
--->&quot;Straße&quot;;&quot;Postleitzahl&quot;;&quot;Wohnort&quot;;&quot;Land&quot;;<!--
--->&quot;Telefonnummer&quot;;&quot;Mobilnummer&quot;;&quot;E-Mail&quot;;&quot;Geburtstag&quot;</pre>
+        <pre>{{   "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
+                -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
+                -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;<!--
+                -->&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
+                format(_("Academy"), _("Course"), _("Family Name"), _("Given Names"), _("Title"), _("Name Affix"),
+                       _("Birth Name"), _("Gender"), _("Address Supplement"), _("Street"), _("Zipcode"), _("City"),
+                       _("Country"), _("Phone number"), _("Mobilephone number"), _("E-Mail"), _("Birthday"))}}
+        </pre>
         <p class="help-block">
-            Bei Geschlecht 1 für männlich, 2 für weiblich, 3 für keine Angabe und 0 für alles andere eintragen.
+            {% if True %}
+                {% trans -%}For Gender enter 1 for male, 2 for female, 3 for other and 0 for not specified.{%- endtrans %}
+            {% else %}
+            {% trans -%}For Gender enter {%- endtrans %}
+                {% for gender in enums['Genders'].__members__.values() -%}
+                    {% trans val=gender.value, name=gettext(gender|string)-%}{{ val }} for {{ name }}{%- endtrans -%}
+                    {%- if not loop.last %}, {% endif -%}
+                {%- endfor -%}
+            {%- trans -%}for_gender_enter_part2{%- endtrans %}
+            {% endif %}
         </p>
 
         {{ ba_submit_button() }}
 
         {% if data %}
-            <h2>Validierungsergebnisse</h2>
+            <h2>{% trans -%}Validation results{%- endtrans %}</h2>
             {% for dataset in data %}
                 {{ util.input_hidden("hash{}".format(dataset['lineno'] - 1)) }}
                 <strong>
-                    <span class="row-key" data-row="{{ dataset['lineno']|e }}">Zeile {{ dataset['lineno']|e }}</span>:
+                    <span class="row-key" data-row="{{ dataset['lineno']|e }}">
+                        {% trans lineno=dataset['lineno']|e -%}Line {{ lineno }}{%- endtrans %}
+                    </span>:
                     {{ dataset['raw']['given_names']|e }} {{ dataset['raw']['family_name']|e }}
-                    &lt;{{ dataset['raw']['username']|e }}&gt; geb. am {{ dataset['raw']['birthday']|e }}
+                    &lt;{{ dataset['raw']['username']|e }}&gt; {% trans -%}born{%- endtrans %} {{ dataset['raw']['birthday']|e }}
                     {% if dataset['pevent_id'] %}
                         ({{ pevents[dataset['pevent_id']]|e }}
                         {%- if dataset['pcourse_id'] -%}
@@ -70,7 +86,7 @@
                         <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
-                                    {{ util.make_icon('exclamation-sign', title="Fehler") }}
+                                    {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno']|e }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
@@ -82,7 +98,7 @@
                             {% endfor %}
                             {% for key, warning in dataset['warnings'] %}
                                 <li class="text-warning">
-                                    {{ util.make_icon('warning-sign', title="Warnung") }}
+                                    {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
                                     {% if key %}
                                         <em class="row-col-key" data-row="{{ dataset['lineno']|e }}"
                                           data-col="{{ csvfields.get(key, -1) }}">
@@ -96,7 +112,7 @@
                     {% endif %}
                     <div class="row">
                         <div class="col-md-6">
-                            <label>Aktion</label>
+                            <label>{% trans -%}Action{%- endtrans %}</label>
                             <div class="p">
                                 {#- jinja does not support list comprehension ... #}
                                 {%- set myentries = [] %}
@@ -106,24 +122,25 @@
                                 {%- endfor %}
                                 {{ util.input_select("resolution{}".format(dataset['lineno'] - 1), myentries,
                                         nulloption="", aclass="form-control select-action",
-                                        arialabel="Operation für Zeile {}".format(dataset['lineno'])) }}
+                                        arialabel=gettext("Operation for line {}").format(dataset['lineno']|e)) }}
                             </div>
                         </div>
 
                         {% if dataset['doppelgangers'] %}
                             <div class="col-md-6">
                                 <label id="doppelgangers-{{ dataset['lineno'] }}-label">
-                                    Zusammenführen mit Account
+                                    {% trans -%}Merge with Account{%- endtrans %}
                                 </label>
                                 <div class="p strip-space">
                                     {#- jinja does not support list comprehension ... #}
                                     {%- set myentries = [('', '–')] %}
                                     {%- for key, value in dataset['doppelgangers']|dictsort %}
-                                        {%- with description = "{} {} ({}) <{}> (geb. am {}), {}{}".format(
+                                        {%- with description = "{} {} ({}) <{}> ({} {}), {}{}".format(
                                                 value['given_names'], value['family_name'],
                                                 value['birth_name'] or value['family_name'],
-                                                value['username'], value['birthday']|date(lang=lang), key|cdedbid,
-                                                '' if value['is_member'] else ' (kein Mitglied)') %}
+                                                value['username'], gettext("born"),
+                                                value['birthday']|date(lang=lang), key|cdedbid,
+                                                '' if value['is_member'] else gettext(" (not a Member)"))|e %}
                                             {%- do myentries.append((key, description))|e %}
                                         {%- endwith %}
                                     {%- endfor %}

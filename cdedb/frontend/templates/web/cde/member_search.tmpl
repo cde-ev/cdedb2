@@ -1,16 +1,22 @@
 {% set sidenav_active='cde_member_search' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Mitgliedersuche{% endblock %}
+{% block title %}{% trans -%}CdE-Member Search{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/member_search"), "CdE-Mitglied suchen", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/member_search"), gettext("CdE-Member Search"), active="True") }}
 {% endblock %}
 {% block content %}
     {% if values['is_search'] %}
         <h2>
-            Ergebnis
-            <small>{{ result|length|e }} {{ result|length|numerus("Mitglied", "Mitglieder")|e }} gefunden</small>
+            {% trans -%}Result{%- endtrans %}
+            <small>
+            {% trans count=result|length -%}
+                {{ count }} Member found
+            {%- pluralize count -%}
+                {{ count }} Members found
+            {%- endtrans %}
+            </small>
         </h2>
         <ul>
             {% for dataset in result %}
@@ -26,24 +32,24 @@
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary mosp">
             <div class="panel-heading">
-                <h2 class="panel-title">{{ util.make_icon('search') }} Suchmaske</h2>
+                <h2 class="panel-title">{{ util.make_icon('search') }} {% trans -%}Search Mask{%- endtrans %}</h2>
             </div>
             <div class="panel-body">
                 <div class="row">
                     <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_fulltext", label="Volltext", aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_given_names,display_name", label="Vorname",
+                        {{ util.form_input_text(name="qval_fulltext", label=gettext("Fulltext"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_given_names,display_name", label=gettext("Given Name(s)"),
                                 aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_family_name,birth_name", label="Nachname",
+                        {{ util.form_input_text(name="qval_family_name,birth_name", label="Family/Birth Name",
                                 aclass="input-sm") }}
                         {{ util.form_input_text(
                                 name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
-                                label="Interessen, …", aclass="input-sm") }}
+                                label=gettext("Interests"), aclass="input-sm") }}
                         {{ util.form_input_select(name="qval_pevent_id", entries=choices['pevent_id']|dictsort,
-                                                  nulloption="", label="Akademie", aclass="input-sm") }}
+                                                  nulloption="", label=gettext("Academy"), aclass="input-sm") }}
                         {% if values.get('qval_pevent_id') %}
                             {{ util.form_input_select(name="qval_pcourse_id", entries=choices['pcourse_id']|dictsort,
-                                                      nulloption="", label="Kurs", aclass="input-sm",
+                                                      nulloption="", label=gettext("Course"), aclass="input-sm",
                                                       defaultvalue='') }}
                         {% else %}
                             <div class="help-block text-muted">
@@ -53,18 +59,18 @@
                         {% endif %}
                     </div>
                     <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_username", label="E-Mail", aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_telephone,mobile", label="Telefon", aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_username", label=gettext("E-Mail"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_telephone,mobile", label=gettext("Phone"), aclass="input-sm") }}
                         {{ util.form_input_text(name="qval_address,address_supplement,address2,address_supplement2",
-                                                label="Adresse", aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_postal_code,postal_code2", label="PLZ", aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_location,location2", label="Ort", aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_country,country2", label="Land", aclass="input-sm") }}
+                                                label=gettext("Address"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_postal_code,postal_code2", label=gettext("ZIP"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_location,location2", label=gettext("City"), aclass="input-sm") }}
+                        {{ util.form_input_text(name="qval_country,country2", label=gettext("Country"), aclass="input-sm") }}
                     </div>
                 </div>
             </div>
             <div class="panel-footer text-right">
-                {{ util.input_submit("Suche", icon='search') }}
+                {{ util.input_submit(gettext("Search"), icon='search') }}
             </div>
         </div>
     </form>

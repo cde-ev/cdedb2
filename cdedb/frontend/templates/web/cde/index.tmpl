@@ -1,35 +1,41 @@
 {% set sidenav_active='cde_index' %}
 {% extends "web/cde/base.tmpl" %}
-{% block title %}CdE-Mitgliederbereich{% endblock %}
+{% block title %}
+    {% trans -%}
+        CdE-Member Area
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("cde/index"), "Mitglieder", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/index"), gettext("Members"), active="True") }}
 {% endblock %}
 {% block content %}
     <div class="row">
         <div class="col-md-6">
-            {% call util.bootstrap_panel(title="Mitgliedersuche", icon='search', aclass="panel-primary") %}
+            {% call util.bootstrap_panel(title=gettext("CdE-Member Quick-Search"), icon='search', aclass="panel-primary") %}
                 {% if "searchable" in user.roles %}
                     <form action="{{ cdedblink('cde/member_search')|e }}" method="GET" id="membersearchform"
                             class="form-horizontal">
                         {{ util.input_hidden(name="is_search", value=True) }}
                         <p>
-                            {{ util.input_text(name="qval_fulltext", arialabel="Suchbegriff") }}
+                            {{ util.input_text(name="qval_fulltext", arialabel=gettext("Search item")) }}
                         </p>
                         <div class="text-right">
-                            {{ util.input_submit('Suche', icon='search') }}
+                            {{ util.input_submit(gettext("Search"), icon='search') }}
                         </div>
                     </form>
                 {% else %}
                     {% if 'member' in user.roles %}
                         <p>
-                            Um die Mitgliedersuche verwenden zu können, musst Du die
-                            {{ util.href(cdedblink("cde/consent_decision_form"), "Datenschutzerklärung") }}
-                            bestätigen.
+                            {% trans pri_pol=util.href(cdedblink("cde/consent_decision_form"), "Privacy Policy") -%}
+                                To use the Member Search, You need to agree to the {{ pri_pol }}.
+                            {%- endtrans %}
                         </p>
                     {% else %}
                         <p>
-                            Um die Mitgliedersuche verwenden zu können, musst Du CdE-Mitglied sein. Weitere
-                            Informationen dazu findest Du weiter unten.
+                            {% trans -%}
+                                To use the Member Search, You need to be a CdE-Member.
+                                You can find more Information about Membership below.
+                            {%- endtrans %}
                         </p>
                     {% endif %}
                 {% endif %}
@@ -39,70 +45,90 @@
             {% call util.bootstrap_panel(title="Initiative 25+", icon='euro') %}
                 {% if has_lastschrift %}
                     <p>
-                        Mit der Initiative 25+ unterstützt Du den CdE und die „Idee Schülerakademie“ finanziell durch
-                        einen Lastschrifteinzug von jährlich 25 € oder mehr.
-                        {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }}
+                        {% trans link=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
+                                 amount=25|money|e, idea=gettext("Idee Schülerakaedmie") -%}
+                            With the Initiative 25+ you can support the CdE and the "{{ idea }}" financially,
+                            via Direct Debit of {{ amount }} or more annually. {{ link }}
+                        {%- endtrans %}
                     </p>
                     <p>
-                        <strong>Du nimmst bereits an der Initiative 25+ teil</strong>. Du kannst Deine
-                        {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
-                                "bestehende Einzugsermächtigung", icon='euro') }}
-                        ansehen.
+                        <strong>
+                            {% trans -%}
+                                You are already a part of the Initiative 25+
+                            {%- endtrans %}
+                        </strong>.
+                        {% trans link=util.href(cdedblink("cde/lastschrift_show", {'persona_id': user.persona_id}),
+                                gettext("existing Direct Debit Authorization"), icon='euro')-%}
+                            View Your {{ link }}.
+                        {%- endtrans %}
                     </p>
                 {% else %}
                     <p>
-                        Du möchtest den CdE und die „Idee Schülerakademie“ finanziell unterstützen? Sofern Du die
-                        Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich 25 € oder einen beliebigen höheren
-                        Betrag als Lastschrift von Deinem Konto ein: 25+ eben.
+                        {% trans amount=25|money|e, idea=gettext("Idee Schülerakademie") -%}
+                            You want to support the CdE and the "{{ idea }}" financially?
+                            You can give authorization for the CdE to withdraw {{ amount }} or more annually via Direct Debit.
+                        {%- endtrans %}
                     </p>
                     <p>
-                        {{ util.href(cdedblink("cde/i25p_index"), "Weitere Informationen") }} dazu oder direkt zum
-                        {{ util.href(cdedblink("cde/lastschrift_subscription_form"), "Lastschrift-Formular") }}.
+                        {% trans link_more_info=util.href(cdedblink("cde/i25p_index"), gettext("More Information")),
+                                 link_form=util.href(cdedblink("cde/lastschrift_subscription_form"), "Direct Debit Form") -%}
+                            Get {{ link_more_info }} or go directly to the {{ link_form }}.
+                        {%- endtrans %}
                     </p>
                 {% endif %}
             {% endcall %}
         </div>
     </div>
     {% if not has_lastschrift %}
-        {% call util.bootstrap_panel(title="Mitgliedsbeitrag", icon='euro') %}
+        {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='euro') %}
             {% if "member" in user.roles %}
                 <p>
-                    Dein aktuelles Guthaben beträgt {{ data['balance']|money|e }}.
+                    {% trans amount=data['balance']|money|e -%}
+                        Your current Balance is {{ amount }}.
+                    {%- endtrans %}
                     {% if deadline <= now().date() %}
-                        Deine Mitgliedschaft läuft in wenigen Tagen aus.
+                        {% trans -%}
+                            Your Membership will end in a few days.
+                        {%- endtrans %}
                     {% else %}
-                        Dies reicht voraussichtlich bis {{ deadline|date(lang=lang)|e }}.
+                        {% trans date=deadline|date(lang=lang)|e -%}
+                            This will presumably last until {{ date }}.
+                        {%- endtrans %}
                     {% endif %}
                 </p>
             {% else %}
                 <p>
-                    Du bist derzeit <u>kein Mitglied</u>. Um wieder Mitglied zu werden, musst Du lediglich
-                    Dein Guthaben auffüllen.
+                    {% trans -%}
+                        You are currently <u>not a Member</u>.
+                        To become a Member again, You just have to replenish Your Account Balance.
+                    {%- endtrans %}
                 </p>
             {% endif %}
             <p>
-                Um Dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto:
+                {% trans -%}
+                    To replenish your Account Balance, transfer money to the following Account:
+                {%- endtrans %}
             </p>
             <table class="table table-condensed">
                 <tbody>
                     <tr>
-                        <td>Kontoinhaber</td>
+                        <td>{% trans -%}Account holder{%- endtrans %}</td>
                         <td>{{ meta_info['CdE_Konto_Inhaber']|e }}</td>
                     </tr>
                     <tr>
-                        <td>IBAN</td>
+                        <td>{% trans -%}IBAN{%- endtrans %}</td>
                         <td>{{ meta_info['CdE_Konto_IBAN']|e }}</td>
                     </tr>
                     <tr>
-                        <td>BIC</td>
+                        <td>{% trans -%}BIC{%- endtrans %}</td>
                         <td>{{ meta_info['CdE_Konto_BIC']|e }}</td>
                     </tr>
                     <tr>
-                        <td>Kreditinstitut</td>
+                        <td>{% trans -%}Bank{%- endtrans %}</td>
                         <td>{{ meta_info['CdE_Konto_Institut']|e }}</td>
                     </tr>
                     <tr>
-                        <td>Verwendungszweck</td>
+                        <td>Payment reference</td>
                         <td>{{ data['id']|cdedbid|e }}, {{ data['family_name']|e }},
                             {{ data['given_names']|e }}</td>
                     </tr>

@@ -3,14 +3,18 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Kurs hinzufügen ({{ ambience['pevent']['title'] }}){% endblock %}
+{% block title %}
+    {% trans pevent=ambience['pevent']['title']|e -%}
+        Create Course ({{ pevent }})
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
         ambience['pevent']['title']|e, icon="calendar") }}
 {{ util.breadcrumb_link(cdedblink("cde/create_past_course", {"pevent_id": ambience['pevent']['id']}),
-        "Kurs hinzufügen", active=True) }}
+        gettext("Create Course"), active=True) }}
 {% endblock %}
 {% block content %}
     <script type="text/javascript">
@@ -20,18 +24,18 @@
     </script>
     <form action="{{ cdedblink('cde/create_past_course')|e }}" method="POST" id="createcourseform"
             class="form-horizontal">
-        {{ util.form_input_text(name="nr", label="Nummer") }}
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                                    info="Unterstützt reStructuredText") }}
+        {{ util.form_input_text(name="nr", label=gettext("Number")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="form-control-static text-info">
-                    {{ util.make_icon('info-sign') }} Achtung: Der neue Kurs ist direkt für CdE-Mitglieder, die sich die
-                    vergangene Veranstaltung ansehen, sichtbar.
+                    {{ util.make_icon('info-sign') }}
+                    {% trans -%}Warning: The new Course will be immediately visible to all CdE-Members viewing past Events.{%- endtrans %}
                 </div>
             </div>
         </div>
-        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("cde/show_past_event")) }}
+        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>
 {% endblock %}

@@ -2,22 +2,25 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-Log: Vergangene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+    {% trans -%}
+        Past Events Log
+    {%- endtrans %}
+    [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/view_past_log"), "Log (verg. Veranstaltungen)", active=True) }}
+{{ util.breadcrumb_link(cdedblink("cde/view_past_log"), gettext("Past Events Log"), active=True) }}
 {% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th>Zeitstempel</th>
-                <th>Code</th>
-                <th>Verantwortlich</th>
-                <th>Veranstaltung</th>
-                <th>Betroffen</th>
-                <th>Zusatz</th>
+                <th>{% trans -%}Timestamp{%- endtrans %}</th>
+                <th>{% trans -%}Code{%- endtrans %}</th>
+                <th>{% trans -%}Submitted By{%- endtrans %}</th>
+                <th>{% trans -%}Event{%- endtrans %}</th>
+                <th>{% trans -%}Affected{%- endtrans %}</th>
+                <th>{% trans -%}Additional Info{%- endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -53,15 +56,15 @@ Log: Vergangene Veranstaltungen [{{ values['start']|int|e }}–{{ (values['start
         </tbody>
     </table>
     
-    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}    
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('cde/view_past_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
+            {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info="Keine Auswahl entspricht allem.",
                                           entries=enums['PastEventLogCodes']|enum_entries(processing=gettext),
                                           small=True) }}
-            {{ util.form_input_select(name="pevent_id", label="Veranstaltung", nulloption="",
+            {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="",
                                       entries=pevents|dictsort|dict_entries('id', 'title'), small=True) }}
-            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
-            {{ util.form_input_submit(value="Anzeigen",small=True) }}
+            {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
+            {{ util.form_input_submit(value=gettext("Apply"),small=True) }}
         </form>
     {% endcall %}
 {% endblock %}

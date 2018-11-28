@@ -5,37 +5,43 @@
 {% block title %}Überweisungen eintragen{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten") }}
-{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), "Überweisungen eintragen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users")) }}
+{{ util.breadcrumb_link(cdedblink("cde/batch_admission_form"), gettext("Enter Bank Transfers"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('cde/money_transfers')|e }}" method="POST" id="transfersform">
         {{ util.input_hidden("checksum") }}
-        {{ util.form_input_checkbox("sendmail", label="Benachrichtigung verschicken", horizontal=False) }}
-        {{ util.form_input_textarea(name="transfers", label="Daten", horizontal=False, rows=8, anid="input-data") }}
+        {{ util.form_input_checkbox("sendmail", label=gettext("Send Notifications"), horizontal=False) }}
+        {{ util.form_input_textarea(name="transfers", label=gettext("Transfers"), horizontal=False, rows=8, anid="input-data") }}
 
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} Bitte einen Datensatz pro Zeile einfügen. Das Format ist
+            {{ util.make_icon('info-sign') }} {% trans -%}Enter one dataset per line.{%- endtrans %}
+            {% trans -%}Use the following format:{%- endtrans %}
         </p>
-        <pre>&quot;ID&quot;;&quot;Nachname&quot;;&quot;Vorname&quot;;&quot;Betrag&quot;;&quot;Kommentar&quot;</pre>
+        <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
+                format(_("ID"), _("Family Name"), _("Given Name"), _("Amount"), _("Comment")) }}</pre>
         <p class="help-block">
-            {{ util.make_icon('info-sign') }} Der Kommentar ist optional.
+            {{ util.make_icon('info-sign') }} {% trans -%}The Comment is optional.{%- endtrans %}
         </p>
 
         {% if data %}
-            <h2>Validierungsergebnisse</h2>
+            <h2>{% trans -%}Validation results{%- endtrans %}</h2>
             {% for dataset in data %}
                 <strong>
-                    <span  class="row-key" data-row="{{ dataset['lineno']|e }}">Zeile {{ dataset['lineno']|e }}</span>:
-                    {{ dataset['amount']|money }} für
-                    {{ dataset['raw']['given_names']|e }} {{ dataset['raw']['family_name']|e }}
+                    <span class="row-key" data-row="{{ dataset['lineno']|e }}">
+                        {% trans lineno=dataset['lineno'] -%}Line {{ lineno }}{%- endtrans %}
+                    </span>:
+                    {% trans amount=dataset['amount']|money|e, given_names=dataset['raw']['given_names']|e,
+                             family_name=dataset['raw']['family_name']|e -%}
+                        {{ amount }} for {{ given_names }} {{ family_names }}
+                    {%- endtrans %}
                 </strong>
                 <div class="batch-line-body">
                     {% if dataset['problems'] or dataset['warnings'] %}
                         <ul class="list-unstyled">
                             {% for key, problem in dataset['problems'] %}
                                 <li class="text-danger">
-                                    {{ util.make_icon('exclamation-sign', title="Fehler") }}
+                                    {{ util.make_icon('exclamation-sign', title=gettext("Error")) }}
                                     {% if key %}
                                         <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
                                             data-col="{{ csvfields.get(key, -1) }}">
@@ -47,7 +53,7 @@
                             {% endfor %}
                             {% for key, warning in dataset['warnings'] %}
                                 <li class="text-warning">
-                                    {{ util.make_icon('warning-sign', title="Warnung") }}
+                                    {{ util.make_icon('warning-sign', title=gettext("Warning")) }}
                                     {% if key %}
                                         <em class="row-col-key clickable" data-row="{{ dataset['lineno']|e }}"
                                             data-col="{{ csvfields.get(key, -1) }}">
@@ -77,11 +83,11 @@
         {% if values['checksum'] %}
             <p class="help-block">
                 {{ util.make_icon('info-sign') }}
-                Falls die Eingabe geändert wird, wird das Validierungsergebnis erneut angezeigt.
+                {% trans -%}If the input changed, the validation results will be displayed again.{%- endtrans %}
             </p>
-            {{ util.form_input_submit(value="Abschicken", horizontal=False) }}
+            {{ util.form_input_submit(value=gettext("Confirm"), horizontal=False) }}
         {% else %}
-            {{ util.form_input_submit(value="Validieren", horizontal=False) }}
+            {{ util.form_input_submit(value=gettext("Validate"), horizontal=False) }}
         {% endif %}
     </form>
 {% endblock %}

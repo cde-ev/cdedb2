@@ -4,22 +4,22 @@
 {% import "web/generic.tmpl" as generic with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('queryform') }}{{ util.cdedb_script('helper') }}{% endblock %}
-{% block title %}CdE-Nutzerverwaltung{% endblock %}
+{% block title %}{% trans -%}CdE-Usermanagement{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/user_search"), "Nutzer verwalten", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/user_search"), gettext("Manage Users"), active="True") }}
 {% endblock %}
 {% block content %}
     <div class="row">
         <div class="col-md-4">
             <div class="p button-par">
-                {{ util.href(cdedblink('cde/create_user'), "Nutzer anlegen", icon="plus",
+                {{ util.href(cdedblink('cde/create_user'), gettext("Create User"), icon="plus",
                              aclass="btn btn-success btn-sm") }}
-                {{ util.href(cdedblink('cde/batch_admission'), "Massenaufnahme", icon="import",
+                {{ util.href(cdedblink('cde/batch_admission'), gettext("Batch Admission"), icon="import",
                              aclass="btn btn-default btn-sm") }}
             </div>
             <p class="text-muted">{{ util.make_icon('info-sign') }}
-                Hier können nur CdEler gefunden werden (auch ehemalige).
+                {% trans -%}Only CdE-Members (and ex-Members) can be found here. {%- endtrans %}
             </p>
         </div>
         <div class="col-md-8">
@@ -30,7 +30,7 @@
     {{ generic.user_search_mask("cde", ("pevent_id", "pcourse_id")) }}
 
     {% if values['is_search'] %}
-        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length|e }}]</h3>
         {{ generic.user_search_result(result, "cde") }}
     {% endif %}
 {% endblock %}

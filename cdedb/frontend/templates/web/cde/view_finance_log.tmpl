@@ -1,25 +1,29 @@
 {% set sidenav_active='cde_finance_log' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Log: Finanzen [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+{% block title %}
+    {% trans -%}
+        Finance Log
+    {%- endtrans %}
+    [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/view_finance_log"), "Finanz-Log", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/view_finance_log"), gettext("Finance Log"), active="True") }}
 {% endblock %}
 {% block content %}
     <table class="table table-condensed table-hover">
         <thead>
             <tr>
-                <th>Zeitstempel</th>
-                <th>Code</th>
-                <th>Verantwortlich</th>
-                <th>Betroffen</th>
-                <th>Betrag</th>
-                <th>Guthaben</th>
-                <th>Zusatz</th>
-                <th>Mitglieder</th>
-                <th>Gesamtguthaben</th>
+                <th>{% trans -%}Timestamp{%- endtrans %}</th>
+                <th>{% trans -%}Code{%- endtrans %}</th>
+                <th>{% trans -%}Submitted By{%- endtrans %}</th>
+                <th>{% trans -%}Affected{%- endtrans %}</th>
+                <th>{% trans -%}Amount{%- endtrans %}</th>
+                <th>{% trans -%}Balance{%- endtrans %}</th>
+                <th>{% trans -%}Additional Info{%- endtrans %}</th>
+                <th>{% trans -%}Members{%- endtrans %}</th>
+                <th>{% trans -%}Overall Balance{%- endtrans %}</th>
             </tr>
         </thead>
         <tbody>
@@ -51,13 +55,13 @@
         </tbody>
     </table>
 
-    {% call util.bootstrap_panel(title="Filter", icon="search", aclass="panel-primary") %}
+    {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('cde/view_finance_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {{ util.form_input_checkboxes("codes", label="Kategorien", info="Keine Auswahl entspricht allem.",
+            {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info="Keine Auswahl entspricht allem.",
                     entries=enums['FinanceLogCodes']|enum_entries(processing=gettext), small=True) }}
-            {{ util.form_input_text(name="persona_id", label="Account", small=True) }}
-            {{ util.form_input_from_to('start', 'stop', label='Einträge', type='number', small=True) }}
-            {{ util.form_input_submit(value="Anzeigen", small=True) }}
+            {{ util.form_input_text(name="persona_id", label=gettext("Account"), small=True) }}
+            {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
+            {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
         </form>
     {% endcall %}
 {% endblock %}
