@@ -11,7 +11,7 @@
 {% block content %}
     <form action="{{ cdedblink('cde/money_transfers')|e }}" method="POST" id="transfersform">
         {{ util.input_hidden("checksum") }}
-        {{ util.form_input_checkbox("sendmail", label=gettext("Send Notifications"), horizontal=False) }}
+        {{ util.form_input_checkbox("sendmail", label=gettext("Send Notification"), horizontal=False) }}
         {{ util.form_input_textarea(name="transfers", label=gettext("Transfers"), horizontal=False, rows=8, anid="input-data") }}
 
         <p class="help-block">
@@ -19,7 +19,7 @@
             {% trans -%}Use the following format:{%- endtrans %}
         </p>
         <pre>{{ "&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;;&quot;%s&quot;"|
-                format(_("ID"), _("Family Name"), _("Given Name"), _("Amount"), _("Comment")) }}</pre>
+                format(_("ID"), _("Family Name"), _("Given Names"), _("Amount"), _("Comment")) }}</pre>
         <p class="help-block">
             {{ util.make_icon('info-sign') }} {% trans -%}The Comment is optional.{%- endtrans %}
         </p>
@@ -33,7 +33,7 @@
                     </span>:
                     {% trans amount=dataset['amount']|money|e, given_names=dataset['raw']['given_names']|e,
                              family_name=dataset['raw']['family_name']|e -%}
-                        {{ amount }} for {{ given_names }} {{ family_names }}
+                        {{ amount }} for {{ given_names }} {{ family_name }}
                     {%- endtrans %}
                 </strong>
                 <div class="batch-line-body">

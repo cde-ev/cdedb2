@@ -24,13 +24,13 @@
         {% if is_admin %}
             <script type="text/javascript">
             $(function() {
-                $('#revokeform').cdedbProtectAction("{{ gettext("This cannot be undone.") }}");
-                $('#skiptransactionform').cdedbProtectAction("{{ gettext("This cannot be undone.") }}");
+                $('#revokeform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
+                $('#skiptransactionform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
                 $('#generatetransactionform')
                     .cdedbProtectAction("{{ gettext("Direct Debit will be created and SEPA file created.") }}")
                     .on('submit', function(){window.location.reload();});
-                $('.failure-form').cdedbProtectAction("{{ gettext("This cannot be undone.") }}");
-                $('.success-form').cdedbProtectAction("{{ gettext("This cannot be undone.") }}");
+                $('.failure-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
+                $('.success-form').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}");
             });
             </script>
 
@@ -146,7 +146,7 @@
                                     class="failure-form">
                                     {{ util.input_hidden(name="transaction_id", value=transaction_id) }}
                                     {{ util.input_hidden(name="status", value=enums['LastschriftTransactionStati'].failure.value) }}
-                                    {{ util.input_submit(value=gettext("Failure"), aclass="btn btn-xs btn-danger", icon="exclamation-sign") }}
+                                    {{ util.input_submit(value=gettext("Failed"), aclass="btn btn-xs btn-danger", icon="exclamation-sign") }}
                                 </form>
                                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],

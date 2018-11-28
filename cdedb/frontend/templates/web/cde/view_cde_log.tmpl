@@ -49,7 +49,7 @@
     
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink('cde/view_cde_log')|e }}" method="GET" id="logshowform" class="form-horizontal">
-            {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info="Keine Auswahl entspricht allem.",
+            {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
                     entries=enums['CdeLogCodes']|enum_entries(processing=gettext), small=True) }}
             {{ util.form_input_text(name="persona_id", label=gettext("Account"), small=True) }}
             {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}

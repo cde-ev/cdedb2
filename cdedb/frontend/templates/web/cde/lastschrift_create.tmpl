@@ -1,9 +1,10 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title -%}
-    {% trans given_names=ambience['persona']['given_names']|e, family_name=ambience['persona']['family_name']|e -%}
-        New Direct Debit Authorization ({{ given_names }} {{ family_name }})
+    {% trans -%}
+        New Direct Debit Authorization
     {%- endtrans %}
+    ({{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }})
 {%- endblock %}
 {% block heading -%}
     <h1>
@@ -35,8 +36,8 @@
             class="form-horizontal">
         {{ util.form_input_text(name="amount", label=gettext("Amount"), type="number", attributes='min="0" step="0.01"') }}
         {{ util.form_input_text(name="iban", label=gettext("IBAN")) }}
-        {{ util.form_input_text(name="account_owner", label=gettext("Account holder's address (if different)")) }}
-        {{ util.form_input_textarea(name="account_address", label=gettext("Account address (if different)")) }}
+        {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
+        {{ util.form_input_textarea(name="account_address", label=gettext("Account holder's address (if different)")) }}
         {{ util.form_input_text(name="max_dsa", label=gettext("Maximum DSA-Share"), type="number", attributes='min="0" max="1"') }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5",
                                     info=gettext("Supports reStructuredText")) }}
