@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-11-28 14:48+0100\n"
+"POT-Creation-Date: 2018-11-28 21:15+0100\n"
 "PO-Revision-Date: 2016-11-24 16:06+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -120,71 +120,71 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:16
 msgid "AssemblyLogCodes.assembly_created"
-msgstr ""
+msgstr "Assembly created"
 
 #: cdedb/i18n_additional.py:17
 msgid "AssemblyLogCodes.assembly_changed"
-msgstr ""
+msgstr "Assembly modified"
 
 #: cdedb/i18n_additional.py:18
 msgid "AssemblyLogCodes.assembly_concluded"
-msgstr ""
+msgstr "Assembly condluded"
 
 #: cdedb/i18n_additional.py:19
 msgid "AssemblyLogCodes.ballot_created"
-msgstr ""
+msgstr "Ballot created"
 
 #: cdedb/i18n_additional.py:20
 msgid "AssemblyLogCodes.ballot_changed"
-msgstr ""
+msgstr "Ballot modified"
 
 #: cdedb/i18n_additional.py:21
 msgid "AssemblyLogCodes.ballot_deleted"
-msgstr ""
+msgstr "Ballot deleted"
 
 #: cdedb/i18n_additional.py:22
 msgid "AssemblyLogCodes.ballot_extended"
-msgstr ""
+msgstr "Ballot extended"
 
 #: cdedb/i18n_additional.py:23
 msgid "AssemblyLogCodes.ballot_tallied"
-msgstr ""
+msgstr "Ballot tallied"
 
 #: cdedb/i18n_additional.py:24
 msgid "AssemblyLogCodes.candidate_added"
-msgstr ""
+msgstr "Candidate added"
 
 #: cdedb/i18n_additional.py:25
 msgid "AssemblyLogCodes.candidate_updated"
-msgstr ""
+msgstr "Candidate modified"
 
 #: cdedb/i18n_additional.py:26
 msgid "AssemblyLogCodes.candidate_removed"
-msgstr ""
+msgstr "Candidate removed"
 
 #: cdedb/i18n_additional.py:27
 msgid "AssemblyLogCodes.new_attendee"
-msgstr ""
+msgstr "New Attendee"
 
 #: cdedb/i18n_additional.py:28
 msgid "AssemblyLogCodes.attachment_added"
-msgstr ""
+msgstr "Attachment added"
 
 #: cdedb/i18n_additional.py:29
 msgid "AssemblyLogCodes.attachment_removed"
-msgstr ""
+msgstr "Attachment removed"
 
 #: cdedb/i18n_additional.py:31
 msgid "AttachmentPolicy.allow"
-msgstr ""
+msgstr "All Attachments allowed"
 
 #: cdedb/i18n_additional.py:32
 msgid "AttachmentPolicy.pdf_only"
-msgstr ""
+msgstr "Only PDF-files allowed"
 
 #: cdedb/i18n_additional.py:33
 msgid "AttachmentPolicy.forbid"
-msgstr ""
+msgstr "No Attachments allowed"
 
 #: cdedb/i18n_additional.py:35
 msgid "AudiencePolicy.everybody"
@@ -208,11 +208,11 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:41
 msgid "CdeLogCodes.advance_semester"
-msgstr ""
+msgstr "Semester advanced"
 
 #: cdedb/i18n_additional.py:42
 msgid "CdeLogCodes.advance_expuls"
-msgstr ""
+msgstr "exPuls-Semester advanced"
 
 #: cdedb/i18n_additional.py:44
 msgid "CoreLogCodes.persona_creation"
@@ -384,67 +384,67 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:89
 msgid "FinanceLogCodes.new_member"
-msgstr ""
+msgstr "New Member"
 
 #: cdedb/i18n_additional.py:90
 msgid "FinanceLogCodes.gain_membership"
-msgstr ""
+msgstr "Membership gained"
 
 #: cdedb/i18n_additional.py:91
 msgid "FinanceLogCodes.lose_membership"
-msgstr ""
+msgstr "Membership lost"
 
 #: cdedb/i18n_additional.py:92
 msgid "FinanceLogCodes.increase_balance"
-msgstr ""
+msgstr "Balance increased"
 
 #: cdedb/i18n_additional.py:93
 msgid "FinanceLogCodes.deduct_membership_fee"
-msgstr ""
+msgstr "Membership fee deducted"
 
 #: cdedb/i18n_additional.py:94
 msgid "FinanceLogCodes.end_trial_membership"
-msgstr ""
+msgstr "End of Trialmembership"
 
 #: cdedb/i18n_additional.py:95
 msgid "FinanceLogCodes.grant_lastschrift"
-msgstr ""
+msgstr "Direct Debit Authorization granted"
 
 #: cdedb/i18n_additional.py:96
 msgid "FinanceLogCodes.revoke_lastschrift"
-msgstr ""
+msgstr "Direct Debit Authorization revoked"
 
 #: cdedb/i18n_additional.py:97
 msgid "FinanceLogCodes.modify_lastschrift"
-msgstr ""
+msgstr "Direct Debit Authorization modified"
 
 #: cdedb/i18n_additional.py:98
 msgid "FinanceLogCodes.lastschrift_transaction_issue"
-msgstr ""
+msgstr "Direct Debit issued"
 
 #: cdedb/i18n_additional.py:99
 msgid "FinanceLogCodes.lastschrift_transaction_success"
-msgstr ""
+msgstr "Direct Debit successful"
 
 #: cdedb/i18n_additional.py:100
 msgid "FinanceLogCodes.lastschrift_transaction_failure"
-msgstr ""
+msgstr "Direct Debit failed"
 
 #: cdedb/i18n_additional.py:101
 msgid "FinanceLogCodes.lastschrift_transaction_skip"
-msgstr ""
+msgstr "Direct Debit skipped"
 
 #: cdedb/i18n_additional.py:102
 msgid "FinanceLogCodes.lastschrift_transaction_cancelled"
-msgstr ""
+msgstr "Direct Debit cancelled"
 
 #: cdedb/i18n_additional.py:103
 msgid "FinanceLogCodes.lastschrift_transaction_revoked"
-msgstr ""
+msgstr "Direct Debit revoked"
 
 #: cdedb/i18n_additional.py:104
 msgid "FinanceLogCodes.other"
-msgstr ""
+msgstr "Other"
 
 #: cdedb/i18n_additional.py:106
 msgid "Genders.female"
@@ -576,71 +576,71 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:143
 msgid "PastEventLogCodes.event_created"
-msgstr ""
+msgstr "Past Event created"
 
 #: cdedb/i18n_additional.py:144
 msgid "PastEventLogCodes.event_changed"
-msgstr ""
+msgstr "Past Event modified"
 
 #: cdedb/i18n_additional.py:145
 msgid "PastEventLogCodes.course_created"
-msgstr ""
+msgstr "Past Course created"
 
 #: cdedb/i18n_additional.py:146
 msgid "PastEventLogCodes.course_changed"
-msgstr ""
+msgstr "Past Course modified"
 
 #: cdedb/i18n_additional.py:147
 msgid "PastEventLogCodes.course_deleted"
-msgstr ""
+msgstr "Past Course deleted"
 
 #: cdedb/i18n_additional.py:148
 msgid "PastEventLogCodes.participant_added"
-msgstr ""
+msgstr "Participant added"
 
 #: cdedb/i18n_additional.py:149
 msgid "PastEventLogCodes.participant_removed"
-msgstr ""
+msgstr "Participant removed"
 
 #: cdedb/i18n_additional.py:150
 msgid "PastEventLogCodes.institution_created"
-msgstr ""
+msgstr "Institution created"
 
 #: cdedb/i18n_additional.py:151
 msgid "PastEventLogCodes.institution_changed"
-msgstr ""
+msgstr "Institution modified"
 
 #: cdedb/i18n_additional.py:152
 msgid "PastEventLogCodes.institution_deleted"
-msgstr ""
+msgstr "Institution deleted"
 
 #: cdedb/i18n_additional.py:154
 msgid "RegistrationPartStati.not_applied"
-msgstr ""
+msgstr "Not applied"
 
 #: cdedb/i18n_additional.py:155
 msgid "RegistrationPartStati.applied"
-msgstr ""
+msgstr "Applied"
 
 #: cdedb/i18n_additional.py:156
 msgid "RegistrationPartStati.participant"
-msgstr ""
+msgstr "Participant"
 
 #: cdedb/i18n_additional.py:157
 msgid "RegistrationPartStati.waitlist"
-msgstr ""
+msgstr "Waitlist"
 
 #: cdedb/i18n_additional.py:158
 msgid "RegistrationPartStati.guest"
-msgstr ""
+msgstr "Guest"
 
 #: cdedb/i18n_additional.py:159
 msgid "RegistrationPartStati.cancelled"
-msgstr ""
+msgstr "Cancelled"
 
 #: cdedb/i18n_additional.py:160
 msgid "RegistrationPartStati.rejected"
-msgstr ""
+msgstr "Rejected"
 
 #: cdedb/i18n_additional.py:162
 msgid "SubscriptionPolicy.mandatory"
@@ -2717,6 +2717,8 @@ msgid "Title"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:41
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:10
 #: cdedb/frontend/templates/web/generic.tmpl:93
 #: cdedb/frontend/templates/web/generic.tmpl:153
@@ -2922,7 +2924,7 @@ msgid "Searchable for BuB"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:30
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:41
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:42
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:58
 #: cdedb/frontend/templates/web/generic.tmpl:67
 msgid "Notes"
@@ -2941,7 +2943,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:30
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:24
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:31
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:42
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:43
 #: cdedb/frontend/templates/web/generic.tmpl:68
 msgid "Supports reStructuredText"
 msgstr ""
@@ -3562,8 +3564,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:14
 #: cdedb/frontend/templates/web/cde/create_past_course.tmpl:39
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:38
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:30
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:43
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:44
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:84
 msgid "Create"
 msgstr ""
@@ -3637,6 +3639,7 @@ msgid "The user will be added as a participant. This cannot be undone."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:45
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:47
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:73
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr ""
@@ -4232,6 +4235,9 @@ msgid "Categories"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:60
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:52
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:60
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:61
 msgid "No selection means everything."
 msgstr ""
 
@@ -4242,10 +4248,7 @@ msgstr ""
 msgid "Entries"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:51
-msgid "Course choices will be displayed after first search."
-msgstr ""
-
+#: cdedb/frontend/templates/web/assembly/view_log.tmpl:65
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:56
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:64
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:67
@@ -4264,7 +4267,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:24
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:8
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:20
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:21
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:6
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:15
 msgid "Direct Debit Authorizations"
@@ -4546,7 +4549,8 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:49
-msgid "Idee Schülerakaedmie"
+#: cdedb/frontend/templates/web/cde/index.tmpl:67
+msgid "Idee Schülerakademie"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:56
@@ -4554,7 +4558,7 @@ msgid "You are already a part of the Initiative 25+"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:61
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:27
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:28
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:19
 msgid "existing Direct Debit Authorization"
 msgstr ""
@@ -4570,10 +4574,6 @@ msgid ""
 "You want to support the CdE and the \"%(idea)s\" financially?\n"
 "                            You can give authorization for the CdE to "
 "withdraw %(amount)s or more annually via Direct Debit."
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/index.tmpl:67
-msgid "Idee Schülerakademie"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:73
@@ -4619,7 +4619,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:119
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:26
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:37
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:38
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:69
 msgid "IBAN"
 msgstr ""
@@ -4630,6 +4630,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:127
 msgid "Bank"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:131
+msgid "Payment reference"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:6
@@ -4660,7 +4664,7 @@ msgid "Member"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:25
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:36
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:37
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:93
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:63
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:113
@@ -4671,27 +4675,23 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:27
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:28
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:38
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:40
 msgid "Account holder's address (if different)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:29
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:40
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:41
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:66
 msgid "Maximum DSA-Share"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:4
-#, python-format
-msgid "New Direct Debit Authorization (%(given_names)s %(family_name)s)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:10
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:11
 msgid "New Direct Debit Authorization"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:39
-msgid "Account address (if different)"
+msgid "Account holder (if different)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:21
@@ -4699,6 +4699,10 @@ msgid "This Direct Debit will be skipped for this semster. This cannot be undone
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:22
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:27
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:28
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:32
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:33
 msgid "This action cannot be undone."
 msgstr ""
 
@@ -4769,6 +4773,7 @@ msgid "Success"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:114
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:149
 msgid "Failed"
 msgstr ""
 
@@ -4788,13 +4793,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:6
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:12
 msgid "Direct Debit Authorization"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:27
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:28
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:32
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:33
-msgid "This cannot be undone."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:42
@@ -4845,10 +4843,6 @@ msgstr ""
 msgid "Creator"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:149
-msgid "Failure"
-msgstr ""
-
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:168
 msgid "Donation receipt"
 msgstr ""
@@ -4880,20 +4874,16 @@ msgid_plural "%(count)s Members found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:41
-msgid "Given Name(s)"
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:57
+msgid "Course choices will be displayed after first search."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:14
-msgid "Send Notifications"
+msgid "Send Notification"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:15
 msgid "Transfers"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
-msgid "Given Name"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
@@ -4906,7 +4896,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:34
 #, python-format
-msgid "%(amount)s for %(given_names)s %(family_names)s"
+msgid "%(amount)s for %(given_names)s %(family_name)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:86
@@ -4924,10 +4914,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:43
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:69
 msgid "ID of the new Participant"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:47
-msgid "CdEDB-ID, Name, or E-Mail"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:54
@@ -4953,7 +4939,6 @@ msgstr[0] "and %(count)s more"
 msgstr[1] "and %(count)s more"
 
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:113
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:147
 msgid "This Course had no Participants."
 msgstr ""
 
@@ -4983,6 +4968,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:67
 msgid "DB-XXXX-X"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:147
+msgid "This Event had no Participants."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/show_past_event.tmpl:152
