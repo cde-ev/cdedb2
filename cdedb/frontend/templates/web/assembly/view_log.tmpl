@@ -1,9 +1,12 @@
 {% set sidenav_active='assembly_log' %}
 {% extends "web/assembly/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %} {% trans start=values['start']|int|e, end=(values['start']|int + log|length)|e%}
-Assembly – Logs [{{ start }}–{{ end }}]
-{%- endtrans %}{% endblock %}
+{% block title %}
+    {% trans -%}
+        Assembly Log
+    {%- endtrans %}
+    [{{ values['start']|int|e }}–{{ (values['start']|int + log|length)|e }}]
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Log"), active=True) }}
@@ -59,7 +62,7 @@ Assembly – Logs [{{ start }}–{{ end }}]
         {{ util.form_input_select(name="assembly_id", label=gettext("Assembly"), nulloption="",
                                   entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True) }}
         {{ util.form_input_from_to('start', 'stop', label=gettext("Entries"), type='number', small=True) }}
-        {{ util.form_input_submit(value=gettext("Show"), small=True) }}
+        {{ util.form_input_submit(value=gettext("Apply"), small=True) }}
     </form>
     {% endcall %}
 {% endblock %}
