@@ -101,33 +101,35 @@
     {% endif %}
 
     {% if is_admin %}
-        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
-            <div class="row">
-                <div class="col-sm-4">
-                    <div class="p">
-                        <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST"
-                              id="concludeassemblyform" style="display: inline;">
-                            {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-danger",
-                                                 icon="folder-close") }}
-                            {{ util.input_checkbox(name="ack_conclude", label="sicher?") }}
-                        </form>
+        {% if ambience['assembly']['is_active'] %}
+            {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+                <div class="row">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST"
+                                  id="concludeassemblyform" style="display: inline;">
+                                {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-danger",
+                                                     icon="folder-close") }}
+                                {{ util.input_checkbox(name="ack_conclude", label="sicher?") }}
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            Archiviert die Versammlung. Anschließend können keine Einstellungen der Versammlung oder ihrer
+                            Abstimmungen mehr geändert werden. Außerdem werden die geheimen Schlüssel zur Signatur der
+                            Stimmen aus der Datenbank gelöscht.
+                        </p>
                     </div>
                 </div>
-                <div class="col-sm-8">
-                    <p class="text-muted">
-                        Archiviert die Versammlung. Anschließend können keine Einstellungen der Versammlung oder ihrer
-                        Abstimmungen mehr geändert werden. Außerdem werden die geheimen Schlüssel zur Signatur der
-                        Stimmen aus der Datenbank gelöscht.
-                    </p>
-                </div>
-            </div>
-        {% endcall %}
-        <script type="text/javascript">
-            $(function() {
-                $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
-                $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();
-            });
-        </script>
+            {% endcall %}
+            <script type="text/javascript">
+                $(function() {
+                    $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
+                    $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();
+                });
+            </script>
+        {% endif %}
     {% endif %}
     
 {% endblock %}
