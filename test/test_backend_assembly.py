@@ -75,6 +75,17 @@ class TestAssemblyBackend(BackendTest):
             self.key, 2))
 
     @as_users("anton")
+    def test_ticket_176(self, user):
+        data = {
+            'description': None,
+            'notes': None,
+            'signup_end': now(),
+            'title': 'Außerordentliche Mitgliederversammlung'
+        }
+        self.assertEqual(2, self.assembly.create_assembly(self.key, data))
+        self.assertLess(0, self.assembly.conclude_assembly(self.key, 2))
+
+    @as_users("anton")
     def test_entity_ballot(self, user):
         assembly_id = 1
         expectation = {1: 'Antwort auf die letzte aller Fragen',
