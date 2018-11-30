@@ -472,7 +472,7 @@ class MlFrontend(AbstractUserFrontend):
                  'Subject': n_("Confirm email address for CdE mailing list")},
                 {'email': self.encode_parameter(
                     "ml/do_address_change", "email", email,
-                    timeout=self.conf.EMAIL_PARAMETER_TIMEOUT),})
+                    timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT),})
             rs.notify("info", n_("Confirmation email sent."))
         return self.redirect(rs, "ml/show_mailinglist")
 

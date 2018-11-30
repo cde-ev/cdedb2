@@ -170,9 +170,11 @@ _DEFAULTS = {
     ## log for frontend issues
     "FRONTEND_LOG": pathlib.Path("/tmp/cdedb-frontend.log"),
     ## timeout for protected url parameters to prevent replay
-    "ONLINE_PARAMETER_TIMEOUT": datetime.timedelta(seconds=120),
-    ## email is a slower medium, so this has a longer timeout
-    "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=1),
+    "PARAMETER_TIMEOUT": datetime.timedelta(hours=1),
+    ## timeout for protected parameters, that are not security related
+    "UNCRITICAL_PARAMETER_TIMEOUT": datetime.timedelta(days=1),
+    ## timeoue for parameters, in unsuspected emails (triggered by another user)
+    "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=2),
     ## maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
     ## minimal number of input characters to start a search for personas
