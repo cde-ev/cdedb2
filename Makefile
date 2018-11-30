@@ -131,6 +131,7 @@ lint:
 	/usr/lib/python-exec/python3.6/pylint --rcfile='./lint.rc' --output-format=text cdedb | egrep '^(\*\*\*\*|E:|W:)' | egrep -v "Module 'cdedb.validation' has no '[a-zA-Z_]*' member" | egrep -v "Instance of '[A-Za-z]*Config' has no '[a-zA-Z_]*' member"
 
 check:
+	make i18n-compile
 	make sample-data-test &> /dev/null
 	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || true
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
@@ -138,6 +139,7 @@ check:
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 single-check:
+	make i18n-compile
 	make sample-data-test &> /dev/null
 	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || true
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
@@ -145,6 +147,7 @@ single-check:
 	[ -f cdedb/testconfig.py ] && mv cdedb/testconfig.py cdedb/testconfig.py.off || true
 
 new-single-check:
+	make i18n-compile
 	make sample-data-test &> /dev/null
 	rm -f /tmp/test-cdedb* /tmp/cdedb-timing.log /tmp/cdedb-mail-* || true
 	[ -f cdedb/testconfig.py.off ] && mv cdedb/testconfig.py.off cdedb/testconfig.py || true
