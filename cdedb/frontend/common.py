@@ -1263,7 +1263,8 @@ def access(*roles, modi=None):
                 if rs.user.roles == {"anonymous"}:
                     params = {
                         'wants': rs._coders['encode_parameter'](
-                            "core/index", "wants", rs.request.url),
+                            "core/index", "wants", rs.request.url,
+                            timeout=None),
                         }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     notifications = json_serialize([
