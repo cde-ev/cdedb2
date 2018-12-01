@@ -928,7 +928,7 @@ class AssemblyBackend(AbstractBackend):
                 'assembly_id': assembly_id,
                 'secret': None
             }
-            ret *= self.sql_update(rs, "assembly.attendees", update,
+            self.sql_update(rs, "assembly.attendees", update,
                                    entity_key="assembly_id")
             self.assembly_log(rs, const.AssemblyLogCodes.assembly_concluded,
                               assembly_id)
