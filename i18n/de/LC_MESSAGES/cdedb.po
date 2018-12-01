@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-11-28 14:48+0100\n"
+"POT-Creation-Date: 2018-12-01 13:46+0100\n"
 "PO-Revision-Date: 2017-12-10 13:36+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -778,7 +778,7 @@ msgstr "Keine Zahl gefunden."
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:36
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:40
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:48
 #: cdedb/i18n_additional.py:206
 msgid "Save"
@@ -2709,7 +2709,7 @@ msgstr "Ein unbekannter Fehler ist aufgetreten."
 msgid "Personal Information"
 msgstr "Person"
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:21
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:25
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:25
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:14
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:17
@@ -2908,8 +2908,8 @@ msgstr "Zugriff für BuB"
 msgid "Notes"
 msgstr "Notizen"
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:23
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:27
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:31
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:27
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:39
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:16
@@ -3023,7 +3023,7 @@ msgstr "Mitgliedsbeitrag-Guthaben"
 msgid "Searchability Decided"
 msgstr "Suchbarkeit entschieden"
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:26
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:30
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:38
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:19
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:30
@@ -3321,43 +3321,47 @@ msgstr ""
 msgid "{} to"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:358
 #: cdedb/frontend/templates/web/util.tmpl:446
-#, python-format
-msgid "Help (%for_this_site)"
-msgstr ""
+msgid "Help"
+msgstr "Hilfe"
 
-#: cdedb/frontend/templates/web/util.tmpl:446
+#: cdedb/frontend/templates/web/util.tmpl:450
 msgid "for this site"
-msgstr ""
+msgstr "zu dieser Seite"
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:6
+#, python-format
+msgid "Attach File (%(title_assembly)s/%(title_ballot)s)"
+msgstr "Datei anhängen (%(title_assembly)s/%(title_ballot)s)"
+
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:10
 #, python-format
-msgid "Attach File %(title)s"
-msgstr ""
+msgid "Attach File (%(title)s)"
+msgstr "Datei anhängen (%(title)s)"
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:16
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:35
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:17
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:38
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:71
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:560
 msgid "Attach File"
 msgstr "Datei anhängen"
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:19
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:22
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:230
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:329
 msgid "Ballot"
 msgstr "Abstimmung"
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:23
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:26
 #: cdedb/frontend/templates/web/assembly/base.tmpl:32
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:10
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:14
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:21
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:62
 msgid "Assembly"
 msgstr "Versammlung"
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:32
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:35
 #: cdedb/frontend/templates/web/assembly/base.tmpl:13
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:12
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:11
@@ -3367,25 +3371,25 @@ msgstr "Versammlung"
 msgid "Ballots"
 msgstr "Abstimmungen"
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:40
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:43
 msgid "Label"
 msgstr "Bezeichnung"
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:41
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:44
 msgid "Filename"
 msgstr "Dateiname"
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:41
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:44
 msgid "Leave empty for current filename."
 msgstr "Leer lassen für derzeitigen Dateinamen."
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:42
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:45
 msgid "Only PDFs allowed."
 msgstr "Nur PDF-Dokumente sind möglich."
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:43
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:46
 msgid "Upload"
-msgstr "Hochlade"
+msgstr "Hochladen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:7
 #: cdedb/frontend/templates/web/assembly/base.tmpl:38
@@ -3393,13 +3397,13 @@ msgid "Overview"
 msgstr "Übersicht"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:10
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:15
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
 msgid "Participants"
 msgstr "Teilnehmer"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:17
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:9
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:16
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:13
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:20
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:14
 msgid "Configuration"
 msgstr "Konfiguration"
@@ -3419,7 +3423,12 @@ msgstr "Nutzer verwalten"
 msgid "Log"
 msgstr "Log"
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:22
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:7
+#, python-format
+msgid "Edit %(assembly)s"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:26
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:26
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:15
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:18
@@ -3428,12 +3437,12 @@ msgstr "Log"
 msgid "Description"
 msgstr "Beschreibung"
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:24
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:28
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:17
 msgid "Application Deadline"
 msgstr "Anmeldeschluss"
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:31
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:35
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:43
 msgid ""
 "Warning: All changes will be immediately visible to all CdE-Members and "
@@ -3523,7 +3532,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/create_user.tmpl:7
 msgid "Create new Assembly-User"
-msgstr "Neuen Versammlungs-Nutzer anlegen"
+msgstr "Neuen Versammlungsnutzer anlegen"
 
 #: cdedb/frontend/templates/web/assembly/create_user.tmpl:10
 msgid "Manage Assembly-Users"
@@ -3541,20 +3550,20 @@ msgstr "Aktive Versammlungen"
 msgid "Inactive Assemblies"
 msgstr "Inaktive Versammlungen"
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:5
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:6
 #, python-format
-msgid "Participantlist %(title)s"
-msgstr "Anwesenheitsliste %(title)s"
+msgid "Participantlist (%(title)s)"
+msgstr "Anwesenheitsliste (%(title)s)"
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:8
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:12
 msgid "Participantlist"
 msgstr "Anwesenheitsliste"
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:23
 msgid "Add external participants"
 msgstr "Externe Teilnehmer hinzufügen"
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:23
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:27
 msgid ""
 "Current CdE-Members must register for the assembly themselves. Only "
 "external participants can be added with this form. This is only possible "
@@ -3564,26 +3573,26 @@ msgstr ""
 "Über dieses Formular können externe Teilnehmer von Admins hinzugefügt "
 "werden. Dies ist ebenfalls nur innerhalb der Anmeldefrist möglich."
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:32
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:36
 msgid "User-ID of the new participant"
 msgstr "Benutzer-ID des neuen Teilnehmers"
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:36
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:40
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:118
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:42
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:46
 msgid "The user will be added as a participant. This cannot be undone."
 msgstr ""
 "Der Benutzer wird als Teilnehmer hinzugefügt. Das kann nicht rückgängig "
 "gemacht werden."
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:45
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:49
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr "CdEDB-ID, Name oder E-Mail"
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:51
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:55
 #, python-format
 msgid "%(count)s participants total."
 msgstr "Insgesamt %(count)s Anwesende."
@@ -3655,33 +3664,34 @@ msgstr "Dateien zu Abstimmungen"
 msgid "ballot_file_arialabel"
 msgstr "Zu Abstimmung"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:104
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:105
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:567
 msgid "Actions"
 msgstr "Aktionen"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:110
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:111
 msgid "Archive"
 msgstr "Archivieren"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:112
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:113
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:574
 msgid "Are You sure?"
 msgstr "sicher?"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:118
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:119
 msgid ""
 "Archives the assembly. Assembly and Ballot configuration cannot be "
 "changed after this.\n"
-"                            The private Keys used to sign the votes will "
-"be deleted from the database."
+"                                The private Keys used to sign the votes "
+"will be deleted from the database."
 msgstr ""
 "Archiviert die Versammlung. Anschließend können keine Einstellungen der "
 "Versammlung oder ihrer Abstimmungen mehr geändert werden. Außerdem werden"
 " die geheimen Schlüssel zur Signatur der Stimmen aus der Datenbank "
 "gelöscht."
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:126
+
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:127
 msgid "The assembly will be permanently archived."
 msgstr "Die Versammlung wird irreversibel archiviert."
 
@@ -3692,22 +3702,26 @@ msgstr "Abstimmungszeitraum"
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:33
 #, python-format
 msgid "From %(begin)s until %(end)s."
-msgstr ""
+msgstr "%(begin)s bis %(end)s"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:40
 #, python-format
-msgid "Extension until %(extension)s if Quorum = %(quorum)s is not reached."
+msgid "Extension until %(extension)s if %(quorum)s votes are not reached."
 msgstr ""
+"Verlängerung bis %(extension)s falls %(quorum)s Stimmen nicht erreicht "
+"werden."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:48
 #, python-format
-msgid "Extended until %(extension)s because Quorum = %(quorum)s was not reached."
+msgid "Extended until %(extension)s because %(quorum)s votes were not reached."
 msgstr ""
+"Wurde bis %(extension)s verlängert, da %(quorum)s Stimmen nicht erreicht "
+"wurden."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:54
 #, python-format
 msgid "No Extension neccessary, because %(quorum)s votes were reached."
-msgstr ""
+msgstr "Keine Verlängerung notwendig, da %(quorum)s Stimmen erreicht wurden."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:60
 msgid "Status"
@@ -3750,7 +3764,7 @@ msgstr "Die Abstimmung läuft."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:82
 msgid "You have abstained."
-msgstr "Du hast dich enthalten."
+msgstr "Du hast Dich enthalten."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:83
 msgid "You can make your choice below, during the voting period."
@@ -3909,10 +3923,6 @@ msgstr "Interaktive Abstimmung"
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:351
 msgid "Preferencelist"
 msgstr "Präferenzliste"
-
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:358
-msgid "Help"
-msgstr "Hilfe"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:360
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:491
@@ -4368,7 +4378,7 @@ msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
 #~ msgstr ""
 
 #~ msgid ""
-#~ msgstr "Versammlung – Logs [%(start)s-%(end)s]"
+#~ msgstr ""
 
 #~ msgid "Couldn't find the requested site: "
 #~ msgstr ""
@@ -4570,4 +4580,7 @@ msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
 
 #~ msgid "Show"
 #~ msgstr "Anzeigen"
+
+#~ msgid "Participantlist %(title)s"
+#~ msgstr "Anwesenheitsliste %(title)s"
 

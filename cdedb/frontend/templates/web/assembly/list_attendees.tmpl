@@ -2,7 +2,11 @@
 {% extends "web/assembly/base.tmpl" %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='strong' %}
-{% block title %}{{ gettext("Participantlist %(title)s")|format(title=ambience['assembly']['title']|e) }}{% endblock %}
+{% block title %}
+    {% trans title=ambience['assembly']['title']|e -%}
+        Participantlist ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block heading %}
     <h1 class="title">
         {{ gettext("Participantlist") }}

@@ -39,7 +39,7 @@
                     <br />
                     {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
                              quorum=ambience['ballot']['quorum']|e -%}
-                    Extension until {{ extension }} if Quorum = {{ quorum }} is not reached.
+                    Extension until {{ extension }} if {{ quorum }} votes are not reached.
                     {%- endtrans %}
                 {% endif %}
             {% else %}
@@ -47,7 +47,7 @@
                     <br />
                     {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
                              quorum=ambience['ballot']['quorum']|e -%}
-                    Extended until {{ extension }} because Quorum = {{ quorum }} was not reached.
+                    Extended until {{ extension }} because {{ quorum }} votes were not reached.
                     {%- endtrans %}
                 {% elif ambience['ballot']['quorum'] %}
                     <br />

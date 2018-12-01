@@ -3,17 +3,20 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% if ambience['ballot'] %}
-        {{ gettext("Attach File %(title)s")|
-           format(title="(" + ambience['assembly']['title']|e +
-                  "/" + ambience['ballot']['title']|e + ")") }}
+        {% trans title_assembly=ambience['assembly']['title']|e, title_ballot=ambience['ballot']['title']|e -%}
+            Attach File ({{ title_assembly }}/{{ title_ballot }})
+        {%- endtrans %}
     {% else %}
-        {{ gettext("Attach File %(title)s")|
-           format(title="(" + ambience['assembly']['title']|e + ")") }}
+        {% trans title=ambience['assembly']['title']|e -%}
+            Attach File ({{ title }})
+        {%- endtrans %}
     {% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        {{ gettext("Attach File") }}
+        {% trans -%}
+            Attach File
+        {%- endtrans %}
         {% if ambience['ballot'] %}
             <small>
                 {{- util.make_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title']|e -}}
