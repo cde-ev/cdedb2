@@ -80,8 +80,10 @@
             format(given_names=case['given_names']) }},</p>
 
     <p>
-        {{ gettext("To create Your CdE-Database Account, enter Your data into this form. "
-                   "Then You can set up Your password. Your Account will be activated shortly.") }}
+        {% trans -%}
+            To create Your CdE-Database Account, enter Your data into this form.
+            Then You can set up Your password. Your Account will be activated shortly.
+        {%- endtrans %}
     </p>
 
     <form action="{{ cdedblink('{}/genesis'.format(realm))|e }}" method="POST" id="newuserform" class="form-horizontal">
