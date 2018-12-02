@@ -45,3 +45,9 @@ Mitnahmeversion
 Die Datenbank kann als Offline-Version mittels einer virtuellen Maschine
 genutzt werden. Die allgemeine Dokumentation zur Benutzung der virtuellen
 Maschine ist unter :ref:`vm` zu finden.
+
+
+Eine Veranstaltung Planen - ein Ablaufplan
+------------------------------------------
+
+
