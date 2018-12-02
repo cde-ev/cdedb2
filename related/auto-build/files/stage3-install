@@ -132,6 +132,12 @@ if [ -e /media/cdrom0/vdi ]; then
 
     sed -i -e 's=/dev/vda1=/dev/sda1=g' /boot/grub/grub.cfg
 
+    echo ""
+    echo "Adjusting /etc/network/interfaces..."
+    echo "--------------------------------------------"
+
+    sed -i -e 's=\bens3\b=enp0s3=g' /etc/network/interfaces
+    
 fi
 
 echo ""
