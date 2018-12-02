@@ -1016,7 +1016,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
-                 ("position", "int_or_None"),
+                 ("position", "infinite_enum_coursefilterpositions_or_None"),
                  ("ids", "int_csv_list_or_None"))
     @event_guard()
     def course_choices_form(self, rs, event_id, course_id, track_id, position, ids):
@@ -1097,7 +1097,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event", modi={"POST"})
     @REQUESTdata(("registration_ids", "[int]"), ("track_ids", "[int]"),
-                 ("action", "int"),
+                 ("action", "infinite_enum_coursechoicetoolactions"),
                  ("course_id", "id_or_None"))
     @event_guard(check_offline=True)
     def course_choices(self, rs, event_id, registration_ids, track_ids, action,
@@ -1113,7 +1113,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         courses = None
-        if action == CourseChoiceToolActions.assign_auto:
+        if action.enum == CourseChoiceToolActions.assign_auto:
             course_ids = self.eventproxy.list_db_courses(rs, event_id)
             courses = self.eventproxy.get_courses(rs, course_ids)
 
@@ -1130,19 +1130,13 @@ class EventFrontend(AbstractUserFrontend):
                 if (reg_part['status']
                         != const.RegistrationPartStati.participant):
                     continue
-                if action >= 0:
-                    try:
-                        choice = reg_track['choices'][action]
-                    except IndexError:
-                        rs.notify("error", n_("No choice available."))
-                    else:
-                        tmp['tracks'][track_id] = {'course_id': choice}
+                if action.enum == CourseChoiceToolActions.specific_rank:
+                    choice = reg_track['choices'][action.int]
+                    tmp['tracks'][track_id] = {'course_id': choice}
                 else:
-                    action = unwrap(request_extractor(
-                        rs, (('action', 'enum_coursechoicetoolactions'),)))
-                    if action == CourseChoiceToolActions.assign_fixed:
+                    if action.enum == CourseChoiceToolActions.assign_fixed:
                         tmp['tracks'][track_id] = {'course_id': course_id}
-                    elif action == CourseChoiceToolActions.assign_auto:
+                    elif action.enum == CourseChoiceToolActions.assign_auto:
                         cid = reg_track['course_id']
                         if cid and track_id in courses[cid]['active_segments']:
                             ## Do not modify a valid assignment

@@ -818,6 +818,39 @@ class LineResolutions(enum.IntEnum):
                         LineResolutions.update,
                         LineResolutions.renew_and_update}
 
+#: magic number which signals our makeshift algebraic data type
+INFINITE_ENUM_MAGIC_NUMBER = 0
+
+def infinite_enum(aclass):
+    """Decorator to document infinite enums.
+
+    This does nothing and is only for documentation purposes.
+
+    Infinite enums are sadly not directly supported by python which
+    means, that we have to emulate them on our own.
+
+    We implement them by pairing the enum with an int and assigning a
+    special enum value to the meaning "see the int value" (namely
+    :py:const:`INFINITE_ENUM_MAGIC_NUMBER`).
+
+    Furthermore by convention the int is always non-negative and the
+    enum can have additional states which are all associated with
+    negative values. In case of an additional enum state, the int is 
+    None.
+
+    In the code they are stored as an :py:var:`InfiniteEnum`.
+
+    :type aclass: obj
+    :rtype: obj
+
+    """
+    return aclass
+
+#: Storage facility for infinite enums with associated data, see
+#: :py:func:`infinite_enum`
+InfiniteEnum = collections.namedtuple('InfiniteEnum', ('enum', 'int'))
+
+@infinite_enum
 @enum.unique
 class CourseFilterPositions(enum.IntEnum):
     """Selection possibilities for the course assignment tool.
@@ -825,24 +858,23 @@ class CourseFilterPositions(enum.IntEnum):
     We want to find registrations which have a specific course as choice
     or something else. Where exactly we search for the course is
     specified via this enum.
-
-    The enum members' values are all <0 to be distinguished from a specific
-    course choice rank (>=0)
     """
+    #: This is the reference to the infinite enum int.
+    specific_rank = INFINITE_ENUM_MAGIC_NUMBER
     instructor = -1  #: Being a course instructor for the course in question.
     any_choice = -5  #: Having chosen the course (in any choice)
     assigned = -6  #: Being in this course either as participant or instructor.
     anywhere = -7  #: Having chosen the course, being instructor or participant.
 
+@infinite_enum
 @enum.unique
 class CourseChoiceToolActions(enum.IntEnum):
     """Selection possibilities for the course assignment tool.
 
     Specify the action to take.
-
-    The enum members' values are all <0 to be distinguished from a specific
-    course choice rank (>=0)
     """
+    #: reference to the infinite enum int
+    specific_rank = INFINITE_ENUM_MAGIC_NUMBER
     assign_fixed = -4  #: the course is specified separately
     assign_auto = -5  #: somewhat intelligent algorithm
 

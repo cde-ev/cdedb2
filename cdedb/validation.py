@@ -46,14 +46,14 @@ import werkzeug.datastructures
 
 from cdedb.common import (
     n_, EPSILON, compute_checkdigit, now, extract_roles, asciificator,
-    ASSEMBLY_BAR_MONIKER)
+    ASSEMBLY_BAR_MONIKER, InfiniteEnum, INFINITE_ENUM_MAGIC_NUMBER)
 from cdedb.validationdata import (
     GERMAN_POSTAL_CODES, GERMAN_PHONE_CODES, ITU_CODES)
 from cdedb.query import (
     Query, QueryOperators, VALID_QUERY_OPERATORS, MULTI_VALUE_OPERATORS,
     NO_VALUE_OPERATORS)
 from cdedb.config import BasicConfig
-from cdedb.enums import ALL_ENUMS, ENUMS_DICT
+from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS, ENUMS_DICT
 _BASICCONF = BasicConfig()
 
 current_module = sys.modules[__name__]
@@ -237,6 +237,21 @@ def _int(val, argname=None, *, _convert=True):
     if not isinstance(val, int):
         return None, [(argname, TypeError(n_("Must be an integer.")))]
     return val, []
+
+@_addvalidator
+def _non_negative_int(val, argname=None, *, _convert=True):
+    """
+    :type val: object
+    :type argname: str or None
+    :type _convert: bool
+    :rtype: (int or None, [(str or None, exception)])
+    """
+    val, err = _int(val, argname, _convert=_convert)
+    if not err and val < 0:
+        val = None
+        err.append((argname, ValueError(n_("Must not be negative."))))
+    return val, err
+
 
 @_addvalidator
 def _id(val, argname=None, *, _convert=True):
@@ -2935,7 +2950,7 @@ def _query(val, argname=None, *, _convert=None):
         val = copy.deepcopy(val)
     return val, errs
 
-def _enum_validator_maker(anenum, name=None):
+def _enum_validator_maker(anenum, name=None, internal=False):
     """Automate validator creation for enums.
 
     Since this is pretty generic we do this all in one go.
@@ -2944,6 +2959,8 @@ def _enum_validator_maker(anenum, name=None):
     :type name: str or None
     :param name: If given determines the name of the validator, otherwise the
       name is inferred from the name of the enum.
+    :type internal: bool
+    :param internal: If True the validator is not added to the module.
     """
     def the_validator(val, argname=None, *, _convert=True):
         """
@@ -2974,12 +2991,76 @@ def _enum_validator_maker(anenum, name=None):
         return val, []
 
     the_validator.__name__ = name or "_enum_{}".format(anenum.__name__.lower())
-    _addvalidator(the_validator)
-    setattr(current_module, the_validator.__name__, the_validator)
+    if not internal:
+        _addvalidator(the_validator)
+        setattr(current_module, the_validator.__name__, the_validator)
+    return the_validator
 
 for oneenum in ALL_ENUMS:
     _enum_validator_maker(oneenum)
 
+def _infinite_enum_validator_maker(anenum, name=None):
+    """Automate validator creation for infinity enums.
+
+    Since this is pretty generic we do this all in one go.
+
+    For further information about infinite enums see
+    :py:func:`cdedb.common.infinite_enum`.
+
+    :type anenum: enum
+    :type name: str or None
+    :param name: If given determines the name of the validator, otherwise the
+      name is inferred from the name of the enum.
+    """
+    raw_validator = _enum_validator_maker(anenum, internal=True)
+    def the_validator(val, argname=None, *, _convert=True):
+        """
+        :type val: object
+        :type argname: str or None
+        :type _convert: bool
+        :rtype: (InfiniteEnum or None, [(str or None, exception)])
+        """
+        if isinstance(val, InfiniteEnum):
+            val.enum, errs = raw_validator(
+                val.enum, argname=argname, _convert=_convert)
+            if errs:
+                return None, errs
+            if val.enum.value == INFINITE_ENUM_MAGIC_NUMBER:
+                val.int, errs = _non_negative_int(
+                    val.int, argname=argname, _convert=_convert)
+            else:
+                val.int = None
+            if errs:
+                return None, errs
+        else:
+            if _convert:
+                val, errs = _int(val, argname=argname, _convert=_convert)
+                if errs:
+                    return None, errs
+                val_enum = None
+                val_int = None
+                if val < 0:
+                    try:
+                        val_enum = anenum(val)
+                    except ValueError as e:
+                        return None, [(argname, e)]
+                else:
+                    val_enum = anenum(INFINITE_ENUM_MAGIC_NUMBER)
+                    val_int = val
+                val = InfiniteEnum(val_enum, val_int)
+            else:
+                return None, [(argname, TypeError(n_("Must be a {type}."),
+                                                  {'type': anenum}))]
+        return val, []
+
+    the_validator.__name__ = name or "_infinite_enum_{}".format(
+        anenum.__name__.lower())
+    _addvalidator(the_validator)
+    setattr(current_module, the_validator.__name__, the_validator)
+
+for oneenum in ALL_INFINITE_ENUMS:
+    _enum_validator_maker(oneenum)
+    
 ##
 ## Above is the real stuff
 ##

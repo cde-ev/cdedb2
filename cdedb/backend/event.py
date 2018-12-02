@@ -1077,9 +1077,8 @@ class EventBackend(AbstractBackend):
         :type event_id: int
         :type track_id: int or None
         :type course_id: int or None
-        :param position: A CourseFilterPositions member or an int >=0 for a
-          specific position
-        :type position: :py:class:`cdedb.common.CourseFilterPositions` or int
+        :param position: A :py:class:`cdedb.common.CourseFilterPositions`
+        :type position: :py:class:`cdedb.common.InfiniteEnum`
         :param reg_ids: List of registration ids to filter for
         :type reg_ids: [int] or None
         :rtype: {int: int}
@@ -1087,9 +1086,8 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         track_id = affirm("id_or_None", track_id)
         course_id = affirm("id_or_None", course_id)
-        position = affirm("int_or_None", position)
-        if position is not None and position < 0:
-            position = affirm("enum_coursefilterpositions_or_None", position)
+        position = affirm("infinite_enum_coursefilterpositions_or_None",
+                          position)
         reg_ids = reg_ids or set()
         reg_ids = affirm_set("id", reg_ids)
         if (not self.is_admin(rs)
@@ -1116,21 +1114,21 @@ class EventBackend(AbstractBackend):
         if course_id:
             cfp = CourseFilterPositions
             if position is None:
-                position = cfp.anywhere
+                position = InfiniteEnum(cfp.anywhere, None)
             conditions = []
-            if position in (cfp.instructor, cfp.anywhere):
+            if position.enum in (cfp.instructor, cfp.anywhere):
                 conditions.append("rtracks.course_instructor = %s")
                 params += (course_id,)
-            if position in (cfp.any_choice, cfp.anywhere):
+            if position.enum in (cfp.any_choice, cfp.anywhere):
                 conditions.append(
                     "(choices.course_id = %s AND "
                     " choices.rank < course_tracks.num_choices)")
                 params += (course_id,)
-            elif position >= 0:
+            if position.enum == cfp.specific_rank:
                 conditions.append(
                     "(choices.course_id = %s AND choices.rank = %s)")
-                params += (course_id, position)
-            if position in (cfp.assigned, cfp.anywhere):
+                params += (course_id, position.int)
+            if position.enum in (cfp.assigned, cfp.anywhere):
                 conditions.append("rtracks.course_id = %s")
                 params += (course_id,)
             condition = " OR ".join(conditions)

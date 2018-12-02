@@ -166,9 +166,9 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     {% set cfp = enums.CourseFilterPositions %}
                     {% macro filtered_col_class(track_id, position) -%}
                         {% if values.get('track_id')|int == '' or values.get('track_id')|int == track_id -%}
-                            {% if position == values.get('position')|int
-                                  or values.get('position')|int == cfp.anywhere.value
-                                  or (values.get('position')|int == cfp.any_choice.value
+                            {% if position == values.get('position').int
+                                  or values.get('position').enum == cfp.anywhere
+                                  or (values.get('position').enum == cfp.any_choice
                                       and position >= 0) -%}
                                 filtered_column
                             {% endif -%}
