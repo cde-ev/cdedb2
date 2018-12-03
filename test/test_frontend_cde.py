@@ -783,6 +783,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/semester/show'})
         self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['billform']
         f['testrun'].checked = True
         self.submit(f)
@@ -794,6 +795,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['billform']
         f['addresscheck'].checked = True
         self.submit(f)
@@ -806,6 +808,12 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Derzeit haben 0 Mitglieder ein zu niedriges Guthaben")
+        # Check error handling for bill
+        self.submit(f, check_notification=False)
+        self.assertPresence('Zahlungserinnerung bereits erledigt',
+                            'notifications')
+        self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['ejectform']
         self.submit(f)
         count = 0
@@ -817,6 +825,12 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Derzeit haben 3 Mitglieder eine Probemitgliedschaft")
+        # Check error handling for eject
+        self.submit(f, check_notification=False)
+        self.assertPresence('Falscher Zeitpunkt für Bereinigung',
+                            'notifications')
+        self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['balanceform']
         self.submit(f)
         count = 0
@@ -828,6 +842,12 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 43")
+        # Check error handling for balance
+        self.submit(f, check_notification=False)
+        self.assertPresence('Falscher Zeitpunkt für Guthabenaktualisierung',
+                            'notifications')
+        self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['proceedform']
         self.submit(f)
         count = 0
@@ -839,6 +859,12 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 44")
+        # Check error handling for proceed
+        self.submit(f, check_notification=False)
+        self.assertPresence('Falscher Zeitpunkt für Beendigung des Semesters',
+                            'notifications')
+        self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['billform']
         self.submit(f)
         count = 0
@@ -850,6 +876,7 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Derzeit haben 2 Mitglieder ein zu niedriges Guthaben")
+
         f = self.response.forms['ejectform']
         self.submit(f)
         count = 0
@@ -861,6 +888,7 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Derzeit haben 0 Mitglieder eine Probemitgliedschaft")
+
         f = self.response.forms['balanceform']
         self.submit(f)
         count = 0
@@ -872,6 +900,7 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("Semester Nummer 44")
+
         f = self.response.forms['proceedform']
         self.submit(f)
         count = 0
@@ -890,6 +919,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/semester/show'})
         self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['addresscheckform']
         f['testrun'].checked = True
         self.submit(f)
@@ -901,6 +931,7 @@ class TestCdEFrontend(FrontendTest):
                 break
             count += 1
         self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['addresscheckform']
         self.submit(f)
         count = 0
@@ -912,6 +943,12 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 42")
+        # Check error handling for addresscheck
+        self.submit(f, check_notification=False)
+        self.assertPresence('Adressabfrage bereits erledigt',
+                            'notifications')
+        self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         count = 0
@@ -923,6 +960,7 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 43")
+
         f = self.response.forms['noaddresscheckform']
         self.submit(f)
         count = 0
@@ -934,6 +972,12 @@ class TestCdEFrontend(FrontendTest):
             count += 1
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 43")
+        # Check error handling for noaddresscheck
+        self.submit(f, check_notification=False)
+        self.assertPresence('Adressabfrage bereits erledigt',
+                            'notifications')
+        self.assertTitle("Semesterverwaltung")
+
         f = self.response.forms['proceedexpulsform']
         self.submit(f)
         count = 0
@@ -946,6 +990,11 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Semesterverwaltung")
         self.assertPresence("exPuls trägt die Nummer 44")
         self.assertIn('addresscheckform', self.response.forms)
+        # Check error handling for proceedexpuls
+        self.submit(f, check_notification=False)
+        self.assertPresence('Adressabfrage noch nicht erledigt',
+                            'notifications')
+        self.assertTitle("Semesterverwaltung")
 
     @as_users("anton")
     def test_institutions(self, user):
