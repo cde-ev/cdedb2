@@ -25,5 +25,5 @@ ALL_ENUMS = (
 ALL_INFINITE_ENUMS = (CourseFilterPositions, CourseChoiceToolActions)
 
 #: A dict for enum lookup in the templates.
-ENUMS_DICT = {e.__name__: e for e in ALL_ENUMS}.update({
-    e.__name__: e for e in ALL_INFINITE_ENUMS})
+ENUMS_DICT = {e.__name__: e for e in ALL_ENUMS}
+ENUMS_DICT.update({e.__name__: e for e in ALL_INFINITE_ENUMS})

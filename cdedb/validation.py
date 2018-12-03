@@ -3021,15 +3021,15 @@ def _infinite_enum_validator_maker(anenum, name=None):
         :rtype: (InfiniteEnum or None, [(str or None, exception)])
         """
         if isinstance(val, InfiniteEnum):
-            val.enum, errs = raw_validator(
+            val_enum, errs = raw_validator(
                 val.enum, argname=argname, _convert=_convert)
             if errs:
                 return None, errs
             if val.enum.value == INFINITE_ENUM_MAGIC_NUMBER:
-                val.int, errs = _non_negative_int(
+                val_int, errs = _non_negative_int(
                     val.int, argname=argname, _convert=_convert)
             else:
-                val.int = None
+                val_int = None
             if errs:
                 return None, errs
         else:
@@ -3037,7 +3037,6 @@ def _infinite_enum_validator_maker(anenum, name=None):
                 val, errs = _int(val, argname=argname, _convert=_convert)
                 if errs:
                     return None, errs
-                val_enum = None
                 val_int = None
                 if val < 0:
                     try:
@@ -3047,11 +3046,10 @@ def _infinite_enum_validator_maker(anenum, name=None):
                 else:
                     val_enum = anenum(INFINITE_ENUM_MAGIC_NUMBER)
                     val_int = val
-                val = InfiniteEnum(val_enum, val_int)
             else:
                 return None, [(argname, TypeError(n_("Must be a {type}."),
                                                   {'type': anenum}))]
-        return val, []
+        return InfiniteEnum(val_enum, val_int), []
 
     the_validator.__name__ = name or "_infinite_enum_{}".format(
         anenum.__name__.lower())
@@ -3059,7 +3057,7 @@ def _infinite_enum_validator_maker(anenum, name=None):
     setattr(current_module, the_validator.__name__, the_validator)
 
 for oneenum in ALL_INFINITE_ENUMS:
-    _enum_validator_maker(oneenum)
+    _infinite_enum_validator_maker(oneenum)
     
 ##
 ## Above is the real stuff
