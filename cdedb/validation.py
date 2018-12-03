@@ -1674,6 +1674,21 @@ def _event(val, argname=None, *, creation=False, _convert=True):
         val, mandatory_fields, optional_fields, _convert=_convert)
     if errs:
         return val, errs
+    if ('registration_soft_limit' in val
+            and 'registration_hard_limit' in val
+            and 'registration_soft_limit' in val):
+        if (val['registration_soft_limit']
+                and val['registration_hard_limit']
+                and val['registration_soft_limit'] > val['registration_hard_limit']):
+            errs.append(("registration_soft_limit",
+                         ValueError(n_("Must be before or equal to hard limit."))))
+        if val['registration_start'] and (
+                val['registration_soft_limit'] and
+                    val['registration_start'] > val['registration_soft_limit']
+                or val['registration_hard_limit'] and
+                    val['registration_start'] > val['registration_hard_limit']):
+            errs.append(("registration_start",
+                         ValueError(n_("Must be before hard and soft limit."))))
     if 'orgas' in val:
         oldorgas, e = _iterable(val['orgas'], "orgas", _convert=_convert)
         if e:
