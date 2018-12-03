@@ -486,6 +486,42 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
 
+    def test_register_no_registraion_end(self):
+        # Remove registration end (soft and hard) from Große Testakademie 2222
+        self.login(USER_DICT['garcia'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/change'})
+        self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        f = self.response.forms['changeeventform']
+        f['registration_soft_limit'] = ""
+        f['registration_hard_limit'] = ""
+        self.submit(f)
+        self.logout()
+
+        # Berta tries registering and amending registraions. We do less checks
+        # than in test_register()
+        # (the login checks the dashboard for Exceptions, by the way)
+        self.login(USER_DICT['berta'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/register'})
+        self.assertTitle("Anmeldung für Große Testakademie 2222")
+        f = self.response.forms['registerform']
+        f['parts'] = ['1']
+        f['mixed_lodging'] = 'True'
+        f['foto_consent'].checked = True
+        self.submit(f)
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+        mail = self.fetch_mail()[0]
+        self.assertIn("10.50", mail)
+        self.traverse({'href': '/event/event/1/registration/amend'})
+        self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
+        f = self.response.forms['amendregistrationform']
+        self.assertPresence("Ich freu mich schon so zu kommen")
+        self.submit(f)
+        self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
+
     @as_users("garcia")
     def test_questionnaire(self, user):
         self.traverse({'href': '/event/$'},
