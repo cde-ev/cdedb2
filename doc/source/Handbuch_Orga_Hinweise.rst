@@ -50,4 +50,8 @@ Maschine ist unter :ref:`vm` zu finden.
 Eine Veranstaltung Planen - ein Ablaufplan
 ------------------------------------------
 
+Dieser Guide soll euch durch die Verwaltung einer Veranstaltung mittels der neuen CdE-Datenbank führen - vom Anlegen der Veranstalltung, über die Anmeldephase bis auf die Veranstalltung vor Ort. Die Beschreibung soll so ausführlich erfolgen, das auch neue Orgas, die zum ersten Mal Kontakt mit der neuen Datenbank haben, sich gut zurecht finden und gleichzeitig erfahrenen Orgas als Nachschlagewerk dienen.
+
+
+
 

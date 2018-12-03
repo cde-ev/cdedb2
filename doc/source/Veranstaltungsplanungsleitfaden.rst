@@ -33,14 +33,19 @@ _______________________________________________________
 
 Kursschienen sind Kurse, die *pro* Teilnehmer auf einem Veranstaltungs-Teil *parallel* zueinander besucht werden. Jeder Teilnehmer muss also in jeder Kursschiene einen Kurs belegen. Auf Veranstaltungen mit zwei Kursschienen könnten beispielsweise Teilnehmer vormittags und nachmittags unterschieliche Kurse besuchen.
 
+Hinweise
+________
 
-Kurse eintragen
+Ihr könnt einmal angelegte Veranstaltungs-Teile und Kursschienen nur löschen, wenn für diese keine Daten registriert sind (es etwa Kurse gibt, die währenddessen stattfinden).
+
+Kurse
 ---------------
 
 Hat eure Veranstaltung Kurse? Wenn ja, könnt ihr diese unter dem Reiter "Kurse" in die Datenbank eintragen.
 
 Einen neuen Kurs anlegen
 ________________________
+.. veranstaltung_kurs_anlegen
 
 Über den Button "Kurs hinzufügen" gelangt ihr in einen Reiter, unter dem ihr die Daten des Kurses, den ihr hinzufügen wollt, eintragen könnt. Dafür müsst ihr mindestens die Felder "Kurzname" und "Langer Titel" ausfüllen.
 
@@ -54,7 +59,29 @@ Wollt ihr einen bereits existenten Kurs bearbeiten, wählt ihr in der Zeile mit 
 weitere Datenfelder
 ___________________
 
-TODO
+TODO Ref zu Datenfelder
+
+Hinweise
+________
+Es ist empfehlenswert, den Teilnehmern vor eurer Anmeldebeginn die Kursliste zur Verfügung zu stellen, auch wenn diese eventuell noch nicht vollständig sein sollte. Unter "Konfiguration" könnt ihr in der Checkbox "Sichtbarkeit der Kursliste" die Kursliste für alle, die sich für die Veranstaltung anmelden können, sichtbar machen.
 
 Unterkunft
 ----------
+
+Vor einer Veranstaltung sollte man wissen, wie viele Teilnehmer die Veranstaltung besuchen können - dies ist schon für die Kalkulation des Teilnehmerbeitrag essenziel wichtig (siehe [Referenz Teilehmerberechnungtabelle])!
+
+Dafür können die Unterkünfte - gerade bei neuen Veranstaltungen empfehlenswert - direkt in der Datenbank unter "Unterkunft" angelegt werden, das erleichtert die Berechnung und den Überblick über verfügbare Teilnehmerplätze.
+
+ACHTUNG - FEATURE EXISTIERT NOCH NICHT
+Das Anlegen kann auch nach Anmeldebeginn erfolgen oder - wenn vorhanden - von einer alten Veranstaltung importiert werden.
+
+Unterkünfte neu anlegen
+_______________________
+
+Analog zu :ref: 'veranstlug'.
+
+Eine bestehende Unterkunft bearbeiten
+_____________________________________
+
+Analog zu Kurse bearbeiten
+
