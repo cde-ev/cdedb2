@@ -33,7 +33,7 @@
         {{ util.form_input_text(name="vote_extension_end", label=gettext("End of extension"), type="datetime-local",
                                 placeholder="YYYY-MM-DDThh:ii:ss") }}
         {{ util.form_input_text(name="votes", label=gettext("Number of votes"),
-                               info=gettext("Leave empty for Alternative Vote.")) }}
+                               info=gettext("Leave empty for Preferential Vote.")) }}
         {{ util.form_input_checkbox(name="use_bar", label=gettext("Allow rejection")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
                                     info=gettext("Supports reStructuredText")) }}

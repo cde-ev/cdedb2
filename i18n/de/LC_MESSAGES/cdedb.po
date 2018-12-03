@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-12-01 20:26+0100\n"
+"POT-Creation-Date: 2018-12-03 20:01+0100\n"
 "PO-Revision-Date: 2017-12-10 13:36+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -3229,81 +3229,89 @@ msgstr "Vergleichswerte"
 msgid "sort order"
 msgstr "Sortierreihenfolge"
 
-#: cdedb/frontend/templates/web/generic.tmpl:487
+#: cdedb/frontend/templates/web/generic.tmpl:473
+msgid "<value>,<value>,…"
+msgstr "<wert>,<wert>,…"
+
+#: cdedb/frontend/templates/web/generic.tmpl:474
+msgid "<id>,<id>,…"
+msgstr "<id>,<id>,…"
+
+#: cdedb/frontend/templates/web/generic.tmpl:489
 msgid "Default Queries"
 msgstr "Standardabfragen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:507
-#: cdedb/frontend/templates/web/generic.tmpl:508
+#: cdedb/frontend/templates/web/generic.tmpl:509
+#: cdedb/frontend/templates/web/generic.tmpl:510
 msgid "show in search mask"
 msgstr "In Suchmaske anzeigen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:523
+#: cdedb/frontend/templates/web/generic.tmpl:525
 msgid "No search results!"
 msgstr "Keine Ergebnisse!"
 
-#: cdedb/frontend/templates/web/generic.tmpl:553
+#: cdedb/frontend/templates/web/generic.tmpl:555
 msgid "select all"
 msgstr "Alle auswählen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:554
+#: cdedb/frontend/templates/web/generic.tmpl:556
 msgid "all"
 msgstr "alle"
 
-#: cdedb/frontend/templates/web/generic.tmpl:556
+#: cdedb/frontend/templates/web/generic.tmpl:558
 msgid "select none"
 msgstr "Keines auswählen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:557
+#: cdedb/frontend/templates/web/generic.tmpl:559
 msgid "none"
 msgstr "keines"
 
-#: cdedb/frontend/templates/web/generic.tmpl:559
+#: cdedb/frontend/templates/web/generic.tmpl:561
 msgid "invert selection"
 msgstr "Auswahl umkehren"
 
-#: cdedb/frontend/templates/web/generic.tmpl:560
+#: cdedb/frontend/templates/web/generic.tmpl:562
 msgid "invert"
 msgstr "umkehren"
 
-#: cdedb/frontend/templates/web/generic.tmpl:563
+#: cdedb/frontend/templates/web/generic.tmpl:565
 msgid "filter for selected rows"
 msgstr "Nach ausgewählten Zeilen filtern"
 
-#: cdedb/frontend/templates/web/generic.tmpl:565
+#: cdedb/frontend/templates/web/generic.tmpl:567
 msgid "selected only"
 msgstr "nur ausgewählte"
 
-#: cdedb/frontend/templates/web/generic.tmpl:567
-#: cdedb/frontend/templates/web/generic.tmpl:568
+#: cdedb/frontend/templates/web/generic.tmpl:569
+#: cdedb/frontend/templates/web/generic.tmpl:570
 msgid "widen results table"
 msgstr "Ergebnis-Tabelle breiter anzeigen"
 
-#: cdedb/frontend/templates/web/generic.tmpl:582
+#: cdedb/frontend/templates/web/generic.tmpl:584
 msgid "filtered column"
 msgstr "Gefilterte Spalte"
 
-#: cdedb/frontend/templates/web/generic.tmpl:589
+#: cdedb/frontend/templates/web/generic.tmpl:591
 msgid "sorted column"
 msgstr "Sortierte Spalte"
 
-#: cdedb/frontend/templates/web/generic.tmpl:605
+#: cdedb/frontend/templates/web/generic.tmpl:607
 msgid "row {}"
 msgstr "Zeile {}"
 
-#: cdedb/frontend/templates/web/generic.tmpl:610
+#: cdedb/frontend/templates/web/generic.tmpl:612
 msgid "Details"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:613
+#: cdedb/frontend/templates/web/generic.tmpl:615
 msgid "Profile"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:630
+#: cdedb/frontend/templates/web/generic.tmpl:632
 msgid "false"
 msgstr "falsch"
 
-#: cdedb/frontend/templates/web/generic.tmpl:631
+#: cdedb/frontend/templates/web/generic.tmpl:633
 msgid "true"
 msgstr "wahr"
 
@@ -3324,6 +3332,7 @@ msgid "{} to"
 msgstr "{} bis"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:358
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:489
 #: cdedb/frontend/templates/web/util.tmpl:446
 msgid "Help"
 msgstr "Hilfe"
@@ -3495,7 +3504,7 @@ msgstr "Anzahl der Stimmen"
 
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:36
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:28
-msgid "Leave empty for Alternative Vote."
+msgid "Leave empty for Preferential Vote."
 msgstr "Leer lassen für vollständige Präferenzwahl."
 
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:37
@@ -3934,7 +3943,7 @@ msgstr "<a href='https://enwikipedia.org/wiki/Schulze_Methode'>Schulze_Methode</
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:491
 #, python-format
 msgid ""
-"This vote is an Alternative vote. You can arrange the Candidates in the "
+"This vote is an Preferential Vote. You can arrange the Candidates in the "
 "field above\n"
 "                                    according to Your personal "
 "preference. The preferences of all participants will be\n"
@@ -4084,7 +4093,7 @@ msgstr ""
 "Text-basierten Formular zu wechseln."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:456
-msgid "Increasing preference"
+msgid "Incr. preference"
 msgstr "Steigende Präferenz"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:472

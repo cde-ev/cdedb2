@@ -358,7 +358,7 @@
                         {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
                                 {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
-                                    This vote is an Alternative vote. You can arrange the Candidates in the field above
+                                    This vote is an Preferential Vote. You can arrange the Candidates in the field above
                                     according to Your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
                                 {%- endtrans %}
@@ -453,7 +453,7 @@
                         </p>
                         <div class="prefvote_container" id="prefvote_container">
                             <div class="indicator">
-                                {% trans -%}Increasing preference{%- endtrans %} →
+                                {% trans -%}Incr. preference{%- endtrans %} →
                             </div>
                         </div>
                         <div class="p clearfix">
@@ -486,10 +486,10 @@
                             $('#button-jsvote').click(function(){$('#voteform').submit();});
                         </script>
                         
-                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign', aclass='panel-default mosp') %}
+                        {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
                                 {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
-                                    This vote is an Alternative vote. You can arrange the Candidates in the field above
+                                    This vote is an Preferential Vote. You can arrange the Candidates in the field above
                                     according to Your personal preference. The preferences of all participants will be
                                     evaluated using the {{ link }}, to determine the winner.
                                 {%- endtrans %}

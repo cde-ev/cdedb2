@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-12-01 20:26+0100\n"
+"POT-Creation-Date: 2018-12-03 20:01+0100\n"
 "PO-Revision-Date: 2016-11-24 16:06+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -120,59 +120,59 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:16
 msgid "AssemblyLogCodes.assembly_created"
-msgstr ""
+msgstr "Assembly created"
 
 #: cdedb/i18n_additional.py:17
 msgid "AssemblyLogCodes.assembly_changed"
-msgstr ""
+msgstr "Assembly modified"
 
 #: cdedb/i18n_additional.py:18
 msgid "AssemblyLogCodes.assembly_concluded"
-msgstr ""
+msgstr "Assembly concluded"
 
 #: cdedb/i18n_additional.py:19
 msgid "AssemblyLogCodes.ballot_created"
-msgstr ""
+msgstr "Ballot created"
 
 #: cdedb/i18n_additional.py:20
 msgid "AssemblyLogCodes.ballot_changed"
-msgstr ""
+msgstr "Ballot modified"
 
 #: cdedb/i18n_additional.py:21
 msgid "AssemblyLogCodes.ballot_deleted"
-msgstr ""
+msgstr "Ballot deleted"
 
 #: cdedb/i18n_additional.py:22
 msgid "AssemblyLogCodes.ballot_extended"
-msgstr ""
+msgstr "Ballot extended"
 
 #: cdedb/i18n_additional.py:23
 msgid "AssemblyLogCodes.ballot_tallied"
-msgstr ""
+msgstr "Ballot tallied"
 
 #: cdedb/i18n_additional.py:24
 msgid "AssemblyLogCodes.candidate_added"
-msgstr ""
+msgstr "Candidate added"
 
 #: cdedb/i18n_additional.py:25
 msgid "AssemblyLogCodes.candidate_updated"
-msgstr ""
+msgstr "Candidate modified"
 
 #: cdedb/i18n_additional.py:26
 msgid "AssemblyLogCodes.candidate_removed"
-msgstr ""
+msgstr "Candidate removed"
 
 #: cdedb/i18n_additional.py:27
 msgid "AssemblyLogCodes.new_attendee"
-msgstr ""
+msgstr "New Participant"
 
 #: cdedb/i18n_additional.py:28
 msgid "AssemblyLogCodes.attachment_added"
-msgstr ""
+msgstr "Attachment added"
 
 #: cdedb/i18n_additional.py:29
 msgid "AssemblyLogCodes.attachment_removed"
-msgstr ""
+msgstr "Attachment removed"
 
 #: cdedb/i18n_additional.py:31
 msgid "AttachmentPolicy.allow"
@@ -688,83 +688,83 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:175
 msgid "QueryOperators.empty"
-msgstr ""
+msgstr "is empty"
 
 #: cdedb/i18n_additional.py:176
 msgid "QueryOperators.nonempty"
-msgstr ""
+msgstr "is not empty"
 
 #: cdedb/i18n_additional.py:177
 msgid "QueryOperators.equal"
-msgstr ""
+msgstr "equals"
 
 #: cdedb/i18n_additional.py:178
 msgid "QueryOperators.unequal"
-msgstr ""
+msgstr "does not equal"
 
 #: cdedb/i18n_additional.py:179
 msgid "QueryOperators.oneof"
-msgstr ""
+msgstr "is one of"
 
 #: cdedb/i18n_additional.py:180
 msgid "QueryOperators.otherthan"
-msgstr ""
+msgstr "is not one of"
 
 #: cdedb/i18n_additional.py:181
 msgid "QueryOperators.similar"
-msgstr ""
+msgstr "matches pattern"
 
 #: cdedb/i18n_additional.py:182
 msgid "QueryOperators.dissimilar"
-msgstr ""
+msgstr "does not match pattern"
 
 #: cdedb/i18n_additional.py:183
 msgid "QueryOperators.regex"
-msgstr ""
+msgstr "matches POSIX-RegEx"
 
 #: cdedb/i18n_additional.py:184
 msgid "QueryOperators.notregex"
-msgstr ""
+msgstr "does not match POSIX-RegEx"
 
 #: cdedb/i18n_additional.py:185
 msgid "QueryOperators.containsall"
-msgstr ""
+msgstr "contains all of"
 
 #: cdedb/i18n_additional.py:186
 msgid "QueryOperators.containsnone"
-msgstr ""
+msgstr "contains none of"
 
 #: cdedb/i18n_additional.py:187
 msgid "QueryOperators.containssome"
-msgstr ""
+msgstr "contains at least one of"
 
 #: cdedb/i18n_additional.py:188
 msgid "QueryOperators.fuzzy"
-msgstr ""
+msgstr "is similar to"
 
 #: cdedb/i18n_additional.py:189
 msgid "QueryOperators.less"
-msgstr ""
+msgstr "is less than"
 
 #: cdedb/i18n_additional.py:190
 msgid "QueryOperators.lessequal"
-msgstr ""
+msgstr "is less or equal"
 
 #: cdedb/i18n_additional.py:191
 msgid "QueryOperators.between"
-msgstr ""
+msgstr "is between"
 
 #: cdedb/i18n_additional.py:192
 msgid "QueryOperators.outside"
-msgstr ""
+msgstr "is not between"
 
 #: cdedb/i18n_additional.py:193
 msgid "QueryOperators.greaterequal"
-msgstr ""
+msgstr "is greater or equal"
 
 #: cdedb/i18n_additional.py:194
 msgid "QueryOperators.greater"
-msgstr ""
+msgstr "is greater than"
 
 #: cdedb/i18n_additional.py:199
 msgid "day is out of range for month"
@@ -3207,81 +3207,89 @@ msgstr ""
 msgid "sort order"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:487
+#: cdedb/frontend/templates/web/generic.tmpl:473
+msgid "<value>,<value>,..."
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:474
+msgid "<id>,<id>,..."
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:489
 msgid "Default Queries"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:507
-#: cdedb/frontend/templates/web/generic.tmpl:508
+#: cdedb/frontend/templates/web/generic.tmpl:509
+#: cdedb/frontend/templates/web/generic.tmpl:510
 msgid "show in search mask"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:523
+#: cdedb/frontend/templates/web/generic.tmpl:525
 msgid "No search results!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:553
+#: cdedb/frontend/templates/web/generic.tmpl:555
 msgid "select all"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:554
+#: cdedb/frontend/templates/web/generic.tmpl:556
 msgid "all"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:556
+#: cdedb/frontend/templates/web/generic.tmpl:558
 msgid "select none"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:557
+#: cdedb/frontend/templates/web/generic.tmpl:559
 msgid "none"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:559
+#: cdedb/frontend/templates/web/generic.tmpl:561
 msgid "invert selection"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:560
+#: cdedb/frontend/templates/web/generic.tmpl:562
 msgid "invert"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:563
+#: cdedb/frontend/templates/web/generic.tmpl:565
 msgid "filter for selected rows"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:565
+#: cdedb/frontend/templates/web/generic.tmpl:567
 msgid "selected only"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:567
-#: cdedb/frontend/templates/web/generic.tmpl:568
+#: cdedb/frontend/templates/web/generic.tmpl:569
+#: cdedb/frontend/templates/web/generic.tmpl:570
 msgid "widen results table"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:582
+#: cdedb/frontend/templates/web/generic.tmpl:584
 msgid "filtered column"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:589
+#: cdedb/frontend/templates/web/generic.tmpl:591
 msgid "sorted column"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:605
+#: cdedb/frontend/templates/web/generic.tmpl:607
 msgid "row {}"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:610
+#: cdedb/frontend/templates/web/generic.tmpl:612
 msgid "Details"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:613
+#: cdedb/frontend/templates/web/generic.tmpl:615
 msgid "Profile"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:630
+#: cdedb/frontend/templates/web/generic.tmpl:632
 msgid "false"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:631
+#: cdedb/frontend/templates/web/generic.tmpl:633
 msgid "true"
 msgstr ""
 
@@ -3302,6 +3310,7 @@ msgid "{} to"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:358
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:489
 #: cdedb/frontend/templates/web/util.tmpl:446
 msgid "Help"
 msgstr ""
@@ -3471,7 +3480,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:36
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:28
-msgid "Leave empty for Alternative Vote."
+msgid "Leave empty for Preferential Vote."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:37
@@ -3883,7 +3892,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:491
 #, python-format
 msgid ""
-"This vote is an Alternative vote. You can arrange the Candidates in the "
+"This vote is an Preferential Vote. You can arrange the Candidates in the "
 "field above\n"
 "                                    according to Your personal "
 "preference. The preferences of all participants will be\n"
@@ -3999,7 +4008,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:456
-msgid "Increasing preference"
+msgid "Incr. preference"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:472
