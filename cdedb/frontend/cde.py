@@ -1253,7 +1253,7 @@ class CdEFrontend(AbstractUserFrontend):
         period = self.cdeproxy.get_period(rs, period_id)
         if period['billing_done']:
             rs.notify("error", n_("Billing already done."))
-            return self.redirect(rs, "show/semester")
+            return self.redirect(rs, "cde/show_semester")
         open_lastschrift = self.determine_open_permits(rs)
         ## The rs parameter shadows the outer request state, making sure that
         ## it doesn't leak
@@ -1319,7 +1319,7 @@ class CdEFrontend(AbstractUserFrontend):
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['billing_done'] or period['ejection_done']:
             rs.notify("error", n_("Wrong timing for ejection."))
-            return self.redirect(rs, "show/semester")
+            return self.redirect(rs, "cde/show_semester")
         ## The rs parameter shadows the outer request state, making sure that
         ## it doesn't leak
         def task(rrs, rs=None):
@@ -1369,7 +1369,7 @@ class CdEFrontend(AbstractUserFrontend):
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['ejection_done'] or period['balance_done']:
             rs.notify("error", n_("Wrong timing for balance update."))
-            return self.redirect(rs, "show/semester")
+            return self.redirect(rs, "cde/show_semester")
         ## The rs parameter shadows the outer request state, making sure that
         ## it doesn't leak
         def task(rrs, rs=None):
@@ -1424,7 +1424,7 @@ class CdEFrontend(AbstractUserFrontend):
         period = self.cdeproxy.get_period(rs, period_id)
         if not period['balance_done']:
             rs.notify("error", n_("Wrong timing for advancing the semester."))
-            return self.redirect(rs, "show/semester")
+            return self.redirect(rs, "cde/show_semester")
         self.cdeproxy.create_period(rs)
         rs.notify("success", n_("New period started."))
         return self.redirect(rs, "cde/show_semester")
@@ -1441,7 +1441,7 @@ class CdEFrontend(AbstractUserFrontend):
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if expuls['addresscheck_done']:
             rs.notify("error", n_("Addresscheck already done."))
-            return self.redirect(rs, "show/semester")
+            return self.redirect(rs, "cde/show_semester")
         ## The rs parameter shadows the outer request state, making sure that
         ## it doesn't leak
         def task(rrs, rs=None):
@@ -1509,7 +1509,7 @@ class CdEFrontend(AbstractUserFrontend):
         expuls = self.cdeproxy.get_expuls(rs, expuls_id)
         if not expuls['addresscheck_done']:
             rs.notify("error", n_("Addresscheck not done."))
-            return self.redirect(rs, "show/semester")
+            return self.redirect(rs, "cde/show_semester")
         self.cdeproxy.create_expuls(rs)
         rs.notify("success", n_("New expuls started."))
         return self.redirect(rs, "cde/show_semester")
