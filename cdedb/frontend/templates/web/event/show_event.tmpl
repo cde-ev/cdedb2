@@ -41,15 +41,24 @@
                 {% endif %}
             </dd>
         {% endif %}
-        <dt>Anmeldung</dt>
-        <dd>
-            {{ ambience['event']['registration_start']|datetime(lang=lang)|e }}&#8239;–&#8239;
-            {{- ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }}
-            {% if (values['event_id'] in user.orga or is_admin) and
-                    ambience['event']['registration_hard_limit'] != ambience['event']['registration_hard_limit'] %}
-                (inoffiziell noch bis {{ ambience['event']['registration_hard_limit']|datetime(lang=lang)|e }})
-            {% endif %}
-        </dd>
+        {% if not ambience['event']['registration_start'] is none %}
+            <dt>Anmeldung</dt>
+            <dd>
+                {% if ambience['event']['registration_soft_limit'] is none and
+                        ambience['event']['registration_hard_limit'] is none %}
+                    ab {{ ambience['event']['registration_start']|datetime(lang=lang)|e }}
+                {% else %}
+                    {{ ambience['event']['registration_start']|datetime(lang=lang)|e }}&#8239;–&#8239;
+                    {{- (ambience['event']['registration_hard_limit']
+                            if ambience['event']['registration_soft_limit'] is none
+                            else ambience['event']['registration_soft_limit'])|datetime(lang=lang)|e }}
+                    {% if (values['event_id'] in user.orga or is_admin) and
+                            ambience['event']['registration_hard_limit'] != ambience['event']['registration_hard_limit'] %}
+                        (inoffiziell noch bis {{ ambience['event']['registration_hard_limit']|datetime(lang=lang)|e }})
+                    {% endif %}
+                {% endif %}
+            </dd>
+        {% endif %}
         <dt>Orgas</dt>
         <dd>
             {% for anid, entry in orgas|dictsort %}

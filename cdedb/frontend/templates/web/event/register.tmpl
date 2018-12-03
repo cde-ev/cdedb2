@@ -17,11 +17,13 @@
 {% endblock %}
 {% block content %}
     <p>
-        {% if ambience['event']['registration_soft_limit'] >= now() %}
+        {% if ambience['event']['registration_soft_limit'] is none %}
+            Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss geändert werden.
+        {% elif ambience['event']['registration_soft_limit'] >= now() %}
             Alle Angaben bis auf die Veranstaltungsteile können bis zum Anmeldeschluss
             ({{ ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }}) geändert werden.
         {% else %}
-            Der Anmeldeschluss ist bereits vorbei. Deine Anmeldung wird nach Möglichkeit berücksichtigt.
+            Der offizielle Anmeldeschluss ist bereits vorbei. Deine Anmeldung wird nach Möglichkeit berücksichtigt.
         {% endif %}
     </p>
 

@@ -24,10 +24,12 @@
                                 placeholder="YYYY-MM-DD") }}
         {{ util.form_input_text(name="registration_start", label="Anmeldebeginn", type="datetime-local",
                                 placeholder="YYYY-MM-DD HH:MM:SS") }}
-        {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss", type="datetime-local",
-                                placeholder="YYYY-MM-DD HH:MM:SS") }}
-        {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss", type="datetime-local",
-                                placeholder="YYYY-MM-DD HH:MM:SS") }}
+        {{ util.form_input_text(name="registration_soft_limit", label="offizieller Anmeldeschluss",
+                                type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
+                                info="Änderungen an Anmeldungen sind nur bis dahin möglich.") }}
+        {{ util.form_input_text(name="registration_hard_limit", label="tatsächlicher Anmeldeschluss",
+                                type="datetime-local", placeholder="YYYY-MM-DD HH:MM:SS",
+                                info="Endgültiger Anmeldeschluss. Bis dahin sind Nachmeldungen möglich.") }}
         {{ util.form_input_select(name="iban", label="CdE-Konto IBAN", entries=accounts, nulloption="") }}
         {{ util.form_input_textarea(name="mail_text", label="Freitext Anmeldungsbestätigung", rows="5") }}
         {{ util.form_input_textarea(name="notes", label="Admin/Orga-Notizen", rows="5") }}

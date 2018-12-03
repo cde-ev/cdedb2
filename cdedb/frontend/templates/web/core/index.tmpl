@@ -158,10 +158,10 @@
                                                  "Fragebogen", icon='edit') -}}
                                 {% endif -%}
                                 )
-                            {% elif event['registration_start'] and event['registration_start'] <= now() %}
+                            {% elif event['is_open'] %}
                                 {{ util.href(cdedblink('event/register_form', {'event_id': event_id}), "anmelden",
                                              icon='log-in') }}
-                                {% if event['registration_soft_limit'] %}
+                                {% if not event['registration_soft_limit'] is none %}
                                     {% if now() <= event['registration_soft_limit'] %}
                                         (bis {{ event['registration_soft_limit']|datetime(lang=lang)|e }})
                                     {% elif event['registration_hard_limit'] %}
@@ -169,10 +169,8 @@
                                     {% else %}
                                         (nur noch Nachmeldungen)
                                     {% endif %}
-                                {% else %}
-                                    {% if event['registration_hard_limit'] %}
-                                        (bis {{ event['registration_hard_limit']|datetime(lang=lang)|e }})
-                                    {% endif %}
+                                {% elif not event['registration_hard_limit'] is none %}
+                                    (bis {{ event['registration_hard_limit']|datetime(lang=lang)|e }})
                                 {% endif %}
                             {% endif %}
                         </li>

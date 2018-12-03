@@ -78,12 +78,21 @@
     </dl>
 
     <h3 class="heading-underline">Anmeldedaten</h3>
-    {% if ambience['event']['registration_soft_limit'] and ambience['event']['registration_soft_limit'] >= now() %}
+    {% if ambience['event']['registration_soft_limit'] is none or
+            ambience['event']['registration_soft_limit'] >= now() %}
         <p>
             {{ util.href(cdedblink("event/amend_registration_form"), "Ändern", aclass="btn btn-sm btn-warning",
                          icon='pencil') }}
-            &ensp; Änderungen sind bis zum Anmeldeschluss ({{ ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }})
-            möglich.
+            {% if not ambience['event']['registration_soft_limit'] is none %}
+                &ensp; Änderungen sind bis zum Anmeldeschluss
+                    ({{ ambience['event']['registration_soft_limit']|datetime(lang=lang)|e }})
+                möglich.
+            {% endif %}
+        </p>
+    {% else %}
+        <p>
+            Da der Anmeldeschluss bereits vorbei ist, sind keine Änderungen mehr möglich. Wende Dich bitte per E-Mail an
+            die Orgas, falls Du etwas ändern musst.
         </p>
     {% endif %}
 
