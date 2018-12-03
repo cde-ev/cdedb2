@@ -508,6 +508,7 @@ etc;anything else""", f['entries_2'].value)
                       {'href': '/event/event/1/register'})
         self.assertTitle("Anmeldung für Große Testakademie 2222")
         f = self.response.forms['registerform']
+        f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['parts'] = ['1']
         f['mixed_lodging'] = 'True'
         f['foto_consent'].checked = True
