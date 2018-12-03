@@ -17,7 +17,7 @@ from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, PsycoJson)
+    REGISTRATION_TRACK_FIELDS, PsycoJson, InfiniteEnum)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -535,7 +535,7 @@ class EventBackend(AbstractBackend):
         current = self.sql_select(
             rs, "event.course_tracks", COURSE_TRACK_FIELDS, (part_id,),
             entity_key="part_id")
-        current = {e['id']: e['title'] for e in current}
+        current = {e['id']: e for e in current}
         existing = set(current)
         if not(existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))
@@ -575,7 +575,7 @@ class EventBackend(AbstractBackend):
             for x in deleted:
                 self.event_log(
                     rs, const.EventLogCodes.track_removed, event_id,
-                    additional_info=data[x]['title'])
+                    additional_info=current[x]['title'])
         return ret
 
     @access("event")
