@@ -83,6 +83,7 @@ working with test data.
 
     fsync = off
     synchronous_commit = off
+    full_page_writes = off
 
 
 Sample dev setup
