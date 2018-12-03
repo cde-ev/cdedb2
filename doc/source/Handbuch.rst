@@ -12,3 +12,4 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
    :maxdepth: 2
 
    Handbuch_Orga_Hinweise
+   Handbuch_Veranstaltungsleitfaden
