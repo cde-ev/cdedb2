@@ -237,6 +237,85 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['partsummaryform']
         self.assertNotIn('title_5', f.fields)
 
+    @as_users("garcia")
+    def test_aposteriori_change_num_choices(self, user):
+        # Increase number of course choices of track 2 ("Kaffekränzchen")
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/part/summary'})
+        f = self.response.forms['partsummaryform']
+        f['track_num_choices_2_2'] = "2"
+        self.submit(f)
+
+        # Change course choices as Orga
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/3/show'},
+                      {'href': '/event/event/1/registration/3/change'})
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual('', f['track2.course_choice_1'].value)
+        f['track2.course_choice_0'] = 3
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/3/change'})
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual('', f['track2.course_choice_1'].value)
+
+        # Amend registration with new choice and check via course_choices
+        self.traverse({'href': '/event/event/1/registration/status'},
+                      {'href': '/event/event/1/registration/amend'})
+        f = self.response.forms['amendregistrationform']
+        self.assertEqual('3', f['course_choice2_0'].value)
+        # Check preconditions for second part
+        self.assertIsNotNone(f.get('course_choice1_3', default=None))
+        f['course_choice2_1'] = 4
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/course/choices'})
+        f = self.response.forms['choicefilterform']
+        f['track_id'] = 2
+        f['course_id'] = 4
+        f['position'] = 1
+        self.submit(f)
+        self.assertPresence("Garcia")
+
+        # Reduce number of course choices of track 1 ("Morgenkreis")
+        self.traverse({'href': '/event/event/1/part/summary'})
+        f = self.response.forms['partsummaryform']
+        f['track_num_choices_2_1'] = "3"
+        self.submit(f)
+
+        # Check registration as Orga
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/3/show'})
+        self.assertPresence('3. Wahl')
+        self.assertNonPresence('4. Wahl')
+        self.assertNonPresence('ε. Backup')
+
+        # Amend registration
+        self.traverse({'href': '/event/event/1/registration/status'})
+        self.assertNonPresence('4. Wahl')
+        self.assertNonPresence('ε. Backup')
+        self.traverse({'href': '/event/event/1/registration/amend'})
+        f = self.response.forms['amendregistrationform']
+        self.assertEqual('1', f['course_choice1_2'].value)
+        self.assertIsNone(f.get('course_choice1_3', default=None))
+        f['course_choice1_0'] = 2
+        f['course_choice1_1'] = 4
+        self.submit(f)
+
+        # Change registration as orga
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/3/show'},
+                      {'href': '/event/event/1/registration/3/change'})
+        f = self.response.forms['changeregistrationform']
+        self.assertIsNone(f.get('track1.course_choice_3', default=None))
+        self.assertEqual('4', f['track1.course_choice_1'].value)
+        self.assertEqual('1', f['track1.course_choice_2'].value)
+        f['track1.course_choice_2'] = ''
+        self.submit(f)
+        self.assertNonPresence('Heldentum')
+
     @as_users("anton", "garcia")
     def test_change_event_fields(self, user):
         self.traverse({'href': '/event/$'},
