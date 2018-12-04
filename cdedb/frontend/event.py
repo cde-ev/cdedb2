@@ -1133,29 +1133,28 @@ class EventFrontend(AbstractUserFrontend):
                 if action.enum == CourseChoiceToolActions.specific_rank:
                     choice = reg_track['choices'][action.int]
                     tmp['tracks'][track_id] = {'course_id': choice}
-                else:
-                    if action.enum == CourseChoiceToolActions.assign_fixed:
-                        tmp['tracks'][track_id] = {'course_id': course_id}
-                    elif action.enum == CourseChoiceToolActions.assign_auto:
-                        cid = reg_track['course_id']
-                        if cid and track_id in courses[cid]['active_segments']:
-                            ## Do not modify a valid assignment
-                            continue
-                        instructor = reg_track['course_instructor']
-                        if (instructor
-                                and track_id in courses[instructor]
-                                ['active_segments']):
-                            ## Let instructors instruct
-                            tmp['tracks'][track_id] = {'course_id': instructor}
-                            continue
-                        for choice in (reg_track['choices']
-                                       [:tracks[track_id]['num_choices']]):
-                            if track_id in courses[choice]['active_segments']:
-                                ## Assign first possible choice
-                                tmp['tracks'][track_id] = {'course_id': choice}
-                                break
-                        else:
-                            rs.notify("error", n_("No choice available."))
+                elif action.enum == CourseChoiceToolActions.assign_fixed:
+                    tmp['tracks'][track_id] = {'course_id': course_id}
+                elif action.enum == CourseChoiceToolActions.assign_auto:
+                    cid = reg_track['course_id']
+                    if cid and track_id in courses[cid]['active_segments']:
+                        ## Do not modify a valid assignment
+                        continue
+                    instructor = reg_track['course_instructor']
+                    if (instructor
+                            and track_id in courses[instructor]
+                            ['active_segments']):
+                        ## Let instructors instruct
+                        tmp['tracks'][track_id] = {'course_id': instructor}
+                        continue
+                    for choice in (reg_track['choices']
+                                   [:tracks[track_id]['num_choices']]):
+                        if track_id in courses[choice]['active_segments']:
+                            ## Assign first possible choice
+                            tmp['tracks'][track_id] = {'course_id': choice}
+                            break
+                    else:
+                        rs.notify("error", n_("No choice available."))
             if tmp['tracks']:
                 code *= self.eventproxy.set_registration(rs, tmp)
         self.notify_return_code(rs, code)
