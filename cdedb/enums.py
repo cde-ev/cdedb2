@@ -10,7 +10,7 @@ from cdedb.query import QueryOperators
 from cdedb.common import (AgeClasses, LineResolutions, CourseFilterPositions,
                           SubscriptionStates, CourseChoiceToolActions)
 
-#: The list.
+#: The list of normal enums
 ALL_ENUMS = (
     const.Genders, const.MemberChangeStati, const.RegistrationPartStati,
     const.GenesisStati, const.SubscriptionPolicy, const.ModerationPolicy,
@@ -19,8 +19,11 @@ ALL_ENUMS = (
     const.CdeLogCodes, const.FinanceLogCodes, const.EventLogCodes,
     const.PastEventLogCodes, const.AssemblyLogCodes, const.MlLogCodes,
     const.FieldAssociations,
-    QueryOperators, AgeClasses, LineResolutions, CourseFilterPositions,
-    CourseChoiceToolActions, SubscriptionStates)
+    QueryOperators, AgeClasses, LineResolutions, SubscriptionStates)
+
+#: The list of infinite enums
+ALL_INFINITE_ENUMS = (CourseFilterPositions, CourseChoiceToolActions)
 
 #: A dict for enum lookup in the templates.
 ENUMS_DICT = {e.__name__: e for e in ALL_ENUMS}
+ENUMS_DICT.update({e.__name__: e for e in ALL_INFINITE_ENUMS})

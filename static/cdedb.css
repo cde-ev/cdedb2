@@ -483,10 +483,10 @@ tr.ls-selected td {
 
 
 /* dynamic row js */
-tr.drow-new>td {
+tr.drow-new>td, tr.drow-new1>td {
     background-color: #dff0d8;
 }
-tr.drow-delete>td {
+tr.drow-delete>td, tr.drow-delete1>td {
     background-color: #f2dede;
 }
 .panel.shaded-info>.panel-body {
@@ -512,16 +512,8 @@ tr.drow-delete>td {
 .panel.drow-delete>.panel-body, .drow-delete .panel>.panel-body {
     background-color: #f3e8e8;
 }
-.drow-delete input, .drow-delete textarea, .drow-delete select {
-    text-decoration: line-through;
-}
-.drow-new1>.input-group input {
-    border-color: #3c763d;
-    background-color: #dff0d8;
-}
-.drow-delete1>.input-group input {
-    border-color: #a94442;
-    background-color: #f2dede;
+.drow-delete input, .drow-delete textarea, .drow-delete select,
+.drow-delete1 input, .drow-delete1 textarea, .drow-delete1 select {
     text-decoration: line-through;
 }
 

@@ -23,25 +23,27 @@
         <thead>
             <tr>
                 <th rowspan="2" colspan="2">Kurs</th>
-                {% if ambience['event']['tracks']|length == 1 %}
-                    <th colspan="5" class="b-left">Teilnehmer &amp; Kurswahl</th>
-                {% else %}
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                        <th colspan="5" class="b-left">{{ track['title']|e }}</th>
-                    {% endfor %}
-                {% endif %}
+                {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
+                    <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">
+                        {%- if ambience['event']['tracks']|length == 1 -%}
+                            Teilnehmer &amp; Kurswahl
+                        {%- else -%}
+                            {{ track['title']|e }}
+                        {%- endif -%}
+                    </th>
+                {% endfor %}
                 <th colspan="2" class="b-left">Grenzen</th>
                 {% if ambience['event']['tracks']|length < 4 %}
                     <th rowspan="2" class="b-left"></th>
                 {% endif %}
             </tr>
             <tr>
-                {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                     <th class="b-left"></th>
                     <th class="text-right">{{ util.make_icon('screenshot', title="eingeteilt") }}</th>
-                    <th class="text-right">1</th>
-                    <th class="text-right">2</th>
-                    <th class="text-right">3</th>
+                    {% for i in range(track['num_choices']) %}
+                        <th class="text-right">{{ (i + 1)|e }}</th>
+                    {% endfor %}
                 {% endfor %}
                 <th class="b-left text-right">Min</th>
                 <th class="text-right">Max</th>
@@ -53,7 +55,7 @@
                     <td>{{ course['nr']|e }}</td>
                     <td>{{ util.href(cdedblink('event/show_course', {'course_id': course_id}),
                                      course['shortname']) }}</td>
-                    {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                    {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                         {% if track_id in course['segments'] %}
                             {% set attendees = assign_counts[course_id][track_id] %}
                             {% set aclass = 'course-cancelled' if track_id not in course['active_segments'] and attendees > 0 else
@@ -72,17 +74,18 @@
                                                                                 'submitform': True}),
                                              assign_counts[course_id][track_id]) }}
                             </td>
-                            {% for i in range(3) %}
+                            {% for i in range(track['num_choices']) %}
                                 <td class="text-right">
+                                    {# FIXME position does not work for arbitrary number of choices #}
                                     {{ util.href(cdedblink('event/course_choices', {'track_id': track_id,
-                                                                                'course_id': course_id,
-                                                                                'position': i + 2,
-                                                                                'submitform': True}),
+                                                                                    'course_id': course_id,
+                                                                                    'position': i + 2,
+                                                                                    'submitform': True}),
                                              choice_counts[course_id][(track_id, i)]) }}
                             {% endfor %}
                         {% else %}
                             <td class="b-left">{{ util.make_icon('remove-sign', title="Nicht angeboten") }}</td>
-                            <td colspan="4"></td>
+                            <td colspan="{{ track['num_choices'] + 1 }}"></td>
                         {% endif %}
                     {% endfor %}
                     <td class="b-left text-right">{{ course['min_size']|e }}</td>

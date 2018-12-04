@@ -34,7 +34,7 @@
             {{ util.input_hidden("segments", (ambience['event']['tracks']|list)[0]) }}
         {% else %}
             {{ util.form_input_checkboxes(name="segments", label="Veranstaltungsteile",
-                                          entries=ambience['event']['tracks']|dictsort|dict_entries('id', 'title')) }}
+                                          entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title')) }}
         {% endif %}
 
         <h4 class="heading-underline">Status</h4>

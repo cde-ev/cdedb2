@@ -17,7 +17,7 @@ from cdedb.common import (
     REGISTRATION_FIELDS, REGISTRATION_PART_FIELDS, LODGEMENT_FIELDS,
     COURSE_SEGMENT_FIELDS, unwrap, now, ProxyShim, PERSONA_EVENT_FIELDS,
     CourseFilterPositions, FIELD_DEFINITION_FIELDS, COURSE_TRACK_FIELDS,
-    REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms)
+    REGISTRATION_TRACK_FIELDS, PsycoJson, implying_realms, InfiniteEnum)
 from cdedb.database.connection import Atomizer
 from cdedb.query import QueryOperators
 import cdedb.database.constants as const
@@ -486,10 +486,11 @@ class EventBackend(AbstractBackend):
                                    all_parts, entity_key="part_id")
             for anid in ids:
                 for part_id in ret[anid]['parts']:
-                    tracks = {d['id']: d['title'] for d in data
+                    tracks = {d['id']: d for d in data
                               if d['part_id'] == part_id}
                     assert('tracks' not in ret[anid]['parts'][part_id])
                     ret[anid]['parts'][part_id]['tracks'] = tracks
+                ret[anid]['tracks'] = {d['id']: d for d in data}
             data = self.sql_select(
                 rs, "event.orgas", ("persona_id", "event_id"), ids,
                 entity_key="event_id")
@@ -514,15 +515,6 @@ class EventBackend(AbstractBackend):
                 and ret[anid]['registration_start'] <= now()
                 and (ret[anid]['registration_hard_limit'] is None
                      or ret[anid]['registration_hard_limit'] >= now()))
-            ret[anid]['tracks'] = {
-                track_id: {
-                    'id': track_id,
-                    'part_id': part_id,
-                    'title': title
-                }
-                for part_id, part in ret[anid]['parts'].items()
-                for track_id, title in part['tracks'].items()
-            }
         return ret
 
     def _set_tracks(self, rs, event_id, part_id, data, cautious=False):
@@ -535,7 +527,7 @@ class EventBackend(AbstractBackend):
         :type rs: :py:class:`cdedb.common.RequestState`
         :type event_id: int
         :type part_id: int
-        :type data: {int: str}
+        :type data: {int: {str: object} or None}
         :type cautious: bool
         :param cautious: If True only modification of existing tracks is
           allowed. That is creation and deletion of tracks is disallowed.
@@ -549,7 +541,7 @@ class EventBackend(AbstractBackend):
         current = self.sql_select(
             rs, "event.course_tracks", COURSE_TRACK_FIELDS, (part_id,),
             entity_key="part_id")
-        current = {e['id']: e['title'] for e in current}
+        current = {e['id']: e for e in current}
         existing = set(current)
         if not(existing >= {x for x in data if x > 0}):
             raise ValueError(n_("Non-existing tracks specified."))
@@ -564,23 +556,23 @@ class EventBackend(AbstractBackend):
         for x in reversed(sorted(new)):
             new_track = {
                 "part_id": part_id,
-                "title": data[x],
+                **data[x]
             }
             ret *= self.sql_insert(rs, "event.course_tracks", new_track)
             self.event_log(
                 rs, const.EventLogCodes.track_added, event_id,
-                additional_info=data[x])
+                additional_info=data[x]['title'])
         ## updated
         for x in updated:
             if current[x] != data[x]:
                 update = {
                     'id': x,
-                    'title': data[x],
+                    **data[x]
                 }
                 ret *= self.sql_update(rs, "event.course_tracks", update)
                 self.event_log(
                     rs, const.EventLogCodes.track_updated, event_id,
-                    additional_info=data[x])
+                    additional_info=data[x]['title'])
 
         ## deleted
         if deleted:
@@ -589,7 +581,7 @@ class EventBackend(AbstractBackend):
             for x in deleted:
                 self.event_log(
                     rs, const.EventLogCodes.track_removed, event_id,
-                    additional_info=data[x])
+                    additional_info=current[x]['title'])
         return ret
 
     @access("event")
@@ -1091,7 +1083,8 @@ class EventBackend(AbstractBackend):
         :type event_id: int
         :type track_id: int or None
         :type course_id: int or None
-        :type position: :py:class:`cdedb.common.CourseFilterPositions`
+        :param position: A :py:class:`cdedb.common.CourseFilterPositions`
+        :type position: :py:class:`cdedb.common.InfiniteEnum`
         :param reg_ids: List of registration ids to filter for
         :type reg_ids: [int] or None
         :rtype: {int: int}
@@ -1099,7 +1092,8 @@ class EventBackend(AbstractBackend):
         event_id = affirm("id", event_id)
         track_id = affirm("id_or_None", track_id)
         course_id = affirm("id_or_None", course_id)
-        position = affirm("enum_coursefilterpositions_or_None", position)
+        position = affirm("infinite_enum_coursefilterpositions_or_None",
+                          position)
         reg_ids = reg_ids or set()
         reg_ids = affirm_set("id", reg_ids)
         if (not self.is_admin(rs)
@@ -1126,25 +1120,21 @@ class EventBackend(AbstractBackend):
         if course_id:
             cfp = CourseFilterPositions
             if position is None:
-                position = cfp.anywhere
+                position = InfiniteEnum(cfp.anywhere, None)
             conditions = []
-            if position in (cfp.instructor, cfp.anywhere):
+            if position.enum in (cfp.instructor, cfp.anywhere):
                 conditions.append("rtracks.course_instructor = %s")
                 params += (course_id,)
-            if position in (cfp.any_choice, cfp.anywhere):
-                conditions.append("choices.course_id = %s")
+            if position.enum in (cfp.any_choice, cfp.anywhere):
+                conditions.append(
+                    "(choices.course_id = %s AND "
+                    " choices.rank < course_tracks.num_choices)")
                 params += (course_id,)
-            elif position in (cfp.first_choice, cfp.second_choice,
-                              cfp.third_choice):
+            if position.enum == cfp.specific_rank:
                 conditions.append(
                     "(choices.course_id = %s AND choices.rank = %s)")
-                if position == cfp.first_choice:
-                    params += (course_id, 0)
-                elif position == cfp.second_choice:
-                    params += (course_id, 1)
-                elif position == cfp.third_choice:
-                    params += (course_id, 2)
-            if position in (cfp.assigned, cfp.anywhere):
+                params += (course_id, position.int)
+            if position.enum in (cfp.assigned, cfp.anywhere):
                 conditions.append("rtracks.course_id = %s")
                 params += (course_id,)
             condition = " OR ".join(conditions)

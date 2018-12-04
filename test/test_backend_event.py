@@ -49,13 +49,23 @@ class TestEventBackend(BackendTest):
             'orgas': {2, 7},
             'parts': {
                 -1: {
-                    'tracks': {-1: "First lecture"},
+                    'tracks': {
+                        -1: {'title': "First lecture",
+                             'shortname': "First",
+                             'num_choices': 3,
+                             'sortkey': 1}
+                    },
                     'title': "First coming",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
                 -2: {
-                    'tracks': {-1: "Second lecture"},
+                    'tracks': {
+                        -1: {'title': "Second lecture",
+                             'shortname': "Second",
+                             'num_choices': 3,
+                             'sortkey': 1}
+                    },
                     'title': "Second coming",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
@@ -91,8 +101,10 @@ class TestEventBackend(BackendTest):
         data['end'] = datetime.date(2110, 8, 20)
         data['is_open'] = True
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'id': 4, 'part_id': 5, 'title': 'Second lecture'},
-                          5: {'id': 5, 'part_id': 6, 'title': 'First lecture'}}
+        data['parts'][-1]['tracks'][-1].update({'id': 5, 'part_id': 6})
+        data['parts'][-2]['tracks'][-1].update({'id': 4, 'part_id': 5})
+        data['tracks'] = {5: data['parts'][-1]['tracks'][-1],
+                          4: data['parts'][-2]['tracks'][-1]}
         ## correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -103,8 +115,10 @@ class TestEventBackend(BackendTest):
                     data['parts'][part] = data['parts'][oldpart]
                     data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
-                    self.assertEqual(set(data['parts'][part]['tracks'].values()),
-                                     set(tmp['parts'][part]['tracks'].values()))
+                    self.assertEqual(set(x['title']
+                                         for x in data['parts'][part]['tracks'].values()),
+                                     set(x['title']
+                                         for x in tmp['parts'][part]['tracks'].values()))
                     data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
                     break
             del data['parts'][oldpart]
@@ -125,7 +139,12 @@ class TestEventBackend(BackendTest):
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
         newpart = {
-            'tracks': {-1: "Third lecture"},
+            'tracks': {
+                -1: {'title': "Third lecture",
+                     'shortname': "Third",
+                     'num_choices': 2,
+                     'sortkey': 2}
+            },
             'title': "Third coming",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
@@ -135,7 +154,12 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
-            'tracks': {4: "Second lecture v2"}} # hardcoded value 4
+            'tracks': {
+                4: {'title': "Second lecture v2",  # hardcoded id 4
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'sortkey': 3}
+            }}
         newfield = {
             'association': 3,
             'field_name': "kuea",
@@ -171,12 +195,15 @@ class TestEventBackend(BackendTest):
                 data['parts'][part] = newpart
                 data['parts'][part]['id'] = part
                 data['parts'][part]['event_id'] = new_id
-                self.assertEqual(set(data['parts'][part]['tracks'].values()),
-                                 set(tmp['parts'][part]['tracks'].values()))
+                self.assertEqual(set(x['title']
+                                     for x in data['parts'][part]['tracks'].values()),
+                                 set(x['title']
+                                     for x in tmp['parts'][part]['tracks'].values()))
                 data['parts'][part]['tracks'] = tmp['parts'][part]['tracks']
         del data['parts'][part_map["First coming"]]
         changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
+        changed_part['tracks'][4].update({'part_id': 5, 'id': 4})
         data['parts'][part_map["Second coming"]] = changed_part
         for field in tmp['fields']:
             if tmp['fields'][field]['field_name'] == "kuea":
@@ -192,8 +219,18 @@ class TestEventBackend(BackendTest):
         data['begin'] = datetime.date(2110, 9, 8)
         data['end'] = datetime.date(2111, 8, 20)
         # TODO dynamically adapt ids from the database result
-        data['tracks'] = {4: {'id': 4, 'part_id': 5, 'title': 'Second lecture v2'},
-                          6: {'id': 6, 'part_id': 7, 'title': 'Third lecture'}}
+        data['tracks'] = {4: {'id': 4,
+                              'part_id': 5,
+                              'title': 'Second lecture v2',
+                              'shortname': "Second v2",
+                              'num_choices': 5,
+                              'sortkey': 3},
+                          6: {'id': 6,
+                              'part_id': 7,
+                              'title': 'Third lecture',
+                              'shortname': 'Third',
+                              'num_choices': 2,
+                              'sortkey': 2}}
 
         self.assertEqual(data,
                          self.event.get_event(self.key, new_id))
@@ -214,7 +251,7 @@ class TestEventBackend(BackendTest):
             'max_size': 12,
             'min_size': None,
             'notes': "Beware of dragons.",
-            'segments': {4}, # hardcoded value 4
+            'segments': {4},  # hardcoded value 4
         }
         new_course_id = self.event.create_course(self.key, cdata)
         cdata['id'] = new_course_id
@@ -359,17 +396,17 @@ class TestEventBackend(BackendTest):
                     'registration_id': 2,
                     'status': 2}},
             'tracks': {
-                1: {'choices': [5, 4, 1],
+                1: {'choices': [5, 4, 2, 1],
                     'course_id': None,
                     'course_instructor': None,
                     'registration_id': 2,
                     'track_id': 1,},
-                2: {'choices': [3, 4, 2],
+                2: {'choices': [3],
                     'course_id': None,
                     'course_instructor': None,
                     'registration_id': 2,
                     'track_id': 2,},
-                3: {'choices': [4, 2, 1],
+                3: {'choices': [4, 2],
                     'course_id': 1,
                     'course_instructor': 1,
                     'registration_id': 2,
@@ -485,17 +522,17 @@ class TestEventBackend(BackendTest):
                         'registration_id': 1,
                         'status': 2}},
                 'tracks': {
-                    1: {'choices': [1, 3, 4],
+                    1: {'choices': [1, 3, 4, 2],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 1,
                         'track_id': 1},
-                    2: {'choices': [2, 3, 4],
+                    2: {'choices': [2],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 1,
                         'track_id': 2},
-                    3: {'choices': [1, 4, 5],
+                    3: {'choices': [1, 4],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 1,
@@ -529,17 +566,17 @@ class TestEventBackend(BackendTest):
                         'registration_id': 2,
                         'status': 2}},
                 'tracks': {
-                    1: {'choices': [5, 4, 1],
+                    1: {'choices': [5, 4, 2, 1],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 2,
                         'track_id': 1},
-                    2: {'choices': [3, 4, 2],
+                    2: {'choices': [3],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 2,
                         'track_id': 2},
-                    3: {'choices': [4, 2, 1],
+                    3: {'choices': [4, 2],
                         'course_id': 1,
                         'course_instructor': 1,
                         'registration_id': 2,
@@ -576,17 +613,17 @@ class TestEventBackend(BackendTest):
                         'registration_id': 4,
                         'status': 2}},
                 'tracks': {
-                    1: {'choices': [1, 4, 5],
+                    1: {'choices': [2, 1, 4, 5],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 4,
                         'track_id': 1},
-                    2: {'choices': [4, 2, 3],
+                    2: {'choices': [4],
                         'course_id': None,
                         'course_instructor': None,
                         'registration_id': 4,
                         'track_id': 2},
-                    3: {'choices': [1, 2, 4],
+                    3: {'choices': [1, 2],
                         'course_id': 1,
                         'course_instructor': None,
                         'registration_id': 4,
@@ -614,10 +651,10 @@ class TestEventBackend(BackendTest):
             'tracks': {
                 1: {
                     'course_id': 5,
-                    'choices': [5, 4, 1],
+                    'choices': [5, 4, 1, 2],
                 },
                 2: {
-                    'choices': [2, 3, 4],
+                    'choices': [2],
                 },
                 3: {
                     'course_id': None,
@@ -658,7 +695,7 @@ class TestEventBackend(BackendTest):
                 },
             },
             'tracks': {
-                1: {'choices': [1, 4, 5],
+                1: {'choices': [1, 2, 4, 5],
                     'course_id': None,
                     'course_instructor': None
                 },
@@ -1075,12 +1112,16 @@ class TestEventBackend(BackendTest):
                                   'min_size': 10,
                                   'notes': 'Kursleiter hat Sekt angefordert.',
                                   'nr': 'β',
-                                  'segments': {2: {'course_id': 2,
+                                  'segments': {1: {'course_id': 2,
                                                    'id': 3,
+                                                   'is_active': True,
+                                                   'track_id': 1},
+                                               2: {'course_id': 2,
+                                                   'id': 4,
                                                    'is_active': False,
                                                    'track_id': 2},
                                                3: {'course_id': 2,
-                                                   'id': 4,
+                                                   'id': 5,
                                                    'is_active': True,
                                                    'track_id': 3}},
                                   'shortname': 'Kabarett',
@@ -1095,7 +1136,7 @@ class TestEventBackend(BackendTest):
                                   'notes': None,
                                   'nr': 'γ',
                                   'segments': {2: {'course_id': 3,
-                                                   'id': 5,
+                                                   'id': 6,
                                                    'is_active': True,
                                                    'track_id': 2}},
                                   'shortname': 'Kurz',
@@ -1110,15 +1151,15 @@ class TestEventBackend(BackendTest):
                                   'notes': None,
                                   'nr': 'δ',
                                   'segments': {1: {'course_id': 4,
-                                                   'id': 6,
+                                                   'id': 7,
                                                    'is_active': True,
                                                    'track_id': 1},
                                                2: {'course_id': 4,
-                                                   'id': 7,
+                                                   'id': 8,
                                                    'is_active': True,
                                                    'track_id': 2},
                                                3: {'course_id': 4,
-                                                   'id': 8,
+                                                   'id': 9,
                                                    'is_active': True,
                                                    'track_id': 3}},
                                   'shortname': 'Lang',
@@ -1133,15 +1174,15 @@ class TestEventBackend(BackendTest):
                                   'notes': None,
                                   'nr': 'ε',
                                   'segments': {1: {'course_id': 5,
-                                                   'id': 9,
+                                                   'id': 10,
                                                    'is_active': True,
                                                    'track_id': 1},
                                                2: {'course_id': 5,
-                                                   'id': 10,
+                                                   'id': 11,
                                                    'is_active': True,
                                                    'track_id': 2},
                                                3: {'course_id': 5,
-                                                   'id': 11,
+                                                   'id': 12,
                                                    'is_active': False,
                                                    'track_id': 3}},
                                   'shortname': 'Backup',
@@ -1222,11 +1263,19 @@ class TestEventBackend(BackendTest):
                                                'tracks': {1: {'id': 1,
                                                               'part_id': 2,
                                                               'title': 'Morgenkreis '
-                                                              '(Erste Hälfte)'},
+                                                              '(Erste Hälfte)',
+                                                              'shortname': 
+                                                                  'Morgenkreis',
+                                                              'num_choices': 4,
+                                                              'sortkey': 1},
                                                           2: {'id': 2,
                                                               'part_id': 2,
                                                               'title': 'Kaffeekränzchen '
-                                                              '(Erste Hälfte)'}}},
+                                                              '(Erste Hälfte)',
+                                                              'shortname':
+                                                                  'Kaffee',
+                                                              'num_choices': 1,
+                                                              'sortkey': 2}}},
                                            3: {'event_id': 1,
                                                'fee': decimal.Decimal('450.99'),
                                                'id': 3,
@@ -1237,7 +1286,11 @@ class TestEventBackend(BackendTest):
                                                               'part_id': 3,
                                                               'title': 'Arbeitssitzung '
                                                               '(Zweite '
-                                                              'Hälfte)'}}}},
+                                                              'Hälfte)',
+                                                              'shortname': 
+                                                                  'Sitzung',
+                                                              'num_choices': 2,
+                                                              'sortkey': 3}}}},
                                  'questionnaire_rows': {1: {'event_id': 1,
                                                             'field_id': None,
                                                             'id': 1,
@@ -1401,6 +1454,11 @@ class TestEventBackend(BackendTest):
                                                                     'id': 3,
                                                                     'rank': 2,
                                                                     'registration_id': 1,
+                                                                    'track_id': 1},
+                                                                   {'course_id': 2,
+                                                                    'id': 4,
+                                                                    'rank': 3,
+                                                                    'registration_id': 1,
                                                                     'track_id': 1}],
                                                        'course_id': None,
                                                        'course_instructor': None,
@@ -1408,18 +1466,8 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 1,
                                                        'track_id': 1},
                                                    2: {'choices': [{'course_id': 2,
-                                                                    'id': 4,
-                                                                    'rank': 0,
-                                                                    'registration_id': 1,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 3,
                                                                     'id': 5,
-                                                                    'rank': 1,
-                                                                    'registration_id': 1,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 4,
-                                                                    'id': 6,
-                                                                    'rank': 2,
+                                                                    'rank': 0,
                                                                     'registration_id': 1,
                                                                     'track_id': 2}],
                                                        'course_id': None,
@@ -1428,18 +1476,13 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 1,
                                                        'track_id': 2},
                                                    3: {'choices': [{'course_id': 1,
-                                                                    'id': 7,
+                                                                    'id': 6,
                                                                     'rank': 0,
                                                                     'registration_id': 1,
                                                                     'track_id': 3},
                                                                    {'course_id': 4,
-                                                                    'id': 8,
+                                                                    'id': 7,
                                                                     'rank': 1,
-                                                                    'registration_id': 1,
-                                                                    'track_id': 3},
-                                                                   {'course_id': 5,
-                                                                    'id': 9,
-                                                                    'rank': 2,
                                                                     'registration_id': 1,
                                                                     'track_id': 3}],
                                                        'course_id': None,
@@ -1481,18 +1524,23 @@ class TestEventBackend(BackendTest):
                                         'persona_id': 5,
                                         'real_persona_id': None,
                                         'tracks': {1: {'choices': [{'course_id': 5,
-                                                                    'id': 10,
+                                                                    'id': 8,
                                                                     'rank': 0,
                                                                     'registration_id': 2,
                                                                     'track_id': 1},
                                                                    {'course_id': 4,
-                                                                    'id': 11,
+                                                                    'id': 9,
                                                                     'rank': 1,
                                                                     'registration_id': 2,
                                                                     'track_id': 1},
-                                                                   {'course_id': 1,
-                                                                    'id': 12,
+                                                                   {'course_id': 2,
+                                                                    'id': 10,
                                                                     'rank': 2,
+                                                                    'registration_id': 2,
+                                                                    'track_id': 1},
+                                                                   {'course_id': 1,
+                                                                    'id': 11,
+                                                                    'rank': 3,
                                                                     'registration_id': 2,
                                                                     'track_id': 1}],
                                                        'course_id': None,
@@ -1501,18 +1549,8 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 2,
                                                        'track_id': 1},
                                                    2: {'choices': [{'course_id': 3,
-                                                                    'id': 13,
+                                                                    'id': 12,
                                                                     'rank': 0,
-                                                                    'registration_id': 2,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 4,
-                                                                    'id': 14,
-                                                                    'rank': 1,
-                                                                    'registration_id': 2,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 2,
-                                                                    'id': 15,
-                                                                    'rank': 2,
                                                                     'registration_id': 2,
                                                                     'track_id': 2}],
                                                        'course_id': None,
@@ -1521,18 +1559,13 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 2,
                                                        'track_id': 2},
                                                    3: {'choices': [{'course_id': 4,
-                                                                    'id': 16,
+                                                                    'id': 13,
                                                                     'rank': 0,
                                                                     'registration_id': 2,
                                                                     'track_id': 3},
                                                                    {'course_id': 2,
-                                                                    'id': 17,
+                                                                    'id': 14,
                                                                     'rank': 1,
-                                                                    'registration_id': 2,
-                                                                    'track_id': 3},
-                                                                   {'course_id': 1,
-                                                                    'id': 18,
-                                                                    'rank': 2,
                                                                     'registration_id': 2,
                                                                     'track_id': 3}],
                                                        'course_id': 1,
@@ -1572,18 +1605,23 @@ class TestEventBackend(BackendTest):
                                         'persona_id': 7,
                                         'real_persona_id': None,
                                         'tracks': {1: {'choices': [{'course_id': 4,
-                                                                    'id': 19,
+                                                                    'id': 15,
                                                                     'rank': 0,
                                                                     'registration_id': 3,
                                                                     'track_id': 1},
-                                                                   {'course_id': 1,
-                                                                    'id': 20,
+                                                                   {'course_id': 2,
+                                                                    'id': 16,
                                                                     'rank': 1,
                                                                     'registration_id': 3,
                                                                     'track_id': 1},
-                                                                   {'course_id': 5,
-                                                                    'id': 21,
+                                                                   {'course_id': 1,
+                                                                    'id': 17,
                                                                     'rank': 2,
+                                                                    'registration_id': 3,
+                                                                    'track_id': 1},
+                                                                   {'course_id': 5,
+                                                                    'id': 18,
+                                                                    'rank': 3,
                                                                     'registration_id': 3,
                                                                     'track_id': 1}],
                                                        'course_id': None,
@@ -1592,18 +1630,8 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 3,
                                                        'track_id': 1},
                                                    2: {'choices': [{'course_id': 2,
-                                                                    'id': 22,
+                                                                    'id': 19,
                                                                     'rank': 0,
-                                                                    'registration_id': 3,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 3,
-                                                                    'id': 23,
-                                                                    'rank': 1,
-                                                                    'registration_id': 3,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 4,
-                                                                    'id': 24,
-                                                                    'rank': 2,
                                                                     'registration_id': 3,
                                                                     'track_id': 2}],
                                                        'course_id': 2,
@@ -1612,18 +1640,13 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 3,
                                                        'track_id': 2},
                                                    3: {'choices': [{'course_id': 2,
-                                                                    'id': 25,
+                                                                    'id': 20,
                                                                     'rank': 0,
                                                                     'registration_id': 3,
                                                                     'track_id': 3},
                                                                    {'course_id': 4,
-                                                                    'id': 26,
+                                                                    'id': 21,
                                                                     'rank': 1,
-                                                                    'registration_id': 3,
-                                                                    'track_id': 3},
-                                                                   {'course_id': 1,
-                                                                    'id': 27,
-                                                                    'rank': 2,
                                                                     'registration_id': 3,
                                                                     'track_id': 3}],
                                                        'course_id': None,
@@ -1664,19 +1687,24 @@ class TestEventBackend(BackendTest):
                                         'payment': datetime.date(2014, 4, 4),
                                         'persona_id': 9,
                                         'real_persona_id': None,
-                                        'tracks': {1: {'choices': [{'course_id': 1,
-                                                                    'id': 28,
+                                        'tracks': {1: {'choices': [{'course_id': 2,
+                                                                    'id': 22,
                                                                     'rank': 0,
                                                                     'registration_id': 4,
                                                                     'track_id': 1},
-                                                                   {'course_id': 4,
-                                                                    'id': 29,
+                                                                   {'course_id': 1,
+                                                                    'id': 23,
                                                                     'rank': 1,
                                                                     'registration_id': 4,
                                                                     'track_id': 1},
-                                                                   {'course_id': 5,
-                                                                    'id': 30,
+                                                                   {'course_id': 4,
+                                                                    'id': 24,
                                                                     'rank': 2,
+                                                                    'registration_id': 4,
+                                                                    'track_id': 1},
+                                                                   {'course_id': 5,
+                                                                    'id': 25,
+                                                                    'rank': 3,
                                                                     'registration_id': 4,
                                                                     'track_id': 1}],
                                                        'course_id': None,
@@ -1685,18 +1713,8 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 4,
                                                        'track_id': 1},
                                                    2: {'choices': [{'course_id': 4,
-                                                                    'id': 31,
+                                                                    'id': 26,
                                                                     'rank': 0,
-                                                                    'registration_id': 4,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 2,
-                                                                    'id': 32,
-                                                                    'rank': 1,
-                                                                    'registration_id': 4,
-                                                                    'track_id': 2},
-                                                                   {'course_id': 3,
-                                                                    'id': 33,
-                                                                    'rank': 2,
                                                                     'registration_id': 4,
                                                                     'track_id': 2}],
                                                        'course_id': None,
@@ -1705,18 +1723,13 @@ class TestEventBackend(BackendTest):
                                                        'registration_id': 4,
                                                        'track_id': 2},
                                                    3: {'choices': [{'course_id': 1,
-                                                                    'id': 34,
+                                                                    'id': 27,
                                                                     'rank': 0,
                                                                     'registration_id': 4,
                                                                     'track_id': 3},
                                                                    {'course_id': 2,
-                                                                    'id': 35,
+                                                                    'id': 28,
                                                                     'rank': 1,
-                                                                    'registration_id': 4,
-                                                                    'track_id': 3},
-                                                                   {'course_id': 4,
-                                                                    'id': 36,
-                                                                    'rank': 2,
                                                                     'registration_id': 4,
                                                                     'track_id': 3}],
                                                        'course_id': 1,
@@ -1767,7 +1780,10 @@ class TestEventBackend(BackendTest):
         event['parts'][4000]['tracks'][1100] = {
             'part_id': 4000,
             'id': 1100,
-            'title': 'Enlightnment'}
+            'title': 'Enlightnment',
+            'shortname': 'Enlightnment',
+            'num_choices': 3,
+            'sortkey': 1}
         ## lodgements
         new_data['event.lodgements'][6000] = {
             'capacity': 1,
@@ -1833,12 +1849,9 @@ class TestEventBackend(BackendTest):
         ## course choices
         oldreg = new_data['event.registrations'][4]
         newreg = new_data['event.registrations'][1000]
-        ## - an update
-        oldreg['tracks'][3]['choices'][1] = {
-            'course_id': 5, 'id': 35, 'track_id': 3, 'rank': 1, 'registration_id': 4}
         ## - a delete and an insert
-        oldreg['tracks'][3]['choices'][2] = {
-            'course_id': 4, 'id': 9000, 'track_id': 3, 'rank': 2, 'registration_id': 4}
+        oldreg['tracks'][3]['choices'][1] = {
+            'course_id': 5, 'id': 9000, 'track_id': 3, 'rank': 1, 'registration_id': 4}
         ## - an insert
         newreg['tracks'][1100]['choices'].append({
             'course_id': 3000, 'id': 10000, 'track_id': 1100, 'rank': 0, 'registration_id': 1000})
@@ -1882,7 +1895,10 @@ class TestEventBackend(BackendTest):
             'tracks': {4: {
                 'part_id': 5,
                 'id': 4,
-                'title': 'Enlightnment'}}}
+                'title': 'Enlightnment',
+                'shortname': 'Enlightnment',
+                'num_choices': 3,
+                'sortkey': 1}}}
         stored_data['event.lodgements'][5] = {
             'capacity': 1,
             'event_id': 1,
@@ -1934,14 +1950,12 @@ class TestEventBackend(BackendTest):
             'shortname': 'Spontan',
             'title': 'Spontankurs',
             'segments': {4: {
-                'course_id': 6, 'id': 12, 'track_id': 4, 'is_active': True}}}
+                'course_id': 6, 'id': 13, 'track_id': 4, 'is_active': True}}}
         registrations = stored_data['event.registrations']
         registrations[4]['tracks'][3]['choices'][1] = {
-            'course_id': 5, 'id': 35, 'track_id': 3, 'rank': 1, 'registration_id': 4}
+            'course_id': 5, 'id': 30, 'track_id': 3, 'rank': 1, 'registration_id': 4}
         registrations[5]['tracks'][4]['choices'] = [{
-            'course_id': 6, 'id': 37, 'track_id': 4, 'rank': 0, 'registration_id': 5}]
-        registrations[4]['tracks'][3]['choices'][2] = {
-            'course_id': 4, 'id': 38, 'track_id': 3, 'rank': 2, 'registration_id': 4}
+            'course_id': 6, 'id': 29, 'track_id': 4, 'rank': 0, 'registration_id': 5}]
         event['fields'][7] = {
             'association': 1,
             'entries': [['good', 'good'],
@@ -1996,13 +2010,21 @@ class TestEventBackend(BackendTest):
             'orgas': {2, 7},
             'parts': {
                 -1: {
-                    'tracks': {-1: 'First lecture'},
+                    'tracks': {
+                        -1: {'title': "First lecture",
+                             'shortname': "First",
+                             'num_choices': 3,
+                             'sortkey': 1}},
                     'title': "First coming",
                     'part_begin': datetime.date(2109, 8, 7),
                     'part_end': datetime.date(2109, 8, 20),
                     'fee': decimal.Decimal("234.56")},
                 -2: {
-                    'tracks': {-1: 'Second lecture'},
+                    'tracks': {
+                        -1: {'title': "Second lecture",
+                             'shortname': "Second",
+                             'num_choices': 3,
+                             'sortkey': 1}},
                     'title': "Second coming",
                     'part_begin': datetime.date(2110, 8, 7),
                     'part_end': datetime.date(2110, 8, 20),
@@ -2052,7 +2074,11 @@ class TestEventBackend(BackendTest):
         data['title'] = "Alternate Universe Academy"
         data['orgas'] = {1, 7}
         newpart = {
-            'tracks': {-1: "Third lecture"},
+            'tracks': {
+                -1: {'title': "Third lecture",
+                     'shortname': "Third",
+                     'num_choices': 2,
+                     'sortkey': 2}},
             'title': "Third coming",
             'part_begin': datetime.date(2111, 8, 7),
             'part_end': datetime.date(2111, 8, 20),
@@ -2062,7 +2088,11 @@ class TestEventBackend(BackendTest):
             'part_begin': datetime.date(2110, 9, 8),
             'part_end': datetime.date(2110, 9, 21),
             'fee': decimal.Decimal("1.23"),
-            'tracks': {4: "Second lecture v2"}, # hardcoded value 4
+            'tracks': {
+                4: {'title': "Second lecture v2",  # hardcoded id 4
+                    'shortname': "Second v2",
+                    'num_choices': 5,
+                    'sortkey': 3}}
         }
         newfield = {
             'association': 1,
@@ -2303,7 +2333,7 @@ class TestEventBackend(BackendTest):
              'event_id': 3,
              'persona_id': None,
              'submitted_by': 1},
-            {'additional_info': None,
+            {'additional_info': 'First lecture',
              'code': 37,
              'ctime': nearly_now(),
              'event_id': 3,

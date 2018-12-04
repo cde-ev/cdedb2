@@ -41,7 +41,8 @@
                     von {{ entry['instructors']|e }}
                     {% if ambience['event']['tracks']|length > 1 %}
                         – <span class="text-info">
-                        {% for track_id, track in ambience['event']['tracks']|dictsort if track_id in entry['segments'] -%}
+                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
+                                if track_id in entry['segments'] -%}
                             {% if not loop.first %}{% if loop.last %} und {% else %}, {% endif %}{% endif %}
                             {% if track_id not in entry['active_segments'] %}
                                 <i><s>{{ track['title']|e }}</s></i>

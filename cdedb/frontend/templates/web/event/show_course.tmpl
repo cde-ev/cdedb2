@@ -80,7 +80,8 @@
 
     <h2>Teilnehmer</h2>
     <div class="row">
-        {% for track_id in ambience['course']['segments']|sort %}
+        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey')
+                if track_id in ambience['course']['segments'] %}
             {% set num_track_attendees = attendees[(ambience['course']['id'], track_id)]|length %}
             <div class="col-md-4">
                 <div class="panel panel-info panel-condensed">
@@ -95,7 +96,7 @@
                         </div>
                         <h3 class="panel-title">
                             {% if ambience['event']['tracks']|length > 1 %}
-                                {{ ambience['event']['tracks'][track_id]['title']|e }}
+                                {{ track['title']|e }}
                             {% else %}
                                 Teilnehmer
                             {% endif %}

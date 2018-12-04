@@ -28,7 +28,7 @@ from cdedb.query import QUERY_SPECS, QueryOperators, mangle_query_input, Query
 from cdedb.common import (
     n_, name_key, merge_dicts, determine_age_class, deduct_years, AgeClasses,
     unwrap, now, ProxyShim, json_serialize, glue, CourseChoiceToolActions,
-    diacritic_patterns, open_utf8, shutil_copy)
+    CourseFilterPositions, diacritic_patterns, open_utf8, shutil_copy)
 from cdedb.backend.event import EventBackend
 from cdedb.backend.past_event import PastEventBackend
 from cdedb.database.connection import Atomizer
@@ -320,8 +320,10 @@ class EventFrontend(AbstractUserFrontend):
             for part_id, part in rs.ambience['event']['parts'].items()
             for key, value in part.items() if key not in ('id', 'tracks')}
         for part_id, part in rs.ambience['event']['parts'].items():
-            for track_id, title in part['tracks'].items():
-                current["track_{}_{}".format(part_id, track_id)] = title
+            for track_id, track in part['tracks'].items():
+                for k in ('title', 'shortname', 'num_choices', 'sortkey'):
+                    current["track_{}_{}_{}".format(k, part_id, track_id)] = \
+                        track[k]
         merge_dicts(rs.values, current)
         referenced_parts = set()
         referenced_tracks = set()
@@ -373,6 +375,25 @@ class EventFrontend(AbstractUserFrontend):
             for part_id in parts if part_id not in deletes
         }
 
+        def track_params(part_id, track_id):
+            """
+            Helper function to create the parameter extraction configuration
+            for the data of a single track.
+            """
+            return (
+                ("track_{}_{}_{}".format(k, part_id, track_id), t)
+                for k, t in (('title', 'str'), ('shortname', 'str'),
+                             ('num_choices', 'int'), ('sortkey', 'int')))
+
+        def track_excavator(req_data, part_id, track_id):
+            """
+            Helper function to create a single track's data dict from the
+            extracted request data.
+            """
+            return {
+                k: req_data['track_{}_{}_{}'.format(k, part_id, track_id)]
+                for k in ('title', 'shortname', 'num_choices', 'sortkey')}
+
         ## Handle newly created parts
         marker = 1
         while marker < 2**10:
@@ -405,20 +426,19 @@ class EventFrontend(AbstractUserFrontend):
                                  part_id, track_id)]}
         if has_registrations and track_deletes:
             raise ValueError(n_("Registrations exist, no deletion."))
-        params = tuple(("track_{}_{}".format(part_id, track_id), "str")
-                       for part_id, part in parts.items()
-                       for track_id in part['tracks']
-                       if track_id not in track_deletes)
+        params = tuple(itertools.chain.from_iterable(
+            track_params(part_id, track_id)
+            for part_id, part in parts.items()
+            for track_id in part['tracks']
+            if track_id not in track_deletes))
         data = request_extractor(rs, params)
         rs.values['track_create_last_index'] = {}
         for part_id, part in parts.items():
             if part_id in deletes:
                 continue
-            track_excavator = lambda part_id, track_id: \
-                (data['track_{}_{}'.format(part_id, track_id)]
-                 if track_id not in track_deletes else None)
             ret[part_id]['tracks'] = {
-                track_id: track_excavator(part_id, track_id)
+                track_id: (track_excavator(data, part_id, track_id)
+                           if track_id not in track_deletes else None)
                 for track_id in part['tracks']}
             marker = 1
             while marker < 2**5:
@@ -427,9 +447,11 @@ class EventFrontend(AbstractUserFrontend):
                     (("track_create_{}_-{}".format(part_id, marker), "bool"),)))
                 if will_create:
                     if has_registrations:
-                        raise ValueError(n_("Registrations exist, no creation."))
-                    params = (("track_{}_-{}".format(part_id, marker), "str"),)
-                    newtrack = unwrap(request_extractor(rs, params))
+                        raise ValueError(
+                            n_("Registrations exist, no creation."))
+                    params = tuple(track_params(part_id, -marker))
+                    newtrack = track_excavator(request_extractor(rs, params),
+                                               part_id, -marker)
                     ret[part_id]['tracks'][-marker] = newtrack
                 else:
                     break
@@ -443,10 +465,12 @@ class EventFrontend(AbstractUserFrontend):
             while marker < 2**5:
                 will_create = unwrap(request_extractor(
                     rs,
-                    (("track_create_-{}_-{}".format(new_part_id, marker), "bool"),)))
+                    (("track_create_-{}_-{}".format(new_part_id, marker),
+                      "bool"),)))
                 if will_create:
-                    params = (("track_-{}_-{}".format(new_part_id, marker), "str"),)
-                    newtrack = unwrap(request_extractor(rs, params))
+                    params = tuple(track_params(-new_part_id, -marker))
+                    newtrack = track_excavator(request_extractor(rs, params),
+                                               -new_part_id, -marker)
                     ret[-new_part_id]['tracks'][-marker] = newtrack
                 else:
                     break
@@ -813,24 +837,15 @@ class EventFrontend(AbstractUserFrontend):
             ('no course', (lambda e, r, p, t: (
                 p['status'] == stati.participant
                 and not t['course_id']
-                and r['persona_id'] not in e['orgas']))),
-            ('first choice', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and len(t['choices']) > 0
-                and (t['choices'][0] == t['course_id'])))),
-            ('second choice', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and len(t['choices']) > 1
-                and (t['choices'][1] == t['course_id'])))),
-            ('third choice', (lambda e, r, p, t: (
-                p['status'] == stati.participant
-                and t['course_id']
-                and len(t['choices']) > 2
-                and (t['choices'][2] == t['course_id'])))),))
+                and r['persona_id'] not in e['orgas']))),))
         per_track_statistics = OrderedDict()
         if tracks:
+            for i in range(max(t['num_choices'] for t in tracks.values())):
+                tests2['in {}. choice'.format(i+1)] = (lambda e, r, p, t: (
+                    p['status'] == stati.participant
+                    and t['course_id']
+                    and len(t['choices']) > i
+                    and (t['choices'][i] == t['course_id'])))
             for key, test in tests2.items():
                 per_track_statistics[key] = {
                     track_id: sum(
@@ -860,7 +875,9 @@ class EventFrontend(AbstractUserFrontend):
             'wrong choice': (lambda e, r, p, t: (
                 p['status'] == stati.participant
                 and t['course_id']
-                and (t['course_id'] not in t['choices']))),
+                and t['course_id'] != t['course_instructor']
+                and (t['course_id'] not in t['choices']
+                     [:e['tracks'][t['track_id']]['num_choices']]))),
         }
         sorter = lambda registration_id: name_key(
             personas[registrations[registration_id]['persona_id']])
@@ -999,7 +1016,7 @@ class EventFrontend(AbstractUserFrontend):
 
     @access("event")
     @REQUESTdata(("course_id", "id_or_None"), ("track_id", "id_or_None"),
-                 ("position", "enum_coursefilterpositions_or_None"),
+                 ("position", "infinite_enum_coursefilterpositions_or_None"),
                  ("ids", "int_csv_list_or_None"))
     @event_guard()
     def course_choices_form(self, rs, event_id, course_id, track_id, position, ids):
@@ -1054,17 +1071,33 @@ class EventFrontend(AbstractUserFrontend):
             (("reg.id", QueryOperators.oneof, registration_ids.keys()),),
             (("persona.family_name", True), ("persona.given_names", True),)
         )
+        filter_entries = [
+            (CourseFilterPositions.anywhere.value, "know somehow"),
+            (CourseFilterPositions.assigned.value, "participate in"),
+            (CourseFilterPositions.instructor.value, "offer"),
+            (CourseFilterPositions.any_choice.value, "chose")]
+        filter_entries.extend(
+            (i, "have as {}. choice".format(i+1))
+            for i in range(max(t['num_choices'] for t in tracks.values())))
+        action_entries = [
+            (i, "into their {}. choice".format(i+1))
+            for i in range(max(t['num_choices'] for t in tracks.values()))]
+        action_entries.extend((
+            (CourseChoiceToolActions.assign_fixed.value, "in the course …"),
+            (CourseChoiceToolActions.assign_auto.value, "automatically")))
         return self.render(rs, "course_choices", {
             'courses': courses, 'personas': personas,
             'registrations': OrderedDict(
                 sorted(registrations.items(),
                        key=lambda reg: name_key(personas[reg[1]['persona_id']]))),
             'course_infos': course_infos,
-            'corresponding_query': corresponding_query})
+            'corresponding_query': corresponding_query,
+            'filter_entries': filter_entries,
+            'action_entries': action_entries})
 
     @access("event", modi={"POST"})
     @REQUESTdata(("registration_ids", "[int]"), ("track_ids", "[int]"),
-                 ("action", "enum_coursechoicetoolactions"),
+                 ("action", "infinite_enum_coursechoicetoolactions"),
                  ("course_id", "id_or_None"))
     @event_guard(check_offline=True)
     def course_choices(self, rs, event_id, registration_ids, track_ids, action,
@@ -1080,7 +1113,7 @@ class EventFrontend(AbstractUserFrontend):
         tracks = rs.ambience['event']['tracks']
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         courses = None
-        if action == CourseChoiceToolActions.assign_auto:
+        if action.enum == CourseChoiceToolActions.assign_auto:
             course_ids = self.eventproxy.list_db_courses(rs, event_id)
             courses = self.eventproxy.get_courses(rs, course_ids)
 
@@ -1097,27 +1130,25 @@ class EventFrontend(AbstractUserFrontend):
                 if (reg_part['status']
                         != const.RegistrationPartStati.participant):
                     continue
-                if action.choice_rank() is not None:
-                    try:
-                        choice = reg_track['choices'][action.choice_rank()]
-                    except IndexError:
-                        rs.notify("error", n_("No choice available."))
-                    else:
-                        tmp['tracks'][track_id] = {'course_id': choice}
-                elif action == CourseChoiceToolActions.assign_fixed:
+                if action.enum == CourseChoiceToolActions.specific_rank:
+                    choice = reg_track['choices'][action.int]
+                    tmp['tracks'][track_id] = {'course_id': choice}
+                elif action.enum == CourseChoiceToolActions.assign_fixed:
                     tmp['tracks'][track_id] = {'course_id': course_id}
-                elif action == CourseChoiceToolActions.assign_auto:
+                elif action.enum == CourseChoiceToolActions.assign_auto:
                     cid = reg_track['course_id']
                     if cid and track_id in courses[cid]['active_segments']:
                         ## Do not modify a valid assignment
                         continue
                     instructor = reg_track['course_instructor']
                     if (instructor
-                            and track_id in courses[instructor]['active_segments']):
+                            and track_id in courses[instructor]
+                            ['active_segments']):
                         ## Let instructors instruct
                         tmp['tracks'][track_id] = {'course_id': instructor}
                         continue
-                    for choice in reg_track['choices']:
+                    for choice in (reg_track['choices']
+                                   [:tracks[track_id]['num_choices']]):
                         if track_id in courses[choice]['active_segments']:
                             ## Assign first possible choice
                             tmp['tracks'][track_id] = {'course_id': choice}
@@ -1152,8 +1183,8 @@ class EventFrontend(AbstractUserFrontend):
                         and (reg['parts'][tracks[track_id]['part_id']]['status']
                              == const.RegistrationPartStati.participant)
                         and reg['persona_id'] not in event['orgas']))
-                for track_id in tracks
-                for i in range(3)
+                for track_id, track in tracks.items()
+                for i in range(track['num_choices'])
             }
             for course_id in course_ids
         }
@@ -1409,8 +1440,8 @@ class EventFrontend(AbstractUserFrontend):
                         and (reg['parts'][track['part_id']]['status']
                              == const.RegistrationPartStati.participant)
                         and reg['persona_id'] not in event['orgas']))
-                for track_id, track in tracks.items()
-                for i in range(3)
+                for track_id, track in tracks.items() for i in
+                range(track['num_choices'])
             }
             for course_id in course_ids
         }
@@ -1648,7 +1679,8 @@ class EventFrontend(AbstractUserFrontend):
                     for field in rs.ambience['event']['fields'].values()
                     if field['association'] == const.FieldAssociations.course])
                 columns.extend('track{}.choice{}.{}'.format(track_id, i, f)
-                               for i in range(3)
+                               for i in range(part['tracks'][track_id]
+                                              ['num_choices'])
                                for f in ('id', 'nr'))
                 columns.extend(
                     'track{}.course_instructor.{}'.format(track_id, f)
@@ -1704,7 +1736,7 @@ class EventFrontend(AbstractUserFrontend):
                         'track{}.choice{}.{}'.format(track_id, i, f):
                             courses[choice][f] if choice else ''
                         for f in ('id', 'nr')})
-                for i in range(len(track['choices']), 3):
+                for i in range(len(track['choices']), track['num_choices']):
                     registration.update({
                         'track{}.choice{}.{}'.format(track_id, i, f): ''
                         for f in ('id', 'nr')})
@@ -1802,7 +1834,8 @@ class EventFrontend(AbstractUserFrontend):
         choice_params = (("course_choice{}_{}".format(track_id, i), "id")
                          for part_id in standard['parts']
                          for track_id in event['parts'][part_id]['tracks']
-                         for i in range(3))
+                         for i in range(event['tracks'][track_id]
+                                        ['num_choices']))
         choices = request_extractor(rs, choice_params)
         instructor_params = (
             ("course_instructor{}".format(track_id), "id_or_None")
@@ -1814,15 +1847,15 @@ class EventFrontend(AbstractUserFrontend):
                               ValueError(n_("Must select at least one part."))))
         present_tracks = set()
         for part_id in standard['parts']:
-            for track_id in event['parts'][part_id]['tracks']:
+            for track_id, track in event['parts'][part_id]['tracks'].items():
                 present_tracks.add(track_id)
                 cids = {choices["course_choice{}_{}".format(track_id, i)]
-                        for i in range(3)}
-                if len(cids) != 3:
+                        for i in range(track['num_choices'])}
+                if len(cids) != track['num_choices']:
                     rs.errors.extend(
                         ("course_choice{}_{}".format(track_id, i),
-                         ValueError(n_("Must choose three different courses.")))
-                        for i in range(3))
+                         ValueError(n_("Must choose different courses.")))
+                        for i in range(track['num_choices']))
         if not standard['foto_consent']:
             rs.errors.append(("foto_consent",
                               ValueError(n_("Must consent for participation."))))
@@ -1843,7 +1876,8 @@ class EventFrontend(AbstractUserFrontend):
         }
         for track_id in present_tracks:
             reg_tracks[track_id]['choices'] = tuple(
-                choices["course_choice{}_{}".format(track_id, i)] for i in range(3))
+                choices["course_choice{}_{}".format(track_id, i)]
+                for i in range(tracks[track_id]['num_choices']))
         registration = {
             'mixed_lodging': standard['mixed_lodging'],
             'foto_consent': standard['foto_consent'],
@@ -2254,7 +2288,7 @@ class EventFrontend(AbstractUserFrontend):
 
         This takes care of extracting the values and validating them. Which
         values to extract depends on the event. This puts less restrictions
-        on the input (like not requiring three different course choices).
+        on the input (like not requiring different course choices).
 
         :type rs: :py:class:`FrontendRequestState`
         :type event: {str: object}
@@ -2294,12 +2328,13 @@ class EventFrontend(AbstractUserFrontend):
                 ("part{}.lodgement_id".format(part_id), "id_or_None"),
                 ("part{}.is_reserve".format(part_id), "bool")))
         track_params = []
-        for track_id in tracks:
+        for track_id, track in tracks.items():
             track_params.extend(
                 ("track{}.{}".format(track_id, key), "id_or_None")
-                for key in ("course_id", "course_choice_0",
-                            "course_choice_1", "course_choice_2",
-                            "course_instructor"))
+                for key in ("course_id", "course_instructor"))
+            track_params.extend(
+                ("track{}.course_choice_{}".format(track_id, i), "id_or_None")
+                for i in range(track['num_choices']))
         field_params = tuple(
             ("fields.{}".format(field['field_name']),
              "{}_or_None".format(field['kind']))
@@ -2331,16 +2366,17 @@ class EventFrontend(AbstractUserFrontend):
             }
             for track_id in tracks
         }
-        # Build course choices (but only if all 3 choices are present)
-        for track_id in tracks:
+        # Build course choices (but only if all choices are present)
+        for track_id, track in tracks.items():
             if not all("track{}.course_choice_{}".format(track_id, i)
                             in raw_tracks
-                       for i in range(3)):
+                       for i in range(track['num_choices'])):
                 continue
             extractor = lambda i: raw_tracks["track{}.course_choice_{}".format(
                 track_id, i)]
             new_tracks[track_id]['choices'] = tuple(
-                extractor(i) for i in range(3) if extractor(i))
+                extractor(i)
+                for i in range(track['num_choices']) if extractor(i))
         new_fields = {
             key.split('.', 1)[1]: value for key, value in raw_fields.items()}
 

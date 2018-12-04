@@ -818,6 +818,39 @@ class LineResolutions(enum.IntEnum):
                         LineResolutions.update,
                         LineResolutions.renew_and_update}
 
+#: magic number which signals our makeshift algebraic data type
+INFINITE_ENUM_MAGIC_NUMBER = 0
+
+def infinite_enum(aclass):
+    """Decorator to document infinite enums.
+
+    This does nothing and is only for documentation purposes.
+
+    Infinite enums are sadly not directly supported by python which
+    means, that we have to emulate them on our own.
+
+    We implement them by pairing the enum with an int and assigning a
+    special enum value to the meaning "see the int value" (namely
+    :py:const:`INFINITE_ENUM_MAGIC_NUMBER`).
+
+    Furthermore by convention the int is always non-negative and the
+    enum can have additional states which are all associated with
+    negative values. In case of an additional enum state, the int is 
+    None.
+
+    In the code they are stored as an :py:var:`InfiniteEnum`.
+
+    :type aclass: obj
+    :rtype: obj
+
+    """
+    return aclass
+
+#: Storage facility for infinite enums with associated data, see
+#: :py:func:`infinite_enum`
+InfiniteEnum = collections.namedtuple('InfiniteEnum', ('enum', 'int'))
+
+@infinite_enum
 @enum.unique
 class CourseFilterPositions(enum.IntEnum):
     """Selection possibilities for the course assignment tool.
@@ -826,42 +859,24 @@ class CourseFilterPositions(enum.IntEnum):
     or something else. Where exactly we search for the course is
     specified via this enum.
     """
-    instructor = 1 #: Being a course instructor for the course in question.
-    first_choice = 2 #:
-    second_choice = 3 #:
-    third_choice = 4 #:
-    any_choice = 5 #:
-    assigned = 6 #: Being in this course either as participant or as instructor.
-    anywhere = 7 #:
+    #: This is the reference to the infinite enum int.
+    specific_rank = INFINITE_ENUM_MAGIC_NUMBER
+    instructor = -1  #: Being a course instructor for the course in question.
+    any_choice = -5  #: Having chosen the course (in any choice)
+    assigned = -6  #: Being in this course either as participant or instructor.
+    anywhere = -7  #: Having chosen the course, being instructor or participant.
 
+@infinite_enum
 @enum.unique
 class CourseChoiceToolActions(enum.IntEnum):
     """Selection possibilities for the course assignment tool.
 
     Specify the action to take.
     """
-    assign_first_choice = 1 #:
-    assign_second_choice = 2 #:
-    assign_third_choice = 3 #:
-    assign_fixed = 4 #: the course is specified separately
-    assign_auto = 5 #: somewhat intelligent algorithm
-
-    def choice_rank(self):
-        """Return the numerical rank of the required choice.
-
-        This is an index into the respective list. If we don't operate on
-        choices, we return None instead.
-
-        :rtype: int or None
-        """
-        if self == CourseChoiceToolActions.assign_first_choice:
-            return 0
-        elif self == CourseChoiceToolActions.assign_second_choice:
-            return 1
-        elif self == CourseChoiceToolActions.assign_third_choice:
-            return 2
-        else:
-            return None
+    #: reference to the infinite enum int
+    specific_rank = INFINITE_ENUM_MAGIC_NUMBER
+    assign_fixed = -4  #: the course is specified separately
+    assign_auto = -5  #: somewhat intelligent algorithm
 
 @enum.unique
 class SubscriptionStates(enum.IntEnum):
@@ -1265,7 +1280,8 @@ EVENT_FIELDS = (
 EVENT_PART_FIELDS = ("id", "event_id", "title", "part_begin", "part_end", "fee")
 
 #: Fields of a track where courses can happen
-COURSE_TRACK_FIELDS = ("id", "part_id", "title")
+COURSE_TRACK_FIELDS = ("id", "part_id", "title", "shortname", "num_choices",
+                       "sortkey")
 
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = ("id", "event_id", "field_name", "kind",

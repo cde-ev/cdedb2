@@ -54,7 +54,7 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 {% if ambience['event']['tracks']|length > 1 %}
                     in Kursschiene
                     {{ util.input_select(name="track_id",
-                                         entries=ambience['event']['tracks']|dictsort|dict_entries('id', 'title'),
+                                         entries=ambience['event']['tracks']|xdictsort('sortkey')|dict_entries('id', 'title'),
                                          nulloption='— egal —', aclass="form-control input-slim input-sm",
                                          arialabel="Filter: Kursschiene") }}
                 {% else %}
@@ -63,16 +63,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                 den Kurs
                 {{ util.input_select(name="course_id", entries=course_entries, nulloption="",
                                      aclass="form-control input-slim input-sm", arialabel="Filter: Kurs") }}
-                {% set myentries = [('', "— kein Filter —"),
-                                    (enums.CourseFilterPositions.anywhere.value, "irgendwie kennen"),
-                                    (enums.CourseFilterPositions.assigned.value, "besuchen"),
-                                    (enums.CourseFilterPositions.instructor.value, "anbieten"),
-                                    (enums.CourseFilterPositions.any_choice.value, "gewählt haben"),
-                                    (enums.CourseFilterPositions.first_choice.value, "als 1. Wahl haben"),
-                                    (enums.CourseFilterPositions.second_choice.value, "als 2. Wahl haben"),
-                                    (enums.CourseFilterPositions.third_choice.value, "als 3. Wahl haben")] %}
-                {{ util.input_select(name="position", entries=myentries, aclass="form-control input-slim input-sm",
-                                     arialabel="Filter: Kursoperator") }}<br />
+                {{ util.input_select(name="position", entries=filter_entries, aclass="form-control input-slim input-sm",
+                                     arialabel="Filter: Kursoperator", nulloption="— kein Filter —") }}<br />
                 mit einer der folgenden Teilnehmer-IDs:
                 {{ util.input_text(name='ids', aclass="form-control input-slim input-sm",
                                    arialabel="Filter: Anmeldungs-ID") }}
@@ -100,19 +92,14 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     <label class="sr-only" id="input-track_ids-label">Kursschienen</label>
                     <div class="col-md-3 strip-inner-space">
                         {{ util.input_checkboxes(name="track_ids",
-                                                 entries=ambience['event']['tracks']|dictsort
+                                                 entries=ambience['event']['tracks']|xdictsort('sortkey')
                                                     |dict_entries('id', 'title'),
                                                  arialabeledby="input-track_ids-label") }}
                     </div>
                 {% endif %}
                 <div class="col-md-4">
                     <div class="form-group">
-                        {{ util.input_select(name="action", anid="input-action", entries=(
-                            (enums.CourseChoiceToolActions.assign_first_choice.value, "in ihre Erstwahl"),
-                            (enums.CourseChoiceToolActions.assign_second_choice.value, "in ihre Zweitwahl"),
-                            (enums.CourseChoiceToolActions.assign_third_choice.value, "in ihre Drittwahl"),
-                            (enums.CourseChoiceToolActions.assign_fixed.value, "in den Kurs …"),
-                            (enums.CourseChoiceToolActions.assign_auto.value, "automatisch")),
+                        {{ util.input_select(name="action", anid="input-action", entries=action_entries,
                                 arialabel="Einteilungsverfahren") }}
                     </div>
                     <div class="form-group">
@@ -164,8 +151,8 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                     <tr>
                         <th rowspan="2"></th>
                         <th rowspan="2">Name</th>
-                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
-                            <th colspan="5" class="b-left">{{ track['title']|e }}</th>
+                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
+                            <th colspan="{{ track['num_choices'] + 2 }}" class="b-left">{{ track['title']|e }}</th>
                         {% endfor %}
                     </tr>
                 {% endif %}
@@ -175,28 +162,27 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                         <th>Name</th>
                     {% endif %}
 
-                    {# Some definitions to hight the headings of the filtered columns #}
+                    {# Some definitions to highlight the headings of the filtered columns #}
                     {% set cfp = enums.CourseFilterPositions %}
                     {% macro filtered_col_class(track_id, position) -%}
                         {% if values.get('track_id')|int == '' or values.get('track_id')|int == track_id -%}
-                            {% if position == values.get('position')|int
-                                  or values.get('position')|int == cfp.anywhere.value
-                                  or (values.get('position')|int == cfp.any_choice.value
-                                      and position in (cfp.first_choice.value,
-                                                       cfp.second_choice.value,
-                                                       cfp.third_choice.value)) -%}
+                            {% if position == values.get('position').int
+                                  or values.get('position').enum == cfp.anywhere
+                                  or (values.get('position').enum == cfp.any_choice
+                                      and position >= 0) -%}
                                 filtered_column
                             {% endif -%}
                         {% endif -%}
                     {% endmacro %}
-                    {% for track_id in ambience['event']['tracks']|sort %}
+                    {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.assigned.value) }}">
                             {{ util.make_icon('screenshot', title="eingeteilt in") }}
                         </th>
                         <th class="b-left text-center {{ filtered_col_class(track_id, cfp.instructor.value) }}">KL</th>
-                        <th class="text-center {{ filtered_col_class(track_id, cfp.first_choice.value) }}">1.</th>
-                        <th class="text-center {{ filtered_col_class(track_id, cfp.second_choice.value) }}">2.</th>
-                        <th class="text-center {{ filtered_col_class(track_id, cfp.third_choice.value) }}">3.</th>
+                        {% for i in range(track['num_choices']) %}
+                            <th class="text-center {{ filtered_col_class(track_id, i) }}">
+                                {{ (i + 1)|e }}.</th>
+                        {% endfor %}
                     {% endfor %}
                 </tr>
             </thead>
@@ -214,14 +200,14 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             {{ util.href(cdedblink("event/show_registration", {'registration_id': reg_id}),
                                          "{} {}".format(persona['given_names'], persona['family_name'])) }}
                         </td>
-                        {% for track_id, track in ambience['event']['tracks']|dictsort %}
+                        {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                             {% set track_is_filtered = (values['track_id'] in ('', track_id)) %}
                             {% if registration['parts'][track['part_id']]['status'] == enums['RegistrationPartStati'].participant %}
                                 {{ course_cell(registration['tracks'][track_id]['course_id'], track_id, border_left=True,
                                                complain_empty=True, primary=True) }}
                                 {{ course_cell(registration['tracks'][track_id]['course_instructor'], track_id,
                                                border_left=True) }}
-                                {% for j in range(3) %}
+                                {% for j in range(track['num_choices']) %}
                                     {{ course_cell(registration['tracks'][track_id]['choices'][j]
                                                    if registration['tracks'][track_id]['choices']|length > j else None,
                                                    track_id) }}
@@ -229,9 +215,9 @@ Kurswahlen ({{ ambience['event']['title']|e }})
                             {% else %}
                                 <td class="b-left"></td>
                                 <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                {% for j in range(track['num_choices']) %}
+                                    <td></td>
+                                {% endfor %}
                             {% endif %}
                         {% endfor %}
                     </tr>

@@ -261,12 +261,15 @@ class TestEventFrontend(FrontendTest):
         f['part_end_-1'] = "2233-6-7"
         f['fee_-1'] = "23456.78"
         f['track_create_-1_-1'].checked = True
-        f['track_-1_-1'] = "Chillout"
+        f['track_title_-1_-1'] = "Chillout Training"
+        f['track_shortname_-1_-1'] = "Chillout"
+        f['track_num_choices_-1_-1'] = "1"
+        f['track_sortkey_-1_-1'] = "1"
         self.submit(f)
         self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertEqual("Cooldown", f['title_5'].value)
-        self.assertEqual("Chillout", f['track_5_4'].value)
+        self.assertEqual("Chillout Training", f['track_title_5_4'].value)
         f['title_5'] = "Größere Hälfte"
         f['fee_5'] = "99.99"
         self.submit(f)
@@ -274,20 +277,25 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('track_5_5', f.fields)
-        f['track_5_-1'] = "Spätschicht"
+        f['track_title_5_-1'] = "Spätschicht"
+        f['track_shortname_5_-1'] = "Spät"
+        f['track_num_choices_5_-1'] = "3"
+        f['track_sortkey_5_-1'] = "1"
         f['track_create_5_-1'].checked = True
         self.submit(f)
         f = self.response.forms['partsummaryform']
-        self.assertEqual("Spätschicht", f['track_5_5'].value)
-        f['track_5_5'] = "Nachtschicht"
+        self.assertEqual("Spätschicht", f['track_title_5_5'].value)
+        f['track_title_5_5'] = "Nachtschicht"
+        f['track_shortname_5_5'] = "Nacht"
         self.submit(f)
         f = self.response.forms['partsummaryform']
-        self.assertEqual("Nachtschicht", f['track_5_5'].value)
+        self.assertEqual("Nachtschicht", f['track_title_5_5'].value)
+        self.assertEqual("Nacht", f['track_shortname_5_5'].value)
         f['track_delete_5_5'].checked = True
         self.submit(f)
         self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
-        self.assertNotIn('track_5_5', f.fields)
+        self.assertNotIn('track_title_5_5', f.fields)
         ## finally deletion
         self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
@@ -297,6 +305,85 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("CdE-Party 2050 Teile konfigurieren")
         f = self.response.forms['partsummaryform']
         self.assertNotIn('title_5', f.fields)
+
+    @as_users("garcia")
+    def test_aposteriori_change_num_choices(self, user):
+        # Increase number of course choices of track 2 ("Kaffekränzchen")
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/1/show'},
+                      {'href': '/event/event/1/part/summary'})
+        f = self.response.forms['partsummaryform']
+        f['track_num_choices_2_2'] = "2"
+        self.submit(f)
+
+        # Change course choices as Orga
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/3/show'},
+                      {'href': '/event/event/1/registration/3/change'})
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual('', f['track2.course_choice_1'].value)
+        f['track2.course_choice_0'] = 3
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/registration/3/change'})
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual('', f['track2.course_choice_1'].value)
+
+        # Amend registration with new choice and check via course_choices
+        self.traverse({'href': '/event/event/1/registration/status'},
+                      {'href': '/event/event/1/registration/amend'})
+        f = self.response.forms['amendregistrationform']
+        self.assertEqual('3', f['course_choice2_0'].value)
+        # Check preconditions for second part
+        self.assertIsNotNone(f.get('course_choice1_3', default=None))
+        f['course_choice2_1'] = 4
+        self.submit(f)
+        self.traverse({'href': '/event/event/1/course/choices'})
+        f = self.response.forms['choicefilterform']
+        f['track_id'] = 2
+        f['course_id'] = 4
+        f['position'] = 1
+        self.submit(f)
+        self.assertPresence("Garcia")
+
+        # Reduce number of course choices of track 1 ("Morgenkreis")
+        self.traverse({'href': '/event/event/1/part/summary'})
+        f = self.response.forms['partsummaryform']
+        f['track_num_choices_2_1'] = "3"
+        self.submit(f)
+
+        # Check registration as Orga
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/3/show'})
+        self.assertPresence('3. Wahl')
+        self.assertNonPresence('4. Wahl')
+        self.assertNonPresence('ε. Backup')
+
+        # Amend registration
+        self.traverse({'href': '/event/event/1/registration/status'})
+        self.assertNonPresence('4. Wahl')
+        self.assertNonPresence('ε. Backup')
+        self.traverse({'href': '/event/event/1/registration/amend'})
+        f = self.response.forms['amendregistrationform']
+        self.assertEqual('1', f['course_choice1_2'].value)
+        self.assertIsNone(f.get('course_choice1_3', default=None))
+        f['course_choice1_0'] = 2
+        f['course_choice1_1'] = 4
+        self.submit(f)
+
+        # Change registration as orga
+        self.traverse({'href': '/event/event/1/registration/query'},
+                      {'description': 'Alle Anmeldungen'},
+                      {'href': '/event/event/1/registration/3/show'},
+                      {'href': '/event/event/1/registration/3/change'})
+        f = self.response.forms['changeregistrationform']
+        self.assertIsNone(f.get('track1.course_choice_3', default=None))
+        self.assertEqual('4', f['track1.course_choice_1'].value)
+        self.assertEqual('1', f['track1.course_choice_2'].value)
+        f['track1.course_choice_2'] = ''
+        self.submit(f)
+        self.assertNonPresence('Heldentum')
 
     @as_users("anton", "garcia")
     def test_change_event_fields(self, user):
@@ -524,8 +611,8 @@ etc;anything else""", f['entries_2'].value)
         f['notes'] = "Ich freu mich schon so zu kommen\n\nyeah!\n"
         f['course_choice3_0'] = 2
         f['course_choice3_1'] = 4
-        f['course_choice3_2'] = 1
-        self.assertNotIn('5', tuple(o for o, _, _ in f['course_choice3_2'].options))
+        self.assertNotIn('5', tuple(
+            o for o, _, _ in f['course_choice3_1'].options))
         f['course_instructor3'] = 2
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
@@ -538,12 +625,12 @@ etc;anything else""", f['entries_2'].value)
         self.assertNonPresence("Kaffeekränzchen")
         self.assertPresence("Arbeitssitzung")
         f = self.response.forms['amendregistrationform']
-        self.assertEqual("1", f['course_choice3_2'].value)
+        self.assertEqual("4", f['course_choice3_1'].value)
         self.assertEqual("2", f['course_instructor3'].value)
         self.assertPresence("Ich freu mich schon so zu kommen")
         f['notes'] = "Ich kann es kaum erwarten!"
+        f['course_choice3_0'] = 4
         f['course_choice3_1'] = 1
-        f['course_choice3_2'] = 4
         f['course_instructor3'] = 1
         self.submit(f)
         self.assertTitle("Deine Anmeldung (Große Testakademie 2222)")
@@ -551,7 +638,7 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/1/registration/amend'})
         self.assertTitle("Anmeldung für Große Testakademie 2222 ändern")
         f = self.response.forms['amendregistrationform']
-        self.assertEqual("4", f['course_choice3_2'].value)
+        self.assertEqual("4", f['course_choice3_0'].value)
         self.assertEqual("1", f['course_instructor3'].value)
         self.assertPresence("Ich kann es kaum erwarten!")
 
@@ -996,21 +1083,21 @@ etc;anything else""", f['entries_2'].value)
         self.assertPresence("Inga")
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
-        f['position'] = 4
+        f['position'] = 0
         self.submit(f)
+        self.assertNonPresence("Inga")
         self.assertNonPresence("Anton Armin")
-        self.assertNonPresence("Emilia")
         self.assertPresence("Garcia")
-        self.assertPresence("Inga")
+        self.assertPresence("Emilia")
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
-        f['position'] = 4
+        f['position'] = 0
         f['track_id'] = 3
         self.submit(f)
         self.assertNonPresence("Anton Armin")
-        self.assertNonPresence("Emilia")
+        self.assertNonPresence("Inga")
         self.assertNonPresence("Garcia")
-        self.assertPresence("Inga")
+        self.assertPresence("Emilia")
         f = self.response.forms['choicefilterform']
         f['course_id'] = ''
         f['position'] = ''
@@ -1019,20 +1106,20 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2]
         f['track_ids'] = [3]
-        f['action'] = 1
+        f['action'] = 0
         self.submit(f)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 1
-        f['position'] = 6
+        f['position'] = -6
         f['track_id'] = 3
         self.submit(f)
         self.assertPresence("Anton Armin")
-        self.assertNonPresence("Emilia")
-        self.assertNonPresence("Garcia")
         self.assertPresence("Inga")
+        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Emilia")
         f = self.response.forms['choicefilterform']
         f['course_id'] = 4
-        f['position'] = 6
+        f['position'] = -6
         f['track_id'] = 3
         self.submit(f)
         self.assertNonPresence("Anton Armin")
@@ -1047,12 +1134,12 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [3]
         f['track_ids'] = [2, 3]
-        f['action'] = 4
+        f['action'] = -4
         f['course_id'] = 5
         self.submit(f)
         f = self.response.forms['choicefilterform']
         f['course_id'] = 5
-        f['position'] = 6
+        f['position'] = -6
         self.submit(f)
         self.assertNonPresence("Anton Armin")
         self.assertNonPresence("Emilia")
@@ -1073,7 +1160,7 @@ etc;anything else""", f['entries_2'].value)
         f = self.response.forms['choiceactionform']
         f['registration_ids'] = [1, 2, 3, 4]
         f['track_ids'] = [1,2, 3]
-        f['action'] = 5
+        f['action'] = -5
         self.submit(f)
 
     @as_users("garcia")
@@ -1381,7 +1468,10 @@ etc;anything else""", f['entries_2'].value)
         self.traverse({'href': '/event/event/2/part/summary'})
         f = self.response.forms['partsummaryform']
         f['track_create_4_-1'].checked = True
-        f['track_4_-1'] = "Chillout"
+        f['track_title_4_-1'] = "Chillout Training"
+        f['track_shortname_4_-1'] = "Chill"
+        f['track_num_choices_4_-1'] = "1"
+        f['track_sortkey_4_-1'] = "1"
         self.submit(f)
 
         # Add registration

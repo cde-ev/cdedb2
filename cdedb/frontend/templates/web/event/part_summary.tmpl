@@ -20,26 +20,44 @@
    aclass is used to pass classes to the row, such as drow-row1, drow-prototype1, drow-new1
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_track(part_id, track_id, aclass="", newrow=False) %}
-    <div class="p {{ aclass }}">
-        <div class="input-group">
-            {{ util.input_text(name="track_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
-                               attributes=('data-basename="track_" data-basename1="_"' if newrow else ''),
-                               arialabel="Name der Kursschiene") }}
-            <div class="input-group-addon">
-                <div class="drow-buttonspace1">
-                    {% if newrow %}
-                        {{ util.input_checkbox("track_create_{}_{}".format(part_id, track_id), label="Hinzufügen",
-                                               attributes='data-basename="track_create_"', aclass='drow-indicator1') }}
-                    {% else %}
-                        {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Löschen",
-                                               readonly=(has_registrations or track_id in referenced_tracks),
-                                               aclass='drow-indicator1') }}
-                    {% endif %}
-                </div>
+    <tr class="{{ aclass }}">
+        <td style="width: 40%;">
+            {{ util.input_text(name="track_title_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
+                               attributes=('data-basename="track_title_" data-basename1="_"' if newrow else ''),
+                               arialabel="Name der Kursschiene", placeholder="Titel") }}
+            {{ util.output_errors("track_title_{}_{}".format(part_id, track_id)) }}
+        </td>
+        <td>
+            {{ util.input_text(name="track_shortname_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
+                               attributes=('data-basename="track_shortname_" data-basename1="_"' if newrow else ''),
+                               arialabel="Kurzname der Kursschiene", placeholder="Kurzname") }}
+            {{ util.output_errors("track_shortname_{}_{}".format(part_id, track_id)) }}
+        </td>
+        <td>
+            {{ util.input_text(name="track_num_choices_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
+                               attributes=('data-basename="track_num_choices_" data-basename1="_"' if newrow else ''),
+                               arialabel="Anzahl Kurswahlen", type="number", defaultvalue="3") }}
+            {{ util.output_errors("track_num_choices_{}_{}".format(part_id, track_id)) }}
+        </td>
+        <td>
+            {{ util.input_text(name="track_sortkey_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
+                               attributes=('data-basename="track_sortkey_" data-basename1="_"' if newrow else ''),
+                               arialabel="Sortierung der Kursschiene", type="number", defaultvalue="1") }}
+            {{ util.output_errors("track_sortkey_{}_{}".format(part_id, track_id)) }}
+        </td>
+        <td>
+            <div class="drow-buttonspace1">
+                {% if newrow %}
+                    {{ util.input_checkbox("track_create_{}_{}".format(part_id, track_id), label="Hinz.",
+                                           attributes='data-basename="track_create_"', aclass='drow-indicator1') }}
+                {% else %}
+                    {{ util.input_checkbox("track_delete_{}_{}".format(part_id, track_id), label="Entf.",
+                                           readonly=(has_registrations or track_id in referenced_tracks),
+                                           aclass='drow-indicator1') }}
+                {% endif %}
             </div>
-        </div>
-        {{ util.output_errors("track_{}_{}".format(part_id, track_id)) }}
-    </div>
+        </td>
+    </tr>
 {% endmacro %}
 
 {# Macro for a general part, that can have each role in the DynamicRow workflow.
@@ -54,11 +72,56 @@
                                aclass='drow-input form-control', arialabel="Name des Teils") }}
             {{ util.output_errors("title_{}".format(part_id)) }}
         </div>
-        <div class="panel-body row">
-            <div class="col-md-6">
-                <label>Kursschienen</label>
-                <div class="drow-container1 course-tracks-container" data-outerid0="{{ part_id }}">
-                    {% for track_id, title in tracks|dictsort %}
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {{ util.form_input_text(name="part_begin_{}".format(part_id), label="Beginn", type='date',
+                                            attributes=('data-basename="part_begin_"' if newrow else ''),
+                                            aclass='drow-input', placeholder="YYYY-MM-DD") }}
+                    {{ util.form_input_text(name="part_end_{}".format(part_id), label="Ende", type='date',
+                                            attributes=('data-basename="part_end_"' if newrow else ''),
+                                            aclass='drow-input', placeholder="YYYY-MM-DD") }}
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="text-right col-sm-12">
+                            <span class="drow-buttonspace">
+                                {% if newrow %}
+                                    {{ util.input_checkbox("create_{}".format(part_id), label="Hinzufügen",
+                                                           attributes='data-basename="create_"', aclass='drow-indicator') }}
+                                {% else %}
+                                    {{ util.input_checkbox("delete_{}".format(part_id), label="Löschen",
+                                                           readonly=not deletable, aclass='drow-indicator') }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% call util.form_input_general("fee_{}".format(part_id), "Teilnehmerbeitrag",
+                                                    anid="input-text-fee_".format(part_id)) %}
+                        <div class="input-group">
+                            {{ util.input_text(name="fee_{}".format(part_id),
+                                               attributes=('data-basename="fee_"' if newrow else ''),
+                                               aclass='drow-input form-control', anid="input-text-fee_".format(part_id)) }}
+                            <span class="input-group-addon">
+                                €
+                            </span>
+                        </div>
+                    {% endcall %}
+                </div>
+            </div>
+                <hr />
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th>Kursschiene</th>
+                        <th>Kurzname</th>
+                        <th>Kurswahlen</th>
+                        <th>Sortierung</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody class="drow-container1 course-tracks-container" data-outerid0="{{ part_id }}">
+                    {% for track_id, title in tracks|xdictsort('sortkey') %}
                         {{ print_track(part_id, track_id, aclass='drow-row1') }}
                     {% endfor%}
                     {# Items that were added by the user but failed validation. They are still new and have no official id. #}
@@ -68,41 +131,15 @@
                     {% if not has_registrations %}
                         {{ print_track(part_id, values.get('track_create_last_index', {}).get(part_id, 0) - 1,
                                        aclass='drow-prototype1', newrow=True) }}
-                        <button type="button" class="btn btn-success btn-xs add-track-button softhide">
-                            {{ util.make_icon('plus') }} Schiene hinzufügen</button>
                     {% endif %}
+                </tbody>
+            </table>
+            {% if not has_registrations %}
+                <div class="pull-right p">
+                    <button type="button" class="btn btn-success btn-xs add-track-button softhide">
+                        {{ util.make_icon('plus') }} Kursschiene hinzufügen</button>
                 </div>
-            </div>
-            <div class="col-md-6">
-                {{ util.form_input_text(name="part_begin_{}".format(part_id), label="Beginn", type='date',
-                                        attributes=('data-basename="part_begin_"' if newrow else ''),
-                                        aclass='drow-input', placeholder="YYYY-MM-DD") }}
-                {{ util.form_input_text(name="part_end_{}".format(part_id), label="Ende", type='date',
-                                        attributes=('data-basename="part_end_"' if newrow else ''),
-                                        aclass='drow-input', placeholder="YYYY-MM-DD") }}
-                {% call util.form_input_general("fee_{}".format(part_id), "Teilnehmerbeitrag",
-                                                anid="input-text-fee_".format(part_id)) %}
-                    <div class="input-group">
-                        {{ util.input_text(name="fee_{}".format(part_id),
-                                           attributes=('data-basename="fee_"' if newrow else ''),
-                                           aclass='drow-input form-control', anid="input-text-fee_".format(part_id)) }}
-                        <span class="input-group-addon">
-                            €
-                        </span>
-                    </div>
-                {% endcall %}
-                <div class="text-right">
-                    <span class="drow-buttonspace">
-                        {% if newrow %}
-                            {{ util.input_checkbox("create_{}".format(part_id), label="Hinzufügen",
-                                                   attributes='data-basename="create_"', aclass='drow-indicator') }}
-                        {% else %}
-                            {{ util.input_checkbox("delete_{}".format(part_id), label="Löschen",
-                                                   readonly=not deletable, aclass='drow-indicator') }}
-                        {% endif %}
-                    </span>
-                </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 {% endmacro %}
@@ -147,7 +184,7 @@
         });
         $('.course-tracks-container').each(function() {
             $(this).cdedbDynamicRow({
-                addButton: $(this).find('.add-track-button'),
+                addButton: $(this).closest('.panel-body').find('.add-track-button'),
                 delButtonTitle: "Schiene löschen",
                 nestingLevel: 1
             });
