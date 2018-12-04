@@ -3,21 +3,27 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
     {% if ambience['ballot'] %}
-        Datei anhängen ({{ ambience['assembly']['title']|e }}/{{ ambience['ballot']['title']|e }})
+        {% trans title_assembly=ambience['assembly']['title']|e, title_ballot=ambience['ballot']['title']|e -%}
+            Attach File ({{ title_assembly }}/{{ title_ballot }})
+        {%- endtrans %}
     {% else %}
-        Datei anhängen ({{ ambience['assembly']['title']|e }})
+        {% trans title=ambience['assembly']['title']|e -%}
+            Attach File ({{ title }})
+        {%- endtrans %}
     {% endif %}
 {% endblock %}
 {% block heading %}
     <h1 class="title">
-        Datei anhängen
+        {% trans -%}
+            Attach File
+        {%- endtrans %}
         {% if ambience['ballot'] %}
             <small>
-                {{- util.make_icon('thumbs-up', arialabel="Abstimmung") }} {{ ambience['ballot']['title']|e -}}
+                {{- util.make_icon('thumbs-up', arialabel=gettext("Ballot")) }} {{ ambience['ballot']['title']|e -}}
             </small>
         {% else %}
             <small>
-                {{- util.make_icon('bullhorn', arialabel="Versammlung") }} {{ ambience['assembly']['title']|e -}}
+                {{- util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title']|e -}}
             </small>
         {% endif %}
     </h1>
@@ -26,18 +32,18 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
     {% if ambience['ballot'] %}
-        {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
+        {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
         {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up") }}
     {% endif %}
-    {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), "Datei anhängen", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/add_attachment"), gettext("Attach File"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/add_attachment')|e }}" method="POST" enctype="multipart/form-data"
             id="addattachmentform" class="form-horizontal">
-        {{ util.form_input_text(name="title", label="Bezeichnung") }}
-        {{ util.form_input_text(name="filename", label="Dateiname", info="Leer lassen für derzeitigen Dateinamen.") }}
-        {{ util.form_input_file(name="attachment", accept="application/pdf", info="Nur PDF-Dokumente sind möglich.") }}
-        {{ util.form_input_submit(value="Hochladen", cancellink=(
+        {{ util.form_input_text(name="title", label=gettext("Label")) }}
+        {{ util.form_input_text(name="filename", label=gettext("Filename"), info=gettext("Leave empty for current filename.")) }}
+        {{ util.form_input_file(name="attachment", accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
+        {{ util.form_input_submit(value=gettext("Upload"), cancellink=(
             cdedblink('assembly/show_ballot') if ambience['ballot'] else cdedblink('assembly/show_assembly'))) }}
     </form>
 {% endblock %}

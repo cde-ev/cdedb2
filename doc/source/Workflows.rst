@@ -16,7 +16,7 @@ internationalization.
 
 * You can also translate strings in templates, by wrapping them in either of the following. Both of these way replace the marked string with the appropriate translation.
 	* the ``rs.gettext()`` function or it' common alias ``_()`` where appropriate.
-	* the ``{% trans %}`` / ``{% endtrans %}`` environment.
+	* the ``{% trans -%}`` / ``{%- endtrans %}`` environment.
 
 * Marked strings are extracted via the ``make i18n-refresh`` command.
 

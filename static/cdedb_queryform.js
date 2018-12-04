@@ -354,11 +354,11 @@
                 var placeholders = {
                     'date' : 'YYYY-MM-DD,YYYY-MM-DD,…',
                     'datetime' : 'YYYY-MM-DDThh:mm,YYYY-MM-DDThh:mm,…',
-                    'int' : '<wert>,<wert>,…',
-                    'id' : '<id>,<id>,…',
-                    'list' : '<id>,<id>,…',
-                    'str' : '<wert>,<wert>,…',
-                    'float' : '<wert>,<wert>,…'};
+                    'int' : settings.labels['range_values'],
+                    'id' : settings.labels['range_ids'],
+                    'list' : settings.labels['range_ids'],
+                    'str' : settings.labels['range_values'],
+                    'float' : settings.labels['range_values']};
 
                 var $i = $('<input>',{
                     'class' : "form-control input-sm input-slim",

@@ -200,4 +200,10 @@ I18N_STRINGS = (
     ##
     n_("day is out of range for month"),
     n_("[<class 'decimal.ConversionSyntax'>]"),
+
+    ##
+    ## Default Strings
+    ##
+    n_("Cancel"),
+    n_("Save"),
 )

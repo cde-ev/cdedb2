@@ -3,37 +3,41 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}{{ ambience['assembly']['title']|e }} bearbeiten{% endblock %}
+{% block title %}
+    {% trans title=ambience['assembly']['title']|e -%}
+        Edit {{ title }}
+    {%- endtrans %}
+{% endblock %}
 {% block heading %}
     <h1 class="title">
-        Konfiguration
-        <small>{{ util.make_icon('bullhorn', arialabel="Versammlung") }} {{ ambience['assembly']['title']|e }}</small>
+        {% trans -%}Configuration{%- endtrans %}
+        <small>{{ util.make_icon('bullhorn', arialabel=gettext("Assembly")) }} {{ ambience['assembly']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/change_assembly"), "Konfiguration", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/change_assembly"), gettext("Configuration"), active=True) }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('assembly/change_assembly')|e }}" method="POST" id="changeassemblyform"
             class="form-horizontal">
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                                    info="Unterstützt reStructuredText") }}
-        {{ util.form_input_text(name="signup_end", label="Anmeldeschluss", placeholder="YYYY-MM-DDThh:ii",
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
+        {{ util.form_input_text(name="signup_end", label=gettext("Application Deadline"), placeholder="YYYY-MM-DDThh:ii",
                                 type="datetime-local") }}
-        {{ util.form_input_textarea(name="notes", label="Admin-Notizen", rows="5",
-                                    info="Unterstützt reStructuredText") }}
+        {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="form-control-static text-info">
-                    {{ util.make_icon('info-sign') }} Achtung: Die Änderungen sind sofort für alle CdE-Mitglieder
-                    und Versammlungsteilnehmer sichtbar.
+                    {{ util.make_icon('info-sign') }} {{ gettext("Warning: All changes will be immediately "
+                    "visible to all CdE-Members and Assembly-Participants.") }}
                 </div>
             </div>
         </div>
-        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("assembly/show_assembly")) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("assembly/show_assembly")) }}
     </form>
     <script type="text/javascript">
         $('#changeassemblyform').cdedbProtectChanges();

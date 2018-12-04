@@ -11,7 +11,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), "Abstimmungen") }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_ballots"), gettext("Ballots")) }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_ballot"), ambience['ballot']['title'], icon="thumbs-up",
                             active=True) }}
 {% endblock %}
@@ -19,7 +19,7 @@
     {# Admin modification options (delete and edit) #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
         <div class="p">
-            {{ util.href(cdedblink("assembly/change_ballot_form"), "Bearbeiten", icon="pencil",
+            {{ util.href(cdedblink("assembly/change_ballot_form"), gettext("Edit"), icon="pencil",
                     aclass="btn btn-sm btn-warning") }}
         </div>
     {% endif %}
@@ -28,49 +28,65 @@
     {{ ambience['ballot']['description']|rst }}
     
     <dl class="dl-horizontal">
-        <dt>Abstimmungszeitraum</dt>
+        <dt>{% trans -%}Voting Period{%- endtrans %}</dt>
         <dd>
-            {{ ambience['ballot']['vote_begin']|datetime(lang=lang)|e }}
-            bis {{ ambience['ballot']['vote_end']|datetime(lang=lang)|e }}
+            {% trans begin=ambience['ballot']['vote_begin']|datetime(lang=lang)|e,
+                     end=ambience['ballot']['vote_end']|datetime(lang=lang)|e -%}
+            From {{ begin }} until {{ end }}.
+            {%- endtrans %}
             {% if ambience['ballot']['extended'] is none %}
                 {% if ambience['ballot']['quorum'] %}
                     <br />
-                    Verlängerung bis {{ ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e }} falls Quorum =
-                    {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht werden.
+                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
+                             quorum=ambience['ballot']['quorum']|e -%}
+                    Extension until {{ extension }} if {{ quorum }} votes are not reached.
+                    {%- endtrans %}
                 {% endif %}
             {% else %}
                 {% if ambience['ballot']['extended'] %}
                     <br />
-                    Wurde bis {{ ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e }} verlängert, da
-                    {{ ambience['ballot']['quorum']|e }} Stimmen nicht erreicht wurden.
+                    {% trans extension=ambience['ballot']['vote_extension_end']|datetime(lang=lang)|e,
+                             quorum=ambience['ballot']['quorum']|e -%}
+                    Extended until {{ extension }} because {{ quorum }} votes were not reached.
+                    {%- endtrans %}
                 {% elif ambience['ballot']['quorum'] %}
                     <br />
-                    Keine Verlängerung nötig, da {{ ambience['ballot']['quorum']|e }} Stimmen erreicht wurden.
+                    {% trans quorum=anbience['ballot']['quorum']|e -%}
+                    No Extension neccessary, because {{ quorum }} votes were reached.
+                    {%- endtrans %}
                 {% endif %}
             {% endif %}
         </dd>
-        <dt>Status</dt>
+        <dt>{% trans -%}Status{%- endtrans %}</dt>
         <dd>
             {% if now() < ambience['ballot']['vote_begin'] %}
-                <strong>Diese Abstimmung hat noch nicht begonnen.</strong> Admins können noch Veränderungen
-                an der Beschreibung, den Dateien und der Liste der Kandidaten vornehmen.
+                <strong>{% trans -%}This Ballot has not yet begun.{%- endtrans %}</strong><br />
+                {% trans -%}Admins can still make changes to description, files and candidates.{%- endtrans %}
                 {% if is_admin %}
-                    Alle CdE-Mitglieder und externe Teilnehmer der Veranstaltung können die Abstimmung und
-                    alle Details jedoch bereits sehen, um sich zu informieren.
+                    {% trans -%}
+                        All CdE-Members and external assembly participants can already
+                        see this Ballot and all associated information.
+                    {%- endtrans %}
                 {% endif %}
             {% elif ambience['ballot']['is_tallied'] %}
-                <strong>Die Abstimmung ist beendet.</strong> Unten wird das Ergebnis angezeigt.
+                <strong>{% trans -%}This Ballot has been concluded.{%- endtrans %}</strong><br />
+                {% trans -%}You can see the results below.{%- endtrans %}
             {% elif not attends %}
-                Du nimmst nicht an der Versammlung teil. Daher kannst Du nicht abstimmen.
+                {% trans -%}
+                    You are not participating in this assembly, therefore You cannot vote in this ballot.
+                {%- endtrans %}
             {% elif ambience['ballot']['is_voting'] %}
-                <strong>Die Abstimmung läuft.</strong>
+                <strong>{% trans -%}This Ballot is currently open for voting.{%- endtrans %}</strong><br />
                 {% if values['vote'] %}
                     {% if split_vote|length == 1 %}
-                        <span class="text-warning">Du hast Dich enthalten.</span> Du kannst unten bis zum Ende des
-                        Abstimmungszeitraums noch eine Auswahl treffen.
+                        <span class='text-warning'>{% trans -%}You have abstained.{%- endtrans %}</span>
+                        {% trans -%}You can make your choice below, during the voting period.{%- endtrans %}
                     {% else %}
-                        <span class="text-success">Du hast bereits abgestimmt.</span> Du kannst Deine Auswahl
-                        unten überprüfen und bis zum Ende des Abstimmungszeitraums verändern.
+                        <span class='text-success'>{% trans -%}You already voted.{%- endtrans %}</span>
+                        {% trans -%}
+                            You can check your vote below and change it
+                            before the end of the voting period.
+                        {%- endtrans %}
                     {% endif %}
                 {% endif %}
             {% endif %}
@@ -78,28 +94,28 @@
     </dl>
     
     {% if is_admin and ambience['ballot']['notes'] %}
-        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['ballot']['notes']|rst }}
         {% endcall %}
     {% endif %}
 
     {# Add candidate form #}
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
-        {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title="Kandidaten hinzufügen",
+        {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title=gettext("Add Candidate"),
                 icon='plus') %}
             <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform" class="row">
                 <div class="col-md-3">
-                    {{ util.input_text(name="moniker", placeholder="Kurzname", aclass="form-control input-sm",
-                                       arialabel="Kurzname") }}
+                    {{ util.input_text(name="moniker", placeholder=gettext("Shortname"), aclass="form-control input-sm",
+                                       arialabel=gettext("Shortname")) }}
                     {{ util.output_errors("moniker") }}
                 </div>
                 <div class="col-md-6">
-                    {{ util.input_text(name="description", placeholder="Beschreibung",
-                                       aclass="form-control input-sm", arialabel="Beschreibung") }}
+                    {{ util.input_text(name="description", placeholder=gettext("Description"),
+                                       aclass="form-control input-sm", arialabel=gettext("Description")) }}
                     {{ util.output_errors("description") }}
                 </div>
                 <div class="col-md-3">
-                    {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}
+                    {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
                 </div>
             </form>
         {% endcall %}
@@ -107,7 +123,7 @@
 
     {# Display of result #}
     {% if ambience['ballot']['is_tallied'] %}
-        <h3>Ergebnis</h3>
+        <h3>{% trans -%}Result{%- endtrans %}</h3>
         {% if result['winners'] %}
             <ol>
                 {% for candidate_ids in result['winners'] %}
@@ -123,23 +139,25 @@
                                 ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
                                  Stimmen)
                             {% endif %}
-                            {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
+                            {% if not loop.last %}<br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>{% endif %}
                         {% endfor %}
                     </li>
                 {% endfor %}
             </ol>
         {% endif %}
-        {% if ambience['ballot']['use_bar'] and result['loosers'] %}
+        {% if ambience['ballot']['use_bar'] and result['losers'] %}
             <p class="text-info">
                 {% if ambience['ballot']['votes'] %}
-                    Die folgenden Kandidaten haben weniger Stimmen erhalten als die „Gegen alle
-                    Kandidaten“-Option.
+                    {% trans against_all=gettext("Against all Candidates") -%}
+                        The following Candidates have less votes than the {{ against_all }} choice.
+                    {%- endtrans %}
                 {% else %}
-                    Die folgenden Kandidaten haben gegen die Ablehnungs-Grenze (<code>{{ ASSEMBLY_BAR_MONIKER }}</code>)
-                    verloren.
+                    {% trans assembly_bar_moniker="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER) %}
+                        The following Candidates lost against the bar ({{ assembly_bar_moniker }}).
+                    {%- endtrans %}
                 {% endif %}
             <ol>
-                {% for candidate_ids in result['loosers'] %}
+                {% for candidate_ids in result['losers'] %}
                     <li value="{{ (loop.index + result['winners']|length)|e }}">
                         {% for candidate_id in candidate_ids %}
                             {% if not ambience['ballot']['votes'] %}
@@ -149,39 +167,40 @@
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
                             {% if result['counts'] %}
-                                ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
-                                 Stimmen)
+                                {% trans count=result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e -%}
+                                    ({{ count }} votes)
+                                {%- endtrans %}
                             {% endif %}
-                            {% if not loop.last %}<br /><span class="sr-only">und</span>{% endif %}
+                            {% if not loop.last %}<br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>{% endif %}
                         {% endfor %}
                     </li>
                 {% endfor %}
             </ol>
         {% endif %}
         
-        <h4>Zusammenfassung</h4>
+        <h4>{% trans -%}Summary{%- endtrans %}</h4>
         {% if not ambience['ballot']['votes'] %}
             <pre style="max-width: 500px;">{{ result['result']|e }}</pre>
         {% endif %}
-        <p>{{ util.href(cdedblink("assembly/get_result"), "Ergebnisdatei herunterladen", icon="download")}}</p>
+        <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download results"), icon="download")}}</p>
         
-        <h3>Deine Stimme</h3>
+        <h3>{% trans -%}Your vote{%- endtrans %}</h3>
         <p>
             {# Show own vote under result: Classical vote #}
             {% if not attends %}
-                Du nimmst nicht an der Versammlung teil.
+                {% trans -%}You are not participating in this assembly.{%- endtrans %}
             {% elif ambience['ballot']['votes'] %}
                 {% if not values['vote'] %}
                     {% if ambience['assembly']['is_active'] %}
-                        Du hast noch nicht abgestimmt.
+                        {% trans -%}You have not voted yet.{%- endtrans %}
                     {% endif %}
                 {% else %}
                     {% if split_vote|length == 1 %}
-                        Du hast Dich enthalten.
+                        {% trans -%}You abstained.{%- endtrans %}
                     {% elif split_vote|length == 2 and split_vote[0] == [ASSEMBLY_BAR_MONIKER] %}
-                        Du hast Dich gegen alle Kandidaten entschieden.
+                        {% trans -%}You voted against all Candidates.{%- endtrans %}
                     {% else %}
-                        Du hast für folgende Kandidaten gestimmt:<br />
+                        {% trans -%}You voted for the following Candidates:{%- endtrans %}<br />
                         {% for voted in split_vote[0] %}
                             {{ candidates[voted]['description']|e }}{% if not loop.last %},{% endif %}
                         {% endfor %}
@@ -191,9 +210,13 @@
             {# Show own vote under result: Classical vote #}
             {% else %}
                 {% if values['vote'] %}
-                    Du hast mit <code>{{ values['vote']|e }}</code> gestimmt.
+                    {%- trans vote="<code>%(vote)s</code>"|format(vote=values['vote']|e) -%}
+                        You voted {{ vote }}.
+                    {%- endtrans -%}
                 {% elif ambience['assembly']['is_active'] %}
-                    Du hast nicht abgestimmt.
+                    {%- trans -%}
+                        You did not vote.
+                    {%- endtrans -%}
                 {% endif %}
             {% endif %}
         </p>
@@ -204,23 +227,23 @@
 
             {# Classical voting: Voting form #}
             {% if ambience['ballot']['is_voting'] and attends %}
-                <h3>Abstimmung</h3>
+                <h3>{% trans -%}Ballot{%- endtrans %}</h3>
                 <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
                     {% if ambience['ballot']['votes'] > 1 %}
-                        {{ util.form_input_static(value='Du hast {} Stimmen'.format(ambience['ballot']['votes']),
-                                                  small=True) }}
+                        {{ util.form_input_static(value=gettext("You have %(votes)s votes.")|
+                                                        format(votes=ambience['ballot']['votes']|e), small=True) }}
                     {% endif %}
-                    {{ util.form_input_checkboxes("vote", label="Kandidaten",
+                    {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
                                                   entries=ambience['ballot']['candidates']|dictsort|dict_entries('moniker', 'description'),
                                                   radio=(ambience['ballot']['votes'] == 1), small=True) }}
                     {% if ambience['ballot']['use_bar'] %}
                         {{ util.form_input_checkboxes(
-                            "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER,"Gegen alle Kandidaten")],
+                            "vote", label="", entries=[(ASSEMBLY_BAR_MONIKER, gettext("Against all Candidates"))],
                             small=True, radio=(ambience['ballot']['votes'] == 1),
-                            info="Mit dieser Option kannst Du Dein Ablehnung aller Kandidaten ausdrücken. Sollte eine "
-                                 "Mehrheit dafür stimmen, so kann der Vorstand ggf. weitere Maßnahmen ergreifen.") }}
+                            info=gettext("With this option you reject all Candidates. "
+                                         "If this gets a majority the board may take additional measures.")) }}
                     {% endif %}
-                    {{ util.form_input_submit(value="Abstimmen", small=True) }}
+                    {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
                 </form>
                 <script type="text/javascript">
                     {% if ambience['ballot']['votes'] > 1 %}
@@ -232,13 +255,13 @@
                 <div class="form-horizontal">
                     <div class="form-group">
                         <div class="col-sm-2 control-label">
-                            <strong>Weitere Optionen</strong>
+                            <strong>{% trans -%}Additional Options{%- endtrans %}</strong>
                         </div>
                         <div class="col-sm-10">
                             <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="abstentionform"
                                     style="display: inline;">
                                 {{ util.input_hidden(name="vote", value="special: abstain") }}
-                                {{ util.input_submit(value="Enthalten", icon="stop") }}
+                                {{ util.input_submit(value=gettext("Abstain"), icon="stop") }}
                             </form>
                         </div>
                     </div>
@@ -246,7 +269,7 @@
 
             {# Classical voting: Presentation of candidates #}
             {% else %}
-                <h3>Kandidaten</h3>
+                <h3>{% trans -%}Candidates{%- endtrans %}</h3>
                 <ul>
                     {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                         <li>
@@ -257,7 +280,7 @@
                                         method="POST" id="removecandidateform{{ candidate_id|e }}"
                                         style="display: inline;" class="remove-candiate-form">
                                     {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
-                                                         title="Kandidaten löschen") }}
+                                                         title=gettext("Remove Candidate")) }}
                                 </form>
                             {% endif %}
                         </li>
@@ -265,20 +288,20 @@
                 </ul>
                 {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                     <script type="text/javascript">
-                        $('.remove-candiate-form').cdedbProtectAction("Der Kandidat wird gelöscht.");
+                        $('.remove-candiate-form').cdedbProtectAction({{ gettext("The Candidate will be removed.") }});
                     </script>
                 {% endif %}
             {% endif %}
 
         {% else %}
             {# Preferential voting: Presentation of candidates #}
-            <h3>Kandidaten</h3>
+            <h3>{% trans -%}Candidates{%- endtrans %}</h3>
             <ul>
                 {% for candidate_id, candidate in ambience['ballot']['candidates']|dictsort %}
                     <li>
                         {{ candidate['description']|e }}
                         {% if attends or is_admin %}
-                            <span class="label label-primary"><span class="sr-only">Kurz: </span>
+                            <span class="label label-primary"><span class="sr-only">{% trans -%}Short: {%- endtrans %}</span>
                                 {{ candidate['moniker']|e }}
                             </span>
                         {% endif %}
@@ -289,7 +312,7 @@
                                   method="POST" id="removecandidateform{{ candidate_id|e }}" style="display: inline;"
                                   class="remove-candiate-form">
                                 {{ util.input_submit(value="", icon="trash", aclass="btn btn-xs btn-danger",
-                                                     title="Kandidaten löschen") }}
+                                                     title=gettext("Remove Candidate")) }}
                             </form>
                         {% endif %}
                     </li>
@@ -297,24 +320,25 @@
             </ul>
             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                 <script type="text/javascript">
-                    $('.remove-candiate-form').cdedbProtectAction("Der Kandidat wird gelöscht.");
+                    $('.remove-candiate-form').cdedbProtectAction({{ gettext("The Candidate will be removed.") }});
                 </script>
             {% endif %}
 
             {# Preferential voting: Voting form #}
             {% if ambience['ballot']['is_voting'] and attends %}
-                <h3>Abstimmung</h3>
+                <h3>{% trans -%}Ballot{%- endtrans %}</h3>
                 
                 {# Tab controls to switch to javascript preferential voting form #}
                 <ul class="nav nav-tabs mosp softhide" role="tablist" id="tablist-formselect">
                     <li role="presentation" class="active">
                         <a href="#tab-textform" aria-controls="tab-textform" role="tab" data-toggle="tab">
-                            {{ util.make_icon('console') }} Text-basierte Abstimmung</a>
+                            {{ util.make_icon('console') }} {% trans -%}Text-based voting{%- endtrans %}
+                        </a>
                     </li>
                     <li role="presentation">
                         <a href="#tab-jsform" aria-controls="tab-jsform" role="tab" data-toggle="tab"
                                 id="tablink-jsform">
-                            {{ util.make_icon('flash') }} Interaktive Abstimmung
+                            {{ util.make_icon('flash') }} {% trans -%}Interactive voting{%- endtrans %}
                         </a>
                     </li>
                 </ul>
@@ -324,76 +348,95 @@
                     <div role="tabpanel" class="tab-pane active" id="tab-textform">
                         <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform"
                                 class="form-horizontal">
-                            {{ util.form_input_text(name="vote", label="Präferenzliste", small=True,
+                            {{ util.form_input_text(name="vote", label=gettext("Preferencelist"), small=True,
                                                     anid='input-preferencelist') }}
-                            {{ util.form_input_submit(value="Abstimmen", small=True) }}
+                            {{ util.form_input_submit(value=gettext("Vote"), small=True) }}
                         </form>
                         <script type="text/javascript">
                             $('#voteform').cdedbProtectChanges();
                         </script>
-                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign', aclass='panel-default mosp') %}
+                        {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
-                                Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld eine Präferenzliste
-                                eintragen, um die Kandidaten in eine persönliche Rangfolge zu bringen. Später werden die
-                                Präferenzlisten aller Teilnehmer mit der
-                                <a href="https://de.wikipedia.org/wiki/Schulze-Methode">Schulze-Methode</a> ausgewertet, um die
-                                Wahlsieger zu bestimmen.
+                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
+                                    This vote is an Preferential Vote. You can arrange the Candidates in the field above
+                                    according to Your personal preference. The preferences of all participants will be
+                                    evaluated using the {{ link }}, to determine the winner.
+                                {%- endtrans %}
                             </p>
                             <p>
-                                Um die Präferenzliste einzugeben, verwende bitte die in der Kandidatenliste angegebenen
-                                Kurzbezeichnungen der Kandidaten und die Zeichen <code>&gt;</code> und <code>=</code>. Mit dem
-                                Größer-als-Zeichen <code>&gt;</code> bevorzugst Du die Kandidaten links des Zeichens gegenüber
-                                denen auf der rechten Seite. Mit dem Gleichheitszeichen <code>=</code> bewertest Du zwei
-                                Kandidaten gleich. In der Präferenzliste müssen alle Kandidaten genannt werden.
+                                {% trans  gt="<code>></code>", eq="<code>=</code>" -%}
+                                    To enter Your preferencelist, use the Shortnames given in the list of Candidates and the
+                                    {{ gt }} and {{ eq }} characters. Use the Greater-Than character {{ gt }}
+                                    to give the Candidates left of the character higher preference, than those on the right.
+                                    Use the Equals character to give two Candidates the same preference. You need to have all
+                                    Candidates in Your preferencelist.
+                                {%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
-                                    Zusätzlich musst Du die Ablehnungsgrenze <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> in der
-                                    Präferenzliste verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt an,
-                                    welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet hältst, solltest Du höher als
-                                    <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code> bewerten, Kandidaten, die Du ablehnst, niedriger,
-                                    d.h. rechts von <code>{{ ASSEMBLY_BAR_MONIKER|e }}</code>. Sollte in der Auszählung kein
-                                    Kandidat gegen die Ablehnungsgrenze gewinnen, so kann der Vorstand ggf. weitere Maßnahmen
-                                    ergreifen.
+                                    {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER|e) %}
+                                        Additionally You need to use the Rejection Bar {{ abm }} in Your preferencelist.
+                                        Use it in Your preferencelist like You would a Candidate. Put all
+                                        Candidates You deem suitable higher than {{ abm }} and all
+                                        Candidates You reject lower, i.e. to the right of {{ abm }}.
+                                        Should no Candidate win against the bar, the board may take additional measures.
+                                    {%- endtrans %}
                                 </p>
                             {% endif %}
                             <p>
-                                <strong>Beispiele:</strong> Wir nehmen folgende beispielhafte Kandidatenliste an:
+                                {% trans  -%}
+                                    <strong>Examples:</strong> Take the following examplatory Candidate list:
+                                {%- endtrans %}
                             </p>
                             <ul>
-                                <li>Luke Skywalker, kurz: [Luke]</li>
-                                <li>Princess Leia Organa von Alderaan, kurz: [Leia]</li>
-                                <li>Han Solo, kurz: [Han]</li>
-                                <li>Obi-Wan „Ben“ Kenobi, kurz: [ObiWan]</li>
+                                <li>{% trans  -%}Luke Skywalker, short: [Luke]{%- endtrans %}</li>
+                                <li>{% trans  -%}Princess Leia Organa of Alderaan, short: [Leia]{%- endtrans %}</li>
+                                <li>{% trans  -%}Han Solo, short: [Han]{%- endtrans %}</li>
+                                <li>{% trans -%}Obi-Wan "Ben" Kenobi, short: [ObiWan]{%- endtrans %}</li>
                             </ul>
                             <p>
-                                Deine Wahl könnte dann z.B. so aussehen:
+                                {% trans -%}Your Vote could look like this:{%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <ul>
-                                    <li>Du hältst alle Kandidaten für geeignet, aber Leia ist die Beste, bei den anderen gibt
-                                        es keinen Unterschied<br />
+                                    <li>{% trans -%}
+                                            You deem all candidates suitable, but You like Leia the best,
+                                            with no difference between the other Candidate.
+                                        {%- endtrans %}<br />
                                         <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
-                                    <li>Du hältst nur Leia und Obi-Wan für (gleich) geeignet, Luke lehnst Du ab und Han Solo
-                                        geht echt gar nicht<br />
+                                    <li>{% trans -%}
+                                            You deem Leia and Obi-Wan (equally) suitable, You want to reject Luke
+                                            and you absolutely can't stand Han Solo.
+                                        {%- endtrans %}<br />
                                         <code>Leia=ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}&gt;Luke&gt;Han</code></li>
-                                    <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
-                                        hast du keine Meinung<br />
+                                    <li>{% trans -%}
+                                            You want to vote for Luke and if he doesn't make it, You think Obi-Wan should.
+                                            You don't have an opinion about the others.
+                                        {%- endtrans %}<br />
                                         <code>Luke&gt;ObiWan&gt;{{ ASSEMBLY_BAR_MONIKER|e }}=Han=Leia</code></li>
-                                    <li>Du möchtest dich komplett enthalten<br />
+                                    <li>{% trans -%}
+                                            You want to completely abstain.
+                                        {%- endtrans %}<br />
                                         <code>Luke=ObiWan=Han=Leia={{ ASSEMBLY_BAR_MONIKER|e }}</code></li>
                                 </ul>
                             {% else %}
                                 <ul>
-                                    <li>Du findest Leia am geeignetsten, bei den anderen gibt es keinen Unterschied<br />
+                                    <li>{% trans -%}
+                                            You like Leia the most, but You see no difference between the others.
+                                        {%- endtrans %}<br />
                                         <code>Leia&gt;Luke=Han=ObiWan</code></li>
-                                    <li>Du hältst Leia und Obi-Wan für (gleich) geeignet, Luke geht so und Han Solo eher nicht
-                                        <br />
+                                    <li>{% trans -%}
+                                            You deem Leia and Obi-Wan (equally) suitable, Luke less so and Han Solo not at all.
+                                        {%- endtrans %}<br />
                                         <code>Leia=ObiWan&gt;Luke&gt;Han</code></li>
-                                    <li>Du möchtest Luke wählen, und wenn er es nicht wird, dann bitte Obi-Wan. Zu den anderen
-                                        hast du keine Meinung<br />
+                                    <li>{% trans -%}
+                                            You want to vote for Luke and if he doensn't make it, You think Obi-Wan should.
+                                            You don't have an opinion about the others.
+                                        {%- endtrans %}<br />
                                         <code>Luke&gt;ObiWan&gt;Han=Leia</code></li>
-                                    <li>Du möchtest dich komplett enthalten<br />
+                                    <li>{% trans -%}
+                                            You want to completely abstain.
+                                        {%- endtrans %}<br />
                                         <code>Luke=ObiWan=Han=Leia</code></li>
                                 </ul>
                             {% endif %}
@@ -403,17 +446,19 @@
                     {# Javascript preferential voting form #}
                     <div role="tabpanel" class="tab-pane" id="tab-jsform">
                         <p class="sr-only">
-                            Hier folgt das interaktive Absitummgs-Formular. Dieses ist mit der Tastatur nur mäßig gut
-                            zu bedienen. Verwende den obigen Link, um zum Text-basierten Formular zu wechseln.
+                            {% trans -%}
+                                This is the interactive voting form. It is not supposed to be used with a Keyboard only.
+                                Use the link above to switch to the text-based form.
+                            {%- endtrans %}
                         </p>
                         <div class="prefvote_container" id="prefvote_container">
                             <div class="indicator">
-                                steigende Präferenz →
+                                {% trans -%}Incr. preference{%- endtrans %} →
                             </div>
                         </div>
                         <div class="p clearfix">
                             <button class="btn btn-primary" id="button-jsvote">
-                                {{ util.make_icon('ok') }} Abstimmen
+                                {{ util.make_icon('ok') }} {% trans -%}Vote{%- endtrans %}
                             </button>
                         </div>
                         <script type="text/javascript">
@@ -441,42 +486,44 @@
                             $('#button-jsvote').click(function(){$('#voteform').submit();});
                         </script>
                         
-                        {% call util.bootstrap_panel(title='Hilfe', icon='info-sign', aclass='panel-default mosp') %}
+                        {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
                             <p>
-                                Diese Abstimmung findet als Präferenzwahl statt. Du kannst die Kandidaten in dem oben
-                                angezeigten Feld in eine persönliche Rangfolge zu bringen. Später werden die
-                                Präferenzlisten aller Teilnehmer mit der
-                                <a href="https://de.wikipedia.org/wiki/Schulze-Methode">Schulze-Methode</a> ausgewertet,
-                                um die Wahlsieger zu bestimmen.
+                                {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
+                                    This vote is an Preferential Vote. You can arrange the Candidates in the field above
+                                    according to Your personal preference. The preferences of all participants will be
+                                    evaluated using the {{ link }}, to determine the winner.
+                                {%- endtrans %}
                             </p>
                             <p>
-                                Um die Kandidaten anzuordnen, bewege sie in eine der schattierten Boxen. Eine Einordnung
-                                in einer höheren Box drückt eine höhere Präferenz dieses Kandidaten aus. Kandidaten, die
-                                sich in der gleichen Box befinden, werden mit gleicher Präferenz gewertet. Bewegst Du
-                                einen Kandidaten in den Zwischenraum ober- und unterhalb der Boxen, ensteht dort eine
-                                neue Box.
+                                {% trans -%}
+                                    To arrange the Candidates, move them into one of the shaded boxes. The higher up the box,
+                                    the higher Your preference for that Candidate. Candidates within the same box will be
+                                    evaluated with the same preference. Move a Candidate between two boxes to create a new box.
+                                {%- endtrans %}
                             </p>
                             <p>
-                                Zum Bewegen der Kandidaten hast du drei Möglichkeiten: Verschiebe sie mit Drag’n’Drop in
-                                eine andere Box oder klicke zuerst den Kandidaten, dann die gewünschte Box an. Mit der
-                                Tastatur kannst Du Kandidaten und Boxen mit <kbd>TAB</kbd> fokussieren und so
-                                zunächst den Kandidaten und dann die Ziel-Box mit <kbd>ENTER</kbd> oder
-                                <kbd>Leertaste</kbd> auswählen.
+                                {% trans -%}
+                                    There are three ways of moving Candidates: Drag'n'Drop them into a different box or
+                                    click on a Candidate and then on a box. Or You can select a Candidate with <kbd>TAB</kbd>,
+                                    confirm it with <kbd>Enter</kbd> or <kbd>Space</kbd>, then select a box with <kbd>TAB</kbd>
+                                    and confirm the selection with <kbd>ENTER</kbd> or <kbd>Space</kbd>.
+                                {%- endtrans %}
                             </p>
                             {% if ambience['ballot']['use_bar'] %}
                                 <p>
-                                    Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne Kandidaten, die
-                                    Du für geeignet hältst, oberhalb dieser Box an (Boxen werden grün hinterlegt) und
-                                    Kandidaten die Du ablehnst unterhalb (Boxen werden rot hinterlegt). Sollten in der
-                                    Auszählung alle Kandidaten abgelehnt werden, so kann der Vorstand ggf. weitere
-                                    Maßnahmen ergreifen.
+                                    {% trans -%}
+                                        One of the boxes is marked as "Neutral". Please place Candidates You deem suitable
+                                        above this box (they will be highlighted in green) and Candidates you want to reject
+                                        below this box (they will be highlighted in red). Should all Candidates be rejected,
+                                        the board may take additional measures.
+                                    {%- endtrans %}
                                 </p>
                                 <p>
-                                    Um Dich zu enthalten, positioniere alle Kandidaten in der Neutral-Box.
+                                    {% trans -%}To abstain, place all Candidates in the neutral box.{%- endtrans %}
                                 </p>
                             {% else %}
                                 <p>
-                                    Um Dich zu enthalten, positioniere alle Kandidaten in einer Box.
+                                    {% trans -%}To abstain, place all Candidates in the same box.{%- endtrans %}
                                 </p>
                             {% endif %}
                             
@@ -489,7 +536,7 @@
 
     {# Attachments #}
     {% if attachments or is_admin and now() < ambience['ballot']['vote_begin'] %}
-        {% call util.bootstrap_panel(title="Dateien", icon='file') %}
+        {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
             {% if attachments %}
                 <ul>
                     {% for attachment_id, attachment in attachments|dictsort %}
@@ -499,10 +546,10 @@
                             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
                                 <form action="{{ cdedblink('assembly/remove_attachment',
                                                            {'attachment_id': attachment_id})|e }}"
-                                        method="POST" id="removeattachmentform{{ attachment_id|e }}",
+                                        method="POST" id="removeattachmentform{{ attachment_id|e }}"
                                         style="display: inline;">
                                     {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
-                                            title="Datei löschen") }}
+                                            title=gettext("Delete File")) }}
                                 </form>
                             {% endif %}
                         </li>
@@ -510,26 +557,26 @@
                 </ul>
             {% endif %}
             {% if is_admin and now() < ambience['ballot']['vote_begin'] %}
-                {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
+                {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
                              aclass="btn btn-success btn-sm", icon="plus") }}
             {% endif %}
         {% endcall %}
     {% endif %}
 
     {% if is_admin and now() < ambience['ballot']['vote_begin']  %}
-        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
                          <form action="{{ cdedblink('assembly/delete_ballot')|e }}" method="POST" id="deleteballotform"
                                style="display: inline;">
-                             {{ util.input_submit(value="Löschen", icon="trash", aclass="btn btn-danger") }}
-                             {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                             {{ util.input_submit(value=gettext("Delete"), icon="trash", aclass="btn btn-danger") }}
+                             {{ util.input_checkbox(name="ack_delete", label=gettext("Are You sure?")) }}
                          </form>
                          <script type="text/javascript">
                              $(function() {
                                  $('#deleteballotform').cdedbProtectAction(
-                                     "Die Abstimmung wird irreversibel mit allen Daten gelöscht.");
+                                     "{{ gettext("This Ballot and all its Data will be permanently deleted.") }}");
                                  $('#deleteballotform').find('[name="ack_delete"]').prop('checked', true)
                                      .parent().hide();
                              });
@@ -538,7 +585,7 @@
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        Löscht die Abstimmung und alle dazugehörigen Einstellungen und Kandidaten.
+                        {% trans -%}Deletes the Ballot and all associated Settings and Candidates.{%- endtrans %}
                     </p>
                 </div>
             </div>

@@ -2,52 +2,57 @@
 {% extends "web/assembly/base.tmpl" %}
 {% block scripts %}{{ util.cdedb_script('search-persona') }}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='strong' %}
-{% block title %}Anwesenheitsliste ({{ ambience['assembly']['title']|e }}){% endblock %}
+{% block title %}
+    {% trans title=ambience['assembly']['title']|e -%}
+        Participantlist ({{ title }})
+    {%- endtrans %}
+{% endblock %}
 {% block heading %}
     <h1 class="title">
-        Anwesenheitsliste
+        {{ gettext("Participantlist") }}
         <small>{{ util.make_icon('bullhorn') }} {{ ambience['assembly']['title']|e }}</small>
     </h1>
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
-    {{ util.breadcrumb_link(cdedblink("assembly/list_attendees"), "Teilnehmer", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("assembly/list_attendees"), gettext("Participants"), active=True) }}
 {% endblock %}
 {% block content %}
     {% if is_admin and now() < ambience['assembly']['signup_end'] %}
-        {% call util.bootstrap_panel(title='Externe Teilnehmer hinzufügen', aclass='panel-success panel-condensed',
+        {% call util.bootstrap_panel(title=gettext("Add external participants"), aclass='panel-success panel-condensed',
                 icon='plus') %}
             <p class="text-muted">
-                {{ util.make_icon('info-sign') }} Derzeitige CdE-Mitglieder müssen sich selbst zur Versammlung
-                anmelden. Über dieses Formular können externe Teilnehmer von Admins hinzugefügt werden. Dies ist
-                ebenfalls nur innerhalb der Anmeldefrist möglich.
+                {{ util.make_icon('info-sign') }}
+                {{ gettext("Current CdE-Members must register for the assembly themselves. "
+                           "Only external participants can be added with this form. "
+                           "This is only possible within the application deadline.") }}
             </p>
             <form action="{{ cdedblink('assembly/external_signup')|e }}" method="POST" id="addattendeeform">
                 <div class="row">
                     <div class="col-sm-7">
                         {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
                                 anid="input-add-attendee", aclass="form-control input-sm",
-                                arialabel="Benutzer-ID des neuen Teilnehmers") }}
+                                arialabel=gettext("User-ID of the new participant")) }}
                         {{ util.output_errors('persona_id') }}
                     </div>
                     <div class="col-sm-3">
-                        {{ util.input_submit(value="hinzufügen", icon="plus", aclass="btn btn-primary btn-sm") }}
+                        {{ util.input_submit(value=gettext("Add"), icon="plus", aclass="btn btn-primary btn-sm") }}
                     </div>
                 </div>
             </form>
             <script type="text/javascript">
                 $('#addattendeeform').cdedbProtectAction(
-                    "Der Benutzer wird als Teilnehmer hinzugefügt. Das kann nicht rückgängig gemacht werden.");
+                    {{ gettext("The user will be added as a participant. This cannot be undone.") }});
                 $('#input-add-attendee').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') + '?kind=pure_assembly_user&phrase=%s'}}',
-                    {{ attendees|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
+                    {{ attendees|list|json }}, false, false, {{ gettext("CdEDB-ID, Name or E-Mail") }}
                 );
             </script>
         {% endcall %}
     {% endif %}
 
-    <p>Insgesamt {{ attendees|length|e }} Anwesende.</p>
+    <p>{{ gettext("%(count)s participants total.")|format(count=attendees|length|e) }}</p>
     <div class="row">
         {% for list in attendees | dictsort | slice(3 if attendees|length > 20 else
                                                     2 if attendees|length > 10 else 1) %}

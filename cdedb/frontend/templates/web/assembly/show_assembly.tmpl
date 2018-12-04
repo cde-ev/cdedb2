@@ -11,9 +11,9 @@
 {% block content %}
     <div class="p">
         {% if is_admin and ambience['assembly']['is_active'] %}
-            {{ util.href(cdedblink('assembly/change_assembly'), "Konfiguration", aclass="btn btn-sm btn-warning",
+            {{ util.href(cdedblink('assembly/change_assembly'), gettext("Configuration"), aclass="btn btn-sm btn-warning",
                          icon="cog") }}
-            {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), "Log",
+            {{ util.href(cdedblink("assembly/view_log", {'assembly_id': ambience['assembly']['id']}), gettext("Log"),
                     icon="list-alt") }}
         {% endif %}
     </div>
@@ -23,15 +23,15 @@
     <dl class="dl-horizontal">
         <dt>Anmeldeschluss</dt>
         <dd>{{ ambience['assembly']['signup_end']|datetime(lang=lang)|e }}</dd>
-        <dt>Partizipationsstatus</dt>
+        <dt>{% trans -%}Participationstatus{%- endtrans %}</dt>
         <dd>
             {% if attends %}
-                <strong class="text-success">Du nimmst an der Versammlung teil.</strong>
+                <strong class="text-success">{% trans -%}You are participating in this assembly.{%- endtrans %}</strong>
             {% else %}
-                <p><strong class="text-muted">Du nimmst nicht teil.</strong></p>
+                <p><strong class="text-muted">{% trans -%}You are not participating.{%- endtrans %}</strong></p>
                 {% if "member" in user.roles and now() < ambience['assembly']['signup_end'] %}
                     <form action="{{ cdedblink('assembly/signup')|e }}" method="POST" id="signupform">
-                        {{ util.input_submit(value="Teilnehmen", icon="log-in") }}
+                        {{ util.input_submit(value=gettext("Participate"), icon="log-in") }}
                     </form>
                 {% endif %}
             {% endif %}
@@ -39,17 +39,17 @@
     </dl>
 
     {% if is_admin and ambience['assembly']['notes'] %}
-        {% call util.bootstrap_panel(title="Admin-Notizen", icon="tag", aclass="panel-default panel-condensed") %}
+        {% call util.bootstrap_panel(title=gettext("Admin-Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             {{ ambience['assembly']['notes']|rst }}
         {% endcall %}
     {% endif %}
     
     {% if attachments or is_admin or has_ballot_attachments %}
-        {% call util.bootstrap_panel(title="Dateien", icon='file') %}
+        {% call util.bootstrap_panel(title=gettext("Files"), icon='file') %}
         <div class="row">
             {% if attachments or is_admin %}
                 <div class="col-sm-6">
-                    <h4>Allgemeine Dateien</h4>
+                    <h4>{% trans -%}General Files{%- endtrans %}</h4>
                     <ul class="slim">
                         {% for attachment_id, attachment in attachments|dictsort %}
                             <li>
@@ -61,14 +61,14 @@
                                             method="POST" id="removeattachmentform{{ attachment_id|e }}",
                                             style="display: inline;">
                                         {{ util.input_submit(value="", aclass="btn btn-xs btn-danger", icon="trash",
-                                                title="Datei löschen") }}
+                                                title=gettext("Delete File")) }}
                                     </form>
                                 {% endif %}
                             </li>
                         {% endfor %}
                     </ul>
                     <div class="p">
-                        {{ util.href(cdedblink("assembly/add_attachment_form"), "Datei anhängen",
+                        {{ util.href(cdedblink("assembly/add_attachment_form"), gettext("Attach File"),
                                      aclass="btn btn-success btn-sm", icon="plus") }}
                     </div>
                 </div>
@@ -76,7 +76,7 @@
             
             {% if has_ballot_attachments %}
                 <div class="col-sm-6">
-                <h4>Dateien zu Abstimmungen</h4>
+                <h4>{% trans -%}Ballot Files{%- endtrans %}</h4>
                     {% for ballot_id, ballot in ballots|dictsort %}
                         {% if ballot_attachments[ballot_id] %}
                             <ul class="slim">
@@ -86,7 +86,7 @@
                                                      {'attachment_id': battachment_id, 'ballot_id': ballot_id}),
                                                      battachment['title'])}}
                                         (<small class="text-muted nowrap">
-                                            {{- util.make_icon('thumbs-up', arialabel="Zu Abstimmung") }}
+                                            {{- util.make_icon('thumbs-up', arialabel=gettext("ballot_file_arialabel")) }}
                                             {{ ballot['title']|e -}}
                                          </small>)
                                     </li>
@@ -102,30 +102,29 @@
 
     {% if is_admin %}
         {% if ambience['assembly']['is_active'] %}
-            {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+            {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
                 <div class="row">
                     <div class="col-sm-4">
                         <div class="p">
                             <form action="{{ cdedblink('assembly/conclude_assembly')|e }}" method="POST"
                                   id="concludeassemblyform" style="display: inline;">
-                                {{ util.input_submit(value="Archivieren", readonly=has_activity, aclass="btn btn-danger",
+                                {{ util.input_submit(value=gettext("Archive"), readonly=has_activity, aclass="btn btn-danger",
                                                      icon="folder-close") }}
-                                {{ util.input_checkbox(name="ack_conclude", label="sicher?") }}
+                                {{ util.input_checkbox(name="ack_conclude", label=gettext("Are You sure?")) }}
                             </form>
                         </div>
                     </div>
                     <div class="col-sm-8">
                         <p class="text-muted">
-                            Archiviert die Versammlung. Anschließend können keine Einstellungen der Versammlung oder ihrer
-                            Abstimmungen mehr geändert werden. Außerdem werden die geheimen Schlüssel zur Signatur der
-                            Stimmen aus der Datenbank gelöscht.
+                            {% trans -%}Archives the assembly. Assembly and Ballot configuration cannot be changed after this.
+                                The private Keys used to sign the votes will be deleted from the database.{%- endtrans %}
                         </p>
                     </div>
                 </div>
             {% endcall %}
             <script type="text/javascript">
                 $(function() {
-                    $('#concludeassemblyform').cdedbProtectAction("Die Versammlung wird irreversibel archiviert.");
+                    $('#concludeassemblyform').cdedbProtectAction("{{ gettext("The assembly will be permanently archived.") }}");
                     $('#concludeassemblyform').find('[name="ack_conclude"]').prop('checked', true).parent().hide();
                 });
             </script>

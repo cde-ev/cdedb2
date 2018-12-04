@@ -59,7 +59,7 @@
 {%- endmacro %}
 
 {% macro href(ref, label, readonly=False, icon="", aclass='', active=False, title='') -%}
-{% if readonly %}<span {%- else -%}<a href="{{ ref|e }}"{% endif %}
+{% if readonly %}<span>{%- else -%}<a href="{{ ref|e }}"{% endif %}
 {%- if aclass or active or readonly -%}
     class="{{ aclass }}{% if active %} active{% endif -%}
            {% if readonly %} {% if not 'btn' in aclass %}link-{% endif%}disabled{% endif %}"
@@ -317,7 +317,7 @@
     {%- endcall %}
 {%- endmacro %}
 
-{% macro input_submit(value='Speichern', name="submitform", anid='', aclass='btn btn-primary', icon="ok",
+{% macro input_submit(value="Save", name="submitform", anid='', aclass='btn btn-primary', icon="ok",
         readonly=False, title='', arialabel='') %}
     <button type="submit" name="{{ name|e }}" {%- if readonly %} disabled="disabled"{% endif %}
             {%- if anid %} id="{{ anid|e }}"{% endif %} {%- if aclass %} class="{{ aclass|e }}"{% endif %}
@@ -326,15 +326,15 @@
             {%- if icon %}{{ make_icon(icon) }} {% endif %}{{ value|e -}}</button>
 {%- endmacro %}
 
-{% macro form_input_submit(value='Speichern', name="submitform", readonly=False, anid='',
-        aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue='Abbrechen',
+{% macro form_input_submit(value="Save", name="submitform", readonly=False, anid='',
+        aclass='btn btn-primary', icon="ok", cancellink='', cancelicon='remove', cancelvalue="Cancel",
         small=False, horizontal=True) %}
     <div class="form-group mosp">
         <div {% if horizontal %}class="{% if small %}col-sm-offset-2 col-sm-10{% else -%}
                 col-sm-offset-4 col-sm-8{% endif %}"{% endif %}>
-            {{- input_submit(value, name, anid, aclass, icon, readonly) }}
+            {{- input_submit(gettext(value), name, anid, aclass, icon, readonly) }}
             {%- if cancellink %}
-                &emsp; {{ href(cancellink, cancelvalue, icon=cancelicon, aclass="btn btn-default cancel") }}
+                &emsp; {{ href(cancellink, gettext(cancelvalue), icon=cancelicon, aclass="btn btn-default cancel") }}
             {%- endif %}
         </div>
     </div>
@@ -348,10 +348,10 @@
         </label>
         <div {% if horizontal %}class="{% if small %}col-sm-6{% else %}col-sm-8{% endif %}"{% endif %}>
             <div class="input-group">
-                <span class="input-group-addon">von</span>
-                {{ input_text(name=name1, type=type, arialabel='{} von'.format(label)) }}
-                <span class="input-group-addon">bis</span>
-                {{ input_text(name=name2, type=type, arialabel='{} bis'.format(label)) }}
+                <span class="input-group-addon">{% trans -%}from{%- endtrans %}</span>
+                {{ input_text(name=name1, type=type, arialabel=gettext('{} from').format(label)) }}
+                <span class="input-group-addon">{% trans -%}to{%- endtrans %}</span>
+                {{ input_text(name=name2, type=type, arialabel=gettext('{} to').format(label)) }}
             </div>
             {{- output_errors('start', displayerrors) }}
             {{- output_errors('stop', displayerrors) }}
@@ -442,6 +442,14 @@
    docurl(). #}
 {% macro doclink(topic, anchor=None) %}
     <a href="{{ docurl(topic, anchor)|e }}" class="btn btn-info btn-lg pull-right" target="_blank">
-        {{ make_icon('question-sign') }} Hilfe <span class="sr-only">zu dieser Seite</span>
+        {{ make_icon('question-sign') }}
+    {% trans -%}
+        Help
+    {%- endtrans %}
+    <span class="sr-only">
+        {% trans -%}
+            for this site
+        {%- endtrans %}
+    </span>
     </a>
 {%- endmacro %}

@@ -507,7 +507,7 @@ class AssemblyFrontend(AbstractUserFrontend):
                 result = json.load(f)
             tiers = tuple(x.split('=') for x in result['result'].split('>'))
             winners = []
-            loosers = []
+            losers = []
             tmp = winners
             lookup = {e['moniker']: e['id']
                       for e in ballot['candidates'].values()}
@@ -517,9 +517,9 @@ class AssemblyFrontend(AbstractUserFrontend):
                 if ntier:
                     tmp.append(ntier)
                 if ASSEMBLY_BAR_MONIKER in tier:
-                    tmp = loosers
+                    tmp = losers
             result['winners'] = winners
-            result['loosers'] = loosers
+            result['losers'] = losers
             result['counts'] = None # Will be used for classical voting
         attends = self.assemblyproxy.does_attend(rs, ballot_id=ballot_id)
         vote = None
@@ -626,16 +626,16 @@ class AssemblyFrontend(AbstractUserFrontend):
                 return self.show_ballot(rs, assembly_id, ballot_id)
             else:
                 winners = "=".join(voted)
-                loosers = "=".join(c for c in candidates if c not in voted)
+                losers = "=".join(c for c in candidates if c not in voted)
                 if ballot['use_bar']:
-                    if loosers:
-                        loosers += "={}".format(ASSEMBLY_BAR_MONIKER)
+                    if losers:
+                        losers += "={}".format(ASSEMBLY_BAR_MONIKER)
                     else:
-                        loosers = ASSEMBLY_BAR_MONIKER
-                if winners and loosers:
-                    vote = "{}>{}".format(winners, loosers)
+                        losers = ASSEMBLY_BAR_MONIKER
+                if winners and losers:
+                    vote = "{}>{}".format(winners, losers)
                 else:
-                    vote = winners + loosers
+                    vote = winners + losers
         else:
             vote = unwrap(request_extractor(rs, (("vote", "str"),)))
         vote = check(rs, "vote", vote, "vote", ballot=ballot)
