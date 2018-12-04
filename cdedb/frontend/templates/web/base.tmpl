@@ -50,8 +50,8 @@
                                 <input type="hidden" name="wants"
                                        value="{{ encode_parameter("core/change_locale", "wants", request_url)|e }}" />
                             {% endif %}
-                            {% with TITLES = {'de': ("deutsch", "auf deutsch umschalten"),
-                                              'en': ("engish", "switch to english"),} %}
+                            {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
+                                              'en': ("English", "Switch to English"),} %}
                                 {% for l in I18N_LANGUAGES if l != lang %}
                                     <button type="submit" class="btn btn-link" name="locale" value="{{ l|e }}"
                                             title="{{ TITLES.get(l, (None, None))[1]|e }}">

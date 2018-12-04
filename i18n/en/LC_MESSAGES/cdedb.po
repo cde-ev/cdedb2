@@ -128,7 +128,7 @@ msgstr "Assembly modified"
 
 #: cdedb/i18n_additional.py:18
 msgid "AssemblyLogCodes.assembly_concluded"
-msgstr "Assembly condluded"
+msgstr "Assembly concluded"
 
 #: cdedb/i18n_additional.py:19
 msgid "AssemblyLogCodes.ballot_created"
@@ -164,7 +164,7 @@ msgstr "Candidate removed"
 
 #: cdedb/i18n_additional.py:27
 msgid "AssemblyLogCodes.new_attendee"
-msgstr "New Attendee"
+msgstr "New Participant"
 
 #: cdedb/i18n_additional.py:28
 msgid "AssemblyLogCodes.attachment_added"
@@ -688,83 +688,83 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:175
 msgid "QueryOperators.empty"
-msgstr ""
+msgstr "is empty"
 
 #: cdedb/i18n_additional.py:176
 msgid "QueryOperators.nonempty"
-msgstr ""
+msgstr "is not empty"
 
 #: cdedb/i18n_additional.py:177
 msgid "QueryOperators.equal"
-msgstr ""
+msgstr "equals"
 
 #: cdedb/i18n_additional.py:178
 msgid "QueryOperators.unequal"
-msgstr ""
+msgstr "does not equal"
 
 #: cdedb/i18n_additional.py:179
 msgid "QueryOperators.oneof"
-msgstr ""
+msgstr "is one of"
 
 #: cdedb/i18n_additional.py:180
 msgid "QueryOperators.otherthan"
-msgstr ""
+msgstr "is not one of"
 
 #: cdedb/i18n_additional.py:181
 msgid "QueryOperators.similar"
-msgstr ""
+msgstr "matches pattern"
 
 #: cdedb/i18n_additional.py:182
 msgid "QueryOperators.dissimilar"
-msgstr ""
+msgstr "does not match pattern"
 
 #: cdedb/i18n_additional.py:183
 msgid "QueryOperators.regex"
-msgstr ""
+msgstr "matches POSIX-RegEx"
 
 #: cdedb/i18n_additional.py:184
 msgid "QueryOperators.notregex"
-msgstr ""
+msgstr "does not match POSIX-RegEx"
 
 #: cdedb/i18n_additional.py:185
 msgid "QueryOperators.containsall"
-msgstr ""
+msgstr "contains all of"
 
 #: cdedb/i18n_additional.py:186
 msgid "QueryOperators.containsnone"
-msgstr ""
+msgstr "contains none of"
 
 #: cdedb/i18n_additional.py:187
 msgid "QueryOperators.containssome"
-msgstr ""
+msgstr "contains at least one of"
 
 #: cdedb/i18n_additional.py:188
 msgid "QueryOperators.fuzzy"
-msgstr ""
+msgstr "is similar to"
 
 #: cdedb/i18n_additional.py:189
 msgid "QueryOperators.less"
-msgstr ""
+msgstr "is less than"
 
 #: cdedb/i18n_additional.py:190
 msgid "QueryOperators.lessequal"
-msgstr ""
+msgstr "is less or equal"
 
 #: cdedb/i18n_additional.py:191
 msgid "QueryOperators.between"
-msgstr ""
+msgstr "is between"
 
 #: cdedb/i18n_additional.py:192
 msgid "QueryOperators.outside"
-msgstr ""
+msgstr "is not between"
 
 #: cdedb/i18n_additional.py:193
 msgid "QueryOperators.greaterequal"
-msgstr ""
+msgstr "is greater or equal"
 
 #: cdedb/i18n_additional.py:194
 msgid "QueryOperators.greater"
-msgstr ""
+msgstr "is greater than"
 
 #: cdedb/i18n_additional.py:199
 msgid "day is out of range for month"
@@ -778,7 +778,7 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:36
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:40
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:48
 #: cdedb/frontend/templates/web/cde/change_past_course.tmpl:33
 #: cdedb/frontend/templates/web/cde/change_past_event.tmpl:33
@@ -2574,18 +2574,18 @@ msgid "Members"
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:132
-#: cdedb/frontend/templates/web/generic.tmpl:187
-#: cdedb/frontend/templates/web/generic.tmpl:191
-#: cdedb/frontend/templates/web/generic.tmpl:251
-#: cdedb/frontend/templates/web/generic.tmpl:255
+#: cdedb/frontend/templates/web/generic.tmpl:189
+#: cdedb/frontend/templates/web/generic.tmpl:193
+#: cdedb/frontend/templates/web/generic.tmpl:253
+#: cdedb/frontend/templates/web/generic.tmpl:257
 msgid "Events"
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:137
-#: cdedb/frontend/templates/web/generic.tmpl:186
-#: cdedb/frontend/templates/web/generic.tmpl:190
-#: cdedb/frontend/templates/web/generic.tmpl:250
-#: cdedb/frontend/templates/web/generic.tmpl:254
+#: cdedb/frontend/templates/web/generic.tmpl:188
+#: cdedb/frontend/templates/web/generic.tmpl:192
+#: cdedb/frontend/templates/web/generic.tmpl:252
+#: cdedb/frontend/templates/web/generic.tmpl:256
 msgid "Mailinglists"
 msgstr ""
 
@@ -2594,10 +2594,10 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/index.tmpl:3
 #: cdedb/frontend/templates/web/assembly/index.tmpl:5
 #: cdedb/frontend/templates/web/base.tmpl:142
-#: cdedb/frontend/templates/web/generic.tmpl:188
-#: cdedb/frontend/templates/web/generic.tmpl:192
-#: cdedb/frontend/templates/web/generic.tmpl:252
-#: cdedb/frontend/templates/web/generic.tmpl:256
+#: cdedb/frontend/templates/web/generic.tmpl:190
+#: cdedb/frontend/templates/web/generic.tmpl:194
+#: cdedb/frontend/templates/web/generic.tmpl:254
+#: cdedb/frontend/templates/web/generic.tmpl:258
 msgid "Assemblies"
 msgstr ""
 
@@ -2638,14 +2638,14 @@ msgid "Club der Ehemaligen e.V."
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:199
-#: cdedb/frontend/templates/web/error.tmpl:13
-#: cdedb/frontend/templates/web/error.tmpl:26
+#: cdedb/frontend/templates/web/error.tmpl:12
+#: cdedb/frontend/templates/web/error.tmpl:25
 msgid "Database-Development-Team"
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:200
-#: cdedb/frontend/templates/web/error.tmpl:14
-#: cdedb/frontend/templates/web/error.tmpl:27
+#: cdedb/frontend/templates/web/error.tmpl:13
+#: cdedb/frontend/templates/web/error.tmpl:26
 msgid "CdE-Database-Development-Team"
 msgstr ""
 
@@ -2664,42 +2664,43 @@ msgid ""
 "and describe what You did."
 msgstr ""
 
-#: cdedb/frontend/templates/web/error.tmpl:20
+#: cdedb/frontend/templates/web/error.tmpl:21
 msgid "Couldn't find the requested site:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/error.tmpl:24
+#: cdedb/frontend/templates/web/error.tmpl:25
 #, python-format
 msgid ""
 "If You got here via an internal CdE-Database Link, please constact the "
-"%(team)s at %(mail)s and describe what You did."
+"%(team)s at %(mail)s\n"
+"                and describe what You did."
 msgstr ""
 
-#: cdedb/frontend/templates/web/error.tmpl:31
-#, python-format
-msgid ""
-"Use the navigation bar of your Browser to get back or go to the %(link)s "
-"of the %(db)s"
-msgstr ""
-
-#: cdedb/frontend/templates/web/error.tmpl:32
+#: cdedb/frontend/templates/web/error.tmpl:33
 msgid "Frontpage"
 msgstr ""
 
-#: cdedb/frontend/templates/web/error.tmpl:32
+#: cdedb/frontend/templates/web/error.tmpl:33
+#, python-format
+msgid ""
+"Use the navigation bar of your Browser to get back or go to the %(link)s "
+"of the %(db)s."
+msgstr ""
+
+#: cdedb/frontend/templates/web/error.tmpl:33
 msgid "CdE-Database"
 msgstr ""
 
-#: cdedb/frontend/templates/web/error.tmpl:36
+#: cdedb/frontend/templates/web/error.tmpl:39
 msgid "An unknown Error occurred."
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:8
-#: cdedb/frontend/templates/web/generic.tmpl:91
+#: cdedb/frontend/templates/web/generic.tmpl:93
 msgid "Personal Information"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:21
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:25
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:25
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:14
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:17
@@ -2710,9 +2711,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:20
 #: cdedb/frontend/templates/web/cde/create_past_event.tmpl:28
 #: cdedb/frontend/templates/web/generic.tmpl:9
-#: cdedb/frontend/templates/web/generic.tmpl:92
-#: cdedb/frontend/templates/web/generic.tmpl:155
-#: cdedb/frontend/templates/web/generic.tmpl:219
+#: cdedb/frontend/templates/web/generic.tmpl:94
+#: cdedb/frontend/templates/web/generic.tmpl:157
+#: cdedb/frontend/templates/web/generic.tmpl:221
 msgid "Title"
 msgstr ""
 
@@ -2720,152 +2721,152 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:41
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:10
-#: cdedb/frontend/templates/web/generic.tmpl:93
-#: cdedb/frontend/templates/web/generic.tmpl:153
-#: cdedb/frontend/templates/web/generic.tmpl:217
+#: cdedb/frontend/templates/web/generic.tmpl:95
+#: cdedb/frontend/templates/web/generic.tmpl:155
+#: cdedb/frontend/templates/web/generic.tmpl:219
 msgid "Given Names"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:11
-#: cdedb/frontend/templates/web/generic.tmpl:151
-#: cdedb/frontend/templates/web/generic.tmpl:215
+#: cdedb/frontend/templates/web/generic.tmpl:153
+#: cdedb/frontend/templates/web/generic.tmpl:217
 msgid "Family Name"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:13
-#: cdedb/frontend/templates/web/generic.tmpl:152
-#: cdedb/frontend/templates/web/generic.tmpl:216
+#: cdedb/frontend/templates/web/generic.tmpl:154
+#: cdedb/frontend/templates/web/generic.tmpl:218
 msgid "Birth Name"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
 #: cdedb/frontend/templates/web/generic.tmpl:15
-#: cdedb/frontend/templates/web/generic.tmpl:95
-#: cdedb/frontend/templates/web/generic.tmpl:156
-#: cdedb/frontend/templates/web/generic.tmpl:220
+#: cdedb/frontend/templates/web/generic.tmpl:97
+#: cdedb/frontend/templates/web/generic.tmpl:158
+#: cdedb/frontend/templates/web/generic.tmpl:222
 msgid "Name Affix"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:16
-#: cdedb/frontend/templates/web/generic.tmpl:96
-#: cdedb/frontend/templates/web/generic.tmpl:154
-#: cdedb/frontend/templates/web/generic.tmpl:218
+#: cdedb/frontend/templates/web/generic.tmpl:98
+#: cdedb/frontend/templates/web/generic.tmpl:156
+#: cdedb/frontend/templates/web/generic.tmpl:220
 msgid "First Given Name"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:18
-#: cdedb/frontend/templates/web/generic.tmpl:172
-#: cdedb/frontend/templates/web/generic.tmpl:236
+#: cdedb/frontend/templates/web/generic.tmpl:174
+#: cdedb/frontend/templates/web/generic.tmpl:238
 msgid "Specialisation"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:19
-#: cdedb/frontend/templates/web/generic.tmpl:173
-#: cdedb/frontend/templates/web/generic.tmpl:237
+#: cdedb/frontend/templates/web/generic.tmpl:175
+#: cdedb/frontend/templates/web/generic.tmpl:239
 msgid "School, University, …"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:20
-#: cdedb/frontend/templates/web/generic.tmpl:174
-#: cdedb/frontend/templates/web/generic.tmpl:238
+#: cdedb/frontend/templates/web/generic.tmpl:176
+#: cdedb/frontend/templates/web/generic.tmpl:240
 msgid "Year(s) of Graduation"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:47
 #: cdedb/frontend/templates/web/generic.tmpl:21
-#: cdedb/frontend/templates/web/generic.tmpl:175
-#: cdedb/frontend/templates/web/generic.tmpl:239
+#: cdedb/frontend/templates/web/generic.tmpl:177
+#: cdedb/frontend/templates/web/generic.tmpl:241
 msgid "Interests"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:22
-#: cdedb/frontend/templates/web/generic.tmpl:176
-#: cdedb/frontend/templates/web/generic.tmpl:240
+#: cdedb/frontend/templates/web/generic.tmpl:178
+#: cdedb/frontend/templates/web/generic.tmpl:242
 msgid "Miscellaneous"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:26
-#: cdedb/frontend/templates/web/generic.tmpl:100
-#: cdedb/frontend/templates/web/generic.tmpl:157
-#: cdedb/frontend/templates/web/generic.tmpl:221
+#: cdedb/frontend/templates/web/generic.tmpl:102
+#: cdedb/frontend/templates/web/generic.tmpl:159
+#: cdedb/frontend/templates/web/generic.tmpl:223
 msgid "Gender"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/generic.tmpl:27
-#: cdedb/frontend/templates/web/generic.tmpl:98
-#: cdedb/frontend/templates/web/generic.tmpl:158
-#: cdedb/frontend/templates/web/generic.tmpl:222
+#: cdedb/frontend/templates/web/generic.tmpl:100
+#: cdedb/frontend/templates/web/generic.tmpl:160
+#: cdedb/frontend/templates/web/generic.tmpl:224
 msgid "Birthday"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:30
-#: cdedb/frontend/templates/web/generic.tmpl:103
+#: cdedb/frontend/templates/web/generic.tmpl:105
 msgid "Contact Information"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:62
 #: cdedb/frontend/templates/web/generic.tmpl:31
-#: cdedb/frontend/templates/web/generic.tmpl:104
-#: cdedb/frontend/templates/web/generic.tmpl:149
-#: cdedb/frontend/templates/web/generic.tmpl:213
+#: cdedb/frontend/templates/web/generic.tmpl:106
+#: cdedb/frontend/templates/web/generic.tmpl:151
+#: cdedb/frontend/templates/web/generic.tmpl:215
 msgid "E-Mail"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:63
 #: cdedb/frontend/templates/web/generic.tmpl:33
-#: cdedb/frontend/templates/web/generic.tmpl:106
-#: cdedb/frontend/templates/web/generic.tmpl:159
-#: cdedb/frontend/templates/web/generic.tmpl:223
+#: cdedb/frontend/templates/web/generic.tmpl:108
+#: cdedb/frontend/templates/web/generic.tmpl:161
+#: cdedb/frontend/templates/web/generic.tmpl:225
 msgid "Phone"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:34
-#: cdedb/frontend/templates/web/generic.tmpl:107
-#: cdedb/frontend/templates/web/generic.tmpl:160
-#: cdedb/frontend/templates/web/generic.tmpl:224
+#: cdedb/frontend/templates/web/generic.tmpl:109
+#: cdedb/frontend/templates/web/generic.tmpl:162
+#: cdedb/frontend/templates/web/generic.tmpl:226
 msgid "Mobilephone"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:37
-#: cdedb/frontend/templates/web/generic.tmpl:171
-#: cdedb/frontend/templates/web/generic.tmpl:235
+#: cdedb/frontend/templates/web/generic.tmpl:173
+#: cdedb/frontend/templates/web/generic.tmpl:237
 msgid "WWW"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:65
 #: cdedb/frontend/templates/web/generic.tmpl:41
-#: cdedb/frontend/templates/web/generic.tmpl:109
-#: cdedb/frontend/templates/web/generic.tmpl:161
-#: cdedb/frontend/templates/web/generic.tmpl:225
+#: cdedb/frontend/templates/web/generic.tmpl:111
+#: cdedb/frontend/templates/web/generic.tmpl:163
+#: cdedb/frontend/templates/web/generic.tmpl:227
 msgid "Address"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:42
 #: cdedb/frontend/templates/web/generic.tmpl:50
-#: cdedb/frontend/templates/web/generic.tmpl:110
+#: cdedb/frontend/templates/web/generic.tmpl:112
 msgid "Street"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:43
 #: cdedb/frontend/templates/web/generic.tmpl:51
-#: cdedb/frontend/templates/web/generic.tmpl:111
-#: cdedb/frontend/templates/web/generic.tmpl:162
-#: cdedb/frontend/templates/web/generic.tmpl:226
+#: cdedb/frontend/templates/web/generic.tmpl:113
+#: cdedb/frontend/templates/web/generic.tmpl:164
+#: cdedb/frontend/templates/web/generic.tmpl:228
 msgid "Address Supplement"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:44
 #: cdedb/frontend/templates/web/generic.tmpl:52
-#: cdedb/frontend/templates/web/generic.tmpl:112
+#: cdedb/frontend/templates/web/generic.tmpl:114
 msgid "Zipcode"
 msgstr ""
 
@@ -2873,9 +2874,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:67
 #: cdedb/frontend/templates/web/generic.tmpl:45
 #: cdedb/frontend/templates/web/generic.tmpl:53
-#: cdedb/frontend/templates/web/generic.tmpl:113
-#: cdedb/frontend/templates/web/generic.tmpl:164
-#: cdedb/frontend/templates/web/generic.tmpl:228
+#: cdedb/frontend/templates/web/generic.tmpl:115
+#: cdedb/frontend/templates/web/generic.tmpl:166
+#: cdedb/frontend/templates/web/generic.tmpl:230
 msgid "City"
 msgstr ""
 
@@ -2883,9 +2884,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:68
 #: cdedb/frontend/templates/web/generic.tmpl:46
 #: cdedb/frontend/templates/web/generic.tmpl:54
-#: cdedb/frontend/templates/web/generic.tmpl:114
-#: cdedb/frontend/templates/web/generic.tmpl:165
-#: cdedb/frontend/templates/web/generic.tmpl:229
+#: cdedb/frontend/templates/web/generic.tmpl:116
+#: cdedb/frontend/templates/web/generic.tmpl:167
+#: cdedb/frontend/templates/web/generic.tmpl:231
 msgid "Country"
 msgstr ""
 
@@ -2900,26 +2901,26 @@ msgid "Account"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:59
-#: cdedb/frontend/templates/web/generic.tmpl:184
-#: cdedb/frontend/templates/web/generic.tmpl:248
+#: cdedb/frontend/templates/web/generic.tmpl:186
+#: cdedb/frontend/templates/web/generic.tmpl:250
 msgid "CdE-Member"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:61
-#: cdedb/frontend/templates/web/generic.tmpl:185
-#: cdedb/frontend/templates/web/generic.tmpl:249
+#: cdedb/frontend/templates/web/generic.tmpl:187
+#: cdedb/frontend/templates/web/generic.tmpl:251
 msgid "Searchable"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:63
-#: cdedb/frontend/templates/web/generic.tmpl:181
-#: cdedb/frontend/templates/web/generic.tmpl:245
+#: cdedb/frontend/templates/web/generic.tmpl:183
+#: cdedb/frontend/templates/web/generic.tmpl:247
 msgid "Trial Member"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:65
-#: cdedb/frontend/templates/web/generic.tmpl:182
-#: cdedb/frontend/templates/web/generic.tmpl:246
+#: cdedb/frontend/templates/web/generic.tmpl:184
+#: cdedb/frontend/templates/web/generic.tmpl:248
 msgid "Searchable for BuB"
 msgstr ""
 
@@ -2930,8 +2931,8 @@ msgstr ""
 msgid "Notes"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:23
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:27
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:31
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:27
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:39
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:16
@@ -2953,7 +2954,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/create_user.tmpl:11
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:16
 #: cdedb/frontend/templates/web/generic.tmpl:71
-#: cdedb/frontend/templates/web/generic.tmpl:124
+#: cdedb/frontend/templates/web/generic.tmpl:126
 msgid "Create User"
 msgstr ""
 
@@ -2964,384 +2965,371 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:83
 msgid ""
-"To create Your CdE-Database Account, enter Your data into this form. Then"
-" You can set up Your password. Your Account will be activated shortly."
+"To create Your CdE-Database Account, enter Your data into this form.\n"
+"            Then You can set up Your password. Your Account will be "
+"activated shortly."
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:92
+#: cdedb/frontend/templates/web/generic.tmpl:94
 msgid "Prof., Dr., etc."
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:96
+#: cdedb/frontend/templates/web/generic.tmpl:98
 msgid "What do people call you?"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:116
+#: cdedb/frontend/templates/web/generic.tmpl:118
 msgid "Create Account"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:126
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:12
-#: cdedb/frontend/templates/web/cde/user_search.tmpl:33
-#: cdedb/frontend/templates/web/generic.tmpl:139
+#: cdedb/frontend/templates/web/generic.tmpl:141
 msgid "Result"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:40
-#: cdedb/frontend/templates/web/generic.tmpl:147
-#: cdedb/frontend/templates/web/generic.tmpl:211
+#: cdedb/frontend/templates/web/generic.tmpl:149
+#: cdedb/frontend/templates/web/generic.tmpl:213
 msgid "Fulltext"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
-#: cdedb/frontend/templates/web/generic.tmpl:148
-#: cdedb/frontend/templates/web/generic.tmpl:212
-msgid "ID"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:150
 #: cdedb/frontend/templates/web/generic.tmpl:214
+msgid "ID"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:152
+#: cdedb/frontend/templates/web/generic.tmpl:216
 msgid "Active Account"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:66
-#: cdedb/frontend/templates/web/generic.tmpl:163
-#: cdedb/frontend/templates/web/generic.tmpl:227
 msgid "ZIP"
-msgstr ""
-
-#: cdedb/frontend/templates/web/generic.tmpl:166
-#: cdedb/frontend/templates/web/generic.tmpl:230
-msgid "Address (2)"
-msgstr ""
-
-#: cdedb/frontend/templates/web/generic.tmpl:167
-#: cdedb/frontend/templates/web/generic.tmpl:231
-msgid "Address Supplement (2)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:168
 #: cdedb/frontend/templates/web/generic.tmpl:232
-msgid "ZIP (2)"
+msgid "Address (2)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:169
 #: cdedb/frontend/templates/web/generic.tmpl:233
-msgid "City (2)"
+msgid "Address Supplement (2)"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:170
 #: cdedb/frontend/templates/web/generic.tmpl:234
+msgid "ZIP (2)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:171
+#: cdedb/frontend/templates/web/generic.tmpl:235
+msgid "City (2)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:172
+#: cdedb/frontend/templates/web/generic.tmpl:236
 msgid "Country (2)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:13
-#: cdedb/frontend/templates/web/generic.tmpl:177
-#: cdedb/frontend/templates/web/generic.tmpl:241
 msgid "Past Event"
-msgstr ""
-
-#: cdedb/frontend/templates/web/generic.tmpl:178
-#: cdedb/frontend/templates/web/generic.tmpl:242
-msgid "Past Course"
-msgstr ""
-
-#: cdedb/frontend/templates/web/generic.tmpl:179
-#: cdedb/frontend/templates/web/generic.tmpl:243
-msgid "Membership-Fee Balance"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:180
 #: cdedb/frontend/templates/web/generic.tmpl:244
+msgid "Past Course"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:181
+#: cdedb/frontend/templates/web/generic.tmpl:245
+msgid "Membership-Fee Balance"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:182
+#: cdedb/frontend/templates/web/generic.tmpl:246
 msgid "Searchability Decided"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:26
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:30
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:38
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:19
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:30
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:42
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:97
-#: cdedb/frontend/templates/web/generic.tmpl:183
-#: cdedb/frontend/templates/web/generic.tmpl:247
+#: cdedb/frontend/templates/web/generic.tmpl:185
+#: cdedb/frontend/templates/web/generic.tmpl:249
 msgid "Admin-Notes"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:186
-#: cdedb/frontend/templates/web/generic.tmpl:187
 #: cdedb/frontend/templates/web/generic.tmpl:188
 #: cdedb/frontend/templates/web/generic.tmpl:189
-#: cdedb/frontend/templates/web/generic.tmpl:250
-#: cdedb/frontend/templates/web/generic.tmpl:251
+#: cdedb/frontend/templates/web/generic.tmpl:190
+#: cdedb/frontend/templates/web/generic.tmpl:191
 #: cdedb/frontend/templates/web/generic.tmpl:252
 #: cdedb/frontend/templates/web/generic.tmpl:253
+#: cdedb/frontend/templates/web/generic.tmpl:254
+#: cdedb/frontend/templates/web/generic.tmpl:255
 msgid "Realm"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:189
-#: cdedb/frontend/templates/web/generic.tmpl:193
-#: cdedb/frontend/templates/web/generic.tmpl:253
-#: cdedb/frontend/templates/web/generic.tmpl:257
+#: cdedb/frontend/templates/web/generic.tmpl:191
+#: cdedb/frontend/templates/web/generic.tmpl:195
+#: cdedb/frontend/templates/web/generic.tmpl:255
+#: cdedb/frontend/templates/web/generic.tmpl:259
 msgid "cde_realm"
 msgstr "CdE"
 
-#: cdedb/frontend/templates/web/generic.tmpl:190
-#: cdedb/frontend/templates/web/generic.tmpl:191
 #: cdedb/frontend/templates/web/generic.tmpl:192
 #: cdedb/frontend/templates/web/generic.tmpl:193
 #: cdedb/frontend/templates/web/generic.tmpl:194
 #: cdedb/frontend/templates/web/generic.tmpl:195
-#: cdedb/frontend/templates/web/generic.tmpl:254
-#: cdedb/frontend/templates/web/generic.tmpl:255
+#: cdedb/frontend/templates/web/generic.tmpl:196
+#: cdedb/frontend/templates/web/generic.tmpl:197
 #: cdedb/frontend/templates/web/generic.tmpl:256
 #: cdedb/frontend/templates/web/generic.tmpl:257
 #: cdedb/frontend/templates/web/generic.tmpl:258
 #: cdedb/frontend/templates/web/generic.tmpl:259
+#: cdedb/frontend/templates/web/generic.tmpl:260
+#: cdedb/frontend/templates/web/generic.tmpl:261
 msgid "Admin"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:194
-#: cdedb/frontend/templates/web/generic.tmpl:258
+#: cdedb/frontend/templates/web/generic.tmpl:196
+#: cdedb/frontend/templates/web/generic.tmpl:260
 msgid "Core"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:195
-#: cdedb/frontend/templates/web/generic.tmpl:259
+#: cdedb/frontend/templates/web/generic.tmpl:197
+#: cdedb/frontend/templates/web/generic.tmpl:261
 msgid "Super"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:35
-#: cdedb/frontend/templates/web/generic.tmpl:274
 msgid "Search Mask"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:280
+#: cdedb/frontend/templates/web/generic.tmpl:282
 msgid "Tabular"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:285
+#: cdedb/frontend/templates/web/generic.tmpl:287
 msgid "Magic"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:299
+#: cdedb/frontend/templates/web/generic.tmpl:301
 msgid "show field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:300
+#: cdedb/frontend/templates/web/generic.tmpl:302
 msgid "Fields"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:50
-#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:58
-#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:59
-#: cdedb/frontend/templates/web/generic.tmpl:301
-#: cdedb/frontend/templates/web/generic.tmpl:404
 msgid "Filter"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:316
+#: cdedb/frontend/templates/web/generic.tmpl:318
 msgid "show {}"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:338
+#: cdedb/frontend/templates/web/generic.tmpl:340
 msgid "filter operator for {}"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:351
+#: cdedb/frontend/templates/web/generic.tmpl:353
 msgid "Yes"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:351
+#: cdedb/frontend/templates/web/generic.tmpl:353
 msgid "No"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:352
-#: cdedb/frontend/templates/web/generic.tmpl:357
+#: cdedb/frontend/templates/web/generic.tmpl:354
+#: cdedb/frontend/templates/web/generic.tmpl:359
 msgid "compare value for {}"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:386
+#: cdedb/frontend/templates/web/generic.tmpl:388
 msgid "{} sort key"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:392
+#: cdedb/frontend/templates/web/generic.tmpl:394
 msgid "{} sort order"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:407
+#: cdedb/frontend/templates/web/generic.tmpl:409
 msgid "add filter"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:409
+#: cdedb/frontend/templates/web/generic.tmpl:411
 msgid "field to filter on"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:414
+#: cdedb/frontend/templates/web/generic.tmpl:416
 msgid "Displayed Fields"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:418
+#: cdedb/frontend/templates/web/generic.tmpl:420
 msgid "add displayed field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:421
+#: cdedb/frontend/templates/web/generic.tmpl:423
 msgid "field to add"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:426
+#: cdedb/frontend/templates/web/generic.tmpl:428
 msgid "Sorting"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:430
+#: cdedb/frontend/templates/web/generic.tmpl:432
 msgid "add sort key"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:433
+#: cdedb/frontend/templates/web/generic.tmpl:435
 msgid "sort key to add"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:23
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:73
-#: cdedb/frontend/templates/web/generic.tmpl:442
 msgid "Search"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:445
+#: cdedb/frontend/templates/web/generic.tmpl:447
 msgid "CSV file"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:448
+#: cdedb/frontend/templates/web/generic.tmpl:450
 msgid "JSON file"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:458
+#: cdedb/frontend/templates/web/generic.tmpl:460
 msgid "– add displayed field –"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:459
+#: cdedb/frontend/templates/web/generic.tmpl:461
 msgid "– add filter –"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:460
+#: cdedb/frontend/templates/web/generic.tmpl:462
 msgid "– add sort key –"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:461
+#: cdedb/frontend/templates/web/generic.tmpl:463
 msgid "remove filter"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:462
+#: cdedb/frontend/templates/web/generic.tmpl:464
 msgid "remove field"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:463
+#: cdedb/frontend/templates/web/generic.tmpl:465
 msgid "remove sort key"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:464
+#: cdedb/frontend/templates/web/generic.tmpl:466
 msgid "filter operation"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:465
+#: cdedb/frontend/templates/web/generic.tmpl:467
 msgid "compare value"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:466
+#: cdedb/frontend/templates/web/generic.tmpl:468
 msgid "range start"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:467
+#: cdedb/frontend/templates/web/generic.tmpl:469
 msgid "range end"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:468
+#: cdedb/frontend/templates/web/generic.tmpl:470
 msgid "&ensp;and&ensp;"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:469
+#: cdedb/frontend/templates/web/generic.tmpl:471
 msgid "compare values"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:470
+#: cdedb/frontend/templates/web/generic.tmpl:472
 msgid "sort order"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:485
+#: cdedb/frontend/templates/web/generic.tmpl:473
+msgid "<value>,<value>,..."
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:474
+msgid "<id>,<id>,..."
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:489
 msgid "Default Queries"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:505
-#: cdedb/frontend/templates/web/generic.tmpl:506
+#: cdedb/frontend/templates/web/generic.tmpl:509
+#: cdedb/frontend/templates/web/generic.tmpl:510
 msgid "show in search mask"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:521
+#: cdedb/frontend/templates/web/generic.tmpl:525
 msgid "No search results!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:551
+#: cdedb/frontend/templates/web/generic.tmpl:555
 msgid "select all"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:552
+#: cdedb/frontend/templates/web/generic.tmpl:556
 msgid "all"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:554
+#: cdedb/frontend/templates/web/generic.tmpl:558
 msgid "select none"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:555
+#: cdedb/frontend/templates/web/generic.tmpl:559
 msgid "none"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:557
+#: cdedb/frontend/templates/web/generic.tmpl:561
 msgid "invert selection"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:558
+#: cdedb/frontend/templates/web/generic.tmpl:562
 msgid "invert"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:561
+#: cdedb/frontend/templates/web/generic.tmpl:565
 msgid "filter for selected rows"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:563
+#: cdedb/frontend/templates/web/generic.tmpl:567
 msgid "selected only"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:565
-#: cdedb/frontend/templates/web/generic.tmpl:566
+#: cdedb/frontend/templates/web/generic.tmpl:569
+#: cdedb/frontend/templates/web/generic.tmpl:570
 msgid "widen results table"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:580
+#: cdedb/frontend/templates/web/generic.tmpl:584
 msgid "filtered column"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:587
+#: cdedb/frontend/templates/web/generic.tmpl:591
 msgid "sorted column"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:603
+#: cdedb/frontend/templates/web/generic.tmpl:607
 msgid "row {}"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:608
+#: cdedb/frontend/templates/web/generic.tmpl:612
 msgid "Details"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:137
-#: cdedb/frontend/templates/web/generic.tmpl:611
 msgid "Profile"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:628
+#: cdedb/frontend/templates/web/generic.tmpl:632
 msgid "false"
 msgstr ""
 
-#: cdedb/frontend/templates/web/generic.tmpl:629
+#: cdedb/frontend/templates/web/generic.tmpl:633
 msgid "true"
 msgstr ""
 
@@ -3361,43 +3349,48 @@ msgstr ""
 msgid "{} to"
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:358
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:489
 #: cdedb/frontend/templates/web/util.tmpl:446
-#, python-format
-msgid "Help (%for_this_site)"
+msgid "Help"
 msgstr ""
 
-#: cdedb/frontend/templates/web/util.tmpl:446
+#: cdedb/frontend/templates/web/util.tmpl:450
 msgid "for this site"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:6
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:10
 #, python-format
-msgid "Attach File %(title)s"
+msgid "Attach File (%(title_assembly)s/%(title_ballot)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:16
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:35
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:10
+#, python-format
+msgid "Attach File (%(title)s)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:17
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:38
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:71
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:560
 msgid "Attach File"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:19
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:22
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:230
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:329
 msgid "Ballot"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:23
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:26
 #: cdedb/frontend/templates/web/assembly/base.tmpl:32
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:10
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:14
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:21
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:62
 msgid "Assembly"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:32
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:35
 #: cdedb/frontend/templates/web/assembly/base.tmpl:13
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:12
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:11
@@ -3407,23 +3400,23 @@ msgstr ""
 msgid "Ballots"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:40
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:43
 msgid "Label"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:41
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:44
 msgid "Filename"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:41
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:44
 msgid "Leave empty for current filename."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:42
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:45
 msgid "Only PDFs allowed."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:43
+#: cdedb/frontend/templates/web/assembly/add_attachment.tmpl:46
 msgid "Upload"
 msgstr ""
 
@@ -3435,15 +3428,12 @@ msgid "Overview"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:10
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:15
-#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:33
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:55
 msgid "Participants"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:17
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:9
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:16
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:13
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:20
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:14
 msgid "Configuration"
 msgstr ""
@@ -3468,7 +3458,12 @@ msgstr ""
 msgid "Log"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:22
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:7
+#, python-format
+msgid "Edit %(title)s"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:26
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:26
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:15
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:18
@@ -3482,12 +3477,12 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:24
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:28
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:17
 msgid "Application Deadline"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:31
+#: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:35
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:43
 msgid ""
 "Warning: All changes will be immediately visible to all CdE-Members and "
@@ -3541,7 +3536,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:36
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:28
-msgid "Leave empty for Alternative Vote."
+msgid "Leave empty for Preferential Vote."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:37
@@ -3602,31 +3597,31 @@ msgstr ""
 msgid "Inactive Assemblies"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:5
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:6
 #, python-format
-msgid "Participantlist %(title)s"
+msgid "Participantlist (%(title)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:8
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:12
 msgid "Participantlist"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:23
 msgid "Add external participants"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:23
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:27
 msgid ""
 "Current CdE-Members must register for the assembly themselves. Only "
 "external participants can be added with this form. This is only possible "
 "within the application deadline."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:32
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:36
 msgid "User-ID of the new participant"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:36
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:40
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:118
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:30
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:63
@@ -3634,17 +3629,14 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:42
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:46
 msgid "The user will be added as a participant. This cannot be undone."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:45
-#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:47
-#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:73
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:51
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:55
 #, python-format
 msgid "%(count)s participants total."
 msgstr ""
@@ -3714,33 +3706,33 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:89
 msgid "ballot_file_arialabel"
-msgstr ""
+msgstr "belongs to ballot"
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:104
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:105
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:567
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:119
 msgid "Actions"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:110
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:111
 msgid "Archive"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:112
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:113
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:574
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:126
 msgid "Are You sure?"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:118
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:119
 msgid ""
 "Archives the assembly. Assembly and Ballot configuration cannot be "
 "changed after this.\n"
-"                            The private Keys used to sign the votes will "
-"be deleted from the database."
+"                                The private Keys used to sign the votes "
+"will be deleted from the database."
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:126
+#: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:127
 msgid "The assembly will be permanently archived."
 msgstr ""
 
@@ -3755,12 +3747,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:40
 #, python-format
-msgid "Extension until %(extension)s if Quorum = %(quorum)s is not reached."
+msgid "Extension until %(extension)s if %(quorum)s votes are not reached."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:48
 #, python-format
-msgid "Extended until %(extension)s because Quorum = %(quorum)s was not reached."
+msgid "Extended until %(extension)s because %(quorum)s votes were not reached."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:54
@@ -3963,10 +3955,6 @@ msgstr ""
 msgid "Preferencelist"
 msgstr ""
 
-#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:358
-msgid "Help"
-msgstr ""
-
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:360
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:491
 msgid "<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>"
@@ -3976,7 +3964,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:491
 #, python-format
 msgid ""
-"This vote is an Alternative vote. You can arrange the Candidates in the "
+"This vote is an Preferential Vote. You can arrange the Candidates in the "
 "field above\n"
 "                                    according to Your personal "
 "preference. The preferences of all participants will be\n"
@@ -4092,7 +4080,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:456
-msgid "Increasing preference"
+msgid "Incr. preference"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:472
@@ -5555,3 +5543,43 @@ msgstr ""
 
 #~ msgid "Must continue with digits."
 #~ msgstr ""
+
+#~ msgid "Show"
+#~ msgstr ""
+
+#~ msgid "Course choices will be displayed after first search"
+#~ msgstr ""
+
+#~ msgid "Participantlist %(title)s"
+#~ msgstr ""
+
+#~ msgid "Attach File %(title)s"
+#~ msgstr ""
+
+#~ msgid "Label"
+#~ msgstr ""
+
+#~ msgid "Filename"
+#~ msgstr ""
+
+#~ msgid "Leave empty for current filename."
+#~ msgstr ""
+
+#~ msgid "Only PDFs allowed."
+#~ msgstr ""
+
+#~ msgid "Upload"
+#~ msgstr ""
+
+#~ msgid "Extension until %(extension)s if Quorum = %(quorum)s is not reached."
+#~ msgstr ""
+
+#~ msgid "Help (%for_this_site)"
+#~ msgstr ""
+
+#~ msgid "Attach File (%(title)s"
+#~ msgstr ""
+
+#~ msgid "Edit %(assembly)s"
+#~ msgstr ""
+

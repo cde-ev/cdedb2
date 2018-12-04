@@ -443,6 +443,13 @@
 {% macro doclink(topic, anchor=None) %}
     <a href="{{ docurl(topic, anchor)|e }}" class="btn btn-info btn-lg pull-right" target="_blank">
         {{ make_icon('question-sign') }}
-    {{ gettext("Help (%for_this_site)")|format(for_this_site="<span class='sr-only'>" + gettext("for this site") + "</span>") }}
+    {% trans -%}
+        Help
+    {%- endtrans %}
+    <span class="sr-only">
+        {% trans -%}
+            for this site
+        {%- endtrans %}
+    </span>
     </a>
 {%- endmacro %}

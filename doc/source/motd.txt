@@ -5,8 +5,10 @@ sudo -u cdb psql -U cdb -d cdb
 # i.e. restart backend and frontend)
 cd /cdedb2 && make reload
 
-# run test suite
-cd /cdedb2 && make check
+# run (part of the) test suite; leave out the filename to run everything
+/cdedb2/bin/check.sh test_backend_core.py
+# run a single test (the filename is optional and only to disambiguate)
+/cdedb2/bin/singlecheck.sh test_json_fields_with_dates test_backend_event.py
 
 # list CdEDB log files (most recently changed first)
 ls -lht /log/
