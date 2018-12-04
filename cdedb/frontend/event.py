@@ -1718,6 +1718,11 @@ class EventFrontend(AbstractUserFrontend):
                         const.FieldAssociations.lodgement})
             # Courses' data for each track
             for track_id, track in registration['tracks'].items():
+                event_track = None
+                for part in rs.ambience['event']['parts'].values():
+                    if track_id in part['tracks']:
+                        event_track = part['tracks'][track_id]
+                        break
                 registration.update({
                     'track{}.course.{}'.format(track_id, f):
                         courses[track['course_id']][f]
@@ -1736,7 +1741,8 @@ class EventFrontend(AbstractUserFrontend):
                         'track{}.choice{}.{}'.format(track_id, i, f):
                             courses[choice][f] if choice else ''
                         for f in ('id', 'nr')})
-                for i in range(len(track['choices']), track['num_choices']):
+                for i in range(len(track['choices']),
+                               event_track['num_choices']):
                     registration.update({
                         'track{}.choice{}.{}'.format(track_id, i, f): ''
                         for f in ('id', 'nr')})

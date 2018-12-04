@@ -179,7 +179,8 @@ class TestEventFrontend(FrontendTest):
                       {'href': '/event/event/2/show'},
                       {'href': '/event/event/2/part/summary'})
         f = self.response.forms['partsummaryform']
-        f['track_4_-1'] = "Spätschicht"
+        f['track_title_4_-1'] = "Spätschicht"
+        f['track_shortname_4_-1'] = "Spät"
         f['track_create_4_-1'].checked = True
         self.submit(f)
         self.traverse({'href': '/event/event/2/course/stats'},
@@ -1227,7 +1228,7 @@ etc;anything else""", f['entries_2'].value)
         self.assertEqual(expectation, result)
 
     @as_users("garcia")
-    def test_downlaod_csv(self, user):
+    def test_download_csv(self, user):
         class dialect(csv.Dialect):
             delimiter = ';'
             quotechar = '"'
