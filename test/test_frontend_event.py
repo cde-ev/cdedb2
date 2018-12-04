@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import csv
 import json
+import datetime
 import unittest
 import quopri
 import webtest
 from test.common import as_users, USER_DICT, FrontendTest, nearly_now
 
 from cdedb.query import QueryOperators
+from cdedb.common import now
 
 class TestEventFrontend(FrontendTest):
     @as_users("emilia")
@@ -168,6 +170,73 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("Bertålotta")
+
+    def test_event_visibility(self):
+        # Add a course track, a course and move the registration start to one
+        # week in the future.
+        self.login(USER_DICT['anton'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/part/summary'})
+        f = self.response.forms['partsummaryform']
+        f['track_4_-1'] = "Spätschicht"
+        f['track_create_4_-1'].checked = True
+        self.submit(f)
+        self.traverse({'href': '/event/event/2/course/stats'},
+                      {'href': '/event/event/2/course/create'})
+        f = self.response.forms['createcourseform']
+        f['title'] = "Chillout mit Musik"
+        f['nr'] = "1"
+        f['shortname'] = "music"
+        f['instructors'] = "Giorgio Moroder"
+        self.submit(f)
+        self.traverse({'href': '/event/event/2/change'})
+        f = self.response.forms['changeeventform']
+        f['registration_start'] =\
+            (now() + datetime.timedelta(days=7)).isoformat()
+        self.submit(f)
+
+        # Check visibility for orga
+        self.traverse({'href': '/event/event/2/course/list'})
+        self.assertPresence("Chillout mit Musik")
+        # Check for inexistence of links to event, invisible event page, but
+        # visible course page
+        self.logout()
+        self.login(USER_DICT['emilia'])
+        self.assertNotIn('/event/event/2/show', self.response.text)
+        self.traverse({'href': '/event/$'})
+        self.assertNotIn('/event/event/2/show', self.response.text)
+        self.get('/event/event/2/course/list')
+        self.assertPresence("Chillout mit Musik")
+        self.assertNotIn('/event/event/2/show', self.response.text)
+        self.get('/event/event/2/show', status=403)
+
+        # Now, the other way round: visible event without visible course list
+        self.get('/')
+        self.logout()
+        self.login(USER_DICT['anton'])
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'},
+                      {'href': '/event/event/2/change'})
+        f = self.response.forms['changeeventform']
+        f['is_course_list_visible'] = False
+        f['is_visible'] = True
+        self.submit(f)
+        self.traverse({'href': '/event/event/2/course/list'})
+        self.assertPresence("Chillout mit Musik")
+        self.logout()
+
+        self.login(USER_DICT['emilia'])
+        self.traverse({'href': '/event/event/2/show'})
+        self.traverse({'href': '/event/$'},
+                      {'href': '/event/event/2/show'})
+        self.assertPresence("Let's have a party!")
+        self.assertNotIn('/event/event/2/course/list', self.response.text)
+        self.get('/event/event/2/course/list')
+        self.follow()
+        self.assertPresence("Die Kursliste ist noch nicht öffentlich",
+                            'notifications')
+
 
     @as_users("anton", "garcia")
     def test_part_summary_trivial(self, user):
