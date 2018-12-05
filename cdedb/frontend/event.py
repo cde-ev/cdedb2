@@ -1641,6 +1641,11 @@ class EventFrontend(AbstractUserFrontend):
         lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
         course_ids = self.eventproxy.list_db_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
+        all_tracks = {
+            track_id: track
+            for part in rs.ambience['event']['parts'].values()
+            for track_id, track in part['tracks'].items()
+        }
 
         # Construct CSV columns
         columns = ['id', 'persona.id', 'persona.birthday', 'persona.telephone',
@@ -1718,11 +1723,6 @@ class EventFrontend(AbstractUserFrontend):
                         const.FieldAssociations.lodgement})
             # Courses' data for each track
             for track_id, track in registration['tracks'].items():
-                event_track = None
-                for part in rs.ambience['event']['parts'].values():
-                    if track_id in part['tracks']:
-                        event_track = part['tracks'][track_id]
-                        break
                 registration.update({
                     'track{}.course.{}'.format(track_id, f):
                         courses[track['course_id']][f]
@@ -1742,7 +1742,7 @@ class EventFrontend(AbstractUserFrontend):
                             courses[choice][f] if choice else ''
                         for f in ('id', 'nr')})
                 for i in range(len(track['choices']),
-                               event_track['num_choices']):
+                               all_tracks[track_id]['num_choices']):
                     registration.update({
                         'track{}.choice{}.{}'.format(track_id, i, f): ''
                         for f in ('id', 'nr')})
