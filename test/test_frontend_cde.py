@@ -122,7 +122,7 @@ class TestCdEFrontend(FrontendTest):
     def test_member_search_one(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
-        self.assertTitle("Mitgliedersuche")
+        self.assertTitle("CdE-Mitglied suchen")
         f = self.response.forms['membersearchform']
         f['qval_family_name,birth_name'] = "Beispiel"
         self.submit(f)
@@ -133,7 +133,7 @@ class TestCdEFrontend(FrontendTest):
     def test_member_search_accents(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
-        self.assertTitle("Mitgliedersuche")
+        self.assertTitle("CdE-Mitglied suchen")
         f = self.response.forms['membersearchform']
         f['qval_given_names,display_name'] = "Berta"
         self.submit(f)
@@ -144,7 +144,7 @@ class TestCdEFrontend(FrontendTest):
     def test_member_search(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
-        self.assertTitle("Mitgliedersuche")
+        self.assertTitle("CdE-Mitglied suchen")
         f = self.response.forms['membersearchform']
         f['qval_pevent_id'] = 1
         self.submit(f)
@@ -154,11 +154,11 @@ class TestCdEFrontend(FrontendTest):
     def test_member_search_fulltext(self, user):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/search/member'})
-        self.assertTitle("Mitgliedersuche")
+        self.assertTitle("CdE-Mitglied suchen")
         f = self.response.forms['membersearchform']
         f['qval_fulltext'] = "876 @example.cde"
         self.submit(f)
-        self.assertTitle("Mitgliedersuche")
+        self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("2 Mitglieder gefunden")
         self.assertPresence("Anton")
         self.assertPresence("Bertålotta")
@@ -718,7 +718,7 @@ class TestCdEFrontend(FrontendTest):
 
         ## validate
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Vergangene Veranstaltungen")
+        self.assertTitle("Verg. Veranstaltungen")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
         self.assertNonPresence("Willy Brandt")
@@ -771,7 +771,7 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
 
         ## second round
-        self.assertPresence("Abschicken")
+        self.assertPresence("Bestätigen")
         self.assertNonPresence("Validieren")
         f = self.response.forms['transfersform']
         self.assertTrue(f['checksum'].value)
@@ -979,13 +979,13 @@ class TestCdEFrontend(FrontendTest):
     @as_users("anton")
     def test_list_past_events(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Vergangene Veranstaltungen")
+        self.assertTitle("Verg. Veranstaltungen")
         self.assertPresence("PfingstAkademie")
 
     @as_users("anton")
     def test_show_past_event_course(self, user):
         self.traverse({'href': '/cde/$'}, {'href': '/past/event/list'})
-        self.assertTitle("Vergangene Veranstaltungen")
+        self.assertTitle("Verg. Veranstaltungen")
         self.assertPresence("PfingstAkademie")
         self.traverse({'href': '/past/event/1/show'})
         self.assertTitle("PfingstAkademie 2014")
@@ -1015,7 +1015,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/past/event/list'},
                       {'href': '/past/event/create'})
-        self.assertTitle("Veranstaltung anlegen")
+        self.assertTitle("Verg. Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Link Academy II"
         f['shortname'] = "link"
@@ -1032,7 +1032,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/past/event/list'},
                       {'href': '/past/event/create'})
-        self.assertTitle("Veranstaltung anlegen")
+        self.assertTitle("Verg. Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Link Academy II"
         f['shortname'] = "link"
@@ -1072,7 +1072,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/past/event/list'},
                       {'href': '/past/event/1/show'},
                       {'href': '/past/event/1/course/create'},)
-        self.assertTitle("Kurs hinzufügen (PfingstAkademie 2014)")
+        self.assertTitle("Kurs anlegen (PfingstAkademie 2014)")
         f = self.response.forms['createcourseform']
         f['nr'] = "42"
         f['title'] = "Abstract Nonsense"
@@ -1087,7 +1087,7 @@ class TestCdEFrontend(FrontendTest):
                       {'href': '/past/event/list'},
                       {'href': '/past/event/1/show'},
                       {'href': '/past/event/1/course/create'},)
-        self.assertTitle("Kurs hinzufügen (PfingstAkademie 2014)")
+        self.assertTitle("Kurs anlegen (PfingstAkademie 2014)")
         f = self.response.forms['createcourseform']
         f['nr'] = "42"
         f['title'] = "Abstract Nonsense"
@@ -1150,13 +1150,13 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/past/log'})
-        self.assertTitle("Log: Vergangene Veranstaltungen [0–8]")
+        self.assertTitle("Verg. Veranstaltungen Log [0–8]")
         f = self.response.forms['logshowform']
         f['codes'] = [1, 10, 21]
         f['start'] = 1
         f['stop'] = 10
         self.submit(f)
-        self.assertTitle("Log: Vergangene Veranstaltungen [1–4]\n")
+        self.assertTitle("Verg. Veranstaltungen Log [1–4]\n")
 
     def test_cde_log(self):
         ## First: generate data
@@ -1166,7 +1166,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/log'})
-        self.assertTitle("Log: CdE allgemein [0–0]")
+        self.assertTitle("CdE Log [0–0]")
 
     def test_finance_log(self):
         ## First: generate data
@@ -1176,7 +1176,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT['anton'])
         self.traverse({'href': '/cde/$'},
                       {'href': '/cde/finances'})
-        self.assertTitle("Log: Finanzen [0–2]")
+        self.assertTitle("Finanz Log [0–2]")
 
     @as_users("anton")
     def test_changelog_meta(self, user):

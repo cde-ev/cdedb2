@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-11-28 21:15+0100\n"
+"POT-Creation-Date: 2018-12-04 17:06+0100\n"
 "PO-Revision-Date: 2016-11-24 16:06+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: en\n"
@@ -2950,7 +2950,6 @@ msgid "Supports reStructuredText"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/create_user.tmpl:11
-#: cdedb/frontend/templates/web/cde/create_user.tmpl:7
 #: cdedb/frontend/templates/web/cde/create_user.tmpl:11
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:16
 #: cdedb/frontend/templates/web/generic.tmpl:71
@@ -2983,15 +2982,19 @@ msgid "Create Account"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:126
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:12
+#: cdedb/frontend/templates/web/cde/user_search.tmpl:33
 #: cdedb/frontend/templates/web/generic.tmpl:141
 msgid "Result"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:40
 #: cdedb/frontend/templates/web/generic.tmpl:149
 #: cdedb/frontend/templates/web/generic.tmpl:213
 msgid "Fulltext"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:150
 #: cdedb/frontend/templates/web/generic.tmpl:214
 msgid "ID"
@@ -3002,6 +3005,9 @@ msgstr ""
 msgid "Active Account"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:66
+#: cdedb/frontend/templates/web/generic.tmpl:165
+#: cdedb/frontend/templates/web/generic.tmpl:229
 msgid "ZIP"
 msgstr ""
 
@@ -3030,6 +3036,9 @@ msgstr ""
 msgid "Country (2)"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:13
+#: cdedb/frontend/templates/web/generic.tmpl:179
+#: cdedb/frontend/templates/web/generic.tmpl:243
 msgid "Past Event"
 msgstr ""
 
@@ -3102,6 +3111,8 @@ msgstr ""
 msgid "Super"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:35
+#: cdedb/frontend/templates/web/generic.tmpl:276
 msgid "Search Mask"
 msgstr ""
 
@@ -3121,6 +3132,11 @@ msgstr ""
 msgid "Fields"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:50
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:58
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:59
+#: cdedb/frontend/templates/web/generic.tmpl:303
+#: cdedb/frontend/templates/web/generic.tmpl:406
 msgid "Filter"
 msgstr ""
 
@@ -3185,6 +3201,9 @@ msgstr ""
 msgid "sort key to add"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/index.tmpl:23
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:73
+#: cdedb/frontend/templates/web/generic.tmpl:444
 msgid "Search"
 msgstr ""
 
@@ -3249,11 +3268,11 @@ msgid "sort order"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:473
-msgid "<value>,<value>,..."
+msgid "<value>,<value>,…"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:474
-msgid "<id>,<id>,..."
+msgid "<id>,<id>,…"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:489
@@ -3322,6 +3341,8 @@ msgstr ""
 msgid "Details"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:134
+#: cdedb/frontend/templates/web/generic.tmpl:615
 msgid "Profile"
 msgstr ""
 
@@ -3423,11 +3444,13 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base.tmpl:7
 #: cdedb/frontend/templates/web/assembly/base.tmpl:38
 #: cdedb/frontend/templates/web/cde/base.tmpl:10
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:9
 msgid "Overview"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:10
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:33
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:55
 msgid "Participants"
 msgstr ""
 
@@ -3633,6 +3656,9 @@ msgstr ""
 msgid "The user will be added as a participant. This cannot be undone."
 msgstr ""
 
+#: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:49
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:47
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:73
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr ""
 
@@ -4256,8 +4282,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/base.tmpl:24
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:8
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:21
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:6
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:15
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:12
 msgid "Direct Debit Authorizations"
 msgstr ""
 
@@ -4498,6 +4523,10 @@ msgid ""
 "                        viewing the list of past Events."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/create_user.tmpl:7
+msgid "Create New Member"
+msgstr ""
+
 #: cdedb/frontend/templates/web/cde/index.tmpl:4
 msgid "CdE-Member Area"
 msgstr ""
@@ -4646,14 +4675,14 @@ msgid "Edit Direct Debit Authorization"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:23
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:91
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:88
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:51
 msgid "Member"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:25
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:37
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:93
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:90
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:63
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:113
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
@@ -4682,11 +4711,15 @@ msgstr ""
 msgid "Account holder (if different)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:21
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:6
+msgid "Direct Debit Authorizations Overview"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:18
 msgid "This Direct Debit will be skipped for this semster. This cannot be undone."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:22
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:19
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:27
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:28
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:32
@@ -4694,20 +4727,20 @@ msgstr ""
 msgid "This action cannot be undone."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:24
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:21
 msgid "Direct Debits will be created and SEPA file created."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:26
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:23
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:30
 msgid "Direct Debit will be created and SEPA file created."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:28
 msgid "Open Direct Debit Authorizations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:34
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:31
 msgid ""
 "During the Semester – as early as possible, but not before the Payment "
 "Reqeusts/Information are sent – the\n"
@@ -4716,29 +4749,29 @@ msgid ""
 "            banking software."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:54
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:51
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:94
 msgid "Perform Direct Debit"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:61
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:58
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:100
 msgid "Skip Direct Debit"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:66
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:63
 msgid "No Direct Debits to perform this Semester."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:73
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:70
 msgid "Perform all Direct Debits"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:76
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:73
 msgid "Open Direct Debits"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:79
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:76
 msgid ""
 "The following Direct Debits are pending. As soon as they are executed, "
 "enter whether they were\n"
@@ -4747,34 +4780,34 @@ msgid ""
 "                authorization will be considered revoked."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:92
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:89
 msgid "Date"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:112
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:109
 msgid "All selected:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:113
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:110
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:140
 msgid "Success"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:114
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:111
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:149
 msgid "Failed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:115
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:112
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:158
 msgid "Cancelled"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:119
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:116
 msgid "There are currently no Direct Debits pending."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:124
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:121
 msgid "All active Authorizations"
 msgstr ""
 
@@ -5581,5 +5614,11 @@ msgstr ""
 #~ msgstr ""
 
 #~ msgid "Edit %(assembly)s"
+#~ msgstr ""
+
+#~ msgid "<value>,<value>,..."
+#~ msgstr ""
+
+#~ msgid "<id>,<id>,..."
 #~ msgstr ""
 
