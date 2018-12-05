@@ -4387,9 +4387,6 @@ msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
 #~ msgid "You do not have sufficient permissions to access this site:"
 #~ msgstr ""
 
-#~ msgid ""
-#~ msgstr ""
-
 #~ msgid "Couldn't find the requested site: "
 #~ msgstr ""
 
