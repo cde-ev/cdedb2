@@ -97,7 +97,7 @@ class BaseApp(metaclass=abc.ABCMeta):
             lambda target, name, param:
             decode_parameter(secrets.URL_PARAMETER_SALT, target, name, param))
         def local_encode(target, name, param,
-                         timeout=self.conf.ONLINE_PARAMETER_TIMEOUT):
+                         timeout=self.conf.PARAMETER_TIMEOUT):
             return encode_parameter(secrets.URL_PARAMETER_SALT, target, name,
                                     param, timeout=timeout)
         self.encode_parameter = local_encode
@@ -121,7 +121,9 @@ class BaseApp(metaclass=abc.ABCMeta):
         nparams = nparams or {}
         message = "{}--{}--{}--{}".format(ntype, len(nmessage), nmessage,
                                           json_serialize(nparams))
-        return self.encode_parameter('_/notification', 'displaynote', message)
+        return self.encode_parameter(
+            '_/notification', 'displaynote', message,
+            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT)
 
     def decode_notification(self, note):
         """Inverse wrapper to :py:meth:`encode_notification`.
@@ -1263,7 +1265,8 @@ def access(*roles, modi=None):
                 if rs.user.roles == {"anonymous"}:
                     params = {
                         'wants': rs._coders['encode_parameter'](
-                            "core/index", "wants", rs.request.url),
+                            "core/index", "wants", rs.request.url,
+                            timeout=None),
                         }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     notifications = json_serialize([

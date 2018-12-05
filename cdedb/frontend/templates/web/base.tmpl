@@ -48,7 +48,8 @@
                               style="display: inline;">
                             {% if request_url %}
                                 <input type="hidden" name="wants"
-                                       value="{{ encode_parameter("core/change_locale", "wants", request_url)|e }}" />
+                                       value="{{ encode_parameter("core/change_locale", "wants", request_url,
+                                                                  timeout=None)|e }}" />
                             {% endif %}
                             {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
                                               'en': ("English", "Switch to English"),} %}

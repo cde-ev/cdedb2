@@ -137,7 +137,8 @@ class Application(BaseApp):
                 if sessionkey and not data["persona_id"]:
                     params = {
                         'wants': self.encode_parameter(
-                            "core/index", "wants", request.url),}
+                            "core/index", "wants", request.url,
+                            timeout=self.conf.UNCRITICAL_PARAMETER_TIMEOUT),}
                     ret = construct_redirect(request,
                                              urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
