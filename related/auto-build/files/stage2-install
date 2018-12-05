@@ -56,7 +56,7 @@ echo 'slapd slapd/password1 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' |
 echo 'slapd slapd/password2 password s1n2t3h4d5i6u7e8o9a0s1n2t3h4d5i6u7e8o9a0' | debconf-set-selections
 
 apt-get -y install --no-install-recommends                          \
-    openssh-server sudo git file mc emacs-nox vim htop make         \
+    openssh-server sudo git file mc emacs-nox vim htop make gettext \
     apache2 libapache2-mod-wsgi-py3 fail2ban                        \
     slapd ldap-utils                                                \
     postgresql-client postgresql postgresql-contrib pgbouncer       \
