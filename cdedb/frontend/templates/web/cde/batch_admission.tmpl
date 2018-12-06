@@ -49,16 +49,7 @@
                        _("Country"), _("Phone number"), _("Mobilephone number"), _("E-Mail"), _("Birthday"))}}
         </pre>
         <p class="help-block">
-            {% if True %}
-                {% trans -%}For Gender enter 1 for male, 2 for female, 3 for other and 0 for not specified.{%- endtrans %}
-            {% else %}
-            {% trans -%}For Gender enter {%- endtrans %}
-                {% for gender in enums['Genders'].__members__.values() -%}
-                    {% trans val=gender.value, name=gettext(gender|string)-%}{{ val }} for {{ name }}{%- endtrans -%}
-                    {%- if not loop.last %}, {% endif -%}
-                {%- endfor -%}
-            {%- trans -%}for_gender_enter_part2{%- endtrans %}
-            {% endif %}
+            {% trans -%}For Gender enter 1 for male, 2 for female, 3 for other and 0 for not specified.{%- endtrans %}
         </p>
 
         {{ ba_submit_button() }}
