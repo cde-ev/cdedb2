@@ -9,7 +9,7 @@ Sollte ein Thema zu stiefmütterlich behandelt sein, freuen wir uns stets
 über Anregungen an cdedb ät lists.cde-ev.de.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    Handbuch_Orga_Hinweise
    Handbuch_Veranstaltungsleitfaden
