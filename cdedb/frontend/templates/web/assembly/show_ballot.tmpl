@@ -136,10 +136,14 @@
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
                             {% if result['counts'] %}
-                                ({{result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e}}
-                                 Stimmen)
+                                {% set candidate_moniker = ambience['ballot']['condidates'][candidate_id]['moniker'] %}
+                                {% trans count=result[candidate_moniker]|e -%}
+                                    ({{ count }} votes)
+                                {%- endtrans %}
                             {% endif %}
-                            {% if not loop.last %}<br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>{% endif %}
+                            {% if not loop.last %}
+                                <br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>
+                            {% endif %}
                         {% endfor %}
                     </li>
                 {% endfor %}
@@ -167,11 +171,14 @@
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
                             {% if result['counts'] %}
-                                {% trans count=result['counts'][ambience['ballot']['candidates'][candidate_id]['moniker']]|e -%}
+                                {% set candidate_moniker = ambience['ballot']['condidates'][candidate_id]['moniker'] %}
+                                {% trans count=result[candidate_moniker]|e -%}
                                     ({{ count }} votes)
                                 {%- endtrans %}
                             {% endif %}
-                            {% if not loop.last %}<br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>{% endif %}
+                            {% if not loop.last %}
+                                <br /><span class="sr-only">{% trans -%}and{%- endtrans %}</span>
+                            {% endif %}
                         {% endfor %}
                     </li>
                 {% endfor %}
@@ -181,7 +188,37 @@
         <h4>{% trans -%}Summary{%- endtrans %}</h4>
         {% if not ambience['ballot']['votes'] %}
             <pre style="max-width: 500px;">{{ result['result']|e }}</pre>
+
+            {# info box for preferential votes #}
+            {% call util.bootstrap_panel(title=gettext("Help"), icon='info-sign', aclass='panel-default mosp') %}
+                <p>
+                    {% trans link=gettext("<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>") -%}
+                        This vote was a Preferential Vote. Voters arranged the candidates according to their preference.
+                        The preferences of all participants were evaluated using the {{ link }},
+                        to determine the winner.
+                    {%- endtrans %}
+                </p>
+                <p>
+                    {% trans  gt="<code>></code>", eq="<code>=</code>" -%}
+                        The summary shows the combined preference list of all participant.
+                        The Greater-Than character {{ gt }} means that the Candidate, represented by their
+                        shortname, on the left has higher overall preference than the one on the right.
+                        The Equals character {{ eq }} means that two or more Candidates have the same overall
+                        preference across all participants.
+                    {%- endtrans %}
+                </p>
+                {% if ambience['ballot']['use_bar'] %}
+                    <p>
+                        {% trans abm="<code>%(abm)s</code>"|format(abm=ASSEMBLY_BAR_MONIKER|e) -%}
+                            Additionally the moniker {{ abm }} shows where in the Rejection Bar was ranked in the
+                            overall preference list.
+                            Should no Candidate have won against the bar, the board may take additional measures.
+                        {%- endtrans %}
+                    </p>
+                {% endif %}
+            {% endcall %}
         {% endif %}
+
         <p>{{ util.href(cdedblink("assembly/get_result"), gettext("Download results"), icon="download")}}</p>
         
         <h3>{% trans -%}Your vote{%- endtrans %}</h3>
