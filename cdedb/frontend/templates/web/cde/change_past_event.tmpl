@@ -3,13 +3,17 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}{{ ambience['pevent']['title']|e }} bearbeiten{% endblock %}
+{% block title %}
+    {% trans pevent=ambience['pevent']['title']|e -%}
+        Edit {{ pevent }}
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
         ambience['pevent']['title']|e, icon="calendar") }}
-{{ util.breadcrumb_link(cdedblink("cde/change_past_event_form", {"pevent_id": ambience['pevent']['id']}), "Bearbeiten",
+{{ util.breadcrumb_link(cdedblink("cde/change_past_event_form", {"pevent_id": ambience['pevent']['id']}), gettext("Edit"),
         active=True) }}
 {% endblock %}
 {% block content %}
@@ -20,12 +24,12 @@
     </script>
     <form action="{{ cdedblink('cde/change_past_event')|e }}" method="POST" id="changeeventform"
             class="form-horizontal">
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_text(name="shortname", label="Kürzel") }}
-        {{ util.form_input_select(name="institution", label="Organisation", entries=institutions|dictsort) }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                                    info="Unterstützt reStructuredText") }}
-        {{ util.form_input_text(name="tempus", label="Stichtag") }}
-        {{ util.form_input_submit(value="Speichern", cancellink=cdedblink("cde/show_past_event")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
+        {{ util.form_input_text(name="tempus", label=gettext("Cutoff date")) }}
+        {{ util.form_input_submit(value=gettext("Save"), cancellink=cdedblink("cde/show_past_event")) }}
     </form>
 {% endblock %}

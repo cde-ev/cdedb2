@@ -3,11 +3,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Veranstaltung anlegen{% endblock %}
+{% block title %}{% trans -%}Create Past Event{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen") }}
-{{ util.breadcrumb_link(cdedblink("cde/create_past_event"), "verg. Veranstaltung anlegen", active=True) }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
+{{ util.breadcrumb_link(cdedblink("cde/create_past_event"), gettext("Create Past Event"), active=True) }}
 {% endblock %}
 {% block content %}
     <script type="text/javascript">
@@ -17,22 +17,24 @@
     </script>
     <form action="{{ cdedblink('cde/create_past_event')|e }}" method="POST" id="createeventform"
         class="form-horizontal">
-        {{ util.form_input_text(name="title", label="Titel") }}
-        {{ util.form_input_text(name="shortname", label="Kürzel") }}
-        {{ util.form_input_select(name="institution", label="Organisation", entries=institutions|dictsort) }}
-        {{ util.form_input_textarea(name="description", label="Beschreibung", rows="5",
-                                    info="Unterstützt reStructuredText") }}
-        {{ util.form_input_text(name="tempus", label="Stichtag", type="date", placeholder="YYYY-MM-DD") }}
-        {{ util.form_input_textarea(name="courses", label="Kurse",
-                               info='Hier einen Kurs pro Zeile im Format "Nummer";"Titel";"Beschreibung" eingeben.') }}
+        {{ util.form_input_text(name="title", label=gettext("Title")) }}
+        {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
+        {{ util.form_input_select(name="institution", label=gettext("Institution"), entries=institutions|dictsort) }}
+        {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="5",
+                                    info=gettext("Supports reStructuredText")) }}
+        {{ util.form_input_text(name="tempus", label=gettext("Cutoff date"), type="date", placeholder="YYYY-MM-DD") }}
+        {{ util.form_input_textarea(name="courses", label=gettext("Courses"),
+                               info=gettext('Enter one Course per line in the format: "%(number)s";"%(title)s";"%(desc)s".')|
+                                    format(number=gettext("Number"), title=gettext("Title"), desc=gettext("Description"))) }}
         <div class="form-group">
             <div class="col-sm-offset-4 col-sm-8">
                 <div class="form-control-static text-info">
-                    {{ util.make_icon('info-sign') }} Achtung: Die neue Veranstaltung ist direkt für alle CdE-Mitglieder
-                    in der Liste der verg. Veranstaltungen sichtbar.
+                    {{ util.make_icon('info-sign') }} 
+                    {% trans -%}Warning: The new Event will be immediately visible to all CdE-Members
+                        viewing the list of past Events.{%- endtrans %}
                 </div>
             </div>
         </div>
-        {{ util.form_input_submit(value="Anlegen", cancellink=cdedblink("cde/list_past_events")) }}
+        {{ util.form_input_submit(value=gettext("Create"), cancellink=cdedblink("cde/list_past_events")) }}
     </form>
 {% endblock %}

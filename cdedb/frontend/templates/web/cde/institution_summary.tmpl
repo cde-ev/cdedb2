@@ -3,10 +3,10 @@
 {% import "web/util.tmpl" as util with context %}
 {% set jshint='strong' %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{{ util.cdedb_script('dynamicrow') }}{% endblock %}
-{% block title %}Organisationen der verg. Veranstaltungen verwalten{% endblock %}
+{% block title %}{% trans -%}Manage Institutions of past Events{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/institution_summary"), "Organisationen verwalten", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/institution_summary"), gettext("Manage Institutions"), active="True") }}
 {% endblock %}
 {# Macro for a general institution row, that can have each role in the DynamicRow workflow.
    non-deletable rows have a disabled 'delete'-checkbox,
@@ -16,21 +16,21 @@
     <tr class="{{ aclass }}" role="group" aria-label="Institution {{ institution_id }}">
         <td>
             {{ util.input_text('title_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="title_"' if newrow else ''), arialabel="Name") }}
+                    attributes=('data-basename="title_"' if newrow else ''), arialabel=gettext("Name")) }}
             {{ util.output_errors('title_{}'.format(institution_id)) }}
         </td>
         <td>
             {{ util.input_text('moniker_{}'.format(institution_id), aclass='drow-input form-control',
-                    attributes=('data-basename="moniker_"' if newrow else ''), arialabel="Kürzel") }}
+                    attributes=('data-basename="moniker_"' if newrow else ''), arialabel=gettext("Shortname")) }}
             {{ util.output_errors('moniker_{}'.format(institution_id)) }}
         </td>
         <td>
             <span class="drow-buttonspace">
                 {% if newrow %}
-                    {{ util.input_checkbox("create_{}".format(institution_id), label="Hinzufügen",
+                    {{ util.input_checkbox("create_{}".format(institution_id), label=gettext("Add"),
                                            attributes='data-basename="create_"', aclass='drow-indicator')}}
                 {% else %}
-                    {{ util.input_checkbox("delete_{}".format(institution_id), label="Löschen",
+                    {{ util.input_checkbox("delete_{}".format(institution_id), label=gettext("Delete"),
                                            readonly=not deletable, aclass='drow-indicator') }}
                 {% endif %}
             </span>
@@ -44,14 +44,14 @@
         $(function() {
             $('#drow-table').cdedbDynamicRow({
                 addButton: $('#drow-addbutton'),
-                delButtonTitle: "Zeile löschen"});
+                delButtonTitle: "{{ gettext("Delete line") }}"});
             $('#institutionsummaryform').cdedbProtectChanges();
         });
     </script>
     <form action="{{ cdedblink('cde/institution_summary')|e }}" method="POST" id="institutionsummaryform">
         <table class="table table-condensed" id="drow-table">
             <thead>
-                <tr><th>Name</th><th>Kürzel</th><th></th></tr>
+                <tr><th>{% trans -%}Name{%- endtrans %}</th><th>{% trans -%}Shortname{%- endtrans %}</th><th></th></tr>
             </thead>
             <tbody>
                 {# Old items, already stored in the database #}
@@ -70,9 +70,9 @@
         </table>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} Organisation hinzufügen
+                {{ util.make_icon('plus') }} {% trans -%}Add Institution{%- endtrans %}
             </button>
         </p>
-        {{ util.input_submit(value="Speichern", readonly=is_locked) }}
+        {{ util.input_submit(value=gettext("Save"), readonly=is_locked) }}
     </form>
 {% endblock %}

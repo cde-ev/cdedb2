@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
 "POT-Creation-Date: 2018-12-06 21:23+0100\n"
-"PO-Revision-Date: 2017-12-10 13:36+0100\n"
+"PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -576,23 +576,23 @@ msgstr "Alle moderiert"
 
 #: cdedb/i18n_additional.py:143
 msgid "PastEventLogCodes.event_created"
-msgstr "Abg. Veranstaltung erstellt"
+msgstr "Verg. Veranstaltung erstellt"
 
 #: cdedb/i18n_additional.py:144
 msgid "PastEventLogCodes.event_changed"
-msgstr "Abg. Veranstaltung geändert"
+msgstr "Verg. Veranstaltung geändert"
 
 #: cdedb/i18n_additional.py:145
 msgid "PastEventLogCodes.course_created"
-msgstr "Abg. Kurs erstellt"
+msgstr "Verg. Kurs erstellt"
 
 #: cdedb/i18n_additional.py:146
 msgid "PastEventLogCodes.course_changed"
-msgstr "Abg. Kurs geändert"
+msgstr "Verg. Kurs geändert"
 
 #: cdedb/i18n_additional.py:147
 msgid "PastEventLogCodes.course_deleted"
-msgstr "Abg. Kurs gelöscht"
+msgstr "Verg. Kurs gelöscht"
 
 #: cdedb/i18n_additional.py:148
 msgid "PastEventLogCodes.participant_added"
@@ -780,6 +780,10 @@ msgstr "Abbrechen"
 
 #: cdedb/frontend/templates/web/assembly/change_assembly.tmpl:40
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:48
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:33
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:33
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:76
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:33
 #: cdedb/i18n_additional.py:206
 msgid "Save"
 msgstr "Speichern"
@@ -2572,6 +2576,10 @@ msgid "Index"
 msgstr "Index"
 
 #: cdedb/frontend/templates/web/base.tmpl:127
+#: cdedb/frontend/templates/web/cde/base.tmpl:5
+#: cdedb/frontend/templates/web/cde/base.tmpl:8
+#: cdedb/frontend/templates/web/cde/index.tmpl:9
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:25
 msgid "Members"
 msgstr "Mitglieder"
 
@@ -2714,6 +2722,12 @@ msgstr "Person"
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:25
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:14
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:17
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:30
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:27
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:28
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:20
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:28
 #: cdedb/frontend/templates/web/generic.tmpl:9
 #: cdedb/frontend/templates/web/generic.tmpl:94
 #: cdedb/frontend/templates/web/generic.tmpl:157
@@ -2721,6 +2735,9 @@ msgstr "Person"
 msgid "Title"
 msgstr "Titel"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:41
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:10
 #: cdedb/frontend/templates/web/generic.tmpl:95
 #: cdedb/frontend/templates/web/generic.tmpl:155
@@ -2728,18 +2745,22 @@ msgstr "Titel"
 msgid "Given Names"
 msgstr "Vorname(n)"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:11
 #: cdedb/frontend/templates/web/generic.tmpl:153
 #: cdedb/frontend/templates/web/generic.tmpl:217
 msgid "Family Name"
 msgstr "Nachname"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:13
 #: cdedb/frontend/templates/web/generic.tmpl:154
 #: cdedb/frontend/templates/web/generic.tmpl:218
 msgid "Birth Name"
 msgstr "Geburtsname"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
 #: cdedb/frontend/templates/web/generic.tmpl:15
 #: cdedb/frontend/templates/web/generic.tmpl:97
 #: cdedb/frontend/templates/web/generic.tmpl:158
@@ -2772,6 +2793,7 @@ msgstr "Schule, Uni, …"
 msgid "Year(s) of Graduation"
 msgstr "Jahrgang, Matrikel, …"
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:47
 #: cdedb/frontend/templates/web/generic.tmpl:21
 #: cdedb/frontend/templates/web/generic.tmpl:177
 #: cdedb/frontend/templates/web/generic.tmpl:241
@@ -2784,6 +2806,7 @@ msgstr "Interessen"
 msgid "Miscellaneous"
 msgstr "Sonstiges"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:26
 #: cdedb/frontend/templates/web/generic.tmpl:102
 #: cdedb/frontend/templates/web/generic.tmpl:159
@@ -2791,6 +2814,7 @@ msgstr "Sonstiges"
 msgid "Gender"
 msgstr "Geschlecht"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
 #: cdedb/frontend/templates/web/generic.tmpl:27
 #: cdedb/frontend/templates/web/generic.tmpl:100
 #: cdedb/frontend/templates/web/generic.tmpl:160
@@ -2803,6 +2827,8 @@ msgstr "Geburtstag"
 msgid "Contact Information"
 msgstr "Kontakt"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:62
 #: cdedb/frontend/templates/web/generic.tmpl:31
 #: cdedb/frontend/templates/web/generic.tmpl:106
 #: cdedb/frontend/templates/web/generic.tmpl:151
@@ -2810,6 +2836,7 @@ msgstr "Kontakt"
 msgid "E-Mail"
 msgstr "E-Mail"
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:63
 #: cdedb/frontend/templates/web/generic.tmpl:33
 #: cdedb/frontend/templates/web/generic.tmpl:108
 #: cdedb/frontend/templates/web/generic.tmpl:161
@@ -2830,6 +2857,7 @@ msgstr "Mobiltelefon"
 msgid "WWW"
 msgstr "WWW"
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:65
 #: cdedb/frontend/templates/web/generic.tmpl:41
 #: cdedb/frontend/templates/web/generic.tmpl:111
 #: cdedb/frontend/templates/web/generic.tmpl:163
@@ -2837,12 +2865,14 @@ msgstr "WWW"
 msgid "Address"
 msgstr "Adresse"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:42
 #: cdedb/frontend/templates/web/generic.tmpl:50
 #: cdedb/frontend/templates/web/generic.tmpl:112
 msgid "Street"
 msgstr "Straße"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:43
 #: cdedb/frontend/templates/web/generic.tmpl:51
 #: cdedb/frontend/templates/web/generic.tmpl:113
@@ -2851,12 +2881,15 @@ msgstr "Straße"
 msgid "Address Supplement"
 msgstr "Adresszusatz"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/generic.tmpl:44
 #: cdedb/frontend/templates/web/generic.tmpl:52
 #: cdedb/frontend/templates/web/generic.tmpl:114
 msgid "Zipcode"
 msgstr "Postleitzahl"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:67
 #: cdedb/frontend/templates/web/generic.tmpl:45
 #: cdedb/frontend/templates/web/generic.tmpl:53
 #: cdedb/frontend/templates/web/generic.tmpl:115
@@ -2865,6 +2898,8 @@ msgstr "Postleitzahl"
 msgid "City"
 msgstr "Ort"
 
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:68
 #: cdedb/frontend/templates/web/generic.tmpl:46
 #: cdedb/frontend/templates/web/generic.tmpl:54
 #: cdedb/frontend/templates/web/generic.tmpl:116
@@ -2877,6 +2912,8 @@ msgstr "Land"
 msgid "Second Address"
 msgstr "Zweitadresse"
 
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:54
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:62
 #: cdedb/frontend/templates/web/generic.tmpl:57
 msgid "Account"
 msgstr "Account"
@@ -2905,6 +2942,9 @@ msgstr "Probemitgliedschaft"
 msgid "Searchable for BuB"
 msgstr "Zugriff für BuB"
 
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:30
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:42
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:58
 #: cdedb/frontend/templates/web/generic.tmpl:67
 msgid "Notes"
 msgstr "Notizen"
@@ -2917,11 +2957,19 @@ msgstr "Notizen"
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:20
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:19
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:31
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:32
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:31
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:30
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:24
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:43
 #: cdedb/frontend/templates/web/generic.tmpl:68
 msgid "Supports reStructuredText"
 msgstr "Unterstützt reStructuredText"
 
 #: cdedb/frontend/templates/web/assembly/create_user.tmpl:11
+#: cdedb/frontend/templates/web/cde/create_user.tmpl:11
+#: cdedb/frontend/templates/web/cde/user_search.tmpl:16
 #: cdedb/frontend/templates/web/generic.tmpl:71
 #: cdedb/frontend/templates/web/generic.tmpl:126
 msgid "Create User"
@@ -2956,15 +3004,19 @@ msgid "Create Account"
 msgstr "Account anlegen"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:126
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:12
+#: cdedb/frontend/templates/web/cde/user_search.tmpl:33
 #: cdedb/frontend/templates/web/generic.tmpl:141
 msgid "Result"
 msgstr "Ergebnis"
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:40
 #: cdedb/frontend/templates/web/generic.tmpl:149
 #: cdedb/frontend/templates/web/generic.tmpl:213
 msgid "Fulltext"
 msgstr "Volltext"
 
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:150
 #: cdedb/frontend/templates/web/generic.tmpl:214
 msgid "ID"
@@ -2975,6 +3027,7 @@ msgstr "ID"
 msgid "Active Account"
 msgstr "Aktiver Account"
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:66
 #: cdedb/frontend/templates/web/generic.tmpl:165
 #: cdedb/frontend/templates/web/generic.tmpl:229
 msgid "ZIP"
@@ -3005,6 +3058,7 @@ msgstr "Ort (2)"
 msgid "Country (2)"
 msgstr "Land (2)"
 
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:13
 #: cdedb/frontend/templates/web/generic.tmpl:179
 #: cdedb/frontend/templates/web/generic.tmpl:243
 msgid "Past Event"
@@ -3079,6 +3133,7 @@ msgstr "Core"
 msgid "Super"
 msgstr "Super"
 
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:35
 #: cdedb/frontend/templates/web/generic.tmpl:276
 msgid "Search Mask"
 msgstr "Suchmaske"
@@ -3099,6 +3154,9 @@ msgstr "Feld anzeigen"
 msgid "Fields"
 msgstr "Felder"
 
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:50
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:58
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:59
 #: cdedb/frontend/templates/web/generic.tmpl:303
 #: cdedb/frontend/templates/web/generic.tmpl:406
 msgid "Filter"
@@ -3165,6 +3223,8 @@ msgstr "Sortierkriterium hinzufügen"
 msgid "sort key to add"
 msgstr "Neues Sortierkriterium"
 
+#: cdedb/frontend/templates/web/cde/index.tmpl:23
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:73
 #: cdedb/frontend/templates/web/generic.tmpl:444
 msgid "Search"
 msgstr "Suche"
@@ -3301,11 +3361,12 @@ msgstr "Zeile {}"
 
 #: cdedb/frontend/templates/web/generic.tmpl:612
 msgid "Details"
-msgstr ""
+msgstr "Details"
 
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:134
 #: cdedb/frontend/templates/web/generic.tmpl:615
 msgid "Profile"
-msgstr ""
+msgstr "Profil"
 
 #: cdedb/frontend/templates/web/generic.tmpl:632
 msgid "false"
@@ -3405,11 +3466,14 @@ msgstr "Hochladen"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:7
 #: cdedb/frontend/templates/web/assembly/base.tmpl:38
+#: cdedb/frontend/templates/web/cde/base.tmpl:10
 msgid "Overview"
 msgstr "Übersicht"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:10
 #: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:19
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:33
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:55
 msgid "Participants"
 msgstr "Teilnehmer"
 
@@ -3426,6 +3490,11 @@ msgstr "Versammlungs-Übersicht"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:43
 #: cdedb/frontend/templates/web/assembly/user_search.tmpl:10
+#: cdedb/frontend/templates/web/cde/base.tmpl:22
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:9
+#: cdedb/frontend/templates/web/cde/create_user.tmpl:10
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:8
+#: cdedb/frontend/templates/web/cde/user_search.tmpl:10
 msgid "Manage Users"
 msgstr "Nutzer verwalten"
 
@@ -3446,6 +3515,11 @@ msgstr "%(title)s bearbeiten"
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:18
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:113
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:114
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:31
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:30
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:29
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:23
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:28
 msgid "Description"
 msgstr "Beschreibung"
 
@@ -3471,6 +3545,11 @@ msgstr "%(ballot)s bearbeiten %(assembly)s"
 #: cdedb/frontend/templates/web/assembly/change_ballot.tmpl:14
 #: cdedb/frontend/templates/web/assembly/list_ballots.tmpl:43
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:22
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:16
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:12
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:38
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:26
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:20
 msgid "Edit"
 msgstr "Bearbeiten"
 
@@ -3525,6 +3604,12 @@ msgstr "Achtung: Die Versammlung ist sofort für alle CdE-Mitglieder sichtbar."
 
 #: cdedb/frontend/templates/web/assembly/create_assembly.tmpl:30
 #: cdedb/frontend/templates/web/assembly/create_ballot.tmpl:40
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:14
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:39
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:38
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:44
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:84
 msgid "Create"
 msgstr "Anlegen"
 
@@ -3591,6 +3676,9 @@ msgstr "Benutzer-ID des neuen Teilnehmers"
 
 #: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:40
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:118
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:30
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:63
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:84
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -3601,6 +3689,8 @@ msgstr ""
 "gemacht werden."
 
 #: cdedb/frontend/templates/web/assembly/list_attendees.tmpl:49
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:47
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:73
 msgid "CdEDB-ID, Name or E-Mail"
 msgstr "CdEDB-ID, Name oder E-Mail"
 
@@ -3677,6 +3767,8 @@ msgid "ballot_file_arialabel"
 msgstr "Zu Abstimmung"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:105
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:567
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:119
 msgid "Actions"
 msgstr "Aktionen"
 
@@ -3685,6 +3777,8 @@ msgid "Archive"
 msgstr "Archivieren"
 
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:113
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:574
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:126
 msgid "Are You sure?"
 msgstr "sicher?"
 
@@ -3733,6 +3827,7 @@ msgid "No Extension neccessary, because %(quorum)s votes were reached."
 msgstr "Keine Verlängerung notwendig, da %(quorum)s Stimmen erreicht wurden."
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:60
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:112
 msgid "Status"
 msgstr "Status"
 
@@ -3799,6 +3894,11 @@ msgstr "Kandidaten hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:108
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:109
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:28
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:21
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:24
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:54
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:26
 msgid "Shortname"
 msgstr "Kurzname"
 
@@ -4229,6 +4329,8 @@ msgstr "Um dich zu enthalten, positioniere alle Kandidaten in der Neutral Box"
 msgid "To abstain, place all Candidates in the same box."
 msgstr "Um dich zu enthalten, positioniere alle Kandidaten in einer Box"
 
+#: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:573
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:33
 msgid "Delete"
 msgstr "Löschen"
 
@@ -4257,44 +4359,1003 @@ msgid "Assembly Log"
 msgstr "Versammlungs Log"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:18
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:18
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:18
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:18
 msgid "Timestamp"
 msgstr "Zeitstempel"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:19
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:19
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:19
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:19
 msgid "Code"
 msgstr "Code"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:20
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:20
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:20
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:20
 msgid "Submitted By"
 msgstr "Verantwortlich"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:22
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:21
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:21
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:22
 msgid "Affected"
 msgstr "Betroffen"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:23
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:22
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:24
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:23
 msgid "Additional Info"
 msgstr "Zusatz"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:60
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:52
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:60
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:61
 msgid "Categories"
 msgstr "Kategorien"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:60
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:52
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:60
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:61
 msgid "No selection means everything."
 msgstr "Keine Auswahl entspricht allem."
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:64
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:55
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:63
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:66
 msgid "Entries"
 msgstr "Einträge"
 
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:65
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:56
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:64
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:67
 msgid "Apply"
 msgstr "Anwenden"
 
-#: cdedb/frontend/templates/web/cde/member_search.tmpl:51
+#: cdedb/frontend/templates/web/cde/base.tmpl:13
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:4
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:7
+msgid "CdE-Member Search"
+msgstr "CdE-Mitglied suchen"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:16
+msgid "Privacy Policy"
+msgstr "Datenschutzerklärung"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:24
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:8
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:21
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:12
+msgid "Direct Debit Authorizations"
+msgstr "Einzugsermächtigungen"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:26
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:9
+msgid "Enter Bank Transfers"
+msgstr "Überweisungen eintragen"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:28
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:6
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:9
+msgid "Semester Management"
+msgstr "Semesterverwaltung"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:30
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:5
+msgid "CdE Log"
+msgstr "CdE Log"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:32
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:5
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:12
+msgid "Finance Log"
+msgstr "Finanz Log"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:38
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:13
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:13
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:13
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:9
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:4
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:7
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:17
+msgid "Past Events"
+msgstr "Verg. Veranstaltungen"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:41
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:9
+msgid "Manage Institutions"
+msgstr "Organisationen verwalten"
+
+#: cdedb/frontend/templates/web/cde/base.tmpl:43
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:5
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:12
+msgid "Past Events Log"
+msgstr "Verg. Veranstaltungen Log"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:6
+msgid "Create Accounts"
+msgstr "Accounts anlegen"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:10
+#: cdedb/frontend/templates/web/cde/user_search.tmpl:18
+msgid "Batch Admission"
+msgstr "Massenaufnahme"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:17
+msgid "Validate Again"
+msgstr "Erneut validieren"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:19
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:90
+msgid "Validate"
+msgstr "Validieren"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:28
+msgid "Set CdE-Membership"
+msgstr "CdE-Mitgliedschaft eintragen"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:29
+msgid "Set Trial-Membership"
+msgstr "Probemitgliedschaft gutschreiben"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:33
+msgid "Privacy Consent given"
+msgstr "Datenschutzeinwilligung gegeben"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:34
+msgid "Send Welcome Mail"
+msgstr "Willkommensmail verschicken"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:37
+msgid "Data"
+msgstr "Daten"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:40
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:18
+msgid "Enter one dataset per line."
+msgstr "Bitte einen Datensatz pro Zeile einfügen."
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:41
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:19
+msgid "Use the following format:"
+msgstr "Das Format ist:"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:49
+msgid "Academy"
+msgstr "Akademie"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:47
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:52
+msgid "Course"
+msgstr "Kurs"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
+msgid "Phone number"
+msgstr "Telefonnummer"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:49
+msgid "Mobilephone number"
+msgstr "Mobilnummer"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:53
+msgid ""
+"For Gender enter 1 for male, 2 for female, 3 for other and 0 for not "
+"specified."
+msgstr ""
+"Bei Geschlecht 1 für männlich, 2 für weiblich, 3 für keine Angabe und 0 "
+"für alles andere eintragen."
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:55
+msgid "For Gender enter"
+msgstr "Bei Geschlecht"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:57
+#, python-format
+msgid "%(val)s for %(name)s"
+msgstr "%(val)s für %(name)s"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:60
+msgid "for_gender_enter_part2"
+msgstr " eintragen."
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:67
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:28
+msgid "Validation results"
+msgstr "Validierungsergebnisse"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:72
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:32
+#, python-format
+msgid "Line %(lineno)s"
+msgstr "Zeile %(lineno)s"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:75
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:141
+msgid "born"
+msgstr "geb. am"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:89
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:44
+msgid "Error"
+msgstr "Fehler"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:101
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:56
+msgid "Warning"
+msgstr "Warnung"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:115
+msgid "Action"
+msgstr "Aktion"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:125
+msgid "Operation for line {}"
+msgstr "Operation für Zeile {}"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:132
+msgid "Merge with Account"
+msgstr "Zusammenführen mit Account"
+
+#: cdedb/frontend/templates/web/cde/batch_admission.tmpl:143
+msgid " (not a Member)"
+msgstr " (kein Mitglied)"
+
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:7
+#, python-format
+msgid "Edit %(pcourse)s (%(pevent)s)"
+msgstr "%(pcourse)s (%(pevent)s) bearbeiten"
+
+#: cdedb/frontend/templates/web/cde/change_past_course.tmpl:29
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:27
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:28
+msgid "Number"
+msgstr "Nummer"
+
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:7
+#, python-format
+msgid "Edit %(pevent)s"
+msgstr "%(pevent)s bearbeiten"
+
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:29
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:22
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:29
+msgid "Institution"
+msgstr "Organisation"
+
+#: cdedb/frontend/templates/web/cde/change_past_event.tmpl:32
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:25
+msgid "Cutoff date"
+msgstr "Stichtag"
+
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:7
+#, python-format
+msgid "Create Course (%(pevent)s)"
+msgstr "Kurs anlegen (%(pevent)s)"
+
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:17
+msgid "Create Course"
+msgstr "Kurs anlegen"
+
+#: cdedb/frontend/templates/web/cde/create_past_course.tmpl:35
+msgid ""
+"Warning: The new Course will be immediately visible to all CdE-Members "
+"viewing past Events."
+msgstr ""
+"Achtung: Der neue Kurs ist direkt für CdE-Mitglieder, die sich die "
+"vergangene Veranstaltung ansehen, sichtbar."
+
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:6
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:10
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:12
+msgid "Create Past Event"
+msgstr "Verg. Veranstaltung anlegen"
+
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:26
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:36
+msgid "Courses"
+msgstr "Kurse"
+
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:27
+#, python-format
+msgid ""
+"Enter one Course per line in the format: "
+"\"%(number)s\";\"%(title)s\";\"%(desc)s\"."
+msgstr ""
+"Hier einen Kurs pro Zeile im Format "
+"\"%(number)s\";\"%(title)s\";\"%(desc)s\" eingeben."
+
+#: cdedb/frontend/templates/web/cde/create_past_event.tmpl:33
+msgid ""
+"Warning: The new Event will be immediately visible to all CdE-Members\n"
+"                        viewing the list of past Events."
+msgstr ""
+"Achtung: Die neue Veranstaltung ist direkt für alle CdE-Mitglieder in der"
+" Liste der verg. Veranstaltungen sichtbar."
+
+#: cdedb/frontend/templates/web/cde/create_user.tmpl:7
+msgid "Create New Member"
+msgstr "Neues Mitglied anlegen"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:4
+msgid "CdE-Member Area"
+msgstr "CdE-Mitgliederbereich"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:14
+msgid "CdE-Member Quick-Search"
+msgstr "Mitglieder-Schnellsuche"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:20
+msgid "Search item"
+msgstr "Suchbegriff"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:29
+#, python-format
+msgid "To use the Member Search, You need to agree to the %(pri_pol)s."
+msgstr ""
+"Um die Mitgliedersuche verwenden zu können, musst Du die %(pri_pol)s "
+"bestätigen."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:35
+msgid ""
+"To use the Member Search, You need to be a CdE-Member.\n"
+"                                You can find more Information about "
+"Membership below."
+msgstr ""
+"Um die Mitgliedersuche verwenden zu können, musst Du CdE-Mitglied sein. "
+"Weitere Informationen dazu findest Du weiter unten."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:48
+#: cdedb/frontend/templates/web/cde/index.tmpl:73
+msgid "More Information"
+msgstr "Weitere Informationen"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:48
+#, python-format
+msgid ""
+"With the Initiative 25+ you can support the CdE and the \"%(idea)s\" "
+"financially,\n"
+"                            via Direct Debit of %(amount)s or more "
+"annually. %(link)s"
+msgstr ""
+"Mit der Initiative 25+ unterstützt Du den CdE und die %(idea)s finanziell"
+" durch einen Lastschrifteinzug von jährlich %(amount)s oder mehr."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:49
+#: cdedb/frontend/templates/web/cde/index.tmpl:67
+msgid "Idee Schülerakademie"
+msgstr "Idee Schülerakademie"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:56
+msgid "You are already a part of the Initiative 25+"
+msgstr "Du nimmst bereits an der Initiative 25+ teil"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:61
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:28
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:19
+msgid "existing Direct Debit Authorization"
+msgstr "bestehende Einzugsermächtigung"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:60
+#, python-format
+msgid "View Your %(link)s."
+msgstr "Du kannst deine %(link)s ansehen."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:67
+#, python-format
+msgid ""
+"You want to support the CdE and the \"%(idea)s\" financially?\n"
+"                            You can give authorization for the CdE to "
+"withdraw %(amount)s or more annually via Direct Debit."
+msgstr ""
+"Du möchtest den CdE und die %(idea)s finanziell unterstützen? Sofern Du "
+"die Erlaubnis dazu erteilst, zieht der CdE in Zukunft jährlich %(amount)s"
+" oder einen beliebigen höheren Betrag als Lastschrift von Deinem Konto "
+"ein: 25+ eben."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:73
+#, python-format
+msgid "Get %(link_more_info)s or go directly to the %(link_form)s."
+msgstr "%(link_more_info)s dazu oder direkt zum %(link_form)s."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:83
+msgid "Membership-Fee"
+msgstr "Mitgliedsbeitrag"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:86
+#, python-format
+msgid "Your current Balance is %(amount)s."
+msgstr "Dein aktuelle Guthaben beträgt %(amount)s."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:90
+msgid "Your Membership will end in a few days."
+msgstr "Deine Mitgliedschaft läuft in wenigen Tagen aus."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:94
+#, python-format
+msgid "This will presumably last until %(date)s."
+msgstr "Dies reicht voraussichtlich bis %(date)s."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:101
+msgid ""
+"You are currently <u>not a Member</u>.\n"
+"                        To become a Member again, You just have to "
+"replenish Your Account Balance."
+msgstr ""
+"Du bist derzeit <u>kein Mitglied</u>. Um wieder Mitglied zu werden, musst"
+" Du lediglich Dein Guthaben auffüllen."
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:108
+msgid ""
+"To replenish your Account Balance, transfer money to the following "
+"Account:"
+msgstr "Um Dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto:"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:115
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:72
+msgid "Account holder"
+msgstr "Kontoinhaber"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:119
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:26
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:38
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:69
+msgid "IBAN"
+msgstr "IBAN"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:123
+msgid "BIC"
+msgstr "BIC"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:127
+msgid "Bank"
+msgstr "Kreditinstitut"
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:131
+msgid "Payment reference"
+msgstr "Verwendungszweck"
+
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:6
+msgid "Manage Institutions of past Events"
+msgstr "Organisationen der verg. Veranstaltungen verwalten"
+
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:19
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:54
+msgid "Name"
+msgstr "Name"
+
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:47
+msgid "Delete line"
+msgstr "Zeile löschen"
+
+#: cdedb/frontend/templates/web/cde/institution_summary.tmpl:73
+msgid "Add Institution"
+msgstr "Organisation hinzufügen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:5
+msgid "Edit Direct Debit Authorization"
+msgstr "Einzugsermächtigung bearbeiten"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:23
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:88
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:51
+msgid "Member"
+msgstr "Mitglied"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:25
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:37
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:90
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:63
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:113
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:22
+msgid "Amount"
+msgstr "Betrag"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:27
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:28
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:40
+msgid "Account holder's address (if different)"
+msgstr "Anschrift Kontoinhaber (falls abweichend)"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:29
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:41
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:66
+msgid "Maximum DSA-Share"
+msgstr "Maximaler DSA-Anteil"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:4
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:11
+msgid "New Direct Debit Authorization"
+msgstr "Neue Einzugsermächtigung"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:39
+msgid "Account holder (if different)"
+msgstr "Kontoinhaber (falls abweichend)"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:6
+msgid "Direct Debit Authorizations Overview"
+msgstr "Übersicht Einzugsermächtigungen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:18
+msgid "This Direct Debit will be skipped for this semster. This cannot be undone."
+msgstr ""
+"Der Bankeinzug wird für dieses Semester übersprungen. Das kann nicht "
+"rückgängig gemacht werden."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:19
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:27
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:28
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:32
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:33
+msgid "This action cannot be undone."
+msgstr "Diese Aktion kann nicht rückgängig gemacht werden."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:21
+msgid "Direct Debits will be created and SEPA file created."
+msgstr "Bankeinzüge werden angelegt und SEPA-Datei erstellt."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:23
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:30
+msgid "Direct Debit will be created and SEPA file created."
+msgstr "Bankeinzug wird angelegt und SEPA-Datei erstellt."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:28
+msgid "Open Direct Debit Authorizations"
+msgstr "Offene Einzugsermächtigungen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:31
+msgid ""
+"During the Semester – as early as possible, but not before the Payment "
+"Reqeusts/Information are sent – the\n"
+"            following Direct Debits have to be executed. To do this, "
+"generate a dtx-file and import it into the online\n"
+"            banking software."
+msgstr ""
+"Im Laufe des Semesters – und dabei möglichst früh, aber erst nach der "
+"Zahlungsinformation – sind noch folgende Lastschriften auszuführen. Dazu "
+"eine dtx-Datei generieren und in die Online-Banking-Software importieren."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:51
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:94
+msgid "Perform Direct Debit"
+msgstr "Bankeinzug ausführen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:58
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:100
+msgid "Skip Direct Debit"
+msgstr "Überspringen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:63
+msgid "No Direct Debits to perform this Semester."
+msgstr "Keine zu bearbeitenden Lastschriften für dieses Semester."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:70
+msgid "Perform all Direct Debits"
+msgstr "Alle Bankeinzüge ausführen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:73
+msgid "Open Direct Debits"
+msgstr "Offene Bankeinzüge"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:76
+msgid ""
+"The following Direct Debits are pending. As soon as they are executed, "
+"enter whether they were\n"
+"                executed successfully, were not executed at all or failed"
+" to execute. In the latter case, the\n"
+"                authorization will be considered revoked."
+msgstr ""
+"Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald die "
+"ausgeführt wurden, bitte hier eintragen, ob diese erfolgreich ausgeführt "
+"wurden, gar nicht ausgeführt wurden oder geplatzt sind. Im letzteren "
+"Falle wird die Ermächtigung ans Widerrufen angesehen."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:89
+msgid "Date"
+msgstr "Datum"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:109
+msgid "All selected:"
+msgstr "Alle ausgewählten:"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:110
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:140
+msgid "Success"
+msgstr "Erfolg"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:111
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:149
+msgid "Failed"
+msgstr "Geplatzt"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:112
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:158
+msgid "Cancelled"
+msgstr "Abbruch"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:116
+msgid "There are currently no Direct Debits pending."
+msgstr "Aktuell befinden sich keine Einzüge in der Schwebe."
+
+#: cdedb/frontend/templates/web/cde/lastschrift_index.tmpl:121
+msgid "All active Authorizations"
+msgstr "Alle aktiven Einzugsermöchtigungen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:6
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:12
+msgid "Direct Debit Authorization"
+msgstr "Einzugsermächtigung"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:42
+msgid "Revoke Direct Debit Authorization"
+msgstr "Einzugsermächtigung widerrufen"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:48
+msgid "Active Direct Debit Authorization"
+msgstr "Aktive Einzugsermächtigung"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:55
+msgid "Submitted by"
+msgstr "Erteilt durch"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:75
+msgid "Acc. holder's address"
+msgstr "Anschrift Kontoinhaber"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:78
+msgid "Granted"
+msgstr "Erteilt"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:83
+msgid "No active Direct Debit Authorization"
+msgstr "Keine aktive Einzugsermächtigung"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:88
+msgid "Transactions"
+msgstr "Getätigte Lastschriften"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:109
+msgid "Created"
+msgstr "Erstellt"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:110
+msgid "Finalized"
+msgstr "Finalisiert"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:111
+msgid "Semester"
+msgstr "Semester"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:114
+msgid "Transaction"
+msgstr "Buchung"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:115
+msgid "Creator"
+msgstr "Ersteller"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:168
+msgid "Donation receipt"
+msgstr "Spendenbescheinigung"
+
+#: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:176
+msgid "Reverse"
+msgstr "Rückbuchung"
+
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:25
+#, python-format
+msgid "%(count)s Course"
+msgid_plural "%(count)s Courses"
+msgstr[0] "%(count)s Kurs"
+msgstr[1] "%(count)s Kurse"
+
+#: cdedb/frontend/templates/web/cde/list_past_events.tmpl:30
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:104
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:138
+#, python-format
+msgid "%(count)s Participant"
+msgid_plural "%(count)s Participants"
+msgstr[0] "%(count)s Teilnehmer"
+msgstr[1] "%(count)s Teilnehmer"
+
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:14
+#, python-format
+msgid "%(count)s Member found"
+msgid_plural "%(count)s Members found"
+msgstr[0] "%(count)s Mitglied gefunden"
+msgstr[1] "%(count)s Mitglieder gefunden"
+
+#: cdedb/frontend/templates/web/cde/member_search.tmpl:57
 msgid "Course choices will be displayed after first search."
 msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
+
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:14
+msgid "Send Notification"
+msgstr "Benachrichtigung verschicken"
+
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:15
+msgid "Transfers"
+msgstr "Daten"
+
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:22
+msgid "Comment"
+msgstr "Kommentar"
+
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:24
+msgid "The Comment is optional."
+msgstr "Der Kommentar ist optional."
+
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:34
+#, python-format
+msgid "%(amount)s for %(given_names)s %(family_name)s"
+msgstr "%(amount)s für %(given_names)s %(family_name)s"
+
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:86
+msgid "If the input changed, the validation results will be displayed again."
+msgstr ""
+"Falls die Eingabe geändert wird, wird das Validierungsergebnis ernaut "
+"angezeigt."
+
+#: cdedb/frontend/templates/web/cde/money_transfers.tmpl:88
+msgid "Confirm"
+msgstr "Bestätigen"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:35
+msgid "Add Participant to this Course"
+msgstr "Teilnehmer zu diesem Kurs hinzufügen"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:43
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:69
+msgid "ID of the new Participant"
+msgstr "ID des neuen Teilnehmers"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:54
+msgid "Instructor"
+msgstr "Kursleiter"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:59
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:80
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:113
+msgid "Orga"
+msgstr "Orga"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:87
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:121
+msgid "Remove"
+msgstr "Entfernen"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:94
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:128
+msgid "extra_participants_singular"
+msgid_plural "extra_participants_plural"
+msgstr[0] "und %(count)s weiterer"
+msgstr[1] "und %(count)s weitere"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:113
+msgid "This Course had no Participants."
+msgstr "Keine Teilnehmer eingetragen."
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:125
+msgid "Delete Course"
+msgstr "Kurs löschen"
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:132
+msgid "Deletes the Course, including Description and Participant information"
+msgstr ""
+"Löscht den Kurs inkl. Beschreibung und der Information über die "
+"Zugehörigkeit der Teilnehmer."
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:138
+msgid "The Course will be permanently deleted."
+msgstr "Dieser Kurs wird mit allen Daten irreversibel gelöscht."
+
+#: cdedb/frontend/templates/web/cde/show_past_course.tmpl:140
+msgid "The Participant will be removed from this Course."
+msgstr "Der Teilnehmer wird aus diesem Kurs entfernt."
+
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:40
+msgid "Add Course"
+msgstr "Kurs hinzufügen"
+
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:59
+msgid "Add Participant <u>without</u> Course"
+msgstr "Teilnehmer <u>ohne</u> Kurs hinzufügen"
+
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:67
+msgid "DB-XXXX-X"
+msgstr "DB-XXXX_X"
+
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:147
+msgid "This Event had no Participants."
+msgstr "Keine Teilnehmer eingetragen."
+
+#: cdedb/frontend/templates/web/cde/show_past_event.tmpl:152
+msgid "The Participant will be removed from the Event."
+msgstr "Der Teilnehemr wird aus der Veranstaltung entfernt."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:13
+msgid ""
+"The actions on this site affect all Members, therefore they are\n"
+"            basically irreversibel. Only use them, if You are absolutely "
+"sure\n"
+"            what You are doing."
+msgstr ""
+"Die auf dieser Seite enthaltenen Aktionen betreffen alle Mitglieder. Aus "
+"diesem Grund sind sie praktisch nicht rückgängig zu machen. Führe diese "
+"Aktionen bitte nur aus, wenn Du Dir sicher bist, was Du tust."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:20
+msgid "CdE-Semester"
+msgstr "CdE-Semester"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:23
+#, python-format
+msgid "We are currently in Semester %(number)s."
+msgstr "Derzeit befinden wir uns in Semester Nummer %(number)s."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:31
+msgid "Payment Requests will be sent."
+msgstr "Der Versand der Zahlungsaufforderungen wird gestartet."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:36
+msgid ""
+"All inactive Members will be removed.\n"
+"                This cannot be undone and it can only be done once per "
+"Semester."
+msgstr ""
+"Die inaktiven Mitglieder werden gestrichen. Das ist irreversibel und nur "
+"einmal im Semester möglich."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:39
+msgid "The Balance of all Members will be updated. This cannot be undone."
+msgstr ""
+"Das Guthaben aller Mitglieder wird aktualisiert. Diese Aktion ist "
+"irreversibel."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:41
+msgid "The new Semester will be created."
+msgstr "Das neue Semester wird angelegt."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:43
+msgid "Address-Check-Mails will be sent."
+msgstr "Der Versand der Address-Check-Mails wird gestartet."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:48
+msgid "The new exPuls-Semester will be created."
+msgstr "Das neue exPuls-Semester wird angelegt."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:57
+msgid "Send Payment Requests/Information"
+msgstr "Zahlungsaufforderung/-information versenden"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:62
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:97
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:134
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:201
+#, python-format
+msgid "Done on the %(date)s."
+msgstr "Erledigt am %(date)s."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:69
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:104
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:141
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:208
+#, python-format
+msgid "Done up until %(state)s."
+msgstr "Bereits bis ID %(state)s abgearbeitet."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:77
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:216
+msgid "Only one Test-Mail"
+msgstr "Nur einzelne Testmail"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:80
+msgid "Include Address-Check"
+msgstr "Mit Adressabfrage"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:82
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:219
+msgid "Send Mails"
+msgstr "Mails verschicken"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:92
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:116
+msgid "Remove inactive Members"
+msgstr "Streichung inaktiver Mitglieder"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:110
+#, python-format
+msgid "%(count)s Members have insufficient Balance right now."
+msgstr "Derzeit haben %(count)s Mitglieder ein zu niedriges Guthaben."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:119
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:156
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:177
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:243
+msgid "To be done later."
+msgstr "Später zu erledigen."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:129
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:153
+msgid "Update Balances"
+msgstr "Guthaben aktualisieren"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:147
+#, python-format
+msgid "%(count)s Members have a Trial-Membership right now."
+msgstr "Derzeit haben %(count)s Mitglieder eine Probemitgliedschaft."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:163
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:174
+msgid "Next Semester"
+msgstr "Nächstes Semester"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:167
+msgid ""
+"The Semesterstate influences the display of Balances. This button should "
+"be pressed at the\n"
+"                            target date (give or take three weeks)."
+msgstr ""
+"Der Semesterzustand beeinflusst die Anzeige der Guthaben. Dieser Knopf "
+"sollte also zum Zielzeitpunkt (plus/minus drei Wochen) gedrückt werden."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:184
+msgid "exPuls-Semester"
+msgstr "exPuls-Semester"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:187
+#, python-format
+msgid "The next exPuls will be number %(number)s."
+msgstr "Der nächste exPuls trägt die Nummer %(number)s."
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:196
+msgid "Send Address-Checks"
+msgstr "Adressabfragen verschicken"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:225
+msgid "Mark as done"
+msgstr "Als erledigt markieren"
+
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:235
+#: cdedb/frontend/templates/web/cde/show_semester.tmpl:240
+msgid "Next exPuls"
+msgstr "Nächster exPuls"
+
+#: cdedb/frontend/templates/web/cde/user_search.tmpl:7
+msgid "CdE-Usermanagement"
+msgstr "CdE-Nutzerverwaltung"
+
+#: cdedb/frontend/templates/web/cde/user_search.tmpl:22
+msgid "Only CdE-Members (and ex-Members) can be found here."
+msgstr "Hier können nur CdEler gefunden werden (auch ehemalige)."
+
+#: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:12
+msgid "CdE-Log"
+msgstr "CdE-Log"
+
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:23
+msgid "Balance"
+msgstr "Guthaben"
+
+#: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:26
+msgid "Overall Balance"
+msgstr "Gesamtguthaben"
+
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:21
+#: cdedb/frontend/templates/web/cde/view_past_log.tmpl:64
+msgid "Event"
+msgstr "Veranstaltung"
 
 #~ msgid "Year missing."
 #~ msgstr "Angabe des Jahres fehlt."
@@ -4644,3 +5705,17 @@ msgstr "Kursauswahl wird nach der ersten Suche angezeigt."
 #~ msgid ""
 #~ msgstr ""
 
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR Free Software Foundation, Inc.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"

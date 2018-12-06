@@ -3,43 +3,49 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint = 'weak' %}
-{% block title %}Semesterverwaltung{% endblock %}
+{% block title %}{% trans -%}Semester Management{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/show_semester"), "Semesterverwaltung", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/show_semester"), gettext("Semester Management"), active="True") }}
 {% endblock %}
 {% block content %}
     <p class="text-danger">
-        Die auf dieser Seite enthaltenen Aktionen betreffen alle
-        Mitglieder. Aus diesem Grund sind sie praktisch nicht rückgängig zu
-        machen. Führe diese Aktionen bitte nur aus, wenn du dir sicher bist,
-        was du tust!
+        {% trans -%}
+            The actions on this site affect all Members, therefore they are
+            basically irreversibel. Only use them, if You are absolutely sure
+            what You are doing.
+        {%- endtrans %}
     </p>
 
-    <h2>CdE-Semester</h2>
+    <h2>{% trans -%}CdE-Semester{%- endtrans %}</h2>
 
     <p>
-        Derzeit befinden wir uns in Semester Nummer <span class="label label-default">{{ period['id']|e }}</span>.
+        {% trans number="<span class='label label-default'>%s</span>"|format(period['id']|e) -%}
+            We are currently in Semester {{ number }}.
+        {%- endtrans %}
     </p>
 
     <script type="text/javascript">
         $(function() {
             $('#billform').cdedbProtectAction(
-                "Der Versand der Zahlungsaufforderungen wird gestartet.",
+                "{{ gettext("Payment Requests will be sent.") }}",
                 function() {
                     return $(this).find('[name="testrun"]').prop('checked');
                 });
             $('#ejectform').cdedbProtectAction(
-                "Die inaktiven Mitglieder werden gestrichen. Das ist irreversibel und nur einmal im Semester möglich.");
+                "{{ gettext("All inactive Members will be removed.
+                This cannot be undone and it can only be done once per Semester.") }}");
             $('#balanceform').cdedbProtectAction(
-                "Das Guthaben aller Mitglieder wird aktualisert. Diese Aktion ist irreversibel.");
-            $('#proceedform').cdedbProtectAction("Das neue Semester wird angelegt.");
+                "{{ gettext("The Balance of all Members will be updated. This cannot be undone.") }}");
+            $('#proceedform').cdedbProtectAction(
+                "{{ gettext("The new Semester will be created.") }}");
             $('#addresscheckform').cdedbProtectAction(
-                "Der Versand der Adress-Check-Mails wird gestartet.",
+                "{{ gettext("Address-Check-Mails will be sent.") }}",
                 function() {
                     return $(this).find('[name="testrun"]').prop('checked');
                 });
-            $('#proceedexpulsform').cdedbProtectAction("Das neue Expuls-Semester wird angelegt.");
+            $('#proceedexpulsform').cdedbProtectAction(
+                "{{ gettext("The new exPuls-Semester will be created.") }}");
         });
     </script>
 
@@ -48,24 +54,32 @@
             <div class="panel {% if period['billing_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.01./01.07.)</span>
-                    <h4 class="panel-title">Zahlungsaufforderung/-information versenden</h4>
+                    <h4 class="panel-title">{% trans -%}Send Payment Requests/Information{%- endtrans %}</h4>
                 </div>
                 <div class="panel-body">
                     {% if period['billing_done'] %}
-                        <span class="text-success">Erledigt am {{ period['billing_done']|datetime(lang=lang)|e }}.</span>
+                        <span class="text-success">
+                            {% trans date=period['billing_done']|datetime(lang=lang)|e -%}
+                                Done on the {{ date }}.
+                            {%- endtrans %}
+                        </span>
                     {% else %}
                         {% if period['billing_state'] %}
-                            Bereits bis ID {{ period['billing_state']|cdedbid }} abgearbeitet.
+                            <p>
+                                {% trans state=period['billing_state']|cdedbid|e -%}
+                                    Done up until {{ state }}.
+                                {%- endtrans %}
+                            </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_bill')|e }}" method="POST" id="billform"
                                 class="strip-space">
                             <div class="checkbox">
-                                {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
+                                {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
                             </div>
                             <div class="checkbox">
-                                {{ util.input_checkbox("addresscheck", label="mit Adressabfrage") }}
+                                {{ util.input_checkbox("addresscheck", label=gettext("Include Address-Check")) }}
                             </div>
-                            {{ util.input_submit(value="Mails verschicken", icon="send") }}
+                            {{ util.input_submit(value=gettext("Send Mails"), icon="send") }}
                         </form>
                     {% endif %}
                 </div>
@@ -75,26 +89,34 @@
                     panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.03./01.09.)</span>
-                    <h4 class="panel-title">Streichung inaktiver Mitglieder</h4>
+                    <h4 class="panel-title">{% trans -%}Remove inactive Members{%- endtrans %}</h4>
                 </div>
                 <div class="panel-body">
                     {% if period['ejection_done'] %}
-                        <span class="text-success">Erledigt am {{ period['ejection_done']|datetime(lang=lang)|e }}.</span>
+                        <span class="text-success">
+                            {% trans date=period['ejection_done']|datetime(lang=lang)|e -%}
+                                Done on the {{ date }}.
+                            {%- endtrans %}
+                        </span>
                     {% elif period['billing_done'] %}
                         {% if period['ejection_state'] %}
                             <p>
-                                Bereits bis ID {{ period['ejection_state']|cdedbid }} abgearbeitet.
+                                {% trans state=period['ejection_state']|cdedbid|e -%}
+                                    Done up until {{ state }}.
+                                {%- endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                Derzeit haben {{ stats['low_balance_members']|e }} Mitglieder ein zu niedriges Guthaben.
+                                {% trans count=stats['low_balance_members']|e -%}
+                                    {{ count }} Members have insufficient Balance right now.
+                                {%- endtrans %}
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_eject')|e }}" method="POST" id="ejectform">
-                            {{ util.input_submit(value="Inaktive streichen") }}
+                            {{ util.input_submit(value=gettext("Remove inactive Members")) }}
                         </form>
                     {% else %}
-                        <span class="text-muted">Später zu erledigen.</span>
+                        <span class="text-muted">{% trans -%}To be done later.{%- endtrans %}</span>
                     {% endif %}
                 </div>
             </div>
@@ -104,85 +126,103 @@
                     panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.04./01.10.)</span>
-                    <h4 class="panel-title">Guthaben aktualisieren</h4>
+                    <h4 class="panel-title">{% trans -%}Update Balances{%- endtrans %}</h4>
                 </div>
                 <div class="panel-body">
                     {% if period['balance_done'] %}
-                        <span class="text-success">Erledigt am {{ period['balance_done']|datetime(lang=lang)|e }}.</span>
+                        <span class="text-success">
+                            {% trans date=period['balance_done']|datetime(lang=lang)|e -%}
+                                Done on the {{ date }}.
+                            {%- endtrans %}
+                        </span>
                     {% elif period['ejection_done'] %}
                         {% if period['balance_state'] %}
                             <p>
-                                Bereits bis ID {{ period['balance_state']|cdedbid }} abgearbeitet.
+                                {% trans state=period['balance_state']|cdedbid|e -%}
+                                    Done up until {{ state }}.
+                                {%- endtrans %}
                             </p>
                         {% else %}
                             <p>
-                                Derzeit haben {{ stats['trial_members']|e }} Mitglieder eine Probemitgliedschaft.
+                                {% trans count=stats['trial_members']|e -%}
+                                    {{ count }} Members have a Trial-Membership right now.
+                                {%- endtrans %}
                             </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_balance_update')|e }}" method="POST" id="balanceform">
-                            {{ util.input_submit(value="Guthaben aktualisieren") }}
+                            {{ util.input_submit(value=gettext("Update Balances")) }}
                         </form>
                     {% else %}
-                        <span class="text-muted">Später zu erledigen.</span>
+                        <span class="text-muted">{% trans -%}To be done later.{%- endtrans %}</span>
                     {% endif %}
                 </div>
             </div>
             <div class="panel {% if not period['balance_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
                     <span class="pull-right">(01.07./01.01.)</span>
-                    <h4 class="panel-title">Nächstes Semester</h4>
+                    <h4 class="panel-title">{% trans -%}Next Semester{%- endtrans %}</h4>
                 </div>
                 <div class="panel-body">
                     <p>
-                        Der Semesterzustand beeinflusst die Anzeige der Guthaben. Dieser Knopf sollte also zum
-                        Zielzeitpunkt (plus/minus drei Wochen) gedrückt werden.
+                        {% trans -%}
+                            The Semesterstate influences the display of Balances. This button should be pressed at the
+                            target date (give or take three weeks).
+                        {%- endtrans %}
                     </p>
                     {% if period['balance_done'] %}
                         <form action="{{ cdedblink('cde/semester_advance')|e }}" method="POST" id="proceedform">
-                            {{ util.input_submit(value="Nächstes Semester") }}
+                            {{ util.input_submit(value=gettext("Next Semester")) }}
                         </form>
                     {% else %}
-                        <span class="text-muted">Später zu erledigen.</span>
+                        <span class="text-muted">{% trans -%}To be done later.{%- endtrans %}</span>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <h2>Expuls-Semester</h2>
+    <h2>{% trans -%}exPuls-Semester{%- endtrans %}</h2>
 
     <p>
-        Der nächste exPuls trägt die Nummer <span class="label label-default">{{ expuls['id']|e }}</span>.
+        {% trans number="<span class='label label-default'>%s</span>"|format(expuls['id']|e) -%}
+            The next exPuls will be number {{ number }}.
+        {%- endtrans %}
     </p>
 
     <div class="row">
         <div class="col-md-6">
             <div class="panel {% if expuls['addresscheck_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
-                    <h4 class="panel-title">Adressabfrage verschicken</h4>
+                    <h4 class="panel-title">{% trans -%}Send Address-Checks{%- endtrans %}</h4>
                 </div>
                 <div class="panel-body">
                     {% if expuls['addresscheck_done'] %}
                         <span class="text-success">
-                            Erledigt am {{ expuls['addresscheck_done']|datetime(lang=lang)|e }}.
+                            {% trans date=expuls['addresscheck_done']|datetime(lang=lang)|e -%}
+                                Done on the {{ date }}.
+                            {%- endtrans %}
                         </span>
                     {% else %}
                         {% if expuls['addresscheck_state'] %}
-                            Bereits bis ID {{ expuls['addresscheck_state']|cdedbid }} abgearbeitet.
+                            <p>
+                                {% trans state=expuls['addresscheck_state']|cdedbid|e -%}
+                                    Done up until {{ state }}.
+                                {%- endtrans %}
+                            </p>
                         {% endif %}
                         <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST" id="addresscheckform"
                                 class="strip-space">
                             <div class="checkbox">
-                                {{ util.input_checkbox("testrun", label="nur einzelne Testemail") }}
+                                {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail")) }}
                             </div>
                             <div class="form-group">
-                            {{ util.input_submit(value="Mails verschicken", icon="send") }}
+                            {{ util.input_submit(value=gettext("Send Mails"), icon="send") }}
                             </div>
                         </form>
                         <form action="{{ cdedblink('cde/expuls_addresscheck')|e }}" method="POST"
                           id="noaddresscheckform">
                             {{ util.input_hidden("skip", value=True) }}
-                            {{ util.input_submit(value="Als erledigt markieren", aclass="btn btn-warning",
+                            {{ util.input_submit(value=gettext("Mark as done"), aclass="btn btn-warning",
                                     icon="check")}}
                         </form>
                     {% endif %}
@@ -192,15 +232,15 @@
         <div class="col-md-6">
             <div class="panel {% if not expuls['addresscheck_done'] %}panel-default{% else %}panel-primary{% endif %}">
                 <div class="panel-heading">
-                    <h4 class="panel-title">Nächster Expuls</h4>
+                    <h4 class="panel-title">{% trans -%}Next exPuls{%- endtrans %}</h4>
                 </div>
                 <div class="panel-body">
                     {% if expuls['addresscheck_done'] %}
                         <form action="{{ cdedblink('cde/expuls_advance')|e }}" method="POST" id="proceedexpulsform">
-                            {{ util.input_submit(value="Nächster Expuls") }}
+                            {{ util.input_submit(value=gettext("Next exPuls")) }}
                         </form>
                     {% else %}
-                        <span class="text-muted">Später zu erledigen.</span>
+                        <span class="text-muted">{% trans -%}To be done later.{%- endtrans %}</span>
                     {% endif %}
                 </div>
             </div>

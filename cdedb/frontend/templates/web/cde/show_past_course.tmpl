@@ -14,7 +14,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
         ambience['pevent']['title']|e, icon="calendar") }}
 {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
@@ -23,16 +23,16 @@
 {% block content %}
     {% if is_admin %}
         <div class="p">
-            {{ util.href(cdedblink('cde/change_past_course_form'), "Bearbeiten", icon="pencil",
+            {{ util.href(cdedblink('cde/change_past_course_form'), gettext("Edit"), icon="pencil",
                     aclass="btn btn-warning btn-sm") }}
         </div>
     {% endif %}
     
     {{ ambience['pcourse']['description']|rst }}
 
-    <h2>Teilnehmer</h2>
+    <h2>{% trans -%}Participants{%- endtrans %}</h2>
     {% if is_admin %}
-        {% call util.bootstrap_panel(title="Teilnehmer zu diesem Kurs hinzufügen",
+        {% call util.bootstrap_panel(title=gettext("Add Participant to this Course"),
                 aclass="panel-success panel-condensed", icon='plus') %}
                 <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
@@ -40,27 +40,27 @@
                         <div class="col-sm-5">
                             {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
                                                anid='input-add-participant', aclass='form-control input-sm',
-                                               arialabel="ID des neuen Teilnehmers") }}
+                                               arialabel=gettext("ID of the new Participant")) }}
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
                                     '{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s&sphere=event'}}',
-                                    {{ participants.keys()|list|json }}, false, false, "CdEDB-ID, Name oder E-Mail"
+                                    {{ participants.keys()|list|json }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                 );
                             </script>
                             {{ util.output_errors('persona_id') }}
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox input-sm">
-                                {{ util.input_checkbox(name="is_instructor", label="Kursleiter") }}
+                                {{ util.input_checkbox(name="is_instructor", label=gettext("Instructor")) }}
                             </div>
                         </div>
                         <div class="col-sm-2">
                             <div class="checkbox input-sm">
-                                {{ util.input_checkbox(name="is_orga", label="Orga") }}
+                                {{ util.input_checkbox(name="is_orga", label=gettext("Orga")) }}
                             </div>
                         </div>
                         <div class="col-sm-3">
-                            {{ util.input_submit(value="Hinzufügen", aclass="btn btn-primary btn-sm") }}
+                            {{ util.input_submit(value=gettext("Add"), aclass="btn btn-primary btn-sm") }}
                         </div>
                     </div>
                 </form>
@@ -84,50 +84,60 @@
                             {{ util.input_hidden(name="persona_id", value=anid) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.input_hidden(name="course_page", value=True) }}
-                            {{ util.input_submit(title='entfernen', icon="minus", aclass="btn btn-xs btn-danger",
+                            {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger",
                                     value="") }}
                         </form>
                     {% endif %}
                 </li>
             {% endfor %}
             {% if extra_participants %}
-                <li>und {{ extra_participants|e }} {{ extra_participants|numerus("weiterer", "weitere") }} …</li>
+                <li>{% trans count=extra_participants|e, extra_participants=extra_participants -%}
+                    extra_participants_singular
+                {%- pluralize extra_participants-%}
+                    extra_participants_plural
+                {%- endtrans %} …</li>
             {% endif %}
         </ul>
     {% elif extra_participants %}
         <p>
-            <i>{{ extra_participants|e }} Teilnehmer.</i>
+            <i>
+                {% trans count=extra_participants|e, extra_participants=extra_participants -%}
+                    {{ count }} Participant
+                {%- pluralize extra_participants -%}
+                    {{ count }} Participants
+                {%- endtrans %}
+            </i>
         </p>
     {% else %}
         <p>
-            <i>Keine Teilnehmer eingetragen.</i>
+            <i>{% trans -%}This Course had no Participants.{%- endtrans %}</i>
         </p>
     {% endif %}
 
 
     {% if is_admin %}
-        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
                         <form action="{{ cdedblink('cde/delete_past_course')|e }}" method="POST"
                                 id="deletecourseform" style="display: inline;">
-                            {{ util.input_submit(value="Kurs löschen", icon="trash", aclass="btn btn-danger") }}
-                            {{ util.input_checkbox(name="ack_delete", label="sicher?", readonly=is_locked) }}
+                            {{ util.input_submit(value=gettext("Delete Course"), icon="trash", aclass="btn btn-danger") }}
+                            {{ util.input_checkbox(name="ack_delete", label=gettext("Are You sure?"), readonly=is_locked) }}
                         </form>
                     </div>
                 </div>
                 <div class="col-sm-8">
                     <p class="text-muted">
-                        Löscht den Kurs inkl. Beschreibung und der Information über die Zugehörigkeit der Teilnehmer.
+                        {% trans -%}Deletes the Course, including Description and Participant information{%- endtrans %}
                     </p>
                 </div>
             </div>
         {% endcall %}
         <script type="text/javascript">
-            $('#deletecourseform').cdedbProtectAction("Der Kurs wird mit allen Daten irreversibel gelöscht.");
+            $('#deletecourseform').cdedbProtectAction("{{ gettext("The Course will be permanently deleted.") }}");
             $('#deletecourseform').find('[name="ack_delete"]').prop('checked', true).parent().hide();
-            $('.delete-participant-form').cdedbProtectAction("Der Teilnehmer wird aus dem Kurs entfernt.");
+            $('.delete-participant-form').cdedbProtectAction("{{ gettext("The Participant will be removed from this Course.") }}");
         </script>
     {% endif %}
 

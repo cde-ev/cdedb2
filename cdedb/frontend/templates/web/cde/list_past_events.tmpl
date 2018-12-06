@@ -1,15 +1,15 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Vergangene Veranstaltungen{% endblock %}
+{% block title %}{% trans -%}Past Events{%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), "Verg. Veranstaltungen", active="True") }}
+{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active="True") }}
 {% endblock %}
 {% block content %}
     {% if is_admin %}
         <div class="p">
-            {{ util.href(cdedblink("cde/create_past_event_form"), "verg. Veranstaltung anlegen",
+            {{ util.href(cdedblink("cde/create_past_event_form"), gettext("Create Past Event"),
                     aclass="btn btn-success btn-sm", icon="plus") }}
         </div>
     {% endif %}
@@ -22,8 +22,16 @@
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
                     ({{ stats[pevent_id]['institution_moniker'] }})&emsp;
                     <small class="text-muted nowrap">
-                        {{ stats[pevent_id]['courses'] }} Kurs{% if stats[pevent_id]['courses'] != 1 %}e{% endif %},
-                        {{ stats[pevent_id]['participants'] }} Teilnehmer
+                        {% trans count=stats[pevent_id]['courses'] -%}
+                            {{ count }} Course
+                        {%- pluralize count -%}
+                            {{ count }} Courses
+                        {%- endtrans %},
+                        {% trans count=stats[pevent_id]['participants'] -%}
+                            {{ count }} Participant
+                        {%- pluralize count -%}
+                            {{ count }} Participants
+                        {%- endtrans %}
                     </small>
                 </li>
             {% endfor %}
