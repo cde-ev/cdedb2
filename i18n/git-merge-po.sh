@@ -9,7 +9,7 @@
 #
 #   [merge "pomerge"]
 #     name = Gettext merge driver
-#     driver = i18n/get-merge-po.sh
+#     driver = i18n/get-merge-po.sh %O %A %B
 #
 # Then add the following line to your .git/info/attributes file:
 #
