@@ -61,7 +61,7 @@
             </dl>
             <dl class="dl-horizontal">
                 <dt>{% trans -%}Amount{%- endtrans %}</dt>
-                <dd>{{ lastschrift['amount']|e }}€</dd>
+                <dd>{{ lastschrift['amount']|money|e }}</dd>
 
                 <dt>{% trans -%}Maximum DSA-Share{%- endtrans %}</dt>
                 <dd>{{ lastschrift['max_dsa']|e }}</dd>
