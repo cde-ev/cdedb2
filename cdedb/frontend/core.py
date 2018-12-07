@@ -632,28 +632,29 @@ class CoreFrontend(AbstractFrontend):
             tmp = sorted(data, key=lambda e: e['id'])
             data = tmp[:num_preview_personas]
 
-        counter = collections.defaultdict(lambda: 0)
-        def formatter(entry, verbose=False):
-            if verbose:
-                return "{} {} ({})".format(
-                    entry['given_names'], entry['family_name'],
-                    entry['username'])
-            else:
-                return "{} {}".format(
-                    entry['given_names'], entry['family_name'])
+        def name(x):
+            return "{} {}".format(x['given_names'], x['family_name'])
+
         # Check if name occurs multiple times to add email address in this case
+        counter = collections.defaultdict(lambda: 0)
         for entry in data:
-            counter[formatter(entry)] += 1
+            counter[name(entry)] += 1
+
+        # Generate return JSON list
         ret = []
         for entry in sorted(data, key=name_key):
-            verbose = counter[formatter(entry)] > 1
-            ret.append(
-                {
-                    'id': entry['id'],
-                    'name': formatter(entry, verbose),
-                    'display_name': entry['display_name'],
-                    'email': entry['username'],
-                })
+            verbose = counter["{} {}".format(
+                    entry['given_names'], entry['family_name'])] > 1
+            result = {
+                'id': entry['id'],
+                'name': name(entry),
+                'display_name': entry['display_name'],
+            }
+            # Email/username is only delivered if we have relative_admins rights
+            # or it is required to distinguish equally named users
+            if self.coreproxy.is_relative_admin(rs, entry['id']) or verbose:
+                result['email'] = entry['username']
+            ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
     @access("persona")

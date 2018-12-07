@@ -56,10 +56,13 @@
             copyClassesToDropdown: false,
             render: {
                 option: function(data, escape) {
-                    if (data['id'] && data['email']) {
-                        return '<div class="option"><div class="name">' + escape(data['name']) +
-                               '</div><div class="meta">' + cdedb_id(data['id']) + ' • '+ escape(data['email']) +
-                               '</div></div>';
+                    if (data['id']) {
+                        var res = '<div class="option"><div class="name">' + escape(data['name']) +
+                                '</div><div class="meta">' + cdedb_id(data['id']);
+                        if (data['email'])
+                            res += ' • '+ escape(data['email']);
+                        res += '</div></div>';
+                        return res;
                     } else {
                         return '<div class="option">' + escape(data['name']) + '</div>';
                     }
