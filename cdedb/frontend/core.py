@@ -604,6 +604,7 @@ class CoreFrontend(AbstractFrontend):
         if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
             return self.send_json(rs, {})
 
+        terms = []
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             search = [("username,family_name,given_names,display_name",
@@ -643,16 +644,21 @@ class CoreFrontend(AbstractFrontend):
         # Generate return JSON list
         ret = []
         for entry in sorted(data, key=name_key):
-            verbose = counter["{} {}".format(
-                    entry['given_names'], entry['family_name'])] > 1
             result = {
                 'id': entry['id'],
                 'name': name(entry),
                 'display_name': entry['display_name'],
             }
-            # Email/username is only delivered if we have relative_admins rights
-            # or it is required to distinguish equally named users
-            if self.coreproxy.is_relative_admin(rs, entry['id']) or verbose:
+            # Email/username is only delivered if we have relative_admins
+            # rights, a search term with an @ (and more) matches the mail
+            # address, or the mail address is required to distinguish equally
+            # named users
+            searched_email = any(t in entry['username']
+                                    and '@' in t and
+                                    len(t) > self.conf.NUM_PREVIEW_CHARS
+                                 for t in terms)
+            if counter[name(entry)] > 1 or searched_email or \
+                    self.coreproxy.is_relative_admin(rs, entry['id']):
                 result['email'] = entry['username']
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
