@@ -507,9 +507,8 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
-                 ("sphere", "str_or_None"))
-    def select_persona(self, rs, phrase, kind, aux, sphere):
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
+    def select_persona(self, rs, phrase, kind, aux):
         """Provide data for inteligent input fields.
 
         This searches for users by name so they can be easily selected
@@ -520,10 +519,14 @@ class CoreFrontend(AbstractFrontend):
         the privilege level required and the basic search paramaters.
 
         Allowed kinds:
-        * admin_persona: Search for users in a realm as an admin
+        * admin_persona: Search for users as core_admin
+        * past_event_user: Search for an event user to add to a past event as
+                           cde_admin
         * pure_assembly_user: Search for an assembly only user as assembly_admin
         * mod_ml_user: Search for a mailinglist user as a moderator
-        * orga_event_user: Search of an event user as event orga
+        * event_admin_user: Search an event user as event_admin (for creating
+                            events)
+        * orga_event_user: Search for an event user as event orga
 
         The aux parameter allows to supply an additional id for example
         in the case of a moderator this would be the relevant
@@ -532,14 +535,9 @@ class CoreFrontend(AbstractFrontend):
         Required aux value based on the 'kind':
         * admin_persona: Realm to search users for (or 'member' to search
                          CdE-Members)
-        * pure_assembly_user: --
         * mod_ml_user: Id of the mailinglist you are moderator of
         * orga_event_user: Id of the event you are orga of
         """
-        if not rs.errors and sphere:
-            if sphere not in ("cde", "event", "ml", "assembly", "member"):
-                rs.errors.append(("sphere",
-                                  ValueError(n_("Not a valid restriction."))))
         if rs.errors:
             return self.send_json(rs, {})
 
@@ -548,22 +546,14 @@ class CoreFrontend(AbstractFrontend):
         mailinglist = None
         event = None
         num_preview_personas = self.conf.NUM_PREVIEW_PERSONAS
-        sphere_additions = {
-            realm: ("is_{}_realm".format(realm), QueryOperators.equal, True)
-            for realm in ("cde", "event", "ml", "assembly")
-        }
-        sphere_additions["member"] = ("is_member", QueryOperators.equal, True)
         if kind == "admin_persona":
-            privilege_levels = {
-                None: "core_admin",
-                "cde": "cde_admin",
-                "member": "cde_admin",
-                "event": "event_admin",
-                "ml": "ml_admin",
-                "assembly": "assembly_admin",
-            }
-            if privilege_levels[sphere] not in rs.user.roles:
+            if not {"core_admin", "admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
+        elif kind == "past_event_user":
+            if "cde_admin" not in rs.user.roles:
+                raise PrivilegeError(n_("Not privileged."))
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             if "assembly_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
@@ -579,6 +569,11 @@ class CoreFrontend(AbstractFrontend):
                     raise PrivilegeError(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
+        elif kind == "event_admin_user":
+            if "event_admin" not in rs.user.roles:
+                raise PrivilegeError(n_("Not privileged."))
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
         elif kind == "orga_event_user" and aux:
             event = self.eventproxy.get_event(rs, aux)
             if "event_admin" not in rs.user.roles:
@@ -589,21 +584,23 @@ class CoreFrontend(AbstractFrontend):
                 ("is_event_realm", QueryOperators.equal, True))
         else:
             return self.send_json(rs, {})
-        if sphere:
-            search_additions.append(sphere_additions[sphere])
 
-        # FIXME: Searchadditions are not applied here. Anyone can query users
-        # by user by incrementing IDs!
         data = None
-        anid, errs = validate.check_cdedbid(phrase, "phrase")
-        if not errs:
-            data = self.get_personas(rs, anid)
-        else:
-            anid, errs = validate.check_id(phrase, "phrase")
+
+        # Core admins and super admins are allowed to search by raw ID or
+        # CDEDB-ID
+        if {"core_admin", "admin"} & rs.user.roles:
+            anid, errs = validate.check_cdedbid(phrase, "phrase")
             if not errs:
                 data = self.get_personas(rs, anid)
-        if data:
-            data = unwrap(data)
+            else:
+                anid, errs = validate.check_id(phrase, "phrase")
+                if not errs:
+                    data = self.get_personas(rs, anid)
+            if data:
+                data = unwrap(data)
+
+        # Don't query, if search phrase is too short
         if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
             return self.send_json(rs, {})
 
@@ -611,8 +608,6 @@ class CoreFrontend(AbstractFrontend):
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             search = [("username,family_name,given_names,display_name",
                        QueryOperators.similar, t) for t in terms]
-            # FIXME: Add is_archived == False if not (kind == admin_persona,
-            # sphere == None and user is core_admin)
             search.extend(search_additions)
             spec = copy.deepcopy(QUERY_SPECS["qview_core_user"])
             spec["username,family_name,given_names,display_name"] = "str"
@@ -632,6 +627,7 @@ class CoreFrontend(AbstractFrontend):
                 e for e in data
                 if pol.check(extract_roles(personas[e['id']])))
 
+        # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
             tmp = sorted(data, key=lambda e: e['id'])
             data = tmp[:num_preview_personas]
