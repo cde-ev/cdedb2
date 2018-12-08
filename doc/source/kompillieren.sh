@@ -1,6 +1,6 @@
-cd /cdedb2/
+cd ../..
 
 make doc
 
-cd /cdedb2/doc/source
+cd doc/source
 
