@@ -11,7 +11,7 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/archived_user_search"), gettext("Search Archive Users"), active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/archived_user_search"), gettext("Search Archived Users"), active="True") }}
 {% endblock %}
 {% block content %}
     {{ generic.place_default_queries("core/archived_user_search", default_queries) }}

@@ -140,14 +140,14 @@
                 <dt>{% trans -%}Admin Privileges{%- endtrans %}</dt>
                 <dd>
                     {% set vars = {'any_privilege': False} %}
-                    {% for bit, desc, icon in (("is_admin", gettext("Super"), "wrench"),
-                                              ("is_core_admin", gettext("Core"), "user"),
-                                              ("is_cde_admin", gettext("cde_realm"), "education"),
-                                              ("is_event_admin", gettext("event_admin"), "blackboard"),
-                                              ("is_ml_admin", gettext("ml_admin"), "envelope"),
-                                              ("is_assembly_admin", gettext("assembly_admin"), "bullhorn"),)%}
+                    {% for bit, desc, icon in (("is_admin", gettext("Super-Admin"), "wrench"),
+                                              ("is_core_admin", gettext("Core-Admin"), "user"),
+                                              ("is_cde_admin", gettext("CdE-Admin"), "education"),
+                                              ("is_event_admin", gettext("Event-Admin"), "blackboard"),
+                                              ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
+                                              ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon, title=desc+gettext("-Admin")) }}
+                            {{ util.make_icon(icon, title=desc) }}
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_privilege': True}) %}
                         {% endif %}
@@ -222,7 +222,7 @@
                         <dd>
                             {{ util.deko_checkbox(checked=data['bub_search']) }}
                             {% if data['bub_search'] %}
-                                {% trans -%}active{%- endtrans %}
+                                {% trans -%}Active{%- endtrans %}
                             {% endif %}
                         </dd>
                     {% endif %}
@@ -310,7 +310,7 @@
                     <dd>{{ data['interests']|rst }}</dd>
                 {% endif %}
                 {% if data['free_form'] %}
-                    <dt>{% trans -%}Miscellaneous …{%- endtrans %}</dt>
+                    <dt>{% trans -%}Miscellaneous{%- endtrans %}</dt>
                     <dd>{{ data['free_form']|rst }}</dd>
                 {% endif %}
             </dl>
@@ -441,7 +441,7 @@
                                  id="purgepersonaform" style="display: inline;">
                                     {{ util.input_submit(value=gettext("Delete Account"), icon="fire",
                                             aclass="btn btn-danger btn-sm") }}
-                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are Your sure?")) }}
+                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are You sure?")) }}
                                 </form>
                                 <script type="text/javascript">
                                     $('#purgepersonaform').cdedbProtectAction(

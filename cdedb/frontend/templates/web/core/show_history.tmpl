@@ -157,14 +157,14 @@
             {% call(c) print_multifield_history(['is_admin','is_core_admin','is_cde_admin','is_event_admin',
                                                  'is_ml_admin', 'is_assembly_admin']) %}
                 {% set vars = {'any_privilege': False} %}
-                {% for bit, desc, icon in (("is_admin", gettext("Super"), "wrench"),
-                                          ("is_core_admin", gettext("Core"), "user"),
-                                          ("is_cde_admin", gettext("cde_realm"), "education"),
-                                          ("is_event_admin", gettext("event_admin"), "blackboard"),
-                                          ("is_ml_admin", gettext("ml_admin"), "envelope"),
-                                          ("is_assembly_admin", gettext("assembly_admin"), "bullhorn"),)%}
+                {% for bit, desc, icon in (("is_admin", gettext("Super-Admin"), "wrench"),
+                                          ("is_core_admin", gettext("Core-Admin"), "user"),
+                                          ("is_cde_admin", gettext("CdE-Admin"), "education"),
+                                          ("is_event_admin", gettext("Event-Admin"), "blackboard"),
+                                          ("is_ml_admin", gettext("Mailinglist-Admin"), "envelope"),
+                                          ("is_assembly_admin", gettext("Assembly-Admin"), "bullhorn"),)%}
                     {% if entries[c][bit] %}
-                        {{ util.make_icon(icon) }} {{ desc|e }}{% trans -%}-Admin{%- endtrans %},
+                        {{ util.make_icon(icon) }} {{ desc|e }},
                         {# Dirty hack to workaround Jinjas set drawbacks #}
                         {% set tmp = vars.update({'any_privilege': True}) %}
                     {% endif %}

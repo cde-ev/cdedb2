@@ -37,7 +37,7 @@
                     <div class="sr-only">{% trans -%}Search for Users by ID or Name{%- endtrans %}</div>
                     <div class="input-group">
                         <input type="text" name="phrase" class="form-control" id="input-showuser-id"
-                               aria-label={% trans -%}User-ID or Username{%- endtrans %}/>
+                               aria-label={% trans -%}CdEDB-ID, Name or E-Mail{%- endtrans %}/>
                         <span class="input-group-btn">
                             {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                         </span>
@@ -69,8 +69,8 @@
 
                 {% if 'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
                     <p>
-                        {% trans count=dashboard['genesis_cases']|e,
-                                 link=-util.href(cdedblink('core/list_pending_changes'), gettext("Changes")) %}
+                        {% trans count=dashboard['pending_changes']|e,
+                                 link=util.href(cdedblink('core/list_pending_changes'), gettext("Changes")) -%}
                         	There are currently {{ count }} {{ link }} to review.
                         {%- endtrans %}
                     </p>
@@ -164,7 +164,7 @@
                             {% if event['registration'] %}
                                 {% trans link=util.href(cdedblink('event/registration_status', {'event_id': event_id}),
                                              gettext("registered")) -%}
-                                	(already {{ link }})
+                                	(Already {{ link }})
                                 {%- endtrans %}
                                 {%- if event['use_questionnaire'] %}
                                     &bull;
@@ -173,24 +173,24 @@
                                 {% endif -%}
                             {% elif event['is_open'] %}
                                 {{ util.href(cdedblink('event/register_form', {'event_id': event_id}),
-                                    gettext("register"), icon='log-in') }}
+                                    gettext("Register"), icon='log-in') }}
                                 {% if not event['registration_soft_limit'] is none %}
                                     {% if now() <= event['registration_soft_limit'] %}
                                         {% trans date=event['registration_soft_limit']|datetime(lang=lang)|e -%}
-                                        	(until {{ date }})
+                                        	(Until {{ date }})
                                         {%- endtrans %}
                                     {% elif event['registration_hard_limit'] %}
                                         {% trans date=event['registration_hard_limit']|datetime(lang=lang)|e -%}
-                                        	(late Registrations until {{ date }})
+                                        	(Late Registrations until {{ date }})
                                         {%- endtrans %}
                                     {% else %}
                                         {% trans -%}
-                                        	(only late Registrations possible)
+                                        	(Only late Registrations possible)
                                         {%- endtrans %}
                                     {% endif %}
                                 {% elif not event['registration_hard_limit'] is none %}
                                     {% trans date=event['registration_hard_limit']|datetime(lang=lang)|e -%}
-                                    	(until {{ date }})
+                                    	(Until {{ date }})
                                     {%- endtrans %}
                                 {% endif %}
                             {% endif %}
@@ -203,7 +203,7 @@
 
         {% if 'assemblies' in dashboard %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title=gettext("Current Registrations"), icon='bullhorn',
+            {% call util.bootstrap_panel(title=gettext("Current Assemblies"), icon='bullhorn',
                                          aclass='panel-success') %}
                 <ul class="slim">
                     {% for assembly_id, assembly in dashboard['assemblies']|dictsort %}
@@ -213,7 +213,7 @@
                             <br />
                             {% if assembly['does_attend'] %}
                                 {% trans -%}
-                                	(already attending)
+                                	(Already attending)
                                 {%- endtrans %}
                             {% else %}
                                 {% trans date=assembly['signup_end']|datetime(lang=lang)|e -%}

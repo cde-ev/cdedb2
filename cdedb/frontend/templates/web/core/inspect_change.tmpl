@@ -63,14 +63,14 @@
         {% endcall %}
 
         <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
-        {% call(next) show_diff('id', gettext("CdEDB_ID"), True) %}
+        {% call(next) show_diff('id', gettext("CdEDB-ID"), True) %}
             {{ util.href(show_user_link(pending['id']), pending['id']|cdedbid|e, aclass='nowrap') }}
         {% endcall %}
         {{ show_diff('is_member', gettext("CdE-Membership"), True) }}
         {{ show_diff('balance', gettext("Balance")) }}
         {{ show_diff('bub_search', gettext("Searchable for BuB")) }}
 
-        <h4 class="heading-underline">{% trans -%}Contac Information{%- endtrans %}</h4>
+        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
         {{ show_diff('username', gettext("E-Mail"), True) }}
         {{ show_diff('telephone', gettext("Phone")) }}
         {{ show_diff('mobile', gettext("Mobilephone")) }}
