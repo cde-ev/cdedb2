@@ -533,8 +533,6 @@ class CoreFrontend(AbstractFrontend):
         mailinglist id.
 
         Required aux value based on the 'kind':
-        * admin_persona: Realm to search users for (or 'member' to search
-                         CdE-Members)
         * mod_ml_user: Id of the mailinglist you are moderator of
         * orga_event_user: Id of the event you are orga of
         """
