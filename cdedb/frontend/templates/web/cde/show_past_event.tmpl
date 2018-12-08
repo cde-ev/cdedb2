@@ -69,7 +69,7 @@
                                     arialabel=gettext("ID of the new Participant")) }}
                             <script type="text/javascript">
                                 $('#input-add-participant').cdedbSearchPerson(
-                                    '{{ cdedblink('core/select_persona') + '?kind=admin_persona&phrase=%s&sphere=event'}}',
+                                    '{{ cdedblink('core/select_persona') + '?kind=past_event_user&phrase=%s'}}',
                                     {{ participants.keys()|list|json }}, false, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                 );
                             </script>

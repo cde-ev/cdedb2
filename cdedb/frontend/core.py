@@ -507,9 +507,8 @@ class CoreFrontend(AbstractFrontend):
             return self.index(rs)
 
     @access("persona")
-    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"),
-                 ("sphere", "str_or_None"))
-    def select_persona(self, rs, phrase, kind, aux, sphere):
+    @REQUESTdata(("phrase", "str"), ("kind", "str"), ("aux", "id_or_None"))
+    def select_persona(self, rs, phrase, kind, aux):
         """Provide data for inteligent input fields.
 
         This searches for users by name so they can be easily selected
@@ -519,18 +518,24 @@ class CoreFrontend(AbstractFrontend):
         The kind parameter specifies the purpose of the query which decides
         the privilege level required and the basic search paramaters.
 
+        Allowed kinds:
+        * admin_persona: Search for users as core_admin
+        * past_event_user: Search for an event user to add to a past event as
+                           cde_admin
+        * pure_assembly_user: Search for an assembly only user as assembly_admin
+        * mod_ml_user: Search for a mailinglist user as a moderator
+        * event_admin_user: Search an event user as event_admin (for creating
+                            events)
+        * orga_event_user: Search for an event user as event orga
+
         The aux parameter allows to supply an additional id for example
         in the case of a moderator this would be the relevant
         mailinglist id.
 
-        The sphere parameter allows to restrict results to a specific realm
-        or to members only. This is only useful for certain kinds of queries
-        and ignored in the rest.
+        Required aux value based on the 'kind':
+        * mod_ml_user: Id of the mailinglist you are moderator of
+        * orga_event_user: Id of the event you are orga of
         """
-        if not rs.errors and sphere:
-            if sphere not in ("cde", "event", "ml", "assembly", "member"):
-                rs.errors.append(("sphere",
-                                  ValueError(n_("Not a valid restriction."))))
         if rs.errors:
             return self.send_json(rs, {})
 
@@ -538,23 +543,17 @@ class CoreFrontend(AbstractFrontend):
         search_additions = []
         mailinglist = None
         event = None
-        num_preview_personas = self.conf.NUM_PREVIEW_PERSONAS
-        sphere_additions = {
-            realm: ("is_{}_realm".format(realm), QueryOperators.equal, True)
-            for realm in ("cde", "event", "ml", "assembly")
-        }
-        sphere_additions["member"] = ("is_member", QueryOperators.equal, True)
+        num_preview_personas = (self.conf.NUM_PREVIEW_PERSONAS_CORE_ADMIN
+                                if {"core_admin", "admin"} & rs.user.roles
+                                else self.conf.NUM_PREVIEW_PERSONAS)
         if kind == "admin_persona":
-            privilege_levels = {
-                None: "core_admin",
-                "cde": "cde_admin",
-                "member": "cde_admin",
-                "event": "event_admin",
-                "ml": "ml_admin",
-                "assembly": "assembly_admin",
-            }
-            if privilege_levels[sphere] not in rs.user.roles:
+            if not {"core_admin", "admin"} & rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
+        elif kind == "past_event_user":
+            if "cde_admin" not in rs.user.roles:
+                raise PrivilegeError(n_("Not privileged."))
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             if "assembly_admin" not in rs.user.roles:
                 raise PrivilegeError(n_("Not privileged."))
@@ -565,37 +564,45 @@ class CoreFrontend(AbstractFrontend):
         elif kind == "mod_ml_user" and aux:
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if "ml_admin" not in rs.user.roles:
-                num_preview_personas //= 3
                 if rs.user.persona_id not in mailinglist['moderators']:
                     raise PrivilegeError(n_("Not privileged."))
             search_additions.append(
                 ("is_ml_realm", QueryOperators.equal, True))
+        elif kind == "event_admin_user":
+            if "event_admin" not in rs.user.roles:
+                raise PrivilegeError(n_("Not privileged."))
+            search_additions.append(
+                ("is_event_realm", QueryOperators.equal, True))
         elif kind == "orga_event_user" and aux:
             event = self.eventproxy.get_event(rs, aux)
             if "event_admin" not in rs.user.roles:
-                num_preview_personas //= 3
                 if rs.user.persona_id not in event['orgas']:
                     raise PrivilegeError(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
         else:
             return self.send_json(rs, {})
-        if sphere:
-            search_additions.append(sphere_additions[sphere])
 
         data = None
-        anid, errs = validate.check_cdedbid(phrase, "phrase")
-        if not errs:
-            data = self.get_personas(rs, anid)
-        else:
-            anid, errs = validate.check_id(phrase, "phrase")
+
+        # Core admins and super admins are allowed to search by raw ID or
+        # CDEDB-ID
+        if {"core_admin", "admin"} & rs.user.roles:
+            anid, errs = validate.check_cdedbid(phrase, "phrase")
             if not errs:
                 data = self.get_personas(rs, anid)
-        if data:
-            data = unwrap(data)
+            else:
+                anid, errs = validate.check_id(phrase, "phrase")
+                if not errs:
+                    data = self.get_personas(rs, anid)
+            if data:
+                data = unwrap(data)
+
+        # Don't query, if search phrase is too short
         if not data and len(phrase) < self.conf.NUM_PREVIEW_CHARS:
             return self.send_json(rs, {})
 
+        terms = []
         if data is None:
             terms = tuple(t.strip() for t in phrase.split(' ') if t)
             search = [("username,family_name,given_names,display_name",
@@ -610,6 +617,7 @@ class CoreFrontend(AbstractFrontend):
                  "display_name"), search, (("personas.id", True),))
             data = self.coreproxy.submit_select_persona_query(rs, query)
 
+        # Filter result to get only valid audience, if mailinglist is given
         if mailinglist:
             persona_ids = tuple(e['id'] for e in data)
             personas = self.coreproxy.get_personas(rs, persona_ids)
@@ -618,31 +626,39 @@ class CoreFrontend(AbstractFrontend):
                 e for e in data
                 if pol.check(extract_roles(personas[e['id']])))
 
+        # Strip data to contain at maximum `num_preview_personas` results
         if len(data) > num_preview_personas:
             tmp = sorted(data, key=lambda e: e['id'])
             data = tmp[:num_preview_personas]
 
+        def name(x):
+            return "{} {}".format(x['given_names'], x['family_name'])
+
+        # Check if name occurs multiple times to add email address in this case
         counter = collections.defaultdict(lambda: 0)
-        def formatter(entry, verbose=False):
-            if verbose:
-                return "{} {} ({})".format(
-                    entry['given_names'], entry['family_name'],
-                    entry['username'])
-            else:
-                return "{} {}".format(
-                    entry['given_names'], entry['family_name'])
         for entry in data:
-            counter[formatter(entry)] += 1
+            counter[name(entry)] += 1
+
+        # Generate return JSON list
         ret = []
         for entry in sorted(data, key=name_key):
-            verbose = counter[formatter(entry)] > 1
-            ret.append(
-                {
-                    'id': entry['id'],
-                    'name': formatter(entry, verbose),
-                    'display_name': entry['display_name'],
-                    'email': entry['username'],
-                })
+            result = {
+                'id': entry['id'],
+                'name': name(entry),
+                'display_name': entry['display_name'],
+            }
+            # Email/username is only delivered if we have relative_admins
+            # rights, a search term with an @ (and more) matches the mail
+            # address, or the mail address is required to distinguish equally
+            # named users
+            searched_email = any(t in entry['username']
+                                    and '@' in t and
+                                    len(t) > self.conf.NUM_PREVIEW_CHARS
+                                 for t in terms)
+            if counter[name(entry)] > 1 or searched_email or \
+                    self.coreproxy.is_relative_admin(rs, entry['id']):
+                result['email'] = entry['username']
+            ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
     @access("persona")
