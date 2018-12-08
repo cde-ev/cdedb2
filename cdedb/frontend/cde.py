@@ -117,7 +117,7 @@ class CdEFrontend(AbstractUserFrontend):
             'has_lastschrift': (len(user_lastschrift) > 0), 'data': data,
             'meta_info': meta_info, 'deadline': deadline})
 
-    @access("persona")
+    @access("member")
     @REQUESTdata(("stay", "bool_or_None"))
     def consent_decision_form(self, rs, stay):
         """After login ask cde members for decision about searchability. Do
@@ -126,8 +126,6 @@ class CdEFrontend(AbstractUserFrontend):
         This is the default page after login, but most users will instantly
         be redirected.
         """
-        if "member" not in rs.user.roles or "searchable" in rs.user.roles:
-            return self.redirect(rs, "core/index")
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         if data['decided_search'] and not stay:
             return self.redirect(rs, "core/index")
