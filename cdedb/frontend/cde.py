@@ -118,8 +118,7 @@ class CdEFrontend(AbstractUserFrontend):
             'meta_info': meta_info, 'deadline': deadline})
 
     @access("member")
-    @REQUESTdata(("stay", "bool_or_None"))
-    def consent_decision_form(self, rs, stay):
+    def consent_decision_form(self, rs):
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
 
@@ -127,8 +126,6 @@ class CdEFrontend(AbstractUserFrontend):
         be redirected.
         """
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        if data['decided_search'] and not stay:
-            return self.redirect(rs, "core/index")
         return self.render(rs, "consent_decision", {
             'decided_search': data['decided_search']})
 
@@ -137,7 +134,7 @@ class CdEFrontend(AbstractUserFrontend):
     def consent_decision(self, rs, ack):
         """Record decision."""
         if rs.errors:
-            return self.consent_decision_form(rs, stay=True)
+            return self.consent_decision_form(rs)
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         new = {
             'id': rs.user.persona_id,
@@ -151,7 +148,7 @@ class CdEFrontend(AbstractUserFrontend):
         message = n_("Consent noted.") if ack else n_("Decision noted.")
         self.notify_return_code(rs, code, success=message)
         if not code:
-            return self.consent_decision_form(rs, stay=True)
+            return self.consent_decision_form(rs)
         if not data['decided_search']:
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
