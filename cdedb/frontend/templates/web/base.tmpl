@@ -23,7 +23,7 @@
                         /* search for paths of temporary mail files and create link */
                         var pos = html.indexOf(" /tmp/cdedb-mail-");
                         if (pos >= 0) {
-                            var endpos = html.indexOf(".txt ", pos);
+                            var endpos = html.indexOf(".txt", pos);
                             var token = html.substring(pos + 17, endpos);
                             var link = "{{ cdedblink('core/debug_email', magic_placeholders=['token']) }}"
                                 .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', token);
