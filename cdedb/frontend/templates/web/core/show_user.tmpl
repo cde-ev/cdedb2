@@ -3,7 +3,11 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% import "web/generic.tmpl" as generic with context %}
-{% block title %}{{ data['given_names']|e }} {{ data['family_name']|e }}{% endblock %}
+{% block title %}
+    {% trans given_names=data['given_names']|e, family_name=data['family_name']|e -%}
+        {{ given_names }} {{ family_name }}
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
@@ -14,18 +18,18 @@
     {% if is_relative_admin %}
         {% if not ambience['persona']['is_active'] %}
             <div class="alert alert-info">
-                {{ util.make_icon('info-sign') }} Der Benutzer ist deaktiviert.
+                {{ util.make_icon('info-sign') }} {% trans -%}The User is deactivated.{%- endtrans %}
             </div>
         {% endif %}
         {% if ambience['persona']['is_archived'] %}
             <div class="alert alert-info">
-                {{ util.make_icon('info-sign') }} Der Benutzer ist archiviert.
+                {{ util.make_icon('info-sign') }} {% trans -%}The User is archived.{%- endtrans %}
             </div>
         {% endif %}
     {% endif %}
 
     {% if quoteable %}
-        {{ util.href(show_user_link(ambience['persona']['id'], quote_me=True), "Gesamtes Profil anzeigen",
+        {{ util.href(show_user_link(ambience['persona']['id'], quote_me=True), gettext("Show complete Profile"),
                      aclass="btn btn-info btn-sm", icon='eye-close') }}
     {% endif %}
     {% if data['id'] == user.persona_id or is_relative_admin %}
@@ -33,24 +37,25 @@
             {% if not ambience['persona']['is_archived'] %}
                 {% if is_relative_admin %}
                     {% if data['id'] == user.persona_id %}
-                        {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten (normal)",
+                        {{ util.href(cdedblink('core/change_user_form'), gettext("Edit (normal)"),
                                 aclass="btn btn-warning btn-sm", icon="pencil") }}
-                        {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten (mit Adminrechten)",
+                        {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit (as Admin)"),
                                 aclass="btn btn-warning btn-sm", icon="pencil") }}
                     {% else %}
-                        {{ util.href(cdedblink('core/admin_change_user_form'), "Bearbeiten",
+                        {{ util.href(cdedblink('core/admin_change_user_form'), gettext("Edit"),
                                 aclass="btn btn-warning btn-sm", icon="pencil") }}
                     {% endif %}
                 {% else %}
-                    {{ util.href(cdedblink('core/change_user_form'), "Bearbeiten",
+                    {{ util.href(cdedblink('core/change_user_form'), gettext("Edit"),
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
-                    {{ util.href(cdedblink("core/change_password_form"), "Passwort ändern", aclass="btn btn-warning btn-sm",
-                            icon="edit") }}
+                    {{ util.href(cdedblink("core/change_password_form"), gettext("Change Password"),
+                            aclass="btn btn-warning btn-sm", icon="edit") }}
                 {% endif %}
                 {% if is_relative_admin %}
-                    {{ util.href(cdedblink("core/show_history"), "Geschichte", aclass="btn btn-info btn-sm", icon="time") }}
+                    {{ util.href(cdedblink("core/show_history"), gettext("History"), aclass="btn btn-info btn-sm",
+                            icon="time") }}
                 {% endif %}
             {% endif %}
         </div>
@@ -60,63 +65,63 @@
     {% if data['is_cde_realm'] %}
         <div class="pull-right-responsive text-right-responsive">
             {% if data['foto'] %}
-                <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']})|e }}" alt="Profilbild"
-                  class="profilepic img-thumbnail">
+                <img src="{{ cdedblink('core/get_foto', {'foto': data['foto']})|e }}"
+                     alt="{{ gettext("Profile Picture") }}" class="profilepic img-thumbnail">
             {%- else %}
-                <img src="{{ staticurl("generic-avatar.png")|e }}" alt="Standardprofilbild"
+                <img src="{{ staticurl("generic-avatar.png")|e }}" alt="{{ gettext("Default Profile Picture") }}"
                   class="profilepic img-thumbnail">
             {%- endif -%}
             {% if data['id'] == user.persona_id or is_relative_admin -%}
                 <br />
-                {{ util.href(cdedblink('core/set_foto_form'), "Profilbild ändern", aclass="btn btn-xs btn-warning",
-                        icon="pencil") }}
+                {{ util.href(cdedblink('core/set_foto_form'), gettext("Change Profile Picture"),
+                        aclass="btn btn-xs btn-warning", icon="pencil") }}
             {% endif %}
         </div>
     {% endif %}
 
     <div class="float-along">
-        <h4 class="heading-underline">Person</h4>
+        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
         <dl class="dl-horizontal">
-            <dt>Name</dt>
+            <dt>{% trans -%}Name{%- endtrans %}</dt>
             <dd>
                 {{ data['title']|e }} {{ util.output_given_displayname(data['given_names'], data ['display_name']) }}
                 {{ data['family_name']|e }} {{ data['name_supplement']|e }}
             </dd>
             {% if data['birth_name'] %}
-                <dt>Geburtsname</dt>
+                <dt>{% trans -%}Birth Name{%- endtrans %}</dt>
                 <dd>{{ data['birth_name']|e }}</dd>
             {% endif %}
             {% if data['birthday'] %}
-                <dt>Geburtstag</dt>
+                <dt>{% trans -%}Birthday{%- endtrans %}</dt>
                 <dd>{{ data['birthday']|date(lang=lang)|e }}</dd>
             {% endif %}
             {% if (data['id'] == user.persona_id or is_relative_admin) and data['gender'] %}
-                <dt>Geschlecht</dt>
+                <dt>{% trans -%}Gender{%- endtrans %}</dt>
                 <dd>{{ gettext(enums['Genders'](data['gender'])|string)|e }}</dd>
             {% endif %}
         </dl>
 
 
         {% if data['id'] == user.persona_id or is_relative_admin %}
-            <h4 class="heading-underline">Account &amp; Mitgliedschaft</h4>
+            <h4 class="heading-underline">{% trans -%}Account &amp; Membership{%- endtrans %}</h4>
             <dl class="dl-horizontal">
-                <dt>CdEDB-ID</dt>
+                <dt>{% trans -%}CdEDB-ID{%- endtrans %}</dt>
                 <dd>{{ data['id']|cdedbid|e }}</dd>
                 {% if is_relative_admin %}
-                    <dt>Account aktiv</dt>
+                    <dt>{% trans -%}Account active{%- endtrans %}</dt>
                     <dd>{{ util.deko_checkbox(checked=data['is_active'], anid='activity_checkbox',
-                                              titles=['nein', 'ja']) }}</dd>
+                                              titles=[gettext("No"), gettext("Yes")]) }}</dd>
                 {% endif %}
             </dl>
 
             <dl class="dl-horizontal">
-                <dt>Bereiche</dt>
+                <dt>{% trans -%}Realms{%- endtrans %}</dt>
                 <dd>
                     {% set vars = {'any_realm_not': False} %}
-                    {% for bit, desc, icon in (("is_cde_realm", "CdE", "education"),
-                                               ("is_event_realm", "Veranstaltungen", "blackboard"),
-                                               ("is_ml_realm", "Mailinglisten", "envelope"),
-                                               ("is_assembly_realm", "Versammlungen", "bullhorn"),)%}
+                    {% for bit, desc, icon in (("is_cde_realm", gettext("cde_realm"), "education"),
+                                               ("is_event_realm", gettext("Events"), "blackboard"),
+                                               ("is_ml_realm", gettext("Mailinglists"), "envelope"),
+                                               ("is_assembly_realm", gettext("Assemblies"), "bullhorn"),)%}
                         {% if data[bit] %}
                             {{ util.make_icon(icon, title=desc) }}
                         {% else %}
@@ -127,103 +132,107 @@
                     {% if 'core_admin' in user.roles
                             and vars['any_realm_not']
                             and not ambience['persona']['is_archived'] %}
-                        {{ util.href(cdedblink("core/promote_user_form"), "Bereich hinzufügen", icon="pencil",
+                        {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
                 </dd>
 
-                <dt>Admin-Privilegien</dt>
+                <dt>{% trans -%}Admin Privileges{%- endtrans %}</dt>
                 <dd>
                     {% set vars = {'any_privilege': False} %}
-                    {% for bit, desc, icon in (("is_admin", "Super", "wrench"),
-                                              ("is_core_admin", "Core", "user"),
-                                              ("is_cde_admin", "CdE", "education"),
-                                              ("is_event_admin", "Veranstaltungs", "blackboard"),
-                                              ("is_ml_admin", "Mailinglisten", "envelope"),
-                                              ("is_assembly_admin", "Versammlungs", "bullhorn"),)%}
+                    {% for bit, desc, icon in (("is_admin", gettext("Super"), "wrench"),
+                                              ("is_core_admin", gettext("Core"), "user"),
+                                              ("is_cde_admin", gettext("cde_realm"), "education"),
+                                              ("is_event_admin", gettext("event_admin"), "blackboard"),
+                                              ("is_ml_admin", gettext("ml_admin"), "envelope"),
+                                              ("is_assembly_admin", gettext("assembly_admin"), "bullhorn"),)%}
                         {% if data[bit] %}
-                            {{ util.make_icon(icon, title=desc+"-Admin") }}
+                            {{ util.make_icon(icon, title=desc+gettext("-Admin")) }}
                             {# Dirty hack to workaround Jinjas set drawbacks #}
                             {% set tmp = vars.update({'any_privilege': True}) %}
                         {% endif %}
                     {% endfor %}
-                    {% if not vars['any_privilege'] %}<i>Keine</i>{% endif %}
+                    {% if not vars['any_privilege'] %}
+                        <i>{% trans -%}None{%- endtrans %}</i>
+                    {% endif %}
                     {% if 'admin' in user.roles and not ambience['persona']['is_archived'] %}
-                        {{ util.href(cdedblink("core/change_privileges_form"), "bearbeiten", icon="pencil",
+                        {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pencil",
                                 aclass="btn btn-xs btn-warning") }}
                     {% endif %}
                 </dd>
 
                 {% if data['notes'] and is_relative_admin %}
-                    <dt>Notizen</dt>
+                    <dt>{% trans -%}Notes{%- endtrans %}</dt>
                     <dd>{{ data['notes']|rst }}</dd>
                 {% endif %}
             </dl>
 
             {% if data['is_cde_realm'] %}
                 <dl class="dl-horizontal">
-                    <dt>Mitgliedschaft</dt>
+                    <dt>{% trans -%}Membership{%- endtrans %}</dt>
                     <dd>
                         {{ util.deko_checkbox(checked=data['is_member'], anid="membership_checkbox") }}
-                        {% if data['is_member'] %}CdE-Mitglied{% endif %}
+                        {% if data['is_member'] %}{% trans -%}CdE-Member{%- endtrans %}{% endif %}
                         {% if data['trial_member'] %}
-                            (Probemitgliedschaft)
+                            {% trans -%}(Trialmembership){%- endtrans %}
                         {% endif %}
                         {% if is_relative_admin %}
-                            {{ util.href(cdedblink('core/modify_membership_form'), "Status ändern", icon="pencil",
+                            {{ util.href(cdedblink('core/modify_membership_form'), gettext("Change Status"), icon="pencil",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
                     </dd>
 
-                    <dt>Guthaben</dt>
+                    <dt>{% trans -%}Balance{%- endtrans %}</dt>
                     {% if data['has_lastschrift'] %}
                         <dd>
-                            {{ data['balance']|e }}&#x202F;€ und
+                            {{ data['balance']|money|e }} {% trans -%}and{%- endtrans %}
                             {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                                   "Einzugsermächtigung", icon="euro") }}
+                                    gettext("Direct Debit Authorization"), icon="euro") }}
                         </dd>
                     {% else %}
                         <dd>{{ data['balance']|e }}€</dd>
                         {% if 'cde_admin' in user.roles %}
                             <dd>
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
-                                             "Neue Einzugsermächtigung …", icon="euro") }}
+                                        gettext("New Direct Debit Authorization …"), icon="euro") }}
                             </dd>
                         {% endif %}
                     {% endif %}
 
                     {% if data['is_member'] %}
-                        <dt>Sichtbarkeit</dt>
+                        <dt>{% trans -%}Searchability{%- endtrans %}</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=data['is_searchable']) }}
                             {% if data['is_searchable'] %}
-                                <td>Daten sind für andere Mitglieder sichtbar.</td>
+                                <td>{% trans -%}Data is visible for other Members.{%- endtrans %}</td>
                             {% else %}
                                 {% if not data['decided_search'] %}
-                                    Noch nicht entschieden. (Daten sind nicht sichtbar)
+                                    {% trans -%}Not yet decided. (Data is not visible){%- endtrans %}
                                     {% if data['id'] == user.persona_id %}
-                                        {{ util.href(cdedblink('cde/consent_decision'), "Entscheiden",
+                                        {{ util.href(cdedblink('cde/consent_decision'), gettext("Give Consent"),
                                                      icon="hand-right", aclass="btn btn-xs btn-primary") }}
                                     {% endif %}
                                 {% else %}
-                                    Daten sind nicht sichtbar.
+                                    {% trans -%}Data is not visible.{%- endtrans %}
                                 {% endif %}
                             {% endif %}
                         </dd>
 
-                        <dt>Datenzugriff für BuB</dt>
+                        <dt>{% trans -%}Searchable for BuB{%- endtrans %}</dt>
                         <dd>
                             {{ util.deko_checkbox(checked=data['bub_search']) }}
-                            {% if data['bub_search'] %}aktiv{% endif %}
+                            {% if data['bub_search'] %}
+                                {% trans -%}active{%- endtrans %}
+                            {% endif %}
                         </dd>
                     {% endif %}
                 </dl>
             {% endif %}
         {% endif %}
 
-        <h4 class="heading-underline">Kontakt</h4>
+        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
         <dl class="dl-horizontal">
-            <dt>E-Mail</dt>
+            <dt>{% trans -%}E-Mail{%- endtrans %}</dt>
             <dd>
                 {% if data['username'] %}
                     {{ data['username']|e }}
@@ -231,23 +240,23 @@
                     —
                 {% endif %}
                 {% if data['id'] == user.persona_id %}
-                    {{ util.href(cdedblink('core/change_username_form'), "Bearbeiten",
+                    {{ util.href(cdedblink('core/change_username_form'), gettext("Edit"),
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% elif is_relative_admin and not ambience['persona']['is_archived'] %}
-                    {{ util.href(cdedblink('core/admin_username_change_form'), "Bearbeiten",
+                    {{ util.href(cdedblink('core/admin_username_change_form'), gettext("Edit"),
                                  aclass="btn btn-xs btn-warning", icon="pencil") }}
                 {% endif %}
             </dd>
             {% if data['telephone'] %}
-                <dt>Telefon</dt>
+                <dt>{% trans -%}Phone{%- endtrans %}</dt>
                 <dd>{{ data['telephone']|e }}</dd>
             {% endif %}
             {% if data['mobile'] %}
-                <dt>Mobiltelefon</dt>
+                <dt>{% trans -%}Mobilephone{%- endtrans %}</dt>
                 <dd>{{ data['mobile']|e }}</dd>
             {% endif %}
             {% if data['weblink'] %}
-                <dt>WWW</dt>
+                <dt>{% trans -%}WWW{%- endtrans %}</dt>
                 {# TODO maybe add links or so - must be validated before! #}
                 <dd>{{ data['weblink']|e }}</dd>
             {% endif %}
@@ -255,9 +264,9 @@
 
         {% if (data['address'] or data['address_supplement'] or data['postal_code']
                     or data['location'] or data['country']) %}
-            <h4 class="heading-underline">Adresse</h4>
+            <h4 class="heading-underline">{% trans -%}Address Information{%- endtrans %}</h4>
             <dl class="dl-horizontal">
-                <dt>Adresse</dt>
+                <dt>{% trans -%}Address{%- endtrans %}</dt>
                 <dd>
                     {{ data['address']|e }}{% if data['address'] %}<br />{% endif %}
                     {{ data['address_supplement']|e }}{% if data['address_supplement'] %}<br />{% endif %}
@@ -270,7 +279,7 @@
         {% if (data['address2'] or data['address_supplement2'] or data['postal_code2']
                 or data['location2'] or data['country2']) %}
             <dl class="dl-horizontal">
-                <dt>Zweitadresse</dt>
+                <dt>{% trans -%}Second Address{%- endtrans %}</dt>
                 <dd>
                     {{ data['address2']|e }}{% if data['address2'] %}<br />{% endif %}
                     {{ data['address_supplement2']|e }}{% if data['address_supplement2'] %}<br />{% endif %}
@@ -282,29 +291,33 @@
         {% endif %}
 
         {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests'] %}
-            <h4 class="heading-underline">Lebenslauf</h4>
+            <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
             <dl class="dl-horizontal">
                 {% if data['specialisation'] %}
-                    <dt>Fachgebiet</dt>
+                    <dt>{% trans -%}Specialisation{%- endtrans %}</dt>
                     <dd>{{ data['specialisation']|rst }}</dd>
                 {% endif %}
                 {% if data['affiliation'] %}
-                    <dt>Schule, Uni, …</dt>
+                    <dt>{% trans -%}School, University, …{%- endtrans %}</dt>
                     <dd>{{ data['affiliation']|rst }}</dd>
                 {% endif %}
                 {% if data['timeline'] %}
-                    <dt>Jahrgang, Matrikel, …</dt>
+                    <dt>{% trans -%}Year(s) of Graduation{%- endtrans %}</dt>
                     <dd>{{ data['timeline']|rst }}</dd>
                 {% endif %}
                 {% if data['interests'] %}
-                    <dt>Interessen</dt>
+                    <dt>{% trans -%}Interests{%- endtrans %}</dt>
                     <dd>{{ data['interests']|rst }}</dd>
+                {% endif %}
+                {% if data['free_form'] %}
+                    <dt>{% trans -%}Miscellaneous …{%- endtrans %}</dt>
+                    <dd>{{ data['free_form']|rst }}</dd>
                 {% endif %}
             </dl>
         {% endif %}
 
         {% if past_events %}
-            <h4 class="heading-underline">Veranstaltungen</h4>
+            <h4 class="heading-underline">{% trans -%}Past Events{%- endtrans %}</h4>
             <ul>
             {#  FIXME: Sort by name if tempus is equal #}
             {% for pevent_id, pevent in past_events|xdictsort('tempus') %}
@@ -312,7 +325,7 @@
                     {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}),
                                  pevent['event_name'], readonly='cde' not in user.roles) -}}
                     {% if pevent['is_orga'] %}
-                        (Orga)
+                        {% trans -%}(Orga){%- endtrans %}
                     {%- endif -%}
                     {% if pevent['courses'] -%}
                         :
@@ -322,7 +335,7 @@
                                                                             "pcourse_id": pcourse_id}),
                                          pcourse['course_name'], readonly='cde' not in user.roles) }}
                             {%- if pcourse['is_instructor'] %}
-                                (Kursleiter)
+                                {% trans -%}(Instructor){%- endtrans %}
                             {%- endif -%}
                             {% if not loop.last %}, {% endif %}
                         {% endfor %}
@@ -332,14 +345,10 @@
             </ul>
         {% endif %}
 
-        {% if data['free_form'] %}
-            <h4 class="heading-underline">Sonstiges …</h4>
-            {{ data['free_form']|rst }}
-        {% endif %}
     </div>
 
     {% if data['id'] != user.persona_id and (is_relative_admin or "core_admin" in user.roles) %}
-        {% call util.bootstrap_panel(title="Aktionen", icon="warning-sign", aclass="panel-danger mosp") %}
+        {% call util.bootstrap_panel(title=gettext("Actions"), icon="warning-sign", aclass="panel-danger mosp") %}
             {% if not ambience['persona']['is_archived'] %}
                 {% if is_relative_admin %}
                     <div class="row">
@@ -348,13 +357,13 @@
                                 {% if data['is_active'] %}
                                     <form action="{{ cdedblink('core/toggle_activity', {'activity': False})|e }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
-                                        {{ util.input_submit(value="Account deaktivieren", icon="ban-circle",
+                                        {{ util.input_submit(value=gettext("Deactivate Account"), icon="ban-circle",
                                                 aclass="btn btn-danger btn-sm") }}
                                     </form>
                                 {% else %}
                                     <form action="{{ cdedblink('core/toggle_activity', {'activity': True})|e }}"
                                           method="POST" id="activitytoggleform" style="display: inline;">
-                                        {{ util.input_submit(value="Account aktivieren", icon="ok-circle",
+                                        {{ util.input_submit(value=gettext("Reactivate Account"), icon="ok-circle",
                                                 aclass="btn btn-success btn-sm") }}
                                     </form>
                                 {% endif %}
@@ -363,9 +372,11 @@
                         <div class="col-sm-8">
                             <p class="text-muted">
                                 {% if data['is_active'] %}
-                                    Deaktiviert den Account, sodass der Benutzer sich nicht mehr einloggen kann. Andere
-                                    Benutzer ohne Admin-Rechte können den Benutzer noch sehen, jedoch ohne vollständiges
-                                    Profil. Dies kann jederzeit rückgängig gemacht werden.
+                                    {% trans -%}
+                                    	Deactivates the Account, so the User can no longer login.
+                                        Non-Admins can still see the User but not the complete Profile.
+                                        This can be reversed at any time.
+                                    {%- endtrans %}
                                 {% endif %}
                             </p>
                         </div>
@@ -378,12 +389,13 @@
                             <div class="p">
                                 <form action="{{ cdedblink('core/archive_persona')|e }}" method="POST"
                                  id="archivepersonaform" style="display: inline;">
-                                    {{ util.input_submit(value="Account archivieren", icon="erase",
+                                    {{ util.input_submit(value=gettext("Archive Account"), icon="erase",
                                             aclass="btn btn-danger btn-sm") }}
-                                    {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are You sure?")) }}
                                 </form>
                                 <script type="text/javascript">
-                                    $('#archivepersonaform').cdedbProtectAction("Der Account wird archiviert.");
+                                    $('#archivepersonaform').cdedbProtectAction(
+                                        "{{ gettext("The Account will be archived.") }}");
                                     $('#archivepersonaform').find('[name="ack_delete"]').prop('checked', true)
                                         .parent().hide();
                                 </script>
@@ -391,11 +403,12 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                Archiviert den Account. Dabei wird der Account bis auf Weiteres unbenutzbar und die
-                                meisten Informationen werden gelöscht. Nur Informationen, die für eine
-                                Wiederaufnahme der CdE-Mitgliedschaft von Bedeutung sind (z.B. Name und
-                                Akademieteilnahme), bleiben bestehen. Andere Benutzer können den Account nicht mehr
-                                finden.
+                                {% trans -%}
+                                	Archives the Account. The User can no longer login and most Information is deleted.
+                                    Only Information necesary to restore Membership will be retained
+                                    (i.e. Name and Past Events attendance).
+                                    Other Users can no longer see the Account.
+                                {%- endtrans %}
                             </p>
                         </div>
                     </div>
@@ -408,14 +421,16 @@
                             <div class="p">
                                 <form action="{{ cdedblink('core/dearchive_persona')|e }}" method="POST"
                                       id="dearchivepersonaform" style="display: inline;">
-                                    {{ util.input_submit(value="Account wiederherstellen.", icon="open-file",
+                                    {{ util.input_submit(value=gettext("Restore Account"), icon="open-file",
                                                          aclass="btn btn-success btn-sm") }}
                                 </form>
                             </div>
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                Reaktiviert den archivierten Account. Er kann anschließend wieder normal genutzt werden.
+                                {% trans -%}
+                                	Restores the archives Account. It will be usable again.
+                                {%- endtrans %}
                             </p>
                         </div>
                     </div>
@@ -424,12 +439,13 @@
                             <div class="p">
                                 <form action="{{ cdedblink('core/purge_persona')|e }}" method="POST"
                                  id="purgepersonaform" style="display: inline;">
-                                    {{ util.input_submit(value="Account leeren", icon="fire",
+                                    {{ util.input_submit(value=gettext("Delete Account"), icon="fire",
                                             aclass="btn btn-danger btn-sm") }}
-                                    {{ util.input_checkbox(name="ack_delete", label="sicher?") }}
+                                    {{ util.input_checkbox(name="ack_delete", label=gettext("Are Your sure?")) }}
                                 </form>
                                 <script type="text/javascript">
-                                    $('#purgepersonaform').cdedbProtectAction("Der Account wird geleert.");
+                                    $('#purgepersonaform').cdedbProtectAction(
+                                        "{{ gettext("The Account will be deleted.") }}");
                                     $('#purgepersonaform').find('[name="ack_delete"]').prop('checked', true)
                                         .parent().hide();
                                 </script>
@@ -437,8 +453,10 @@
                         </div>
                         <div class="col-sm-8">
                             <p class="text-muted">
-                                Löscht alle verbleibenden Informationen aus dem Account. Auch der Name geht dabei
-                                verloren. Es ist anschließend nicht mehr möglich, den Benutzer wiederherzustellen.
+                                {% trans -%}
+                                	Deletes all remaining Information associated with the Account.
+                                    The Name will be lost as well. It will no longer be possible to restore the Account.
+                                {%- endtrans %}
                             </p>
                         </div>
                     </div>

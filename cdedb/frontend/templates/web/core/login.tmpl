@@ -4,16 +4,20 @@
 {% block scripts %}
     {% if 'core_admin' in user.roles %}{{ util.cdedb_script('search-persona') }}{% endif %}
 {% endblock %}
-{% block title %}CdE-Datenbank{% endblock %}
+{% block title %}
+    {% trans -%}
+    	CdE-Database
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
-{{ util.breadcrumb_link(cdedblink("core/index"), "Index", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/index"), gettext("Index"), active="True") }}
 {% endblock %}
 {% block content %}
     {% if CDEDB_OFFLINE_DEPLOYMENT %}
         <div class="alert alert-info">
             <p>
-                {{ util.make_icon('info-sign') }} <strong>Info</strong>
-                Dies ist eine Offline-Instanz der CdE-Datenbank
+                {{ util.make_icon('info-sign') }} <strong>{% trans -%}Info{%- endtrans %}</strong>
+                {% trans -%}This is an Offline-Instance of the CdEDB{%- endtrans %}
             </p>
             
             <p class=nosp>{# TODO Erklärtext #}</p>
@@ -22,9 +26,9 @@
 
     <form action="{{ cdedblink('core/login')|e }}" method="POST" id="loginform" class="form-horizontal">
         <p>
-            {{ util.form_input_text(name="username", label="E-Mail:", type="email", small=True,
+            {{ util.form_input_text(name="username", label=gettext("E-Mail"), type="email", small=True,
                                     anid="login_name") }}
-            {{ util.form_input_text(name="password", label="Passwort:", small=True, anid="login_password",
+            {{ util.form_input_text(name="password", label=gettext("Password"), small=True, anid="login_password",
                                     type="password") }}
             <script type="text/javascript">
                 $(function() {
@@ -34,12 +38,12 @@
 
             {{ util.input_hidden(name="wants") }}
 
-            {{ util.form_input_submit(value="Anmelden", small=True) }}
+            {{ util.form_input_submit(value=gettext("Login"), small=True) }}
         </p>
     </form>
     <p>
-        {{ util.href(cdedblink('core/reset_password_form'), "Passwort vergessen?") }} |
-        {{ util.href(cdedblink('core/genesis_request_form'), "Account anfordern") }}
+        {{ util.href(cdedblink('core/reset_password_form'), gettext("Reset Password")) }} |
+        {{ util.href(cdedblink('core/genesis_request_form'), gettext("Request Account")) }}
     </p>
     {% if meta_info.get('banner_before_login') %}
         {% call util.bootstrap_panel() %}

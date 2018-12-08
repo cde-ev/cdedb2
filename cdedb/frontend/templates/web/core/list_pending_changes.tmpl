@@ -1,10 +1,14 @@
 {% set sidenav_active='core_pending_changes' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block title %}Zu prüfende Profiländerungen [{{ pending|length|e }}]{% endblock %}
+{% block title %}
+    {% trans count=pending|length|e -%}
+    	Pending Profilechanges [{{ count }}]
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), "Änderungen prüfen", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/list_pending_changes"), gettext("Inspect Changes"), active="True") }}
 {% endblock %}
 {% block content %}
    <ul>

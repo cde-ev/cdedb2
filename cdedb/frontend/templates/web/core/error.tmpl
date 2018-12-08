@@ -1,39 +1,48 @@
 {% extends "web/base.tmpl" %}
-{% block title %}Fehler{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Error
+    {%- endtrans %}
+{% endblock %}
 {% block content %}
     {% if kind == "database" %}
         <p>
-            Eine Datenbanktransaktion ist fehlgeschlagen. Versuche es bitte
-            einfach nochmal, dann sollte es klappen.
+            {% trans -%}
+            	A database transaction went wrong. Please try again.
+            {%- endtrans %}
         </p>
     {% elif kind == "quota" %}
         <p>
-            Du hast das interne Limit für Zugriffe erreicht. Dies ist ein
-            Sicherheitsfeature, das ein Klonen der Datenbank verhindern
-            soll. Dabei kann es leider auch zu falsch positiven Beschränkungen
-            kommen. Dein Zähler wird im Laufe der nächsten Tage automatisch
-            zurückgesetzt.
+            {% trans -%}
+            	You reached the internal Limit for databse requests.
+                This is a security feature to prevent cloning of the database.
+                Unfortunately this can lead to false positives.
+                The Counter will reset within a few days.
+            {%- endtrans %}
         </p>
     {% else %}
         <p>
-            Es ist leider ein Fehler aufgetreten. Dies bedeutet vermutlich, dass
-            sich irgendwo im Quelltext ein Bug versteckt, den Du gerade
-            erfolgreich aufgespürt hast.
+            {% trans -%}
+                An error occurred. This probably means that there is a Bug in the Code, which You stumbled upon.
+            {%- endtrans %}
         </p>
 
         {% if message %}
             <p>
-                Die Fehlermeldung war <strong>{{ message|e }}</strong>.
+                {% trans message=message|e -%}
+                	The Error Message was <strong>{{ message }}</strong>.
+                {%- endtrans %}
             </p>
         {% endif %}
     {% endif %}
-    </p>
-
+    
     <p>
-        Sollte das Problem hartnäckig sein, so schreibe bitte eine E-Mail an das
-        Datenbankentwicklungsteam <a href="mailto:CdE-Datenbankentwicklungsteam <cdedb@lists.cde-ev.de>">{#-#}
-        &lt;cdedb@lists.cde-ev.de&gt;</a>. Gib dabei bitte eine möglichst genaue Fehlerbeschreibung (sprich: wie lässt
-        sich der Fehler reproduzieren) sowie die aktuelle Uhrzeit ({{ now()|datetime(lang=lang)|e }})
-        an.
+        {% trans team=gettext("Database-Development-Team"),
+                 mail="<a href='mailto:" + gettext("CdE-Database-Development-Team") +
+                      "<cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>",
+                 now=now()|datetime(lang=lang)|e -%}
+        	Should the Problem persist, please contact the {{ team }} at {{ mail }}.
+            Be sure to include a description of how to reproduce this error, as well as the current time ({{ now }}).
+        {%- endtrans %}
     </p>
 {% endblock %}

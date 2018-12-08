@@ -3,45 +3,54 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Accountanfrage bearbeiten{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Edit Account Request
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests")) }}
 {{ util.breadcrumb_link(cdedblink("core/genesis_modify_form", {'case_id': values['case_id']}),
-                        "Accountanfrage von {} {} bearbeiten".format(values["given_names"], values["family_name"]),
+                        gettext("Edit Account Request from {given_names} {family_name}").format(
+                            given_names=values["given_names"], family_name=values["family_name"]),
                         active="True", icon="user") }}
 {% endblock %}
 {% block content %}
     <form action="{{ cdedblink('core/genesis_modify')|e }}" method="POST" id="genesismodifyform" class="form-horizontal">
         <div>
-            {{ util.form_input_text(name="given_names", label="Vorname(n)", small=True) }}
-            {{ util.form_input_text(name="family_name", label="Nachname", small=True) }}
-            {{ util.form_input_text(name="username", label="E-Mail-Adresse", small=True, type="email") }}
+            {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
+            {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
+            {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
             {% if "core_admin" in user.roles %}
                 {{ util.form_input_select(
-                    name="realm", small=True, entries=(("event", "CdE-Veranstaltung"), ("ml", "CdE-Mailingliste")),
+                    name="realm", small=True, entries=(("event", gettext("CdE-Event")),
+                                                       ("ml", gettext("CdE-Mailinglist"))),
                     label="Bereich", anid="realm-select") }}
             {% else %}
-                {% with realms = {'event': ('Veranstaltung', 'blackboard'), 'ml': ('Mailingliste', 'envelope')} %}
+                {% with realms = {'event': (gettext("Event"), 'blackboard'),
+                                  'ml': (gettext("Mailinglist"), 'envelope')} %}
                     {{ util.make_icon(values['realm'][1]) }} {{ values['realm'][0] }}
                 {% endwith %}
                 {{ util.form_input_hidden(name="realm") }}
             {% endif %}
-            {{ util.form_input_textarea(name="notes", label="Begründung (max. {} Zeichen)".format(max_rationale),
+            {{ util.form_input_textarea(name="notes",
+                                        label=gettext("Rationale (max. {} Characters)").format(max_rationale),
                                         small=True, maxlength=max_rationale) }}
             <div id="event-field-container">
                 <p class="text-muted">{{ util.make_icon('info-sign') }}
-                    Die folgenden Felder sind nur für Veranstaltungsanfragen relevant.</p>
+                    {% trans -%}The following fields are only relevant for Event-Account Requests{%- endtrans %}</p>
                 {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
-                                          label="Geschlecht", small=True) }}
-                {{ util.form_input_text(name="birthday", label="Geburtstag", placeholder="YYYY-MM-DD", type="date", small=True) }}
-                {{ util.form_input_text(name="telephone", label="Telefon", small=True) }}
-                {{ util.form_input_text(name="mobile", label="Mobiltelefon", small=True) }}
-                {{ util.form_input_text(name="address", label="Straße", small=True) }}
-                {{ util.form_input_text(name="address_supplement", label="Addresszusatz", small=True) }}
-                {{ util.form_input_text(name="postal_code", label="Postleitzahl", small=True) }}
-                {{ util.form_input_text(name="location", label="Stadt", small=True) }}
-                {{ util.form_input_text(name="country", label="Land", small=True) }}
+                                          label=gettext("Gender"), small=True) }}
+                {{ util.form_input_text(name="birthday", label=gettext("Birthday"),
+                                        placeholder="YYYY-MM-DD", type="date", small=True) }}
+                {{ util.form_input_text(name="telephone", label=gettext("Phone"), small=True) }}
+                {{ util.form_input_text(name="mobile", label=gettext("Mobilephone"), small=True) }}
+                {{ util.form_input_text(name="address", label=gettext("Street"), small=True) }}
+                {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement"), small=True) }}
+                {{ util.form_input_text(name="postal_code", label=gettext("Zipcode"), small=True) }}
+                {{ util.form_input_text(name="location", label=gettext("City"), small=True) }}
+                {{ util.form_input_text(name="country", label=gettext("Country"), small=True) }}
             </div>
 
             <script type="text/javascript">
@@ -57,7 +66,7 @@
                 show_event_fields();
             </script>
 
-            {{ util.form_input_submit(value="Speichern", small=True, cancellink=cdedblink("core/genesis_list_cases")) }}
+            {{ util.form_input_submit(value=gettext("Save"), small=True, cancellink=cdedblink("core/genesis_list_cases")) }}
         </div>
     </form>
 {% endblock %}

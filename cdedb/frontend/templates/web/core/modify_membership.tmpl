@@ -1,31 +1,34 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    Mitgliedschaftsstatus von {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }}
-    bearbeiten
+    {% trans given_names=ambience['persona']['given_names']|e, family_name=ambience['persona']['family_name'] -%}
+    	Modify Memberhip for {{ given_names }} {{ family_name }}
+    {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
                                                                                   ambience['persona']['family_name']),
         icon="user") }}
-{{ util.breadcrumb_link(cdedblink("core/modify_membership"), "Mitgliedschaft ändern", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/modify_membership"), gettext("Modify Membership"), active="True") }}
 {% endblock %}
 {% block content %}
    {% if ambience['persona']['is_member'] %}
         <p>
-            {{ util.make_icon("info-sign") }} Hiermit kann die CdE-Mitglidschaft beendet werden. Das bewirkt folgendes:
+            {{ util.make_icon("info-sign") }}
+            {% trans -%}Here You can terminate the CdE-Membership. This has the following Effects:{%- endtrans %}
         </p>
         <ul>
-            <li>Beenden der Mitgliedschaft</li>
-            <li>Löschen der Einwilligung zur Datenschutzerklärung</li>
+            <li>{% trans -%}Termination of Membership{%- endtrans %}</li>
+            <li>{% trans -%}Deletion of Privacy Policy Consent{%- endtrans %}</li>
+            <li>{% trans -%}Loss of Membership Fee Balance{%- endtrans %}</li>
         </ul>
 
         <form action="{{ cdedblink('core/modify_membership')|e }}" method="POST" id="modifymembershipform">
             <div>
                 {{ util.input_hidden(name="is_member", value=False) }}
-                {{ util.input_submit(value="Mitgliedschaft terminieren", aclass="btn btn-warning") }}&emsp;
-                {{ util.href(show_user_link(ambience['persona']['id']), "Abbrechen", icon="remove",
+                {{ util.input_submit(value=gettext("Terminate Membership"), aclass="btn btn-warning") }}&emsp;
+                {{ util.href(show_user_link(ambience['persona']['id']), gettext("Cancel"), icon="remove",
                         aclass="btn btn-default") }}
             </div>
         </form>
@@ -33,7 +36,7 @@
         <form action="{{ cdedblink('core/modify_membership')|e }}" method="POST" id="modifymembershipform">
             <div>
                 {{ util.input_hidden(name="is_member", value=True) }}
-                {{ util.input_submit(value="zum Mitglied machen") }}&emsp;
+                {{ util.input_submit(value=gettext("Make a Member")) }}&emsp;
                 {{ util.href(show_user_link(ambience['persona']['id']), "Abbrechen", icon="remove",
                         aclass="btn btn-default") }}
             </div>

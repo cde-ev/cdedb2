@@ -8,10 +8,14 @@
     {{ util.cdedb_script('search-persona') }}
     {{ util.cdedb_script('helper') }}
 {% endblock %}
-{% block title %}Allgemeine Nutzerverwaltung{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Core-Usermanagement
+    {%- endtrans %}
+{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/user_search"), "Nutzer verwalten", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/user_search"), "Manage Users", active="True") }}
 {% endblock %}
 {% block content %}
     {{ generic.place_default_queries("core/user_search", default_queries) }}
@@ -19,7 +23,7 @@
     {{ generic.user_search_mask("core", ("pevent_id",)) }}
 
     {% if values['is_search'] %}
-        <h3>Ergebnis [{{ result|length|e }}]</h3>
+        <h3>{% trans -%}Result{%- endtrans %} [{{ result|length|e }}]</h3>
         {{ generic.user_search_result(result, "core") }}
     {% endif %}
 {% endblock %}

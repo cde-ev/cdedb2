@@ -4,53 +4,58 @@
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    Profilbild von {{ ambience['persona']['given_names']|e }} {{ ambience['persona']['family_name']|e }}
+    {% trans given_names=ambience['persona']['given_names']|e, family_name=ambience['persona']['family_name']|e -%}
+    	Set Profile Picture for {{ given_names }} {{ family_name }}
+    {%- endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(show_user_link(ambience['persona']['id']), "{} {}".format(ambience['persona']['given_names'],
                                                                                   ambience['persona']['family_name']),
         icon="user") }}
-{{ util.breadcrumb_link(cdedblink('core/set_foto_form'), "Profilbild ändern", active="True") }}
+{{ util.breadcrumb_link(cdedblink('core/set_foto_form'), gettext("Set Profile Picture"), active="True") }}
 {% endblock %}
 {% block content %}
 
     <div class="row">
         {% if foto %}
             <div class="col-md-5">
-                <h3>Aktuelles Bild</h3>
+                <h3>{% trans -%}Current Picture{%- endtrans %}</h3>
                 <img src="{{ cdedblink('core/get_foto', {'foto': foto})|e }}" class="profilepic img-thumbnail">
 
                 <script type="text/javascript">
                     $(function() {
-                        $('#resetfotoform').cdedbProtectAction("Das Foto wird irreversibel gelöscht.");
+                        $('#resetfotoform').cdedbProtectAction(
+                            "{{ gettext("The Profile Picture will be premanently deleted.") }}");
                     });
                 </script>
                 <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" id="resetfotoform">
                     <div class="form-group">
-                        {{ util.input_submit(value="Foto löschen", aclass="btn btn-danger", icon="trash") }}
+                        {{ util.input_submit(value=gettext("Delete Picture"), aclass="btn btn-danger", icon="trash") }}
                     </div>
                 </form>
             </div>
         {% endif %}
 
         <div class="col-md-7">
-            <h3>Neues Bild hochladen</h3>
+            <h3>{% trans -%}Upload new Picture{%- endtrans %}</h3>
             <p>
-                Das Bild muss folgende Anforderungen erfüllen:
+                {% trans -%}
+                	The Picture must meet the following Criteria:
+                {%- endtrans %}
             </p>
             <ul>
-                <li>JPEG- oder PNG-Datei</li>
-                <li>max. 128 kiB Dateigröße</li>
-                <li>möglichst quadratisch</li>
+                <li>{% trans -%}JPEG or PNG file{%- endtrans %}</li>
+                <li>{% trans -%}max. 138 kB Filesize{%- endtrans %}</li>
+                <li>{% trans -%}preferably square{%- endtrans %}</li>
             </ul>
             <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" enctype="multipart/form-data"
                     id="setfotoform">
                 <div class="form-group">
                     <div class="input-group">
-                        {{ util.input_file(name="foto", accept="image/*", arialabel="Foto-Datei") }}
+                        {{ util.input_file(name="foto", accept="image/*", arialabel=gettext("Picture-File")) }}
                         <div class="input-group-btn">
-                            {{ util.input_submit(value="Hochladen") }}
+                            {{ util.input_submit(value=gettext("Upload")) }}
                         </div>
                     </div>
                     {{ util.output_errors('foto') }}
@@ -59,5 +64,5 @@
         </div>
     </div>
 
-    {{ util.href(show_user_link(ambience['persona']['id']), "Zurück", icon="arrow-left", aclass="btn btn-default") }}
+    {{ util.href(show_user_link(ambience['persona']['id']), gettext("Go Back"), icon="arrow-left", aclass="btn btn-default") }}
 {% endblock %}

@@ -3,19 +3,26 @@
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('helper') }}{% endblock %}
 {% set jshint='weak' %}
-{% block title %}Accountanfragen{% endblock %}
+{% block title %}
+    {% trans -%}
+    	Account Requests
+    {%- endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), "Accountanfragen", active="True") }}
+{{ util.breadcrumb_link(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), active="True") }}
 {% endblock %}
 {% block content %}
     <script type="text/javascript">
         $(function() {
-            $('.rejection-form').cdedbProtectAction("Die Account-Anfrage wird irreversibel gelöscht.");
+            $('.rejection-form').cdedbProtectAction("{{ gettext("The Account Request will be permanently deleted.") }}");
         });
     </script>
     {% if 'event_admin' in user.roles or 'core_admin' in user.roles %}
-        <h3>Veranstaltungs-Anfragen [{{ event_cases|length|e }}]</h3>
+        <h3>
+            {% trans count=event_cases|length|e -%}
+                Event-Account Requests [{{ count }}]
+            {%- endtrans %}
+        </h3>
         {% if event_cases|length > 0 %}
             {% for case_id, entry in event_cases|dictsort %}
                 <div class="row">
@@ -27,7 +34,8 @@
                         {# FIXME maybe display more information?#}
                     </div>
                     <div class="col-sm-4">
-                        {% with realms = {'event': ('Veranstaltung', 'blackboard'), 'ml': ('Mailingliste', 'envelope')} %}
+                        {% with realms = {'event': (gettext("Event"), 'blackboard'),
+                                          'ml': (gettext("Mailinglist"), 'envelope')} %}
                             {{ util.make_icon(realms[entry['realm']][1]) }} {{ realms[entry['realm']][0] }}
                         {% endwith %}
                         {% if entry['notes'] %}<p class="textbox">{{ entry['notes']|e }}</p>{% endif %}
@@ -37,15 +45,16 @@
                          id="genesiseventapprovalform{{ loop.index|e }}" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value="OK", aclass="btn btn-sm btn-success") }}
+                            {{ util.input_submit(value=gettext("Confirm"), aclass="btn btn-sm btn-success") }}
                         </form>
                         <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                          id="genesiseventrejectionform{{ loop.index|e }}" class="rejection-form" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                            {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
+                            {{ util.input_submit(icon="remove", value=gettext("Reject"),
+                                aclass="btn btn-sm btn-danger") }}
                         </form>
-                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), "Bearbeiten",
+                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), gettext("Edit"),
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
                     </div>
                 </div>
@@ -54,11 +63,15 @@
                 {% endif %}
             {% endfor %}
         {% else %}
-            <p class="text-muted">Zur Zeit liegen keine Veranstaltungs-Anfragen vor.</p>
+            <p class="text-muted">{% trans -%}There are currently no Event-Account Requests pending.{%- endtrans %}</p>
         {% endif %}
     {% endif %}
     {% if 'ml_admin' in user.roles or 'core_admin' in user.roles %}
-        <h3>Malinglisten-Anfragen [{{ ml_cases|length|e }}]</h3>
+        <h3>
+            {% trans count=ml_cases|length|e -%}
+            	Malinglist-Account Requests [{{ count }}]
+            {%- endtrans %}
+        </h3>
         {% if ml_cases|length > 0 %}
             {% for case_id, entry in ml_cases|dictsort %}
                 <div class="row">
@@ -69,7 +82,8 @@
                         </p>
                     </div>
                     <div class="col-sm-4">
-                        {% with realms = {'event': ('Veranstaltung', 'blackboard'), 'ml': ('Mailingliste', 'envelope')} %}
+                        {% with realms = {'event': (gettext("Event"), 'blackboard'),
+                                          'ml': (gettext("Mailinglist"), 'envelope')} %}
                             {{ util.make_icon(realms[entry['realm']][1]) }} {{ realms[entry['realm']][0] }}
                         {% endwith %}
                         {% if entry['notes'] %}<p class="textbox">{{ entry['notes']|e }}</p>{% endif %}
@@ -79,15 +93,16 @@
                          id="genesismlapprovalform{{ loop.index|e }}" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value="OK", aclass="btn btn-sm btn-success") }}
+                            {{ util.input_submit(value=gettext("Confirm"), aclass="btn btn-sm btn-success") }}
                         </form>
                         <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                          id="genesismlrejectionform{{ loop.index|e }}" class="rejection-form" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].rejected.value) }}
-                            {{ util.input_submit(icon="remove", value="Ablehnen", aclass="btn btn-sm btn-danger") }}
+                            {{ util.input_submit(icon="remove", value=gettext("Reject"),
+                                aclass="btn btn-sm btn-danger") }}
                         </form>
-                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), "Bearbeiten",
+                        {{ util.href(cdedblink('core/genesis_modify_form', {'case_id': case_id}), gettext("Edit"),
                             aclass="btn btn-warning btn-sm", icon="pencil") }}
                     </div>
                 </div>
@@ -96,7 +111,9 @@
                 {% endif %}
             {% endfor %}
         {% else %}
-            <p class="text-muted">Zur Zeit liegen keine Mailinglisten-Anfragen vor.</p>
+            <p class="text-muted">
+                {% trans -%}There are currently no Mailinglist-Account Requests pending.{%- endtrans %}
+            </p>
         {% endif %}
     {% endif %}
 {% endblock %}
