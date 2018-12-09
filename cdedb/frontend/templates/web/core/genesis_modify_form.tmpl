@@ -26,7 +26,7 @@
                 {{ util.form_input_select(
                     name="realm", small=True, entries=(("event", gettext("CdE-Event")),
                                                        ("ml", gettext("CdE-Mailinglist"))),
-                    label="Bereich", anid="realm-select") }}
+                    label=gettext("Realm"), anid="realm-select") }}
             {% else %}
                 {% with realms = {'event': (gettext("Event"), 'blackboard'),
                                   'ml': (gettext("Mailinglist"), 'envelope')} %}

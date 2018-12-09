@@ -27,7 +27,7 @@
                             var token = html.substring(pos + 17, endpos);
                             var link = "{{ cdedblink('core/debug_email', magic_placeholders=['token']) }}"
                                 .replace('_CDEDB_MAGIC_URL_PLACEHOLDER_0_', token);
-                            return '(<a href="' + link + '">View Email in Browser</a>)';
+                            return '(<a href="' + link + '">{{ gettext("View E-Mail in Browser") }}</a>)';
                         }
                     });
                 });

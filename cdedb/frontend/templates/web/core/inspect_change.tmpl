@@ -37,10 +37,10 @@
 
 {% block content %}
     <button type="button" class="btn btn-default btn-sm softhide" id="unhide-button">
-        {{ util.make_icon('eye-close') }} Alle Felder anzeigen
+        {{ util.make_icon('eye-close') }} {% trans -%}Show all Fields{%- endtrans %}
     </button>
-    {{ util.href(show_user_link(pending['id']), "Profil anzeigen", icon="share-alt", aclass="btn btn-sm btn-info") }}
-    {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), "Geschichte",
+    {{ util.href(show_user_link(pending['id']), gettext("Show Profile"), icon="share-alt", aclass="btn btn-sm btn-info") }}
+    {{ util.href(cdedblink("core/show_history", {'persona_id': pending['id']}), gettext("History"),
                  aclass="btn btn-info btn-sm", icon="time") }}
     <script type="text/javascript">
         $(function() {
@@ -90,7 +90,7 @@
         {{ show_diff('location2', gettext("City")) }}
         {{ show_diff('country2', gettext("Country")) }}
 
-        <h4 class="heading-underline">gettext("Miscellaneous")</h4>
+        <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
         {{ show_diff('specialisation', gettext("Specialisation")) }}
         {{ show_diff('affiliation', gettext("School, University, …")) }}
         {{ show_diff('timeline', gettext("Year(s) of Graduation")) }}

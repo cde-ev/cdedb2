@@ -204,7 +204,7 @@
 
             {% for name, field in ((gettext("Balance"), 'balance'),
                                    (gettext("Searchable for BuB"), 'bub_search'),
-                                   (gettext("Notes"), 'notes')) %}
+                                   (gettext("Admin-Notes"), 'notes')) %}
                 {% call history_field(name) %}
                     {{ print_history(field) }}
                 {% endcall %}

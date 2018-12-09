@@ -57,7 +57,7 @@
               'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
 
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title="Verwaltung", aclass='panel-info', icon='check') %}
+            {% call util.bootstrap_panel(title="Account Management", aclass='panel-info', icon='check') %}
                 {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 %}
                     <p>
                         {% trans count=dashboard['genesis_cases']|e, 

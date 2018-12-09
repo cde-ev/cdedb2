@@ -24,7 +24,7 @@
         class="form-horizontal">
         {{ util.input_hidden(name="generation") }}
         {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
-        <h4 class="heading-underline">Person</h4>
+        <h4 class="heading-underline">{% trans -%}Personal Information{%- endtrans %}</h4>
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
@@ -47,7 +47,7 @@
         {{ util.form_input_textarea(name="notes", label=gettext("Admin-Notes"), rows="7",
                                     info=gettext("Visible to all Admins, supports reStructuredText")) }}
 
-        <h4 class="heading-underline">Kontakt</h4>
+        <h4 class="heading-underline">{% trans -%}Contact Information{%- endtrans %}</h4>
         {{ util.form_input_static(label="E-Mail", value=values['username']) }}
         {% if (values['is_cde_realm'] or values['is_event_realm']) and 'event' in admin_bits %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone")) }}

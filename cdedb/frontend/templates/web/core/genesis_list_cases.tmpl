@@ -45,7 +45,7 @@
                          id="genesiseventapprovalform{{ loop.index|e }}" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value=gettext("Confirm"), aclass="btn btn-sm btn-success") }}
+                            {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
                         </form>
                         <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                          id="genesiseventrejectionform{{ loop.index|e }}" class="rejection-form" style="display: inline;">
@@ -93,7 +93,7 @@
                          id="genesismlapprovalform{{ loop.index|e }}" style="display: inline;">
                             {{ util.input_hidden(name="case_id", value=case_id) }}
                             {{ util.input_hidden(name="case_status", value=enums['GenesisStati'].approved.value) }}
-                            {{ util.input_submit(value=gettext("Confirm"), aclass="btn btn-sm btn-success") }}
+                            {{ util.input_submit(value=gettext("Approve"), aclass="btn btn-sm btn-success") }}
                         </form>
                         <form action="{{ cdedblink('core/genesis_decide', {'case_id': case_id})|e }}" method="POST"
                          id="genesismlrejectionform{{ loop.index|e }}" class="rejection-form" style="display: inline;">

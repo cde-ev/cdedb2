@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-12-08 22:23+0100\n"
+"POT-Creation-Date: 2018-12-09 02:35+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -2618,6 +2618,10 @@ msgstr "CdEDB Account erstellt"
 msgid "User created."
 msgstr "Account erstellt."
 
+#: cdedb/frontend/templates/web/base.tmpl:30
+msgid "View E-Mail in Browser"
+msgstr ""
+
 #: cdedb/frontend/templates/web/base.tmpl:76
 msgid "This site provides additional functionality with JavaScript enabled."
 msgstr "Diese Seite bietet mit JavaScript erweiterte Funktionalität."
@@ -2800,6 +2804,7 @@ msgstr "CdE-Datenbank"
 msgid "An unknown Error occurred."
 msgstr "Ein unbekannter Fehler ist aufgetreten."
 
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:27
 #: cdedb/frontend/templates/web/core/change_user.tmpl:26
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:51
 #: cdedb/frontend/templates/web/core/show_user.tmpl:83
@@ -2939,6 +2944,7 @@ msgstr "Interessen"
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:83
 #: cdedb/frontend/templates/web/core/change_user.tmpl:66
 #: cdedb/frontend/templates/web/core/change_user.tmpl:71
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:93
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:98
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:92
 #: cdedb/frontend/templates/web/core/show_history.tmpl:252
@@ -2981,6 +2987,7 @@ msgstr "Geschlecht"
 msgid "Birthday"
 msgstr "Geburtstag"
 
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:50
 #: cdedb/frontend/templates/web/core/change_user.tmpl:38
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:73
 #: cdedb/frontend/templates/web/core/show_history.tmpl:214
@@ -2997,7 +3004,7 @@ msgstr "Kontakt"
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:28
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:74
 #: cdedb/frontend/templates/web/core/login.tmpl:29
-#: cdedb/frontend/templates/web/core/reset_password.tmpl:20
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:24
 #: cdedb/frontend/templates/web/core/show_history.tmpl:216
 #: cdedb/frontend/templates/web/core/show_user.tmpl:235
 #: cdedb/frontend/templates/web/generic.tmpl:31
@@ -3200,8 +3207,6 @@ msgstr "Zugriff für BuB"
 #: cdedb/frontend/templates/web/cde/lastschrift_change.tmpl:30
 #: cdedb/frontend/templates/web/cde/lastschrift_create.tmpl:42
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:58
-#: cdedb/frontend/templates/web/core/show_history.tmpl:207
-#: cdedb/frontend/templates/web/core/show_user.tmpl:165
 #: cdedb/frontend/templates/web/generic.tmpl:67
 msgid "Notes"
 msgstr "Notizen"
@@ -3351,11 +3356,14 @@ msgstr "Suchbarkeit entschieden"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:42
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:97
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:47
+#: cdedb/frontend/templates/web/core/show_history.tmpl:207
+#: cdedb/frontend/templates/web/core/show_user.tmpl:165
 #: cdedb/frontend/templates/web/generic.tmpl:185
 #: cdedb/frontend/templates/web/generic.tmpl:249
 msgid "Admin-Notes"
 msgstr "Admin-Notizen"
 
+#: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:29
 #: cdedb/frontend/templates/web/generic.tmpl:188
 #: cdedb/frontend/templates/web/generic.tmpl:189
 #: cdedb/frontend/templates/web/generic.tmpl:190
@@ -5418,8 +5426,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/change_password.tmpl:29
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:22
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:20
-#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:48
-#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:96
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:15
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:46
 msgid "Confirm"
@@ -5701,6 +5707,7 @@ msgid "Edit Username for %(given_names)s %(family_name)s"
 msgstr "E-Mail-Adresse ändern für %(given_names)s %(family_name)s"
 
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:11
+#: cdedb/frontend/templates/web/core/admin_username_change.tmpl:19
 msgid "Edit Username"
 msgstr "E-Mail-Adresse ändern"
 
@@ -5850,17 +5857,17 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:5
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:4
-msgid "Change Your E-Mail"
+msgid "Change Your E-Mail-Address"
 msgstr "Eigene E-Mail-Adresse ändern"
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:13
-msgid "Change E-Mail"
-msgstr "E-Mail-Adresse ändern"
+msgid "Change E-Mail-Address"
+msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:17
 msgid ""
-"To change Your E-Mail, You will have to confirm Your new E-Mail by "
-"clicking a link in the\n"
+"To change Your E-Mail-Address, You will have to confirm Your new E-Mail-"
+"Address by clicking a link in the\n"
 "            verification mail sent to the new E-Mail."
 msgstr ""
 "Um Deine E-Mail-Adresse zu ändern wird zuerst eine E-Mail an die neue "
@@ -5868,7 +5875,7 @@ msgstr ""
 "einen Link, mit dem Du den Vorgang abschließen kannst."
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:25
-msgid "New E-Mail"
+msgid "New E-Mail-Address"
 msgstr "Neue E-Mail-Adresse"
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:26
@@ -5888,24 +5895,26 @@ msgid ""
 "You can reset Your Password here. Then You can use the new Password to "
 "login."
 msgstr ""
-"Hier kannst Du ein neues Passwort für die CdE-DAtenbank eingeben. "
+"Hier kannst Du ein neues Passwort für die CdE-Datenbank eingeben. "
 "Anschließend kannst Du Dich mit Deinem neuen Passwort anmelden."
 
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:29
 #: cdedb/frontend/templates/web/core/login.tmpl:45
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:4
 msgid "Reset Password"
 msgstr "Passwort zurücksetzen"
 
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:10
 #, python-format
 msgid ""
-"Enter Your Password and click \"Confirm\" to change Your E-Mail to "
-"%(email)s.\n"
-"            Aftwerwards you need to user Your new E-Mail to login."
+"Enter Your Password and click \"Confirm\" to change Your E-Mail-Address "
+"to <code>%(email)s</code>.\n"
+"            Aftwerwards you need to user Your new E-Mail-Address to login."
 msgstr ""
 "Gib Dein Passwort ein und klicke den Bestätigungsknopf um Deine E-Mail-"
-"Adresse zu %(email)s zu ändern. Nachdem Du die Änderung durchgeführt hast"
-" musst Du bei der Anmeldung Deine neue E-Mail-Adresse angeben."
+"Adresse zu <code>%(email)s</code> zu ändern. Nachdem Du die Änderung "
+"durchgeführt hast musst Du bei der Anmeldung Deine neue E-Mail-Adresse "
+"angeben."
 
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:19
 #: cdedb/frontend/templates/web/core/login.tmpl:31
@@ -5971,6 +5980,14 @@ msgstr "Veranstaltungs-Accountanfragen [%(count)s]"
 #: cdedb/frontend/templates/web/core/genesis_modify_form.tmpl:32
 msgid "Mailinglist"
 msgstr "Mailingliste"
+
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:48
+#: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:96
+msgid "Approve"
+msgstr "Genehmigen"
+
+msgid "Account Management"
+msgstr "Verwaltung"
 
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:54
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:102
@@ -6178,6 +6195,19 @@ msgstr "Änderungen prüfen für %(given_names)s %(family_name)s"
 msgid "Inspect Changes"
 msgstr "Änderungen prüfen"
 
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:40
+msgid "Show all Fields"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:42
+msgid "Show Profile"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:43
+#: cdedb/frontend/templates/web/core/show_user.tmpl:57
+msgid "History"
+msgstr "Änderungs Historie"
+
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:65
 #: cdedb/frontend/templates/web/core/show_history.tmpl:136
 #: cdedb/frontend/templates/web/core/show_user.tmpl:106
@@ -6222,7 +6252,7 @@ msgstr "Mitgliedsstatus bearbeiten"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:19
 msgid "Here You can terminate the CdE-Membership. This has the following Effects:"
-msgstr "Hiermit kann die CdE-Mitgliedschaft beendet werden. Das bweirkt folgendes:"
+msgstr "Hiermit kann die CdE-Mitgliedschaft beendet werden. Das bewirkt folgendes:"
 
 #: cdedb/frontend/templates/web/core/modify_membership.tmpl:22
 msgid "Termination of Membership"
@@ -6281,7 +6311,7 @@ msgstr "Implizite neue Bereiche"
 msgid "Additional Data"
 msgstr "Zusätzliche Daten"
 
-#: cdedb/frontend/templates/web/core/reset_password.tmpl:6
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:10
 msgid ""
 "If You have forgotten Your Password, You can request an E-Mail to reset "
 "it.\n"
@@ -6289,14 +6319,14 @@ msgid ""
 "login."
 msgstr ""
 "Wenn Du Dein Passwort vergessen hast, kannst Du hier eine E-Mail "
-"anfordern, um Dein Passwort zurückzusetzen. Gib dazu einfach E-Mail-"
+"anfordern, um Dein Passwort zurückzusetzen. Gib dazu einfach die E-Mail-"
 "Adresse, die in der Datenbank hinterlegt ist, ein."
 
-#: cdedb/frontend/templates/web/core/reset_password.tmpl:12
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:16
 msgid "Attention: This does not work for Admin-Accounts!"
 msgstr "Achtung: Dies funktioniert nicht für Administrator-Accounts!"
 
-#: cdedb/frontend/templates/web/core/reset_password.tmpl:21
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:25
 msgid "Request Reset Link"
 msgstr "Rücksetzlink anfordern"
 
@@ -6331,7 +6361,7 @@ msgstr "Das Bild muss folgende Anforderungen erfüllen:"
 
 #: cdedb/frontend/templates/web/core/set_foto.tmpl:48
 msgid "JPEG or PNG file"
-msgstr "JPEG- oder PNG-DAtei"
+msgstr "JPEG- oder PNG-Datei"
 
 #: cdedb/frontend/templates/web/core/set_foto.tmpl:49
 msgid "max. 128 kB Filesize"
@@ -6454,10 +6484,6 @@ msgstr "Bearbeiten (normal)"
 #: cdedb/frontend/templates/web/core/show_user.tmpl:42
 msgid "Edit (as Admin)"
 msgstr "Bearbeiten (mit Adminrechten)"
-
-#: cdedb/frontend/templates/web/core/show_user.tmpl:57
-msgid "History"
-msgstr "Änderungs Historie"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:69
 msgid "Profile Picture"
@@ -6975,4 +7001,7 @@ msgstr "Generation"
 
 #~ msgid "Account & Membership"
 #~ msgstr ""
+
+#~ msgid "Change -Address"
+#~ msgstr "E-Mail-Adresse ändern"
 
