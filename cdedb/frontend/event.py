@@ -3599,12 +3599,17 @@ class EventFrontend(AbstractUserFrontend):
             rs.errors.append(("ack_conclude", ValueError(n_("Must be checked."))))
         if rs.errors:
             return self.show_event(rs, event_id)
-        new_id, message = self.pasteventproxy.archive_event(rs, event_id)
-        if not new_id:
+        new_ids, message = self.pasteventproxy.archive_event(rs, event_id)
+        if not new_ids:
             rs.notify("warning", message)
             return self.redirect(rs, "event/show_event")
         rs.notify("success", n_("Event archived."))
-        return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
+        if len(new_ids) == 1:
+            return self.redirect(rs, "cde/show_past_event",
+                                 {'pevent_id': unwrap(new_ids)})
+        else:
+            rs.notify("info", n_("Created multiple past events."))
+            return self.redirect(rs, "event/show_event")
 
     @access("event_admin")
     @REQUESTdata(("codes", "[int]"), ("event_id", "id_or_None"),

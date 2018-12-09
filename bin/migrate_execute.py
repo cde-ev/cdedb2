@@ -582,8 +582,8 @@ events = query_all(cdedbxy, query, tuple())
 events = tuple(sorted(events, key=lambda e: e['shortname']))
 for event in events:
     split_name = None
-    if 'Winter' in event['name'] or 'Musik' in event['name']:
-        ## Deduplicate WinterAkademie and MusikAkademie
+    if 'Musik' in event['name']:
+        ## Deduplicate MusikAkademie (but not WinterAkademie)
         split_name = ' '.join(event['name'].split()[:2])
         if split_name in SPLIT_AKA_MAP:
             EVENT_MAP[event['id']] = SPLIT_AKA_MAP[split_name]

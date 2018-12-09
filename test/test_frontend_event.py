@@ -1454,7 +1454,9 @@ etc;anything else""", f['entries_2'].value)
         f['ack_archive'].checked = True
         self.submit(f)
         self.assertTitle("Große Testakademie 2222")
-        self.assertIn("removeparticipantform7", self.response.forms)
+        self.traverse({'href': '/cde/$'},
+                      {'href': '/cde/past/event/list'})
+        self.assertPresence("Große Testakademie 2222 (Warmup)")
 
     @as_users("anton")
     def test_one_track_no_courses(self, user):

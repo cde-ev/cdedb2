@@ -221,28 +221,56 @@ class TestPastEventBackend(BackendTest):
             }
         }
         self.event.set_event(self.key, update)
-        new_id, _ = self.pastevent.archive_event(self.key, 1)
+        new_ids, _ = self.pastevent.archive_event(self.key, 1)
+        self.assertEqual(3, len(new_ids))
+        pevent_data = sorted(
+            (self.pastevent.get_past_event(self.key, new_id)
+             for new_id in new_ids),
+            key=lambda d: d['tempus'])
         expectation = {
             'description': 'Everybody come!',
             'id': 2,
             'institution': 1,
-            'title': 'Große Testakademie 2222',
-            'shortname': "TestAka",}
-        data = self.pastevent.get_past_event(self.key, new_id)
-        self.assertIn(data['tempus'], {datetime.date(2003, 2, 2),
-                                       datetime.date(2003, 11, 1),
-                                       datetime.date(2003, 11, 11),})
-        del data['tempus']
-        self.assertEqual(expectation, data)
-        expectation = {3: 'Planetenretten für Anfänger',
-                       4: 'Lustigsein für Fortgeschrittene'}
-        self.assertEqual(expectation,
-                         self.pastevent.list_past_courses(self.key, new_id))
+            'title': 'Große Testakademie 2222 (Warmup)',
+            'shortname': "TestAka (Warmup)",
+            'tempus': datetime.date(2003, 2, 2),}
+        self.assertEqual(expectation, pevent_data[0])
         expectation = {
-            (7, 4): {'pcourse_id': 4,
+            'description': 'Everybody come!',
+            'id': 3,
+            'institution': 1,
+            'title': 'Große Testakademie 2222 (Erste Hälfte)',
+            'shortname': "TestAka (Erste Hälfte)",
+            'tempus': datetime.date(2003, 11, 1),}
+        self.assertEqual(expectation, pevent_data[1])
+        expectation = {
+            'description': 'Everybody come!',
+            'id': 4,
+            'institution': 1,
+            'title': 'Große Testakademie 2222 (Zweite Hälfte)',
+            'shortname': "TestAka (Zweite Hälfte)",
+            'tempus': datetime.date(2003, 11, 11),}
+        self.assertEqual(expectation, pevent_data[2])
+        expectation = set()
+        self.assertEqual(
+            expectation,
+            set(self.pastevent.list_past_courses(
+                self.key, pevent_data[0]['id']).values()))
+        expectation = {'Lustigsein für Fortgeschrittene'}
+        self.assertEqual(
+            expectation,
+            set(self.pastevent.list_past_courses(
+                self.key, pevent_data[1]['id']).values()))
+        expectation = {'Planetenretten für Anfänger'}
+        self.assertEqual(
+            expectation,
+            set(self.pastevent.list_past_courses(
+                self.key, pevent_data[2]['id']).values()))
+        expectation = {
+            (7, 9): {'pcourse_id': 9,
                      'is_instructor': False,
                      'is_orga': True,
                      'persona_id': 7}}
         self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pcourse_id=4))
+                         self.pastevent.list_participants(self.key, pcourse_id=9))
 

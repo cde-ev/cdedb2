@@ -575,7 +575,7 @@ CREATE TABLE event.course_tracks (
         id                      serial PRIMARY KEY,
         part_id                 integer NOT NULL REFERENCES event.event_parts(id),
         title                   varchar NOT NULL,
-        shortname               varchar,
+        shortname               varchar NOT NULL,
         num_choices             integer NOT NULL,
         sortkey                 integer NOT NULL
 );
