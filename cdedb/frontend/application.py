@@ -215,6 +215,8 @@ class Application(BaseApp):
                 self.logger.error("SECOND TRY CGITB")
                 self.logger.error(cgitb.text(sys.exc_info(), context=7))
                 raise
+        except werkzeug.routing.RequestRedirect as e:
+            return e.get_response(request.environ)
         except PrivilegeError as e:
             ## Convert permission errors from the backend to 403
             return self.make_error_page(werkzeug.exceptions.Forbidden(e.args),
