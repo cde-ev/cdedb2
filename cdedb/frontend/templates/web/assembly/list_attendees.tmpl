@@ -30,7 +30,7 @@
             </p>
             <form action="{{ cdedblink('assembly/external_signup')|e }}" method="POST" id="addattendeeform">
                 <div class="row">
-                    <div class="col-sm-7">
+                    <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
                         {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
                                 anid="input-add-attendee", aclass="form-control input-sm",
                                 arialabel=gettext("User-ID of the new participant")) }}

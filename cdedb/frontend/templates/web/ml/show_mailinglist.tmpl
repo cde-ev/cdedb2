@@ -103,7 +103,8 @@
                             Absenden erhältst Du eine E-Mail an diese Adresse, mit der Du Deinen Besitz der Adresse
                             bestätigen kannst.
                         </p>
-                        <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="changeaddressform">
+                        <form action="{{ cdedblink('ml/change_address')|e }}" method="POST" id="changeaddressform"
+                              {% if 'email' in errors %}class="has-error"{% endif %}>
                             <label for="input-new-adress" class="sr-only">Neue Abonnement-Adresse</label>
                             <div class="input-group">
                                 {{ util.input_text(name="email", type="email", placeholder="new-address@example.com",

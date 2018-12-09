@@ -14,12 +14,12 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_row(institution_id, deletable, aclass="", newrow=False) %}
     <tr class="{{ aclass }}" role="group" aria-label="Institution {{ institution_id }}">
-        <td>
+        <td {% if 'title_{}'.format(institution_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text('title_{}'.format(institution_id), aclass='drow-input form-control',
                     attributes=('data-basename="title_"' if newrow else ''), arialabel=gettext("Name")) }}
             {{ util.output_errors('title_{}'.format(institution_id)) }}
         </td>
-        <td>
+        <td {% if 'moniker_{}'.format(institution_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text('moniker_{}'.format(institution_id), aclass='drow-input form-control',
                     attributes=('data-basename="moniker_"' if newrow else ''), arialabel=gettext("Shortname")) }}
             {{ util.output_errors('moniker_{}'.format(institution_id)) }}

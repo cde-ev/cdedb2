@@ -63,7 +63,7 @@
                     {{ util.input_hidden(name="pcourse_id", value="") }}
                     {{ util.input_hidden(name="is_instructor", value=False) }}
                     <div class="row">
-                        <div class="col-sm-7">
+                        <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
                             {{ util.input_text(name="persona_id", placeholder=gettext("DB-XXXX-X"),
                                     anid="input-add-participant", aclass="form-control input-sm",
                                     arialabel=gettext("ID of the new Participant")) }}

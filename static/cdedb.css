@@ -45,9 +45,10 @@ body{
 /* ********************** *
  * Bootstrap enhancements *
  * ********************** */
-.input-error-block {
-    display: block;
-    color: #a94442;
+.has-success .help-block.no-color,
+.has-warning .help-block.no-color,
+.has-error .help-block.no-color {
+    color: #737373;
 }
 .input-group .form-control {
     /* Prevent creating a Stacking Context (see ), which prevents embedded selectize.js dropdowns from laying on top */

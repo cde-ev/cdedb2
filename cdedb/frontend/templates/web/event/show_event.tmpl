@@ -127,7 +127,7 @@
                                                  aclass='btn btn-success') }}
                         </div>
                     </div>
-                    {{ util.output_errors('orga_id') }}
+                    {{ util.output_errors('orga_id', wrapper=True) }}
                 </form>
                 {% endcall %}
             </div>
@@ -144,7 +144,7 @@
                         {% endif %}
                     </p>
                     <form action="{{ cdedblink('event/change_minor_form')|e }}" method="POST" enctype="multipart/form-data"
-                     id="changeminorformform">
+                     id="changeminorformform" {% if 'minor_form' in errors %}class="has-error"{% endif %}>
                         <div class="input-group">
                             {{ util.input_file(name="minor_form", accept="application/pdf",
                                                arialabel="PDF-Datei des neuen Minderjährigenformulars") }}
@@ -167,8 +167,9 @@
                                 Die Veranstaltung ist zur Offline-Nutzung gesperrt. Zum Entsperren bitte hier den
                                 Datenexport der Offline-Datenbank hochladen.
                             </p>
-                            <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST" enctype="multipart/form-data"
-                              id="unlockform">
+                            <form action="{{ cdedblink('event/unlock_event')|e }}" method="POST"
+                                  enctype="multipart/form-data" id="unlockform"
+                                  {% if 'json' in errors %}class="has-error"{% endif %}>
                                 <div class="input-group">
                                     {{ util.input_file(name="json", accept="text/json",
                                                        arialabel="Datenexport der Offline-Datenbank") }}

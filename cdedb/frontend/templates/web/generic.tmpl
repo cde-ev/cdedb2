@@ -342,7 +342,7 @@
                                                 {% endwith %}
                                             {% endwith %}
                                         </td>
-                                        <td>
+                                        <td {% if field in errors %}class="has-error"{% endif %}>
                                             {% with name = "qval_{}".format(field) %}
                                                 {% if spec[field] == 'bool' %}
                                                     {# Boolean fields are the only ones that don't need a text input field,
@@ -359,7 +359,7 @@
                                                             arialabel=gettext("compare value for {}")
                                                                       .format(titles.get(field, field)|e)) }}
                                                 {% endif %}
-                                                {{ util.output_errors(field, True) }}
+                                                {{ util.output_errors(field) }}
                                             {% endwith %}
                                         </td>
                                     </tr>
@@ -451,7 +451,7 @@
                         </button>
                     </span>
                 </p>
-                {{ util.output_errors('query') }}
+                {{ util.output_errors('query', wrapper=True) }}
                 <script type="text/javascript">
                     {
                         $('#qf_tablist').css('display', 'block');

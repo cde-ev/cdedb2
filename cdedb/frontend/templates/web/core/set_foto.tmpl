@@ -46,7 +46,7 @@
             </ul>
             <form action="{{ cdedblink('core/set_foto')|e }}" method="POST" enctype="multipart/form-data"
                     id="setfotoform">
-                <div class="form-group">
+                <div class="form-group {% if 'foto' in errors %}has-error{% endif %}">
                     <div class="input-group">
                         {{ util.input_file(name="foto", accept="image/*", arialabel="Foto-Datei") }}
                         <div class="input-group-btn">

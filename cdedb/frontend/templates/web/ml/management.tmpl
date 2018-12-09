@@ -46,7 +46,7 @@
                         {{ util.input_submit(value="Moderator hinzufügen", aclass="btn btn-success") }}
                     </div>
                 </div>
-                {{ util.output_errors('moderator_id') }}
+                {{ util.output_errors('moderator_id', wrapper=True) }}
             </form>
 
             <ul>
@@ -106,7 +106,7 @@
                 {{ util.input_submit(value="Eintrag hinzufügen", aclass="btn btn-success") }}
             </div>
         </div>
-        {{ util.output_errors('email') }}
+        {{ util.output_errors('email', wrapper=True) }}
     </form>
     <ul>
         {% for email in ambience['mailinglist']['whitelist']|sort %}
@@ -137,7 +137,7 @@
                 {{ util.input_submit(value="Abonnent eintragen", aclass="btn btn-success") }}
             </div>
         </div>
-        {{ util.output_errors('subscriber_id') }}
+        {{ util.output_errors('subscriber_id', wrapper=True) }}
     </form>
 
     <div class="row">

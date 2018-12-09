@@ -21,25 +21,26 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_track(part_id, track_id, aclass="", newrow=False) %}
     <tr class="{{ aclass }}">
-        <td style="width: 40%;">
+        <td style="width: 40%;"
+            {% if "track_title_{}_{}".format(tpart_id, rack_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text(name="track_title_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
                                attributes=('data-basename="track_title_" data-basename1="_"' if newrow else ''),
                                arialabel="Name der Kursschiene", placeholder="Titel") }}
             {{ util.output_errors("track_title_{}_{}".format(part_id, track_id)) }}
         </td>
-        <td>
+        <td {% if "track_shortname_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text(name="track_shortname_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
                                attributes=('data-basename="track_shortname_" data-basename1="_"' if newrow else ''),
                                arialabel="Kurzname der Kursschiene", placeholder="Kurzname") }}
             {{ util.output_errors("track_shortname_{}_{}".format(part_id, track_id)) }}
         </td>
-        <td>
+        <td {% if "track_num_choices_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text(name="track_num_choices_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
                                attributes=('data-basename="track_num_choices_" data-basename1="_"' if newrow else ''),
                                arialabel="Anzahl Kurswahlen", type="number", defaultvalue="3") }}
             {{ util.output_errors("track_num_choices_{}_{}".format(part_id, track_id)) }}
         </td>
-        <td>
+        <td {% if "track_sortkey_{}_{}".format(part_id, track_id) in errors %}class="has-error"{% endif %}>
             {{ util.input_text(name="track_sortkey_{}_{}".format(part_id, track_id), aclass='drow-input1 form-control',
                                attributes=('data-basename="track_sortkey_" data-basename1="_"' if newrow else ''),
                                arialabel="Sortierung der Kursschiene", type="number", defaultvalue="1") }}
@@ -66,7 +67,7 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_part(part_id, deletable, tracks={}, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}">
-        <div class="panel-heading">
+        <div class="panel-heading {% if "title_{}".format(part_id) in errors %}has-error{% endif %}">
             {{ util.input_text(name="title_{}".format(part_id), placeholder="Name des Teils",
                                attributes=('data-basename="title_"' if newrow else ''),
                                aclass='drow-input form-control', arialabel="Name des Teils") }}

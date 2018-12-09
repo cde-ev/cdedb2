@@ -104,12 +104,12 @@
         {% call util.bootstrap_panel(aclass="panel-success panel-condensed", title=gettext("Add Candidate"),
                 icon='plus') %}
             <form action="{{ cdedblink('assembly/add_candidate')|e }}" method="POST" id="addcandidateform" class="row">
-                <div class="col-md-3">
+                <div class="col-md-3 {% if 'moniker' in errors %}has-error{% endif %}">
                     {{ util.input_text(name="moniker", placeholder=gettext("Shortname"), aclass="form-control input-sm",
                                        arialabel=gettext("Shortname")) }}
                     {{ util.output_errors("moniker") }}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 {% if 'description' in errors %}has-error{% endif %}">
                     {{ util.input_text(name="description", placeholder=gettext("Description"),
                                        aclass="form-control input-sm", arialabel=gettext("Description")) }}
                     {{ util.output_errors("description") }}

@@ -24,7 +24,7 @@
 {% macro print_field(field_id, association, deletable, aclass="", newrow=False) %}
     <div class="col-md-6 {{ aclass }}" role="group">
         <div class="panel panel-default panel-condensed">
-            <div class="panel-heading">
+            <div class="panel-heading {% if "field_name_{}".format(field_id) in errors %}has-error{% endif %}">
                 {{ util.input_text(name="field_name_{}".format(field_id), placeholder="Name des Datenfelds",
                                    readonly=not newrow, aclass='drow-input form-control',
                                    arialabel="Name des Datenfelds",
@@ -36,7 +36,7 @@
                     <label class="col-sm-4 control-label" for="{{ "input-select-kind_{}".format(field_id)|e }}">
                         Datentyp
                     </label>
-                    <div class="col-sm-5">
+                    <div class="col-sm-5 {% if "kind_{}".format(field_id) in errors %}has-error{% endif %}">
                         {{ util.input_select(name="kind_{}".format(field_id), entries=(
                                 ("str", "Text"), ("bool", "Ja/Nein"), ("int", "Zahl"), ("float", "Kommazahl"),
                                 ("date", "Datum"), ("datetime", "Datum mit Uhrzeit")),

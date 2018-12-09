@@ -66,7 +66,7 @@
         $element.find('.query_field').each(function() {
             var id = $(this).attr('data-id');
             var input_select = $(this).find('.outputSelector');
-            var error_block = $(this).find('.input-error-block');
+            var error_block = $(this).find('.help-block');
 
             /* Reformat list of choices from [[v, t]] to [{'value': v, 'text': t}] */
             var choices = [];
@@ -191,7 +191,8 @@
                 .change(function() {
                     f.input_filter_op.val($(this).val());
                     f.error = null;
-                    $(this).siblings('.input-error-block').detach();
+                    $(this).siblings('.help-block').detach();
+                    $(this).parent().removeClass('has-error');
                     obj.updateFilterValueInput(number,$(this).val(),$fieldbox);
                 });
             // Initially sync operator select
@@ -202,7 +203,7 @@
 
 
             var $item = $('<li></li>',{
-                'class':"list-group-item queryform-filterbox",
+                'class':"list-group-item queryform-filterbox" + (f.error ? " has-error": ""),
                 'data-id': number
             })
                 .append(f.name).append('&ensp;')
@@ -210,7 +211,7 @@
                 .append($fieldbox)
                 .append($button);
             if (f.error)
-                $item.append($('<div></div>',{'class':'input-error-block'}).html(f.error));
+                $item.append($('<div></div>',{'class':'help-block'}).html(f.error));
 
             $filterFieldList.append($item);
             if (focus) {

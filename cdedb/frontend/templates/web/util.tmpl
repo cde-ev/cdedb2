@@ -70,15 +70,16 @@
 {%- if readonly %}</span>{%- else -%}</a>{% endif %}
 {%- endmacro %}
 
-{% macro output_errors(name, displayerrors=True) %}
+{% macro output_errors(name, displayerrors=True, wrapper=False) %}
     {%- if displayerrors and name in errors %}
-        <div class="input-error-block">
-            {%- for error in errors.get(name, []) %}
-                {%- if error -%}
-                    {{ format_error(error) }}
-                {%- endif %}
-            {%- endfor %}
-        </div>
+        {%- if wrapper %}<div class="has-error">{% endif %}
+        {%- for error in errors.get(name, []) if error %}
+            <div class="help-block">
+                {{ make_icon('exclamation-sign') }}
+                {{ format_error(error) }}
+            </div>
+        {%- endfor %}
+        {%- if wrapper %}</div>{% endif %}
     {%- endif %}
 {%- endmacro %}
 
@@ -96,7 +97,7 @@
 
 {% macro output_info(info) %}
     {%- if info %}
-        <p class="help-block">{{ make_icon('info-sign') }} {{ info|e }}</p>
+        <p class="help-block no-color">{{ make_icon('info-sign') }} {{ info|e }}</p>
     {%- endif %}
 {%- endmacro %}
 
@@ -353,8 +354,8 @@
                 <span class="input-group-addon">{% trans -%}to{%- endtrans %}</span>
                 {{ input_text(name=name2, type=type, arialabel=gettext('{} to').format(label)) }}
             </div>
-            {{- output_errors('start', displayerrors) }}
-            {{- output_errors('stop', displayerrors) }}
+            {{- output_errors(name1, displayerrors) }}
+            {{- output_errors(name2, displayerrors) }}
             {{- output_info(info) }}
         </div>
     </div>

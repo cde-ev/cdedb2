@@ -37,7 +37,7 @@
                 <form action="{{ cdedblink('cde/add_participant')|e }}" method="POST" id="addparticipantform">
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                     <div class="row">
-                        <div class="col-sm-5">
+                        <div class="col-sm-5 {% if 'persona_id' in errors %}has-error{% endif %}">
                             {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
                                                anid='input-add-participant', aclass='form-control input-sm',
                                                arialabel=gettext("ID of the new Participant")) }}
