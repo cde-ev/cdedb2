@@ -2651,7 +2651,7 @@ msgid "Members"
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:133
-#: cdedb/frontend/templates/web/core/show_history.tmpl:146
+#: cdedb/frontend/templates/web/core/show_history.tmpl:148
 #: cdedb/frontend/templates/web/core/show_user.tmpl:122
 #: cdedb/frontend/templates/web/generic.tmpl:189
 #: cdedb/frontend/templates/web/generic.tmpl:193
@@ -2662,7 +2662,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:138
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:22
-#: cdedb/frontend/templates/web/core/show_history.tmpl:147
+#: cdedb/frontend/templates/web/core/show_history.tmpl:149
 #: cdedb/frontend/templates/web/core/show_user.tmpl:123
 #: cdedb/frontend/templates/web/generic.tmpl:188
 #: cdedb/frontend/templates/web/generic.tmpl:192
@@ -2842,7 +2842,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:48
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:32
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:57
-#: cdedb/frontend/templates/web/core/show_history.tmpl:117
+#: cdedb/frontend/templates/web/core/show_history.tmpl:119
 #: cdedb/frontend/templates/web/core/show_user.tmpl:91
 #: cdedb/frontend/templates/web/generic.tmpl:13
 #: cdedb/frontend/templates/web/generic.tmpl:154
@@ -2875,7 +2875,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:79
 #: cdedb/frontend/templates/web/core/change_user.tmpl:67
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:94
-#: cdedb/frontend/templates/web/core/show_history.tmpl:254
+#: cdedb/frontend/templates/web/core/show_history.tmpl:256
 #: cdedb/frontend/templates/web/core/show_user.tmpl:297
 #: cdedb/frontend/templates/web/generic.tmpl:18
 #: cdedb/frontend/templates/web/generic.tmpl:174
@@ -2886,7 +2886,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:80
 #: cdedb/frontend/templates/web/core/change_user.tmpl:68
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:95
-#: cdedb/frontend/templates/web/core/show_history.tmpl:255
+#: cdedb/frontend/templates/web/core/show_history.tmpl:257
 #: cdedb/frontend/templates/web/core/show_user.tmpl:301
 #: cdedb/frontend/templates/web/generic.tmpl:19
 #: cdedb/frontend/templates/web/generic.tmpl:175
@@ -2897,7 +2897,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:81
 #: cdedb/frontend/templates/web/core/change_user.tmpl:69
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:96
-#: cdedb/frontend/templates/web/core/show_history.tmpl:256
+#: cdedb/frontend/templates/web/core/show_history.tmpl:258
 #: cdedb/frontend/templates/web/core/show_user.tmpl:305
 #: cdedb/frontend/templates/web/generic.tmpl:20
 #: cdedb/frontend/templates/web/generic.tmpl:176
@@ -2909,7 +2909,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:82
 #: cdedb/frontend/templates/web/core/change_user.tmpl:70
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:97
-#: cdedb/frontend/templates/web/core/show_history.tmpl:257
+#: cdedb/frontend/templates/web/core/show_history.tmpl:259
 #: cdedb/frontend/templates/web/core/show_user.tmpl:309
 #: cdedb/frontend/templates/web/generic.tmpl:21
 #: cdedb/frontend/templates/web/generic.tmpl:177
@@ -2921,10 +2921,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:83
 #: cdedb/frontend/templates/web/core/change_user.tmpl:66
 #: cdedb/frontend/templates/web/core/change_user.tmpl:71
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:93
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:98
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:92
-#: cdedb/frontend/templates/web/core/show_history.tmpl:252
-#: cdedb/frontend/templates/web/core/show_history.tmpl:258
+#: cdedb/frontend/templates/web/core/show_history.tmpl:254
+#: cdedb/frontend/templates/web/core/show_history.tmpl:260
 #: cdedb/frontend/templates/web/core/show_user.tmpl:294
 #: cdedb/frontend/templates/web/core/show_user.tmpl:313
 #: cdedb/frontend/templates/web/generic.tmpl:22
@@ -2939,7 +2940,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:40
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:61
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:80
-#: cdedb/frontend/templates/web/core/show_history.tmpl:128
+#: cdedb/frontend/templates/web/core/show_history.tmpl:130
 #: cdedb/frontend/templates/web/core/show_user.tmpl:99
 #: cdedb/frontend/templates/web/generic.tmpl:26
 #: cdedb/frontend/templates/web/generic.tmpl:102
@@ -2954,7 +2955,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:42
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:58
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:77
-#: cdedb/frontend/templates/web/core/show_history.tmpl:122
+#: cdedb/frontend/templates/web/core/show_history.tmpl:124
 #: cdedb/frontend/templates/web/core/show_user.tmpl:95
 #: cdedb/frontend/templates/web/generic.tmpl:27
 #: cdedb/frontend/templates/web/generic.tmpl:100
@@ -2963,9 +2964,10 @@ msgstr ""
 msgid "Birthday"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/admin_change_user.tmpl:50
 #: cdedb/frontend/templates/web/core/change_user.tmpl:38
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:73
-#: cdedb/frontend/templates/web/core/show_history.tmpl:214
+#: cdedb/frontend/templates/web/core/show_history.tmpl:216
 #: cdedb/frontend/templates/web/core/show_user.tmpl:233
 #: cdedb/frontend/templates/web/generic.tmpl:30
 #: cdedb/frontend/templates/web/generic.tmpl:105
@@ -2979,8 +2981,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:28
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:74
 #: cdedb/frontend/templates/web/core/login.tmpl:29
-#: cdedb/frontend/templates/web/core/reset_password.tmpl:20
-#: cdedb/frontend/templates/web/core/show_history.tmpl:216
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:24
+#: cdedb/frontend/templates/web/core/show_history.tmpl:218
 #: cdedb/frontend/templates/web/core/show_user.tmpl:235
 #: cdedb/frontend/templates/web/generic.tmpl:31
 #: cdedb/frontend/templates/web/generic.tmpl:106
@@ -2996,7 +2998,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:44
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:75
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:83
-#: cdedb/frontend/templates/web/core/show_history.tmpl:217
+#: cdedb/frontend/templates/web/core/show_history.tmpl:219
 #: cdedb/frontend/templates/web/core/show_user.tmpl:251
 #: cdedb/frontend/templates/web/generic.tmpl:33
 #: cdedb/frontend/templates/web/generic.tmpl:108
@@ -3011,7 +3013,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis_request.tmpl:45
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:76
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:84
-#: cdedb/frontend/templates/web/core/show_history.tmpl:218
+#: cdedb/frontend/templates/web/core/show_history.tmpl:220
 #: cdedb/frontend/templates/web/core/show_user.tmpl:255
 #: cdedb/frontend/templates/web/generic.tmpl:34
 #: cdedb/frontend/templates/web/generic.tmpl:109
@@ -3023,7 +3025,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:57
 #: cdedb/frontend/templates/web/core/change_user.tmpl:47
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:77
-#: cdedb/frontend/templates/web/core/show_history.tmpl:219
+#: cdedb/frontend/templates/web/core/show_history.tmpl:221
 #: cdedb/frontend/templates/web/core/show_user.tmpl:259
 #: cdedb/frontend/templates/web/generic.tmpl:37
 #: cdedb/frontend/templates/web/generic.tmpl:173
@@ -3035,7 +3037,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:61
 #: cdedb/frontend/templates/web/core/change_user.tmpl:51
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:79
-#: cdedb/frontend/templates/web/core/show_history.tmpl:226
+#: cdedb/frontend/templates/web/core/show_history.tmpl:228
 #: cdedb/frontend/templates/web/core/show_user.tmpl:269
 #: cdedb/frontend/templates/web/generic.tmpl:41
 #: cdedb/frontend/templates/web/generic.tmpl:111
@@ -3132,7 +3134,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:69
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:86
-#: cdedb/frontend/templates/web/core/show_history.tmpl:239
+#: cdedb/frontend/templates/web/core/show_history.tmpl:241
 #: cdedb/frontend/templates/web/core/show_user.tmpl:282
 #: cdedb/frontend/templates/web/generic.tmpl:49
 msgid "Second Address"
@@ -3146,7 +3148,7 @@ msgstr ""
 msgid "Account"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:183
+#: cdedb/frontend/templates/web/core/show_history.tmpl:185
 #: cdedb/frontend/templates/web/core/show_user.tmpl:175
 #: cdedb/frontend/templates/web/generic.tmpl:59
 #: cdedb/frontend/templates/web/generic.tmpl:186
@@ -3155,7 +3157,7 @@ msgid "CdE-Member"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:44
-#: cdedb/frontend/templates/web/core/show_history.tmpl:195
+#: cdedb/frontend/templates/web/core/show_history.tmpl:197
 #: cdedb/frontend/templates/web/generic.tmpl:61
 #: cdedb/frontend/templates/web/generic.tmpl:187
 #: cdedb/frontend/templates/web/generic.tmpl:251
@@ -3171,7 +3173,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:45
 #: cdedb/frontend/templates/web/core/change_user.tmpl:35
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:71
-#: cdedb/frontend/templates/web/core/show_history.tmpl:206
+#: cdedb/frontend/templates/web/core/show_history.tmpl:208
 #: cdedb/frontend/templates/web/core/show_user.tmpl:221
 #: cdedb/frontend/templates/web/generic.tmpl:65
 #: cdedb/frontend/templates/web/generic.tmpl:184
@@ -3346,7 +3348,7 @@ msgid "Realm"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:20
-#: cdedb/frontend/templates/web/core/show_history.tmpl:145
+#: cdedb/frontend/templates/web/core/show_history.tmpl:147
 #: cdedb/frontend/templates/web/core/show_user.tmpl:121
 #: cdedb/frontend/templates/web/generic.tmpl:191
 #: cdedb/frontend/templates/web/generic.tmpl:195
@@ -3684,7 +3686,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:21
 #: cdedb/frontend/templates/web/assembly/view_log.tmpl:62
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:23
-#: cdedb/frontend/templates/web/core/show_history.tmpl:148
+#: cdedb/frontend/templates/web/core/show_history.tmpl:150
 msgid "Assembly"
 msgstr ""
 
@@ -4080,7 +4082,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:60
 #: cdedb/frontend/templates/web/cde/lastschrift_show.tmpl:112
-#: cdedb/frontend/templates/web/core/show_history.tmpl:273
+#: cdedb/frontend/templates/web/core/show_history.tmpl:275
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:19
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:72
 msgid "Status"
@@ -4541,7 +4543,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:18
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:18
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:18
-#: cdedb/frontend/templates/web/core/show_history.tmpl:272
+#: cdedb/frontend/templates/web/core/show_history.tmpl:274
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:18
 #: cdedb/frontend/templates/web/core/view_log.tmpl:18
 msgid "Timestamp"
@@ -4559,7 +4561,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:20
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:20
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:20
-#: cdedb/frontend/templates/web/core/show_history.tmpl:274
+#: cdedb/frontend/templates/web/core/show_history.tmpl:276
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:20
 #: cdedb/frontend/templates/web/core/view_log.tmpl:20
 msgid "Submitted By"
@@ -4578,7 +4580,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/view_cde_log.tmpl:22
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:24
 #: cdedb/frontend/templates/web/cde/view_past_log.tmpl:23
-#: cdedb/frontend/templates/web/core/show_history.tmpl:276
+#: cdedb/frontend/templates/web/core/show_history.tmpl:278
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:24
 #: cdedb/frontend/templates/web/core/view_log.tmpl:22
 msgid "Additional Info"
@@ -4999,7 +5001,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:19
 #: cdedb/frontend/templates/web/cde/institution_summary.tmpl:54
-#: cdedb/frontend/templates/web/core/show_history.tmpl:108
+#: cdedb/frontend/templates/web/core/show_history.tmpl:110
 #: cdedb/frontend/templates/web/core/show_user.tmpl:85
 msgid "Name"
 msgstr ""
@@ -5502,7 +5504,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:23
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:70
-#: cdedb/frontend/templates/web/core/show_history.tmpl:205
+#: cdedb/frontend/templates/web/core/show_history.tmpl:207
 #: cdedb/frontend/templates/web/core/show_user.tmpl:185
 msgid "Balance"
 msgstr ""
@@ -5638,37 +5640,37 @@ msgid "Change Privileges"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:16
-#: cdedb/frontend/templates/web/core/show_history.tmpl:160
+#: cdedb/frontend/templates/web/core/show_history.tmpl:162
 #: cdedb/frontend/templates/web/core/show_user.tmpl:143
 msgid "Super-Admin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:17
-#: cdedb/frontend/templates/web/core/show_history.tmpl:161
+#: cdedb/frontend/templates/web/core/show_history.tmpl:163
 #: cdedb/frontend/templates/web/core/show_user.tmpl:144
 msgid "Core-Admin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:18
-#: cdedb/frontend/templates/web/core/show_history.tmpl:162
+#: cdedb/frontend/templates/web/core/show_history.tmpl:164
 #: cdedb/frontend/templates/web/core/show_user.tmpl:145
 msgid "CdE-Admin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:19
-#: cdedb/frontend/templates/web/core/show_history.tmpl:163
+#: cdedb/frontend/templates/web/core/show_history.tmpl:165
 #: cdedb/frontend/templates/web/core/show_user.tmpl:146
 msgid "Event-Admin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:20
-#: cdedb/frontend/templates/web/core/show_history.tmpl:164
+#: cdedb/frontend/templates/web/core/show_history.tmpl:166
 #: cdedb/frontend/templates/web/core/show_user.tmpl:147
 msgid "Mailinglist-Admin"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:21
-#: cdedb/frontend/templates/web/core/show_history.tmpl:165
+#: cdedb/frontend/templates/web/core/show_history.tmpl:167
 #: cdedb/frontend/templates/web/core/show_user.tmpl:148
 msgid "Assembly-Admin"
 msgstr ""
@@ -5883,7 +5885,7 @@ msgid "There are currently %(count)s %(link)s to review."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/index.tmpl:73
-#: cdedb/frontend/templates/web/core/show_history.tmpl:267
+#: cdedb/frontend/templates/web/core/show_history.tmpl:269
 msgid "Changes"
 msgstr ""
 
@@ -5985,8 +5987,21 @@ msgstr ""
 msgid "Inspect Changes"
 msgstr ""
 
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:40
+msgid "Show all Fields"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:42
+msgid "Show Profile"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/inspect_change.tmpl:43
+#: cdedb/frontend/templates/web/core/show_user.tmpl:57
+msgid "History"
+msgstr ""
+
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:65
-#: cdedb/frontend/templates/web/core/show_history.tmpl:136
+#: cdedb/frontend/templates/web/core/show_history.tmpl:138
 #: cdedb/frontend/templates/web/core/show_user.tmpl:106
 msgid "Account &amp; Membership"
 msgstr ""
@@ -5997,7 +6012,7 @@ msgid "CdEDB-ID"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:69
-#: cdedb/frontend/templates/web/core/show_history.tmpl:177
+#: cdedb/frontend/templates/web/core/show_history.tmpl:179
 msgid "CdE-Membership"
 msgstr ""
 
@@ -6180,7 +6195,7 @@ msgid "complicated"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:61
-#: cdedb/frontend/templates/web/core/show_history.tmpl:282
+#: cdedb/frontend/templates/web/core/show_history.tmpl:284
 msgid "Gen"
 msgstr ""
 
@@ -6198,43 +6213,47 @@ msgstr ""
 msgid "The User is archived."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:138
+#: cdedb/frontend/templates/web/core/show_history.tmpl:103
+msgid "– {num} more versions –"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/show_history.tmpl:140
 #: cdedb/frontend/templates/web/core/show_user.tmpl:225
 msgid "Active"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:142
+#: cdedb/frontend/templates/web/core/show_history.tmpl:144
 #: cdedb/frontend/templates/web/core/show_user.tmpl:118
 msgid "Realms"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:156
+#: cdedb/frontend/templates/web/core/show_history.tmpl:158
 #: cdedb/frontend/templates/web/core/show_user.tmpl:140
 msgid "Admin Privileges"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:181
+#: cdedb/frontend/templates/web/core/show_history.tmpl:183
 msgid "Trialmembership"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:186
+#: cdedb/frontend/templates/web/core/show_history.tmpl:188
 msgid "Not a Member"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:191
+#: cdedb/frontend/templates/web/core/show_history.tmpl:193
 #: cdedb/frontend/templates/web/core/show_user.tmpl:203
 msgid "Searchability"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:197
+#: cdedb/frontend/templates/web/core/show_history.tmpl:199
 msgid "Not Searchable"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:200
+#: cdedb/frontend/templates/web/core/show_history.tmpl:202
 msgid "(Undecided)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/show_history.tmpl:275
+#: cdedb/frontend/templates/web/core/show_history.tmpl:277
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:21
 msgid "Reviewed By"
 msgstr ""

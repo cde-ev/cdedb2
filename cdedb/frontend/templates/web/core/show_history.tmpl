@@ -99,7 +99,9 @@
 
     <script type="text/javascript">
         $(function() {
-            $('.history-container').cdedbHistoryCollapse();
+            $('.history-container').cdedbHistoryCollapse({
+                'more_versions': "{{ gettext("– {num} more versions –") }}",
+            });
         });
     </script>
 
