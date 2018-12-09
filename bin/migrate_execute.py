@@ -17,8 +17,10 @@ import collections
 import datetime
 import decimal
 import gettext
+import pathlib
 import random
 import re
+import string
 import sys
 import time
 
@@ -32,6 +34,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 import pytz
 
+from cdedb.common import json_serialize
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.past_event import PastEventBackend
@@ -89,7 +92,7 @@ WHITELIST.add(10848)
 WHITELIST.add(8674)
 
 # disable
-WHITELIST = None
+# WHITELIST = None
 
 ##
 ## Fixes for real world data
@@ -853,10 +856,22 @@ ASSEMBLY_MAP = {}
 query = "SELECT * FROM assembly"
 assemblies = query_all(cdedbxy, query, tuple())
 assemblies = tuple(sorted(assemblies, key=lambda l: l['id']))
+description = """Historische Versammlung (Import aus der alten Datenbank)
+
+Die Ergebnisse stimmen überein sind aber rein synthetisch und beinhalten
+die folgenden Informationen nicht:
+
+* Teilnehmer der Abstimmungen (und bei Abstimmung mit mehreren Stimmen pro
+  Mensch auch nicht die genaue Anzahl),
+* Zeiträume der Abstimmungen (also Beginn und Ende),
+* Quorum (ob es eine Quorumsgrenze gab und falls ja, ob sie aktiv wurde).
+
+Außerdem funktionieren Links im Beschreibungstext wahrscheinlich nicht mehr.
+"""
 for anassembly in assemblies:
     new = {
         'title': anassembly['name'],
-        'description': "Alte Versammlung",
+        'description': description,
         'signup_end': now(),
         'is_active': True,
         'notes': None,
@@ -867,6 +882,10 @@ for anassembly in assemblies:
 
 ## Import ballots
 BALLOT_MAP = {}
+ballot_extra_description = """
+
+Historische Abstimmung! Bitte die Hinweise auf der Versammlungsseite beachten.
+"""
 for assembly_id in ASSEMBLY_MAP:
     query = "SELECT * FROM assembly WHERE id = %s"
     theassembly = query_one(cdedbxy, query, (assembly_id,))
@@ -885,43 +904,53 @@ for assembly_id in ASSEMBLY_MAP:
             }
             for i, c in enumerate(candidates)
         }
-        quorum = round(ballot['max_members'] * ballot['quorum'] / 100)
         new = {
             'assembly_id': ASSEMBLY_MAP[assembly_id],
-            'use_bar': True,
+            'use_bar': False,
             'candidates': newcandidates,
-            'description': ballot['description'],
+            'description': ballot['description'] + ballot_extra_description,
             'notes': ballot['agenda_item'],
-            'quorum': quorum,
+            'quorum': 0,
             'title': ballot['name'],
             'vote_begin': now() + datetime.timedelta(seconds=1),
             'vote_end': now() + datetime.timedelta(seconds=1.1),
-            'vote_extension_end': now() + datetime.timedelta(seconds=1.2),
-            'votes': 0
+            'vote_extension_end': None,
+            'votes': ballot['votes'],
+            'is_tallied': True,
+            'extended': False,
         }
         new_id = assembly.create_ballot(rs(DEFAULT_ID), new)
         BALLOT_MAP[ballot['id']] = new_id
         print(" {}".format(ballot['agenda_item']), end="")
     print()
 
-## Make attendees
-for assembly_id in ASSEMBLY_MAP:
-    insert(cdb, "assembly.attendees", {
-        'persona_id': DEFAULT_ID,
-        'assembly_id': ASSEMBLY_MAP[assembly_id],
-        'secret': None,
-    })
-
 ## Import results
+ASSEMBLY_BALLOT_RESULT_TEMPLATE = string.Template("""{
+    "assembly": ${ASSEMBLY},
+    "ballot": ${BALLOT},
+    "result": ${RESULT},
+    "candidates": ${CANDIDATES},
+    "use_bar": ${USE_BAR},
+    "voters": ${VOTERS},
+    "votes": ${VOTES}
+}
+""")
 for ballot_id in BALLOT_MAP:
     query = "SELECT * FROM vote_ballots WHERE id = %s"
     ballot = query_one(cdedbxy, query, (ballot_id,))
     query = "SELECT * FROM assembly WHERE id = %s"
     theassembly = query_one(cdedbxy, query, (ballot['assembly'],))
-    query = "SELECT * FROM votes WHERE ballot_id = %s"
+    query = "SELECT * FROM votes WHERE ballot_id = %s ORDER BY tstamp DESC"
     votes = query_all(cdedbxy, query, (ballot_id,))
+
     tally = collections.defaultdict(lambda: 0)
+    votes_seen = collections.defaultdict(lambda: 0)
     for vote in votes:
+        if votes_seen[vote['user_hash']] >= ballot['votes']:
+            # We sorted by timestamp above to be able to skip changed votes
+            # here
+            continue
+        votes_seen[vote['user_hash']] += 1
         if vote['option_id']:
             tally[vote['option_id']] += 1
     query = "SELECT * FROM vote_options WHERE ballot_id = %s"
@@ -930,22 +959,39 @@ for ballot_id in BALLOT_MAP:
         # Make sure all candidates are present in the defaultdict
         _ = tally[candidate['id']]
     moniker_map = {key: str(i+1) for i, key in enumerate(sorted(tally))}
+    candidate_lookup = {c['id']: c for c in candidates}
+
+    surrogate_candidates = {
+        moniker_map[id]: c['opt_name'] for id, c in candidate_lookup.items()
+    }
+    fake_votes = []
+    for key, number in tally.items():
+        for _ in range(number):
+            fake_votes.append({
+                "vote": "{}>{}".format(moniker_map[key], "=".join(
+                    moniker_map[other] for other in tally if other != key)),
+                "salt": "none",
+                "hash": "{:0128}".format(len(fake_votes)),
+            })
+
     ranking = tuple(reversed(sorted((v, k) for k, v in tally.items())))
     rawvote = tuple(moniker_map[option] for _, option in ranking)
-    barvote = rawvote[:ballot['votes']] + ('_bar_',) + rawvote[ballot['votes']:]
-    vote = '>'.join(barvote)
+    vote = '{}>{}'.format(">".join(rawvote[:ballot['votes']]),
+                          "=".join(rawvote[ballot['votes']:]))
     print("Adding result for {} -- {}".format(ballot['name'], vote))
-    insert(cdb, "assembly.voter_register", {
-        'persona_id': DEFAULT_ID,
-        'ballot_id': BALLOT_MAP[ballot_id],
-        'has_voted': True,
-    })
-    insert(cdb, "assembly.votes", {
-        'ballot_id': BALLOT_MAP[ballot_id],
-        'vote': vote,
-        'salt': 'None',
-        'hash': 'None',
-    })
+    esc = json_serialize
+    result_file = ASSEMBLY_BALLOT_RESULT_TEMPLATE.substitute({
+        'ASSEMBLY': esc(theassembly['name']),
+        'BALLOT': esc(ballot['name']),
+        'RESULT': esc(vote),
+        'CANDIDATES': esc(surrogate_candidates),
+        'USE_BAR': esc(False),
+        'VOTERS': esc([]),
+        'VOTES': esc(fake_votes),})
+    path = (pathlib.Path('/var/lib/cdedb/ballot_result')
+            / str(BALLOT_MAP[ballot_id]))
+    with open(str(path), 'w', encoding='UTF-8') as f:
+        f.write(result_file)
 
 ## Conclude assemblies
 print("Waiting for ballots")

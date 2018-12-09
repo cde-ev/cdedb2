@@ -136,8 +136,8 @@
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
                             {% if result['counts'] %}
-                                {% set candidate_moniker = ambience['ballot']['condidates'][candidate_id]['moniker'] %}
-                                {% trans count=result[candidate_moniker]|e -%}
+                                {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
+                                {% trans count=result['counts'][candidate_moniker]|e -%}
                                     ({{ count }} votes)
                                 {%- endtrans %}
                             {% endif %}
@@ -171,8 +171,8 @@
                             {% endif %}
                             {{ ambience['ballot']['candidates'][candidate_id]['description']|e }}
                             {% if result['counts'] %}
-                                {% set candidate_moniker = ambience['ballot']['condidates'][candidate_id]['moniker'] %}
-                                {% trans count=result[candidate_moniker]|e -%}
+                                {% set candidate_moniker = ambience['ballot']['candidates'][candidate_id]['moniker'] %}
+                                {% trans count=result['counts'][candidate_moniker]|e -%}
                                     ({{ count }} votes)
                                 {%- endtrans %}
                             {% endif %}
