@@ -321,9 +321,9 @@ class FrontendTest(unittest.TestCase):
         self.response = self.app.get(*args, **kwargs)
         self.basic_validate()
 
-    def follow(self):
+    def follow(self, **kwargs):
         oldresponse = self.response
-        self.response = self.response.maybe_follow()
+        self.response = self.response.maybe_follow(**kwargs)
         if self.response != oldresponse:
             self.log_generation_time(oldresponse)
 
