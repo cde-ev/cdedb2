@@ -110,12 +110,10 @@ class TestCdEFrontend(FrontendTest):
                 self.submit(f)
                 self.assertTitle(title)
             else:
-                try:
-                    self.submit(f)
-                except AssertionError:
-                    pass
-                self.assertTitle("Fehler")
+                self.response = f.submit()
+                self.follow(status=403)
                 self.assertPresence("Limit für Zugriffe")
+                self.assertPresence("automatisch zurückgesetzt")
                 break
 
     @as_users("anton", "berta", "inga")
