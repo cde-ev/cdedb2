@@ -2739,11 +2739,15 @@ msgstr "Startseite"
 #, python-format
 msgid ""
 "Use the navigation buttons of your browser to get back to the previous "
-"page or go to the %(link)s of\n"
+"page or go to the %(frontpage_link)s of\n"
 "                the CdE-Datenbank."
 msgstr ""
 "Verwende die Navigations-Schaltflächen deines Browsers um zurück zur "
-"vorherigen Seite zu gelangen oder öffne die %(link)s der %(db)s."
+"vorherigen Seite zu gelangen oder öffne die %(frontpage_link)s der %(db)s."
+
+#: cdedb/frontend/templates/web/error.tmpl:56
+msgid "First try reloading this page."
+msgstr "Versuche zunächst, die Seite neuzuladen."
 
 #: cdedb/frontend/templates/web/error.tmpl:58
 #, python-format
@@ -2756,7 +2760,7 @@ msgid ""
 "                buttons did you click to get here? Have you changed any "
 "settings before the error occurred?"
 msgstr ""
-"Wenn der Fehler hartnäckig bleibt, hast Du vermutlich einen Bug entdeckt, der sich in unserem Code versteckt."
+"Wenn der Fehler hartnäckig bleibt, hast Du vermutlich einen Bug entdeckt, der sich in unserem Code versteckt. "
 "Bitte wende Dich mit der oben angezeigten Fehlermeldung, der aktuellen Zeit "
 "(%(time)s) und einer detaillierten Beschreibung Deines Vorgehens an das %(team)s unter %(mail)s: "
 "Was wolltest Du tun? Welche Links und Buttons hast du angeklickt, um hierher zu gelangen? "

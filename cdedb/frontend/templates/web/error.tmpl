@@ -44,19 +44,19 @@
             {%- endtrans %}
         </p>
         <p>
-            {% trans link=util.href(cdedblink('core/index'), gettext("frontpage")) -%}
-                Use the navigation buttons of your browser to get back to the previous page or go to the {{ link }} of
-                the CdE-Datenbank.
+            {% trans frontpage_link=util.href(cdedblink('core/index'), gettext("frontpage")) -%}
+                Use the navigation buttons of your browser to get back to the previous page or go to the
+                {{ frontpage_link }} of the CdE-Datenbank.
             {%- endtrans %}
         </p>
     {% elif error.code == 500 %}
             {% if not help is none %}
                 <p>{{ gettext(help) }}</p>
             {% else %}
-                <p>First try reloading this page.</p>
+                <p>{% trans %}First try reloading this page.{% endtrans %}</p>
             {% endif %}
         <p>
-            {% trans team=gettext("Database-Development-Team"),
+            {% trans team=gettext("CdE-Datenbank development team"),
                      mail="<a href='mailto:" + gettext("CdE-Datenbank development team") +
                            " <cdedb@lists.cde-ev.de>'>cdedb@lists.cde-ev.de</a>",
                      time=now()|datetime(lang=lang)|e -%}
