@@ -22,8 +22,6 @@ CDEDB_PATHS = werkzeug.routing.Map((
     werkzeug.routing.EndpointPrefix('core/', (
         rule("/", methods=_GET,
              endpoint="index"),
-        rule("/error", methods=_GET,
-             endpoint="error"),
         sub('/core', (
             rule("/login", methods=_POST,
                  endpoint="login"),

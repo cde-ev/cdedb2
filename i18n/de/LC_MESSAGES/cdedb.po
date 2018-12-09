@@ -1748,6 +1748,27 @@ msgstr "Start im Entwicklungsmodus ist unzulässig."
 msgid "Session expired."
 msgstr "Die Sitzung ist abgelaufen."
 
+#: cdedb/frontend/application.py:229
+msgid ""
+"A modification to the database could not be executed due to simultaneous "
+"access. Please reload the page to try again."
+msgstr ""
+"Eine Änderung an der Datenbank konnte wegen eines gleichzeitigen Zugriffs"
+" nicht ausgeführt werden. Bitte lade die Seite neu, um es erneut zu "
+"versuchen."
+
+#: cdedb/frontend/application.py:236
+msgid ""
+"You reached the internal limit for user profile views. This is a privacy "
+"feature to prevent users from cloning the address database. "
+"Unfortunatetly, this may also yield some false positive restrictions. "
+"Your limit will be resetted in the next days."
+msgstr ""
+"Du hast das interne Limit für Zugriffe erreicht. Dies ist ein "
+"Sicherheitsfeature, das ein Klonen der Datenbank verhindern soll. Dabei "
+"kann es leider auch zu ungewollten Beschränkungen kommen. Deine "
+"Limitierung wird im Laufe der nächsten Tage automatisch zurückgesetzt."
+
 #: cdedb/frontend/assembly.py:126 cdedb/frontend/cde.py:237
 #: cdedb/frontend/core.py:748 cdedb/frontend/core.py:801
 #: cdedb/frontend/event.py:177 cdedb/frontend/event.py:3347
@@ -2647,15 +2668,12 @@ msgstr "Das sollte nicht sichtbar sein."
 msgid "Club der Ehemaligen e.V."
 msgstr ""
 
-#: cdedb/frontend/templates/web/base.tmpl:199
-#: cdedb/frontend/templates/web/error.tmpl:12
-#: cdedb/frontend/templates/web/error.tmpl:25
+#: cdedb/frontend/templates/web/base.tmpl:200
+#: cdedb/frontend/templates/web/error.tmpl:58
 msgid "Database-Development-Team"
 msgstr "Datenbank-Entwicklungs-Team"
 
-#: cdedb/frontend/templates/web/base.tmpl:200
-#: cdedb/frontend/templates/web/error.tmpl:13
-#: cdedb/frontend/templates/web/error.tmpl:26
+#: cdedb/frontend/templates/web/base.tmpl:201
 msgid "CdE-Database-Development-Team"
 msgstr "CdE-Datenbank-Entwicklungs-Team"
 
@@ -2664,54 +2682,85 @@ msgid "Version"
 msgstr "Version"
 
 #: cdedb/frontend/templates/web/error.tmpl:8
-msgid "You do not have sufficient permissions to access this site:"
-msgstr "Du hast keine ausreichende Berechtigung, um auf diese Seite zuzugreifen:"
+msgid "You do not have sufficient permissions to access this page:"
+msgstr "Du hast keine ausreichenden Berechtigungen, um auf diese Seite zuzugreifen:"
 
-#: cdedb/frontend/templates/web/error.tmpl:12
+#: cdedb/frontend/templates/web/error.tmpl:11
+msgid "Couldn't find the requested page:"
+msgstr "Konnte die angefragte Seite nicht finden:"
+
+#: cdedb/frontend/templates/web/error.tmpl:14
+msgid "An internal error occured:"
+msgstr "Ein interner Fehler ist aufgetreten:"
+
+#: cdedb/frontend/templates/web/error.tmpl:17
+msgid "An unknown Error occurred."
+msgstr "Ein unbekannter Fehler ist aufgetreten."
+
+#: cdedb/frontend/templates/web/error.tmpl:26
+#: cdedb/frontend/templates/web/error.tmpl:27
+#: cdedb/frontend/templates/web/error.tmpl:38
+#: cdedb/frontend/templates/web/error.tmpl:39
+#: cdedb/frontend/templates/web/error.tmpl:59
+msgid "CdE-Datenbank development team"
+msgstr "CdE-Datenbank-Entwicklungs-Team"
+
+#: cdedb/frontend/templates/web/error.tmpl:26
 #, python-format
 msgid ""
-"If You think this is an error, please contact the %(team)s at %(mail)s "
-"and describe what You did."
+"If you think this is an error, please contact the %(team)s at %(mail)s "
+"with the error message\n"
+"                displayed above, the current time (%(time)s) and a "
+"detailed description of your actions: What were you\n"
+"                about to do? Which links and buttons did you click to get"
+" here? Have you changed any settings before the\n"
+"                error occurred?"
 msgstr ""
-"Wenn Du diese Meldung für einen Fehler der CdE-Datenbank hälst, "
-"kontaktiere bitte das %(team)s unter %(mail)s und beschreibe, welche "
-"Aktionen Du durchgeführt hast."
+"Wenn Du das für einen Fehler hältst, wende Dich bitte mit der oben angezeigten Fehlermeldung, der aktuellen Zeit "
+"(%(time)s) und einer detaillierten Beschreibung Deines Vorgehens an das %(team)s unter %(mail)s: "
+"Was wolltest Du tun? Welche Links und Buttons hast du angeklickt, um hierher zu gelangen? "
+"Hast du irgendwelche Einstellungen geändert, bevor der Fehler aufgetreten ist?"
 
-#: cdedb/frontend/templates/web/error.tmpl:21
-msgid "Couldn't find the requested site:"
-msgstr "Die gewünschte Seite konnte leider nicht gefunden werden:"
-
-#: cdedb/frontend/templates/web/error.tmpl:25
+#: cdedb/frontend/templates/web/error.tmpl:38
 #, python-format
 msgid ""
-"If You got here via an internal CdE-Database Link, please constact the "
-"%(team)s at %(mail)s\n"
-"                and describe what You did."
+"If you reached this page via an internal link of the CdE-Datenbank, "
+"please contact the %(team)s at\n"
+"                %(mail)s and describe how you got here."
 msgstr ""
-"Wenn Du durch einen internen Link der CdE-Datenbank hierher gelangt bist,"
-" kontaktiere bitte das %(team)s unter %(mail)s und beschreibe, welche "
-"Aktionen Du durchgeführt hast."
+"Wenn Du diese Seite über einen internen Link in der CdE-Datenbank erreicht hast, kontaktiere bitte das %(team)s "
+"unter %(mail)s and beschreibe, wie Du hierher gelangt bist."
 
-#: cdedb/frontend/templates/web/error.tmpl:33
-msgid "Frontpage"
+#: cdedb/frontend/templates/web/error.tmpl:46
+msgid "frontpage"
 msgstr "Startseite"
 
-#: cdedb/frontend/templates/web/error.tmpl:33
+#: cdedb/frontend/templates/web/error.tmpl:46
 #, python-format
 msgid ""
-"Use the navigation bar of your Browser to get back or go to the %(link)s "
-"of the %(db)s."
+"Use the navigation buttons of your browser to get back to the previous "
+"page or go to the %(link)s of\n"
+"                the CdE-Datenbank."
 msgstr ""
 "Verwende die Navigations-Schaltflächen deines Browsers um zurück zur "
 "vorherigen Seite zu gelangen oder öffne die %(link)s der %(db)s."
 
-#: cdedb/frontend/templates/web/error.tmpl:33
-msgid "CdE-Database"
-msgstr "CdE-Datenbank"
-
-#: cdedb/frontend/templates/web/error.tmpl:39
-msgid "An unknown Error occurred."
-msgstr "Ein unbekannter Fehler ist aufgetreten."
+#: cdedb/frontend/templates/web/error.tmpl:58
+#, python-format
+msgid ""
+"If the error persists, you probably found a bug, hidden in our code.\n"
+"                Please contact the %(team)s at %(mail)s with the error "
+"message displayed above, the current time\n"
+"                (%(time)s) and a detailed description of your actions: "
+"What were you about to do? Which links and\n"
+"                buttons did you click to get here? Have you changed any "
+"settings before the error occurred?"
+msgstr ""
+"Wenn der Fehler hartnäckig bleibt, hast Du vermutlich einen Bug entdeckt, der sich in unserem Code versteckt."
+"Bitte wende Dich mit der oben angezeigten Fehlermeldung, der aktuellen Zeit "
+"(%(time)s) und einer detaillierten Beschreibung Deines Vorgehens an das %(team)s unter %(mail)s: "
+"Was wolltest Du tun? Welche Links und Buttons hast du angeklickt, um hierher zu gelangen? "
+"Hast du irgendwelche Einstellungen geändert, bevor der Fehler aufgetreten ist?"
 
 #: cdedb/frontend/templates/web/generic.tmpl:8
 #: cdedb/frontend/templates/web/generic.tmpl:93

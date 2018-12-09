@@ -78,21 +78,22 @@ class Application(BaseApp):
             if self.conf.CDEDB_DEV or self.conf.CDEDB_OFFLINE_DEPLOYMENT:
                 raise RuntimeError(n_("Refusing to start in debug mode."))
 
-    def make_error_page(self, error, request):
+    def make_error_page(self, error, request, help=None):
         """Helper to format an error page.
 
         This is similar to
         :py:meth:`cdedb.frontend.common.AbstractFrontend.fill_template`,
-        but creates a Response instead of only a string.
-
+        but creates a Response instead of only a string. It also has a more
+        minimalistic setup to work, even when normal application startup fails.
 
         :type error: :py:class:`werkzeug.exceptions.HTTPException`
         :type request: :py:class:`werkzeug.wrappers.Request`
+        :param help: An additional help string. If given, the default help
+                     string for each HTTP code (below the error description) is
+                     prepended by this string (or its translation).
+        :type help: str
         :rtype: :py:class:`Response`
         """
-        if error.code not in (403, 404):
-            ## Only handle Forbidden and NotFound otherwise return a plain error
-            return error
         urls = self.urlmap.bind_to_environ(request.environ)
         def _cdedblink(endpoint, params=None):
             return urls.build(endpoint, params or {})
@@ -110,6 +111,7 @@ class Application(BaseApp):
             'user': User(),
             'values': {},
             'error': error,
+            'help': help,
         }
         t = self.jinja_env.get_template(str(pathlib.Path("web", "error.tmpl")))
         html = t.render(**data)
@@ -221,11 +223,21 @@ class Application(BaseApp):
             return self.make_error_page(e, request)
         except psycopg2.extensions.TransactionRollbackError:
             ## Serialization error
-            return construct_redirect(
-                request, urls.build("core/error", {'kind': "database"}))
+            return self.make_error_page(
+                werkzeug.exceptions.InternalServerError(e.args),
+                request,
+                n_("A modification to the database could not be executed due "
+                   "to simultaneous access. Please reload the page to try "
+                   "again."))
         except QuotaException:
-            return construct_redirect(
-                request, urls.build("core/error", {'kind': "quota"}))
+            return self.make_error_page(
+                werkzeug.exceptions.Forbidden("Profile view quota reached."),
+                request,
+                n_("You reached the internal limit for user profile views. "
+                   "This is a privacy feature to prevent users from cloning "
+                   "the address database. Unfortunatetly, this may also yield "
+                   "some false positive restrictions. Your limit will be "
+                   "resetted in the next days."))
         except Exception as e:
             ## debug output if applicable
             if self.conf.CDEDB_DEV or ('data' in locals()
@@ -233,13 +245,10 @@ class Application(BaseApp):
                                        and (data.get('db_privileges') % 2)):
                 return Response(cgitb.html(sys.exc_info(), context=7),
                                 mimetype="text/html")
-            ## prevent infinite loop if the error pages are buggy
-            if request.base_url.endswith("error"):
-                raise
             ## generic errors
-            return construct_redirect(
-                request, urls.build("core/error", {'kind': "general",
-                                                   'message': str(e)}))
+            return self.make_error_page(
+                werkzeug.exceptions.InternalServerError(str(e)),
+                request)
 
     def get_locale(self, request):
         """
