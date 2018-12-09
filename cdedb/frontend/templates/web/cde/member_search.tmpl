@@ -11,7 +11,7 @@
         <h2>
             {% trans -%}Result{%- endtrans %}
             <small>
-            {% trans number=result|length|e, count=result|length -%}
+            {% trans number=result|length, count=result|length|e -%}
                 {{ count }} Member found
             {%- pluralize number -%}
                 {{ count }} Members found
