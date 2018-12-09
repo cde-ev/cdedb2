@@ -2724,14 +2724,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/error.tmpl:40
 #: cdedb/frontend/templates/web/error.tmpl:12
 #: cdedb/frontend/templates/web/error.tmpl:25
-msgid "Database-Development-Team"
+msgid "CdE-Datenbank development team"
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:201
 #: cdedb/frontend/templates/web/core/error.tmpl:41
 #: cdedb/frontend/templates/web/error.tmpl:13
 #: cdedb/frontend/templates/web/error.tmpl:26
-msgid "CdE-Database-Development-Team"
+msgid "CdE-CdE-Datenbank development team"
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:202
@@ -2756,7 +2756,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/error.tmpl:25
 #, python-format
 msgid ""
-"If You got here via an internal CdE-Database Link, please constact the "
+"If You got here via an internal CdE-Datenbank Link, please constact the "
 "%(team)s at %(mail)s\n"
 "                and describe what You did."
 msgstr ""
@@ -2775,7 +2775,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:8
 #: cdedb/frontend/templates/web/core/login.tmpl:8
 #: cdedb/frontend/templates/web/error.tmpl:33
-msgid "CdE-Database"
+msgid "CdE-Datenbank"
 msgstr ""
 
 #: cdedb/frontend/templates/web/error.tmpl:39
@@ -3227,7 +3227,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:83
 msgid ""
-"To create Your CdE-Database Account, enter Your data into this form.\n"
+"To create Your CdE-Datenbank Account, enter Your data into this form.\n"
 "            Then You can set up Your password. Your Account will be "
 "activated shortly."
 msgstr ""
