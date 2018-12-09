@@ -245,7 +245,7 @@ class Application(BaseApp):
                    "This is a privacy feature to prevent users from cloning "
                    "the address database. Unfortunatetly, this may also yield "
                    "some false positive restrictions. Your limit will be "
-                   "resetted in the next days."))
+                   "reset in the next days."))
         except Exception as e:
             ## debug output if applicable
             if self.conf.CDEDB_DEV or ('data' in locals()

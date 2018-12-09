@@ -2692,7 +2692,7 @@ msgid "CdE-Database"
 msgstr ""
 
 #: cdedb/frontend/templates/web/error.tmpl:39
-msgid "An unknown Error occurred."
+msgid "An unknown error occurred."
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:8

@@ -8,14 +8,14 @@
             {% trans %}You do not have sufficient permissions to access this page:{% endtrans %}
             {{ error.description|e }}
         {% elif error.code == 404 %}
-            {% trans %}Couldn't find the requested page:{% endtrans %}
+            {% trans %}Couldn't find the requested page{% endtrans %}
         {% elif error.code == 405 %}
             {% trans %}This HTTP method is not allowed for this URL.{% endtrans %}
         {% elif error.code == 500 %}
             {% trans %}An internal error occured:{% endtrans %}
             {{ error.description|e }}
         {% else %}
-             {% trans %}An unknown Error occurred.{% endtrans %}
+             {% trans %}An unknown error occurred.{% endtrans %}
         {% endif %}
     </div>
 
@@ -49,7 +49,7 @@
                 {{ frontpage_link }} of the CdE-Datenbank.
             {%- endtrans %}
         </p>
-    {% elif error.code == 500 %}
+    {% else %}
             {% if not help is none %}
                 <p>{{ gettext(help) }}</p>
             {% else %}

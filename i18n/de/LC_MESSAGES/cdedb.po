@@ -1762,7 +1762,7 @@ msgid ""
 "You reached the internal limit for user profile views. This is a privacy "
 "feature to prevent users from cloning the address database. "
 "Unfortunatetly, this may also yield some false positive restrictions. "
-"Your limit will be resetted in the next days."
+"Your limit will be reset in the next days."
 msgstr ""
 "Du hast das interne Limit für Zugriffe erreicht. Dies ist ein "
 "Sicherheitsfeature, das ein Klonen der Datenbank verhindern soll. Dabei "
@@ -2694,7 +2694,7 @@ msgid "An internal error occured:"
 msgstr "Ein interner Fehler ist aufgetreten:"
 
 #: cdedb/frontend/templates/web/error.tmpl:17
-msgid "An unknown Error occurred."
+msgid "An unknown error occurred."
 msgstr "Ein unbekannter Fehler ist aufgetreten."
 
 #: cdedb/frontend/templates/web/error.tmpl:26
