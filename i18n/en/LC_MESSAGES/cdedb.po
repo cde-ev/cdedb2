@@ -216,39 +216,39 @@ msgstr "exPuls-Semester advanced"
 
 #: cdedb/i18n_additional.py:44
 msgid "CoreLogCodes.persona_creation"
-msgstr ""
+msgstr "Account created"
 
 #: cdedb/i18n_additional.py:45
 msgid "CoreLogCodes.persona_change"
-msgstr ""
+msgstr "Account modified"
 
 #: cdedb/i18n_additional.py:46
 msgid "CoreLogCodes.password_change"
-msgstr ""
+msgstr "Password changed"
 
 #: cdedb/i18n_additional.py:47
 msgid "CoreLogCodes.password_reset_cookie"
-msgstr ""
+msgstr "Password reset cookie created"
 
 #: cdedb/i18n_additional.py:48
 msgid "CoreLogCodes.password_reset"
-msgstr ""
+msgstr "Password reset"
 
 #: cdedb/i18n_additional.py:49
 msgid "CoreLogCodes.password_generated"
-msgstr ""
+msgstr "Password generated"
 
 #: cdedb/i18n_additional.py:50
 msgid "CoreLogCodes.genesis_request"
-msgstr ""
+msgstr "Account Request created"
 
 #: cdedb/i18n_additional.py:51
 msgid "CoreLogCodes.genesis_approved"
-msgstr ""
+msgstr "Account Request approved"
 
 #: cdedb/i18n_additional.py:52
 msgid "CoreLogCodes.genesis_rejected"
-msgstr ""
+msgstr "Account Request rejected"
 
 #: cdedb/i18n_additional.py:54
 msgid "CourseFilterPositions.specific_rank"
@@ -488,23 +488,23 @@ msgstr ""
 
 #: cdedb/i18n_additional.py:119
 msgid "MemberChangeStati.pending"
-msgstr ""
+msgstr "Change awaits confirmation"
 
 #: cdedb/i18n_additional.py:120
 msgid "MemberChangeStati.committed"
-msgstr ""
+msgstr "Change confirmed"
 
 #: cdedb/i18n_additional.py:121
 msgid "MemberChangeStati.superseeded"
-msgstr ""
+msgstr "Change outdated"
 
 #: cdedb/i18n_additional.py:122
 msgid "MemberChangeStati.nacked"
-msgstr ""
+msgstr "Change rejected"
 
 #: cdedb/i18n_additional.py:123
 msgid "MemberChangeStati.displaced"
-msgstr ""
+msgstr "Change displaced"
 
 #: cdedb/i18n_additional.py:125
 msgid "MlLogCodes.list_created"
