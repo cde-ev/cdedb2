@@ -364,6 +364,8 @@ class FrontendTest(unittest.TestCase):
         u = USER_DICT[user]
         self.traverse({'href': '^/$'})
         f = self.response.forms['adminshowuserform']
+        print()
+        print(f)
         f['phrase'] = u["DB-ID"]
         self.submit(f)
         if check:
