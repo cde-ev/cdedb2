@@ -94,30 +94,35 @@ class Application(BaseApp):
         :type help: str
         :rtype: :py:class:`Response`
         """
-        urls = self.urlmap.bind_to_environ(request.environ)
-        def _cdedblink(endpoint, params=None):
-            return urls.build(endpoint, params or {})
-        begin = now()
-        lang = self.get_locale(request)
-        data = {
-            'ambience': {},
-            'cdedblink': _cdedblink,
-            'errors': {},
-            'generation_time': lambda: (now() - begin),
-            'gettext': self.translations[lang].gettext,
-            'ngettext': self.translations[lang].ngettext,
-            'lang': lang,
-            'notifications': tuple(),
-            'user': User(),
-            'values': {},
-            'error': error,
-            'help': help,
-        }
-        t = self.jinja_env.get_template(str(pathlib.Path("web", "error.tmpl")))
-        html = t.render(**data)
-        response = Response(html, mimetype='text/html', status=error.code)
-        response.headers.add('X-Generation-Time', str(now() - begin))
-        return response
+        try:
+            urls = self.urlmap.bind_to_environ(request.environ)
+            def _cdedblink(endpoint, params=None):
+                return urls.build(endpoint, params or {})
+            begin = now()
+            lang = self.get_locale(request)
+            data = {
+                'ambience': {},
+                'cdedblink': _cdedblink,
+                'errors': {},
+                'generation_time': lambda: (now() - begin),
+                'gettext': self.translations[lang].gettext,
+                'ngettext': self.translations[lang].ngettext,
+                'lang': lang,
+                'notifications': tuple(),
+                'user': User(),
+                'values': {},
+                'error': error,
+                'help': help,
+            }
+            t = self.jinja_env.get_template(str(pathlib.Path("web",
+                                                             "error.tmpl")))
+            html = t.render(**data)
+            response = Response(html, mimetype='text/html', status=error.code)
+            response.headers.add('X-Generation-Time', str(now() - begin))
+            return response
+        except Exception:
+            self.logger.exception("Exception while rendering error page")
+            return Response(error.description, status=error.code)
 
     @werkzeug.wrappers.Request.application
     def __call__(self, request):
