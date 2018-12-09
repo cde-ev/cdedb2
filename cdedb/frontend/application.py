@@ -122,7 +122,8 @@ class Application(BaseApp):
             return response
         except Exception:
             self.logger.exception("Exception while rendering error page")
-            return Response(error.description, status=error.code)
+            return Response(str(error) + "\n" + error.description,
+                            status=error.code)
 
     @werkzeug.wrappers.Request.application
     def __call__(self, request):
@@ -254,7 +255,7 @@ class Application(BaseApp):
                                 mimetype="text/html")
             ## generic errors
             return self.make_error_page(
-                werkzeug.exceptions.InternalServerError(str(e)),
+                werkzeug.exceptions.InternalServerError(repr(e)),
                 request)
 
     def get_locale(self, request):
