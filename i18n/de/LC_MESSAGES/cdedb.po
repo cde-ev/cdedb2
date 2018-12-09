@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.schuelerakademie.de\n"
-"POT-Creation-Date: 2018-12-09 02:35+0100\n"
+"POT-Creation-Date: 2018-12-09 17:03+0100\n"
 "PO-Revision-Date: 2018-12-06 22:10+0100\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language: de\n"
@@ -2735,18 +2735,14 @@ msgid "Club der Ehemaligen e.V."
 msgstr ""
 
 #: cdedb/frontend/templates/web/base.tmpl:200
+#: cdedb/frontend/templates/web/base.tmpl:201
 #: cdedb/frontend/templates/web/core/error.tmpl:40
+#: cdedb/frontend/templates/web/core/error.tmpl:41
 #: cdedb/frontend/templates/web/error.tmpl:12
+#: cdedb/frontend/templates/web/error.tmpl:13
 #: cdedb/frontend/templates/web/error.tmpl:25
 msgid "CdE-Datenbank development team"
 msgstr "Datenbank-Entwicklungs-Team"
-
-#: cdedb/frontend/templates/web/base.tmpl:201
-#: cdedb/frontend/templates/web/core/error.tmpl:41
-#: cdedb/frontend/templates/web/error.tmpl:13
-#: cdedb/frontend/templates/web/error.tmpl:26
-msgid "CdE-CdE-Datenbank development team"
-msgstr "CdE-Datenbank-Entwicklungs-Team"
 
 #: cdedb/frontend/templates/web/base.tmpl:202
 msgid "Version"
@@ -2781,6 +2777,10 @@ msgstr ""
 " kontaktiere bitte das %(team)s unter %(mail)s und beschreibe, welche "
 "Aktionen Du durchgeführt hast."
 
+#: cdedb/frontend/templates/web/error.tmpl:26
+msgid "CdE-Datenbank development team"
+msgstr "CdE-Datenbank-Entwicklungs-Team"
+
 #: cdedb/frontend/templates/web/error.tmpl:33
 msgid "Frontpage"
 msgstr "Startseite"
@@ -2789,16 +2789,10 @@ msgstr "Startseite"
 #, python-format
 msgid ""
 "Use the navigation bar of your Browser to get back or go to the %(link)s "
-"of the %(db)s."
+"of the CdE-Datenbank."
 msgstr ""
 "Verwende die Navigations-Schaltflächen deines Browsers um zurück zur "
-"vorherigen Seite zu gelangen oder öffne die %(link)s der %(db)s."
-
-#: cdedb/frontend/templates/web/core/index.tmpl:8
-#: cdedb/frontend/templates/web/core/login.tmpl:8
-#: cdedb/frontend/templates/web/error.tmpl:33
-msgid "CdE-Datenbank"
-msgstr "CdE-Datenbank"
+"vorherigen Seite zu gelangen oder öffne die %(link)s der CdE-Datenbank."
 
 #: cdedb/frontend/templates/web/error.tmpl:39
 msgid "An unknown Error occurred."
@@ -2899,7 +2893,7 @@ msgstr "Rufname"
 #: cdedb/frontend/templates/web/core/change_user.tmpl:67
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:94
 #: cdedb/frontend/templates/web/core/show_history.tmpl:256
-#: cdedb/frontend/templates/web/core/show_user.tmpl:297
+#: cdedb/frontend/templates/web/core/show_user.tmpl:298
 #: cdedb/frontend/templates/web/generic.tmpl:18
 #: cdedb/frontend/templates/web/generic.tmpl:174
 #: cdedb/frontend/templates/web/generic.tmpl:238
@@ -2910,7 +2904,7 @@ msgstr "Fachgebiet"
 #: cdedb/frontend/templates/web/core/change_user.tmpl:68
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:95
 #: cdedb/frontend/templates/web/core/show_history.tmpl:257
-#: cdedb/frontend/templates/web/core/show_user.tmpl:301
+#: cdedb/frontend/templates/web/core/show_user.tmpl:302
 #: cdedb/frontend/templates/web/generic.tmpl:19
 #: cdedb/frontend/templates/web/generic.tmpl:175
 #: cdedb/frontend/templates/web/generic.tmpl:239
@@ -2921,7 +2915,7 @@ msgstr "Schule, Uni, …"
 #: cdedb/frontend/templates/web/core/change_user.tmpl:69
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:96
 #: cdedb/frontend/templates/web/core/show_history.tmpl:258
-#: cdedb/frontend/templates/web/core/show_user.tmpl:305
+#: cdedb/frontend/templates/web/core/show_user.tmpl:306
 #: cdedb/frontend/templates/web/generic.tmpl:20
 #: cdedb/frontend/templates/web/generic.tmpl:176
 #: cdedb/frontend/templates/web/generic.tmpl:240
@@ -2933,7 +2927,7 @@ msgstr "Jahrgang, Matrikel, …"
 #: cdedb/frontend/templates/web/core/change_user.tmpl:70
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:97
 #: cdedb/frontend/templates/web/core/show_history.tmpl:259
-#: cdedb/frontend/templates/web/core/show_user.tmpl:309
+#: cdedb/frontend/templates/web/core/show_user.tmpl:310
 #: cdedb/frontend/templates/web/generic.tmpl:21
 #: cdedb/frontend/templates/web/generic.tmpl:177
 #: cdedb/frontend/templates/web/generic.tmpl:241
@@ -2949,8 +2943,8 @@ msgstr "Interessen"
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:92
 #: cdedb/frontend/templates/web/core/show_history.tmpl:254
 #: cdedb/frontend/templates/web/core/show_history.tmpl:260
-#: cdedb/frontend/templates/web/core/show_user.tmpl:294
-#: cdedb/frontend/templates/web/core/show_user.tmpl:313
+#: cdedb/frontend/templates/web/core/show_user.tmpl:295
+#: cdedb/frontend/templates/web/core/show_user.tmpl:314
 #: cdedb/frontend/templates/web/generic.tmpl:22
 #: cdedb/frontend/templates/web/generic.tmpl:178
 #: cdedb/frontend/templates/web/generic.tmpl:242
@@ -3782,6 +3776,7 @@ msgstr "Versammlungs-Übersicht"
 #: cdedb/frontend/templates/web/cde/money_transfers.tmpl:8
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:10
 #: cdedb/frontend/templates/web/core/base.tmpl:19
+#: cdedb/frontend/templates/web/core/index.tmpl:35
 msgid "Manage Users"
 msgstr "Nutzer verwalten"
 
@@ -4065,7 +4060,7 @@ msgstr "Zu Abstimmung"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:105
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:604
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:119
-#: cdedb/frontend/templates/web/core/show_user.tmpl:351
+#: cdedb/frontend/templates/web/core/show_user.tmpl:352
 msgid "Actions"
 msgstr "Aktionen"
 
@@ -4076,8 +4071,8 @@ msgstr "Archivieren"
 #: cdedb/frontend/templates/web/assembly/show_assembly.tmpl:113
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:611
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:126
-#: cdedb/frontend/templates/web/core/show_user.tmpl:394
-#: cdedb/frontend/templates/web/core/show_user.tmpl:444
+#: cdedb/frontend/templates/web/core/show_user.tmpl:395
+#: cdedb/frontend/templates/web/core/show_user.tmpl:445
 msgid "Are You sure?"
 msgstr "sicher?"
 
@@ -4790,7 +4785,7 @@ msgstr "Finanz Log"
 #: cdedb/frontend/templates/web/cde/list_past_events.tmpl:4
 #: cdedb/frontend/templates/web/cde/list_past_events.tmpl:7
 #: cdedb/frontend/templates/web/cde/show_past_course.tmpl:17
-#: cdedb/frontend/templates/web/core/show_user.tmpl:320
+#: cdedb/frontend/templates/web/core/show_user.tmpl:321
 msgid "Past Events"
 msgstr "Verg. Veranstaltungen"
 
@@ -5862,7 +5857,7 @@ msgstr "Eigene E-Mail-Adresse ändern"
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:13
 msgid "Change E-Mail-Address"
-msgstr ""
+msgstr "E-Mail-Adresse ändern"
 
 #: cdedb/frontend/templates/web/core/change_username.tmpl:17
 msgid ""
@@ -5986,9 +5981,6 @@ msgstr "Mailingliste"
 msgid "Approve"
 msgstr "Genehmigen"
 
-msgid "Account Management"
-msgstr "Verwaltung"
-
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:54
 #: cdedb/frontend/templates/web/core/genesis_list_cases.tmpl:102
 msgid "Reject"
@@ -6072,6 +6064,11 @@ msgstr "Begründung"
 msgid "Confirm Request"
 msgstr "Anfrage abschicken"
 
+#: cdedb/frontend/templates/web/core/index.tmpl:8
+#: cdedb/frontend/templates/web/core/login.tmpl:8
+msgid "CdE-Datenbank"
+msgstr "CdE-Datenbank"
+
 #: cdedb/frontend/templates/web/core/index.tmpl:18
 #: cdedb/frontend/templates/web/core/login.tmpl:19
 msgid "Info"
@@ -6085,6 +6082,10 @@ msgstr "Dies ist eine Offline-Instanz der CdE-Datenbank"
 #: cdedb/frontend/templates/web/core/index.tmpl:37
 msgid "Search for Users by ID or Name"
 msgstr "Benutzer nach ID oder Namen suchen"
+
+#: cdedb/frontend/templates/web/core/index.tmpl:60
+msgid "Account Management"
+msgstr "Verwaltung"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:63
 #: cdedb/frontend/templates/web/core/index.tmpl:72
@@ -6197,11 +6198,11 @@ msgstr "Änderungen prüfen"
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:40
 msgid "Show all Fields"
-msgstr ""
+msgstr "Alle Felder anzeigen"
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:42
 msgid "Show Profile"
-msgstr ""
+msgstr "Profil anzeigen"
 
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:43
 #: cdedb/frontend/templates/web/core/show_user.tmpl:57
@@ -6545,23 +6546,23 @@ msgstr "Daten sind nicht sichtbar."
 msgid "Address Information"
 msgstr "Adresse"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:328
+#: cdedb/frontend/templates/web/core/show_user.tmpl:329
 msgid "(Orga)"
 msgstr "(Orga)"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:338
+#: cdedb/frontend/templates/web/core/show_user.tmpl:339
 msgid "(Instructor)"
 msgstr "(Kursleiter)"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:360
+#: cdedb/frontend/templates/web/core/show_user.tmpl:361
 msgid "Deactivate Account"
 msgstr "Account deaktivieren"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:366
+#: cdedb/frontend/templates/web/core/show_user.tmpl:367
 msgid "Reactivate Account"
 msgstr "Account reaktivieren"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:375
+#: cdedb/frontend/templates/web/core/show_user.tmpl:376
 msgid ""
 "Deactivates the Account, so the User can no longer login.\n"
 "                                        Non-Admins can still see the User"
@@ -6573,15 +6574,15 @@ msgstr ""
 "jedoch ohne vollständiges Profil. Dies kann jederzeit rückgängig gemacht "
 "werden."
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:392
+#: cdedb/frontend/templates/web/core/show_user.tmpl:393
 msgid "Archive Account"
 msgstr "Account archivieren"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:398
+#: cdedb/frontend/templates/web/core/show_user.tmpl:399
 msgid "The Account will be archived."
 msgstr "Der Account wird archiviert."
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:406
+#: cdedb/frontend/templates/web/core/show_user.tmpl:407
 msgid ""
 "Archives the Account. The User can no longer login and most Information "
 "is deleted.\n"
@@ -6598,25 +6599,25 @@ msgstr ""
 "Bedeutung sind (z.B. Name und Akademieteilnahme), bleiben bestehen. "
 "Andere Benutzer können den Account nicht mehr finden."
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:424
+#: cdedb/frontend/templates/web/core/show_user.tmpl:425
 msgid "Restore Account"
 msgstr "Account wiederherstellen"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:431
+#: cdedb/frontend/templates/web/core/show_user.tmpl:432
 msgid "Restores the archives Account. It will be usable again."
 msgstr ""
 "Stellt den archivierten Account wieder her. Er kann anschließend wieder "
 "normal genutzt werden."
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:442
+#: cdedb/frontend/templates/web/core/show_user.tmpl:443
 msgid "Delete Account"
 msgstr "Account leeren"
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:448
+#: cdedb/frontend/templates/web/core/show_user.tmpl:449
 msgid "The Account will be deleted."
 msgstr "Der Account wird geleert."
 
-#: cdedb/frontend/templates/web/core/show_user.tmpl:456
+#: cdedb/frontend/templates/web/core/show_user.tmpl:457
 msgid ""
 "Deletes all remaining Information associated with the Account.\n"
 "                                    The Name will be lost as well. It "
@@ -6627,7 +6628,7 @@ msgstr ""
 "wiederherzustellen."
 
 #: cdedb/frontend/templates/web/core/user_search.tmpl:12
-msgid "Core-Usermanagement"
+msgid "core_usermanagement"
 msgstr "Allgemeine Nutzerverwaltung"
 
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:23
@@ -6689,7 +6690,7 @@ msgstr "Generation"
 #~ msgstr "Im CdE-Bereich nicht verfügbar."
 
 #~ msgid "End trial membership."
-#~ msgstr "Probemitgliedschaft beendet."
+#~ msgstr ""
 
 #~ msgid "CdEDB account approved"
 #~ msgstr "CdEDB Accountanfrage bestätigt"

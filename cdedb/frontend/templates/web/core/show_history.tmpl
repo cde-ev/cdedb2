@@ -15,7 +15,7 @@
     {{ util.breadcrumb_link(cdedblink("core/show_history"), gettext("Change History"), active=True) }}
 {% endblock %}
 {% set STATUS={enums["MemberChangeStati"].pending: ('pending','check',gettext("pending")),
-                enums["MemberChangeStati"].committed: ('','',gettext("")),
+                enums["MemberChangeStati"].committed: ('','',''),
                 enums["MemberChangeStati"].superseded: ('superseded', 'refresh', gettext("superseded")),
                 enums["MemberChangeStati"].nacked: ('nacked', 'ban-circle', gettext("nacked")),
                 enums["MemberChangeStati"].displaced: ('displaced', 'refresh', gettext("displaced")),

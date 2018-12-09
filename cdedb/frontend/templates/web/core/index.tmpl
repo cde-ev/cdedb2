@@ -32,7 +32,7 @@
     <div class="row">
         {% if 'core_admin' in user.roles %}
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title="Manage Users", aclass="panel-warning", icon='user') %}
+            {% call util.bootstrap_panel(title=gettext("Manage Users"), aclass="panel-warning", icon='user') %}
                 <form action="{{ cdedblink('core/admin_show_user')|e }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans -%}Search for Users by ID or Name{%- endtrans %}</div>
                     <div class="input-group">
@@ -57,7 +57,7 @@
               'pending_changes' in dashboard and dashboard['pending_changes'] > 0 %}
 
             <div class="col-md-6">
-            {% call util.bootstrap_panel(title="Account Management", aclass='panel-info', icon='check') %}
+            {% call util.bootstrap_panel(title=gettext("Account Management"), aclass='panel-info', icon='check') %}
                 {% if 'genesis_cases' in dashboard and dashboard['genesis_cases'] > 0 %}
                     <p>
                         {% trans count=dashboard['genesis_cases']|e, 

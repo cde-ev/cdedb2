@@ -290,7 +290,8 @@
             </dl>
         {% endif %}
 
-        {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests'] %}
+        {% if data['specialisation'] or data['affiliation'] or data['timeline'] or data['interests']
+                or data['free_form'] %}
             <h4 class="heading-underline">{% trans -%}Miscellaneous{%- endtrans %}</h4>
             <dl class="dl-horizontal">
                 {% if data['specialisation'] %}
