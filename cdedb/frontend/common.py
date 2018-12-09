@@ -1275,8 +1275,8 @@ def access(*roles, modi=None):
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 raise werkzeug.exceptions.Forbidden(
-                    n_("Access denied to {realm}/{endpoint}.").format(
-                        realm=obj, endpoint=fun.__name__))
+                    "Access denied to {realm}/{endpoint}.".format(
+                        realm=obj.__class__.__name__, endpoint=fun.__name__))
         new_fun.access_list = access_list
         new_fun.modi = modi
         return new_fun
