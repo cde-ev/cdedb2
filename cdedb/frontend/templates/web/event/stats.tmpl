@@ -95,7 +95,7 @@
                             <th>{{ HEADINGS.get(key, key)|e }}</th>
                                 {% for track_id, track in ambience['event']['tracks']|xdictsort('sortkey') %}
                                 <td>
-                                    {% set query = get_query(key, track_id) %}
+                                    {% set query = get_query(key, track['part_id'], track_id) %}
                                     {% if query %}
                                         {{ util.href(cdedblink('event/registration_query', query|querytoparams),
                                                      row[track_id]) }}
