@@ -373,9 +373,14 @@ class EventBackend(AbstractBackend):
                 " = course_fields{track_id}.xfield_course_id_{track_id}",
             )
             track_atoms = ("course_id", "course_instructor",)
-            track_columns_gen = lambda track_id: ", ".join(
-                "{col} AS {col}{track_id}".format(col=col, track_id=track_id)
-                for col in track_atoms)
+            # This needs an additional hack to dynamically generate the
+            # is_course_instructor field.
+            track_columns_gen = lambda track_id: \
+                ", ".join("{col} AS {col}{track_id}".format(col=col,
+                                                            track_id=track_id)
+                          for col in track_atoms) + \
+                ", (course_id = course_instructor) AS " \
+                "is_course_instructor{track_id}".format(track_id=track_id)
             creation_date = glue(
                 "LEFT OUTER JOIN (",
                 "SELECT persona_id, MAX(ctime) AS creation_time",

@@ -3115,6 +3115,8 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
                 spec["track{0}.course_instructor{0}".format(track_id)] = "id"
+                spec["track{0}.is_course_instructor{0}".format(track_id)] \
+                    = "bool"
                 for f in sorted(event['fields'].values(),
                                 key=lambda f: f['field_name']):
                     if f['association'] == const.FieldAssociations.course:
@@ -3140,6 +3142,8 @@ class EventFrontend(AbstractUserFrontend):
                           for track_id in tracks)] = "id"
             spec[",".join("track{0}.course_instructor{0}".format(track_id)
                           for track_id in tracks)] = "id"
+            spec[",".join("track{0}.is_course_instructor{0}".format(track_id)
+                          for track_id in tracks)] = "bool"
             for f in sorted(event['fields'].values(),
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.course:
@@ -3248,6 +3252,9 @@ class EventFrontend(AbstractUserFrontend):
                     "track{0}.course_instructor{0}".format(track_id): rs.gettext(
                         "{title}: course instructor").format(
                         title=track['title']),
+                    "track{0}.is_course_instructor{0}".format(track_id):
+                        rs.gettext("{title}: instructs their course").format(
+                            title=track['title']),
                 })
                 titles.update({
                     "course_fields{0}.xfield_{1}_{0}".format(
@@ -3263,7 +3270,10 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("any track: course"),
                 ",".join("track{0}.course_instructor{0}".format(track_id)
                          for track_id in tracks):
-                    rs.gettext("any track: course instuctor")
+                    rs.gettext("any track: course instuctor"),
+                ",".join("track{0}.is_course_instructor{0}".format(track_id)
+                         for track_id in tracks):
+                    rs.gettext("any track: instructs their course"),
             })
             titles.update({
                 ",".join("course_fields{0}.xfield_{1}_{0}".format(
@@ -3279,6 +3289,8 @@ class EventFrontend(AbstractUserFrontend):
                 "track{0}.course_id{0}".format(track_id): rs.gettext("course"),
                 "track{0}.course_instructor{0}".format(track_id):
                     rs.gettext("course instructor"),
+                "track{0}.is_course_instructor{0}".format(track_id):
+                    rs.gettext("instructs their course"),
             })
             titles.update({
                 "course_fields{0}.xfield_{1}_{0}".format(track_id, field['field_name']):
