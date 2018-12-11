@@ -54,7 +54,7 @@ import cdedb.database.constants as const
 #:                         SELECT fields FROM event.lodgements WHERE event_id=1)))
 #:                     AS X("lodgement_id" integer, "contamination" varchar))
 #:        AS lodge_fields3 ON part3.lodgement_id3 = lodge_fields3.lodgement_id3
-#:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1, course_instructor AS course_instructor1
+#:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id1, course_instructor AS course_instructor1, (course_id = course_instructor) AS is_course_instructor1
 #:                     FROM event.registration_tracks WHERE track_id = 1)
 #:        AS track1 ON reg.id = track1.registration_id
 #:    LEFT OUTER JOIN (SELECT "course_id" AS xfield_course_id_1, "room" AS xfield_room_1
@@ -62,7 +62,7 @@ import cdedb.database.constants as const
 #:                         SELECT fields FROM event.courses WHERE event_id=1)))
 #:                     AS X("course_id" integer, "room" varchar))
 #:        AS course_fields1 ON track1.course_id1 = course_fields1.course_id1
-#:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id2, course_instructor AS course_instructor2
+#:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id2, course_instructor AS course_instructor2, (course_id = course_instructor) AS is_course_instructor2
 #:                     FROM event.registration_tracks WHERE track_id = 2)
 #:        AS track2 ON reg.id = track2.registration_id
 #:    LEFT OUTER JOIN (SELECT "course_id" AS xfield_course_id_2, "room" AS xfield_room_2
@@ -70,7 +70,7 @@ import cdedb.database.constants as const
 #:                         SELECT fields FROM event.courses WHERE event_id=1)))
 #:                     AS X("course_id" integer, "room" varchar))
 #:        AS course_fields2 ON track2.course_id2 = course_fields2.course_id2
-#:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3, course_instructor AS course_instructor3
+#:    LEFT OUTER JOIN (SELECT registration_id, course_id AS course_id3, course_instructor AS course_instructor3, (course_id = course_instructor) AS is_course_instructor3
 #:                     FROM event.registration_tracks WHERE track_id = 3)
 #:        AS track3 ON reg.id = track3.registration_id
 #:    LEFT OUTER JOIN (SELECT "course_id" AS xfield_course_id_3, "room" AS xfield_room_3
