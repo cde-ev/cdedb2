@@ -906,18 +906,12 @@ class EventFrontend(AbstractUserFrontend):
         )
         # Some reusable query filter definitions
         involved_filter = (
-            'part{anid}.status{anid}',
+            'part{part}.status{part}',
             QueryOperators.oneof,
             [x.value for x in stati if x.is_involved()],
         )
         participant_filter = (
-             'part{anid}.status{anid}',
-             QueryOperators.equal,
-             stati.participant.value,
-        )
-        any_part_participant_filter = (
-             ",".join("part{0}.status{0}".format(part_id)
-                      for part_id in rs.ambience['event']['parts']),
+             'part{part}.status{part}',
              QueryOperators.equal,
              stati.participant.value,
         )
@@ -926,9 +920,9 @@ class EventFrontend(AbstractUserFrontend):
         # get_query()
         query_filters = {
             'pending': (
-                ('part{anid}.status{anid}', QueryOperators.equal, stati.applied.value),),
+                ('part{part}.status{part}', QueryOperators.equal, stati.applied.value),),
             ' payed': (
-                ('part{anid}.status{anid}', QueryOperators.equal, stati.applied.value),
+                ('part{part}.status{part}', QueryOperators.equal, stati.applied.value),
                 ("reg.payment", QueryOperators.nonempty, None),),
             'participant': (participant_filter, ),
             ' u18': (
@@ -952,9 +946,9 @@ class EventFrontend(AbstractUserFrontend):
             ' orgas': (
                 ('persona.id', QueryOperators.oneof, rs.ambience['event']['orgas']),),
             'waitlist': (
-                ('part{anid}.status{anid}', QueryOperators.equal, stati.waitlist.value),),
+                ('part{part}.status{part}', QueryOperators.equal, stati.waitlist.value),),
             'guest': (
-                ('part{anid}.status{anid}', QueryOperators.equal, stati.guest.value),),
+                ('part{part}.status{part}', QueryOperators.equal, stati.guest.value),),
             'total involved': (involved_filter,),
             ' not payed': (
                 involved_filter,
@@ -965,22 +959,25 @@ class EventFrontend(AbstractUserFrontend):
                  deduct_years(rs.ambience['event']['begin'], 18)),
                 ("reg.parental_agreement", QueryOperators.equal, False),),
             'no lodgement': (
-                ('part{anid}.status{anid}', QueryOperators.oneof,
+                ('part{part}.status{part}', QueryOperators.oneof,
                  [x.value for x in stati if x.is_present()]),
-                ('part{anid}.lodgement_id{anid}', QueryOperators.empty, None)),
+                ('part{part}.lodgement_id{part}', QueryOperators.empty, None)),
             'cancelled': (
-                ('part{anid}.status{anid}', QueryOperators.equal, stati.cancelled.value),),
+                ('part{part}.status{part}', QueryOperators.equal, stati.cancelled.value),),
             'rejected': (
-                ('part{anid}.status{anid}', QueryOperators.equal, stati.rejected.value),),
+                ('part{part}.status{part}', QueryOperators.equal, stati.rejected.value),),
             'total': (
-                ('part{anid}.status{anid}', QueryOperators.unequal, stati.not_applied.value),),
+                ('part{part}.status{part}', QueryOperators.unequal, stati.not_applied.value),),
 
             'all instructors': (
-                any_part_participant_filter,
-                ('track{anid}.course_instructor{anid}', QueryOperators.nonempty, None),),
+                participant_filter,
+                ('track{track}.course_instructor{track}', QueryOperators.nonempty, None),),
+            'instructors': (
+                participant_filter,
+                ('track{track}.is_course_instructor{track}', QueryOperators.equal, True),),
             'no course': (
-                any_part_participant_filter,
-                ('track{anid}.course_id{anid}', QueryOperators.empty, None),
+                participant_filter,
+                ('track{track}.course_id{track}', QueryOperators.empty, None),
                 ('persona.id', QueryOperators.otherthan, rs.ambience['event']['orgas']),)
         }
         query_additional_fields = {
@@ -989,21 +986,23 @@ class EventFrontend(AbstractUserFrontend):
             ' u16': ('persona.birthday',),
             ' u14': ('persona.birthday',),
             ' checked in': ('reg.checkin',),
-            'total involved': ('part{anid}.status{anid}',),
-            'all instructors': ('track{anid}.course_instructor{anid}',
-                                'track{anid}.course_id{anid}',),
+            'total involved': ('part{part}.status{part}',),
+            'instructors': ('track{track}.course_instructor{track}',),
+            'all instructors': ('track{track}.course_instructor{track}',
+                                'track{track}.course_id{track}',),
         }
 
-        def get_query(category, anid):
+        def get_query(category, part_id, track_id=None):
             if category not in query_filters:
                 return None
             q = copy.deepcopy(base_query)
             for f in query_filters[category]:
                 q.constraints.append(
-                    (f[0].format(anid=anid), f[1], f[2]))
+                    (f[0].format(track=track_id, part=part_id), f[1], f[2]))
             if category in query_additional_fields:
                 for f in query_additional_fields[category]:
-                    q.fields_of_interest.append(f.format(anid=anid))
+                    q.fields_of_interest.append(f.format(track=track_id,
+                                                         part=part_id))
             return q
 
         return self.render(rs, "stats", {
@@ -3115,6 +3114,8 @@ class EventFrontend(AbstractUserFrontend):
             for track_id in event['parts'][part_id]['tracks']:
                 spec["track{0}.course_id{0}".format(track_id)] = "id"
                 spec["track{0}.course_instructor{0}".format(track_id)] = "id"
+                spec["track{0}.is_course_instructor{0}".format(track_id)] \
+                    = "bool"
                 for f in sorted(event['fields'].values(),
                                 key=lambda f: f['field_name']):
                     if f['association'] == const.FieldAssociations.course:
@@ -3140,6 +3141,8 @@ class EventFrontend(AbstractUserFrontend):
                           for track_id in tracks)] = "id"
             spec[",".join("track{0}.course_instructor{0}".format(track_id)
                           for track_id in tracks)] = "id"
+            spec[",".join("track{0}.is_course_instructor{0}".format(track_id)
+                          for track_id in tracks)] = "bool"
             for f in sorted(event['fields'].values(),
                             key=lambda f: f['field_name']):
                 if f['association'] == const.FieldAssociations.course:
@@ -3248,6 +3251,9 @@ class EventFrontend(AbstractUserFrontend):
                     "track{0}.course_instructor{0}".format(track_id): rs.gettext(
                         "{title}: course instructor").format(
                         title=track['title']),
+                    "track{0}.is_course_instructor{0}".format(track_id):
+                        rs.gettext("{title}: instructs their course").format(
+                            title=track['title']),
                 })
                 titles.update({
                     "course_fields{0}.xfield_{1}_{0}".format(
@@ -3263,7 +3269,10 @@ class EventFrontend(AbstractUserFrontend):
                     rs.gettext("any track: course"),
                 ",".join("track{0}.course_instructor{0}".format(track_id)
                          for track_id in tracks):
-                    rs.gettext("any track: course instuctor")
+                    rs.gettext("any track: course instuctor"),
+                ",".join("track{0}.is_course_instructor{0}".format(track_id)
+                         for track_id in tracks):
+                    rs.gettext("any track: instructs their course"),
             })
             titles.update({
                 ",".join("course_fields{0}.xfield_{1}_{0}".format(
@@ -3279,6 +3288,8 @@ class EventFrontend(AbstractUserFrontend):
                 "track{0}.course_id{0}".format(track_id): rs.gettext("course"),
                 "track{0}.course_instructor{0}".format(track_id):
                     rs.gettext("course instructor"),
+                "track{0}.is_course_instructor{0}".format(track_id):
+                    rs.gettext("instructs their course"),
             })
             titles.update({
                 "course_fields{0}.xfield_{1}_{0}".format(track_id, field['field_name']):

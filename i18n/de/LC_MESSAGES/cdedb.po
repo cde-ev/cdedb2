@@ -2431,6 +2431,10 @@ msgstr "{title}: Kurs"
 msgid "{title}: course instructor"
 msgstr "{title}: Kursleiter"
 
+#: cdedb/frontend/event.py:3255
+msgid "{title}: instructs their course"
+msgstr "{title}: Hält seinen/ihren Kurs"
+
 #: cdedb/frontend/event.py:3213
 msgid "{title} course: {field}"
 msgstr "{title} Kurs: {field}"
@@ -2443,6 +2447,10 @@ msgstr "Bel. Schiene: Kurs"
 msgid "any track: course instuctor"
 msgstr "Bel. Schiene: Kursleiter"
 
+#: cdedb/frontend/event.py:3275
+msgid "any track: instructs their course"
+msgstr "Bel. Schiene: Hält seinen/ihren Kurs"
+
 #: cdedb/frontend/event.py:3230
 msgid "any track course: {field}"
 msgstr "Bel. Schiene Kurs: {field}"
@@ -2454,6 +2462,10 @@ msgstr "Kurs"
 #: cdedb/frontend/event.py:3239
 msgid "course instructor"
 msgstr "Kursleiter"
+
+#: cdedb/frontend/event.py:3292
+msgid "instructs their course"
+msgstr "Hält seinen/ihren Kurs"
 
 #: cdedb/frontend/event.py:3243
 msgid "course: {field}"
