@@ -605,6 +605,23 @@ for event in events:
     else:
         year = int(mo.group(1))
     new['tempus'] = datetime.date(year, 7, 1)
+    if event['organisator'] == 0:
+        if any(n in event['name'] for n in ('Pfingst', 'Mai', 'May')):
+            new['tempus'] = datetime.date(year, 6, 1)
+        elif 'Biomodels' in event['name']:
+            new['tempus'] = datetime.date(year, 9, 15)
+        elif 'Multi' in event['name']:
+            new['tempus'] = datetime.date(year, 8, 15)
+        elif 'Musik' in event['name']:
+            new['tempus'] = datetime.date(year, 4, 1)
+        elif 'Seminar' in event['name']:
+            new['tempus'] = datetime.date(year, 12, 1)
+        elif 'Sommer' in event['name']:
+            new['tempus'] = datetime.date(year, 8, 1)
+        elif 'Winter' in event['name']:
+            new['tempus'] = datetime.date(year - 1, 12, 27)
+            if '2.' in  event['name']:
+                new['tempus'] = datetime.date(year, 1, 1)
     new_id = past_event.create_past_event(rs(DEFAULT_ID), new)
     EVENT_MAP[event['id']] = new_id
     if split_name:
