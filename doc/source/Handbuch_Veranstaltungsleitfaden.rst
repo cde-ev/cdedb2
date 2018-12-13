@@ -42,12 +42,20 @@ Wie viele Veranstaltungs-Teile hat eure Veranstaltung?
 
 Hier müsst ihr für jeden Veranstaltungs-Teil eurer Veranstaltung einen seperaten Eintrag anlegen.
 
+Für jede Veranstaltung könnt ihr unterschiedliche Teilnahmebeiträge eintragen.
+
+.. hint:: Denkt an die Verwendung der Punkt-Notation anstelle der Komma-Notation.
+
 .. _handbuch_ablaufplan_vor_veranstaltungsteile_kursschienen:
 
 Wie viele Kursschienen haben eure Veranstaltungs-Teile?
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 Kursschienen sind Kurse, die *pro* Teilnehmer auf einem Veranstaltungs-Teil *parallel* zueinander besucht werden. Jeder Teilnehmer muss also in jeder Kursschiene einen Kurs belegen. Auf Veranstaltungen mit zwei Kursschienen könnten beispielsweise Teilnehmer vormittags und nachmittags unterschieliche Kurse besuchen.
+
+Mittels "Kurswahlen" könnt ihr einstellen, wie viele präferenzierten Kurse (1. Wahl, (2. Wahl, 3. Wahl, ...)) ein Teilnehemer pro Hälfte bei der Anmeldung *wählen* muss.
+
+Die "Sortierung" gibt die Reihenfolge der Abfragen der Kurswahlen bei der Anmeldung in aufsteigender Zahl an.
 
 .. hint:: Ihr könnt einmal angelegte Veranstaltungs-Teile und Kursschienen nur löschen, wenn für diese keine Daten registriert sind (also es keine Kurse gibt, die währenddessen stattfinden).
 
@@ -93,7 +101,9 @@ Unterkunft
 
 Vor einer Veranstaltung sollte man wissen, wie viele Teilnehmer die Veranstaltung besuchen können - dies ist schon für die Kalkulation des Teilnehmerbeitrag essenziel wichtig (siehe [Referenz Teilehmerberechnungtabelle])!
 
-Dafür können die Unterkünfte - gerade bei neuen Veranstaltungen empfehlenswert - direkt in der Datenbank unter "Unterkunft" angelegt werden, das erleichtert die Berechnung und den Überblick über verfügbare Teilnehmerplätze.
+TODO: LINK O.Ä. ZUR TEILNEHMERBEITRAGSTABELLE HINZUFÜGEN
+
+Dafür können die Unterkünfte (also Plätze pro Zimmer, Zelt, etc.)  - gerade bei neuen Veranstaltungen empfehlenswert - direkt in der Datenbank unter "Unterkunft" angelegt werden, das erleichtert die Berechnung und den Überblick über verfügbare Teilnehmerplätze.
 
 ACHTUNG - FEATURE EXISTIERT NOCH NICHT
 Das Anlegen kann auch nach Anmeldebeginn erfolgen oder - wenn vorhanden - von einer alten Veranstaltung importiert werden.
@@ -148,7 +158,13 @@ Die "Admin/Orga-Notizen" sind für euch. Sie sind nur für euch und Datenbankadm
 Anmeldebeginn- und ende
 '''''''''''''''''''''''
 
-Anmeldebeginn- und Ende können ebenfalls hier festgelegt werden. Hierbei können offzieller Anmeldeschluss und tatsächlicher Anmeldeschluss voneinander abweichen, der offizielle wird allen Mitgliedern angezeigt, der tatsächliche ist aber ausschlaggebend. Wenn die beiden gleich sind, muss nur der offizielle Anmeldeschluss eingetragen werden.
+Anmeldebeginn- und Ende können ebenfalls hier festgelegt werden.
+
+Der offizielle Anmeldeschluss wird in der Datenbank angezeigt. Bis zu diesem können bestehende Anmeldungen bearbeitet werden. Wird dieses Feld leer gelassen, können die Teilnehmer dauerhaft ihre Anmeldungen ändern.
+
+Der tatsächliche Anmeldeschluss gibt den Zeitpunkt an, bis zu dem Nachmeldungen möglich sind. Ist dieses Feld leer, bleibt die Anmeldung für Nachmeldungen offen.
+
+TODO: WAS GENAU HEIST DAS? WELCHE KONKRETEN FOLGEN?
 
 .. _handbuch_ablaufplan_vor_konfiguration_extrafelder:
 
@@ -214,15 +230,55 @@ Anmeldung eröffnen
    
 Vor der Anmeldung noch ein paar letze Punkte:
    
-- Minderjährige können sich **erst dann** für eure Veranstaltung anmelden, wenn ihr einen Minderjährigenformular in der DB hochgeladen habt!
-- Die Veranstaltung muss **sichtbar** sein. Dafür müsst ihr im Kontrollkästchen des gleichnamigen Feldes unter "Konfigurationen" setzen.
+- Minderjährige können sich **erst dann** für eure Veranstaltung anmelden, wenn ihr ein Minderjährigenformular in der DB hochgeladen habt!
+- Habt ihr für **jeden** Veranstaltungsteil einen Teilnehmerbeitrag unter :ref:`Veranstaltungs-Teile <handbuch_ablaufplan_vor_veranstaltungsteile_veranstaltungsteile>` eingetragen?
+- Die Veranstaltung muss **sichtbar** sein. Dafür müsst ihr im Kontrollkästchen des gleichnamigen Feldes unter :ref:`Konfiguration <handbuch_ablaufplan_vor_konfiguration>` setzen.
 
 Die Anmeldung eröffnet automatisch zu dem Zeitpunkt, den ihr dafür festgelegt habt, siehe :ref:`Anmeldebeginn und -ende <handbuch_ablaufplan_vor_konfigurationen_beginn>`. 
 
+.. _handbuch_ablaufplan_während:
+
+Zwischen Anmeldeeröffnung und Anmeldeschluss
+--------------------------------------------
+
+TODO:
+
+- ÜBERWEISUNGEN EINTRAGEN
+
+.. _handbuch_ablaufplan_während_überweisungen:
+
+Überweisungen eintragen
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Während der Anmeldephase bekommt ihr vom Finanzvorstand eine Tabelle mit den Menschen, die den Teilnahmebeitrag (so ihr diesen über das CdE-Konto abwickelt) überwiesen haben. Diese könnt ihr über das Tool "Überweisungen eintragen" in der Datenbank hinterlegen - das ist wichtig, damit ihr später bei der Platzvergabe wisst, wer (und auch wann) den Teilnehmerbeitrag bezahlt hat.
+
+Im Idealfall bekommt ihr eine .csv Tabelle vom Finanzvorstand, die die Spalten
+Datum;Betrag;CdEDB-ID;Nachname;Vorname
+in genau dieser Reihenfolge enthält. Dann könnt ihr diese einfach per Copy+Paste in das Formular übertragen. Sollte dies nicht der Fall sein, müsst ihr das Format dementsprechend anpassen.
+
+Im Gegensatz zur alten Datenbank wird nun auch das automatische Einlesen von Externen unterstüzt, da diese für die Veranstaltung eine DB-ID erhalten und damit eindeutig vom System identifiziert werden können.
+
 .. _handbuch_ablaufplan_nach:
 
-Zwischen Anmeldeeröffnung und Veranstaltung
--------------------------------------------
+Zwischen Anmeldeschluss und Veranstaltungsbeginn
+------------------------------------------------
+
+TODO:
+
+- TEILNAHMEBESTÄTIGUNG
+- FRAGEBOGEN (ZUSÄTZLICHE DATEN) ANPASSEN
+- KURSEINTEILUNG
+- UNTERKUNFTSEINTEILUNG
+- DOWNLOAD TOOLS
+
+.. _handbuch_ablaufplan_auf:
+
+Auf der Veranstaltung
+---------------------
+
+TODO:
+
+- CHECK-IN
 
 .. _handbuch_ablaufplan_datenfelder:
 
@@ -330,10 +386,12 @@ TODO REFS HINZUFÜGEN
 Kursfelder
 ^^^^^^^^^^
 
+TODO: HINZUFÜGEN
 
 .. _handbuch_ablaufplan_datenfelder_unterkunft:
 
 Unterkunftsfelder
 ^^^^^^^^^^^^^^^^^
 
+TODO: HINZUFÜGEN
 
