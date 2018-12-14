@@ -27,6 +27,17 @@ sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cd
 cd /cdedb2
 # correct upstream URL after auto-build
 sudo -u cdedb git remote set-url origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
+# insert po-git-handlers
+sudo -u cdedb echo '' >> /cdedb2/.git/config
+sudo -u cdedb echo '[diff "podiff"]' >> /cdedb2/.git/config
+sudo -u cdedb echo '        textconv = i18n/git-diff-filter-po.sh' >> /cdedb2/.git/config
+sudo -u cdedb echo '[merge "pomerge"]' >> /cdedb2/.git/config
+sudo -u cdedb echo '        name = Gettext merge driver' >> /cdedb2/.git/config
+sudo -u cdedb echo '        driver = i18n/git-merge-po.sh %O %A %B' >> /cdedb2/.git/config
+sudo -u cdedb echo '' >> /cdedb2/.git/info/attributes
+sudo -u cdedb echo '*.po diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
+sudo -u cdedb echo '*.pot diff=podiff merge=pomerge' >> /cdedb2/.git/info/attributes
+# secure the ldap password
 chmod 600 /cdedb2/.ldap_rootpw
 # build the documentation
 sudo -u cdedb make doc
