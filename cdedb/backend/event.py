@@ -1695,126 +1695,6 @@ class EventBackend(AbstractBackend):
         self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
-    @staticmethod
-    def refine_export(export):
-        """Convert the export to a more semantic format.
-
-        :type export: {str: object}
-        :rtype: {str: object}
-        """
-        ret = {}
-        for key in ("id", "timestamp", "CDEDB_EXPORT_EVENT_VERSION", "kind",
-                    "event.events", "event.registrations", "event.courses",
-                    "event.lodgements", "event.log", "core.personas"):
-            ret[key] = export[key]
-        event_id = unwrap(export['event.events'], keys=True)
-        event = ret['event.events'][event_id]
-
-        event['orgas'] = {
-            orga['persona_id']: orga
-            for orga in export['event.orgas'].values()}
-        event['questionnaire_rows'] = export['event.questionnaire_rows']
-        event['parts'] = export['event.event_parts']
-        for part in event['parts'].values():
-            part['tracks'] = {}
-        for id, track in export['event.course_tracks'].items():
-            event['parts'][track['part_id']]['tracks'][id] = track
-        event['fields'] = export['event.field_definitions']
-
-        for course in ret['event.courses'].values():
-            course['segments'] = {}
-        for segment in export['event.course_segments'].values():
-            course_id = segment['course_id']
-            track_id = segment['track_id']
-            ret['event.courses'][course_id]['segments'][track_id] = segment
-
-        # core.personas cannot be inlined into the registrations, because
-        # there may be unregistered personas (e.g. referenced in the log)
-        for registration in ret['event.registrations'].values():
-            registration['parts'] = {}
-            registration['tracks'] = {}
-        for part in export['event.registration_parts'].values():
-            reg_id = part['registration_id']
-            part_id = part['part_id']
-            ret['event.registrations'][reg_id]['parts'][part_id] = part
-        for track in export['event.registration_tracks'].values():
-            reg_id = track['registration_id']
-            track_id = track['track_id']
-            ret['event.registrations'][reg_id]['tracks'][track_id] = track
-            track['choices'] = []
-        for choice in export['event.course_choices'].values():
-            reg_id = choice['registration_id']
-            track_id = choice['track_id']
-            track = ret['event.registrations'][reg_id]['tracks'][track_id]
-            track['choices'].append(choice)
-            track['choices'] = sorted(track['choices'], key=lambda x: x['rank'])
-        return ret
-
-    @staticmethod
-    def destill_import(import_):
-        """Unpack an import which is in the format of :py:meth:`refine_export`.
-
-        :type import_: {str: object}
-        :rtype: {str: object}
-        """
-        ret = {}
-        for key in ("id", "timestamp", "CDEDB_EXPORT_EVENT_VERSION", "kind",
-                    "event.lodgements", "event.log", "core.personas"):
-            ret[key] = import_[key]
-
-        ret["event.events"] = {
-            id: {key: value for key, value in event.items()
-                 if key not in ("orgas", "questionnaire_rows", "parts",
-                                "fields")}
-            for id, event in import_['event.events'].items()}
-        ret["event.courses"] = {
-            id: {key: value for key, value in course.items()
-                 if key not in ("segments",)}
-            for id, course in import_['event.courses'].items()}
-        ret["event.registrations"] = {
-            id: {key: value for key, value in registration.items()
-                 if key not in ("parts", "tracks")}
-            for id, registration in import_['event.registrations'].items()}
-
-        event_id = unwrap(import_['event.events'], keys=True)
-        event = import_['event.events'][event_id]
-        ret['event.orgas'] = {
-            orga['id']: orga
-            for orga in event['orgas'].values()
-        }
-        ret['event.questionnaire_rows'] = event['questionnaire_rows']
-
-        ret["event.event_parts"] = {
-            id: {key: value for key, value in part.items()
-                 if key not in ("tracks",)}
-            for id, part in event['parts'].items()}
-        ret["event.course_tracks"] = {
-            id: track
-            for part in event['parts'].values()
-            for id, track in part['tracks'].items()}
-        ret['event.field_definitions'] = event['fields']
-
-        ret['event.course_segments'] = {
-            segment['id']: segment
-            for course in import_['event.courses'].values()
-            for segment in course['segments'].values()}
-
-        ret['event.registration_parts'] = {
-            part['id']: part
-            for registration in import_['event.registrations'].values()
-            for part in registration['parts'].values()}
-        ret['event.registration_tracks'] = {
-            track['id']: {key: value for key, value in track.items()
-                          if key not in ("choices",)}
-            for registration in import_['event.registrations'].values()
-            for track in registration['tracks'].values()}
-        ret['event.course_choices'] = {
-            choice['id']: choice
-            for registration in import_['event.registrations'].values()
-            for track in registration['tracks'].values()
-            for choice in track['choices']}
-        return ret
-
     @access("event")
     def export_event(self, rs, event_id):
         """Export an event for offline usage or after offline usage.
@@ -1889,7 +1769,7 @@ class EventBackend(AbstractBackend):
                         personas.add(e['persona_id'])
             ret['core.personas'] = list_to_dict(self.sql_select(
                 rs, "core.personas", PERSONA_EVENT_FIELDS, personas))
-            return self.refine_export(ret)
+            return ret
 
     @classmethod
     def translate(cls, data, translations, extra_translations=None):
@@ -1977,7 +1857,7 @@ class EventBackend(AbstractBackend):
         :returns: standard return code
         """
         data = affirm("serialized_event", data)
-        data = self.destill_import(data)
+        data = data
         if self.conf.CDEDB_OFFLINE_DEPLOYMENT:
             raise RuntimeError(n_("It makes no sense to do this."))
         if not self.is_offline_locked(rs, event_id=data['id']):
@@ -1988,7 +1868,7 @@ class EventBackend(AbstractBackend):
             raise ValueError(n_("Not a full export, unable to proceed."))
 
         with Atomizer(rs):
-            current = self.destill_import(self.export_event(rs, data['id']))
+            current = self.export_event(rs, data['id'])
             ## First check that all newly created personas have been
             ## transferred to the online DB
             claimed = {e['persona_id']
