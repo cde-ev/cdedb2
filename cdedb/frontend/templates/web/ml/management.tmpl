@@ -52,7 +52,7 @@
             <ul>
                 {% for moderator in ambience['mailinglist']['moderators']|sort %}
                     <li>
-                        {{ util.persona_anchor(personas[moderator]) }}
+                        {{ util.persona_anchor(personas[moderator], ml_id=ambience['mailinglist']['id']) }}
                         <form action="{{ cdedblink('ml/remove_moderator')|e }}" method="POST"
                                 id="removemoderatorform{{ moderator|e }}" style="display: inline;">
                             {{ util.input_hidden(name="moderator_id", value=moderator) }}
@@ -72,7 +72,7 @@
                 <ul>
                     {% for request in requests|sort %}
                         <li>
-                            {{ util.persona_anchor(personas[request]) }}
+                            {{ util.persona_anchor(personas[request], ml_id=ambience['mailinglist']['id']) }}
                             <span class="nowrap">
                                 <form action="{{ cdedblink('ml/decide_request')|e }}" method="POST"
                                         id="nackrequestform{{ request|e }}" style="display: inline;">
@@ -146,7 +146,7 @@
                 <ul class="nosp slim">
                     {% for anid in list %}
                         <li>
-                            {{ util.persona_anchor(personas[anid]) }}
+                            {{ util.persona_anchor(personas[anid], ml_id=ambience['mailinglist']['id']) }}
                             <form action="{{ cdedblink('ml/remove_subscriber')|e }}" method="POST"
                                     id="removesubscriberform{{ anid|e }}" style="display: inline;">
                                 {{ util.input_hidden(name="subscriber_id", value=anid) }}

@@ -28,14 +28,14 @@
                     <td>{{ gettext(enums['MlLogCodes'](entry['code'])|string)|e }}</td>
                     <td>
                         {% if entry['submitted_by'] %}
-                            {{ util.persona_anchor(personas[entry['submitted_by']]) }}
+                            {{ util.persona_anchor(personas[entry['submitted_by']], ml_id=ambience['mailinglist']['id']) }}
                         {% else %}
                             –
                         {% endif %}
                     </td>
                     <td>
                         {% if entry['persona_id'] %}
-                            {{ util.persona_anchor(personas[entry['persona_id']]) }}
+                            {{ util.persona_anchor(personas[entry['persona_id']], ml_id=ambience['mailinglist']['id']) }}
                         {% else %}
                             –
                         {% endif %}

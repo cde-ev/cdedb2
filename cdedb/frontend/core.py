@@ -243,8 +243,9 @@ class CoreFrontend(AbstractFrontend):
 
     @access("persona")
     @event_usage
-    @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"))
-    def show_user(self, rs, persona_id, confirm_id, quote_me):
+    @REQUESTdata(("confirm_id", "#int"), ("quote_me", "bool"),
+                 ("event_id", "id_or_None"), ("ml_id", "id_or_None"))
+    def show_user(self, rs, persona_id, confirm_id, quote_me, event_id, ml_id):
         """Display user details.
 
         This has an additional encoded parameter to make links to this
@@ -254,6 +255,12 @@ class CoreFrontend(AbstractFrontend):
         The quote_me parameter controls access to member datasets by
         other members. Since there is a quota you only want to retrieve
         them if explicitly asked for.
+
+        The event_id and ml_id parameters control access in the context of
+        events and mailinglists, so that orgas and moderators can see their
+        users. This has the additional property, that event/ml admins count
+        as if they are always orga/moderator (otherwise they would observe
+        breakage).
         """
         if persona_id != confirm_id or rs.errors:
             rs.notify("error", n_("Link expired."))
@@ -266,7 +273,9 @@ class CoreFrontend(AbstractFrontend):
 
         ALL_ACCESS_LEVELS = {
             "persona", "ml", "assembly", "event", "cde", "core", "admin",
-            "orga"}
+            "orga", "moderator"}
+        # The basic access level provides only the name (this should only
+        # happen in case of un-quoted searchable member access)
         access_levels = {"persona"}
         ## Let users see themselves
         if persona_id == rs.user.persona_id:
@@ -275,32 +284,54 @@ class CoreFrontend(AbstractFrontend):
         ## Core admins see everything
         if "core_admin" in rs.user.roles:
             access_levels.update(ALL_ACCESS_LEVELS)
-        ## Other admins see their realm
-        for realm in ("ml", "assembly", "event", "cde"):
-            if "{}_admin".format(realm) in rs.user.roles:
-                access_levels.add(realm)
-        ## Relative admins can see core data
+        ## Other admins see their realm if they are relative admin
         if is_relative_admin:
+            ## Relative admins can see core data
             access_levels.add("core")
+            for realm in ("ml", "assembly", "event", "cde"):
+                if "{}_admin".format(realm) in rs.user.roles:
+                    access_levels.add(realm)
         ## Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
             if (not rs.ambience['persona']['is_searchable']
                     and not "cde_admin" in access_levels):
-                raise PrivilegeError(n_("Access to non-searchable member data."))
+                raise PrivilegeError(n_(
+                    "Access to non-searchable member data."))
             access_levels.add("cde")
         ## Orgas see their participants
-        if "event" not in access_levels:
-            for event_id in self.eventproxy.orga_info(rs, rs.user.persona_id):
-                if self.eventproxy.list_registrations(rs, event_id, persona_id):
-                    access_levels.add("event")
-                    access_levels.add("orga")
-                    break
-        ## Mailinglist moderators get no special treatment since this wouldn't
-        ## gain them anything
+        if event_id:
+            is_orga = (
+                "event_admin" in rs.user.roles
+                or event_id in self.eventproxy.orga_info(rs,
+                                                         rs.user.persona_id))
+            is_participant = self.eventproxy.list_registrations(
+                rs, event_id, persona_id)
+            if is_orga and is_participant:
+                access_levels.add("event")
+                access_levels.add("orga")
+        ## Mailinglist moderators see their subscribers
+        if ml_id:
+            is_moderator = (
+                "ml_admin" in rs.user.roles
+                or ml_id in self.mlproxy.moderator_info(rs,
+                                                        rs.user.persona_id))
+            is_subscriber = self.mlproxy.is_subscribed(rs, persona_id, ml_id)
+            if is_moderator and is_subscriber:
+                access_levels.add("ml")
+                # the moderator access level currently does nothing, but we
+                # add it anyway to be less confusing
+                access_levels.add("moderator")
 
         ## Retrieve data
+        ##
+        ## This is the basic mechanism for restricting access, since we only
+        ## add attributes for which an access level is provided.
         roles = extract_roles(rs.ambience['persona'])
         data = self.coreproxy.get_persona(rs, persona_id)
+        ## The base version of the data set should only contain the name,
+        ## however the PERSONA_CORE_FIELDS also contain the email address
+        ## which we must delete beforehand.
+        del data['username']
         if "ml" in access_levels and "ml" in roles:
             data.update(self.coreproxy.get_ml_user(rs, persona_id))
         if "assembly" in access_levels and "assembly" in roles:
@@ -335,7 +366,7 @@ class CoreFrontend(AbstractFrontend):
 
         ## Add past event participation info
         past_events = None
-        if {"event", "cde"} & access_levels and {"event", "cde"} & roles:
+        if "cde" in access_levels and {"event", "cde"} & roles:
             participation_info = self.pasteventproxy.participation_info(
                 rs, persona_id)
             # Group participation data by pevent_id: First get distinct past

@@ -33,7 +33,7 @@ Anmeldung von {{ persona['given_names']|e }} {{ persona['family_name']|e }} ({{ 
             {{ persona['name_supplement']|e }}
         </dd>
         <dt>CdEDB-ID</dt>
-        <dd>{{ util.href(show_user_link(persona['id']), persona['id']|cdedbid) }}</dd>
+        <dd>{{ util.href(show_user_link(persona['id'], event_id=ambience['event']['id']), persona['id']|cdedbid) }}</dd>
         {% if ambience['registration']['real_persona_id'] %}
             <dt>Online CdEDB-ID</dt>
             <dd>{{ ambience['registration']['real_persona_id']|cdedbid|e }}</dd>

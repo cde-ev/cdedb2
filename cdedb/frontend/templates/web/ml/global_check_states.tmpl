@@ -20,7 +20,7 @@
             <ul>
                 {% for problem in problems[mailinglist_id]|sort %}
                     <li>
-                        {{ util.persona_anchor(personas[problem]) }}
+                        {{ util.persona_anchor(personas[problem], ml_id=mailinglist_id) }}
                         <form action="{{ cdedblink('ml/remove_subscriber', {'mailinglist_id': mailinglist_id})|e }}" method="POST"
                                 id="removeproblemform{{ problem|e }}" style="display: inline;">
                             {{ util.input_hidden(name="subscriber_id", value=problem) }}
@@ -45,7 +45,7 @@
             <ul>
                 {% for problem in overrides[mailinglist_id]|sort %}
                     <li>
-                        {{ util.persona_anchor(personas[problem]) }}
+                        {{ util.persona_anchor(personas[problem], ml_id=mailinglist_id) }}
                         <form action="{{ cdedblink('ml/remove_subscriber', {'mailinglist_id': mailinglist_id})|e }}" method="POST"
                                 id="removeproblemform{{ problem|e }}" style="display: inline;">
                             {{ util.input_hidden(name="subscriber_id", value=problem) }}

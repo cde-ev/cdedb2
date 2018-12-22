@@ -675,7 +675,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             force_external=(modus != "web"),
                             magic_placeholders=magic_placeholders)
 
-        def _show_user_link(persona_id, quote_me=None):
+        def _show_user_link(persona_id, quote_me=None, event_id=None,
+                            ml_id=None):
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -684,6 +685,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
             :type persona_id: int
             :type quote_me: bool or None
+            :type event_id: int
+            :type ml_id: int
             :rtype: str
             """
             params = {
@@ -692,6 +695,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     "core/show_user", "confirm_id", persona_id, timeout=None)}
             if quote_me:
                 params['quote_me'] = True
+            if event_id:
+                params['event_id'] = event_id
+            if ml_id:
+                params['ml_id'] = ml_id
             return cdedburl(rs, 'core/show_user', params)
         errorsdict = {}
         for key, value in rs.errors:
