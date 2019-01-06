@@ -8,6 +8,14 @@ Hinweise setzen
    
 Dieser Guide soll euch durch die Verwaltung einer Veranstaltung mittels der neuen CdE-Datenbank führen- vom Anlegen der Veranstalltung, über die Anmeldephase bis auf die Veranstalltung vor Ort. Die Beschreibung soll so ausführlich erfolgen, das auch neue Orgas, die zum ersten Mal Kontakt mit der neuen Datenbank haben, sich gut zurecht finden und gleichzeitig erfahrenen Orgas als Nachschlagewerk dienen.
 
+
+Zum Aufbau dieses Guides
+
+Ich habe versucht diesem Leitfaden eine grobe Zeitliche Strucktur zu Grunde zu legen. Das Spiegelt sich vor allem in den großen Über-Kapiteln (Vor der Anmeldeeröffnung, zwischen Anmeldeeröffnung und Anmeldeschluss,...) wieder, aber auch innerhalb dieser habe ich versucht, die einzelnen Aufgaben und Mögichkeiten in eine einigermaßen sinnvolle Reihenfolge zu bringen.
+Die einzelnen Kapitelüberschrifte (Veranstaltungs-Teile, Kurse, ...) sind nach dem Menüpunkt in der Datenbank benannt, den sie zum Thema haben.
+
+
+
 .. _handbuch_ablaufplan_vor:
 
 Vor der Anmeldeeröffnung
@@ -24,16 +32,20 @@ Ihr bekommt vom Verwaltungsteam eine Mail, das eure Veranstaltung jetzt in die D
 - Überprüft, ob alle Orgas aus eurem Team als Orgas der Veranstaltung eingetragen sind. Falls nicht, fügt die fehlenden über das Eingabefeld hinzu.
 - kontrolliert euren Zeitrahmen - ist dieser nicht korrekt, könnt ihr ihn unter "Veranstaltungs-Teile" korrigieren
 
+
+
 .. _handbuch_ablaufplan_vor_veranstaltungsteile:
 
-Veranstaltungs-Teile konfigurieren
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Veranstaltungs-Teile
+^^^^^^^^^^^^^^^^^^^^
 
 Veranstaltungs-Teile sind
 
 - zeitlich direkt aufeinander folgende Veranstaltungen oder
 - zeitlich parallele und räumlich getrennte Veranstaltungen
 welche alle von *euch* organisiert werden.
+
+
 
 .. _handbuch_ablaufplan_vor_veranstaltungsteile_veranstaltungsteile:
 
@@ -45,6 +57,8 @@ Hier müsst ihr für jeden Veranstaltungs-Teil eurer Veranstaltung einen seperat
 Für jede Veranstaltung könnt ihr unterschiedliche Teilnahmebeiträge eintragen.
 
 .. hint:: Denkt an die Verwendung der Punkt-Notation anstelle der Komma-Notation.
+
+
 
 .. _handbuch_ablaufplan_vor_veranstaltungsteile_kursschienen:
 
@@ -59,6 +73,8 @@ Die "Sortierung" gibt die Reihenfolge der Abfragen der Kurswahlen bei der Anmeld
 
 .. hint:: Ihr könnt einmal angelegte Veranstaltungs-Teile und Kursschienen nur löschen, wenn für diese keine Daten registriert sind (also es keine Kurse gibt, die währenddessen stattfinden).
 
+
+
 .. _handbuch_ablaufplan_vor_kurse:
 
 Kurse
@@ -69,6 +85,7 @@ Hat eure Veranstaltung Kurse? Wenn ja, könnt ihr diese unter dem Reiter "Kurse"
 .. hint:: Es ist empfehlenswert, den Teilnehmern vor eurer Anmeldebeginn die Kursliste zur Verfügung zu stellen, auch wenn diese eventuell noch nicht vollständig sein sollte. Unter "Konfiguration" könnt ihr in der Checkbox "Sichtbarkeit der Kursliste" die Kursliste für alle, die sich für die Veranstaltung anmelden können, sichtbar machen.
 	  
 
+
 .. _handbuch_ablaufplan_vor_kurse_anlegen:
 
 Einen neuen Kurs anlegen
@@ -78,12 +95,16 @@ Einen neuen Kurs anlegen
 
 .. hint:: Unter "Kursangebot" könnt ihr für jeden Kurs einzeln festlegen, auf welchem der Veranstaltungs-Teile er angeboten wird.
 
+
+
 .. _handbuch_ablaufplan_vor_kurse_bearbeiten:
 
 Einen bestehenden Kurs bearbeiten
 '''''''''''''''''''''''''''''''''
 
 Wollt ihr einen bereits existenten Kurs bearbeiten, wählt ihr in der Zeile mit dem Kurstitel des Kurses in der äußeren rechten Spalte das Stift-Symbol aus. Damit gelangt ihr zum gleichen Reiter, unter dem ihr auch neue Kurse eintragen könnt, und ihr könnt beliebig Daten verändern und anschließend speichern.
+
+
 
 .. _handbuch_ablaufplan_vor_kurse_datenfelder:
 
@@ -93,6 +114,8 @@ weitere Datenfelder
 :ref:`Hier <handbuch_ablaufplan_datenfelder_allgemein>` findet ihr, wie Datenfelder allgemein konfiguriert werden.
 
 :ref:`Hier <handbuch_ablaufplan_datenfelder_kurse>` findet ihr, was ihr speziell bei Kursfeldern beachten solltet.
+
+
 
 .. _handbuch_ablaufplan_vor_unterkunft:
 
@@ -106,7 +129,9 @@ TODO: LINK O.Ä. ZUR TEILNEHMERBEITRAGSTABELLE HINZUFÜGEN
 Dafür können die Unterkünfte (also Plätze pro Zimmer, Zelt, etc.)  - gerade bei neuen Veranstaltungen empfehlenswert - direkt in der Datenbank unter "Unterkunft" angelegt werden, das erleichtert die Berechnung und den Überblick über verfügbare Teilnehmerplätze.
 
 ACHTUNG - FEATURE EXISTIERT NOCH NICHT
-Das Anlegen kann auch nach Anmeldebeginn erfolgen oder - wenn vorhanden - von einer alten Veranstaltung importiert werden.
+Das Anlegen kann auch nach Anmeldebeginn erfolgen oder - wenn vorhanden - von einer alten Veranstaltung importiert werden. Es wird für Kirchheim eine Unterkunftsvorlage bereitgestellt werden.
+
+
 
 .. _handbuch_ablaufplan_vor_unterkunft_anlegen:
 
@@ -115,12 +140,16 @@ Unterkünfte neu anlegen
 
 Analog zum :ref:`anlegen von Kursen <handbuch_ablaufplan_vor_kurse_anlegen>`
 
+
+
 .. _handbuch_ablaufplan_vor_unterkunft_bearbeiten:
 
 Eine bestehende Unterkunft bearbeiten
 '''''''''''''''''''''''''''''''''''''
 
 Analog zum :ref:`bearbeiten von Kursen <handbuch_ablaufplan_vor_kurse_bearbeiten>`
+
+
 
 .. _handbuch_ablaufplan_vor_unterkunft_datenfelder:
 
@@ -131,12 +160,16 @@ weitere Datenfelder
 
 :ref:`Hier <handbuch_ablaufplan_datenfelder_unterkunft>` findet ihr, was ihr speziell bei Unterkunftsfeldern beachten solltet.
 
+
+
 .. _handbuch_ablaufplan_vor_konfiguration:
 
 Konfiguration
 ^^^^^^^^^^^^^
 
 Hier könnt ihr ganz grundlegende Rahmenkonfigurationen für eure Veranstaltungen festlegen.
+
+
 
 .. _handbuch_ablaufplan_vor_konfiguration_selbsterklärendes:
 
@@ -153,6 +186,8 @@ Im Freitext zur Anmeldebestätigung könnt ihr Text einfügen, der automatisch b
 
 Die "Admin/Orga-Notizen" sind für euch. Sie sind nur für euch und Datenbankadmins sichtbar.
 
+
+
 .. _handbuch_ablaufplan_vor_konfigurationen_beginn:
 
 Anmeldebeginn- und ende
@@ -166,6 +201,8 @@ Der tatsächliche Anmeldeschluss gibt den Zeitpunkt an, bis zu dem Nachmeldungen
 
 TODO: WAS GENAU HEIST DAS? WELCHE KONKRETEN FOLGEN?
 
+
+
 .. _handbuch_ablaufplan_vor_konfiguration_extrafelder:
 
 Extrafelder und Fragebogen anzeigen
@@ -176,9 +213,9 @@ Allgemeines zur Konfiguration von Datenfeldern findet ihr :ref:`hier <handbuch_a
 
 Um den Fragebogen für die Teilnehmer sichtbar zu machen, tickt die Checkbox. Der Fragebogen ist nur für diejenigen zu sehen, die sich schon für die Veranstaltung angemeldet haben.
 
-Wie ihr den Fragebogen vor der Anmeldung sinnvoll konfigurieren könnt, findet ihr :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, Beispiele zur Änderung der Abfragen nach Anmeldeschluss findet ihr hier
+Wie ihr den Fragebogen vor der Anmeldung sinnvoll konfigurieren könnt, findet ihr :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, Beispiele zur Änderung der Abfragen nach Anmeldeschluss findet ihr :ref:`hier <handbuch_ablaufplan_nach_fragebogen>`.
 
-TODO: REF ZUM FRAGEBOGEN NACH ANMELDESCHLUSS HINZUFÜGEN
+
 
 .. _handbuch_ablaufplan_vor_fragebogen:
 
@@ -186,6 +223,8 @@ Fragebogen konfigurieren
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Mittels des Fragebogens könnt ihr während der Anmeldung und auch nach Anmeldeschluss Daten von den Teilnehmern abfragen ("zusätzlichen Daten").
+
+
 
 .. _handbuch_ablaufplan_vor_fragebogen_konfigurieren:
 
@@ -204,12 +243,16 @@ Nun lassen sich diese Mögichkeiten auch noch kombinieren, eine Kombination von 
 
 .. hint:: Tickt ihr die Box "Schreibgeschützt", lässt sich die dazugehörige Abfrage nicht mehr bearbeiten.
 
+
+
 Anordnug ändern
 '''''''''''''''
 
 Klickt ihr diesen Button oben links auf der Seite, erscheint eine graphische Oberfläche des von euch konfigurierten Fragebogens. Hier könnt ihr die Felder per Dragn Drop verschieben und tauschen. Mit einem einfachen Klick auf ein Feld werden euch die Feldgrenzen eingezeichnet.
 
 .. hint :: Mit diesem Button könnt ihr euch eine Vorschau eures Fragebogens anzeigen lassen, ohne diesen unter :ref:`Konfigurationen <handbuch_ablaufplan_vor_konfiguration_extrafelder>` sichtbar zu machen.
+
+
 
 .. _handbuch_ablaufplan_vor_fragebogen_während:
 
@@ -220,8 +263,11 @@ Einige Beispiele für Abfragen, die während der Anmeldung sinnvoll sein können
 
 - Solidarzusatzbeitrag
 - Bereitschaft auf Isomatten zu schlafen
+- Kursspezifisches, was für die Kurseinteilung entscheidend ist (etwa Tanzpartner oder Schrittart bei Tanzkursen)
 
 .. hint:: Damit die Information, wer auf Isomatten bereit ist zu schlafen, im weiteren Veralauf der Zimmereinteilung eingebunden werden kann, müsst ihr das Feld unter :ref:`Konfigurationen <handbuch_ablaufplan_vor_konfiguration_extrafelder>` angeben.
+
+
 
 .. _handbuch_ablaufplan_vor_open:
 
@@ -236,14 +282,16 @@ Vor der Anmeldung noch ein paar letze Punkte:
 
 Die Anmeldung eröffnet automatisch zu dem Zeitpunkt, den ihr dafür festgelegt habt, siehe :ref:`Anmeldebeginn und -ende <handbuch_ablaufplan_vor_konfigurationen_beginn>`. 
 
+
+
 .. _handbuch_ablaufplan_während:
 
 Zwischen Anmeldeeröffnung und Anmeldeschluss
 --------------------------------------------
 
-TODO:
+Hier ist Datenbanktechnisch nicht viel zu tun. Ihr könnt - falls noch nicht geschehen, die :ref:`Unterkünfte <handbuch_ablaufplan_vor_unterkunft>` eurer Veranstaltung anlegen und die eingehend Überweisungen eintragen.
 
-- ÜBERWEISUNGEN EINTRAGEN
+
 
 .. _handbuch_ablaufplan_während_überweisungen:
 
@@ -258,6 +306,8 @@ in genau dieser Reihenfolge enthält. Dann könnt ihr diese einfach per Copy+Pas
 
 Im Gegensatz zur alten Datenbank wird nun auch das automatische Einlesen von Externen unterstüzt, da diese für die Veranstaltung eine DB-ID erhalten und damit eindeutig vom System identifiziert werden können.
 
+
+
 .. _handbuch_ablaufplan_nach:
 
 Zwischen Anmeldeschluss und Veranstaltungsbeginn
@@ -265,11 +315,36 @@ Zwischen Anmeldeschluss und Veranstaltungsbeginn
 
 TODO:
 
+- ANMELDUNGEN - SUCHMASKE ERKLÄREN (VIELLEICHT ALS EIGENEN PUNKT AUSLAGERN?)
 - TEILNAHMEBESTÄTIGUNG
-- FRAGEBOGEN (ZUSÄTZLICHE DATEN) ANPASSEN
 - KURSEINTEILUNG
 - UNTERKUNFTSEINTEILUNG
 - DOWNLOAD TOOLS
+
+
+
+.. _handbuch_ablaufplan_nach_fragebogen:
+
+Fragebogen konfigurieren
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Nach Anmeldeschluss ist es oftmals sinnvoll, den Fragebogen zu überarbeiten. Sinnvoll ist es etwa, Abfragen, die ihr während der Anmeldung gestellt habt und jetzt nicht mehr verändert werden sollen, schreibzuschützen (indem ihr bei dem jeweiligen Feld die Checkbox "Schreibgeschützt" tickt) und dafür andere Abfragen zu tätigen, etwa sobald die Teilnehmer feststehen. Beispielhafte Abfragen findet ihr unten.
+
+
+
+.. _handbuch_ablaufplan_nach_fragebogen_während:
+
+Konfigurationsbeispiel zwischen Anmeldeschluss und Veranstaltungsbeginn
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+Einige Beispiele für Abfragen, die zwischen Anmeldeschluss und Veranstaltungsbeginn sinnvoll sein können:
+
+- Akademiekleidung (nachdem die Teilnehmerbriefe verschickt wurden)
+- Zimmerwünsche (nachdem die Teilnehmerbriefe verschickt wurden)
+- An/Abreisevehikel und -zeit
+- Wunsch nach Vielschläferzimmer
+
+
 
 .. _handbuch_ablaufplan_auf:
 
@@ -280,12 +355,16 @@ TODO:
 
 - CHECK-IN
 
+
+
 .. _handbuch_ablaufplan_datenfelder:
 
 Datenfelder konfigurieren
 -------------------------
 
 Da Datenfelder ein sehr mächtiges Hilfsmittel sind, die ihr vor, während und nach der Anmeldephase unterschiedlich nutzen könnt und eine Änderung im Verlaufe nicht nur möglich, sondern sogar oft gewollt ist, werden diese hier ausgelagert zentral erklärt. In den jeweiligen Punkten im Leitfaden wird immer, wenn Datenfelder konfiguriert werden, auf den entsprechenden Teil hier verwiesen.
+
+
 
 .. _handbuch_ablaufplan_datenfelder_allgemein:
 
@@ -320,6 +399,8 @@ Das, was später in der Datenbank gespeichert wird, ist jedoch **nicht** der Bes
 
 Im folgenden folgt für jeden Datentyp das Verhalten bei einem leeren Optionenfeld.
 
+
+
 .. _handbuch_ablaufplan_datenfelder_allgemein_text:
 
 Text
@@ -327,6 +408,8 @@ Text
 
 - Ein Textfeld akzeptiert Buchstaben, Zahlen und Sonderzeichen als Eingabe.
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Freitextfeld, welches ausgefüllt werden kann.
+
+
 
 .. _handbuch_ablaufplan_datenfelder_allgemein_janein:
 
@@ -336,6 +419,8 @@ Ja/Nein
 - Ein Ja/Nein Feld akzeptiert Buchstaben, Zahlen und Sonderzeichen als Eingabe.
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen eine Checkbox, die getickt oder nicht getickt werden kann.
 
+
+
 .. _handbuch_ablaufplan_datenfelder_allgemein_zahl:
 
 Zahl
@@ -343,6 +428,8 @@ Zahl
 
 - Ein Zahlenfeld akzeptiert als Werte nur ganze Zahlen, die Beschreibung darf auch Buchstaben und Sonderzeichen enthalten.
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in welches eine ganze zahl eingegeben werden kann.
+
+
 
 .. _handbuch_ablaufplan_datenfelder_allgemein_kommazahl:
 
@@ -353,6 +440,8 @@ Kommazahl
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in wleches eine Kommazahl eingegeben werden kann.
 .. attention:: Kommas werden nicht akzeptiert, es muss ein Punkt verwendet werden.
 
+
+
 .. _handbuch_ablaufplan_datenfelder_allgemein_datum:
 
 Datum
@@ -360,6 +449,8 @@ Datum
 
 - Ein Datumsfeld akzeptiert als Werte Daten im Format YYYY-MM-DD (sowie vom Browser abhängie lokale Varianten, etwa TT.MM.JJJJ, die erste Variante funktioniert aber Browserunanbhängig), die Beschreibung darf Buchstaben, Zahlen und Sonderzeichen enthalten.
 - Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in welches ein Datum in obigem Format eingegeben werden kann.
+
+
 
 .. _handbuch_ablaufplan_datenfelder_allgemein_uhrzeit:
 
@@ -369,6 +460,8 @@ Datum mit Uhrzeit
 - Ein Datum mit Uhrzeit Feld akzeptiert Werte im Format YYYY-MM-DDThh:ii:ss (dabei das "T" einfach als solches eingeben) sowie etwaige Browserabhängie Varianen (sihe dazu unter :ref:`Datum <handbuch_ablaufplan_datenfelder_allgemein_datum>`), die Beschreibung darf Buchstaben, Zahlen und Sonderzeichen enthalten.
 * Wird das Optionenfeld freigelassen, erscheint beim Ausfüllen ein Feld, in welches ein Datum mit Uhrzeit in obigem Format eingegeben werden kann.
  
+ 
+ 
 .. _handbuch_ablaufplan_datenfelder_anmeldung:
  
 Anmeldungsfelder
@@ -376,9 +469,8 @@ Anmeldungsfelder
 
 Die Anmeldungsfelder sind für die Konfiguration des Fragebogens relevant. Mit diesem können während und nach der Anmeldephase fast beliebige Abfragen getätigt werden, etwa wer bereit ist auf einer Isomatte zu schlafen, wer mit wem auf ein Zimmer möchte oder ob jemand zusätzlich Schokolade mit zur Aka bringen kann.
 
-Die Konfigurationssyntax des Fragebogens findet ihr :ref:`hier <handbuch_ablaufplan_vor_konfiguration_extrafelder>`, beispielhafte Abfragen während der Anmeldephase :ref:`hier <handbuch_ablaufplan_vor_fragebogen_während>` und Beispiele für Abfragen nach Anmeldeschluss hier TODO EINFÜGEN.
+Die Konfigurationssyntax des Fragebogens findet ihr :ref:`hier <handbuch_ablaufplan_vor_fragebogen>`, beispielhafte Abfragen während der Anmeldephase :ref:`hier <handbuch_ablaufplan_vor_fragebogen_während>` und Beispiele für Abfragen nach Anmeldeschluss :ref:`hier <handbuch_ablaufplan_nach_fragebogen>`.
 
-TODO REFS HINZUFÜGEN
 
 
 .. _handbuch_ablaufplan_datenfelder_kurse:
@@ -388,10 +480,12 @@ Kursfelder
 
 TODO: HINZUFÜGEN
 
+
+
 .. _handbuch_ablaufplan_datenfelder_unterkunft:
 
 Unterkunftsfelder
 ^^^^^^^^^^^^^^^^^
 
-TODO: HINZUFÜGEN
+Unter diesem Reiter könnt ihr Datenfelder erstellen, die in eure Unterkünfte eingebunden werden. Diese sind für euch Orgas hilfreich, etwa um ein Zimmer als "Geschlechtergetrennt" oder "Vielschläferzimmer" zu markieren. Diese Abfragen werden auch als Parameter in die Suchmaske unter "Anmeldungen" eingebunden.
 
