@@ -4006,7 +4006,7 @@ msgstr "Zusammenfassung"
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:397
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:528
 msgid "<a href='https://en.wikipedia.org/wiki/Schulze_method'>Schulze method</a>"
-msgstr "<a href='https://enwikipedia.org/wiki/Schulze_Methode'>Schulze_Methode</a>"
+msgstr "<a href='https://de.wikipedia.org/wiki/Schulze-Methode'>Schulze-Methode</a>"
 
 #: cdedb/frontend/templates/web/assembly/show_ballot.tmpl:195
 #, python-format
